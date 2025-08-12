@@ -79,7 +79,7 @@ mod Fixpoint3.Provenance {
     ///
     def lookup(rc: Region[r], idb: ProvIDB, searchAndVals: Vector[(Int32, Boxed)], arity: Int32, lookupStruct: ProvLookupStruct[r], pred: PredSym): Option[List[(Vector[Boxed], Int64, Int32)]] \ r + IO =
         match Map.get(makeFakeRelSym(pred), idb) {
-            case None => unreachable!() // No facts for `pred`.
+            case None           => unreachable!() // No facts for `pred`.
             case Some(fullTree) =>
                 let (search, vals) = Vector.unzip(searchAndVals);
                 let innerMap = BPlusTree.computeIfAbsent(() -> BPlusTree.empty(rc), pred, lookupStruct);
@@ -154,7 +154,7 @@ mod Fixpoint3.Provenance {
     def filterAndFlattenProof(p: ProofTree, filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] = region rc {
         let res = MutList.empty(rc);
         def recurse(workList: List[ProofTree]) = match workList {
-            case Nil => ()
+            case Nil                               => ()
             case ProofTree.EDB(pred, fact) :: tail =>
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
@@ -195,22 +195,21 @@ mod Fixpoint3.Provenance {
     def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
         case Provenance(rules, provIdb) => region rc {
             let annotation = match Map.get(makeFakeRelSym(predSym), provIdb) {
-                case None => None
+                case None    => None
                 case Some(v) => match BPlusTree.get(fact, v) {
                     case None => None
                     case Some(annotations) => Some(annotations)
                 }
             };
             match annotation {
-                case None => None
+                case None                    => None
                 case Some((depth, ruleUsed)) =>
                     let lookupStruct = BPlusTree.empty(rc);
                     let tree = buildProof(predSym, fact, depth, ruleUsed, rules, provIdb, lookupStruct, rc);
                     Some(filterAndFlattenProof(tree, p -> Vector.memberOf(p, withh)))
             }
         }
-        case _ =>
-            bug!("In Fixpoint.Provenance.provQuery: Can only build a proof from a provenance model")
+        case _ => bug!("In Fixpoint.Provenance.provQuery: Can only build a proof from a provenance model")
     }
 
     ///
@@ -271,12 +270,12 @@ mod Fixpoint3.Provenance {
         let getValOfVar: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         let headApps = Vector.zip(headTerms, fact) |>
             Vector.filter(match (h, _) -> match h {
-                case (HeadTerm.App1(_, _)) => true
-                case (HeadTerm.App2(_, _, _)) => true
-                case (HeadTerm.App3(_, _, _, _)) => true
-                case (HeadTerm.App4(_, _, _, _, _)) => true
+                case (HeadTerm.App1(_, _))             => true
+                case (HeadTerm.App2(_, _, _))          => true
+                case (HeadTerm.App3(_, _, _, _))       => true
+                case (HeadTerm.App4(_, _, _, _, _))    => true
                 case (HeadTerm.App5(_, _, _, _, _, _)) => true
-                case _ => false
+                case _                                 => false
             });
         ///
         /// Returns the current value of `varName`.
@@ -330,9 +329,9 @@ mod Fixpoint3.Provenance {
                         // must have value `val`. View this as a `zipWithIndex |> filter`.
                         let filterAsList: Vector[(Int32, Boxed)] = ((Nil, 0), expected)
                             ||> Vector.foldLeft(match (acc, i) -> t -> match t {
-                                case BodyTerm.Wild => (acc, i + 1)
+                                case BodyTerm.Wild   => (acc, i + 1)
                                 case BodyTerm.Var(v) => match MutMap.get(v, getValOfVar) {
-                                    case None => (acc, i + 1)
+                                    case None      => (acc, i + 1)
                                     case Some(val) => ((i, val) :: acc, i + 1)
                                 }
                                 case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
@@ -343,17 +342,17 @@ mod Fixpoint3.Provenance {
                             Vector.filterMap(t -> match t {
                                 case BodyTerm.Var(v) => match MutMap.memberOf(v, getValOfVar) {
                                     case false => Some(v)
-                                    case true => None
+                                    case true  => None
                                 }
                                 // We need to keep the order and positions for `registerVars`.
                                 // We do not care about what `_` has been assigned to.
                                 case BodyTerm.Wild => Some(VarSym.VarSym("_"))
-                                case _ => None
+                                case _             => None
                             });
                         // Get a list of all values that match the current assignment of body atoms.
                         let matches = lookup(rc, provIdb, filterAsList, Vector.length(expected), lookupStruct, pred);
                         match matches {
-                            case None => false // Nothing matches the current assignment. Return false to indicate this.
+                            case None        => false // Nothing matches the current assignment. Return false to indicate this.
                             case Some(facts) => {
                                 // Go through the found facts and filter out any fact that has a depth higher than
                                 // the fact we are trying to prove.
@@ -382,7 +381,7 @@ mod Fixpoint3.Provenance {
                                 case BodyTerm.Wild => unreachable!()
                             });
                         let isMatch = match Map.get(makeFakeRelSym(pred), provIdb) {
-                            case None => false
+                            case None        => false
                             case Some(facts) => BPlusTree.memberOf(tuple, facts)
                         };
                         if (isMatch)
@@ -424,7 +423,7 @@ mod Fixpoint3.Provenance {
         foreach ((i, h) <- ForEach.withIndex(headTerms)) {
             match h {
                 case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), getValOfVar)
-                case _ => ()
+                case _               => ()
             }
         };
         loop(0);

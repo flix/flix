@@ -74,11 +74,11 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     def addDepEdges(graph: MutGraph[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(precedenceHelper(graph), rules)
-        case Model(_) => ()
-        case Join(d1, d2) =>
+        case Model(_)          => ()
+        case Join(d1, d2)      =>
             addDepEdges(graph, d1);
             addDepEdges(graph, d2)
-        case Provenance(_, _) => ()
+        case Provenance(_, _)  => ()
     }
 
     ///
@@ -114,9 +114,9 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     def addPredSymsFrom(predMap: PredIdToName[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(predSymHelper(predMap), rules)
-        case Model(_) => ()
-        case Join(d1, d2) => addPredSymsFrom(predMap, d1); addPredSymsFrom(predMap, d2)
-        case Provenance(_, _) => ()
+        case Model(_)          => ()
+        case Join(d1, d2)      => addPredSymsFrom(predMap, d1); addPredSymsFrom(predMap, d2)
+        case Provenance(_, _)  => ()
     }
 
     ///

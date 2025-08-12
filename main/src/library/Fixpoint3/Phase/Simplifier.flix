@@ -86,15 +86,19 @@ mod Fixpoint3.Phase.Simplifier {
             simplifyOp(nonEmpty, predicates, inUntil, Set#{}, op) |>
                 Option.map(RamStmt.Insert)
         case RamStmt.MergeInto(_, _) => Some(stmt)
-        case RamStmt.Swap(_, _) => Some(stmt)
-        case RamStmt.Purge(_) => Some(stmt)
+        case RamStmt.Swap(_, _)      => Some(stmt)
+        case RamStmt.Purge(_)        => Some(stmt)
         case RamStmt.Seq(xs) =>
-            Some(RamStmt.Seq(Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)))
+            Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
+                |> RamStmt.Seq
+                |> Some
         case RamStmt.Par(xs) =>
-            Some(RamStmt.Par(Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)))
+            Vector.filterMap(simplifyHelper(nonEmpty, predicates, inUntil), xs)
+                |> RamStmt.Par
+                |> Some
         case RamStmt.Until(test, body) =>
             match simplifyHelper(nonEmpty, predicates, true, body) {
-                case None => None
+                case None                 => None
                 case Some(simplifiedBody) =>
                     if (isOnlyMergeSwapPurge(simplifiedBody)) {
                         None
@@ -155,18 +159,19 @@ mod Fixpoint3.Phase.Simplifier {
                 let (memberOf, rest) = test
                     // Delete checks of the form `x[i] == x[i]`.
                     |> Vector.filter(e -> match e {
-                        case BoolExp.Eq(RowLoad(lhs1, lhs2, _), RowLoad(rhs1, rhs2, _)) => (lhs1, lhs2) != (rhs1, rhs2)
+                        case BoolExp.Eq(RowLoad(lhs1, lhs2, _), RowLoad(rhs1, rhs2, _)) =>
+                            (lhs1, lhs2) != (rhs1, rhs2)
                         case _ => true
                     })
                     // Partition into membership tests and rest.
                     |> Vector.partition(e -> match e {
                         case BoolExp.NotMemberOf(_, _) => true
-                        case _ => false
+                        case _                         => false
                     });
                 let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.
                 match recurse(then) {
-                    case None => None
+                    case None          => None
                     case Some(newThen) =>
                         if (Vector.isEmpty(newTest))
                             Some(newThen)
@@ -180,14 +185,14 @@ mod Fixpoint3.Phase.Simplifier {
     /// of them.
     ///
     def isOnlyMergeSwapPurge(r: RamStmt): Bool = match r {
-        case RamStmt.Insert(_) => false
+        case RamStmt.Insert(_)       => false
         case RamStmt.MergeInto(_, _) => true
-        case RamStmt.Swap(_, _) => true
-        case RamStmt.Purge(_) => true
-        case RamStmt.Seq(xs) => Vector.forAll(isOnlyMergeSwapPurge, xs)
-        case RamStmt.Par(xs) => Vector.forAll(isOnlyMergeSwapPurge, xs)
-        case RamStmt.Until(_, _) => false
-        case RamStmt.Comment(_) => true
+        case RamStmt.Swap(_, _)      => true
+        case RamStmt.Purge(_)        => true
+        case RamStmt.Seq(xs)         => Vector.forAll(isOnlyMergeSwapPurge, xs)
+        case RamStmt.Par(xs)         => Vector.forAll(isOnlyMergeSwapPurge, xs)
+        case RamStmt.Until(_, _)     => false
+        case RamStmt.Comment(_)      => true
     }
 
 }
