@@ -451,6 +451,27 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    @Test
+    def testExtMatchUnit05(): Bool = {
+        ematch xvar Q() {
+            case Q() => true
+        }
+    }
+
+    @Test
+    def testExtMatchUnit06(): Bool = {
+        ematch xvar Q() {
+            case Q(u) => u == ()
+        }
+    }
+
+    @Test
+    def testExtMatchUnit07(): Bool = {
+        ematch xvar Q(()) {
+            case Q() => true
+        }
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     /// Other.
     ///////////////////////////////////////////////////////////////////////////
