@@ -580,8 +580,8 @@ object Desugar {
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
-    case WeededAst.Expr.ForEach(frags, exp, loc) =>
-      desugarForEach(frags, exp, loc)
+    case WeededAst.Expr.ForEach(frags, exp, _) =>
+      desugarForEach(frags, exp)
 
     case WeededAst.Expr.MonadicFor(frags, exp, loc) =>
       desugarMonadicFor(frags, exp, loc)
@@ -1128,7 +1128,7 @@ object Desugar {
     *   ForEach.foreach(x -> if (x > 0) ForEach.foreach(y -> println(x + y), ys) else (), xs)
     * }}}
     */
-  private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = {
     val fqnForEach = "ForEach.forEach"
 
     frags0.foldRight(visitExp(exp0)) {
