@@ -267,8 +267,6 @@ mod Fixpoint3.Provenance {
         // Not all body predicates will be atoms. After termination of `loop` a
         // `None` at position `i` will be mean that `rule[i]` was not a body atom.
         let bodyValues: Array[Option[(Vector[Boxed], Int64, Int32)], r] = Array.repeat(rc, Vector.length(bodyPreds), None);
-        // A mapping from `VarSym` to its current value.
-        let getValOfVar: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         let headApps = Vector.zip(headTerms, fact) |>
             Vector.filter(match (h, _) -> match h {
                 case (HeadTerm.App1(_, _)) => true
@@ -281,28 +279,31 @@ mod Fixpoint3.Provenance {
         ///
         /// Returns the current value of `varName`.
         ///
-        def getVal(varName) = getOrCrash(MutMap.get(varName, getValOfVar));
+        def getVal(varName, valToVar) = getOrCrash(Map.get(varName, valToVar));
 
         ///
         /// Register the values new values of `varNames` to be `matchedFacts`.
         ///
-        /// Concretely, we update the `getValOfVar` to contain `varNames[i] => matchedFacts[i]`.
+        /// Concretely, we update the `varSymToVal` to contain `varNames[i] => matchedFacts[i]`.
         ///
-        def registerVars(varNames, matchedFact) =
+        def registerVars(varNames, matchedFact, varSymToVal) = {
+            let result = Map.toMutMap(rc, varSymToVal);
             foreach ((i, v) <- ForEach.withIndex(varNames)) {
-                MutMap.put(v, Vector.get(i, matchedFact), getValOfVar)
+                MutMap.put(v, Vector.get(i, matchedFact), result)
             };
+            MutMap.toMap(result)
+        };
         ///
         /// Returns true if all head applications are satisfied by the current variable assignment.
         ///
-        def areHeadApplicationsSatisfied(): Bool = {
+        def areHeadApplicationsSatisfied(varSymToVal): Bool = {
             headApps |>
                 Vector.forAll(match (app, val) -> match app {
-                    case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1))
-                    case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1), getVal(v2))
-                    case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1), getVal(v2), getVal(v3))
-                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1), getVal(v2), getVal(v3), getVal(v4))
-                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1), getVal(v2), getVal(v3), getVal(v4), getVal(v5))
+                    case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1, varSymToVal))
+                    case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
                     case _ => unreachable!()
                 })
         };
@@ -312,15 +313,13 @@ mod Fixpoint3.Provenance {
         /// Attempts to satisfy `bodyPreds`, having already found a satisfying assignment
         /// for `bodyPreds[i]`, where `0 <= i < index`.
         ///
-        /// Destructively updates `getValOfVar` and `bodyValues` with newly bound values.
-        ///
-        /// Returns `true` if the current values in `getValOfVar` and `bodyValues` satisfies `rule`
+        /// Returns `true` if the current values in `varSymToVal` and `bodyValues` satisfies `rule`
         /// and `false` otherwise.
         ///
-        def loop(index) = {
+        def loop(index, varSymToVal) = {
             if (index == Vector.length(bodyPreds)) {
                 // Base case. We have satisfied all atoms and found a satisfying assignment.
-                areHeadApplicationsSatisfied()
+                areHeadApplicationsSatisfied(varSymToVal)
             } else {
                 match Vector.get(index, bodyPreds) {
                     case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, expected) =>
@@ -331,7 +330,7 @@ mod Fixpoint3.Provenance {
                         let filterAsList: Vector[(Int32, Boxed)] = ((Nil, 0), expected)
                             ||> Vector.foldLeft(match (acc, i) -> t -> match t {
                                 case BodyTerm.Wild => (acc, i + 1)
-                                case BodyTerm.Var(v) => match MutMap.get(v, getValOfVar) {
+                                case BodyTerm.Var(v) => match Map.get(v, varSymToVal) {
                                     case None => (acc, i + 1)
                                     case Some(val) => ((i, val) :: acc, i + 1)
                                 }
@@ -341,7 +340,7 @@ mod Fixpoint3.Provenance {
                         // satisfied.
                         let freeVars = expected |>
                             Vector.filterMap(t -> match t {
-                                case BodyTerm.Var(v) => match MutMap.memberOf(v, getValOfVar) {
+                                case BodyTerm.Var(v) => match Map.memberOf(v, varSymToVal) {
                                     case false => Some(v)
                                     case true => None
                                 }
@@ -367,8 +366,8 @@ mod Fixpoint3.Provenance {
                                         } else {
                                             // This combination could be delayed until we knew we had a satisfying assignment.
                                             Array.put(Some((combineToFact(filterAsList, bodyFact), bodyDepth, bodyRule)), index, bodyValues);
-                                            registerVars(freeVars, bodyFact);
-                                            loop(index + 1)
+                                            let newMap = registerVars(freeVars, bodyFact, varSymToVal);
+                                            loop(index + 1, newMap)
                                         }
                                     })
                             }
@@ -377,7 +376,7 @@ mod Fixpoint3.Provenance {
                         // `not pred(tuple)` is true if `pred(tuple)` is not in the model.
                         let tuple = expected |>
                             Vector.map(t -> match t {
-                                case BodyTerm.Var(v) => getVal(v)
+                                case BodyTerm.Var(v) => getVal(v, varSymToVal)
                                 case BodyTerm.Lit(val) => val
                                 case BodyTerm.Wild => unreachable!()
                             });
@@ -390,44 +389,46 @@ mod Fixpoint3.Provenance {
                         else {
                             // No need to save the match. Negative atoms cannot bind variables.
                             Array.put(Some((tuple, -2i64, -2)), index, bodyValues);
-                            loop(index + 1)
+                            loop(index + 1, varSymToVal)
                         }
                     case BodyPredicate.Guard0(_) =>
                         // No need to evaluate `f()`, it must be `true`, otherwise what we know is a fact
                         // would not have been created by this rule.
-                        loop(index + 1)
+                        loop(index + 1, varSymToVal)
                     case BodyPredicate.Guard1(f, v1) =>
-                        if (f(getVal(v1)))
-                            loop(index + 1)
+                        if (f(getVal(v1, varSymToVal)))
+                            loop(index + 1, varSymToVal)
                         else false
                     case BodyPredicate.Guard2(f, v1, v2) =>
-                        if (f(getVal(v1), getVal(v2)))
-                            loop(index + 1)
+                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal)))
+                            loop(index + 1, varSymToVal)
                         else false
                     case BodyPredicate.Guard3(f, v1, v2, v3) =>
-                        if (f(getVal(v1), getVal(v2), getVal(v3)))
-                            loop(index + 1)
+                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal)))
+                            loop(index + 1, varSymToVal)
                         else false
                     case BodyPredicate.Guard4(f, v1, v2, v3, v4) =>
-                        if (f(getVal(v1), getVal(v2), getVal(v3), getVal(v4)))
-                            loop(index + 1)
+                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal)))
+                            loop(index + 1, varSymToVal)
                         else false
                     case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) =>
-                        if (f(getVal(v1), getVal(v2), getVal(v3), getVal(v4), getVal(v5)))
-                            loop(index + 1)
+                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal)))
+                            loop(index + 1, varSymToVal)
                         else false
                     // Functional in provenance is not supported at the moment.
                     case BodyPredicate.Functional(_, _, _) => unreachable!()
                 }
             }};
+        // A mapping from `VarSym` to its current value.
+        let varSymToVal: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         // Bind all variables in the head atom to the values of `fact`.
         foreach ((i, h) <- ForEach.withIndex(headTerms)) {
             match h {
-                case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), getValOfVar)
+                case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), varSymToVal)
                 case _ => ()
             }
         };
-        loop(0);
+        loop(0, MutMap.toMap(varSymToVal));
         bodyValues |> Array.filterMap(rc, identity) |> Array.toVector
     }
 
