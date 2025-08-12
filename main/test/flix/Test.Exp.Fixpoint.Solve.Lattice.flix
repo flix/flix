@@ -1,11 +1,9 @@
 mod Test.Exp.Fixpoint.Solve.Lattice {
 
     enum Constant {
-          case Top,
-
+        case Top,
         case Cst(Int32),
-
-          case Bot
+        case Bot
     }
 
     instance LowerBound[Constant] {
@@ -174,6 +172,138 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         };
         let ans = query m select t from LocalVar("r"; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39+12))
+
+    @Test
+    def testFixpointLattice12(): Bool =
+        let pr = #{
+            A(;1).
+            B(;2).
+            R(;x) :- A(;x), B(;x).
+        };
+        let mm = query pr select x from R(;x);
+        Vector#{1} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice13(): Bool =
+        let pr = #{
+            A(;2).
+            B(;1).
+            R(;x) :- A(;x), B(;x).
+        };
+        let mm = query pr select x from R(;x);
+        Vector#{1} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice14(): Bool =
+        let pr = #{
+            A(;1).
+            B(;2).
+            C(4).
+            C(5).
+            R(y;x) :- A(;x), B(;x), C(y).
+        };
+        let mm = query pr select (y, x) from R(y; x);
+        Vector#{(4, 1), (5, 1)} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice15(): Bool =
+        let pr = #{
+            A(;1).
+            A(;2).
+        };
+        let mm = query pr select x from A(;x);
+        Vector#{2} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice16(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            R(;x) :- A(x).
+        };
+        let mm = query pr select x from R(;x);
+        Vector#{2} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice17(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            R(;x) :- A(x).
+        };
+        let mm = query pr select x from R(;x);
+        Vector#{2} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice18(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            A(3).
+            R(;Set#{x}) :- A(x).
+        };
+        let mm = query pr select x from R(;x);
+        Vector#{Set#{1, 2, 3}} `Assert.eq` mm
+
+    @Test
+    def testFixpointLattice19(): Bool =
+        let db1 = inject Vector#{1, 2, 3, 4} into A/1;
+        let db2 = inject Vector#{2, 3, 4, 5} into B/1;
+        let pr = #{
+            C(;Set#{x}) :- A(x).
+            D(;Set#{x}) :- B(x).
+            R(;x) :- C(;x), D(;x).
+        };
+        let mm = query db1, db2, pr select x from R(;x);
+        Vector#{Set#{2, 3, 4}} `Assert.eq` mm
+
+    @Test
+    def testFix01(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            B(;x) :- A(x).
+            R(x) :- fix B(;x)
+        };
+        let mm = query pr select x from R(x);
+        Vector#{2} `Assert.eq` mm
+
+    @Test
+    def testFix02(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            B(;x) :- A(x).
+            R(x) :- fix B(;x)
+        };
+        let mm = query pr select x from R(x);
+        Vector#{2} `Assert.eq` mm
+
+    @Test
+    def testFix03(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            B(;x) :- A(x).
+            C(x) :- fix B(;x).
+            R(x) :- fix C(x).
+        };
+        let mm = query pr select x from R(x);
+        Vector#{2} `Assert.eq` mm
+
+    @Test
+    def testFix04(): Bool =
+        let pr = #{
+            A(1).
+            A(2).
+            B1(;x) :- A(x).
+            B2(;x) :- A(x).
+            C1(x) :- fix B1(;x).
+            C2(x) :- fix B2(;x).
+            R(x) :- C1(x), C2(x).
+        };
+        let mm = query pr select x from R(x);
+        Vector#{2} `Assert.eq` mm
 
     @Test
     def testRelationToLattice01(): Bool =
