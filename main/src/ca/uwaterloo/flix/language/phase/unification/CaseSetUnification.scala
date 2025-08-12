@@ -35,29 +35,48 @@ object CaseSetUnification {
       return Some(Substitution.empty)
     }
 
-    ///
-    /// Get rid of trivial variable cases.
-    ///
-    (tpe1, tpe2) match {
-      case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
-        return Some(Substitution.singleton(x, t2))
-
-      case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
-        return Some(Substitution.singleton(x, t1))
-
-      case _ => // nop
-    }
-
-    ///
-    /// Run the expensive boolean unification algorithm.
-    ///
     val (env, univ) = mkEnv(List(tpe1, tpe2), cases)
     val input1 = fromCaseType(tpe1, env, univ)
     val input2 = fromCaseType(tpe2, env, univ)
     val renv = liftRigidityEnv(renv0, env)
 
-    booleanUnification(input1, input2, renv, univ).map {
-      case subst => subst.toTypeSubstitution(enumSym, env)
+    ///
+    /// Try get rid of trivial cases.
+    /// If failed, then run the expensive boolean unification algorithm.
+    ///
+    tryFastUnify(input1, input2, renv)
+      .orElse(booleanUnification(input1, input2, renv, univ)).map {
+        case subst => subst.toTypeSubstitution(enumSym, env)
+      }
+  }
+
+  private def tryFastUnify(tpe1: SetFormula, tpe2: SetFormula, renv: Set[Int]): Option[CaseSetSubstitution] = {
+    (tpe1, tpe2) match {
+      case (SetFormula.Var(x), t2) if !renv.contains(x) && !t2.freeVars.contains(x) =>
+        Some(CaseSetSubstitution.singleton(x, t2))
+
+      case (t1, SetFormula.Var(x)) if !renv.contains(x) && !t1.freeVars.contains(x) =>
+        Some(CaseSetSubstitution.singleton(x, t1))
+
+      case (SetFormula.Cst(x), SetFormula.Cst(y)) if x == y =>
+        Some(CaseSetSubstitution.empty)
+
+      case (SetFormula.Not(x), SetFormula.Not(y)) =>
+        tryFastUnify(x, y, renv)
+
+      case (SetFormula.And(x1, y1), SetFormula.And(x2, y2)) =>
+        for {
+          subst1 <- tryFastUnify(x1, x2, renv)
+          subst2 <- tryFastUnify(y1, y2, renv)
+        } yield subst1 ++ subst2
+
+      case (SetFormula.Or(x1, y1), SetFormula.Or(x2, y2)) =>
+        for {
+          subst1 <- tryFastUnify(x1, x2, renv)
+          subst2 <- tryFastUnify(y1, y2, renv)
+        } yield subst1 ++ subst2
+
+      case _ => None
     }
   }
 
