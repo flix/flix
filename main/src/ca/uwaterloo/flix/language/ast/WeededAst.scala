@@ -303,6 +303,8 @@ object WeededAst {
 
     case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
 
+    case class Unit(loc: SourceLocation) extends ExtPattern
+
     case class Error(loc: SourceLocation) extends ExtPattern
   }
 

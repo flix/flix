@@ -963,6 +963,9 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.ExtPattern.Wild(tvar, loc)
 
+    case ResolvedAst.ExtPattern.Unit(loc) =>
+      KindedAst.ExtPattern.Unit(loc)
+
     case ResolvedAst.ExtPattern.Var(sym, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.ExtPattern.Var(sym, tvar, loc)

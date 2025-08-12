@@ -1041,6 +1041,7 @@ object Lowering {
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
     case TypedAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
+    case TypedAst.ExtPattern.Unit(tpe, loc) => LoweredAst.ExtPattern.Unit(tpe, loc)
     case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
     case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }

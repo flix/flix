@@ -736,6 +736,8 @@ object TypeReconstruction {
   private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
     case KindedAst.ExtPattern.Wild(tvar, loc) => TypedAst.ExtPattern.Wild(subst(tvar), loc)
 
+    case KindedAst.ExtPattern.Unit(loc) => TypedAst.ExtPattern.Unit(Type.Unit, loc)
+
     case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
       val tpe = subst(tvar)
       val bnd = TypedAst.Binder(sym, tpe)

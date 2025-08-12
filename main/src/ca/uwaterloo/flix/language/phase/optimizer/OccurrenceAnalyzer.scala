@@ -397,6 +397,9 @@ object OccurrenceAnalyzer {
     case MonoAst.ExtPattern.Wild(_, _) =>
       (pat0, Set.empty) // Always reuse pat0.
 
+    case MonoAst.ExtPattern.Unit(_, _) =>
+      (pat0, Set.empty) // Always reuse pat0.
+
     case MonoAst.ExtPattern.Var(sym, tpe, occur0, loc) =>
       val occur = ctx.get(sym)
       if (occur eq occur0) {

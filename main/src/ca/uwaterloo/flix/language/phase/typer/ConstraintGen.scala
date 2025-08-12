@@ -1073,6 +1073,8 @@ object ConstraintGen {
   private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
     case ExtPattern.Wild(tvar, _) => tvar
 
+    case ExtPattern.Unit(_) => Type.Unit
+
     case ExtPattern.Var(sym, tvar, loc) =>
       c.unifyType(sym.tvar, tvar, loc)
       tvar

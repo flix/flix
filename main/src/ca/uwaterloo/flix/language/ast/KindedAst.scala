@@ -284,6 +284,8 @@ object KindedAst {
 
     case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
+    case class Unit(loc: SourceLocation) extends ExtPattern
+
     case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
     case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern

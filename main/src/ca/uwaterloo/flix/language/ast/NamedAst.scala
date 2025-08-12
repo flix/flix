@@ -284,6 +284,8 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends ExtPattern
 
+    case class Unit(loc: SourceLocation) extends ExtPattern
+
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
 
     case class Error(loc: SourceLocation) extends ExtPattern

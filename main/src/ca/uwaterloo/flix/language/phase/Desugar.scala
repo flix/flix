@@ -892,6 +892,9 @@ object Desugar {
     case WeededAst.ExtPattern.Var(ident, loc) =>
       DesugaredAst.ExtPattern.Var(ident, loc)
 
+    case WeededAst.ExtPattern.Unit(loc) =>
+      DesugaredAst.ExtPattern.Unit(loc)
+
     case WeededAst.ExtPattern.Error(loc) =>
       DesugaredAst.ExtPattern.Error(loc)
   }

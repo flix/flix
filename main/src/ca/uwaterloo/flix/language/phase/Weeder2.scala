@@ -2437,7 +2437,10 @@ object Weeder2 {
     private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[ExtPattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(traverse(patterns)(visitPattern(_, seen)))(_.map(restrictToVarOrWild))
+      mapN(traverse(patterns)(visitPattern(_, seen))) {
+        case Nil => List(ExtPattern.Unit(tree.loc))
+        case xs => xs.map(restrictToVarOrWild)
+      }
     }
 
     private def restrictToVarOrWild(pat: Pattern)(implicit sctx: SharedContext): ExtPattern = pat match {

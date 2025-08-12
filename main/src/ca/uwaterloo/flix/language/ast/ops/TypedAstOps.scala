@@ -222,6 +222,7 @@ object TypedAstOps {
         case (acc, ExtMatchRule(_, pats, exp1, _)) =>
           acc ++ freeVars(exp1) -- pats.flatMap {
             case ExtPattern.Wild(_, _) => List.empty
+            case ExtPattern.Unit(_, _) => List.empty
             case ExtPattern.Var(bnd, _, _) => List(bnd.sym)
             case ExtPattern.Error(_, _) => List.empty
           }

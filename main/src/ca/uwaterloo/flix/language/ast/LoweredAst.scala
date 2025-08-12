@@ -176,6 +176,8 @@ object LoweredAst {
 
     case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
 
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtPattern
+
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtPattern
 
   }
