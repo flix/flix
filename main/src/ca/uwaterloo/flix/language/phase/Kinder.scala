@@ -295,7 +295,7 @@ object Kinder {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
       // if the spec is already calculated (this is a top-level def), then just look it up
-      val spec = renv.defSpecs.get(sym).getOrElse(visitSpec(spec0, Nil, None, kenv, root))
+      val spec = renv.defSpecs.getOrElse(sym, visitSpec(spec0, Nil, None, kenv, root))
       val exp = visitExp(exp0, kenv, root)(Scope.Top, renv, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
