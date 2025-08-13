@@ -2365,11 +2365,16 @@ object Weeder2 {
     private def visitExtTagPattern(tree: SyntaxTree.Tree, seen: mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tag)
       val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
-      mapN(pickNameIdent(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
-        (ident, maybePat) =>
+      mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
+        (qname, maybePat) =>
+          if (qname.namespace.nonEmpty) {
+            // TODO: Maybe more specific error handling
+            val error = IllegalExtPattern(qname.loc)
+            sctx.errors.add(error)
+          }
           maybePat match {
-            case None => ExtPattern.Tag(Name.mkLabel(ident), List.empty, tree.loc)
-            case Some(elms) => ExtPattern.Tag(Name.mkLabel(ident), elms.toList, tree.loc)
+            case None => ExtPattern.Tag(Name.mkLabel(qname.ident), List.empty, tree.loc)
+            case Some(elms) => ExtPattern.Tag(Name.mkLabel(qname.ident), elms.toList, tree.loc)
           }
       }
     }
