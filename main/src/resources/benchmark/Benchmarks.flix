@@ -20,11 +20,11 @@
 /// A benchmark has a name and a function to evaluate.
 ///
 def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
-    "Iterator.filter"    => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filter(x -> Int32.modulo(x, 2) == 0) |> Iterator.toVector |> blackhole },
-    "Iterator.filterMap" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> Iterator.toVector |> blackhole },
-    "Iterator.foldLeft"  => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.foldLeft(Add.add, 0) |> blackhole },
-    "Iterator.foldRight" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.foldRight(Add.add, 0) |> blackhole },
-    "Iterator.map"       => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.map(x -> x + 1) |> Iterator.toVector |> blackhole },
+    "Iterator.filter"    => () -> region rc { Iterator.range(rc, 0, 1000) |> Iterator.filter(x -> Int32.modulo(x, 2) == 0) |> Iterator.toVector |> blackhole },
+    "Iterator.filterMap" => () -> region rc { Iterator.range(rc, 0, 1000) |> Iterator.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> Iterator.toVector |> blackhole },
+    "Iterator.foldLeft"  => () -> region rc { Iterator.range(rc, 0, 1000) |> Iterator.foldLeft(Add.add, 0) |> blackhole },
+    "Iterator.foldRight" => () -> region rc { Iterator.range(rc, 0, 1000) |> Iterator.foldRight(Add.add, 0) |> blackhole },
+    "Iterator.map"       => () -> region rc { Iterator.range(rc, 0, 1000) |> Iterator.map(x -> x + 1) |> Iterator.toVector |> blackhole },
     "List.filter"        => () -> List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
     "List.foldLeft"      => () -> List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole,
     "List.foldRight"     => () -> List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole,
