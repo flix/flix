@@ -584,9 +584,9 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules.map {
-        case ExtMatchRule(_, pats, exp1, _) =>
+        case ExtMatchRule(pat, exp1, _) =>
           // Compute the free variables in the pattern.
-          val fvs = pats.flatMap(freeVars).toSet
+          val fvs = freeVars(pat)
 
           // Extend the environment with the free variables.
           val extendedEnv = env0 ++ fvs
@@ -603,11 +603,14 @@ object Redundancy {
           // Combine everything together.
           (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
+      val tagPatterns = rules.collect {
+        case ExtMatchRule(pat: ExtPattern.Tag, _, _) => pat
+      }
 
       val duplicatePatterns: List[RedundancyError] =
-        SeqOps.getDuplicates(rules, (rule: ExtMatchRule) => rule.label).map {
-          case (rule1, rule2) =>
-            RedundancyError.DuplicateExtPattern(rule1.label, rule1.label.loc, rule2.label.loc)
+        SeqOps.getDuplicates(tagPatterns, (pat: ExtPattern.Tag) => pat.label).map {
+          case (pat1, pat2) =>
+            RedundancyError.DuplicateExtPattern(pat1.label, pat1.label.loc, pat2.label.loc)
         }
 
       Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
@@ -1123,10 +1126,16 @@ object Redundancy {
   /**
     * Returns the free variables in the ext pattern `pat0`.
     */
-  private def freeVars(pat0: ExtPattern): Option[Symbol.VarSym] = pat0 match {
-    case ExtPattern.Wild(_, _) => None
-    case ExtPattern.Var(Binder(sym, _), _, _) => Some(sym)
-    case ExtPattern.Error(_, _) => None
+  private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtPattern.Wild(_, _) => Set.empty
+    case ExtPattern.Tag(_, pats, _, _) => pats.toSet.flatMap((v: ExtPattern.VarOrWild) => freeVars(v))
+    case ExtPattern.Error(_, _) => Set.empty
+  }
+
+  private def freeVars(v: ExtPattern.VarOrWild): Set[Symbol.VarSym] = v match {
+    case ExtPattern.Wild(_, _) => Set.empty
+    case ExtPattern.Var(Binder(sym, _), _, _) => Set(sym)
+    case ExtPattern.Error(_, _) => Set.empty
   }
 
   /**
