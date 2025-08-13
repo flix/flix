@@ -60,6 +60,8 @@ object DocAst {
 
     case class Tag(sym: Symbol.CaseSym, args: List[Expr]) extends Atom
 
+    case class ExtTag(label: Name.Label, args: List[Expr]) extends Atom
+
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class AsIs(s: String) extends Atom
 
