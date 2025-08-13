@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
-import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, ExtPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object MonoAstPrinter {
@@ -39,7 +39,7 @@ object MonoAstPrinter {
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
-    case Expr.ExtMatch(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(exp, rules, _, _, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
@@ -70,6 +70,16 @@ object MonoAstPrinter {
     case MonoAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
   }
 
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: MonoAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case MonoAst.ExtMatchRule(label, pats, exp, _) =>
+      val enumSym = new Symbol.EnumSym(List.empty, label.name, label.loc)
+      val sym = new Symbol.CaseSym(enumSym, label.name, label.loc)
+      (DocAst.Expr.Tag(sym, pats.map(printExtPattern)), print(exp))
+  }
+
   /** Returns the [[DocAst.Expr]] representation of `pattern`. */
   private def printPattern(pattern: MonoAst.Pattern): DocAst.Expr = pattern match {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
@@ -86,6 +96,14 @@ object MonoAstPrinter {
       case (MonoAst.Pattern.Record.RecordLabelPattern(label, recordPat, _, _), acc) =>
         DocAst.Expr.RecordExtend(label, printPattern(recordPat), acc)
     }
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtPattern.Var(sym, _, _, _) => printVar(sym)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `sym`. */
