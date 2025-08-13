@@ -160,15 +160,6 @@ object TypedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `pattern`.
-    */
-  private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = pattern match {
-    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
-    case ExtPattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
-    case ExtPattern.Error(_, _) => DocAst.Expr.Error
-  }
-
-  /**
     * Returns the [[DocAst.Expr]] representation of `pats`.
     */
   private def printRecordPattern(pats: List[Record.RecordLabelPattern], pat: Pattern): DocAst.Expr = {
@@ -176,6 +167,15 @@ object TypedAstPrinter {
       case (TypedAst.Pattern.Record.RecordLabelPattern(label, rest, _, _), acc) =>
         DocAst.Expr.RecordExtend(label, printPattern(rest), acc)
     }
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtPattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
+    case ExtPattern.Error(_, _) => DocAst.Expr.Error
   }
 
   /**
