@@ -1361,7 +1361,9 @@ mod BPlusTree {
                 splitInternalToRightChild(rc, insertedChild, insertionPoint, newKey, mid, arity, rightSize, leftNode)
             };
             let rightNode = mkInternal(rc, rightKeys, rightChildren, rightSize, leftNode->parent);
-            // You do not have a lock on the rightNode?
+            // Lock `rightNode` before updating child-pointers.
+            // This prevents threads working on children from grabbing the lock of our
+            // parent pointer before we lock it.
             let rightNodeStamp = Lock.writeLock(rightNode->lock);
             let parentStamp = lockParent(leftNode, tree);
             rightNode->parent = leftNode->parent;
