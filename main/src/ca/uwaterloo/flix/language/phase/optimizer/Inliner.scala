@@ -422,6 +422,13 @@ object Inliner {
   }
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+      val (ps, varSubsts) = pats.map(visitVarOrWild).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (MonoAst.ExtPattern.Tag(label, ps, tpe, loc), varSubst)
+  }
+
+  private def visitVarOrWild(varOrWild0: MonoAst.ExtPattern.VarOrWild)(implicit flix: Flix): (MonoAst.ExtPattern.VarOrWild, Map[Symbol.VarSym, Symbol.VarSym]) = varOrWild0 match {
     case MonoAst.ExtPattern.Wild(tpe, loc) =>
       (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
 
@@ -459,12 +466,11 @@ object Inliner {
   }
 
   private def visitExtMatchRule(rule: MonoAst.ExtMatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule match {
-    case MonoAst.ExtMatchRule(label, pats, exp, loc) =>
-      val (ps, varSubsts) = pats.map(visitExtPattern).unzip
-      val varSubst1 = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+    case MonoAst.ExtMatchRule(pat, exp, loc) =>
+      val (p, varSubst1) = visitExtPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
-      MonoAst.ExtMatchRule(label, ps, e, loc)
+      MonoAst.ExtMatchRule(p, e, loc)
   }
 
   private def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
