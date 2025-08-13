@@ -288,7 +288,7 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends ExtPattern with VarOrWild
 
-    case class Var(ident: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends VarOrWild
 
     case class Tag(label: Name.Label, pats: List[VarOrWild], loc: SourceLocation) extends ExtPattern
 
