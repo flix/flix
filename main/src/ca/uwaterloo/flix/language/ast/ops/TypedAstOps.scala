@@ -219,12 +219,8 @@ object TypedAstOps {
 
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, ExtMatchRule(_, pats, exp1, _)) =>
-          acc ++ freeVars(exp1) -- pats.flatMap {
-            case ExtPattern.Wild(_, _) => List.empty
-            case ExtPattern.Var(bnd, _, _) => List(bnd.sym)
-            case ExtPattern.Error(_, _) => List.empty
-          }
+        case (acc, ExtMatchRule(pat, exp1, _)) =>
+          acc ++ freeVars(exp1) -- freeVars(pat)
       }
 
     case Expr.Tag(_, exps, _, _, _) =>
@@ -458,6 +454,21 @@ object TypedAstOps {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(Binder(sym, _), _, _) => Some(sym)
     case RestrictableChoosePattern.Error(_, _) => None
+  }
+
+  /**
+    * Returns the free variables in the given extensible pattern `pat0`.
+    */
+  private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtPattern.Wild(_, _) => Set.empty
+    case ExtPattern.Tag(_, pats, _, _) => pats.flatMap(freeVars).toSet
+    case ExtPattern.Error(_, _) => Set.empty
+  }
+
+  private def freeVars(v: ExtPattern.VarOrWild): Set[Symbol.VarSym] = v match {
+    case ExtPattern.Wild(_, _) => Set.empty
+    case ExtPattern.Var(Binder(sym, _), _, _) => Set(sym)
+    case ExtPattern.Error(_, _) => Set.empty
   }
 
   /**
