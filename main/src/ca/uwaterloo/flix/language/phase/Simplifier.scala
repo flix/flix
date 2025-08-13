@@ -1020,7 +1020,7 @@ object Simplifier {
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
-      case (MonoAst.ExtMatchRule(label, pats, exp1, loc1), branch2) =>
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _, _), exp1, loc1), branch2) =>
         val e1 = visitExp(exp1)
         val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
