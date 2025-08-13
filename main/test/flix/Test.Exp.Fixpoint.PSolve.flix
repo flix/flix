@@ -1,7 +1,7 @@
 mod Test.Exp.Fixpoint.PQuery {
 
     ///////////////////////////////////////////////////////////////////////////
-    // Basic sanity checks that PSolve computes provenance.
+    // `psolve` should support computation of provenance with `pquery`.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -53,7 +53,7 @@ mod Test.Exp.Fixpoint.PQuery {
         Assert.eq(expect, actual)
 
     ///////////////////////////////////////////////////////////////////////////
-    // `psolve` can be used with multiple calls to `pquery`.
+    // `psolve` should work with multiple calls to `pquery`.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -165,5 +165,69 @@ mod Test.Exp.Fixpoint.PQuery {
         Vector#{6, 7, 4, 5} `Assert.eq` qry(6) and
         Vector#{7, 4, 5, 6} `Assert.eq` qry(7)
     }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // `psolve` should be idempotent.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPSolveIdempotent01(): Bool =
+        let db = #{
+            Edge(1, 2). Edge(2, 3). Edge(3, 1). Edge(1, 4).
+        };
+        let pr = #{
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+            Cycle(x)   :- Path(x, x).
+        };
+        let pm = psolve (psolve db, pr);
+        let pp = pquery pm select Cycle(2) with {Edge};
+        Vector.map(v -> ematch v { case Edge(x, y) => (x, y) }, pp) `Assert.eq` Vector#{(2, 3), (3, 1), (1, 2)}
+
+    @Test
+    def testPSolveIdempotent02(): Bool =
+        let db = #{
+            Edge(1, 2). Edge(2, 3). Edge(3, 1). Edge(1, 4).
+        };
+        let pr = #{
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+            Cycle(x)   :- Path(x, x).
+        };
+        let pm = psolve (psolve (psolve db, pr));
+        let pp = pquery pm select Cycle(2) with {Edge};
+        Vector.map(v -> ematch v { case Edge(x, y) => (x, y) }, pp) `Assert.eq` Vector#{(2, 3), (3, 1), (1, 2)}
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // `psolve` should return an immutable Datalog value.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPSolveImmutable01(): Bool =
+        let db1 = #{
+            Edge(1, 2). Edge(2, 3). Edge(3, 1). Edge(1, 4).
+        };
+        let db2 = #{ Edge(5, 5). };
+        let db3 = #{ Edge(7, 7). };
+        let pr = #{
+            Path(x, y) :- Edge(x, y).
+            Path(x, z) :- Path(x, y), Edge(y, z).
+            Cycle(x) :- Path(x, x).
+        };
+        let pm = psolve db1, pr;
+
+        // pm should retain edb facts.
+        Vector.nonEmpty(query pm select () from Edge(1, 2)) and
+        Vector.nonEmpty(query pm select () from Edge(2, 3)) and
+
+        // pm should should allow the derivation of new facts.
+        Vector.nonEmpty(query db2, pm, pr select () from Cycle(5)) and
+        Vector.nonEmpty(query db3, pm, pr select () from Cycle(7)) and
+
+        // pm should *NOT* contain the newly derived facts.
+        Vector.isEmpty(query pm select () from Cycle(5)) and
+        Vector.isEmpty(query pm select () from Cycle(7))
 
 }
