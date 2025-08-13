@@ -980,7 +980,7 @@ object Kinder {
 
       case ResolvedAst.ExtPattern.Tag(label, pats, loc) =>
         val ps = pats.map(visitVarOrWild)
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        val tvar = Type.freshVar(Kind.SchemaRow, loc.asSynthetic)
         KindedAst.ExtPattern.Tag(label, ps, tvar, loc)
 
       case ResolvedAst.ExtPattern.Error(loc) =>
@@ -988,6 +988,7 @@ object Kinder {
         KindedAst.ExtPattern.Error(tvar, loc)
     }
   }
+
   /**
     * Performs kinding on the given restrictable choice pattern under the given kind environment.
     */
