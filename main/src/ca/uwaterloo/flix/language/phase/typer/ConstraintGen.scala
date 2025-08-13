@@ -478,12 +478,15 @@ object ConstraintGen {
 
       case Expr.ExtMatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
-        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
-        val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(loc)) {
+        val (patTypes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
+        val expectedSchemaRowType = patTypes.foldRight(Type.mkSchemaRowEmpty(exp.loc.asSynthetic)) {
+          case (cont, acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(tuplePatTypes, name.loc), acc, loc)
+        }
+        val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(exp.loc)) {
           case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
         }
-        val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-        c.unifyType(tpe, expectedSchemaType, exp.loc)
+        val expectedExtensibleType = Type.mkExtensible(expectedSchemaRowType, loc)
+        c.unifyType(tpe, expectedExtensibleType, exp.loc)
         c.unifyAllTypes(tpes, loc)
         val resTpe = tpes.head // Note: We are guaranteed to have one rule.
         val resEff = Type.mkUnion(eff :: effs, loc)
@@ -1070,14 +1073,41 @@ object ConstraintGen {
     *
     * Returns the type of the pattern.
     */
-  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
-    case ExtPattern.Wild(tvar, _) => tvar
+  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type => Type = {
+    def visitVarOrWild(varOrWild0: KindedAst.ExtPattern.VarOrWild): Type = varOrWild0 match {
+      case ExtPattern.Wild(tvar, _) =>
+        tvar
 
-    case ExtPattern.Var(sym, tvar, loc) =>
-      c.unifyType(sym.tvar, tvar, loc)
-      tvar
+      case ExtPattern.Var(sym, tvar, loc) =>
+        c.unifyType(sym.tvar, tvar, loc)
+        tvar
 
-    case ExtPattern.Error(tvar, _) => tvar
+      case ExtPattern.Error(tvar, _) =>
+        tvar
+    }
+
+    pat0 match {
+      case ExtPattern.Wild(tvar, loc) =>
+        tpe => {
+          c.unifyType(tpe, tvar, loc)
+          tvar
+        }
+
+      case ExtPattern.Tag(label, pats, tvar, loc) =>
+        val name = Name.Pred(label.name, label.loc)
+        val ps = pats.map(visitVarOrWild)
+        rest => { // TODO: Maybe we should unify tvar with tpe using empty schema row instead of `rest`?
+          val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc), rest, loc)
+          c.unifyType(tpe, tvar, loc)
+          tvar
+        }
+
+      case ExtPattern.Error(tvar, loc) =>
+        tpe => {
+          c.unifyType(tpe, tvar, loc)
+          tvar
+        }
+    }
   }
 
   /**
@@ -1116,12 +1146,11 @@ object ConstraintGen {
     *
     * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
     */
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, _) =>
-      val name = Name.Pred(label.name, label.loc)
-      val patTypes = pats.map(visitExtPattern)
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type => Type, Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(pat, exp, _) =>
+      val patTpe = visitExtPattern(pat)
       val (tpe, eff) = visitExp(exp)
-      ((name, patTypes), tpe, eff)
+      (patTpe, tpe, eff)
   }
 
   /**
