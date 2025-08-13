@@ -223,7 +223,7 @@ object KindedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, arity: Int, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
