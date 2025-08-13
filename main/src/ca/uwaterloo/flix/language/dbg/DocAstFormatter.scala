@@ -132,6 +132,18 @@ object DocAstFormatter {
             sep(breakWith(" "), branchesF)
           )
         )
+      case ExtMatch(d, branches) =>
+        val scrutineeF = aux(d, paren = false)
+        val branchesF = branches.map { case (pat, body) =>
+          val patF = aux(pat, paren = false)
+          val bodyF = aux(body, paren = false, inBlock = true)
+          text("case") +: patF |:: text("=>") |:: breakIndent(bodyF)
+        }
+        group(
+          text("ematch") +: scrutineeF +: curlyOpen(
+            sep(breakWith(" "), branchesF)
+          )
+        )
       case TypeMatch(d, branches) =>
         val scrutineeF = aux(d, paren = false)
         val branchesF = branches.map { case (pat, tpe, body) =>
