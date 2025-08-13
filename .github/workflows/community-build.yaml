@@ -47,6 +47,7 @@ jobs:
           - "jaschdoc/flix-parsers"
           - "mlutze/flix-json"
           - "mlutze/flixball"
+          - "rywiese/scope-graphs"
           - "stephentetley/charset-locale"
           - "stephentetley/flix-either"
           - "stephentetley/flix-htmldoc"
