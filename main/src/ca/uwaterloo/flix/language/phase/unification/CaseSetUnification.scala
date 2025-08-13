@@ -67,13 +67,13 @@ object CaseSetUnification {
       case (SetFormula.And(x1, y1), SetFormula.And(x2, y2)) =>
         for {
           subst1 <- tryFastUnify(x1, x2, renv)
-          subst2 <- tryFastUnify(y1, y2, renv)
+          subst2 <- tryFastUnify(y1, y2, renv) if subst2.isDisjoint(subst1)
         } yield subst1 ++ subst2
 
       case (SetFormula.Or(x1, y1), SetFormula.Or(x2, y2)) =>
         for {
           subst1 <- tryFastUnify(x1, x2, renv)
-          subst2 <- tryFastUnify(y1, y2, renv)
+          subst2 <- tryFastUnify(y1, y2, renv) if subst2.isDisjoint(subst1)
         } yield subst1 ++ subst2
 
       case _ => None
