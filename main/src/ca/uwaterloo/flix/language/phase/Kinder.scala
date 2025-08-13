@@ -825,12 +825,6 @@ object Kinder {
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc)
 
-      case ResolvedAst.Expr.FixpointInject(exp0, pred, arity, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-        KindedAst.Expr.FixpointInject(exp, pred, arity, tvar, evar, loc)
-
       case ResolvedAst.Expr.FixpointInjectInto(exps0, predsAndArities, loc) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)

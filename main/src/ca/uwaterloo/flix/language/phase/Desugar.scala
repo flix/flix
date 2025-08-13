@@ -1431,19 +1431,6 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
-    */
-  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], predsAndArities: List[PredicateAndArity], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-    val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc0)
-    es.zip(predsAndArities).foldRight(init: Expr) {
-      case ((exp, PredicateAndArity(pred, arity)), acc) =>
-        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc0)
-        DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc0)
-    }
-  }
-
-  /**
     * Rewrites a [[WeededAst.Expr.FixpointSolveWithProject]] into a series of solve and merges.
     *
     * E.g.,
