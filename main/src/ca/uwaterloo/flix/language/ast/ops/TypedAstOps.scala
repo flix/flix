@@ -461,7 +461,7 @@ object TypedAstOps {
     */
   private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
     case ExtPattern.Wild(_, _) => Set.empty
-    case ExtPattern.Tag(_, pats, _, _) => pats.flatMap(freeVars).toSet
+    case ExtPattern.Tag(_, pats, _, _) => pats.toSet.flatMap(freeVars)
     case ExtPattern.Error(_, _) => Set.empty
   }
 
