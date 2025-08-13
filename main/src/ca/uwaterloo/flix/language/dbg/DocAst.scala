@@ -170,7 +170,7 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+    def Untag(d: Expr, idx: Int): Expr =
       Keyword("untag_" + idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
