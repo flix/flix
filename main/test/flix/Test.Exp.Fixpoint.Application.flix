@@ -220,7 +220,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2, x + 1 + 2));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual;
+        expected `Assert.eq` actual
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -378,7 +378,7 @@ mod Test.Exp.Fixpoint.Application {
             R(;x + y) :- P(;x), Q(;y).
         };
         let expected = Vector#{1 + 2};
-        let acutal = query r select x from R(;x);
+        let actual = query r select x from R(;x);
         expected `Assert.eq` actual
     }
 
