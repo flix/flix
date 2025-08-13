@@ -2061,4 +2061,75 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
+
+  test("TypeError.ExtMatch.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X("hello") {
+        |        case A() => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(42i32, "test", true) {
+        |        case B(x, y)       => ()
+        |        case A(a, b, c, d) => ()
+        |        case C()           => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(true, 'a', 3.14f64, "hello", 100i8) {
+        |        case C(b, c, d)    => ()
+        |        case A(x, y, z, w) => ()
+        |        case B()           => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(3.14f64, 42i16, 'x', true, "world", 999i64) {
+        |        case A(s, t)                => ()
+        |        case C(a, b, c, d, e)       => ()
+        |        case B()                    => ()
+        |        case X(p, q, r, s, t, u, v) => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.05") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(1i32, 2i32, 3i32, 4i32) {
+        |        case C(x, y, z)       => ()
+        |        case A(a, b, c, d, e) => ()
+        |        case B()              => ()
+        |        case X(p, q)          => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
 }
