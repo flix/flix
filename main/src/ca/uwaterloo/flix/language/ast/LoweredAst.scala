@@ -180,7 +180,7 @@ object LoweredAst {
       def loc: SourceLocation
     }
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern with VarOrWild
+    case class Wild(tpe: Type, loc: SourceLocation) extends VarOrWild
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends VarOrWild
 
