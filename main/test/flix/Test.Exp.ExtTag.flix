@@ -8,13 +8,13 @@ mod Test.Exp.ExtMatch {
     def testExtTagUnit01(): #| A(Unit) |# = xvar A(())
 
     @Test
+    def testExtTagUnit02(): #| A(Unit) |# = xvar A()
+
+    @Test
     def testExtTagBool01(): #| A(Bool) |# = xvar A(true)
 
     @Test
     def testExtTagBool02(): #| A(Bool) |# = xvar A(false)
-
-    @Test
-    def testExtTagBool03(): #| A(Bool) |# = xvar A(true)
 
     @Test
     def testExtTagChar01(): #| A(Char) |# = xvar A('a')
