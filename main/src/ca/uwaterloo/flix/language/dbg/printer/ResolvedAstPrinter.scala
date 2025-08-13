@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -71,10 +71,10 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, tpe, body, _) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(body))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtMatch(_, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(exp, rules, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtTag(_, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
+    case Expr.ExtTag(label, exps, _) => DocAst.Expr.ExtTag(label, exps.map(print))
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, value, rest, _) => DocAst.Expr.RecordExtend(label, print(value), print(rest))
@@ -133,6 +133,16 @@ object ResolvedAstPrinter {
     case Expr.Error(_) => DocAst.Expr.Error
   }
 
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: ResolvedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case ResolvedAst.ExtMatchRule(label, pats, exp, _) =>
+      val enumSym = new Symbol.EnumSym(List.empty, label.name, label.loc)
+      val sym = new Symbol.CaseSym(enumSym, label.name, label.loc)
+      (DocAst.Expr.Tag(sym, pats.map(printExtPattern)), print(exp))
+  }
+
   /** Returns the [[DocAst.Expr]] representation of `pat`. */
   private def printPattern(pat: ResolvedAst.Pattern): DocAst.Expr = pat match {
     case Pattern.Wild(_) => DocAst.Expr.Wild
@@ -142,6 +152,15 @@ object ResolvedAstPrinter {
     case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern).toList)
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.Error(_) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: ResolvedAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Wild(_) => DocAst.Expr.Wild
+    case ExtPattern.Var(sym, _) => printVarSym(sym)
+    case ExtPattern.Error(_) => DocAst.Expr.Error
   }
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
