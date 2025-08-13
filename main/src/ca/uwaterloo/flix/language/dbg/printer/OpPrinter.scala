@@ -204,7 +204,7 @@ object OpPrinter {
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies
-    case (op, ds) => App(Meta(op.toString), ds)
+    case (op1, ds1) => App(Meta(op1.toString), ds1)
   }
 
 }
