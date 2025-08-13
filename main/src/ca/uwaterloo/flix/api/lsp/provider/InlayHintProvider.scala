@@ -16,14 +16,11 @@
 
 package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor}
-import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
+import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, Visitor}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
-import ca.uwaterloo.flix.language.ast.{Symbol, Type}
-import ca.uwaterloo.flix.language.ast.SourceLocation
-import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range}
-import ca.uwaterloo.flix.api.lsp.Visitor
-import scala.collection.immutable.Map
+import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
 /**
   * Provides inlay hints for effects in the Flix language.
@@ -53,7 +50,7 @@ object InlayHintProvider {
       val defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = getDefSymUses(uri)
       val defEffSyms: List[(Symbol.EffSym, SourceLocation)] = defSymUses.flatMap {
         case (defSymUse, loc) =>
-          (root.defs(defSymUse.sym).spec.eff.effects.zip(loc ::Nil))
+          root.defs(defSymUse.sym).spec.eff.effects.zip(loc :: Nil)
       }
       val effSyms = opEffSyms ++ defEffSyms
 
@@ -81,8 +78,8 @@ object InlayHintProvider {
     object opSymUseConsumer extends Consumer {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
-          case Expr.ApplyOp(opSymUse, _, _, eff, loc) =>
-            opSymUses = ((opSymUse, loc)) :: opSymUses
+          case Expr.ApplyOp(opSymUse, _, _, _, loc) =>
+            opSymUses = (opSymUse, loc) :: opSymUses
           case _ => ()
         }
       }
@@ -100,7 +97,7 @@ object InlayHintProvider {
       override def consumeExpr(expr: Expr): Unit = {
         expr match {
           case Expr.ApplyDef(defSymUse, _, _, _, _, _, loc) =>
-            defSymUses = ((defSymUse, loc)) :: defSymUses
+            defSymUses = (defSymUse, loc) :: defSymUses
           case _ => ()
         }
       }
@@ -132,8 +129,6 @@ object InlayHintProvider {
       kind = Some(InlayHintKind.Type),
       textEdits = List.empty,
       tooltip = s"{ $effectString }",
-      paddingLeft = true,
-      paddingRight = true
     )
   }
 }

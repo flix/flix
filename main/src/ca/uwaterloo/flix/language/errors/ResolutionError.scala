@@ -31,7 +31,7 @@ sealed trait ResolutionError extends CompilationMessage {
 object ResolutionError {
 
   /**
-    * An error raise to indicate a cycle in the trait hierarchy.
+    * An error raised to indicate a cycle in the trait hierarchy.
     *
     * @param path the super trait path from a trait to itself.
     * @param loc  the location where the error occurred.
@@ -64,7 +64,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raise to indicate a cycle in type aliases.
+    * An error raised to indicate a cycle in type aliases.
     *
     * @param path the type reference path from a type alias to itself.
     * @param loc  the location where the error occurred.
@@ -175,7 +175,7 @@ object ResolutionError {
     * @param loc the location where the error occurred.
     */
   case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError {
-    override def summary: String = " Illegal associated type application."
+    override def summary: String = "Illegal associated type application."
 
     override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
@@ -228,7 +228,7 @@ object ResolutionError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      "Every signature in a type class must mention the type variable of the class."
+      "Every signature in a trait must mention the type variable of the class."
     })
 
   }
@@ -513,7 +513,7 @@ object ResolutionError {
     * @param loc      the location where the error occurred.
     */
   case class MismatchedTagPatternArity(caze: Symbol.CaseSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError {
-    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found $actual actual ${Grammar.n_things(expected, "argument")}."
+    override def summary: String = s"Expected ${Grammar.n_things(expected, "argument")} but found ${Grammar.n_things(actual, "argument")}."
 
     override def message(formatter: Formatter): String = messageWithLink {
       import formatter.*

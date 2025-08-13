@@ -339,7 +339,7 @@ object PatMatch {
 
       case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp)
 
-      case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointProject(_, _, exp, _, _, _) => visitExp(exp)
 
       case Expr.Error(_, _, _) => ()
     }

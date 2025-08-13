@@ -580,8 +580,8 @@ object Desugar {
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
 
-    case WeededAst.Expr.ForEach(frags, exp, loc) =>
-      desugarForEach(frags, exp, loc)
+    case WeededAst.Expr.ForEach(frags, exp, _) =>
+      desugarForEach(frags, exp)
 
     case WeededAst.Expr.MonadicFor(frags, exp, loc) =>
       desugarMonadicFor(frags, exp, loc)
@@ -1129,10 +1129,10 @@ object Desugar {
     *   ForEach.foreach(x -> if (x > 0) ForEach.foreach(y -> println(x + y), ys) else (), xs)
     * }}}
     */
-  private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = {
     val fqnForEach = "ForEach.forEach"
 
-    val foreachExp = frags0.foldRight(visitExp(exp0)) {
+    frags0.foldRight(visitExp(exp0)) {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
@@ -1151,9 +1151,6 @@ object Desugar {
         val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
-
-    // We add an ascription to Unit because inference across region boundaries is limited.
-    DesugaredAst.Expr.Ascribe(foreachExp, Some(DesugaredAst.Type.Unit(loc0.asSynthetic)), None, loc0.asSynthetic)
   }
 
   /**

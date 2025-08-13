@@ -57,16 +57,15 @@ mod Fixpoint3.Phase.Stratifier {
         let predSyms = Array.empty(rc, numberOfPredSyms);
         addPredSymsFrom(predSyms, d);
         let result = MutMap.empty(rc);
-        pseudoStrata |>
-            List.forEachWithIndex(pseudoStratum -> list ->
-                list |>
-                    List.forEachWithIndex(stratum -> set ->
-                        foreach (x <- set) {
-                            let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
-                            MutMap.put(predSym, (pseudoStratum, stratum), result)
-                        }
-                    )
-            );
+        foreach ((pseudoStratum, list) <- ForEach.withIndex(pseudoStrata)) {
+            foreach ((stratum, set) <- ForEach.withIndex(list)) {
+                foreach (x <- set) {
+                    let predSym = PredSym.PredSym(Array.get(x, predSyms), Int32.toInt64(x));
+                    MutMap.put(predSym, (pseudoStratum, stratum), result)
+                }
+
+            }
+        };
         MutMap.toMap(result)
 
     ///
@@ -75,11 +74,11 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     def addDepEdges(graph: MutGraph[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(precedenceHelper(graph), rules)
-        case Model(_) => ()
-        case Join(d1, d2) =>
+        case Model(_)          => ()
+        case Join(d1, d2)      =>
             addDepEdges(graph, d1);
             addDepEdges(graph, d2)
-        case Provenance(_, _) => ()
+        case Provenance(_, _)  => ()
     }
 
     ///
@@ -115,9 +114,9 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     def addPredSymsFrom(predMap: PredIdToName[r], d: Datalog): Unit \ r = match d {
         case Datalog(_, rules) => Vector.forEach(predSymHelper(predMap), rules)
-        case Model(_) => ()
-        case Join(d1, d2) => addPredSymsFrom(predMap, d1); addPredSymsFrom(predMap, d2)
-        case Provenance(_, _) => ()
+        case Model(_)          => ()
+        case Join(d1, d2)      => addPredSymsFrom(predMap, d1); addPredSymsFrom(predMap, d2)
+        case Provenance(_, _)  => ()
     }
 
     ///
@@ -128,7 +127,7 @@ mod Fixpoint3.Phase.Stratifier {
     def predSymHelper(predMap: PredIdToName[r], cnst: Constraint): Unit \ r = match cnst {
         case Constraint(HeadPredicate.HeadAtom(PredSym.PredSym(name, id), _, _), body) =>
             Array.put(name, toInt32(id), predMap);
-            Vector.forEach(collectEdge(predMap), body)
+            Vector.forEach(addPredSymsOf(predMap), body)
     }
 
     ///
@@ -136,7 +135,7 @@ mod Fixpoint3.Phase.Stratifier {
     ///
     /// See `addPredSymsFrom`.
     ///
-    def collectEdge(predMap: PredIdToName[r], body: BodyPredicate): Unit \ r = match body {
+    def addPredSymsOf(predMap: PredIdToName[r], body: BodyPredicate): Unit \ r = match body {
         case (BodyAtom(PredSym.PredSym(name, id), _, _, _, _)) => {
             Array.put(name, toInt32(id), predMap);
             ()

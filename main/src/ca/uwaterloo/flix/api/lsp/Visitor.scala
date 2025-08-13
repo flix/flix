@@ -112,7 +112,7 @@ object Visitor {
   }
 
   private def visitInstance(ins: Instance)(implicit a: Acceptor, c: Consumer): Unit = {
-    val Instance(_, ann, _, trt, _, tconstrs, econstrs, assocs, defs, _, loc) = ins
+    val Instance(_, ann, _, trt, _, _, tconstrs, econstrs, assocs, defs, _, loc) = ins
     if (!a.accept(loc)) {
       return
     }
@@ -598,7 +598,7 @@ object Visitor {
       case Expr.FixpointInject(exp, _, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.FixpointProject(_, exp, _, _, _) =>
+      case Expr.FixpointProject(_, _, exp, _, _, _) =>
         visitExpr(exp)
 
       case Expr.Error(_, _, _) => ()

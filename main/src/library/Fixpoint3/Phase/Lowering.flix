@@ -175,10 +175,12 @@ mod Fixpoint3.Phase.Lowering {
                 , Nil)
                 |> List.toVector;
             // Compute arities
-            let arityInformation = collectRowVarArity(program);
+            let arityInformation = rowVarArityOf(program);
             let numOfArities = UniqueInts.get(idToIndex);
             let arities = Array.empty(rc, numOfArities);
-            arityInformation |> List.forEach(match (rv, arity) -> Array.put(arity, UniqueInts.getIndex(rv, idToIndex), arities));
+            foreach ((rv, arity) <- arityInformation) {
+                Array.put(arity, UniqueInts.getIndex(rv, idToIndex), arities)
+            };
             (ExecutableRam.RamProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), idToBoxing), boxing)
     }
 
@@ -454,12 +456,11 @@ mod Fixpoint3.Phase.Lowering {
                     case Denotation.Latticenal(_, leq, _, _) => leq
                 };
                 Some(ExecutableRam.BoolExp.Leq(box, leq, lowerRowVar(rv, idToIndex)))
-            case Ram.BoolExp.Eq(term1, term2) =>
-                Some(ExecutableRam.BoolExp.Eq(lowerT(term1), lowerT(term2)))
-            case Ram.BoolExp.Guard1(f, term1) => Some(ExecutableRam.BoolExp.Guard1(f, lowerT(term1)))
-            case Ram.BoolExp.Guard2(f, term1, term2) => Some(ExecutableRam.BoolExp.Guard2(f, lowerT(term1), lowerT(term2)))
-            case Ram.BoolExp.Guard3(f, term1, term2, term3) => Some(ExecutableRam.BoolExp.Guard3(f, lowerT(term1), lowerT(term2), lowerT(term3)))
-            case Ram.BoolExp.Guard4(f, term1, term2, term3, term4) => Some(ExecutableRam.BoolExp.Guard4(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4)))
+            case Ram.BoolExp.Eq(term1, term2)                             => Some(ExecutableRam.BoolExp.Eq(lowerT(term1), lowerT(term2)))
+            case Ram.BoolExp.Guard1(f, term1)                             => Some(ExecutableRam.BoolExp.Guard1(f, lowerT(term1)))
+            case Ram.BoolExp.Guard2(f, term1, term2)                      => Some(ExecutableRam.BoolExp.Guard2(f, lowerT(term1), lowerT(term2)))
+            case Ram.BoolExp.Guard3(f, term1, term2, term3)               => Some(ExecutableRam.BoolExp.Guard3(f, lowerT(term1), lowerT(term2), lowerT(term3)))
+            case Ram.BoolExp.Guard4(f, term1, term2, term3, term4)        => Some(ExecutableRam.BoolExp.Guard4(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4)))
             case Ram.BoolExp.Guard5(f, term1, term2, term3, term4, term5) => Some(ExecutableRam.BoolExp.Guard5(f, lowerT(term1), lowerT(term2), lowerT(term3), lowerT(term4), lowerT(term5)))
         }
 
@@ -516,7 +517,7 @@ mod Fixpoint3.Phase.Lowering {
         idToIndex: IdToIndex[r],
         meetWithMap: MeetWithMap[r]
     ): Int32 \ r = match toDenotation(relSym) {
-        case Denotation.Relational => -1
+        case Denotation.Relational             => -1
         case Denotation.Latticenal(_, _, _, _) => computeLatticeMeetPos(rv, idToIndex, meetWithMap)
     }
 
@@ -534,7 +535,7 @@ mod Fixpoint3.Phase.Lowering {
         let (prevRowVars, meetDisjointSet) = meetWithMap;
         let firstMatching = List.findLeft(x -> MutDisjointSets.equivalent(rv, x, meetDisjointSet), prevRowVars);
         match firstMatching {
-            case None => lowerRowVar(rv, idToIndex)
+            case None    => lowerRowVar(rv, idToIndex)
             case Some(v) => lowerRowVar(v, idToIndex)
         }
     }
@@ -588,40 +589,39 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns a list `(RowVar, arity)` in `program` in the order of the nesting.
     ///
-    def collectRowVarArity(program: Ram.RamProgram): List[(RowVar, Int32)] =
-        collectRowVarRelSym(program) |> List.map(match (rv, RelSym.Symbol(_, arity, _)) -> (rv, arity))
+    def rowVarArityOf(program: Ram.RamProgram): List[(RowVar, Int32)] =
+        rowVarRelSymOf(program) |> List.map(match (rv, RelSym.Symbol(_, arity, _)) -> (rv, arity))
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `program` in the order of the nesting.
     ///
-    def collectRowVarRelSym(program: Ram.RamProgram): List[(RowVar, RelSym)] = match program {
-        case Ram.RamProgram.Program(stmt, _, _, _) =>
-            collectRowVarRelSymStmt(stmt)
+    def rowVarRelSymOf(program: Ram.RamProgram): List[(RowVar, RelSym)] = match program {
+        case Ram.RamProgram.Program(stmt, _, _, _) => rowVarRelSymOfStmt(stmt)
     }
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `stmt`.
     ///
-    def collectRowVarRelSymStmt(stmt: Ram.RamStmt): List[(RowVar, RelSym)] \ r = match stmt {
-        case Ram.RamStmt.Insert(op) => collectRowVarRelSymOp(op)
+    def rowVarRelSymOfStmt(stmt: Ram.RamStmt): List[(RowVar, RelSym)] \ r = match stmt {
+        case Ram.RamStmt.Insert(op)      => rowVarRelSymOfOp(op)
         case Ram.RamStmt.MergeInto(_, _) => Nil
-        case Ram.RamStmt.Swap(_, _) => Nil
-        case Ram.RamStmt.Purge(_) => Nil
-        case Ram.RamStmt.Seq(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
-        case Ram.RamStmt.Par(stmts) => Vector.foldLeft(acc -> x -> List.append(collectRowVarRelSymStmt(x), acc), Nil, stmts)
-        case Ram.RamStmt.Until(_, rest) => collectRowVarRelSymStmt(rest)
-        case Ram.RamStmt.Comment(_) => Nil
+        case Ram.RamStmt.Swap(_, _)      => Nil
+        case Ram.RamStmt.Purge(_)        => Nil
+        case Ram.RamStmt.Seq(stmts)      => Vector.foldMap(rowVarRelSymOfStmt, stmts)
+        case Ram.RamStmt.Par(stmts)      => Vector.foldMap(rowVarRelSymOfStmt, stmts)
+        case Ram.RamStmt.Until(_, rest)  => rowVarRelSymOfStmt(rest)
+        case Ram.RamStmt.Comment(_)      => Nil
     }
 
     ///
     /// Returns a list of pairs `(RowVar, RelSym)` in `op` in the order of nesting.
     ///
-    def collectRowVarRelSymOp(op: Ram.RelOp): List[(RowVar, RelSym)] \ r = match op {
-        case Ram.RelOp.Search(rv, relSym, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
-        case Ram.RelOp.Query(rv, relSym, _, _, rest) => (rv, relSym) :: collectRowVarRelSymOp(rest)
-        case Ram.RelOp.Functional(_, _, _, rest, _) => collectRowVarRelSymOp(rest)
-        case Ram.RelOp.Project(_, _, _) => Nil
-        case Ram.RelOp.If(_, rest) => collectRowVarRelSymOp(rest)
+    def rowVarRelSymOfOp(op: Ram.RelOp): List[(RowVar, RelSym)] \ r = match op {
+        case Ram.RelOp.Search(rv, relSym, rest)      => (rv, relSym) :: rowVarRelSymOfOp(rest)
+        case Ram.RelOp.Query(rv, relSym, _, _, rest) => (rv, relSym) :: rowVarRelSymOfOp(rest)
+        case Ram.RelOp.Functional(_, _, _, rest, _)  => rowVarRelSymOfOp(rest)
+        case Ram.RelOp.Project(_, _, _)              => Nil
+        case Ram.RelOp.If(_, rest)                   => rowVarRelSymOfOp(rest)
     }
 
 }

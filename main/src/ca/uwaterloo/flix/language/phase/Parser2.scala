@@ -1870,6 +1870,7 @@ object Parser2 {
       )
       close(mark, TreeKind.Expr.ExtMatch)
     }
+
     private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
@@ -2884,8 +2885,9 @@ object Parser2 {
       }
 
       if (isPSolve) {
-        close(mark, TreeKind.Expr.FixpointSolveWithProvenance)
-      } else if (eat(TokenKind.KeywordProject)) {
+        return close(mark, TreeKind.Expr.FixpointSolveWithProvenance)
+      }
+      if (eat(TokenKind.KeywordProject)) {
         nameUnqualified(NAME_PREDICATE)
         while (eat(TokenKind.Comma) && !eof()) {
           nameUnqualified(NAME_PREDICATE)
@@ -2946,13 +2948,13 @@ object Parser2 {
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR
         )
-        case t => UnexpectedToken(
+        case t => closeWithError(open(), UnexpectedToken(
           expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)),
           actual = Some(t),
           sctx,
           hint = Some("provide a list of predicates"),
           loc = currentSourceLocation()
-        )
+        ))
       }
       close(mark, TreeKind.Expr.FixpointWith)
     }

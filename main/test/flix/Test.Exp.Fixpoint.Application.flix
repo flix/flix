@@ -334,4 +334,63 @@ mod Test.Exp.Fixpoint.Application {
         res `Assert.eq` query f, r select (x, y) from R(x, y)
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // Tests with application of lattice elements                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testApplicationLattice01(): Bool = {
+        let r = #{
+            P(;1).
+            R(;x + 1) :- P(;x).
+        };
+        Vector#{1 + 1} `Assert.eq` query r select (x) from R(;x)
+    }
+
+    @Test
+    def testApplicationLattice02(): Bool = {
+        let r = #{
+            Q(;2).
+            P(;1).
+            R(;x + y) :- P(;x), Q(;y).
+        };
+        Vector#{1 + 2} `Assert.eq` query r select x from R(;x)
+    }
+
+    @Test
+    def testApplicationLattice03(): Bool = {
+        let r = #{
+            S(;3).
+            Q(;2).
+            P(;1).
+            R(;x + y + z) :- P(;x), Q(;y), S(;z).
+        };
+        Vector#{1 + 2 + 3} `Assert.eq` query r select x from R(;x)
+    }
+
+    @Test
+    def testApplicationLattice04(): Bool = {
+        let r = #{
+            T(;4).
+            S(;3).
+            Q(;2).
+            P(;1).
+            R(;x1 + x2 + x3 + x4) :- P(;x1), Q(;x2), S(;x3), T(;x4).
+        };
+        Vector#{1 + 2 + 3 + 4} `Assert.eq` query r select x from R(;x)
+    }
+
+    @Test
+    def testApplicationLattice05(): Bool = {
+        let r = #{
+            U(;5).
+            T(;4).
+            S(;3).
+            Q(;2).
+            P(;1).
+            R(;x1 + x2 + x3 + x4 + x5) :- P(;x1), Q(;x2), S(;x3), T(;x4), U(;x5).
+        };
+        Vector#{1 + 2 + 3 + 4 + 5} `Assert.eq` query r select x from R(;x)
+    }
+
 }

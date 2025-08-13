@@ -59,7 +59,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      var errors = sctx.errors.asScala.toList
+      val errors = sctx.errors.asScala.toList
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
@@ -177,7 +177,7 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-         table
+        table
     }
   }
 
@@ -202,6 +202,7 @@ object Namer {
     case "Regex" => true
     case _ => false
   }
+
   /**
     * Adds the given declaration to the table.
     */
@@ -1067,7 +1068,7 @@ object Namer {
   /**
     * Names the given ext pattern `pat0`.
     */
-  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
     case DesugaredAst.ExtPattern.Wild(loc) =>
       NamedAst.ExtPattern.Wild(loc)
 
@@ -1322,8 +1323,11 @@ object Namer {
 
   /**
     * Returns the free variables in the given type `tpe0`.
+    *
+    * Does not include wildcard variables.
     */
   private def freeTypeVars(tpe0: DesugaredAst.Type): List[Name.Ident] = tpe0 match {
+    case DesugaredAst.Type.Var(ident, _) if ident.isWild => Nil
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
@@ -1453,7 +1457,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     *
-    * Implicit type parameters may include duplicates. These are handled by the Resolver.
+    * Does not include wildcard parameters. These are handled by the Resolver.
     */
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.

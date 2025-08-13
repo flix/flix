@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 
 /**
-  * Type class for values that can be debugged.
+  * Trait for values that can be debugged.
   */
 trait Debug[-A] {
   def hasAst: Boolean = true

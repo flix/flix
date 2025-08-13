@@ -36,11 +36,11 @@ mod Fixpoint3.Ast.Ram {
     }
 
     ///
-    /// Contains a set of `RelSym` representing the names of the relations in the program
-    /// and 1 + the maximal identifier of the `RelSym`s.
+    /// Contains a list of `RelSym` representing the names of the relations in the program,
+    /// a list of Full `RelSym` and 1 + the maximal identifier of the Full `RelSym`s.
     ///
     @Internal
-    pub type alias Predicates = (Int64, Set[RelSym])
+    pub type alias Predicates = (List[RelSym], List[RelSym], Int64)
 
     ///
     /// The extensible database (EDB) of a program.

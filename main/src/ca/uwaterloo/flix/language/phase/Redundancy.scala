@@ -880,7 +880,7 @@ object Redundancy {
     case Expr.FixpointInject(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.FixpointProject(_, exp, _, _, _) =>
+    case Expr.FixpointProject(_, _, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
     case Expr.Error(_, _, _) =>

@@ -615,15 +615,11 @@ object TypeReconstruction {
       val eff = e.eff
       TypedAst.Expr.FixpointFilter(pred, e, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.FixpointInject(exp, pred, _, tvar, evar, loc) =>
-      val e = visitExp(exp)
-      TypedAst.Expr.FixpointInject(e, pred, subst(tvar), subst(evar), loc)
-
     case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       TypedAst.Expr.FixpointInjectInto(es, predsAndArities, subst(tvar), subst(evar), loc)
 
-    case KindedAst.Expr.FixpointProject(pred, _, exp1, exp2, tvar, loc) =>
+    case KindedAst.Expr.FixpointProject(pred, arity, exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = subst(tvar)
@@ -634,7 +630,7 @@ object TypeReconstruction {
       // See Weeder for more details.
       val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
       val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, SolveMode.Default, loc)
-      TypedAst.Expr.FixpointProject(pred, solveExp, tpe, eff, loc)
+      TypedAst.Expr.FixpointProject(pred, arity, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, evar) =>
       val tpe = subst(tvar)

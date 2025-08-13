@@ -55,7 +55,7 @@ mod Fixpoint3.Ast.Datalog {
 
     instance PredSymsOf[Datalog] {
         pub def predSymsOf(x: Datalog): Set[PredSym] = match x {
-            case Datalog.Datalog(facts, rules)    =>
+            case Datalog.Datalog(facts, rules) =>
                 let factSyms = facts |> Vector.map(predSymsOf) |> Monoid.fold;
                 let ruleSyms = rules |> Vector.map(predSymsOf) |> Monoid.fold;
                 factSyms ++ ruleSyms
@@ -80,7 +80,7 @@ mod Fixpoint3.Ast.Datalog {
                     Map.insert(newSym, v, macc)
                 };
                 Datalog.Model(Map.foldLeftWithKey(f, Map.empty(), m))
-            case Datalog.Join(v1, v2) => Datalog.Join(substitute(v1, s), substitute(v2, s))
+            case Datalog.Join(v1, v2)             => Datalog.Join(substitute(v1, s), substitute(v2, s))
             case Datalog.Provenance(rules, model) =>
                 let newRules = Vector.map(c -> substitute(c, s), rules);
                 let newModel = (Map#{}, model) ||>
@@ -109,16 +109,15 @@ mod Fixpoint3.Ast.Datalog {
                 } else {
                    unsafely IO run {
                         let builder = StringBuilder.empty(rc);
-                        db |>
-                            Map.forEach(relSym -> innerMap ->
-                                innerMap |> BPlusTree.forEach(tuple -> lat -> {
-                                    let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
-                                    match toDenotation(relSym) {
-                                        case Relational => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
-                                        case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
-                                    }
-                                })
-                            );
+                        foreach ((relSym, innerMap) <- db) {
+                            foreach ((tuple, lat) <- innerMap) {
+                                let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
+                                match toDenotation(relSym) {
+                                    case Relational             => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
+                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
+                                }
+                            }
+                        };
                         StringBuilder.toString(builder)
                     }
                 }
@@ -132,10 +131,9 @@ mod Fixpoint3.Ast.Datalog {
                     let indent = String.repeat(4, " ");
                     Map.joinWith(predSym -> facts -> {
                         let builder = StringBuilder.empty(rc);
-                        facts |>
-                            BPlusTree.forEach(fact -> annotation -> {
-                                StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
-                            });
+                        foreach ((fact, annotation) <- facts) {
+                            StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
+                        };
                         let textOverflow = String.length("$,{String.lineSeparator()}${indent}");
                         let rawFactString = StringBuilder.toString(builder);
                         let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
@@ -210,7 +208,7 @@ mod Fixpoint3.Ast.Datalog {
     instance ToString[HeadPredicate] {
         pub def toString(head: HeadPredicate): String =
             match head {
-                case HeadPredicate.HeadAtom(predSym, Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"
+                case HeadPredicate.HeadAtom(predSym, Relational, terms)             => "${predSym}(${terms |> Vector.join(", ")})"
                 case HeadPredicate.HeadAtom(predSym, Latticenal(_, _, _, _), terms) =>
                     let (keyTerms, latticeTerms) = Vector.splitAt(Vector.length(terms)-1, terms);
                     match Vector.head(latticeTerms) {
@@ -238,8 +236,8 @@ mod Fixpoint3.Ast.Datalog {
 
     instance PredSymsOf[BodyPredicate] {
         pub def predSymsOf(x: BodyPredicate): Set[PredSym] = match x {
-            case BodyPredicate.BodyAtom(predSym, _, _, _, _)    => Set.singleton(predSym)
-            case _                                              => Set.empty()
+            case BodyPredicate.BodyAtom(predSym, _, _, _, _) => Set.singleton(predSym)
+            case _                                           => Set.empty()
         }
     }
 
@@ -248,7 +246,7 @@ mod Fixpoint3.Ast.Datalog {
             case BodyPredicate.BodyAtom(predSym, den, polarity, fixity, terms) =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
                 BodyPredicate.BodyAtom(newSym, den, polarity, fixity, terms)
-            case _                             => x
+            case _ => x
         }
     }
 
@@ -273,12 +271,12 @@ mod Fixpoint3.Ast.Datalog {
                         case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
                     }
                 case BodyPredicate.Functional(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
-                case BodyPredicate.Guard0(_) => "<clo>()"
-                case BodyPredicate.Guard1(_, v) => "<clo>(${v})"
-                case BodyPredicate.Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
-                case BodyPredicate.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
-                case BodyPredicate.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+                case BodyPredicate.Guard0(_)                          => "<clo>()"
+                case BodyPredicate.Guard1(_, v)                       => "<clo>(${v})"
+                case BodyPredicate.Guard2(_, v1, v2)                  => "<clo>(${v1}, ${v2})"
+                case BodyPredicate.Guard3(_, v1, v2, v3)              => "<clo>(${v1}, ${v2}, ${v3})"
+                case BodyPredicate.Guard4(_, v1, v2, v3, v4)          => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case BodyPredicate.Guard5(_, v1, v2, v3, v4, v5)      => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
 
@@ -290,7 +288,6 @@ mod Fixpoint3.Ast.Datalog {
     pub enum HeadTerm {
         case Var(VarSym)
         case Lit(Boxed)
-        case App0(Unit -> Boxed)
         case App1(Boxed -> Boxed, VarSym)
         case App2(Boxed -> Boxed -> Boxed, VarSym, VarSym)
         case App3(Boxed -> Boxed -> Boxed -> Boxed, VarSym, VarSym, VarSym)
@@ -300,13 +297,12 @@ mod Fixpoint3.Ast.Datalog {
 
     instance ToString[HeadTerm] {
         pub def toString(term: HeadTerm): String = match term {
-            case HeadTerm.Var(varSym) => "${varSym}"
-            case HeadTerm.Lit(v) => "%{v}"
-            case HeadTerm.App0(_) => "<clo>()"
-            case HeadTerm.App1(_, v) => "<clo>(${v})"
-            case HeadTerm.App2(_, v1, v2) => "<clo>(${v1}, ${v2})"
-            case HeadTerm.App3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
-            case HeadTerm.App4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case HeadTerm.Var(varSym)                 => "${varSym}"
+            case HeadTerm.Lit(v)                      => "%{v}"
+            case HeadTerm.App1(_, v)                  => "<clo>(${v})"
+            case HeadTerm.App2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
+            case HeadTerm.App3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
+            case HeadTerm.App4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
             case HeadTerm.App5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
@@ -324,9 +320,9 @@ mod Fixpoint3.Ast.Datalog {
 
     instance ToString[BodyTerm] {
         pub def toString(term: BodyTerm): String = match term {
-            case BodyTerm.Wild => "_"
+            case BodyTerm.Wild        => "_"
             case BodyTerm.Var(varSym) => ToString.toString(varSym)
-            case BodyTerm.Lit(v) => Debug.stringify(v)
+            case BodyTerm.Lit(v)      => Debug.stringify(v)
         }
     }
 

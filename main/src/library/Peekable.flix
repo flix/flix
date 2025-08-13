@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+import java.lang.String
+
 ///
 /// Extends `Readable` with the ability to `peek` at values that have not yet been `read`,
 /// `skip` values that don't need to be read, and perform other kinds of conditional reads.
@@ -62,5 +64,50 @@ trait Peekable[t] with Readable[t] {
     /// Returns `Err(err)` if there is an IO error.
     ///
     pub def readUntil(p: Readable.Elm[t] -> Bool, reader: t): Result[IoError, Vector[Readable.Elm[t]]] \ Readable.Aef[t] = Peekable.readWhile(x -> not p(x), reader)
+
+    ///
+    /// Reads a single line from the `reader`.
+    ///
+    /// Returns `Ok(l)` where `l` is the first line. Returns `Ok("")` if EOF has been reached, or if an empty line was read.
+    ///
+    /// Lines are delineated by `\n`, `\r`, or `\r\n`. `\n` and `\r` characters are not included in the returned String.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def readLine(reader: t): Result[IoError, String] \ IO + Readable.Aef[t] where Readable.Elm[t] ~ Char =
+        forM(
+            line <- Peekable.readUntil(c -> c == '\n' or c == '\r', reader);
+            _ <- Peekable.skipElem('\r', reader);
+            _ <- Peekable.skipElem('\n', reader)
+        ) yield new String(line)
+
+    ///
+    /// Skips over the next element if it equals `a`.
+    ///
+    /// Returns `Ok(true)` if the element was skipped, `Ok(false)` if the element did not match or EOF was reached.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def skipElem(elem: a, reader: t): Result[IoError, Bool] \ Readable.Aef[t] with Eq[a] where Readable.Elm[t] ~ a = Peekable.skipIf(e -> e == elem, reader)
+
+    ///
+    /// Skips over the next element if it matches the predicate `p`.
+    ///
+    /// Returns `Ok(true)` if the element was skipped, `Ok(false)` if the predicate did not match or EOF was reached.
+    ///
+    /// Returns `Err(err)` if there is an IO error.
+    ///
+    pub def skipIf(p: (a) -> Bool \ ef, reader: t): Result[IoError, Bool] \ ef + Readable.Aef[t] where Readable.Elm[t] ~ a =
+        forM(
+            peeked <- reader |> Peekable.peek;
+            n <- match peeked {
+                case Some(next) => if (p(next)) {
+                    reader |> Peekable.skip(1)
+                } else {
+                    Ok(0)
+                }
+                case None => Ok(0)
+            }
+        ) yield n != 0
 
 }
