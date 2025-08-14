@@ -787,6 +787,40 @@ mod Test.Exp.Fixpoint.PQuery {
         Vector#{(1i32, 2i64, 3.4f32, 5.6f64, 6i8, 7i16, "Hello", 'c', true)} `Assert.eq` res
 
     /////////////////////////////////////////////////////////////////////////////
+    /// `pquery` should track provenance through rho abstraction.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithRhoAbstraction01(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+        };
+        let pr = #(A, R) -> #{
+            Tmp(x) :- A(x).
+            R(x) :- Tmp(x).
+        };
+        let pp = pquery db, pr select R(2) with { A };
+        let result = Vector.map(v -> ematch v { case A(x) => "A(${x})" }, pp);
+        Assert.eq(Vector#{"A(2)"}, result)
+
+    @Test
+    def testPQueryWithRhoAbstraction02(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+        };
+        let pr = #(A, B, R) -> #{
+            Tmp(x) :- A(x), B(x).
+            R(x) :- Tmp(x).
+        };
+        let pp = pquery db, pr select R(2) with { A, B };
+        let result = Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp);
+        Assert.eq(Vector#{"A(2)", "B(2)"}, result)
+
+    /////////////////////////////////////////////////////////////////////////////
     /// `pquery` should support functional predicates.
     /////////////////////////////////////////////////////////////////////////////
 
