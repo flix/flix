@@ -113,7 +113,7 @@ object TypedAstOps {
     case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
     case Expr.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.FixpointProject(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Error(_, _, _) => Set.empty
   }
@@ -410,8 +410,10 @@ object TypedAstOps {
     case Expr.FixpointFilter(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      freeVars(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        (acc, exp) => acc ++ freeVars(exp)
+      }
 
     case Expr.FixpointProject(_, _, exp, _, _, _) =>
       freeVars(exp)

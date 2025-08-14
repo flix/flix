@@ -3300,7 +3300,7 @@ object Weeder2 {
       case (ident, arityToken) =>
         mapN(tryParsePredicateArity(arityToken)) {
           case arity =>
-            PredicateAndArity(ident, arity)
+            PredicateAndArity(Name.mkPred(ident), arity)
         }
     }
   }

@@ -877,8 +877,8 @@ object Redundancy {
     case Expr.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      visitExps(exps, env0, rc)
 
     case Expr.FixpointProject(_, _, exp, _, _, _) =>
       visitExp(exp, env0, rc)
