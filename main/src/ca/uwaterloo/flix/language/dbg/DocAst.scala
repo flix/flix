@@ -504,6 +504,16 @@ object DocAst {
     def Var(sym: Symbol.UnkindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
+  object Pattern {
+
+    def Tag(sym: Symbol.CaseSym, exprs: List[Expr]): Expr =
+      Expr.Tag(sym, exprs)
+
+    def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
+      Expr.Tag(Sym(label), exprs)
+
+  }
+
   case class Sym(private val symbol: String) {
     override def toString: String = symbol
   }
