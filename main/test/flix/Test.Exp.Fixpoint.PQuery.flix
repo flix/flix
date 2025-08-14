@@ -787,11 +787,58 @@ mod Test.Exp.Fixpoint.PQuery {
         Vector#{(1i32, 2i64, 3.4f32, 5.6f64, 6i8, 7i16, "Hello", 'c', true)} `Assert.eq` res
 
     /////////////////////////////////////////////////////////////////////////////
-    /// Term that functional predicates works
+    /// `pquery` should support functional predicates.
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testPQueryFunctional01(): Bool = {
+    def testPQueryWithFunctionalPredicate01(): Bool =
+        def f(n) = Vector.range(n, 2 * n);
+        let db = #{
+            A(1). A(2). A(3).
+        };
+        let pr = #{
+            R(y) :- A(x), let y = f(x).
+        };
+        let pp = pquery db, pr select R(4) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)"}
+
+    @Test
+    def testPQueryWithFunctionalPredicate02(): Bool =
+        def f(n) = Vector.range(n, 2 * n);
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+        };
+        let pr = #{
+            R(y) :- A(x), B(x), let y = f(x).
+        };
+        let pp = pquery db, pr select R(4) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)", "B(3)"}
+
+    @Test
+    def testPQueryWithFunctionalPredicate03(): Bool =
+        def f(n) = Vector.range(n, 2 * n);
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+        };
+        let pr = #{
+            R(z1, z2) :- A(x), B(y), let z1 = f(x), let z2 = f(y).
+        };
+        let pp = pquery db, pr select R(4, 4) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)", "B(3)"}
+
+
+    @Test
+    def testPQueryWithFunctionalPredicate04(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -805,7 +852,7 @@ mod Test.Exp.Fixpoint.PQuery {
     }
 
     @Test
-    def testPQueryFunctional02(): Bool = {
+    def testPQueryWithFunctionalPredicate05(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -819,7 +866,7 @@ mod Test.Exp.Fixpoint.PQuery {
     }
 
     @Test
-    def testPQueryFunctional03(): Bool = {
+    def testPQueryWithFunctionalPredicate06(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -833,7 +880,7 @@ mod Test.Exp.Fixpoint.PQuery {
     }
 
     @Test
-    def testPQueryFunctional04(): Bool = {
+    def testPQueryWithFunctionalPredicate07(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -847,7 +894,7 @@ mod Test.Exp.Fixpoint.PQuery {
     }
 
     @Test
-    def testPQueryFunctional05(): Bool = {
+    def testPQueryWithFunctionalPredicate08(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -861,7 +908,7 @@ mod Test.Exp.Fixpoint.PQuery {
     }
 
     @Test
-    def testPQueryFunctional06(): Bool = {
+    def testPQueryWithFunctionalPredicate09(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -875,7 +922,7 @@ mod Test.Exp.Fixpoint.PQuery {
     }
 
     @Test
-    def testPQueryFunctional07(): Bool = {
+    def testPQueryWithFunctionalPredicate10(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
