@@ -141,7 +141,7 @@ object TypedAstPrinter {
     */
   private def printExtMatchRule(rule: TypedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
     case TypedAst.ExtMatchRule(label, pats, exp, _) =>
-      (DocAst.Expr.ExtTag(label, pats.map(printExtPattern)), print(exp))
+      (DocAst.Pattern.ExtTag(label, pats.map(printExtPattern)), print(exp))
   }
 
   /**

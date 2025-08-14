@@ -506,9 +506,6 @@ object DocAst {
 
   object Pattern {
 
-    def Tag(sym: Symbol.CaseSym, exprs: List[Expr]): Expr =
-      Expr.Tag(sym, exprs)
-
     def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
       Expr.Tag(Sym(label), exprs)
 

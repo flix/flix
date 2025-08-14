@@ -75,7 +75,7 @@ object MonoAstPrinter {
     */
   private def printExtMatchRule(rule: MonoAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
     case MonoAst.ExtMatchRule(label, pats, exp, _) =>
-      (DocAst.Expr.ExtTag(label, pats.map(printExtPattern)), print(exp))
+      (DocAst.Pattern.ExtTag(label, pats.map(printExtPattern)), print(exp))
   }
 
   /** Returns the [[DocAst.Expr]] representation of `pattern`. */
