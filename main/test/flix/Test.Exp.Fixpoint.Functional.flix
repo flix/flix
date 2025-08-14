@@ -180,7 +180,7 @@ mod Test.Exp.Fixpoint.Functional {
     }
 
     @Test
-    def testFunctionalIgnoreRes01(): Bool = {
+    def testFunctionalUnusedVar01(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -191,7 +191,7 @@ mod Test.Exp.Fixpoint.Functional {
     }
 
     @Test
-    def testFunctionalIgnoreRes02(): Bool = {
+    def testFunctionalUnusedVar02(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
@@ -202,7 +202,7 @@ mod Test.Exp.Fixpoint.Functional {
     }
 
     @Test
-    def testFunctionalIgnoreRes03(): Bool = {
+    def testFunctionalUnusedVar03(): Bool = {
         let db = #{
             A(1). A(3). A(5).
         };
