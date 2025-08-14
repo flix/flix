@@ -336,11 +336,15 @@ mod Fixpoint3.Boxing {
                 };
                 Vector.forEach(unifyRamIdsBool(set), bools);
                 unifyRamIdsOp(predicates, set, withProv, body)
-            case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, _) =>
+            case RelOp.Functional(rv, _, inputTerms, body, arity) =>
+                let RowVar.Named(id) = rv;
                 foreach ((i, curTerm) <- ForEach.withIndex(inputTerms)) {
                     let termID = Ram.getTermRamId(curTerm);
                     MutDisjointSets.union(RamId.InId(id, i), termID, set);
                     unifyRamIdsTerm(set, curTerm)
+                };
+                foreach (i <- Vector.range(0, arity)) {
+                    MutDisjointSets.makeSet(RamId.TuplePos(rv, i), set)
                 };
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>

@@ -275,6 +275,16 @@ mod Fixpoint3.Provenance {
                 case (HeadTerm.App5(_, _, _, _, _, _)) => true
                 case _                                 => false
             });
+        let guards = bodyPreds |>
+            Vector.filter(bodyAtom -> match bodyAtom {
+                case BodyPredicate.Guard1(_, _)             => true
+                case BodyPredicate.Guard2(_, _, _)          => true
+                case BodyPredicate.Guard3(_, _, _, _)       => true
+                case BodyPredicate.Guard4(_, _, _, _, _)    => true
+                case BodyPredicate.Guard5(_, _, _, _, _, _) => true
+                // Filter out Guard0. They must be true.
+                case _                                 => false
+            });
         ///
         /// Returns the current value of `varName`.
         ///
@@ -292,6 +302,22 @@ mod Fixpoint3.Provenance {
             };
             MutMap.toMap(result)
         };
+
+        ///
+        /// Returns true if all guards are satisfied by the current variable assignment.
+        ///
+        def areGuardsSatisfied(varSymToVal): Bool = {
+            guards |>
+                Vector.forAll(guard -> match guard {
+                    case BodyPredicate.Guard1(f, v1)                 => f(getVal(v1, varSymToVal))
+                    case BodyPredicate.Guard2(f, v1, v2)             => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case BodyPredicate.Guard3(f, v1, v2, v3)         => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case BodyPredicate.Guard4(f, v1, v2, v3, v4)     => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
+                    case _                                           => unreachable!()
+                })
+        };
+
         ///
         /// Returns true if all head applications are satisfied by the current variable assignment.
         ///
@@ -318,7 +344,7 @@ mod Fixpoint3.Provenance {
         def loop(index, varSymToVal) = {
             if (index == Vector.length(bodyPreds)) {
                 // Base case. We have satisfied all atoms and found a satisfying assignment.
-                areHeadApplicationsSatisfied(varSymToVal)
+                areHeadApplicationsSatisfied(varSymToVal) and areGuardsSatisfied(varSymToVal)
             } else {
                 match Vector.get(index, bodyPreds) {
                     case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, expected) =>
@@ -330,7 +356,7 @@ mod Fixpoint3.Provenance {
                             ||> Vector.foldLeft(match (acc, i) -> t -> match t {
                                 case BodyTerm.Wild   => (acc, i + 1)
                                 case BodyTerm.Var(v) => match Map.get(v, varSymToVal) {
-                                    case None        => (acc, i + 1)
+                                    case None      => (acc, i + 1)
                                     case Some(val) => ((i, val) :: acc, i + 1)
                                 }
                                 case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
@@ -390,32 +416,26 @@ mod Fixpoint3.Provenance {
                             Array.put(Some((tuple, -2i64, -2)), index, bodyValues);
                             loop(index + 1, varSymToVal)
                         }
+                    case BodyPredicate.Functional(outVars, func, inVars) =>
+                        let args = Vector.map(varSym -> getVal(varSym, varSymToVal), inVars);
+                        let result = func(args);
+                        Vector.exists(tuple -> {
+                            let newMap = registerVars(outVars, tuple, varSymToVal);
+                            loop(index + 1, newMap)
+                        }, result)
+                    // We evaluate these later
                     case BodyPredicate.Guard0(_) =>
-                        // No need to evaluate `f()`, it must be `true`, otherwise what we know is a fact
-                        // would not have been created by this rule.
                         loop(index + 1, varSymToVal)
-                    case BodyPredicate.Guard1(f, v1) =>
-                        if (f(getVal(v1, varSymToVal)))
-                            loop(index + 1, varSymToVal)
-                        else false
-                    case BodyPredicate.Guard2(f, v1, v2) =>
-                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal)))
-                            loop(index + 1, varSymToVal)
-                        else false
-                    case BodyPredicate.Guard3(f, v1, v2, v3) =>
-                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal)))
-                            loop(index + 1, varSymToVal)
-                        else false
-                    case BodyPredicate.Guard4(f, v1, v2, v3, v4) =>
-                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal)))
-                            loop(index + 1, varSymToVal)
-                        else false
-                    case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) =>
-                        if (f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal)))
-                            loop(index + 1, varSymToVal)
-                        else false
-                    // Functional in provenance is not supported at the moment.
-                    case BodyPredicate.Functional(_, _, _) => unreachable!()
+                    case BodyPredicate.Guard1(_, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard2(_, _, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard3(_, _, _, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard4(_, _, _, _, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard5(_, _, _, _, _, _) =>
+                        loop(index + 1, varSymToVal)
                 }
             }};
         // A mapping from `VarSym` to its current value.
