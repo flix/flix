@@ -58,4 +58,22 @@ mod Test.Exp.Fixpoint.Large {
         let result = pquery pr select R(1024) with {R};
         Assert.eq(1024, Vector.length(result))
 
+    @Test
+    def testPQueryLargePath02(): Bool =
+        let pr = #{
+            R(1).
+            R(x + 1) :- R(x), if (x < 8192).
+        };
+        let result = pquery pr select R(8192) with {R};
+        Assert.eq(8192, Vector.length(result))
+
+    @Test
+    def testPQueryLargePath03(): Bool =
+        let pr = #{
+            R(1).
+            R(x + 1) :- R(x), if (x < 65536).
+        };
+        let result = pquery pr select R(65536) with {R};
+        Assert.eq(65536, Vector.length(result))
+
 }
