@@ -786,4 +786,187 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp);
         Vector#{(1i32, 2i64, 3.4f32, 5.6f64, 6i8, 7i16, "Hello", 'c', true)} `Assert.eq` res
 
+    /////////////////////////////////////////////////////////////////////////////
+    /// `pquery` should track provenance through rho abstraction.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithRhoAbstraction01(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+        };
+        let pr = #(A, R) -> #{
+            Tmp(x) :- A(x).
+            R(x) :- Tmp(x).
+        };
+        let pp = pquery db, pr select R(2) with { A };
+        let result = Vector.map(v -> ematch v { case A(x) => "A(${x})" }, pp);
+        Assert.eq(Vector#{"A(2)"}, result)
+
+    @Test
+    def testPQueryWithRhoAbstraction02(): Bool =
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+        };
+        let pr = #(A, B, R) -> #{
+            Tmp(x) :- A(x), B(x).
+            R(x) :- Tmp(x).
+        };
+        let pp = pquery db, pr select R(2) with { A, B };
+        let result = Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp);
+        Assert.eq(Vector#{"A(2)", "B(2)"}, result)
+
+    /////////////////////////////////////////////////////////////////////////////
+    /// `pquery` should support functional predicates.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryWithFunctionalPredicate01(): Bool =
+        def f(n) = Vector.range(n, 2 * n);
+        let db = #{
+            A(1). A(2). A(3).
+        };
+        let pr = #{
+            R(y) :- A(x), let y = f(x).
+        };
+        let pp = pquery db, pr select R(4) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)"}
+
+    @Test
+    def testPQueryWithFunctionalPredicate02(): Bool =
+        def f(n) = Vector.range(n, 2 * n);
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+        };
+        let pr = #{
+            R(y) :- A(x), B(x), let y = f(x).
+        };
+        let pp = pquery db, pr select R(4) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)", "B(3)"}
+
+    @Test
+    def testPQueryWithFunctionalPredicate03(): Bool =
+        def f(n) = Vector.range(n, 2 * n);
+        let db = #{
+            A(1). A(2). A(3).
+            B(1). B(2). B(3).
+        };
+        let pr = #{
+            R(z1, z2) :- A(x), B(y), let z1 = f(x), let z2 = f(y).
+        };
+        let pp = pquery db, pr select R(4, 4) with {A, B};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+            case B(x) => "B(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)", "B(3)"}
+
+
+    @Test
+    def testPQueryWithFunctionalPredicate04(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(x * y) :- A(x), let y = Vector#{2, 7, 11}, if (x <= y).
+        };
+        let pp = pquery db, pr select R(21) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)"}
+    }
+
+    @Test
+    def testPQueryWithFunctionalPredicate05(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(x + y) :- A(x), let y = Vector#{x}.
+        };
+        let pp = pquery db, pr select R(2) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)"}
+    }
+
+    @Test
+    def testPQueryWithFunctionalPredicate06(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(x + y) :- A(x), let y = Vector#{x}.
+        };
+        let pp = pquery db, pr select R(6) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)"}
+    }
+
+    @Test
+    def testPQueryWithFunctionalPredicate07(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(x + y) :- A(x), let y = Vector#{x}.
+        };
+        let pp = pquery db, pr select R(10) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(5)"}
+    }
+
+    @Test
+    def testPQueryWithFunctionalPredicate08(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(10) :- A(x), let y = Vector#{3}, if (y + x > 7).
+        };
+        let pp = pquery db, pr select R(10) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(5)"}
+    }
+
+    @Test
+    def testPQueryWithFunctionalPredicate09(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(10) :- A(x), let y = Vector#{3}, if (y + x < 5).
+        };
+        let pp = pquery db, pr select R(10) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(1)"}
+    }
+
+    @Test
+    def testPQueryWithFunctionalPredicate10(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(10) :- A(x), let y = Vector#{3}, if (y + x > 5 and x + y < 7).
+        };
+        let pp = pquery db, pr select R(10) with {A};
+        Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp) `Assert.eq` Vector#{"A(3)"}
+    }
+
 }
