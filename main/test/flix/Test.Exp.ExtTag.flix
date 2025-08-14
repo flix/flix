@@ -1,7 +1,7 @@
-mod Test.Exp.ExtMatch {
+mod Test.Exp.ExtTag {
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Flix should support extensible variant tags with CLOSED rows.
+    /// Flix should support extensible variants with CLOSED rows.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -104,7 +104,7 @@ mod Test.Exp.ExtMatch {
     def testExtTagPair05(): #| A((Int16, Float32)) |# = xvar A((1000i16, 2.5f32))
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Flix should support extensible variant tags with OPEN rows.
+    /// Flix should support extensible variants with OPEN rows.
     ///////////////////////////////////////////////////////////////////////////
 
     // NOTE: The following functions are polymorphic and hence cannot be marked with @Test.
@@ -153,7 +153,7 @@ mod Test.Exp.ExtMatch {
     def testExtTagArity03(): #| A(Int32, String, Float64) |# = xvar A(42i32, "hello", 2.718f64)
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Flix should support extensible variants with multiple tags.
+    /// Flix should support extensible variants with multiple variants.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
