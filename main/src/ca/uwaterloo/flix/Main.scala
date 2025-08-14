@@ -41,7 +41,7 @@ object Main {
   def main(argv: Array[String]): Unit = {
 
     val iwd = Paths.get(".").toAbsolutePath.normalize()
-    val cwd = findRootWorkingDirectory(iwd).getOrElse(iwd)
+    val cwd = findRootWorkingDirectory(iwd)
 
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
@@ -608,15 +608,15 @@ object Main {
     * @param cwd The current working directory from which to start searching.
     * @return An Option containing the path to the directory with the flix.toml file, or None if not found.
     */
-  private def findRootWorkingDirectory(cwd: Path): Option[Path] = {
+  private def findRootWorkingDirectory(cwd: Path): Path = {
     val validFlixToml = "flix.toml"
 
     def getParentDirectories(path: Path): Iterator[Path] =
       Iterator.iterate(path)(_.getParent).takeWhile(_ != null)
 
     getParentDirectories(cwd)
-      .map(_.resolve(validFlixToml))
-      .find(Files.exists(_))
+      .find(dir => Files.exists(dir.resolve(validFlixToml)))
+      .getOrElse(cwd)
   }
 
 }
