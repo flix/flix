@@ -102,8 +102,10 @@
         case RelOp.Query(rowVar, relSym, bools, index, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
                 RelOp.Query(rowVar, relSym, bools, index)
-        case RelOp.Functional(_, _, _, _, _) =>
-            bug!("In Fixpoint.Phase.Provenance.augmentOp: Cannot do provenance with functional")
+        case RelOp.Functional(rowVar, func, terms, body, arity) =>
+            // Do not add this to `rowVarsArity`. We use this in `ProvMax` as `Functional`
+            // has no concept of depth.
+            RelOp.Functional(rowVar, func, terms, augmentOp(rowVarsArity, body), arity)
         case RelOp.Project(terms, relSym, ruleNum) =>
             let newTerms = terms ++ Vector#{
                 RamTerm.ProvMax(List.toVector(rowVarsArity)),
