@@ -72,7 +72,7 @@ object ResolvedAstPrinter {
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtMatch(exp, rules, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
-    case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(DocAst.Sym(symUse.sym), exps.map(print))
+    case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtTag(label, exps, _) => DocAst.Expr.ExtTag(label, exps.map(print))
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
@@ -138,7 +138,7 @@ object ResolvedAstPrinter {
     */
   private def printExtMatchRule(rule: ResolvedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
     case ResolvedAst.ExtMatchRule(label, pats, exp, _) =>
-      (DocAst.Expr.Tag(DocAst.Sym(label), pats.map(printExtPattern)), print(exp))
+      (DocAst.Expr.ExtTag(label, pats.map(printExtPattern)), print(exp))
   }
 
   /** Returns the [[DocAst.Expr]] representation of `pat`. */
@@ -146,7 +146,7 @@ object ResolvedAstPrinter {
     case Pattern.Wild(_) => DocAst.Expr.Wild
     case Pattern.Var(sym, _) => printVarSym(sym)
     case Pattern.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(symUse, pats, _) => DocAst.Expr.Tag(DocAst.Sym(symUse.sym), pats.map(printPattern))
+    case Pattern.Tag(symUse, pats, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
     case Pattern.Tuple(pats, _) => DocAst.Expr.Tuple(pats.map(printPattern).toList)
     case Pattern.Record(_, _, _) => DocAst.Expr.Unknown
     case Pattern.Error(_) => DocAst.Expr.Error

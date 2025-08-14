@@ -172,6 +172,9 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
+    def Tag(sym: Symbol.CaseSym, exprs: List[Expr]): Expr =
+      Tag(Sym(sym), exprs)
+
     def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
       Keyword("xvar", Tag(Sym(label), exprs))
 
