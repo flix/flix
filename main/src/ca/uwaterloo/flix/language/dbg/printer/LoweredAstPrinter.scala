@@ -121,9 +121,7 @@ object LoweredAstPrinter {
     */
   private def printExtMatchRule(rule: LoweredAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
     case LoweredAst.ExtMatchRule(label, pats, exp, _) =>
-      val enumSym = new Symbol.EnumSym(List.empty, label.name, label.loc)
-      val sym = new Symbol.CaseSym(enumSym, label.name, label.loc)
-      (DocAst.Expr.Tag(sym, pats.map(printExtPattern)), print(exp))
+      (DocAst.Expr.Tag(DocAst.Sym(label), pats.map(printExtPattern)), print(exp))
   }
 
   /**
@@ -133,7 +131,7 @@ object LoweredAstPrinter {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
     case Pattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
     case Pattern.Cst(cst, _, _) => DocAst.Expr.Cst(cst)
-    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
+    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(DocAst.Sym(symUse.sym), pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
     case Pattern.Record(pats, rest, _, _) => printRecordPattern(pats, rest)
   }

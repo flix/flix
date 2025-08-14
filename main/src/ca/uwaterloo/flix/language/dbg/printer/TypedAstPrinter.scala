@@ -52,7 +52,7 @@ object TypedAstPrinter {
     case Expr.TypeMatch(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtMatch(exp, rules, _, _, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
-    case Expr.Tag(symUse, exps, _, _, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
+    case Expr.Tag(symUse, exps, _, _, _) => DocAst.Expr.Tag(DocAst.Sym(symUse.sym), exps.map(print))
     case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.ExtTag(label, exps, _, _, _) => DocAst.Expr.ExtTag(label, exps.map(print))
     case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
@@ -141,9 +141,7 @@ object TypedAstPrinter {
     */
   private def printExtMatchRule(rule: TypedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
     case TypedAst.ExtMatchRule(label, pats, exp, _) =>
-      val enumSym = new Symbol.EnumSym(List.empty, label.name, label.loc)
-      val sym = new Symbol.CaseSym(enumSym, label.name, label.loc)
-      (DocAst.Expr.Tag(sym, pats.map(printExtPattern)), print(exp))
+      (DocAst.Expr.Tag(DocAst.Sym(label), pats.map(printExtPattern)), print(exp))
   }
 
   /**
@@ -153,7 +151,7 @@ object TypedAstPrinter {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
     case Pattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
+    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(DocAst.Sym(symUse.sym), pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
     case Pattern.Error(_, _) => DocAst.Expr.Error

@@ -80,14 +80,6 @@ object DocAstFormatter {
         text(sym.toString)
       case Tag(sym, args) =>
         text(sym.toString) |:: tuple(args.map(aux(_, paren = false)))
-      case ExtTag(label, Nil) =>
-        group(
-          text("xvar") +: text(label.name)
-        )
-      case ExtTag(label, args) =>
-        group(
-          text("xvar") +: text(label.name) |:: tuple(args.map(aux(_, paren = false)))
-        )
       case AsIs(s) =>
         text(s)
       case Meta(s) =>

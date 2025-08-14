@@ -58,9 +58,7 @@ object DocAst {
 
     case class Tuple(elms: List[Expr]) extends Atom
 
-    case class Tag(sym: Symbol.CaseSym, args: List[Expr]) extends Atom
-
-    case class ExtTag(label: Name.Label, args: List[Expr]) extends Atom
+    case class Tag(sym: Sym, args: List[Expr]) extends Atom
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class AsIs(s: String) extends Atom
@@ -173,6 +171,9 @@ object DocAst {
     /** represents the error ast node when compiling partial programs */
     val Error: Expr =
       AsIs("?astError")
+
+    def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
+      Keyword("xvar", Tag(Sym(label), exprs))
 
     def Untag(d: Expr, idx: Int): Expr =
       Keyword("untag_" + idx, d)
@@ -500,6 +501,13 @@ object DocAst {
     def Var(sym: Symbol.UnkindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
+  case class Sym(private val symbol: String) {
+    override def toString: String = symbol
+  }
+
+  def Sym(label: Name.Label): Sym = Sym(label.name)
+
+  def Sym(sym: Symbol.CaseSym): Sym = Sym(sym.toString)
 }
 
 
