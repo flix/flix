@@ -33,7 +33,7 @@
 /// The current implementation does not output the negative atoms. They can be derived from the positive.
 ///
 mod Fixpoint3.Provenance {
-    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity}
+    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity, ProvSuppressed}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Ram.{makeFakeRelSym, RelSym}
     use Fixpoint3.Ast.Shared.{PredSym, Denotation}
@@ -117,15 +117,15 @@ mod Fixpoint3.Provenance {
     /// respect to `ProvIDB`, and it is not a ground atom. Furthermore `subproofs`
     /// contains the proofs/facts of the body which (could have) derived `P(tuple)`.
     ///
-    enum ProofTree {
+    enum ProofTree[r: Region] {
         case EDB(PredSym, Vector[Boxed])
         case Negative(PredSym, Vector[Boxed])
-        case IDB(PredSym, Vector[Boxed], Vector[ProofTree])
+        case IDB(PredSym, Vector[Boxed], Array[ProofTree[r], r])
     }
 
     mod ProofTree {
         @Internal
-        pub def toString(p: ProofTree, indentChild: Int32): String = match p {
+        pub def toString(p: ProofTree[r], indentChild: Int32): String \ r = match p {
             case EDB(pred, fact) =>
                 let indentCur = String.repeat(indentChild, " ");
                 let factString = Vector.join(", ", fact);
@@ -137,13 +137,9 @@ mod Fixpoint3.Provenance {
             case IDB(pred, fact, subs) =>
                 let factString = Vector.join(", ", fact);
                 let indentCur = String.repeat(indentChild, " ");
-                let subProofs = Vector.joinWith(sub -> toString(sub, indentChild + 4), "${String.lineSeparator()}", subs);
+                let subProofs = Array.joinWith(sub -> toString(sub, indentChild + 4), "${String.lineSeparator()}", subs);
                 "${indentCur}${pred}(${factString}). Proof:${String.lineSeparator()}${subProofs}"
         }
-    }
-
-    instance ToString[ProofTree] {
-        pub def toString(p: ProofTree): String = ProofTree.toString(p, 0)
     }
 
     ///
@@ -151,9 +147,9 @@ mod Fixpoint3.Provenance {
     ///
     /// The tree is traversed in a pre-order fashion meaning that for `IDB` atoms the atom is listed before the children.
     ///
-    def filterAndFlattenProof(p: ProofTree, filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] = region rc {
+    def filterAndFlattenProof(p: ProofTree[r], filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] \ r = region rc {
         let res = MutList.empty(rc);
-        def recurse(workList: List[ProofTree]) = match workList {
+        def recurse(workList: List[ProofTree[r]]) = match workList {
             case Nil                               => ()
             case ProofTree.EDB(pred, fact) :: tail =>
                 if (filter(pred)) MutList.push((pred, fact), res)
@@ -163,7 +159,7 @@ mod Fixpoint3.Provenance {
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
-                let furtherWork = Vector.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
+                let furtherWork = Array.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
                 recurse(furtherWork)
         }};
         recurse(p :: Nil);
@@ -213,34 +209,58 @@ mod Fixpoint3.Provenance {
     }
 
     ///
-    /// Builds the provenance tree for `predSym(fact)` where `fact` was derived with
-    /// depth `depth` using `rules[ruleUsed]`.
+    /// Builds the provenance tree for `topPredSym(topFact)` where `topFact` was derived with
+    /// depth `topDepth` using `rules[topRuleUsed]`.
     ///
-    /// `ruleUsed == -1` means that `predSym(fact)` is an `EDB` atom. `ruleUsed == -2`
-    /// means that `predSym(fact)` is a negative fact/not a fact in the model.
+    /// `topRuleUsed == -1` means that `topPredSym(topFact)` is an `EDB` atom. `topRuleUsed == -2`
+    /// means that `topPredSym(topFact)` is a negative fact/not a fact in the model.
     ///
-    def buildProof(predSym: PredSym, fact: Vector[Boxed], depth: Int64, ruleUsed: Int32, rules: Vector[Constraint], provIdb: ProvIDB, lookupStruct: ProvLookupStruct[r], rc: Region[r]): ProofTree \ r + IO = {
-        if (ruleUsed == -1) {
-            ProofTree.EDB(predSym, fact)
-        } else if (ruleUsed == -2) {
-            ProofTree.Negative(predSym, fact)
-        } else {
-            let rule = Vector.get(ruleUsed, rules);
-            let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
-            let Constraint.Constraint(_, bodyPreds) = rule;
-            let relevantPreds = bodyPreds |>
-                Vector.filter(bodyAtom -> match bodyAtom {
-                    case BodyPredicate.BodyAtom(_, _, _, _, _) => true
-                    case _ => false
-                });
-            let childProofs = Vector.zip(relevantPreds, bodyAtoms) |>
-                Vector.map(match (bodyP, (bodyFact, bodyDepth, bodyRule)) -> match bodyP {
-                    case BodyPredicate.BodyAtom(p, _, _, _, _) =>
-                        buildProof(p, bodyFact, bodyDepth, bodyRule, rules, provIdb, lookupStruct, rc)
-                    case _ => unreachable!()
-                });
-            ProofTree.IDB(predSym, fact, childProofs)
-        }
+    def buildProof(
+        topPredSym: PredSym,
+        topFact: Vector[Boxed],
+        topDepth: Int64,
+        topRuleUsed: Int32,
+        rules: Vector[Constraint],
+        provIdb: ProvIDB,
+        lookupStruct: ProvLookupStruct[r],
+        rc: Region[r]
+    ): ProofTree[r] \ r + IO = {
+        let resultArr = Array.empty(rc, 1);
+        def buildProofInternal(workList: List[(Int32, Array[ProofTree[r], r], PredSym, (Vector[Boxed], Int64, Int32))]) = match workList {
+            case Nil => Array.get(0, resultArr)
+            case (savePos, saveArr, predSym, (fact, depth, ruleUsed)) :: tail => match ruleUsed {
+                case -1 =>
+                    Array.put(ProofTree.EDB(predSym, fact), savePos, saveArr);
+                    buildProofInternal(tail)
+                case -2 =>
+                    Array.put(ProofTree.Negative(predSym, fact), savePos, saveArr);
+                    buildProofInternal(tail)
+                case _ =>
+                    let rule = Vector.get(ruleUsed, rules);
+                    let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
+                    let Constraint.Constraint(_, bodyPreds) = rule;
+                    let relevantPreds = bodyPreds |>
+                        Vector.filterMap(bodyAtom -> match bodyAtom {
+                            case BodyPredicate.BodyAtom(pred, _, _, _, sup, _) => Some((pred, sup))
+                            case _ => None
+                        });
+                    let ref = Ref.fresh(rc, tail);
+                    let suppressedAtomCount = Vector.count(v -> match v {
+                        case BodyPredicate.BodyAtom(_, _, _, _, ProvSuppressed.Hidden, _) => true
+                        case _ => false
+                    }, bodyPreds);
+                    let childProofs = Array.empty(rc, Array.length(bodyAtoms) - suppressedAtomCount);
+                    foreach((i, (pred, suppression)) <- ForEach.withIndex(relevantPreds)) match suppression {
+                        case ProvSuppressed.Shown =>
+                            let atom = Array.get(i, bodyAtoms);
+                            Ref.put((i, childProofs, pred, atom) :: Ref.get(ref), ref)
+                        case _ => ()
+                    };
+                    Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
+                    buildProofInternal(Ref.get(ref))
+            }
+        };
+        buildProofInternal((0, resultArr, topPredSym, (topFact, topDepth, topRuleUsed)) :: Nil)
     }
 
     ///
@@ -260,7 +280,7 @@ mod Fixpoint3.Provenance {
         provIdb: ProvIDB,
         lookupStruct: ProvLookupStruct[r],
         rule: Constraint
-    ): Vector[(Vector[Boxed], Int64, Int32)] \ r + IO = {
+    ): Array[(Vector[Boxed], Int64, Int32), r] \ r + IO = {
         let Constraint.Constraint(HeadPredicate.HeadAtom(_, _, headTerms), bodyPreds) = rule;
         // Array which contains the current assignment of body atoms.
         // Not all body predicates will be atoms. After termination of `loop` a
@@ -347,7 +367,7 @@ mod Fixpoint3.Provenance {
                 areHeadApplicationsSatisfied(varSymToVal) and areGuardsSatisfied(varSymToVal)
             } else {
                 match Vector.get(index, bodyPreds) {
-                    case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, expected) =>
+                    case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, _, expected) =>
                         // Collect the bound variables in a list so they can be used
                         // to by `lookup`.
                         // `(2, val)` being in the list means that attribute 3 of the tuple
@@ -397,7 +417,7 @@ mod Fixpoint3.Provenance {
                                     })
                             }
                         }
-                    case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, expected) =>
+                    case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, _, expected) =>
                         // `not pred(tuple)` is true if `pred(tuple)` is not in the model.
                         let tuple = expected |>
                             Vector.map(t -> match t {
@@ -448,7 +468,7 @@ mod Fixpoint3.Provenance {
             }
         };
         loop(0, MutMap.toMap(varSymToVal));
-        bodyValues |> Array.filterMap(rc, identity) |> Array.toVector
+        bodyValues |> Array.filterMap(rc, identity)
     }
 
     ///
