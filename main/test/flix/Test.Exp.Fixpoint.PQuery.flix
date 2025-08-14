@@ -807,6 +807,7 @@ mod Test.Exp.Fixpoint.PQuery {
     def testPQueryWithRhoAbstraction02(): Bool =
         let db = #{
             A(1). A(2). A(3).
+            B(1). B(2). B(3).
         };
         let pr = #(A, B, R) -> #{
             Tmp(x) :- A(x), B(x).
