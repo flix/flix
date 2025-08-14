@@ -145,7 +145,7 @@ object DocAstFormatter {
         val branchesF = branches.map { case (pat, body) =>
           val patF = aux(pat, paren = false)
           val bodyF = aux(body, paren = false, inBlock = true)
-          text("case") +: patF |:: text("=>") |:: breakIndent(bodyF)
+          text("case") +: patF +: Doc.empty |:: text("=>") |:: breakIndent(bodyF)
         }
         group(
           text("ematch") +: scrutineeF +: curlyOpen(
