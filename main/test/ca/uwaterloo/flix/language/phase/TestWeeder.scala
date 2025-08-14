@@ -786,6 +786,41 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalNullPattern](result)
   }
 
+  test("IllegalBigDecimalPattern.01") {
+    val input =
+      s"""
+         |def f(): Int32 = match 123.456ff {
+         |    case 123.456ff => 123
+         |    case _         => 456
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalBigDecimalPattern](result)
+  }
+
+  test("IllegalBigDecimalPattern.02") {
+    val input =
+      s"""
+         |def f(): Int32 = match 0.0ff {
+         |    case _         => 456
+         |    case 123.456ff => 123
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalBigDecimalPattern](result)
+  }
+
+  test("IllegalBigDecimalPattern.03") {
+    val input =
+      s"""
+         |def f(): Int32 = match 0 {
+         |    case 123.456ff => 123
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalBigDecimalPattern](result)
+  }
+
   test("IllegalPrivateDeclaration.01") {
     val input =
       """
