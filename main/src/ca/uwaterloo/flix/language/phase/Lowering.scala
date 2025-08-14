@@ -90,6 +90,7 @@ object Lowering {
     lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.Denotation")
     lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Polarity")
     lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Fixity")
+    lazy val ProvSuppressed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.ProvSuppressed")
 
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
 
@@ -120,6 +121,7 @@ object Lowering {
     lazy val Denotation: Type = Type.mkEnum(Enums.Denotation, Boxed :: Nil, SourceLocation.Unknown)
     lazy val Polarity: Type = Type.mkEnum(Enums.Polarity, Nil, SourceLocation.Unknown)
     lazy val Fixity: Type = Type.mkEnum(Enums.Fixity, Nil, SourceLocation.Unknown)
+    lazy val ProvSuppressed: Type = Type.mkEnum(Enums.ProvSuppressed, Nil, SourceLocation.Unknown)
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
@@ -1170,8 +1172,9 @@ object Lowering {
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
+      val suppressedExp = mkSuppressed(loc)
       val termsExp = mkVector(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
-      val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, termsExp)
+      val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, suppressedExp, termsExp)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case TypedAst.Predicate.Body.Functional(outBnds, exp0, loc) =>
@@ -1354,6 +1357,12 @@ object Lowering {
     case Fixity.Fixed =>
       mkTag(Enums.Fixity, "Fixed", Nil, Types.Fixity, loc)
   }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.ProvSuppressed` from the given fixity `f`.
+    */
+  private def mkSuppressed(loc: SourceLocation): LoweredAst.Expr =
+      mkTag(Enums.ProvSuppressed, "Shown", Nil, Types.ProvSuppressed, loc)
 
   /**
     * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.

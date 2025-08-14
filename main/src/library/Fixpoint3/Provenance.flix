@@ -33,7 +33,7 @@
 /// The current implementation does not output the negative atoms. They can be derived from the positive.
 ///
 mod Fixpoint3.Provenance {
-    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity}
+    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity, ProvSuppressed}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Ram.{makeFakeRelSym, RelSym}
     use Fixpoint3.Ast.Shared.{PredSym, Denotation}
@@ -215,6 +215,9 @@ mod Fixpoint3.Provenance {
     /// `topRuleUsed == -1` means that `topPredSym(topFact)` is an `EDB` atom. `topRuleUsed == -2`
     /// means that `topPredSym(topFact)` is a negative fact/not a fact in the model.
     ///
+    /// `topRuleUsed == -1` means that `topPredSym(topFact)` is an `EDB` atom. `topRuleUsed == -2`
+    /// means that `topPredSym(topFact)` is a negative fact/not a fact in the model.
+    ///
     def buildProof(
         topPredSym: PredSym,
         topFact: Vector[Boxed],
@@ -226,22 +229,6 @@ mod Fixpoint3.Provenance {
         rc: Region[r]
     ): ProofTree[r] \ r + IO = {
         let resultArr = Array.empty(rc, 1);
-        ///
-        /// This is the workhorse for assembling the proof.
-        ///
-        /// Elements of `workList` consist of `(savePos, saveArr, predSym, (fact, depth, ruleUsed))`.
-        /// The meaning is that the proof for `predSym(fact)` with annotations `(depth, ruleUsed)`
-        /// should be stored at `saveArr[savePos]`.
-        ///
-        /// Proofs of IDB facts are initialized without sub proofs. They contain an empty
-        /// array where sub proofs should be saved. Constructing sub proofs and adding them
-        /// to the array is done by adding a job to `workList`. The job will fill a specific
-        /// position in the array with a sub proof. This sub proof might itself need further
-        /// jobs to finish it and create new jobs.
-        ///
-        /// The purpose is to allow `buildProofInternal` to be tail-recursive.
-        /// Without the `workList` approach deep proofs would lead to a stack overflow.
-        ///
         def buildProofInternal(workList: List[(Int32, Array[ProofTree[r], r], PredSym, (Vector[Boxed], Int64, Int32))]) = match workList {
             case Nil => Array.get(0, resultArr)
             case (savePos, saveArr, predSym, (fact, depth, ruleUsed)) :: tail => match ruleUsed {
@@ -257,14 +244,20 @@ mod Fixpoint3.Provenance {
                     let Constraint.Constraint(_, bodyPreds) = rule;
                     let relevantPreds = bodyPreds |>
                         Vector.filterMap(bodyAtom -> match bodyAtom {
-                            case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
+                            case BodyPredicate.BodyAtom(pred, _, _, _, sup, _) => Some((pred, sup))
                             case _ => None
                         });
                     let ref = Ref.fresh(rc, tail);
-                    let childProofs = Array.empty(rc, Array.length(bodyAtoms));
-                    foreach((i, atom) <- ForEach.withIndex(relevantPreds)) {
-                        let pred = Array.get(i, bodyAtoms);
-                        Ref.put((i, childProofs, atom, pred) :: Ref.get(ref), ref)
+                    let suppressedAtomCount = Vector.count(v -> match v {
+                        case BodyPredicate.BodyAtom(_, _, _, _, ProvSuppressed.Hidden, _) => true
+                        case _ => false
+                    }, bodyPreds);
+                    let childProofs = Array.empty(rc, Array.length(bodyAtoms) - suppressedAtomCount);
+                    foreach((i, (pred, suppression)) <- ForEach.withIndex(relevantPreds)) match suppression {
+                        case ProvSuppressed.Shown =>
+                            let atom = Array.get(i, bodyAtoms);
+                            Ref.put((i, childProofs, pred, atom) :: Ref.get(ref), ref)
+                        case _ => ()
                     };
                     Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
                     buildProofInternal(Ref.get(ref))
@@ -331,7 +324,7 @@ mod Fixpoint3.Provenance {
                 areHeadApplicationsSatisfied(headApps, varSymToVal) and areGuardsSatisfied(guards, varSymToVal)
             } else {
                 match Vector.get(index, bodyPreds) {
-                    case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, expected) =>
+                    case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, _, expected) =>
                         // Collect the bound variables in a list so they can be used
                         // to by `lookup`.
                         // `(2, val)` being in the list means that attribute 3 of the tuple
@@ -363,7 +356,7 @@ mod Fixpoint3.Provenance {
                                     })
                             }
                         }
-                    case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, expected) =>
+                    case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, _, expected) =>
                         // `not pred(tuple)` is true if `pred(tuple)` is not in the model.
                         let tuple = evalOrCrash(expected, varSymToVal);
                         let isMatch = match Map.get(makeFakeRelSym(pred), provIdb) {

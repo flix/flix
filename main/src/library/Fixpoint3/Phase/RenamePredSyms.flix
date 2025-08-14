@@ -145,7 +145,7 @@ mod Fixpoint3.Phase.RenamePredSyms {
     /// Maps `PredSym`s of `body` according to `transformer`.
     ///
     def remapBody(transformer: PredSym -> PredSym \ r, body: BodyPredicate): BodyPredicate \ r = match body {
-        case BodyAtom(pred, den, pol, fixed, terms) => BodyAtom(transformer(pred), den, pol, fixed, terms)
+        case BodyAtom(pred, den, pol, fixed, suppressed, terms) => BodyAtom(transformer(pred), den, pol, fixed, suppressed, terms)
         case _ => body
     }
 }
