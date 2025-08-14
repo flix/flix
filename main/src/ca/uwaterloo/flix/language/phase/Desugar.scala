@@ -816,8 +816,12 @@ object Desugar {
       val s = visitHead(select)
       DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
-      desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
+    case WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
+      val es = visitExps(exps)
+      val ss = visitExps(selects)
+      val f = visitPredicateBodies(from)
+      val w = visitExps(where)
+      DesugaredAst.Expr.FixpointQueryWithSelect(es, ss, f, w, loc)
 
     case WeededAst.Expr.Debug(exp, kind, loc) =>
       desugarDebug(exp, kind, loc)

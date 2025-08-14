@@ -333,6 +333,12 @@ object PatMatch {
         exps.foreach(visitExp)
         visitHeadPred(select)
 
+      case Expr.FixpointQueryWithSelect(exps, selects, from, where, _, _, _) =>
+        exps.foreach(visitExp)
+        selects.foreach(visitExp)
+        from.foreach(visitBodyPred)
+        where.foreach(visitExp)
+
       case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)

@@ -871,6 +871,15 @@ object Redundancy {
       val us2 = visitExps(terms, env0, rc)
       us1 ++ us2
 
+    case Expr.FixpointQueryWithSelect(exps, selects, from, where, _, _, _) =>
+      val us1 = visitExps(exps, env0, rc)
+      val us2 = visitExps(selects, env0, rc)
+      val us3 = from.foldLeft(Used.empty) {
+        case (acc, b) => acc ++ visitBodyPred(b, env0, rc)
+      }
+      val us4 = visitExps(where, env0, rc)
+      us1 ++ us2 ++ us3 ++ us4
+
     case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 

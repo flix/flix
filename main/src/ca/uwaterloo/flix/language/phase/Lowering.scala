@@ -832,6 +832,9 @@ object Lowering {
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
+    case TypedAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, tpe, eff, loc) =>
+      ???
+
     case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
       val defn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
