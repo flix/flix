@@ -1328,7 +1328,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast/Datalog.ProvSuppressed` from the given fixity `f`.
+    * Constructs a `Fixpoint/Ast/Datalog.ProvSuppressed`.
     */
   private def mkSuppressed(loc: SourceLocation): LoweredAst.Expr =
       mkTag(Enums.ProvSuppressed, "Shown", Nil, Types.ProvSuppressed, loc)
