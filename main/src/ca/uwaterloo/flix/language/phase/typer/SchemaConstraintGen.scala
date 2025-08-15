@@ -84,9 +84,9 @@ object SchemaConstraintGen {
   def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
+      case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, evar, loc1) =>
         val (tpes, effs) = exps.map(visitExp).unzip
-        val selectRow = visitHeadPredicate(select)
+        val (selectRow, selectEff) = visitHeadPredicate(select)
         val (withRow, resultRow) = withh.foldRight((mkAnySchemaRowType(loc1), mkAnySchemaRowType(loc1))) {
           case (pred, (acc1, acc2)) =>
             val relType = Type.freshVar(Kind.Predicate, loc1)
@@ -96,8 +96,9 @@ object SchemaConstraintGen {
         }
         c.unifyAllTypes(Type.mkSchema(withRow, loc1) :: Type.mkSchema(selectRow, loc1) :: tpes, loc1)
         val resTpe = Type.mkVector(Type.mkExtensible(resultRow, loc1), loc1)
-        val resEff = Type.mkUnion(effs, loc1)
+        val resEff = Type.mkUnion(selectEff :: effs, loc1)
         c.unifyType(tvar, resTpe, loc1)
+        c.unifyType(evar, resEff, loc1)
         (resTpe, resEff)
     }
   }
@@ -214,7 +215,8 @@ object SchemaConstraintGen {
     //  -----------------------------------
     //  A_0 :- A_1, ..., A_n : tpe
     //
-    val headPredicateType = visitHeadPredicate(head0)
+    val (headPredicateType, headPredicateEff) = visitHeadPredicate(head0)
+    c.unifyType(Type.Pure, headPredicateEff, loc)
     val bodyPredicateTypes = body0.map(b => visitBodyPredicate(b))
     c.unifyAllTypes(bodyPredicateTypes, loc)
     val bodyPredicateType = bodyPredicateTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
@@ -227,19 +229,19 @@ object SchemaConstraintGen {
   /**
     * Infers the type of the given head predicate.
     */
-  private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+  private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val (termTypes, termEffs) = terms.map(visitExp(_)).unzip
-        c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
         c.unifyType(tvar, mkRelationOrLatticeType(den, termTypes, loc), loc)
         val tconstrs = getTermTraitConstraints(den, termTypes, root, loc)
         c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
-        resTpe
+        val resEff = Type.mkUnion(termEffs, loc)
+        (resTpe, resEff)
     }
   }
 

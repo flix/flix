@@ -969,4 +969,49 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp) `Assert.eq` Vector#{"A(3)"}
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    /// `pquery` can have non-pure effect.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    pub def testPQueryWithNonPureEffect01(): Bool = region rc {
+        let f = l -> inject Array.init(rc, a -> a, l) |> Array.toVector into A/1;
+        let pr = #{
+            R(x) :- A(x).
+        };
+        let pp = pquery f(6), pr select R(5) with {A};
+        Vector#{"A(5)"} `Assert.eq` Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp)
+    }
+
+    @Test
+    pub def testPQueryWithNonPureEffect02(): Bool = region rc {
+        let arr = Array#{1} @ rc;
+        let pr = #{
+            A(1).
+            R(x) :- A(x).
+        };
+        let pp = pquery pr select R(Array.get(0, arr)) with {A};
+        Vector#{"A(1)"} `Assert.eq` Vector.map(v -> ematch v {
+            case A(x) => "A(${x})"
+        }, pp)
+    }
+
+    @Test
+    pub def testPQueryWithNonPureEffect03(): Bool = region rc1 {
+        region rc2 {
+            let arr1 = Array#{1} @ rc1;
+            let arr2 = Array#{2} @ rc2;
+            let pr = #{
+                A(1, 2).
+                R(x, y) :- A(x, y).
+            };
+            let pp = pquery pr select R(Array.get(0, arr1), Array.get(0, arr2)) with {A};
+            Vector#{"A(1, 2)"} `Assert.eq` Vector.map(v -> ematch v {
+                case A(x, y) => "A(${x}, ${y})"
+            }, pp)
+        }
+    }
+
 }
