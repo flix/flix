@@ -608,8 +608,8 @@ object Dependencies {
   }
 
   private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = r match {
-    case ExtMatchRule(_, pats, exp, _) =>
-      pats.foreach(visitExtPattern)
+    case ExtMatchRule(pat, exp, _) =>
+      visitExtPattern(pat)
       visitExp(exp)
   }
 
@@ -633,6 +633,18 @@ object Dependencies {
   }
 
   private def visitExtPattern(p: TypedAst.ExtPattern)(implicit sctx: SharedContext): Unit = p match {
+    case ExtPattern.Wild(tpe, _) =>
+      visitType(tpe)
+
+    case ExtPattern.Tag(_, pats, tpe, _) =>
+      pats.foreach(visitVarOrWild)
+      visitType(tpe)
+
+    case ExtPattern.Error(tpe, _) =>
+      visitType(tpe)
+  }
+
+  private def visitVarOrWild(v: TypedAst.ExtPattern.VarOrWild)(implicit sctx: SharedContext): Unit = v match {
     case ExtPattern.Wild(tpe, _) =>
       visitType(tpe)
 

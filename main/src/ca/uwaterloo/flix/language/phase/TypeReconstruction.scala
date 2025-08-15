@@ -697,10 +697,10 @@ object TypeReconstruction {
     * Reconstructs types in the given ext-match rule.
     */
   private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree): TypedAst.ExtMatchRule = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPat)
+    case KindedAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPat(pat)
       val e = visitExp(exp)
-      TypedAst.ExtMatchRule(label, ps, e, loc)
+      TypedAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -733,17 +733,32 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given ext-pattern.
     */
-  private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
-    case KindedAst.ExtPattern.Wild(tvar, loc) => TypedAst.ExtPattern.Wild(subst(tvar), loc)
+  private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = {
+    def visitVarOrWild(varOrWild0: KindedAst.ExtPattern.VarOrWild): TypedAst.ExtPattern.VarOrWild = varOrWild0 match {
+      case KindedAst.ExtPattern.Wild(tvar, loc) =>
+        TypedAst.ExtPattern.Wild(subst(tvar), loc)
 
-    case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
-      val tpe = subst(tvar)
-      val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.ExtPattern.Var(bnd, tpe, loc)
+      case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
+        val tpe = subst(tvar)
+        val bnd = TypedAst.Binder(sym, tpe)
+        TypedAst.ExtPattern.Var(bnd, tpe, loc)
 
-    case KindedAst.ExtPattern.Error(tvar, loc) => TypedAst.ExtPattern.Error(subst(tvar), loc)
+      case KindedAst.ExtPattern.Error(tvar, loc) =>
+        TypedAst.ExtPattern.Error(subst(tvar), loc)
+    }
+
+    pat0 match {
+      case KindedAst.ExtPattern.Wild(tvar, loc) =>
+        TypedAst.ExtPattern.Wild(subst(tvar), loc)
+
+      case KindedAst.ExtPattern.Tag(label, pats, tvar, loc) =>
+        val ps = pats.map(visitVarOrWild)
+        TypedAst.ExtPattern.Tag(label, ps, subst(tvar), loc)
+
+      case KindedAst.ExtPattern.Error(tvar, loc) =>
+        TypedAst.ExtPattern.Error(subst(tvar), loc)
+    }
   }
-
   /**
     * Reconstructs types in the given head predicate.
     */

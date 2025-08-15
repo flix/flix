@@ -1032,13 +1032,24 @@ object Lowering {
   }
 
   private def visitExtMatchRule(rule0: TypedAst.ExtMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.ExtMatchRule = rule0 match {
-    case TypedAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPat)
+    case TypedAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPat(pat)
       val e = visitExp(exp)
-      LoweredAst.ExtMatchRule(label, ps, e, loc)
+      LoweredAst.ExtMatchRule(p, e, loc)
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
+    case TypedAst.ExtPattern.Wild(tpe, loc) => throw InternalCompilerException("unexpected wild ext pattern", loc)
+
+    case TypedAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+      val ps = pats.map(visitVarOrWild)
+      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+
+    case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+
+  }
+
+  private def visitVarOrWild(varOrWild0: TypedAst.ExtPattern.VarOrWild): LoweredAst.ExtPattern.VarOrWild = varOrWild0 match {
     case TypedAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
     case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
     case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)

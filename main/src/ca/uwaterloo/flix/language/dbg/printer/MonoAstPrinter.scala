@@ -74,8 +74,8 @@ object MonoAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printExtMatchRule(rule: MonoAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
-    case MonoAst.ExtMatchRule(label, pats, exp, _) =>
-      (DocAst.Pattern.ExtTag(label, pats.map(printExtPattern)), print(exp))
+    case MonoAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
   }
 
   /** Returns the [[DocAst.Expr]] representation of `pattern`. */
@@ -99,9 +99,18 @@ object MonoAstPrinter {
   /**
     * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
-  private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = pattern match {
+  private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = {
+    pattern match {
+      case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printVarOrWild))
+    }
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `varOrWild0`.
+    */
+  private def printVarOrWild(varOrWild0: MonoAst.ExtPattern.VarOrWild): DocAst.Expr = varOrWild0 match {
     case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
-    case ExtPattern.Var(sym, _, _, _) => printVar(sym)
+    case ExtPattern.Var(sym, _, _, _) => DocAst.Expr.Var(sym)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `sym`. */
