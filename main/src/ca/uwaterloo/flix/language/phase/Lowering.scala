@@ -1775,6 +1775,7 @@ object Lowering {
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
+
     f(rel, loc).reverse
   }
 
@@ -1819,7 +1820,7 @@ object Lowering {
     )
 
   /**
-    Returns the `TypedAst` match expression
+    * Returns the `TypedAst` match expression
     * {{{
     *   match predSym {
     *     case PredSym.PredSym(name, _) => match name {
@@ -2150,7 +2151,14 @@ object Lowering {
 
     case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
 
-    case LoweredAst.Expr.ExtMatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
+          val e1 = substExp(exp1, subst)
+          LoweredAst.ExtMatchRule(label, pats, e1, loc1)
+      }
+      LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
 
