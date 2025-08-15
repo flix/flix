@@ -2160,7 +2160,14 @@ object Lowering {
       }
       LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.TypeMatchRule(sym, tpe1, exp1) =>
+          val e1 = substExp(exp1, subst)
+          LoweredAst.TypeMatchRule(sym, tpe1, e1)
+      }
+      LoweredAst.Expr.TypeMatch(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
