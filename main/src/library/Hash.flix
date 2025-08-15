@@ -22,6 +22,8 @@ import java.lang.Integer
 import java.lang.Long
 import java.lang.Short
 
+use Bool.{==>}
+
 ///
 /// A trait for types that can be hashed.
 ///
