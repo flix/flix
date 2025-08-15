@@ -598,11 +598,10 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e1.eff, e2.eff, loc)
       TypedAst.Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc) =>
+    case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       val s = visitHeadPredicate(select)
-      val eff = Type.Pure
-      TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
+      TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), subst(evar), loc)
 
     case KindedAst.Expr.FixpointSolve(exp, mode, loc) =>
       val e = visitExp(exp)
