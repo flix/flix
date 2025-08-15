@@ -105,8 +105,21 @@ object SchemaConstraintGen {
   def visitFixpointQueryWithSelect(e: KindedAst.Expr.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, tvar, loc) =>
-        ???
+      case KindedAst.Expr.FixpointQueryWithSelect(exps, selects, from, _, tvar, loc) =>
+        val (tpes1, effs1) = exps.map(visitExp).unzip
+        val (tpes2, effs2) = selects.map(visitExp).unzip
+        val arity = selects.length
+        val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(arity, Kind.Predicate), loc)
+        val tuple = Type.mkTuplish(tpes2, loc)
+        val expectedSchemaType = Type.mkSchema(Type.mkApply(freshRelOrLat, tpes2, loc), loc)
+        val fromSchemaTypes = from.map(f => Type.mkSchema(visitBodyPredicate(f), loc))
+
+        c.unifyAllTypes(expectedSchemaType :: tpes1 ::: fromSchemaTypes, loc)
+
+        val resTpe = Type.mkVector(tuple, loc)
+        val resEff = Type.mkUnion(effs1 ::: effs2, loc)
+        c.unifyType(tvar, resTpe, loc)
+        (resTpe, resEff)
     }
   }
 
