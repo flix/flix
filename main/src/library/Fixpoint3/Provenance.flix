@@ -226,52 +226,6 @@ mod Fixpoint3.Provenance {
         rc: Region[r]
     ): ProofTree[r] \ r + IO = {
         let resultArr = Array.empty(rc, 1);
-        def buildProofInternal(workList: List[(Int32, Array[ProofTree[r], r], PredSym, (Vector[Boxed], Int64, Int32))]) = match workList {
-            case Nil => Array.get(0, resultArr)
-            case (savePos, saveArr, predSym, (fact, depth, ruleUsed)) :: tail => match ruleUsed {
-                case -1 =>
-                    Array.put(ProofTree.EDB(predSym, fact), savePos, saveArr);
-                    buildProofInternal(tail)
-                case -2 =>
-                    Array.put(ProofTree.Negative(predSym, fact), savePos, saveArr);
-                    buildProofInternal(tail)
-                case _ =>
-                    let rule = Vector.get(ruleUsed, rules);
-                    let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
-                    let Constraint.Constraint(_, bodyPreds) = rule;
-                    let relevantPreds = bodyPreds |>
-                        Vector.filterMap(bodyAtom -> match bodyAtom {
-                            case BodyPredicate.BodyAtom(pred, _, _, _, sup, _) => Some((pred, sup))
-                            case _ => None
-                        });
-                    let ref = Ref.fresh(rc, tail);
-                    let suppressedAtomCount = Vector.count(v -> match v {
-                        case BodyPredicate.BodyAtom(_, _, _, _, ProvSuppressed.Hidden, _) => true
-                        case _ => false
-                    }, bodyPreds);
-                    let childProofs = Array.empty(rc, Array.length(bodyAtoms) - suppressedAtomCount);
-                    foreach((i, (pred, suppression)) <- ForEach.withIndex(relevantPreds)) match suppression {
-                        case ProvSuppressed.Shown =>
-                            let atom = Array.get(i, bodyAtoms);
-                            Ref.put((i, childProofs, pred, atom) :: Ref.get(ref), ref)
-                        case _ => ()
-                    };
-                    Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
-                    buildProofInternal(Ref.get(ref))
-            }
-        };
-        buildProofInternal((0, resultArr, topPredSym, (topFact, topDepth, topRuleUsed)) :: Nil)
-    def buildProof(
-        topPredSym: PredSym,
-        topFact: Vector[Boxed],
-        topDepth: Int64,
-        topRuleUsed: Int32,
-        rules: Vector[Constraint],
-        provIdb: ProvIDB,
-        lookupStruct: ProvLookupStruct[r],
-        rc: Region[r]
-    ): ProofTree[r] \ r + IO = {
-        let resultArr = Array.empty(rc, 1);
         ///
         /// This is the workhorse for assembling the proof.
         ///
@@ -303,14 +257,20 @@ mod Fixpoint3.Provenance {
                     let Constraint.Constraint(_, bodyPreds) = rule;
                     let relevantPreds = bodyPreds |>
                         Vector.filterMap(bodyAtom -> match bodyAtom {
-                            case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
+                            case BodyPredicate.BodyAtom(pred, _, _, _, sup, _) => Some((pred, sup))
                             case _ => None
                         });
                     let ref = Ref.fresh(rc, tail);
-                    let childProofs = Array.empty(rc, Array.length(bodyAtoms));
-                    foreach((i, atom) <- ForEach.withIndex(relevantPreds)) {
-                        let pred = Array.get(i, bodyAtoms);
-                        Ref.put((i, childProofs, atom, pred) :: Ref.get(ref), ref)
+                    let suppressedAtomCount = Vector.count(v -> match v {
+                        case BodyPredicate.BodyAtom(_, _, _, _, ProvSuppressed.Hidden, _) => true
+                        case _ => false
+                    }, bodyPreds);
+                    let childProofs = Array.empty(rc, Array.length(bodyAtoms) - suppressedAtomCount);
+                    foreach((i, (pred, suppression)) <- ForEach.withIndex(relevantPreds)) match suppression {
+                        case ProvSuppressed.Shown =>
+                            let atom = Array.get(i, bodyAtoms);
+                            Ref.put((i, childProofs, pred, atom) :: Ref.get(ref), ref)
+                        case _ => ()
                     };
                     Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
                     buildProofInternal(Ref.get(ref))
