@@ -1775,6 +1775,7 @@ object Lowering {
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
+
     f(rel, loc).reverse
   }
 
@@ -1819,7 +1820,7 @@ object Lowering {
     )
 
   /**
-    Returns the `TypedAst` match expression
+    * Returns the `TypedAst` match expression
     * {{{
     *   match predSym {
     *     case PredSym.PredSym(name, _) => match name {
