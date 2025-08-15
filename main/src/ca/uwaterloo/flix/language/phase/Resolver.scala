@@ -1495,10 +1495,10 @@ object Resolver {
         e => ResolvedAst.Expr.FixpointFilter(pred, e, loc)
       }
 
-    case NamedAst.Expr.FixpointInject(exp, pred, arity, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointInject(e, pred, arity, loc)
+    case NamedAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      mapN(esVal) {
+        es => ResolvedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
       }
 
     case NamedAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>

@@ -278,7 +278,7 @@ object TypedAst {
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class FixpointProject(pred: Name.Pred, arity: Int, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

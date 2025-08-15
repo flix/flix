@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, SolveMode, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, PredicateAndArity, SolveMode, Source}
 import ca.uwaterloo.flix.util.collection.Nel
 
 object WeededAst {
@@ -493,7 +493,5 @@ object WeededAst {
     case object DebugWithLocAndSrc extends DebugKind
 
   }
-
-  case class PredicateAndArity(ident: Name.Ident, arity: Int)
 
 }

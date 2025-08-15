@@ -595,8 +595,8 @@ object Visitor {
       case Expr.FixpointFilter(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.FixpointInject(exp, _, _, _, _) =>
-        visitExpr(exp)
+      case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+        exps.foreach(visitExpr)
 
       case Expr.FixpointProject(_, _, exp, _, _, _) =>
         visitExpr(exp)

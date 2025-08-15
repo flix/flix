@@ -179,6 +179,39 @@ mod Test.Exp.Fixpoint.Functional {
         Vector#{1f64} `Assert.eq` query p select (x) from NonEmpty(x)
     }
 
+    @Test
+    def testFunctionalUnusedVar01(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(x) :- A(x), let y = Vector#{3}, if (y + x > 5 and x + y < 7).
+        };
+        Vector#{3} `Assert.eq` query db, pr select x from R(x)
+    }
+
+    @Test
+    def testFunctionalUnusedVar02(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(x) :- A(x), let y = Vector#{3}.
+        };
+        Vector#{1, 3, 5} `Assert.eq` query db, pr select x from R(x)
+    }
+
+    @Test
+    def testFunctionalUnusedVar03(): Bool = {
+        let db = #{
+            A(1). A(3). A(5).
+        };
+        let pr = #{
+            R(10) :- A(x), let y = Vector#{x}.
+        };
+        Vector#{10} `Assert.eq` query db, pr select x from R(x)
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // Tests with lattice values                                               //
     /////////////////////////////////////////////////////////////////////////////

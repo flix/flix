@@ -452,7 +452,7 @@ mod BPlusTree {
     ///
     @Internal
     @Parallel
-    pub def parForEachWhen(f: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r = 
+    pub def parForEachWhen(f: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r =
         if(size(t) < parLimit)
             forEach(f, t)
         else
@@ -635,6 +635,12 @@ mod BPlusTree {
     ///
     def writeLockRootPointer(t: BPlusTree[k, v, r]): Int64 \ r =
         Lock.writeLock(t->rootLock)
+
+    ///
+    /// Write lock `t->rootLock` and return the stamp.
+    ///
+    def unlockRootPointer(stamp: Int64, t: BPlusTree[k, v, r]): Unit \ r =
+        Lock.unlockWrite(stamp, t->rootLock)
 
     ///
     /// The Node struct defines the tree, having either children or values depending on
@@ -1093,7 +1099,18 @@ mod BPlusTree {
                     lockParent(node, tree)
                 } else writeStamp
             // `node` was root node. We need to lock the root instead, as it protects the parent pointer of `node`.
-            case None => BPlusTree.writeLockRootPointer(tree)
+            case None =>
+                let stamp = BPlusTree.writeLockRootPointer(tree);
+                let parentHasChanged = match node->parent {
+                    case Some(_) => true
+                    case None => false
+                };
+                if (parentHasChanged) {
+                    BPlusTree.unlockRootPointer(stamp, tree);
+                    lockParent(node, tree)
+                } else {
+                    stamp
+                }
         }
 
         ///
@@ -1344,13 +1361,18 @@ mod BPlusTree {
                 splitInternalToRightChild(rc, insertedChild, insertionPoint, newKey, mid, arity, rightSize, leftNode)
             };
             let rightNode = mkInternal(rc, rightKeys, rightChildren, rightSize, leftNode->parent);
+            // Lock `rightNode` before updating child-pointers.
+            // This prevents threads working on children from grabbing the lock of our
+            // parent pointer before we lock it.
+            let rightNodeStamp = Lock.writeLock(rightNode->lock);
+            let parentStamp = lockParent(leftNode, tree);
+            rightNode->parent = leftNode->parent;
             Array.forEachWithIndex(i -> child ->
                 if (i < rightSize)
                     child->parent = Some(rightNode)
                 else (), rightChildren);
-            let parentStamp = lockParent(leftNode, tree);
-            rightNode->parent = leftNode->parent;
             Lock.unlockWrite(leftNodeStamp, leftNode->lock);
+            Lock.unlockWrite(rightNodeStamp, rightNode->lock);
             pushKeyToParent(leftNode->parent, leftNode, rightNode, parentStamp, keyOfRight, tree)
 
         ///

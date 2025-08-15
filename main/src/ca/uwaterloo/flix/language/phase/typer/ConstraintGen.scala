@@ -1002,7 +1002,7 @@ object ConstraintGen {
       case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
       case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
       case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
-      case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)
+      case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
       case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
 
       case Expr.Error(_, tvar, evar) =>

@@ -708,8 +708,8 @@ object SemanticTokensProvider {
     case Expr.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      visitExps(exps)
 
     case Expr.FixpointProject(_, _, exp, _, _, _) =>
       visitExp(exp)

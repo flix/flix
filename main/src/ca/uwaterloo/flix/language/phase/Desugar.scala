@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
-import ca.uwaterloo.flix.language.ast.WeededAst.{Predicate, PredicateAndArity}
+import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
 import ca.uwaterloo.flix.util.ParOps
@@ -805,7 +805,8 @@ object Desugar {
       Expr.FixpointMerge(e1, e2, loc)
 
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
-      desugarFixpointInjectInto(exps, predsAndArities, loc)
+      val es = visitExps(exps)
+      DesugaredAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
     case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
@@ -1436,20 +1437,6 @@ object Desugar {
     val es = visitExps(exps0)
     val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
     mkApplyFqn(fqn, List(vectorLit), loc0)
-  }
-
-  /**
-    * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
-    */
-  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], predsAndArities: List[PredicateAndArity], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-    val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc0)
-    es.zip(predsAndArities).foldRight(init: Expr) {
-      case ((exp, PredicateAndArity(ident, arity)), acc) =>
-        val pred = Name.mkPred(ident)
-        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc0)
-        DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc0)
-    }
   }
 
   /**
