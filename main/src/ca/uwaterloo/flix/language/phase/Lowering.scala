@@ -2149,7 +2149,15 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Discard(e, eff, loc)
 
-    case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.MatchRule(pat, guard, exp1) =>
+          val g = guard.map(substExp(_, subst))
+          val e1 = substExp(exp1, subst)
+          LoweredAst.MatchRule(pat, g, e1)
+      }
+      LoweredAst.Expr.Match(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
