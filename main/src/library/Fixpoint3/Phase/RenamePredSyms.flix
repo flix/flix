@@ -69,12 +69,14 @@ mod Fixpoint3.Phase.RenamePredSyms {
                 })
                 |> Model
         case Provenance(rules, facts) =>
+            let transformer = mapForward(mapping);
+            let newRules = remapConstraints(rules, transformer);
             (Map#{}, facts)
                 ||> Map.foldLeftWithKey(acc -> match RelSym.Symbol(predSym, arity, den) -> v ->
                     let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
                     Map.insert(newSym, v, acc)
                 )
-                |> Provenance(rules)
+                |> Provenance(newRules)
         case Join(d1, d2) =>
             Join(fixPredSymsInternal(d1, mapping), fixPredSymsInternal(d2, mapping))
         case _ => bug!("PredSym error")

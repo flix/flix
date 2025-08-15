@@ -290,7 +290,7 @@ object Summary {
       exps.map(countCheckedEcasts).sum + terms.map(countCheckedEcasts).sum
     case Expr.FixpointSolve(exp, _, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => countCheckedEcasts(exp)
-    case Expr.FixpointInject(exp, _, _, _, _) => countCheckedEcasts(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
     case Expr.FixpointProject(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Error(_, _, _) => 0
   }

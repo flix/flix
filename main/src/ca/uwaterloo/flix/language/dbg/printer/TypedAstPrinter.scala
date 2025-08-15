@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -51,10 +51,10 @@ object TypedAstPrinter {
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
     case Expr.TypeMatch(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.RestrictableChoose(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtMatch(_, _, _, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
+    case Expr.ExtMatch(exp, rules, _, _, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.Tag(symUse, exps, _, _, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtTag(_, _, _, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
+    case Expr.ExtTag(label, exps, _, _, _) => DocAst.Expr.ExtTag(label, exps.map(print))
     case Expr.Tuple(elms, _, _, _) => DocAst.Expr.Tuple(elms.map(print))
     case Expr.RecordSelect(exp, label, _, _, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, exp1, exp2, _, _, _) => DocAst.Expr.RecordExtend(label, print(exp1), print(exp2))
@@ -102,7 +102,7 @@ object TypedAstPrinter {
     case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointSolve(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointFilter(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointInject(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_, _, _) => DocAst.Expr.Error
   }
@@ -137,6 +137,14 @@ object TypedAstPrinter {
   }
 
   /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: TypedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case TypedAst.ExtMatchRule(label, pats, exp, _) =>
+      (DocAst.Pattern.ExtTag(label, pats.map(printExtPattern)), print(exp))
+  }
+
+  /**
     * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
   private def printPattern(pattern: TypedAst.Pattern): DocAst.Expr = pattern match {
@@ -157,6 +165,15 @@ object TypedAstPrinter {
       case (TypedAst.Pattern.Record.RecordLabelPattern(label, rest, _, _), acc) =>
         DocAst.Expr.RecordExtend(label, printPattern(rest), acc)
     }
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtPattern.Var(TypedAst.Binder(sym, _), _, _) => printVar(sym)
+    case ExtPattern.Error(_, _) => DocAst.Expr.Error
   }
 
   /**

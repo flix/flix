@@ -2403,6 +2403,10 @@ object Weeder2 {
             val error = IllegalRegexPattern(tree.loc)
             sctx.errors.add(error)
             WeededAst.Pattern.Error(tree.loc)
+          case Constant.BigDecimal(_) =>
+            val error = IllegalBigDecimalPattern(tree.loc)
+            sctx.errors.add(error)
+            WeededAst.Pattern.Error(tree.loc)
           case c =>
             Pattern.Cst(c, tree.loc)
         }
@@ -3300,7 +3304,7 @@ object Weeder2 {
       case (ident, arityToken) =>
         mapN(tryParsePredicateArity(arityToken)) {
           case arity =>
-            PredicateAndArity(ident, arity)
+            PredicateAndArity(Name.mkPred(ident), arity)
         }
     }
   }

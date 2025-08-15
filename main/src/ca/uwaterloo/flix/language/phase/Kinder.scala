@@ -295,7 +295,7 @@ object Kinder {
     case ResolvedAst.Declaration.Def(sym, spec0, exp0, loc) =>
       val kenv = getKindEnvFromSpec(spec0, kenv0, root)
       // if the spec is already calculated (this is a top-level def), then just look it up
-      val spec = renv.defSpecs.get(sym).getOrElse(visitSpec(spec0, Nil, None, kenv, root))
+      val spec = renv.defSpecs.getOrElse(sym, visitSpec(spec0, Nil, None, kenv, root))
       val exp = visitExp(exp0, kenv, root)(Scope.Top, renv, sctx, flix)
       KindedAst.Def(sym, spec, exp, loc)
   }
@@ -825,11 +825,11 @@ object Kinder {
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc)
 
-      case ResolvedAst.Expr.FixpointInject(exp0, pred, arity, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
+      case ResolvedAst.Expr.FixpointInjectInto(exps0, predsAndArities, loc) =>
+        val exps = exps0.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
-        KindedAst.Expr.FixpointInject(exp, pred, arity, tvar, evar, loc)
+        KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc)
 
       case ResolvedAst.Expr.FixpointProject(pred, arity, exp10, exp20, loc) =>
         val exp1 = visitExp(exp10, kenv0, root)

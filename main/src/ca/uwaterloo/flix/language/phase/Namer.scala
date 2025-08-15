@@ -59,7 +59,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      var errors = sctx.errors.asScala.toList
+      val errors = sctx.errors.asScala.toList
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
@@ -177,7 +177,7 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-         table
+        table
     }
   }
 
@@ -202,6 +202,7 @@ object Namer {
     case "Regex" => true
     case _ => false
   }
+
   /**
     * Adds the given declaration to the table.
     */
@@ -917,9 +918,9 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.FixpointFilter(ident, e, loc)
 
-    case DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointInject(e, pred, arity, loc)
+    case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
+      val es = exps.map(visitExp)
+      NamedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
     case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
@@ -1063,7 +1064,7 @@ object Namer {
   /**
     * Names the given ext pattern `pat0`.
     */
-  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
     case DesugaredAst.ExtPattern.Wild(loc) =>
       NamedAst.ExtPattern.Wild(loc)
 

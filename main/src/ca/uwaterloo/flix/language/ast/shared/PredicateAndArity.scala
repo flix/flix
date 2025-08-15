@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 Casper Dalgaard Nielsen
- *                Adam Yasser Tallouzi
+ * Copyright 2025 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.language.ast.shared
 
-mod Fixpoint3.Util {
-    ///
-    /// Unwraps an option.
-    ///
-    /// Causes runtime hole error when `x` is `None`.
-    ///
-    @Internal
-    pub def getOrCrash(x: Option[a]): a = match x {
-        case Some(v) => v
-        case None    => bug!("Attempted unwrapping none in getOrCrash")
-    }
+import ca.uwaterloo.flix.language.ast.Name
 
-}
+case class PredicateAndArity(pred: Name.Pred, arity: Int)

@@ -1,22 +1,7 @@
-/*
- * Copyright 2025 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 mod Test.Exp.ExtMatch {
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on various types.
+    /// `ematch` should support matching variants with different types.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -320,7 +305,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on various arities.
+    /// `ematch` should support matching on variants with different arities.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -371,7 +356,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on nullary constructors.
+    /// `ematch` should support matching on nullary variants.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -417,7 +402,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on unit constructors.
+    /// `ematch` should support matching on `Unit` variants.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -473,7 +458,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Other.
+    /// Unsorted.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test

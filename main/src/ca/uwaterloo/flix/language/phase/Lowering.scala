@@ -847,26 +847,30 @@ object Lowering {
       val resultType = Types.Datalog
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.FilterType, resultType, eff, loc)
 
-    case TypedAst.Expr.FixpointInject(exp, pred, _, eff, loc) =>
-      // Compute the types arguments of the functor F[(a, b, c)] or F[a].
-      val (targ, targs) = Type.eraseAliases(exp.tpe) match {
-        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-          case Some(TypeConstructor.Unit) => (tycon, Nil)
-          case _ => (tycon, List(innerType))
-        }
-        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
+    case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
+      val loweredExps = exps.zip(predsAndArities).map {
+        case (exp, PredicateAndArity(pred, _)) =>
+          // Compute the types arguments of the functor F[(a, b, c)] or F[a].
+          val (targ, targs) = Type.eraseAliases(exp.tpe) match {
+            case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
+              case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
+              case Some(TypeConstructor.Unit) => (tycon, Nil)
+              case _ => (tycon, List(innerType))
+            }
+            case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
+          }
+
+          // Compute the symbol of the function.
+          val sym = Defs.ProjectInto(targs.length)
+
+          // The type of the function.
+          val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
+
+          // Put everything together.
+          val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
+          LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, exp.eff, loc)
       }
-
-      // Compute the symbol of the function.
-      val sym = Defs.ProjectInto(targs.length)
-
-      // The type of the function.
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
-
-      // Put everything together.
-      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, eff, loc)
+      mergeExps(loweredExps, loc)
 
     case TypedAst.Expr.FixpointProject(pred, arity, exp, tpe, eff, loc) =>
       // Compute the arity of the predicate symbol.
@@ -962,12 +966,7 @@ object Lowering {
   private def visitTypeNonSchema(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
     case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
 
-    case Type.Var(sym, loc) => sym.kind match {
-      case Kind.SchemaRow =>
-        // Rewrite the kind of a Schema type variable to Star (because that is the kind of Types.Datalog)
-        Type.Var(sym.withKind(Kind.Star), loc)
-      case _ => tpe0 // Performance: Reuse tpe0.
-    }
+    case Type.Var(sym, loc) => tpe0
 
     // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
@@ -1777,6 +1776,7 @@ object Lowering {
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
+
     f(rel, loc).reverse
   }
 
@@ -1821,7 +1821,7 @@ object Lowering {
     )
 
   /**
-    Returns the `TypedAst` match expression
+    * Returns the `TypedAst` match expression
     * {{{
     *   match predSym {
     *     case PredSym.PredSym(name, _) => match name {

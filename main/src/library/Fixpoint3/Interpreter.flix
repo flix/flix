@@ -145,7 +145,7 @@ mod Fixpoint3.Interpreter {
         // Create `Indexes` from `program`.
         let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
         let indexNum = match Map.maximumValue(posMap) {
-            case None => 0
+            case None         => 0
             case Some((_, v)) => v + 1
         };
         let indexes = Array.empty(rc, indexNum);
@@ -154,7 +154,7 @@ mod Fixpoint3.Interpreter {
             foreach ((num, search) <- ForEach.withIndex(searches)) {
                 let pos = match Map.get((relSym, num), posMap) {
                     case Some(v) => v
-                    case None => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
+                    case None    => bug!("In Fixpoint.Interpreter.interpretWithInput: ${relSym} has no index!")
                 };
                 storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
             }

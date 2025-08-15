@@ -79,7 +79,7 @@ mod Fixpoint3.Provenance {
     ///
     def lookup(rc: Region[r], idb: ProvIDB, searchAndVals: Vector[(Int32, Boxed)], arity: Int32, lookupStruct: ProvLookupStruct[r], pred: PredSym): Option[List[(Vector[Boxed], Int64, Int32)]] \ r + IO =
         match Map.get(makeFakeRelSym(pred), idb) {
-            case None => unreachable!() // No facts for `pred`.
+            case None           => unreachable!() // No facts for `pred`.
             case Some(fullTree) =>
                 let (search, vals) = Vector.unzip(searchAndVals);
                 let innerMap = BPlusTree.computeIfAbsent(() -> BPlusTree.empty(rc), pred, lookupStruct);
@@ -117,15 +117,15 @@ mod Fixpoint3.Provenance {
     /// respect to `ProvIDB`, and it is not a ground atom. Furthermore `subproofs`
     /// contains the proofs/facts of the body which (could have) derived `P(tuple)`.
     ///
-    enum ProofTree {
+    enum ProofTree[r: Region] {
         case EDB(PredSym, Vector[Boxed])
         case Negative(PredSym, Vector[Boxed])
-        case IDB(PredSym, Vector[Boxed], Vector[ProofTree])
+        case IDB(PredSym, Vector[Boxed], Array[ProofTree[r], r])
     }
 
     mod ProofTree {
         @Internal
-        pub def toString(p: ProofTree, indentChild: Int32): String = match p {
+        pub def toString(p: ProofTree[r], indentChild: Int32): String \ r = match p {
             case EDB(pred, fact) =>
                 let indentCur = String.repeat(indentChild, " ");
                 let factString = Vector.join(", ", fact);
@@ -137,13 +137,9 @@ mod Fixpoint3.Provenance {
             case IDB(pred, fact, subs) =>
                 let factString = Vector.join(", ", fact);
                 let indentCur = String.repeat(indentChild, " ");
-                let subProofs = Vector.joinWith(sub -> toString(sub, indentChild + 4), "${String.lineSeparator()}", subs);
+                let subProofs = Array.joinWith(sub -> toString(sub, indentChild + 4), "${String.lineSeparator()}", subs);
                 "${indentCur}${pred}(${factString}). Proof:${String.lineSeparator()}${subProofs}"
         }
-    }
-
-    instance ToString[ProofTree] {
-        pub def toString(p: ProofTree): String = ProofTree.toString(p, 0)
     }
 
     ///
@@ -151,10 +147,10 @@ mod Fixpoint3.Provenance {
     ///
     /// The tree is traversed in a pre-order fashion meaning that for `IDB` atoms the atom is listed before the children.
     ///
-    def filterAndFlattenProof(p: ProofTree, filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] = region rc {
+    def filterAndFlattenProof(p: ProofTree[r], filter: PredSym -> Bool): Vector[(PredSym, Vector[Boxed])] \ r = region rc {
         let res = MutList.empty(rc);
-        def recurse(workList: List[ProofTree]) = match workList {
-            case Nil => ()
+        def recurse(workList: List[ProofTree[r]]) = match workList {
+            case Nil                               => ()
             case ProofTree.EDB(pred, fact) :: tail =>
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
@@ -163,7 +159,7 @@ mod Fixpoint3.Provenance {
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
                 if (filter(pred)) MutList.push((pred, fact), res)
                 else ();
-                let furtherWork = Vector.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
+                let furtherWork = Array.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
                 recurse(furtherWork)
         }};
         recurse(p :: Nil);
@@ -195,53 +191,86 @@ mod Fixpoint3.Provenance {
     def provQueryInternal(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] \ IO = match d {
         case Provenance(rules, provIdb) => region rc {
             let annotation = match Map.get(makeFakeRelSym(predSym), provIdb) {
-                case None => None
+                case None    => None
                 case Some(v) => match BPlusTree.get(fact, v) {
                     case None => None
                     case Some(annotations) => Some(annotations)
                 }
             };
             match annotation {
-                case None => None
+                case None                    => None
                 case Some((depth, ruleUsed)) =>
                     let lookupStruct = BPlusTree.empty(rc);
                     let tree = buildProof(predSym, fact, depth, ruleUsed, rules, provIdb, lookupStruct, rc);
                     Some(filterAndFlattenProof(tree, p -> Vector.memberOf(p, withh)))
             }
         }
-        case _ =>
-            bug!("In Fixpoint.Provenance.provQuery: Can only build a proof from a provenance model")
+        case _ => bug!("In Fixpoint.Provenance.provQuery: Can only build a proof from a provenance model")
     }
 
     ///
-    /// Builds the provenance tree for `predSym(fact)` where `fact` was derived with
-    /// depth `depth` using `rules[ruleUsed]`.
+    /// Builds the provenance tree for `topPredSym(topFact)` where `topFact` was derived with
+    /// depth `topDepth` using `rules[topRuleUsed]`.
     ///
-    /// `ruleUsed == -1` means that `predSym(fact)` is an `EDB` atom. `ruleUsed == -2`
-    /// means that `predSym(fact)` is a negative fact/not a fact in the model.
+    /// `topRuleUsed == -1` means that `topPredSym(topFact)` is an `EDB` atom. `topRuleUsed == -2`
+    /// means that `topPredSym(topFact)` is a negative fact/not a fact in the model.
     ///
-    def buildProof(predSym: PredSym, fact: Vector[Boxed], depth: Int64, ruleUsed: Int32, rules: Vector[Constraint], provIdb: ProvIDB, lookupStruct: ProvLookupStruct[r], rc: Region[r]): ProofTree \ r + IO = {
-        if (ruleUsed == -1) {
-            ProofTree.EDB(predSym, fact)
-        } else if (ruleUsed == -2) {
-            ProofTree.Negative(predSym, fact)
-        } else {
-            let rule = Vector.get(ruleUsed, rules);
-            let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
-            let Constraint.Constraint(_, bodyPreds) = rule;
-            let relevantPreds = bodyPreds |>
-                Vector.filter(bodyAtom -> match bodyAtom {
-                    case BodyPredicate.BodyAtom(_, _, _, _, _) => true
-                    case _ => false
-                });
-            let childProofs = Vector.zip(relevantPreds, bodyAtoms) |>
-                Vector.map(match (bodyP, (bodyFact, bodyDepth, bodyRule)) -> match bodyP {
-                    case BodyPredicate.BodyAtom(p, _, _, _, _) =>
-                        buildProof(p, bodyFact, bodyDepth, bodyRule, rules, provIdb, lookupStruct, rc)
-                    case _ => unreachable!()
-                });
-            ProofTree.IDB(predSym, fact, childProofs)
-        }
+    def buildProof(
+        topPredSym: PredSym,
+        topFact: Vector[Boxed],
+        topDepth: Int64,
+        topRuleUsed: Int32,
+        rules: Vector[Constraint],
+        provIdb: ProvIDB,
+        lookupStruct: ProvLookupStruct[r],
+        rc: Region[r]
+    ): ProofTree[r] \ r + IO = {
+        let resultArr = Array.empty(rc, 1);
+        ///
+        /// This is the workhorse for assembling the proof.
+        ///
+        /// Elements of `workList` consist of `(savePos, saveArr, predSym, (fact, depth, ruleUsed))`.
+        /// The meaning is that the proof for `predSym(fact)` with annotations `(depth, ruleUsed)`
+        /// should be stored at `saveArr[savePos]`.
+        ///
+        /// Proofs of IDB facts are initialized without sub proofs. They contain an empty
+        /// array where sub proofs should be saved. Constructing sub proofs and adding them
+        /// to the array is done by adding a job to `workList`. The job will fill a specific
+        /// position in the array with a sub proof. This sub proof might itself need further
+        /// jobs to finish it and create new jobs.
+        ///
+        /// The purpose is to allow `buildProofInternal` to be tail-recursive.
+        /// Without the `workList` approach deep proofs would lead to a stack overflow.
+        ///
+        def buildProofInternal(workList: List[(Int32, Array[ProofTree[r], r], PredSym, (Vector[Boxed], Int64, Int32))]) = match workList {
+            case Nil => Array.get(0, resultArr)
+            case (savePos, saveArr, predSym, (fact, depth, ruleUsed)) :: tail => match ruleUsed {
+                case -1 =>
+                    Array.put(ProofTree.EDB(predSym, fact), savePos, saveArr);
+                    buildProofInternal(tail)
+                case -2 =>
+                    Array.put(ProofTree.Negative(predSym, fact), savePos, saveArr);
+                    buildProofInternal(tail)
+                case _ =>
+                    let rule = Vector.get(ruleUsed, rules);
+                    let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
+                    let Constraint.Constraint(_, bodyPreds) = rule;
+                    let relevantPreds = bodyPreds |>
+                        Vector.filterMap(bodyAtom -> match bodyAtom {
+                            case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
+                            case _ => None
+                        });
+                    let ref = Ref.fresh(rc, tail);
+                    let childProofs = Array.empty(rc, Array.length(bodyAtoms));
+                    foreach((i, atom) <- ForEach.withIndex(relevantPreds)) {
+                        let pred = Array.get(i, bodyAtoms);
+                        Ref.put((i, childProofs, atom, pred) :: Ref.get(ref), ref)
+                    };
+                    Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
+                    buildProofInternal(Ref.get(ref))
+            }
+        };
+        buildProofInternal((0, resultArr, topPredSym, (topFact, topDepth, topRuleUsed)) :: Nil)
     }
 
     ///
@@ -261,48 +290,75 @@ mod Fixpoint3.Provenance {
         provIdb: ProvIDB,
         lookupStruct: ProvLookupStruct[r],
         rule: Constraint
-    ): Vector[(Vector[Boxed], Int64, Int32)] \ r + IO = {
+    ): Array[(Vector[Boxed], Int64, Int32), r] \ r + IO = {
         let Constraint.Constraint(HeadPredicate.HeadAtom(_, _, headTerms), bodyPreds) = rule;
         // Array which contains the current assignment of body atoms.
         // Not all body predicates will be atoms. After termination of `loop` a
         // `None` at position `i` will be mean that `rule[i]` was not a body atom.
         let bodyValues: Array[Option[(Vector[Boxed], Int64, Int32)], r] = Array.repeat(rc, Vector.length(bodyPreds), None);
-        // A mapping from `VarSym` to its current value.
-        let getValOfVar: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         let headApps = Vector.zip(headTerms, fact) |>
             Vector.filter(match (h, _) -> match h {
-                case (HeadTerm.App1(_, _)) => true
-                case (HeadTerm.App2(_, _, _)) => true
-                case (HeadTerm.App3(_, _, _, _)) => true
-                case (HeadTerm.App4(_, _, _, _, _)) => true
+                case (HeadTerm.App1(_, _))             => true
+                case (HeadTerm.App2(_, _, _))          => true
+                case (HeadTerm.App3(_, _, _, _))       => true
+                case (HeadTerm.App4(_, _, _, _, _))    => true
                 case (HeadTerm.App5(_, _, _, _, _, _)) => true
-                case _ => false
+                case _                                 => false
+            });
+        let guards = bodyPreds |>
+            Vector.filter(bodyAtom -> match bodyAtom {
+                case BodyPredicate.Guard1(_, _)             => true
+                case BodyPredicate.Guard2(_, _, _)          => true
+                case BodyPredicate.Guard3(_, _, _, _)       => true
+                case BodyPredicate.Guard4(_, _, _, _, _)    => true
+                case BodyPredicate.Guard5(_, _, _, _, _, _) => true
+                // Filter out Guard0. They must be true.
+                case _                                 => false
             });
         ///
         /// Returns the current value of `varName`.
         ///
-        def getVal(varName) = getOrCrash(MutMap.get(varName, getValOfVar));
+        def getVal(varName, valToVar) = getOrCrash(Map.get(varName, valToVar));
 
         ///
         /// Register the values new values of `varNames` to be `matchedFacts`.
         ///
-        /// Concretely, we update the `getValOfVar` to contain `varNames[i] => matchedFacts[i]`.
+        /// Concretely, we update the `varSymToVal` to contain `varNames[i] => matchedFacts[i]`.
         ///
-        def registerVars(varNames, matchedFact) =
+        def registerVars(varNames, matchedFact, varSymToVal) = {
+            let result = Map.toMutMap(rc, varSymToVal);
             foreach ((i, v) <- ForEach.withIndex(varNames)) {
-                MutMap.put(v, Vector.get(i, matchedFact), getValOfVar)
+                MutMap.put(v, Vector.get(i, matchedFact), result)
             };
+            MutMap.toMap(result)
+        };
+
+        ///
+        /// Returns true if all guards are satisfied by the current variable assignment.
+        ///
+        def areGuardsSatisfied(varSymToVal): Bool = {
+            guards |>
+                Vector.forAll(guard -> match guard {
+                    case BodyPredicate.Guard1(f, v1)                 => f(getVal(v1, varSymToVal))
+                    case BodyPredicate.Guard2(f, v1, v2)             => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case BodyPredicate.Guard3(f, v1, v2, v3)         => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case BodyPredicate.Guard4(f, v1, v2, v3, v4)     => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) => f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
+                    case _                                           => unreachable!()
+                })
+        };
+
         ///
         /// Returns true if all head applications are satisfied by the current variable assignment.
         ///
-        def areHeadApplicationsSatisfied(): Bool = {
+        def areHeadApplicationsSatisfied(varSymToVal): Bool = {
             headApps |>
                 Vector.forAll(match (app, val) -> match app {
-                    case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1))
-                    case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1), getVal(v2))
-                    case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1), getVal(v2), getVal(v3))
-                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1), getVal(v2), getVal(v3), getVal(v4))
-                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1), getVal(v2), getVal(v3), getVal(v4), getVal(v5))
+                    case (HeadTerm.App1(f, v1))                 => val == f(getVal(v1, varSymToVal))
+                    case (HeadTerm.App2(f, v1, v2))             => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal))
+                    case (HeadTerm.App3(f, v1, v2, v3))         => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal))
+                    case (HeadTerm.App4(f, v1, v2, v3, v4))     => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal))
+                    case (HeadTerm.App5(f, v1, v2, v3, v4, v5)) => val == f(getVal(v1, varSymToVal), getVal(v2, varSymToVal), getVal(v3, varSymToVal), getVal(v4, varSymToVal), getVal(v5, varSymToVal))
                     case _ => unreachable!()
                 })
         };
@@ -312,15 +368,13 @@ mod Fixpoint3.Provenance {
         /// Attempts to satisfy `bodyPreds`, having already found a satisfying assignment
         /// for `bodyPreds[i]`, where `0 <= i < index`.
         ///
-        /// Destructively updates `getValOfVar` and `bodyValues` with newly bound values.
-        ///
-        /// Returns `true` if the current values in `getValOfVar` and `bodyValues` satisfies `rule`
+        /// Returns `true` if the current values in `varSymToVal` and `bodyValues` satisfies `rule`
         /// and `false` otherwise.
         ///
-        def loop(index) = {
+        def loop(index, varSymToVal) = {
             if (index == Vector.length(bodyPreds)) {
                 // Base case. We have satisfied all atoms and found a satisfying assignment.
-                areHeadApplicationsSatisfied()
+                areHeadApplicationsSatisfied(varSymToVal) and areGuardsSatisfied(varSymToVal)
             } else {
                 match Vector.get(index, bodyPreds) {
                     case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, expected) =>
@@ -330,9 +384,9 @@ mod Fixpoint3.Provenance {
                         // must have value `val`. View this as a `zipWithIndex |> filter`.
                         let filterAsList: Vector[(Int32, Boxed)] = ((Nil, 0), expected)
                             ||> Vector.foldLeft(match (acc, i) -> t -> match t {
-                                case BodyTerm.Wild => (acc, i + 1)
-                                case BodyTerm.Var(v) => match MutMap.get(v, getValOfVar) {
-                                    case None => (acc, i + 1)
+                                case BodyTerm.Wild   => (acc, i + 1)
+                                case BodyTerm.Var(v) => match Map.get(v, varSymToVal) {
+                                    case None      => (acc, i + 1)
                                     case Some(val) => ((i, val) :: acc, i + 1)
                                 }
                                 case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
@@ -341,19 +395,19 @@ mod Fixpoint3.Provenance {
                         // satisfied.
                         let freeVars = expected |>
                             Vector.filterMap(t -> match t {
-                                case BodyTerm.Var(v) => match MutMap.memberOf(v, getValOfVar) {
+                                case BodyTerm.Var(v) => match Map.memberOf(v, varSymToVal) {
                                     case false => Some(v)
-                                    case true => None
+                                    case true  => None
                                 }
                                 // We need to keep the order and positions for `registerVars`.
                                 // We do not care about what `_` has been assigned to.
                                 case BodyTerm.Wild => Some(VarSym.VarSym("_"))
-                                case _ => None
+                                case _             => None
                             });
                         // Get a list of all values that match the current assignment of body atoms.
                         let matches = lookup(rc, provIdb, filterAsList, Vector.length(expected), lookupStruct, pred);
                         match matches {
-                            case None => false // Nothing matches the current assignment. Return false to indicate this.
+                            case None        => false // Nothing matches the current assignment. Return false to indicate this.
                             case Some(facts) => {
                                 // Go through the found facts and filter out any fact that has a depth higher than
                                 // the fact we are trying to prove.
@@ -367,8 +421,8 @@ mod Fixpoint3.Provenance {
                                         } else {
                                             // This combination could be delayed until we knew we had a satisfying assignment.
                                             Array.put(Some((combineToFact(filterAsList, bodyFact), bodyDepth, bodyRule)), index, bodyValues);
-                                            registerVars(freeVars, bodyFact);
-                                            loop(index + 1)
+                                            let newMap = registerVars(freeVars, bodyFact, varSymToVal);
+                                            loop(index + 1, newMap)
                                         }
                                     })
                             }
@@ -377,12 +431,12 @@ mod Fixpoint3.Provenance {
                         // `not pred(tuple)` is true if `pred(tuple)` is not in the model.
                         let tuple = expected |>
                             Vector.map(t -> match t {
-                                case BodyTerm.Var(v) => getVal(v)
+                                case BodyTerm.Var(v) => getVal(v, varSymToVal)
                                 case BodyTerm.Lit(val) => val
                                 case BodyTerm.Wild => unreachable!()
                             });
                         let isMatch = match Map.get(makeFakeRelSym(pred), provIdb) {
-                            case None => false
+                            case None        => false
                             case Some(facts) => BPlusTree.memberOf(tuple, facts)
                         };
                         if (isMatch)
@@ -390,45 +444,41 @@ mod Fixpoint3.Provenance {
                         else {
                             // No need to save the match. Negative atoms cannot bind variables.
                             Array.put(Some((tuple, -2i64, -2)), index, bodyValues);
-                            loop(index + 1)
+                            loop(index + 1, varSymToVal)
                         }
+                    case BodyPredicate.Functional(outVars, func, inVars) =>
+                        let args = Vector.map(varSym -> getVal(varSym, varSymToVal), inVars);
+                        let result = func(args);
+                        Vector.exists(tuple -> {
+                            let newMap = registerVars(outVars, tuple, varSymToVal);
+                            loop(index + 1, newMap)
+                        }, result)
+                    // We evaluate these later
                     case BodyPredicate.Guard0(_) =>
-                        // No need to evaluate `f()`, it must be `true`, otherwise what we know is a fact
-                        // would not have been created by this rule.
-                        loop(index + 1)
-                    case BodyPredicate.Guard1(f, v1) =>
-                        if (f(getVal(v1)))
-                            loop(index + 1)
-                        else false
-                    case BodyPredicate.Guard2(f, v1, v2) =>
-                        if (f(getVal(v1), getVal(v2)))
-                            loop(index + 1)
-                        else false
-                    case BodyPredicate.Guard3(f, v1, v2, v3) =>
-                        if (f(getVal(v1), getVal(v2), getVal(v3)))
-                            loop(index + 1)
-                        else false
-                    case BodyPredicate.Guard4(f, v1, v2, v3, v4) =>
-                        if (f(getVal(v1), getVal(v2), getVal(v3), getVal(v4)))
-                            loop(index + 1)
-                        else false
-                    case BodyPredicate.Guard5(f, v1, v2, v3, v4, v5) =>
-                        if (f(getVal(v1), getVal(v2), getVal(v3), getVal(v4), getVal(v5)))
-                            loop(index + 1)
-                        else false
-                    // Functional in provenance is not supported at the moment.
-                    case BodyPredicate.Functional(_, _, _) => unreachable!()
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard1(_, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard2(_, _, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard3(_, _, _, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard4(_, _, _, _, _) =>
+                        loop(index + 1, varSymToVal)
+                    case BodyPredicate.Guard5(_, _, _, _, _, _) =>
+                        loop(index + 1, varSymToVal)
                 }
             }};
+        // A mapping from `VarSym` to its current value.
+        let varSymToVal: MutMap[VarSym, Boxed, r] = MutMap.empty(rc);
         // Bind all variables in the head atom to the values of `fact`.
         foreach ((i, h) <- ForEach.withIndex(headTerms)) {
             match h {
-                case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), getValOfVar)
-                case _ => ()
+                case HeadTerm.Var(v) => MutMap.put(v, Vector.get(i, fact), varSymToVal)
+                case _               => ()
             }
         };
-        loop(0);
-        bodyValues |> Array.filterMap(rc, identity) |> Array.toVector
+        loop(0, MutMap.toMap(varSymToVal));
+        bodyValues |> Array.filterMap(rc, identity)
     }
 
     ///

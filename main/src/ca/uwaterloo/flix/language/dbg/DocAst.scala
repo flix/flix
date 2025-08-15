@@ -58,7 +58,7 @@ object DocAst {
 
     case class Tuple(elms: List[Expr]) extends Atom
 
-    case class Tag(sym: Symbol.CaseSym, args: List[Expr]) extends Atom
+    case class Tag(sym: Sym, args: List[Expr]) extends Atom
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class AsIs(s: String) extends Atom
@@ -92,6 +92,8 @@ object DocAst {
     case class Branch(d: Expr, branches: Map[Symbol.LabelSym, Expr]) extends Atom
 
     case class Match(d: Expr, branches: List[(Expr, Option[Expr], Expr)]) extends Atom
+
+    case class ExtMatch(d: Expr, branches: List[(Expr, Expr)]) extends Atom
 
     case class TypeMatch(d: Expr, branches: List[(Expr, Type, Expr)]) extends Atom
 
@@ -170,7 +172,13 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+    def Tag(sym: Symbol.CaseSym, exprs: List[Expr]): Expr =
+      Tag(Sym(sym), exprs)
+
+    def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
+      Keyword("xvar", Tag(Sym(label), exprs))
+
+    def Untag(d: Expr, idx: Int): Expr =
       Keyword("untag_" + idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
@@ -496,6 +504,20 @@ object DocAst {
     def Var(sym: Symbol.UnkindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
+  object Pattern {
+
+    def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
+      Expr.Tag(Sym(label), exprs)
+
+  }
+
+  case class Sym(private val symbol: String) {
+    override def toString: String = symbol
+  }
+
+  def Sym(label: Name.Label): Sym = Sym(label.name)
+
+  def Sym(sym: Symbol.CaseSym): Sym = Sym(sym.toString)
 }
 
 
