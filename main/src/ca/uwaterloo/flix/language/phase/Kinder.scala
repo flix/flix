@@ -816,6 +816,13 @@ object Kinder {
         val s = visitHeadPredicate(select, kenv0, root)
         KindedAst.Expr.FixpointQueryWithProvenance(es, s, withh, Type.freshVar(Kind.Star, loc), loc)
 
+      case ResolvedAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
+        val es = exps.map(visitExp(_, kenv0, root))
+        val ss = exps.map(visitExp(_, kenv0, root))
+        val f = from.map(visitBodyPredicate(_, kenv0, root))
+        val w = where.map(visitExp(_, kenv0, root))
+        KindedAst.Expr.FixpointQueryWithSelect(es, ss, f, w, Type.freshVar(Kind.Star, loc), loc)
+
       case ResolvedAst.Expr.FixpointSolve(exp0, mode, loc) =>
         val exp = visitExp(exp0, kenv0, root)
         KindedAst.Expr.FixpointSolve(exp, mode, loc)

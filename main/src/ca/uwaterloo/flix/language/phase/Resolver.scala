@@ -1483,6 +1483,22 @@ object Resolver {
           ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
       }
 
+    case NamedAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      val ssVal = traverse(selects)(resolveExp(_, scp0))
+      // We cannot call resolvePredicateBody as it does not allow new variables to be introduced
+      val fVal = traverse(from) {
+        case NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc1) =>
+          val ts = terms.map(resolvePattern(_, scp0, ns0, root))
+          Validation.Success(ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc1))
+        case _ => throw InternalCompilerException("unreachable", loc)
+      }
+      val wVal = traverse(where)(resolveExp(_, scp0))
+      mapN(esVal, ssVal, fVal, wVal) {
+        case (es, s, f, w) =>
+          ResolvedAst.Expr.FixpointQueryWithSelect(es, s, f, w, loc)
+      }
+
     case NamedAst.Expr.FixpointSolve(exp, mode, loc) =>
       val eVal = resolveExp(exp, scp0)
       mapN(eVal) {
