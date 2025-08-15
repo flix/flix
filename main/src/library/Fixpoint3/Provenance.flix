@@ -261,6 +261,62 @@ mod Fixpoint3.Provenance {
             }
         };
         buildProofInternal((0, resultArr, topPredSym, (topFact, topDepth, topRuleUsed)) :: Nil)
+    def buildProof(
+        topPredSym: PredSym,
+        topFact: Vector[Boxed],
+        topDepth: Int64,
+        topRuleUsed: Int32,
+        rules: Vector[Constraint],
+        provIdb: ProvIDB,
+        lookupStruct: ProvLookupStruct[r],
+        rc: Region[r]
+    ): ProofTree[r] \ r + IO = {
+        let resultArr = Array.empty(rc, 1);
+        ///
+        /// This is the workhorse for assembling the proof.
+        ///
+        /// Elements of `workList` consist of `(savePos, saveArr, predSym, (fact, depth, ruleUsed))`.
+        /// The meaning is that the proof for `predSym(fact)` with annotations `(depth, ruleUsed)`
+        /// should be stored at `saveArr[savePos]`.
+        ///
+        /// Proofs of IDB facts are initialized without sub proofs. They contain an empty
+        /// array where sub proofs should be saved. Constructing sub proofs and adding them
+        /// to the array is done by adding a job to `workList`. The job will fill a specific
+        /// position in the array with a sub proof. This sub proof might itself need further
+        /// jobs to finish it and create new jobs.
+        ///
+        /// The purpose is to allow `buildProofInternal` to be tail-recursive.
+        /// Without the `workList` approach deep proofs would lead to a stack overflow.
+        ///
+        def buildProofInternal(workList: List[(Int32, Array[ProofTree[r], r], PredSym, (Vector[Boxed], Int64, Int32))]) = match workList {
+            case Nil => Array.get(0, resultArr)
+            case (savePos, saveArr, predSym, (fact, depth, ruleUsed)) :: tail => match ruleUsed {
+                case -1 =>
+                    Array.put(ProofTree.EDB(predSym, fact), savePos, saveArr);
+                    buildProofInternal(tail)
+                case -2 =>
+                    Array.put(ProofTree.Negative(predSym, fact), savePos, saveArr);
+                    buildProofInternal(tail)
+                case _ =>
+                    let rule = Vector.get(ruleUsed, rules);
+                    let bodyAtoms = getMatchingBody(fact, depth, rc, provIdb, lookupStruct, rule);
+                    let Constraint.Constraint(_, bodyPreds) = rule;
+                    let relevantPreds = bodyPreds |>
+                        Vector.filterMap(bodyAtom -> match bodyAtom {
+                            case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
+                            case _ => None
+                        });
+                    let ref = Ref.fresh(rc, tail);
+                    let childProofs = Array.empty(rc, Array.length(bodyAtoms));
+                    foreach((i, atom) <- ForEach.withIndex(relevantPreds)) {
+                        let pred = Array.get(i, bodyAtoms);
+                        Ref.put((i, childProofs, atom, pred) :: Ref.get(ref), ref)
+                    };
+                    Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
+                    buildProofInternal(Ref.get(ref))
+            }
+        };
+        buildProofInternal((0, resultArr, topPredSym, (topFact, topDepth, topRuleUsed)) :: Nil)
     }
 
     ///

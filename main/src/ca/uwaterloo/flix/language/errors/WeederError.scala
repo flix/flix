@@ -617,6 +617,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal BigDecimal pattern.
+    *
+    * @param loc the location where the illegal BigDecimal pattern occurs.
+    */
+  case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal BigDecimal pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal BigDecimal pattern.
+         |
+         |${code(loc, "BigDecimal not allowed here.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal trait constraint parameter.
     *
     * @param loc the location where the error occurred.

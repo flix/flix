@@ -968,12 +968,7 @@ object Lowering {
   private def visitTypeNonSchema(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
     case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
 
-    case Type.Var(sym, loc) => sym.kind match {
-      case Kind.SchemaRow =>
-        // Rewrite the kind of a Schema type variable to Star (because that is the kind of Types.Datalog)
-        Type.Var(sym.withKind(Kind.Star), loc)
-      case _ => tpe0 // Performance: Reuse tpe0.
-    }
+    case Type.Var(sym, loc) => tpe0
 
     // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
