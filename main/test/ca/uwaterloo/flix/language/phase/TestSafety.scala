@@ -892,4 +892,83 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalMethodEffect](result)
   }
+
+  test("IllegalCheckedCast.01") {
+    val input =
+      """
+        |import java.lang.StringBuilder
+        |import java.io.FileWriter
+        |
+        |def f(): FileWriter =
+        |    checked_cast(new StringBuilder() as FileWriter)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCast.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |import java.io.FileWriter
+        |
+        |def f(): FileWriter =
+        |    checked_cast(new Object() as FileWriter)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCast.03") {
+    val input =
+      """
+        |import java.io.FileReader
+        |import java.io.FileWriter
+        |
+        |def f(): FileWriter =
+        |    checked_cast(new FileReader("test.txt") as FileWriter)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCast](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.01") {
+    val input =
+      """
+        |import java.lang.Object
+        |
+        |def f(): Bool =
+        |    checked_cast(new Object() as Bool)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.02") {
+    val input =
+      """
+        |import java.lang.String
+        |
+        |def f(): Int32 =
+        |    checked_cast(new String("123") as Int32)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
+
+  test("IllegalCheckedCastToNonJava.03") {
+    val input =
+      """
+        |import java.lang.StringBuilder
+        |
+        |enum Color {
+        |    case Red, Green, Blue
+        |}
+        |
+        |def f(): Color =
+        |    checked_cast(new StringBuilder() as Color)
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[SafetyError.IllegalCheckedCastToNonJava](result)
+  }
 }
