@@ -151,6 +151,7 @@ object LoweredAstPrinter {
     */
   private def printExtPattern(pattern: LoweredAst.ExtPattern): DocAst.Expr = pattern match {
     case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtPattern.Unit(_, _) => DocAst.Expr.Unit
     case ExtPattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
   }
 

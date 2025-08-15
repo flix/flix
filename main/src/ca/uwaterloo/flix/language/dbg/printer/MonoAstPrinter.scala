@@ -101,6 +101,7 @@ object MonoAstPrinter {
     */
   private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = pattern match {
     case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtPattern.Unit(_, _) => DocAst.Expr.Unit
     case ExtPattern.Var(sym, _, _, _) => printVar(sym)
   }
 
