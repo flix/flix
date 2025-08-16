@@ -2736,7 +2736,11 @@ object Parser2 {
       assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
-      nameUnqualified(NAME_JAVA)
+      if (eat(TokenKind.InfixFunction)) {
+        ()
+      } else {
+        nameUnqualified(NAME_JAVA)
+      }
       Decl.parameters()
       expect(TokenKind.Colon)
       Type.typeAndEffect()
