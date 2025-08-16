@@ -769,6 +769,9 @@ object SemanticTokensProvider {
     case ExtPattern.Wild(_, loc) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
       Iterator(t)
+
+    case ExtPattern.Unit(_, _) => Iterator.empty
+
     case ExtPattern.Var(bnd, _, loc) =>
       val o = getSemanticTokenType(bnd.sym, bnd.tpe)
       val t = SemanticToken(o, Nil, loc)

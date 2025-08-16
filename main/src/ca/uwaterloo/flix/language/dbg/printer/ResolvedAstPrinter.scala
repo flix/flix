@@ -157,6 +157,7 @@ object ResolvedAstPrinter {
     */
   private def printExtPattern(pattern: ResolvedAst.ExtPattern): DocAst.Expr = pattern match {
     case ExtPattern.Wild(_) => DocAst.Expr.Wild
+    case ExtPattern.Unit(_) => DocAst.Expr.Unit
     case ExtPattern.Var(sym, _) => printVarSym(sym)
     case ExtPattern.Error(_) => DocAst.Expr.Error
   }

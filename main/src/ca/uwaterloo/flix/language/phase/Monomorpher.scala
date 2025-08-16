@@ -728,6 +728,7 @@ object Monomorpher {
 
   private def specializeExtPat(pat0: LoweredAst.ExtPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
     case LoweredAst.ExtPattern.Wild(tpe, loc) => (MonoAst.ExtPattern.Wild(subst(tpe), loc), Map.empty)
+    case LoweredAst.ExtPattern.Unit(tpe, loc) => (MonoAst.ExtPattern.Unit(subst(tpe), loc), Map.empty)
     case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       (MonoAst.ExtPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))

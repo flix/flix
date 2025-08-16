@@ -1068,6 +1068,9 @@ object Namer {
     case DesugaredAst.ExtPattern.Wild(loc) =>
       NamedAst.ExtPattern.Wild(loc)
 
+    case DesugaredAst.ExtPattern.Unit(loc) =>
+      NamedAst.ExtPattern.Unit(loc)
+
     case DesugaredAst.ExtPattern.Var(ident, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)

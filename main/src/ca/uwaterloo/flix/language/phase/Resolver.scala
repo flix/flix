@@ -1976,6 +1976,9 @@ object Resolver {
     case NamedAst.ExtPattern.Wild(loc) =>
       ResolvedAst.ExtPattern.Wild(loc)
 
+    case NamedAst.ExtPattern.Unit(loc) =>
+      ResolvedAst.ExtPattern.Unit(loc)
+
     case NamedAst.ExtPattern.Var(sym, loc) =>
       ResolvedAst.ExtPattern.Var(sym, loc)
 

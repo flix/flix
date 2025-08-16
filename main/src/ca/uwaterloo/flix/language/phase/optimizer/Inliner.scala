@@ -425,6 +425,9 @@ object Inliner {
     case MonoAst.ExtPattern.Wild(tpe, loc) =>
       (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
 
+    case MonoAst.ExtPattern.Unit(tpe, loc) =>
+      (MonoAst.ExtPattern.Unit(tpe, loc), Map.empty)
+
     case MonoAst.ExtPattern.Var(sym, tpe, occur, loc) => occur match {
       case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
 
