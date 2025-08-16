@@ -135,4 +135,11 @@ case class CaseSetSubstitution(m: Map[Int, SetFormula]) {
     }
     Substitution(map)
   }
+
+  /**
+    * Check that the domains of `this` and `that` substitutions are disjoint.
+    */
+  def isDisjointDomain(that: CaseSetSubstitution): Boolean = {
+    this.m.keySet.intersect(that.m.keySet).isEmpty
+  }
 }

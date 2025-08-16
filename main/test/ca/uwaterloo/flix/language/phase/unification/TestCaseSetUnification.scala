@@ -410,10 +410,12 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
 
   private def assertUnifies(tpe1: Type, tpe2: Type, renv: RigidityEnv, enumSym: Symbol.RestrictableEnumSym): Unit = {
     assert(CaseSetUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym).isDefined)
+    assert(CaseSetZhegalkinUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym).isDefined)
   }
 
   private def assertDoesNotUnify(tpe1: Type, tpe2: Type, renv: RigidityEnv, enumSym: Symbol.RestrictableEnumSym): Unit = {
     assert(CaseSetUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym).isEmpty)
+    assert(CaseSetZhegalkinUnification.unify(tpe1, tpe2, renv, enumSym.universe, enumSym).isEmpty)
   }
 
 }
