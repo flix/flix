@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2025 Matthew Lutze, Alex Asafov
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.*
@@ -47,6 +62,10 @@ object CaseSetZhegalkinUnification {
     }
   }
 
+  /**
+    * Returns the given set formula as a Zhegalkin polynomial.
+    * The universe of the Zhegalkin algebra must be a finite set of cases of restrictable enum.
+    */
   private def toZhegalkin(f: SetFormula)(implicit renv: Set[Int], alg: ZhegalkinAlgebra[FiniteSet[Int]], lat: BoolLattice[FiniteSet[Int]]): ZhegalkinExpr[FiniteSet[Int]] = f match {
     case SetFormula.Cst(s) => ZhegalkinExpr(FiniteSet(s), Nil)
     case SetFormula.Var(x) => ZhegalkinExpr(lat.Bot, List(ZhegalkinTerm(lat.Top, SortedSet(ZhegalkinVar(x, flexible = !renv.contains(x))))))
@@ -55,6 +74,7 @@ object CaseSetZhegalkinUnification {
     case SetFormula.Or(x, y) => ZhegalkinExpr.mkUnion(toZhegalkin(x), toZhegalkin(y))(alg, lat)
   }
 
+  /** Returns the given Zhegalkin expression as a SetFormula. */
   private def toSetFormula(z: ZhegalkinExpr[FiniteSet[Int]])(implicit univ: Set[Int]): SetFormula = {
     def visitCst(cst: FiniteSet[Int]): SetFormula = cst match {
       case FiniteSet(s) => SetFormula.mkCst(s)
@@ -62,17 +82,21 @@ object CaseSetZhegalkinUnification {
 
     def visitTerm(term: ZhegalkinTerm[FiniteSet[Int]]): SetFormula = term match {
       case ZhegalkinTerm(cst, vars) =>
-        val v = vars.foldLeft(SetFormula.mkUni(): SetFormula) {
+        // `c ∩ v1 ∩ v2 ∩ ... ∩ vn`
+        val varsInter = vars.foldLeft(SetFormula.mkUni(): SetFormula) {
           case (acc, zvar) => SetFormula.mkAnd(acc, SetFormula.Var(zvar.id))
         }
-        SetFormula.mkAnd(visitCst(cst), v)
+        SetFormula.mkAnd(visitCst(cst), varsInter)
     }
 
     z match {
       case ZhegalkinExpr(cst, terms) =>
+        // `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn`
         terms.foldLeft(visitCst(cst): SetFormula) {
           case (acc, term) =>
             val ft = visitTerm(term)
+            // To represent xor, the following equality is used:
+            // `x ⊕ y = (xᶜ ∩ y) ∪ (x ∩ yᶜ)`
             SetFormula.mkOr(SetFormula.mkAnd(SetFormula.mkNot(acc), ft), SetFormula.mkAnd(acc, SetFormula.mkNot(ft)))
         }
     }
