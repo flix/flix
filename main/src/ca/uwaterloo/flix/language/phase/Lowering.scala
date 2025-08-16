@@ -2149,11 +2149,33 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Discard(e, eff, loc)
 
-    case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.MatchRule(pat, guard, exp1) =>
+          val g = guard.map(substExp(_, subst))
+          val e1 = substExp(exp1, subst)
+          LoweredAst.MatchRule(pat, g, e1)
+      }
+      LoweredAst.Expr.Match(e, rs, tpe, eff, loc)
 
-    case LoweredAst.Expr.ExtMatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
+          val e1 = substExp(exp1, subst)
+          LoweredAst.ExtMatchRule(label, pats, e1, loc1)
+      }
+      LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.TypeMatchRule(sym, tpe1, exp1) =>
+          val e1 = substExp(exp1, subst)
+          LoweredAst.TypeMatchRule(sym, tpe1, e1)
+      }
+      LoweredAst.Expr.TypeMatch(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
