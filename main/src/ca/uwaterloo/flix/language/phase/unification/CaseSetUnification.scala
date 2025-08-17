@@ -164,6 +164,12 @@ object CaseSetUnification {
     mkOr(mkAnd(p, mkNot(q)), mkAnd(mkNot(p), q))
 
   /**
+    * Translate [[Xor]] using the equation: a ⊕ b = (a ∪ b) - (a ∩ b) = (a ∪ b) ∩ ¬(a ∩ b)
+    */
+  private def elimXor(xor: Xor)(implicit univ: Set[Int]): SetFormula =
+    mkAnd(mkOr(xor.f1, xor.f2), mkNot(mkOr(xor.f1, xor.f2)))
+
+  /**
     * An atom is a constant or a variable.
     */
   private sealed trait Atom
@@ -248,6 +254,7 @@ object CaseSetUnification {
     case Not(tpe) => nnfNot(tpe)
     case Or(tpe1, tpe2) => Nnf.Union(nnf(tpe1), nnf(tpe2))
     case And(tpe1, tpe2) => Nnf.Intersection(nnf(tpe1), nnf(tpe2))
+    case xor: Xor => nnf(elimXor(xor))
   }
 
   /**
@@ -267,6 +274,7 @@ object CaseSetUnification {
       nnf(mkNot(tpe1)),
       nnf(mkNot(tpe2))
     )
+    case xor: Xor => nnf(mkNot(elimXor(xor)))
   }
 
   /**

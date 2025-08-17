@@ -72,6 +72,7 @@ object CaseSetZhegalkinUnification {
     case SetFormula.Not(f1) => ZhegalkinExpr.mkCompl(toZhegalkin(f1))
     case SetFormula.And(x, y) => ZhegalkinExpr.mkInter(toZhegalkin(x), toZhegalkin(y))(alg, lat)
     case SetFormula.Or(x, y) => ZhegalkinExpr.mkUnion(toZhegalkin(x), toZhegalkin(y))(alg, lat)
+    case SetFormula.Xor(x, y) => ZhegalkinExpr.mkXor(toZhegalkin(x), toZhegalkin(y))(alg, lat)
   }
 
   /** Returns the given Zhegalkin expression as a SetFormula. */
@@ -94,10 +95,7 @@ object CaseSetZhegalkinUnification {
         // `c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn`
         terms.foldLeft(visitCst(cst): SetFormula) {
           case (acc, term) =>
-            val ft = visitTerm(term)
-            // To represent xor, the following equality is used:
-            // `x ⊕ y = (xᶜ ∩ y) ∪ (x ∩ yᶜ)`
-            SetFormula.mkOr(SetFormula.mkAnd(SetFormula.mkNot(acc), ft), SetFormula.mkAnd(acc, SetFormula.mkNot(ft)))
+            SetFormula.mkXor(acc, visitTerm(term))
         }
     }
   }
