@@ -634,6 +634,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate illegal syntax: empty tuple type.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal syntax: empty tuple type."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal syntax: empty tuple type.
+         |
+         |${code(loc, "empty tuple type")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal trait constraint parameter.
     *
     * @param loc the location where the error occurred.

@@ -663,6 +663,14 @@ object DisplayType {
             case _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.CaseSymmetricDiff(_) =>
+          t.typeArguments.map(visit) match {
+            case Nil => SymmetricDiff(Hole :: Hole :: Nil)
+            case arg :: Nil => SymmetricDiff(arg :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 :: arg2 :: Nil)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
