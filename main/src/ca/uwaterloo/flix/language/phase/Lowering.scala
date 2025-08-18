@@ -2164,8 +2164,9 @@ object Lowering {
       val e = substExp(exp, subst)
       val rs = rules.map {
         case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
+          val ps = pats.map(substExtPattern(_, subst))
           val e1 = substExp(exp1, subst)
-          LoweredAst.ExtMatchRule(label, pats, e1, loc1)
+          LoweredAst.ExtMatchRule(label, ps, e1, loc1)
       }
       LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
@@ -2253,12 +2254,19 @@ object Lowering {
   }
 
   /**
-    * Applies the given substitution `subst` to the given pattern `pattern0`.
+    * Applies the given substitution `subst` to the given record label pattern `pattern0`.
     */
   private def substRecordLabelPattern(pattern0: LoweredAst.Pattern.Record.RecordLabelPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Pattern.Record.RecordLabelPattern = pattern0 match {
     case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
       val p = substPattern(pat, subst)
       LoweredAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
+  }
+
+  private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
+    case LoweredAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
+    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      LoweredAst.ExtPattern.Var(s, tpe, loc)
   }
 
 }
