@@ -2149,11 +2149,36 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Discard(e, eff, loc)
 
-    case LoweredAst.Expr.Match(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.Match(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.MatchRule(pat, guard, exp1) =>
+          val p = substPattern(pat, subst)
+          val g = guard.map(substExp(_, subst))
+          val e1 = substExp(exp1, subst)
+          LoweredAst.MatchRule(p, g, e1)
+      }
+      LoweredAst.Expr.Match(e, rs, tpe, eff, loc)
 
-    case LoweredAst.Expr.ExtMatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
+          val ps = pats.map(substExtPattern(_, subst))
+          val e1 = substExp(exp1, subst)
+          LoweredAst.ExtMatchRule(label, ps, e1, loc1)
+      }
+      LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case LoweredAst.Expr.TypeMatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.TypeMatchRule(sym, tpe1, exp1) =>
+          val s = subst.getOrElse(sym, sym)
+          val e1 = substExp(exp1, subst)
+          LoweredAst.TypeMatchRule(s, tpe1, e1)
+      }
+      LoweredAst.Expr.TypeMatch(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
@@ -2176,7 +2201,15 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case LoweredAst.Expr.TryCatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.CatchRule(sym, clazz, exp1) =>
+          val s = subst.getOrElse(sym, sym)
+          val e1 = substExp(exp1, subst)
+          LoweredAst.CatchRule(s, clazz, e1)
+      }
+      LoweredAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
@@ -2199,6 +2232,50 @@ object Lowering {
     case LoweredAst.FormalParam(sym, mod, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
       LoweredAst.FormalParam(s, mod, tpe, loc)
+  }
+
+  /**
+    * Applies the given substitution `subst` to the given pattern `pattern0`.
+    */
+  private def substPattern(pattern0: LoweredAst.Pattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Pattern = pattern0 match {
+    case LoweredAst.Pattern.Wild(tpe, loc) =>
+      LoweredAst.Pattern.Wild(tpe, loc)
+
+    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      LoweredAst.Pattern.Var(s, tpe, loc)
+
+    case LoweredAst.Pattern.Cst(cst, tpe, loc) =>
+      LoweredAst.Pattern.Cst(cst, tpe, loc)
+
+    case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
+      val ps = pats.map(substPattern(_, subst))
+      LoweredAst.Pattern.Tag(symUse, ps, tpe, loc)
+
+    case LoweredAst.Pattern.Tuple(pats, tpe, loc) =>
+      val ps = pats.map(substPattern(_, subst))
+      LoweredAst.Pattern.Tuple(ps, tpe, loc)
+
+    case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val ps = pats.map(substRecordLabelPattern(_, subst))
+      val p = substPattern(pat, subst)
+      LoweredAst.Pattern.Record(ps, p, tpe, loc)
+  }
+
+  /**
+    * Applies the given substitution `subst` to the given record label pattern `pattern0`.
+    */
+  private def substRecordLabelPattern(pattern0: LoweredAst.Pattern.Record.RecordLabelPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Pattern.Record.RecordLabelPattern = pattern0 match {
+    case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val p = substPattern(pat, subst)
+      LoweredAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
+  }
+
+  private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
+    case LoweredAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
+    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      LoweredAst.ExtPattern.Var(s, tpe, loc)
   }
 
 }
