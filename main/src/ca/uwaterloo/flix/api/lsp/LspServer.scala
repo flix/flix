@@ -82,7 +82,7 @@ object LspServer {
       * The proxy to the language client.
       * Used to send messages to the client.
       */
-    var flixLanguageClient: LanguageClient = _
+    private var flixLanguageClient: LanguageClient = _
 
     /**
       * The client capabilities.

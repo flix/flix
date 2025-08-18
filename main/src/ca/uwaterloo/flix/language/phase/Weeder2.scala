@@ -2940,8 +2940,9 @@ object Weeder2 {
         case tpe :: Nil => tpe // flatten singleton tuple types
         case tpe :: types => Type.Tuple(Nel(tpe, types), tree.loc)
         case Nil =>
-          // Parser never produces empty tuple types.
-          throw InternalCompilerException("Unexpected empty tuple type", tree.loc)
+          val error = WeederError.IllegalEmptyTupleType(tree.loc)
+          sctx.errors.add(error)
+          Type.Error(tree.loc)
       }
     }
 
