@@ -31,10 +31,11 @@
 ///
  mod Fixpoint3.Phase.Provenance {
     use Fixpoint3.Ast.Ram
-    use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, RamId, BoolExp}
+    use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, BoolExp}
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.BoxedInt64
     use Fixpoint3.Counter
+    use Fixpoint3.TypeInfo.{expandTypeToProv, expandTypeInfoToProv, provType}
 
     ///
     /// If `withProv` is `False`: `program` is returned unchanged.
@@ -52,13 +53,14 @@
     /// Further extend facts to contain a depth and rule.
     ///
     def augmentProgramInternal(program: RamProgram): RamProgram = match program {
-        case RamProgram.Program(stmt, facts, predicates, indexInfo) => unsafely IO run {
+        case RamProgram.Program(stmt, facts, predicates, indexInfo, typeInfo) => unsafely IO run {
             let (f1, f2) = facts;
             let augmentedF1 = Map.map(augmentFacts, f1);
             let augmentedF2 = Map.map(augmentFacts, f2);
             let augmentedFacts = (augmentedF1, augmentedF2);
             let augmentedStmt = augmentStmt(stmt);
-            RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo) |>
+            let newTypeInfo = expandTypeInfoToProv(typeInfo, predicates);
+            RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo, newTypeInfo) |>
                 Fixpoint3.Debugging.notifyPreLowering("Provenance")
         }
     }
@@ -99,20 +101,20 @@
     /// Augments `op` with `ProvMax` terms.
     ///
     def augmentOp(rowVarsArity: List[(RowVar, Int32)], op: RelOp): RelOp \ r = match op {
-        case RelOp.Search(rowVar, relSym, body) =>
+        case RelOp.Search(rowVar, relSym, t, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
-                RelOp.Search(rowVar, relSym)
-        case RelOp.Query(rowVar, relSym, bools, index, body) =>
+                RelOp.Search(rowVar, relSym, t)
+        case RelOp.Query(rowVar, relSym, bools, index, t, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
-                RelOp.Query(rowVar, relSym, removeNotMemberOf(bools), index)
-        case RelOp.Functional(rowVar, func, terms, body, arity) =>
+                RelOp.Query(rowVar, relSym, removeNotMemberOf(bools), index, t)
+        case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             // Do not add this to `rowVarsArity`. We use this in `ProvMax` as `Functional`
             // has no concept of depth.
-            RelOp.Functional(rowVar, func, terms, augmentOp(rowVarsArity, body), arity)
+            RelOp.Functional(rowVar, func, terms, augmentOp(rowVarsArity, body), arity, t)
         case RelOp.Project(terms, relSym, ruleNum) =>
             let newTerms = terms ++ Vector#{
                 RamTerm.ProvMax(List.toVector(rowVarsArity)),
-                RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), RamId.Id(-1))
+                RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), provType())
             };
             RelOp.Project(newTerms, relSym, ruleNum)
         case RelOp.If(boolExps, body) =>

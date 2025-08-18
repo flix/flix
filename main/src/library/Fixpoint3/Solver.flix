@@ -65,7 +65,7 @@ mod Fixpoint3.Solver {
     def runWithStratification(d0: Datalog, stf: Map[PredSym, (Int32, Int32)], withProv: Bool): Datalog = region rc {
         let d = Debugging.notifyPreSolve(d0);
         def compiler(cs: Datalog, db: Ram.Facts): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
-            Phase.Compiler.compile(cs, db, stf)
+            Phase.Compiler.compile(cs, db, stf, withProv)
                 |> Debugging.notifyPreLowering("Compiler")
                 |> Phase.Simplifier.simplifyProgram
                 |> Debugging.notifyPreLowering("Simplifier")
