@@ -2153,9 +2153,10 @@ object Lowering {
       val e = substExp(exp, subst)
       val rs = rules.map {
         case LoweredAst.MatchRule(pat, guard, exp1) =>
+          val p = substPattern(pat, subst)
           val g = guard.map(substExp(_, subst))
           val e1 = substExp(exp1, subst)
-          LoweredAst.MatchRule(pat, g, e1)
+          LoweredAst.MatchRule(p, g, e1)
       }
       LoweredAst.Expr.Match(e, rs, tpe, eff, loc)
 
@@ -2221,6 +2222,43 @@ object Lowering {
     case LoweredAst.FormalParam(sym, mod, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
       LoweredAst.FormalParam(s, mod, tpe, loc)
+  }
+
+  /**
+    * Applies the given substitution `subst` to the given pattern `pattern0`.
+    */
+  private def substPattern(pattern0: LoweredAst.Pattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Pattern = pattern0 match {
+    case LoweredAst.Pattern.Wild(tpe, loc) =>
+      LoweredAst.Pattern.Wild(tpe, loc)
+
+    case LoweredAst.Pattern.Var(sym, tpe, loc) =>
+      val s = subst.getOrElse(sym, sym)
+      LoweredAst.Pattern.Var(s, tpe, loc)
+
+    case LoweredAst.Pattern.Cst(cst, tpe, loc) =>
+      LoweredAst.Pattern.Cst(cst, tpe, loc)
+
+    case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
+      val ps = pats.map(substPattern(_, subst))
+      LoweredAst.Pattern.Tag(symUse, ps, tpe, loc)
+
+    case LoweredAst.Pattern.Tuple(pats, tpe, loc) =>
+      val ps = pats.map(substPattern(_, subst))
+      LoweredAst.Pattern.Tuple(ps, tpe, loc)
+
+    case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
+      val ps = pats.map(substRecordLabelPattern(_, subst))
+      val p = substPattern(pat, subst)
+      LoweredAst.Pattern.Record(ps, p, tpe, loc)
+  }
+
+  /**
+    * Applies the given substitution `subst` to the given pattern `pattern0`.
+    */
+  private def substRecordLabelPattern(pattern0: LoweredAst.Pattern.Record.RecordLabelPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.Pattern.Record.RecordLabelPattern = pattern0 match {
+    case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
+      val p = substPattern(pat, subst)
+      LoweredAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
   }
 
 }
