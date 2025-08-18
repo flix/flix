@@ -393,12 +393,16 @@ mod List {
     ///
     pub def map3(f: t1 -> t2 -> t3 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3]): List[r] \ ef = Applicative.map3(f, l1, l2, l3)
 
+    ///
     /// Lift a 4-ary function to work on lists of its original arguments, returning a list
     /// of applying all combinations of arguments. The results appear in the order extending the pattern from `map3`.
+    ///
     pub def map4(f: t1 -> t2 -> t3 -> t4 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4]): List[r] \ ef = Applicative.map4(f, l1, l2, l3, l4)
 
+    ///
     /// Lift a 5-ary function to work on lists of its original arguments, returning a list
     /// of applying all combinations of arguments. The results appear in the order extending the pattern from `map3`.
+    ///
     pub def map5(f: t1 -> t2 -> t3 -> t4 -> t5 -> r \ ef, l1: List[t1], l2: List[t2], l3: List[t3], l4: List[t4], l5: List[t5]): List[r] \ ef = Applicative.map5(f, l1, l2, l3, l4, l5)
 
     ///
@@ -538,7 +542,7 @@ mod List {
     ///
     /// Returns `l` without adjacent duplicates according to their `Eq` instance.
     ///
-    /// The first occurence in a chain of duplicates is kept.
+    /// The first occurrence in a chain of duplicates is kept.
     ///
     pub def removeAdjDups(l: List[a]): List[a] with Eq[a] = removeAdjDupsWith(Eq.eq, l)
 
@@ -546,7 +550,7 @@ mod List {
     /// Returns `l` without adjacent duplicates according to the function `f`.
     /// Elements `x` and `y` are duplicates if and only if `f(x, y) = true`.
     ///
-    /// The first occurence in a chain of duplicates is kept.
+    /// The first occurrence in a chain of duplicates is kept.
     ///
     /// `f` must define an equivalence relation on the elements of the list.
     ///
@@ -999,8 +1003,6 @@ mod List {
         };
         loop(xs, ys, x -> checked_ecast(x))
 
-
-
     ///
     /// Returns a pair of lists, the first containing all first components in `l`
     /// and the second containing all second components in `l`.
@@ -1246,6 +1248,7 @@ mod List {
         toArray(rc, l) !> Array.sort |> Array.toList
     }
 
+    ///
     /// Sort list `l` so that elements are ordered from low to high according to the `Order` instance
     /// for the values obtained by applying `f` to each element.
     ///
@@ -1316,7 +1319,7 @@ mod List {
         loop(identity)
 
     ///
-    /// Returns the list `l` with duplicates removed. The first occurence of
+    /// Returns the list `l` with duplicates removed. The first occurrence of
     /// an element is kept and except for the removal of subsequent duplicates
     /// the order of `l` is preserved.
     ///
@@ -1452,11 +1455,11 @@ mod List {
     ///
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         def freq(ll, m) = match ll {
-            case Nil   => m
-            case x::xs    =>
-                match Map.get(x,m) {
-                    case None       => freq(xs, Map.insert(x, 1, m))
-                    case Some(_)    => freq(xs, Map.update(v -> Some(v+1), x, m))
+            case Nil      => m
+            case x :: xs  =>
+                match Map.get(x, m) {
+                    case None    => freq(xs, Map.insert(x, 1, m))
+                    case Some(_) => freq(xs, Map.update(v -> Some(v + 1), x, m))
                 }
         };
         freq(l, Map#{})
