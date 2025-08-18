@@ -2174,8 +2174,9 @@ object Lowering {
       val e = substExp(exp, subst)
       val rs = rules.map {
         case LoweredAst.TypeMatchRule(sym, tpe1, exp1) =>
+          val s = subst.getOrElse(sym, sym)
           val e1 = substExp(exp1, subst)
-          LoweredAst.TypeMatchRule(sym, tpe1, e1)
+          LoweredAst.TypeMatchRule(s, tpe1, e1)
       }
       LoweredAst.Expr.TypeMatch(e, rs, tpe, eff, loc)
 
