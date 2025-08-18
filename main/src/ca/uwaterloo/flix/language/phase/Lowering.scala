@@ -2201,7 +2201,15 @@ object Lowering {
       val e = substExp(exp, subst)
       LoweredAst.Expr.Cast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case LoweredAst.Expr.TryCatch(_, _, _, _, _) => ??? // TODO
+    case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      val e = substExp(exp, subst)
+      val rs = rules.map {
+        case LoweredAst.CatchRule(sym, clazz, exp1) =>
+          val s = subst.getOrElse(sym, sym)
+          val e1 = substExp(exp1, subst)
+          LoweredAst.CatchRule(s, clazz, e1)
+      }
+      LoweredAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
