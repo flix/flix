@@ -467,6 +467,9 @@ object TypedAstOps {
     case ExtPattern.Error(_, _) => Set.empty
   }
 
+  /**
+    * Returns the free variables in the given var or wild ext pattern `v`.
+    */
   private def freeVars(v: ExtPattern.VarOrWild): Set[Symbol.VarSym] = v match {
     case ExtPattern.Wild(_, _) => Set.empty
     case ExtPattern.Var(Binder(sym, _), _, _) => Set(sym)
