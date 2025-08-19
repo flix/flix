@@ -703,6 +703,9 @@ object SemanticTokensProvider {
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
       visitExps(exps) ++ visitHeadPredicate(select)
 
+    case Expr.FixpointQueryWithSelect(exps, selects, from, where, _, _, _) =>
+      visitExps(exps) ++ visitExps(selects) ++ from.iterator.flatMap(visitBodyPredicate) ++ visitExps(where)
+
     case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 

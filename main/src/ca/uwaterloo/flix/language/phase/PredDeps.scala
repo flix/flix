@@ -344,6 +344,11 @@ object PredDeps {
       exps.foreach(visitExp)
       terms.foreach(visitExp)
 
+    case Expr.FixpointQueryWithSelect(exps, selects, _, where, _, _, _) =>
+      exps.foreach(visitExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
+
     case Expr.FixpointSolve(exp, _, _, _, _) =>
       visitExp(exp)
 
