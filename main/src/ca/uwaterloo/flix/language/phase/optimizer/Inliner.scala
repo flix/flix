@@ -583,16 +583,18 @@ object Inliner {
     *
     * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
     */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
-    case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
-    case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
-    case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
-    case (Occur.OnceInLocalDef, Type.Pure) => isLambda(exp)
-    case (Occur.ManyBranch, Type.Pure) => false
-    case (Occur.Many, Type.Pure) => false
-    case _ => false // Impure so do not move expression
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = {
+    debug(s"Considering for use-site inline: ${sym.text}, occur: $occur, eff: ${exp.eff}", sym.loc)
+    (occur, exp.eff) match {
+      case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
+      case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
+      case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
+      case (Occur.OnceInLocalDef, Type.Pure) => isLambda(exp)
+      case (Occur.ManyBranch, Type.Pure) => false
+      case (Occur.Many, Type.Pure) => false
+      case _ => false // Impure so do not move expression
+    }
   }
-
   /** Returns `true` if `exp` is [[Expr.Cst]] and the constant is not a [[Constant.Regex]]. */
   private def isCst(exp: Expr): Boolean = exp match {
     case Expr.Cst(Constant.Regex(_), _, _) => false
