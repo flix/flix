@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
-import ca.uwaterloo.flix.language.ast.shared.Constant
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Input}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -227,11 +227,13 @@ object Inliner {
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
+        debug(s"Removing dead: ${sym.text}, occur: $occur, eff: ${exp1.eff}", sym.loc)
         // Eliminate dead binder
         sctx.changed.putIfAbsent(sym0, ())
         visitExp(exp2, ctx0)
 
       case (Occur.Dead, _) =>
+        debug(s"Rewriting to stm: ${sym.text}, occur: $occur, eff: ${exp1.eff}", sym.loc)
         // Rewrite to Stm to preserve effect
         sctx.changed.putIfAbsent(sym0, ())
         val e1 = visitExp(exp1, ctx0)
@@ -239,6 +241,7 @@ object Inliner {
         Expr.Stm(e1, e2, tpe, eff, loc)
 
       case (Occur.Once, Type.Pure) =>
+        debug(s"Unconditional pre-inline: ${sym.text}, occur: $occur, eff: ${exp1.eff}", sym.loc)
         // Unconditionally inline
         sctx.changed.putIfAbsent(sym0, ())
         val freshVarSym = Symbol.freshVarSym(sym)
@@ -250,12 +253,14 @@ object Inliner {
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0)
         if (isSimple(e1) && exp1.eff == Type.Pure) {
+          debug(s"Unconditional post-inline: ${sym.text}, occur: $occur, eff: ${exp1.eff}", sym.loc)
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
           val ctx = ctx0.addVarSubst(sym, freshVarSym).addSubst(freshVarSym, SubstRange.DoneExpr(e1))
           visitExp(exp2, ctx)
         } else {
+          debug(s"Adding to in-scope set: ${sym.text}, occur: $occur, eff: ${exp1.eff}", sym.loc)
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -768,5 +773,19 @@ object Inliner {
     * @param live    the set of symbols of live functions.
     */
   private case class SharedContext(changed: ConcurrentHashMap[Symbol.DefnSym, Unit], live: ConcurrentHashMap[Symbol.DefnSym, Unit])
+
+  private def isRelevant(loc: SourceLocation): Boolean = loc.sp1.source.input match {
+    case Input.Text(_, _, _) => false
+    case Input.TxtFile(path, _) => path.getFileName.toString == "Main.flix"
+    case Input.PkgFile(_, _) => false
+    case Input.FileInPackage(_, _, _, _) => false
+    case Input.Unknown => false
+  }
+
+  private def debug(any: Any, loc: SourceLocation): Unit = {
+    if (isRelevant(loc)) {
+      println(any)
+    }
+  }
 
 }
