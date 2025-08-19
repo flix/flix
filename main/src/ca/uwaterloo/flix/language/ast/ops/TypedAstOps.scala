@@ -495,5 +495,4 @@ object TypedAstOps {
     case Body.Functional(_, exp, _) => freeVars(exp)
   }
 
-
 }
