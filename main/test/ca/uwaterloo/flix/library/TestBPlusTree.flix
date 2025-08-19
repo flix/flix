@@ -404,20 +404,19 @@ mod TestBPlusTree {
                 let y = Random.randomInt64();
                 BPlusTree.put(x, y, treeFrom)
             });
-            BPlusTree.parForEachWhen(x -> y -> {
-                BPlusTree.put(x, y, treeTo)
-            }, 1000, treeFrom);
+            let f1 = x -> y -> BPlusTree.put(x, y, treeTo);
+            let f2 = x -> y -> BPlusTree.put(x, y, treeTo);
+            BPlusTree.parForEachWhen(f1, f2, 1000, treeFrom);
             List.toVector(BPlusTree.toList(treeFrom)) `Vector.equals` List.toVector(BPlusTree.toList(treeTo))
         })
     }
-
 
     @test
     def parForEachWhen02(): Bool = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
-        BPlusTree.parForEachWhen(f, 1000, tree);
+        BPlusTree.parForEachWhen(f, f, 1000, tree);
         let res = Vector#{0, 1, 2, 3, 4, 5};
         MutList.toVector(list) `Vector.equals` res
     }
@@ -427,9 +426,39 @@ mod TestBPlusTree {
         let tree = rangeQueryMultipleValues(rc);
         let list = MutList.empty(rc);
         let f = k -> v -> MutList.push((k, v), list);
-        BPlusTree.parForEachWhen(f, 1000, tree);
+        BPlusTree.parForEachWhen(f, f, 1000, tree);
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
         MutList.toVector(list) `Vector.equals` res
+    }
+
+    @test
+    def parForEachWhen04(): Bool = region rc {
+        let values = List.range(0, 10_000) |> List.map(i -> (i, i+1));
+        let tree = BPlusTree.empty(rc);
+        foreach((k, v) <- values) {
+            BPlusTree.put(k, v, tree)
+        };
+        let sequentialCollector = MutList.empty(rc);
+        let parallelCollector = BPlusTree.empty(rc);
+        let f1 = k -> v -> MutList.push((k, v), sequentialCollector);
+        let f2 = k -> v -> BPlusTree.put(k, v, parallelCollector);
+        BPlusTree.parForEachWhen(f1, f2, 10_000, tree);
+        MutList.isEmpty(sequentialCollector) and BPlusTree.toList(parallelCollector) == values
+    }
+
+    @test
+    def parForEachWhen05(): Bool = region rc {
+        let values = List.range(0, 9_999) |> List.map(i -> (i, i+1));
+        let tree = BPlusTree.empty(rc);
+        foreach((k, v) <- values) {
+            BPlusTree.put(k, v, tree)
+        };
+        let sequentialCollector = MutList.empty(rc);
+        let parallelCollector = BPlusTree.empty(rc);
+        let f1 = k -> v -> MutList.push((k, v), sequentialCollector);
+        let f2 = k -> v -> BPlusTree.put(k, v, parallelCollector);
+        BPlusTree.parForEachWhen(f1, f2, 10_000, tree);
+        MutList.toList(sequentialCollector) == values and BPlusTree.isEmpty(parallelCollector)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -686,12 +715,12 @@ mod TestBPlusTree {
         let _: Unit = region rc2 {
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
-                    List.forEach(i -> 
+                    List.forEach(i ->
                         BPlusTree.putWith(preferSome, i, None, tree)
                     ): _ \ rc) as _ \ IO) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
-                    List.forEach(i -> 
+                    List.forEach(i ->
                         BPlusTree.putWith(preferSome, i, Some(1), tree)
             ): _ \ rc) as _ \ IO) @ rc2)
         };
@@ -798,22 +827,22 @@ mod TestBPlusTree {
         let _: Unit = region rc2 {
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
-                    List.forEach(_ -> 
+                    List.forEach(_ ->
                         Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
             ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
-                    List.forEach(_ -> 
+                    List.forEach(_ ->
                         Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
             ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
-                    List.forEach(_ -> 
+                    List.forEach(_ ->
                         Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
             ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
             (spawn unchecked_cast((
                 List.range(0, totalInsertNumInt32()) |>
-                    List.forEach(_ -> 
+                    List.forEach(_ ->
                         Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
             ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2)
         };

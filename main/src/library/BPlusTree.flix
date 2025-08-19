@@ -441,22 +441,23 @@ mod BPlusTree {
     }
 
     ///
-    /// Applies `f` to all mappings `k => v` in `t`. If `t` contains `parLimit` or more
-    /// elements `f` is applied in parallel.
+    /// Applies `f1` to all mappings `k => v` in `t` sequentially if `t` contains strictly less than
+    /// `parLimit` elements. If `t` contains `parLimit` or more elements `f2` is applied in parallel
+    /// to all mappings.
     ///
-    /// `f` must not modify `t`.
+    /// `f1` and `f2` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads.
+    /// This method unsafely removes the `r` effect when spawning threads in case 2.
     ///
     /// Not thread-safe.
     ///
     @Internal
     @Parallel
-    pub def parForEachWhen(f: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r =
+    pub def parForEachWhen(f1: k -> v -> Unit \ r, f2: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r =
         if(size(t) < parLimit)
-            forEach(f, t)
+            forEach(f1, t)
         else
-            parForEach(f, t)
+            parForEach(f2, t)
 
 
     ///
