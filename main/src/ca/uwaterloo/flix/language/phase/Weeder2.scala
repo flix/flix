@@ -2368,8 +2368,7 @@ object Weeder2 {
       mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
         (qname, maybePat) =>
           if (qname.namespace.nonEmpty) {
-            // TODO: Maybe more specific error handling
-            val error = IllegalExtPattern(qname.loc)
+            val error = IllegalQualifiedExtPattern(qname)
             sctx.errors.add(error)
           }
           maybePat match {
