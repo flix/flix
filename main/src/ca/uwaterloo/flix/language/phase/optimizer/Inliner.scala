@@ -694,6 +694,7 @@ object Inliner {
 
     /**
       * The right-hand side of a let-bound variable along with its occurrence information.
+      *
       * Due to sub-effecting `eff` is required to store the effect of the non-visited exp.
       * When sub-effecting is enabled, the purity of an expression may change when inlining
       * a function. Consider the following example:
