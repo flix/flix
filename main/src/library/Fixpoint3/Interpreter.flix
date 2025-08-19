@@ -142,7 +142,7 @@ mod Fixpoint3.Interpreter {
     /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
     ///
     @Internal
-    pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
+    pub def interpret(rc: Region[r], input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
         let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
@@ -161,7 +161,7 @@ mod Fixpoint3.Interpreter {
                 storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
             }
         };
-        interpretWithDatabase(rc, indexes, boxing, withProv, program)
+        interpretWithDatabase(rc, indexes, boxing, program)
 
     ///
     /// Executes `program` using `boxing` as `Boxing` information and `db` as initial
@@ -171,7 +171,6 @@ mod Fixpoint3.Interpreter {
         rc: Region[r],
         db: Indexes[r],
         boxing: Boxing[r],
-        withProv: Bool,
         program: RamProgram[r]
     ): (Database[r], Predicates) \ r = match program {
         case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), typeInfo) =>
@@ -187,7 +186,7 @@ mod Fixpoint3.Interpreter {
             let ctx = (db, env, boxing);
             evalStmt(rc, ctx, parLevel(), stmt);
             // Remove the `IO` effect from dealing with static.
-            let boxedFacts = unsafely IO run marshallDb(rc, db, boxing, indexPos, predState, typeInfo, withProv);
+            let boxedFacts = unsafely IO run marshallDb(rc, db, boxing, indexPos, predState, typeInfo);
             (boxedFacts, predState)
     }
 
@@ -203,14 +202,12 @@ mod Fixpoint3.Interpreter {
         boxing: Boxing[r],
         indexPos: Map[(RelSym, Int32), Int32],
         predTrack: Predicates,
-        typeInfo: TypeInformation,
-        _withProv: Bool
+        typeInfo: TypeInformation
     ): Database[r] \ r + IO =
         let res = MutMap.empty(rc);
         foreach (relSym <- allFullRelSyms(predTrack)) {
             let innerMap = BPlusTree.empty(Static);
-            let fullId = toId(getRelSymAsType(relSym, Full, predTrack));
-            let curBoxingInfo = getTypeOf(fullId, typeInfo);
+            let curBoxingInfo = getTypeOf(toId(relSym), typeInfo);
             Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db) |>
                 BPlusTree.forEach(vec -> latticeElem -> {
                     let boxedVec = vec |>

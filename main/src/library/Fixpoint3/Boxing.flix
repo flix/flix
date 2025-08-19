@@ -66,7 +66,7 @@ mod Fixpoint3.Boxing {
     @Internal
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r]) \ r =
         let boxingInfo = initializeInternal(rc, program, withProv);
-        let facts = unsafely IO run initializeFacts(rc, program, boxingInfo, withProv);
+        let facts = unsafely IO run initializeFacts(rc, program, boxingInfo);
         (boxingInfo, facts)
 
     ///
@@ -74,7 +74,7 @@ mod Fixpoint3.Boxing {
     /// the facts in `program`, with respect to `boxing`. Note that the old `boxingInfo` is
     /// invalid for the returned `facts`.
     ///
-    def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], withProv: Bool): EFacts[r] \ r + IO =
+    def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r]): EFacts[r] \ r + IO =
         let RamProgram.Program(_, facts, _, (indexes, _), typeInfo) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
@@ -84,40 +84,30 @@ mod Fixpoint3.Boxing {
             let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
             let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
             // `id` will always be a full `id`.
-            mapAllFacts(relSym, relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), withProv, newTree);
+            mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree);
             MutMap.put(relSym, newTree, newFacts)
         };
         foreach ((relSym, relFacts) <- f2) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
             let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
             // `id` will always be a full `id`.
-            mapAllFacts(relSym, relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), withProv, newTree)
+            mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree)
         };
         newFacts |> MutMap.toMap
 
     def mapAllFacts(
-        relSym: RelSym,
         facts: BPlusTree[Vector[Boxed], Boxed, Static],
         boxingInfo: Boxing[r],
         mapping: Vector[Int32],
-        withProv: Bool,
         newTree: BPlusTree[Vector[Int64], Boxed, r]
     ): Unit \ r + IO = unchecked_cast({
-        let nonExtendedPositions = Vector.range(0, arityOf(relSym)) |>
-            Vector.map(i -> Vector.get(i, mapping));
-        let positions = if (not withProv) {
-            nonExtendedPositions
-        } else {
-            // Both can use this type. It does not really matter.
-            nonExtendedPositions ++ Vector#{TypeInfo.provType(), TypeInfo.provType()}
-        };
         facts |>
-            BPlusTree.parForEach(tuple -> lat -> {
+            BPlusTree.forEach(tuple -> lat -> {
                 // `facts` and `newTree` must have same the same region. Cast to achieve this.
                 unchecked_cast(({
                     let savedVec = tuple |>
                         Vector.mapWithIndex(index -> boxedVal ->
-                            let unifiedPos = Vector.get(index, positions);
+                            let unifiedPos = Vector.get(index, mapping);
                             unboxWith(boxedVal, unifiedPos, boxingInfo)
                         );
                     BPlusTree.put(savedVec, lat, newTree)
