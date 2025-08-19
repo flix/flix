@@ -333,7 +333,7 @@ object PatMatch {
         exps.foreach(visitExp)
         visitHeadPred(select)
 
-      case Expr.FixpointSolve(exp, _, _, _, _) => visitExp(exp)
+      case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
 

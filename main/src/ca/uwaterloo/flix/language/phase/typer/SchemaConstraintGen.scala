@@ -102,20 +102,36 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointSolveWithProject(e: KindedAst.Expr.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointSolve(exp, _, loc) =>
+      case KindedAst.Expr.FixpointSolveWithProject(exps, _, optPreds, tvar, loc) =>
         //
-        //  exp : #{...}
+        //  exp : #{ ... | b }    optPreds: P1 :: P2 :: ... :: Nil
         //  ---------------
-        //  solve exp : tpe
+        //  solve exp project P1, P2, ... : #{ P1(...), P2(...), ... }
         //
-        val (tpe, eff) = visitExp(exp)
-        c.unifyType(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
-        val resEff = eff
-        val resTpe = tpe
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val freshSchemaRow = Type.freshVar(Kind.SchemaRow, loc)
+        c.unifyAllTypes(Type.mkSchema(freshSchemaRow, loc) :: tpes, loc)
+        val resultSchemaRow = optPreds match {
+          case Some(preds) =>
+            val (openSchemaRow, closedSchemaRow) = preds.foldRight((mkAnySchemaRowType(loc), Type.mkSchemaRowEmpty(loc))) {
+              case (pred, (acc1, acc2)) =>
+                val fresh = Type.freshVar(Kind.Predicate, loc)
+                val openRow = Type.mkSchemaRowExtend(pred, fresh, acc1, loc)
+                val closedRow = Type.mkSchemaRowExtend(pred, fresh, acc2, loc)
+                (openRow, closedRow)
+            }
+            c.unifyType(freshSchemaRow, openSchemaRow, loc)
+            closedSchemaRow
+          case None => freshSchemaRow
+        }
+        c.unifyType(tvar, Type.mkSchema(resultSchemaRow, loc), loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
+
     }
   }
 

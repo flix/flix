@@ -508,8 +508,8 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointSolve(exp, tpe, eff, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 

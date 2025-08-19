@@ -832,14 +832,19 @@ object Lowering {
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
-    case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
-      val defn = mode match {
+    case TypedAst.Expr.FixpointSolveWithProject(exps0, mode, optPreds, _, eff, loc) =>
+      val solveDefn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
         case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
       }
-      val argExps = visitExp(exp) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, resultType, eff, loc)
+      val exps = exps0.map(visitExp)
+      val mergedExp = mergeExps(exps, loc)
+      val argExps = mergedExp :: Nil
+      val solvedExp = LoweredAst.Expr.ApplyDef(solveDefn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
+      optPreds match {
+        case Some(preds) => mergeExps(preds.map(pred => filterExp(mkPredSym(pred), solvedExp, loc)), loc)
+        case None => solvedExp
+      }
 
     case TypedAst.Expr.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
@@ -1730,6 +1735,14 @@ object Lowering {
         val itpe = Types.MergeType
         LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
     }
+
+  private def filterExp(predSym: LoweredAst.Expr, datalog: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr = {
+    val defn = Defs.lookup(Defs.Filter)
+    val argExps = predSym :: datalog :: Nil
+    val resultType = Types.Datalog
+    val itpe = Types.FilterType
+    LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, datalog.eff, loc)
+  }
 
   /**
     * Returns `t` from the Flix type `Vector[t]`.

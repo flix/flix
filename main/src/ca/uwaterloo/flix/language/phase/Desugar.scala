@@ -808,8 +808,9 @@ object Desugar {
       val es = visitExps(exps)
       DesugaredAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
-    case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optIdents, loc) =>
-      desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
+    case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optPreds, loc) =>
+      val es = visitExps(exps)
+      DesugaredAst.Expr.FixpointSolveWithProject(es, mode, optPreds, loc)
 
     case WeededAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
       val es = visitExps(exps)
@@ -1454,7 +1455,7 @@ object Desugar {
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {
       case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
     }
-    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, mode, loc0)
+    val modelExp = ??? // DesugaredAst.Expr.FixpointSolve(mergeExp, mode, loc0)
 
     // Any projections?
     val bodyExp = idents0 match {

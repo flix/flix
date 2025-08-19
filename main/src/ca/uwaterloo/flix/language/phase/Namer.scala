@@ -910,9 +910,9 @@ object Namer {
       val s = visitHeadPredicate(select)
       NamedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointSolve(e, mode, loc)
+    case DesugaredAst.Expr.FixpointSolveWithProject(exps, mode, optPreds, loc) =>
+      val es = exps.map(visitExp)
+      NamedAst.Expr.FixpointSolveWithProject(es, mode, optPreds, loc)
 
     case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
       val e = visitExp(exp)
