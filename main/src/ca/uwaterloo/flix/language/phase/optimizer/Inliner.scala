@@ -710,6 +710,7 @@ object Inliner {
       * `res` was inlined because it is used once and is pure.
       * Storing the original effect in `eff` allows the inliner to correctly consider its
       * previous decisions, since the purity / effect did not change during inlining.
+      * The subsequent round of inlining may then choose to inline the let-bound variable.
       */
     case class LetBound(expr: MonoAst.Expr, occur: Occur, eff: Type) extends BoundKind
 
