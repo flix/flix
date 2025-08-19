@@ -2097,7 +2097,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
-      Pattern.extPattern()
+      Pattern.pattern()
       if (eat(TokenKind.Equal)) {
         val error = UnexpectedToken(
           NamedTokenSet.FromKinds(Set(TokenKind.ArrowThickR)),
@@ -3115,19 +3115,6 @@ object Parser2 {
       close(mark, TreeKind.Pattern.Pattern)
     }
 
-    def extPattern()(implicit s: State): Mark.Closed = {
-      // If a new pattern is added here then add it to FIRST_PATTERN too.
-      val mark = open()
-      nth(0) match {
-        case TokenKind.NameUpperCase => extTagPat()
-        case t =>
-          val mark = open()
-          val error = UnexpectedToken(expected = NamedTokenSet.Pattern, actual = Some(t), loc = currentSourceLocation())
-          closeWithError(mark, error)
-      }
-      close(mark, TreeKind.Pattern.Pattern)
-    }
-
     private def variablePat()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
       val mark = open()
@@ -3149,16 +3136,6 @@ object Parser2 {
         tuplePat()
       }
       close(mark, TreeKind.Pattern.Tag)
-    }
-
-    private def extTagPat()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
-      val mark = open()
-      nameUnqualified(NAME_TAG)
-      if (at(TokenKind.ParenL)) {
-        tuplePat()
-      }
-      close(mark, TreeKind.Pattern.ExtTag)
     }
 
     private def tuplePat()(implicit s: State): Mark.Closed = {
