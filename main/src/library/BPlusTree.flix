@@ -442,7 +442,7 @@ mod BPlusTree {
 
     ///
     /// Applies `f1` to all mappings `k => v` in `t` sequentially if `t` contains strictly less than
-    /// `parLimit` elements. If `t` contains `parLimit` or more elements `f2` is applied in parallel.
+    /// `parLimit` elements. If `t` contains `parLimit` or more elements `f2` is applied in parallel
     /// to all mappings.
     ///
     /// `f1` and `f2` must not modify `t`.
