@@ -92,11 +92,15 @@ case class StackConsumer() extends Consumer {
 
   override def consumeMatchRule(rule: MatchRule): Unit = push(rule)
 
+  override def consumeExtMatchRule(rule: ExtMatchRule): Unit = push(rule)
+
   override def consumeOp(op: Op): Unit = push(op)
 
   override def consumeOpSymUse(symUse: OpSymUse): Unit = push(symUse)
 
   override def consumePattern(pat: Pattern): Unit = push(pat)
+
+  override def consumeExtPattern(pat: ExtPattern): Unit = push(pat)
 
   override def consumePredicate(p: Predicate): Unit = push(p)
 

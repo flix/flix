@@ -1171,6 +1171,20 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 ⊕ tpe2`
+    */
+  def mkCaseXor(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+      // a ⊕ b = (a ∪ b) - (a ∩ b)
+      val syms = syms1.union(syms2).diff(syms1.intersect(syms2))
+      Type.Cst(TypeConstructor.CaseSet(syms, sym), loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
+    case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
+    // TODO RESTR-VARS ALL case: universe
+    case _ => mkApply(Type.Cst(TypeConstructor.CaseSymmetricDiff(sym), loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
     * Returns the difference of the given types.
     */
   def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {

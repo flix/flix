@@ -451,6 +451,7 @@ object Simplifier {
           case TypeConstructor.CaseSet(_, _) => SimpleType.Unit
           case TypeConstructor.CaseComplement(_) => SimpleType.Unit
           case TypeConstructor.CaseIntersection(_) => SimpleType.Unit
+          case TypeConstructor.CaseSymmetricDiff(_) => SimpleType.Unit
           case TypeConstructor.CaseUnion(_) => SimpleType.Unit
 
           case TypeConstructor.Relation(_) =>
@@ -613,6 +614,7 @@ object Simplifier {
           case TypeConstructor.CaseSet(_, _) => Type.mkUnit(loc)
           case TypeConstructor.CaseComplement(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseIntersection(_) => Type.mkUnit(loc)
+          case TypeConstructor.CaseSymmetricDiff(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseUnion(_) => Type.mkUnit(loc)
 
           case TypeConstructor.SchemaRowEmpty => Type.mkSchemaRowEmpty(loc)
