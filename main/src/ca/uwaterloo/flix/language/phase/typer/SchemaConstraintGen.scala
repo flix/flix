@@ -116,15 +116,13 @@ object SchemaConstraintGen {
         c.unifyAllTypes(Type.mkSchema(freshSchemaRow, loc) :: tpes, loc)
         val resultSchemaRow = optPreds match {
           case Some(preds) =>
-            val (openSchemaRow, closedSchemaRow) = preds.foldRight((mkAnySchemaRowType(loc), Type.mkSchemaRowEmpty(loc))) {
+            val (fullSchemaRow, resultSchemaRow) = preds.foldRight((mkAnySchemaRowType(loc), mkAnySchemaRowType(loc))) {
               case (pred, (acc1, acc2)) =>
                 val fresh = Type.freshVar(Kind.Predicate, loc)
-                val openRow = Type.mkSchemaRowExtend(pred, fresh, acc1, loc)
-                val closedRow = Type.mkSchemaRowExtend(pred, fresh, acc2, loc)
-                (openRow, closedRow)
+                (Type.mkSchemaRowExtend(pred, fresh, acc1, loc), Type.mkSchemaRowExtend(pred, fresh, acc2, loc))
             }
-            c.unifyType(freshSchemaRow, openSchemaRow, loc)
-            closedSchemaRow
+            c.unifyType(freshSchemaRow, fullSchemaRow, loc)
+            resultSchemaRow
           case None => freshSchemaRow
         }
         c.unifyType(tvar, Type.mkSchema(resultSchemaRow, loc), loc)
