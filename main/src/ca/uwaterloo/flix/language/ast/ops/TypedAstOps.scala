@@ -456,6 +456,9 @@ object TypedAstOps {
     case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
+  /**
+    * Returns the free variables in the given restrictable var-or-wild pattern `v`.
+    */
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(Binder(sym, _), _, _) => Some(sym)
@@ -491,6 +494,5 @@ object TypedAstOps {
     case Body.Guard(exp, _) => freeVars(exp)
     case Body.Functional(_, exp, _) => freeVars(exp)
   }
-
 
 }

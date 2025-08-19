@@ -249,7 +249,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0)
-        if (isSimple(e1) && exp1.eff == Type.Pure) {
+        if (isSimple(e1) && e1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -259,7 +259,7 @@ object Inliner {
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
           val freshVarSym = Symbol.freshVarSym(sym)
-          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur, exp1.eff))
           val e2 = visitExp(exp2, ctx)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
@@ -562,7 +562,7 @@ object Inliner {
     */
   private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
-      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
+      case Some(BoundKind.LetBound(exp, occur, eff)) if shouldInlineVar(sym, exp, occur, eff) =>
         Some(exp)
 
       case Some(_) =>
@@ -577,8 +577,10 @@ object Inliner {
     * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
     *
     * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    *
+    * `eff` is the original effect of `exp`. See [[BoundKind.LetBound]] for more information.
     */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, eff: Type): Boolean = (occur, eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
@@ -690,8 +692,28 @@ object Inliner {
     /** Variable is bound by either a parameter or a pattern. Its value is unknown. */
     object ParameterOrPattern extends BoundKind
 
-    /** The right-hand side of a let-bound variable along with its occurrence information. */
-    case class LetBound(expr: MonoAst.Expr, occur: Occur) extends BoundKind
+    /**
+      * The right-hand side of a let-bound variable along with its occurrence information.
+      *
+      * Due to sub-effecting `eff` is required to store the effect of the non-visited exp.
+      * When sub-effecting is enabled, the purity of an expression may change when inlining
+      * a function. Consider the following example:
+      * {{{
+      *   def f(): Int32 \ IO = { ... non-simple pure body ... }
+      *   def g(): Unit \ IO = {
+      *     let res: Int32 = f();
+      *     println(res)
+      *   }
+      * }}}
+      * The definition of `f` is pure but upcast to `IO` do to sub-effecting. Inlining
+      * `f` makes the right-hand side of `res` pure, but is no longer simple. However,
+      * when the inliner consider `res` in the last line, the inliner will think that
+      * `res` was inlined because it is used once and is pure.
+      * Storing the original effect in `eff` allows the inliner to correctly consider its
+      * previous decisions, since the purity / effect did not change during inlining.
+      * The subsequent round of inlining may then choose to inline the let-bound variable.
+      */
+    case class LetBound(expr: MonoAst.Expr, occur: Occur, eff: Type) extends BoundKind
 
   }
 
