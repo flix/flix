@@ -1874,9 +1874,9 @@ object Parser2 {
     private def extTagExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordXvar))
+      val mark = open()
       expect(TokenKind.KeywordXvar)
       val lhs = nameUnqualified(NAME_TAG)
-      val mark = openBefore(lhs)
       nth(0) match {
         case TokenKind.ParenL => arguments()
         case _ => ()
