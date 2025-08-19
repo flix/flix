@@ -610,7 +610,7 @@ object Redundancy {
             RedundancyError.DuplicateExtPattern(rule1.label, rule1.label.loc, rule2.label.loc)
         }
 
-      Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
+      Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.foldLeft(Used.empty)(_ ++ _)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
