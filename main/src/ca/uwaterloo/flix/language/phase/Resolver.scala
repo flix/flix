@@ -1973,8 +1973,8 @@ object Resolver {
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
   private def resolveExtPattern(pat0: NamedAst.ExtPattern): (ResolvedAst.ExtPattern, List[LocalScope]) = pat0 match {
-    case NamedAst.ExtPattern.Wild(loc) =>
-      (ResolvedAst.ExtPattern.Wild(loc), List.empty)
+    case NamedAst.ExtPattern.Default(loc) =>
+      (ResolvedAst.ExtPattern.Default(loc), List.empty)
 
     case NamedAst.ExtPattern.Tag(label, pats, loc) =>
       val (ps, scps) = pats.map(resolveExtTagPattern).unzip

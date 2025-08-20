@@ -960,7 +960,7 @@ object Kinder {
     */
   private def visitExtPattern(pat0: ResolvedAst.ExtPattern)(implicit scope: Scope, flix: Flix): KindedAst.ExtPattern = {
     def visitVarOrWild(varOrWild0: ResolvedAst.ExtPattern.VarOrWild): KindedAst.ExtPattern.VarOrWild = varOrWild0 match {
-      case ResolvedAst.ExtPattern.Wild(loc) =>
+      case ResolvedAst.ExtPattern.Default(loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.ExtPattern.Wild(tvar, loc)
 
@@ -974,7 +974,7 @@ object Kinder {
     }
 
     pat0 match {
-      case ResolvedAst.ExtPattern.Wild(loc) =>
+      case ResolvedAst.ExtPattern.Default(loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.ExtPattern.Wild(tvar, loc)
 

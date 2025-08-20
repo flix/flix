@@ -158,7 +158,7 @@ object ResolvedAstPrinter {
     */
   private def printExtPattern(pattern: ResolvedAst.ExtPattern): DocAst.Expr = {
     pattern match {
-      case ExtPattern.Wild(_) => DocAst.Expr.Wild
+      case ExtPattern.Default(_) => DocAst.Expr.Wild
       case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printVarOrWild))
       case ExtPattern.Error(_) => DocAst.Expr.Error
     }
@@ -168,7 +168,7 @@ object ResolvedAstPrinter {
     * Returns the [[DocAst.Expr]] representation of `varOrWild0`.
     */
   private def printVarOrWild(varOrWild0: ResolvedAst.ExtPattern.VarOrWild): DocAst.Expr = varOrWild0 match {
-    case ExtPattern.Wild(_) => DocAst.Expr.Wild
+    case ExtPattern.Default(_) => DocAst.Expr.Wild
     case ExtPattern.Var(sym, _) => DocAst.Expr.Var(sym)
     case ExtPattern.Error(_) => DocAst.Expr.Error
   }
