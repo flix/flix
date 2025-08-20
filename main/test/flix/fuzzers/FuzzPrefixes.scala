@@ -27,7 +27,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   /**
     * The number of prefixes to compile for each program.
     */
-  private val N: Int = 100
+  private val N: Int = 200
 
   test("simple-card-game") {
     val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
