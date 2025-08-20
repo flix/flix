@@ -29,9 +29,9 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
   // In a file with just 100 lines, there is (100 * 99) / 2 unique non-equal swaps.
   // That's 4950 compiles if we try them all.
   // Assuming each take 1sec to run that ends up at 1.3 hours.
-  // Instead we select numSwapLines and try to swap those with each-other.
+  // Instead, we select numSwapLines and try to swap those with each-other.
   // For instance numSwapLines = 10 gives a total of 330 swaps per file.
-  private val numSwapLines = 20
+  private val numSwapLines = 25
 
   test("simple-card-game") {
     val filepath = Paths.get("examples/larger-examples/simple-card-game.flix")
