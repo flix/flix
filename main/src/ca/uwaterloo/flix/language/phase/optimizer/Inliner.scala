@@ -423,20 +423,20 @@ object Inliner {
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
     case MonoAst.ExtPattern.Tag(label, pats, tpe, loc) =>
-      val (ps, varSubsts) = pats.map(visitVarOrWild).unzip
+      val (ps, varSubsts) = pats.map(visitExtTagPattern).unzip
       val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
       (MonoAst.ExtPattern.Tag(label, ps, tpe, loc), varSubst)
   }
 
-  private def visitVarOrWild(varOrWild0: MonoAst.ExtPattern.VarOrWild)(implicit flix: Flix): (MonoAst.ExtPattern.VarOrWild, Map[Symbol.VarSym, Symbol.VarSym]) = varOrWild0 match {
-    case MonoAst.ExtPattern.Wild(tpe, loc) =>
-      (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+  private def visitExtTagPattern(pat0: MonoAst.ExtTagPattern)(implicit flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtTagPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
 
-    case MonoAst.ExtPattern.Var(sym, tpe, occur, loc) => occur match {
+    case MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc) => occur match {
       case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
 
       case Occur.Dead =>
-        (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+        (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
 
       case Occur.Once
            | Occur.OnceInLambda
@@ -444,7 +444,7 @@ object Inliner {
            | Occur.ManyBranch
            | Occur.Many =>
         val freshVarSym = Symbol.freshVarSym(sym)
-        (MonoAst.ExtPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+        (MonoAst.ExtTagPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
     }
   }
 

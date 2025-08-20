@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
-import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, ExtPattern, Pattern}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object MonoAstPrinter {
@@ -99,18 +99,16 @@ object MonoAstPrinter {
   /**
     * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
-  private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = {
-    pattern match {
-      case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printVarOrWild))
+  private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
     }
-  }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `varOrWild0`.
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
-  private def printVarOrWild(varOrWild0: MonoAst.ExtPattern.VarOrWild): DocAst.Expr = varOrWild0 match {
-    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
-    case ExtPattern.Var(sym, _, _, _) => DocAst.Expr.Var(sym)
+  private def printExtTagPattern(pattern: MonoAst.ExtTagPattern): DocAst.Expr = pattern match {
+    case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _, _, _) => DocAst.Expr.Var(sym)
   }
 
   /** Returns the [[DocAst.Expr]] representation of `sym`. */

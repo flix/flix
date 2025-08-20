@@ -897,7 +897,7 @@ object Visitor {
       case ExtPattern.Default(_, _) => ()
       case ExtPattern.Tag(_, pats, _, _) =>
         pats.foreach {
-          case ExtPattern.Var(bnd, _, _) => visitBinder(bnd)
+          case ExtTagPattern.Var(bnd, _, _) => visitBinder(bnd)
           case _ => ()
         }
       case ExtPattern.Error(_, _) => ()

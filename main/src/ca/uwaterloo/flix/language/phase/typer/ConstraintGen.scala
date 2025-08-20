@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern}
+import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
@@ -1071,38 +1071,41 @@ object ConstraintGen {
   }
 
   /**
-    * Generates constraints for the patterns inside the record label pattern.
+    * Generates constraints for the patterns inside the ext pattern.
     *
     * Returns the type of the pattern.
     */
-  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: Scope, flix: Flix): Either[(Name.Pred, List[Type]), Type.Var] = {
-    def visitVarOrWild(varOrWild0: KindedAst.ExtPattern.ExtTagPattern): Type = varOrWild0 match {
-      case ExtPattern.Default(tvar, _) =>
-        tvar
+  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: Scope, flix: Flix): Either[(Name.Pred, List[Type]), Type.Var] = pat0 match {
+    case ExtPattern.Default(tvar, _) =>
+      Right(tvar)
 
-      case ExtPattern.Var(sym, tvar, loc) =>
-        c.unifyType(sym.tvar, tvar, loc)
-        tvar
+    case ExtPattern.Tag(label, pats, tvar, loc) =>
+      val name = Name.Pred(label.name, label.loc)
+      val ps = pats.map(visitExtTagPattern)
+      val freshRowVar = freshVar(Kind.SchemaRow, loc)
+      val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc.asSynthetic), freshRowVar, loc)
+      c.unifyType(tpe, tvar, loc)
+      Left((name, ps))
 
-      case ExtPattern.Error(tvar, _) =>
-        tvar
-    }
+    case ExtPattern.Error(tvar, _) =>
+      Right(tvar)
+  }
 
-    pat0 match {
-      case ExtPattern.Default(tvar, _) =>
-        Right(tvar)
+  /**
+    * Generates constraints for the patterns inside the ext tag pattern.
+    *
+    * Returns the type of the pattern.
+    */
+  def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext): Type = pat0 match {
+    case ExtTagPattern.Wild(tvar, _) =>
+      tvar
 
-      case ExtPattern.Tag(label, pats, tvar, loc) =>
-        val name = Name.Pred(label.name, label.loc)
-        val ps = pats.map(visitVarOrWild)
-        val freshRowVar = freshVar(Kind.SchemaRow, loc)
-        val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc.asSynthetic), freshRowVar, loc)
-        c.unifyType(tpe, tvar, loc)
-        Left((name, ps))
+    case ExtTagPattern.Var(sym, tvar, loc) =>
+      c.unifyType(sym.tvar, tvar, loc)
+      tvar
 
-      case ExtPattern.Error(tvar, _) =>
-        Right(tvar)
-    }
+    case ExtTagPattern.Error(tvar, _) =>
+      tvar
   }
 
   /**

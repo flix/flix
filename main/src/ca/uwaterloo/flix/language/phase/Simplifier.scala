@@ -1028,8 +1028,8 @@ object Simplifier {
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
         // Let-bind each variable in the rule / pattern
         val branch1 = pats.zipWithIndex.foldRight(e1) {
-          case ((MonoAst.ExtPattern.Wild(_, _), _), acc1) => acc1
-          case ((MonoAst.ExtPattern.Var(sym, _, _, _), idx), acc1) =>
+          case ((MonoAst.ExtTagPattern.Wild(_, _), _), acc1) => acc1
+          case ((MonoAst.ExtTagPattern.Var(sym, _, _, _), idx), acc1) =>
             val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
             SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
         }

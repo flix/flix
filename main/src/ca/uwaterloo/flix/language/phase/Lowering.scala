@@ -1039,20 +1039,20 @@ object Lowering {
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
-    case TypedAst.ExtPattern.Default(tpe, loc) => throw InternalCompilerException("unexpected wild ext pattern", loc)
+    case TypedAst.ExtPattern.Default(_, loc) => throw InternalCompilerException("unexpected default ext pattern", loc)
 
     case TypedAst.ExtPattern.Tag(label, pats, tpe, loc) =>
-      val ps = pats.map(visitVarOrWild)
+      val ps = pats.map(visitExtTagPat)
       LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
 
     case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
 
   }
 
-  private def visitVarOrWild(varOrWild0: TypedAst.ExtPattern.ExtTagPattern): LoweredAst.ExtPattern.VarOrWild = varOrWild0 match {
-    case TypedAst.ExtPattern.Default(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
-    case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
-    case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+  private def visitExtTagPat(pat0: TypedAst.ExtTagPattern): LoweredAst.ExtTagPattern = pat0 match {
+    case TypedAst.ExtTagPattern.Wild(tpe, loc) => LoweredAst.ExtTagPattern.Wild(tpe, loc)
+    case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) => LoweredAst.ExtTagPattern.Var(bnd.sym, tpe, loc)
+    case TypedAst.ExtTagPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
   /**
@@ -2292,15 +2292,15 @@ object Lowering {
   }
 
   /**
-    * Applies the given substitution `subst` to the given ext pattern `pattern0`.
+    * Applies the given substitution `subst` to the given ext tag pattern `pattern0`.
     */
-  private def substVarOrWild(varOrWild0: LoweredAst.ExtPattern.VarOrWild, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern.VarOrWild = varOrWild0 match {
-    case LoweredAst.ExtPattern.Wild(tpe, loc) =>
-      LoweredAst.ExtPattern.Wild(tpe, loc)
+  private def substVarOrWild(pattern0: LoweredAst.ExtTagPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtTagPattern = pattern0 match {
+    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
+      LoweredAst.ExtTagPattern.Wild(tpe, loc)
 
-    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
-      LoweredAst.ExtPattern.Var(s, tpe, loc)
+      LoweredAst.ExtTagPattern.Var(s, tpe, loc)
   }
 
 }

@@ -764,34 +764,35 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given extensible pattern `pat0`.
     */
-  private def visitExtPat(pat0: ExtPattern): Iterator[SemanticToken] = {
-    def visitVarOrWild(varOrWild: ExtPattern.ExtTagPattern): Iterator[SemanticToken] = varOrWild match {
-      case ExtPattern.Default(_, loc) =>
-        val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
-        Iterator(t)
+  private def visitExtPat(pat0: ExtPattern): Iterator[SemanticToken] = pat0 match {
+    case ExtPattern.Default(_, loc) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
+      Iterator(t)
 
-      case ExtPattern.Var(bnd, _, loc) =>
-        val o = getSemanticTokenType(bnd.sym, bnd.tpe)
-        val t = SemanticToken(o, Nil, loc)
-        Iterator(t)
+    case ExtPattern.Tag(label, pats, _, _) =>
+      val t = SemanticToken(SemanticTokenType.EnumMember, Nil, label.loc)
+      val ts = pats.foldRight(Iterator.empty[SemanticToken]) {
+        case (p, acc) => visitExtTagPattern(p) ++ acc
+      }
+      Iterator(t) ++ ts
 
-      case ExtPattern.Error(_, _) => Iterator.empty
-    }
+    case ExtPattern.Error(_, _) => Iterator.empty
+  }
 
-    pat0 match {
-      case ExtPattern.Default(_, loc) =>
-        val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
-        Iterator(t)
+  /**
+    * Returns all semantic tokens in the given extensible tag pattern `pat0`.
+    */
+  private def visitExtTagPattern(pat0: ExtTagPattern): Iterator[SemanticToken] = pat0 match {
+    case ExtTagPattern.Wild(_, loc) =>
+      val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
+      Iterator(t)
 
-      case ExtPattern.Tag(label, pats, _, _) =>
-        val t = SemanticToken(SemanticTokenType.EnumMember, Nil, label.loc)
-        val ts = pats.foldRight(Iterator.empty[SemanticToken]) {
-          case (p, acc) => visitVarOrWild(p) ++ acc
-        }
-        Iterator(t) ++ ts
+    case ExtTagPattern.Var(bnd, _, loc) =>
+      val o = getSemanticTokenType(bnd.sym, bnd.tpe)
+      val t = SemanticToken(o, Nil, loc)
+      Iterator(t)
 
-      case ExtPattern.Error(_, _) => Iterator.empty
-    }
+    case ExtTagPattern.Error(_, _) => Iterator.empty
   }
 
   /**

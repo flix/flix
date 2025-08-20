@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -179,12 +179,12 @@ object TypedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `varOrWild0`.
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
-  private def printVarOrWild(varOrWild0: TypedAst.ExtPattern.ExtTagPattern): DocAst.Expr = varOrWild0 match {
-    case ExtPattern.Default(_, _) => DocAst.Expr.Wild
-    case ExtPattern.Var(TypedAst.Binder(sym, _), _, _) => DocAst.Expr.Var(sym)
-    case ExtPattern.Error(_, _) => DocAst.Expr.Error
+  private def printVarOrWild(pattern: TypedAst.ExtTagPattern): DocAst.Expr = pattern match {
+    case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(TypedAst.Binder(sym, _), _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Error(_, _) => DocAst.Expr.Error
   }
 
   /**

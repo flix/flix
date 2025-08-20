@@ -732,20 +732,22 @@ object Monomorpher {
     */
   private def specializeExtPat(pat0: LoweredAst.ExtPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
     case LoweredAst.ExtPattern.Tag(label, pats, tpe, loc) =>
-      val (ps, symMaps) = pats.map(specializeVarOrWild(_, subst)).unzip
+      val (ps, symMaps) = pats.map(specializeExtTagPat(_, subst)).unzip
       val env = symMaps.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
       (MonoAst.ExtPattern.Tag(label, ps, subst(tpe), loc), env)
   }
 
   /**
-    * Specializes `varOrWild0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
+    * Specializes `pat0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
     * symbols.
     */
-  private def specializeVarOrWild(varOrWild0: LoweredAst.ExtPattern.VarOrWild, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtPattern.VarOrWild, Map[Symbol.VarSym, Symbol.VarSym]) = varOrWild0 match {
-    case LoweredAst.ExtPattern.Wild(tpe, loc) => (MonoAst.ExtPattern.Wild(subst(tpe), loc), Map.empty)
-    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+  private def specializeExtTagPat(pat0: LoweredAst.ExtTagPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Wild(subst(tpe), loc), Map.empty)
+
+    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.ExtPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
+      (MonoAst.ExtTagPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Specializes `method` w.r.t. `subst`. */

@@ -148,17 +148,21 @@ object MonoAst {
 
   object ExtPattern {
 
-    sealed trait VarOrWild {
-      def tpe: Type
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tpe: Type, loc: SourceLocation) extends ExtPattern
 
-      def loc: SourceLocation
-    }
+  }
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends VarOrWild
+  sealed trait ExtTagPattern {
+    def tpe: Type
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends VarOrWild
+    def loc: SourceLocation
+  }
 
-    case class Tag(label: Name.Label, pats: List[VarOrWild], tpe: Type, loc: SourceLocation) extends ExtPattern
+  object ExtTagPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends ExtTagPattern
 
   }
 
