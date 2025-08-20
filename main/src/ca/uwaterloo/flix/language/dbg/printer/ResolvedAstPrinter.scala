@@ -16,8 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.api.lsp.Request.DocumentSymbols
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, Pattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -154,23 +153,21 @@ object ResolvedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    * Returns the [[DocAst.Expr]] representation of `pat`.
     */
-  private def printExtPattern(pattern: ResolvedAst.ExtPattern): DocAst.Expr = {
-    pattern match {
-      case ExtPattern.Default(_) => DocAst.Expr.Wild
-      case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printVarOrWild))
-      case ExtPattern.Error(_) => DocAst.Expr.Error
-    }
+  private def printExtPattern(pat: ResolvedAst.ExtPattern): DocAst.Expr = pat match {
+    case ExtPattern.Default(_) => DocAst.Expr.Wild
+    case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+    case ExtPattern.Error(_) => DocAst.Expr.Error
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `varOrWild0`.
+    * Returns the [[DocAst.Expr]] representation of `pat`.
     */
-  private def printVarOrWild(varOrWild0: ResolvedAst.ExtPattern.VarOrWild): DocAst.Expr = varOrWild0 match {
-    case ExtPattern.Default(_) => DocAst.Expr.Wild
-    case ExtPattern.Var(sym, _) => DocAst.Expr.Var(sym)
-    case ExtPattern.Error(_) => DocAst.Expr.Error
+  private def printExtTagPattern(pat: ResolvedAst.ExtTagPattern): DocAst.Expr = pat match {
+    case ExtTagPattern.Wild(_) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Error(_) => DocAst.Expr.Error
   }
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
