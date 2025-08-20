@@ -888,7 +888,7 @@ object Desugar {
     */
   private def visitExtPattern(pat0: WeededAst.ExtPattern): DesugaredAst.ExtPattern = pat0 match {
     case WeededAst.ExtPattern.Default(loc) =>
-      DesugaredAst.ExtPattern.Wild(loc)
+      DesugaredAst.ExtPattern.Default(loc)
 
     case WeededAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPattern)
