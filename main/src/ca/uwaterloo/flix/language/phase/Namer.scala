@@ -1066,7 +1066,7 @@ object Namer {
     */
   private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
     case DesugaredAst.ExtPattern.Default(loc) =>
-      NamedAst.ExtPattern.Wild(loc)
+      NamedAst.ExtPattern.Default(loc)
 
     case DesugaredAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPattern)

@@ -282,7 +282,7 @@ object NamedAst {
 
   object ExtPattern {
 
-    case class Wild(loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
     case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
