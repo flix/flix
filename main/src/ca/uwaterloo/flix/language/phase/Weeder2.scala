@@ -2447,22 +2447,22 @@ object Weeder2 {
       }
     }
 
-    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[ExtPattern.VarOrWild], CompilationMessage] = {
+    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[ExtTagPattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => Nel(ExtPattern.Wild(tree.loc), Nil)
+        case Nil => Nel(ExtTagPattern.Wild(tree.loc), Nil)
         case x :: xs => Nel(restrictToVarOrWild(x), xs.map(restrictToVarOrWild))
       }
     }
 
-    private def restrictToVarOrWild(pat: Pattern)(implicit sctx: SharedContext): ExtPattern.VarOrWild = pat match {
-      case Pattern.Wild(loc) => ExtPattern.Wild(loc)
-      case Pattern.Var(ident, loc) => ExtPattern.Var(ident, loc)
+    private def restrictToVarOrWild(pat: Pattern)(implicit sctx: SharedContext): ExtTagPattern = pat match {
+      case Pattern.Wild(loc) => ExtTagPattern.Wild(loc)
+      case Pattern.Var(ident, loc) => ExtTagPattern.Var(ident, loc)
       case _ =>
         val error = WeederError.IllegalExtPattern(pat.loc)
         sctx.errors.add(error)
-        ExtPattern.Error(pat.loc)
+        ExtTagPattern.Error(pat.loc)
     }
 
     private def visitTuplePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
