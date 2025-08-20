@@ -1972,30 +1972,32 @@ object Resolver {
   /**
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
-  private def resolveExtPattern(pat0: NamedAst.ExtPattern): (ResolvedAst.ExtPattern, List[LocalScope]) = {
-    def visitVarOrWild(varOrWild0: NamedAst.ExtPattern.ExtTagPattern): (ResolvedAst.ExtPattern.VarOrWild, List[LocalScope]) = varOrWild0 match {
-      case NamedAst.ExtPattern.Wild(loc) =>
-        (ResolvedAst.ExtPattern.Wild(loc), List.empty)
+  private def resolveExtPattern(pat0: NamedAst.ExtPattern): (ResolvedAst.ExtPattern, List[LocalScope]) = pat0 match {
+    case NamedAst.ExtPattern.Wild(loc) =>
+      (ResolvedAst.ExtPattern.Wild(loc), List.empty)
 
-      case NamedAst.ExtPattern.Var(sym, loc) =>
-        (ResolvedAst.ExtPattern.Var(sym, loc), List(mkVarScp(sym)))
+    case NamedAst.ExtPattern.Tag(label, pats, loc) =>
+      val (ps, scps) = pats.map(resolveExtTagPattern).unzip
+      (ResolvedAst.ExtPattern.Tag(label, ps, loc), scps.flatten)
 
-      case NamedAst.ExtPattern.Error(loc) =>
-        (ResolvedAst.ExtPattern.Error(loc), List.empty)
-    }
-
-    pat0 match {
-      case NamedAst.ExtPattern.Wild(loc) =>
-        (ResolvedAst.ExtPattern.Wild(loc), List.empty)
-
-      case NamedAst.ExtPattern.Tag(label, pats, loc) =>
-        val (ps, scps) = pats.map(visitVarOrWild).unzip
-        (ResolvedAst.ExtPattern.Tag(label, ps, loc), scps.flatten)
-
-      case NamedAst.ExtPattern.Error(loc) =>
-        (ResolvedAst.ExtPattern.Error(loc), List.empty)
-    }
+    case NamedAst.ExtPattern.Error(loc) =>
+      (ResolvedAst.ExtPattern.Error(loc), List.empty)
   }
+
+  /**
+    * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
+    */
+  private def resolveExtTagPattern(pat0: NamedAst.ExtTagPattern): (ResolvedAst.ExtTagPattern, List[LocalScope]) = pat0 match {
+    case NamedAst.ExtTagPattern.Wild(loc) =>
+      (ResolvedAst.ExtTagPattern.Wild(loc), List.empty)
+
+    case NamedAst.ExtTagPattern.Var(sym, loc) =>
+      (ResolvedAst.ExtTagPattern.Var(sym, loc), List(mkVarScp(sym)))
+
+    case NamedAst.ExtTagPattern.Error(loc) =>
+      (ResolvedAst.ExtTagPattern.Error(loc), List.empty)
+  }
+
 
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
