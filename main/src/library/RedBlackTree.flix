@@ -982,13 +982,6 @@ mod RedBlackTree {
     /// produces `Some(_)`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
-        filterMapImplementation(f, t)
-
-    ///
-    /// Temporary hack!
-    /// A concrete implementation of `filterMap` that the `Filterable` instance can use.
-    ///
-    def filterMapImplementation(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
         let step = (acc, k, a) -> match f(a) {
             case Some(b) => insert(k, b, acc)
             case None    => acc
