@@ -2272,6 +2272,9 @@ object Lowering {
       LoweredAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
   }
 
+  /**
+    * Applies the given substitution `subst` to the given ext pattern `pattern0`.
+    */
   private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
     case LoweredAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
     case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
