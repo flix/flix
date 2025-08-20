@@ -855,6 +855,67 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
+  test("IllegalQualifiedExtPattern.01") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar B(1) {
+        |    case A.B(_) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedExtPattern](result)
+  }
+
+  test("IllegalQualifiedExtPattern.02") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar B(1) {
+        |    case A.B.C(_) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedExtPattern](result)
+  }
+
+  test("IllegalQualifiedExtPattern.03") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar B(1) {
+        |    case A.B(_) => 1
+        |    case A.B.C(_) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedExtPattern](result)
+  }
+
+  test("IllegalQualifiedExtPattern.04") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar B(1) {
+        |    case A(_) => 1
+        |    case A.B(_) => 1
+        |    case A.B.C(_) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedExtPattern](result)
+  }
+
+  test("IllegalQualifiedExtPattern.05") {
+    val input =
+      """
+        |def f(): Int32 = ematch xvar B(1) {
+        |    case A(_) => 1
+        |    case B(_) => 1
+        |    case A.B(_) => 1
+        |    case A.B.C(_) => 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalQualifiedExtPattern](result)
+  }
+
   test("IllegalRecordExtensionPattern.01") {
     val input =
       """
