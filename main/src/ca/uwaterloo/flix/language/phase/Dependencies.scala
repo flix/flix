@@ -633,7 +633,7 @@ object Dependencies {
   }
 
   private def visitExtPattern(p: TypedAst.ExtPattern)(implicit sctx: SharedContext): Unit = p match {
-    case ExtPattern.Wild(tpe, _) =>
+    case ExtPattern.Default(tpe, _) =>
       visitType(tpe)
 
     case ExtPattern.Tag(_, pats, tpe, _) =>
@@ -644,8 +644,8 @@ object Dependencies {
       visitType(tpe)
   }
 
-  private def visitVarOrWild(v: TypedAst.ExtPattern.VarOrWild)(implicit sctx: SharedContext): Unit = v match {
-    case ExtPattern.Wild(tpe, _) =>
+  private def visitVarOrWild(v: TypedAst.ExtPattern.ExtTagPattern)(implicit sctx: SharedContext): Unit = v match {
+    case ExtPattern.Default(tpe, _) =>
       visitType(tpe)
 
     case ExtPattern.Var(bnd, tpe, _) =>

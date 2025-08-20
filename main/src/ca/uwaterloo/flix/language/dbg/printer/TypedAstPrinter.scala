@@ -172,7 +172,7 @@ object TypedAstPrinter {
     */
   private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = {
     pattern match {
-      case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+      case ExtPattern.Default(_, _) => DocAst.Expr.Wild
       case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printVarOrWild))
       case ExtPattern.Error(_, _) => DocAst.Expr.Error
     }
@@ -181,8 +181,8 @@ object TypedAstPrinter {
   /**
     * Returns the [[DocAst.Expr]] representation of `varOrWild0`.
     */
-  private def printVarOrWild(varOrWild0: TypedAst.ExtPattern.VarOrWild): DocAst.Expr = varOrWild0 match {
-    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
+  private def printVarOrWild(varOrWild0: TypedAst.ExtPattern.ExtTagPattern): DocAst.Expr = varOrWild0 match {
+    case ExtPattern.Default(_, _) => DocAst.Expr.Wild
     case ExtPattern.Var(TypedAst.Binder(sym, _), _, _) => DocAst.Expr.Var(sym)
     case ExtPattern.Error(_, _) => DocAst.Expr.Error
   }

@@ -765,8 +765,8 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given extensible pattern `pat0`.
     */
   private def visitExtPat(pat0: ExtPattern): Iterator[SemanticToken] = {
-    def visitVarOrWild(varOrWild: ExtPattern.VarOrWild): Iterator[SemanticToken] = varOrWild match {
-      case ExtPattern.Wild(_, loc) =>
+    def visitVarOrWild(varOrWild: ExtPattern.ExtTagPattern): Iterator[SemanticToken] = varOrWild match {
+      case ExtPattern.Default(_, loc) =>
         val t = SemanticToken(SemanticTokenType.Variable, Nil, loc)
         Iterator(t)
 
@@ -779,7 +779,7 @@ object SemanticTokensProvider {
     }
 
     pat0 match {
-      case ExtPattern.Wild(_, loc) =>
+      case ExtPattern.Default(_, loc) =>
         val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
         Iterator(t)
 

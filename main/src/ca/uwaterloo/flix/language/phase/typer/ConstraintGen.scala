@@ -1076,8 +1076,8 @@ object ConstraintGen {
     * Returns the type of the pattern.
     */
   private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: Scope, flix: Flix): Either[(Name.Pred, List[Type]), Type.Var] = {
-    def visitVarOrWild(varOrWild0: KindedAst.ExtPattern.VarOrWild): Type = varOrWild0 match {
-      case ExtPattern.Wild(tvar, _) =>
+    def visitVarOrWild(varOrWild0: KindedAst.ExtPattern.ExtTagPattern): Type = varOrWild0 match {
+      case ExtPattern.Default(tvar, _) =>
         tvar
 
       case ExtPattern.Var(sym, tvar, loc) =>
@@ -1089,7 +1089,7 @@ object ConstraintGen {
     }
 
     pat0 match {
-      case ExtPattern.Wild(tvar, _) =>
+      case ExtPattern.Default(tvar, _) =>
         Right(tvar)
 
       case ExtPattern.Tag(label, pats, tvar, loc) =>

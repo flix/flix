@@ -282,17 +282,25 @@ object KindedAst {
 
   object ExtPattern {
 
-    sealed trait VarOrWild {
-      def loc: SourceLocation
-    }
+    case class Default(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
-    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern with VarOrWild
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
-    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends VarOrWild
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
-    case class Tag(label: Name.Label, pats: List[VarOrWild], tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+  }
 
-    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern with VarOrWild
+  sealed trait ExtTagPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
 
   }
 

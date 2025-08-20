@@ -1039,7 +1039,7 @@ object Lowering {
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
-    case TypedAst.ExtPattern.Wild(tpe, loc) => throw InternalCompilerException("unexpected wild ext pattern", loc)
+    case TypedAst.ExtPattern.Default(tpe, loc) => throw InternalCompilerException("unexpected wild ext pattern", loc)
 
     case TypedAst.ExtPattern.Tag(label, pats, tpe, loc) =>
       val ps = pats.map(visitVarOrWild)
@@ -1049,8 +1049,8 @@ object Lowering {
 
   }
 
-  private def visitVarOrWild(varOrWild0: TypedAst.ExtPattern.VarOrWild): LoweredAst.ExtPattern.VarOrWild = varOrWild0 match {
-    case TypedAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
+  private def visitVarOrWild(varOrWild0: TypedAst.ExtPattern.ExtTagPattern): LoweredAst.ExtPattern.VarOrWild = varOrWild0 match {
+    case TypedAst.ExtPattern.Default(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
     case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
     case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }

@@ -339,19 +339,28 @@ object TypedAst {
 
   object ExtPattern {
 
-    sealed trait VarOrWild {
-      def tpe: Type
+    case class Default(tpe: Type, loc: SourceLocation) extends ExtPattern
 
-      def loc: SourceLocation
-    }
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern with VarOrWild
+    case class Error(tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends VarOrWild
+  }
 
-    case class Tag(label: Name.Label, pats: List[VarOrWild], tpe: Type, loc: SourceLocation) extends ExtPattern
+  sealed trait ExtTagPattern {
+    def tpe: Type
 
-    case class Error(tpe: Type, loc: SourceLocation) extends ExtPattern with VarOrWild
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate {

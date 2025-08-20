@@ -731,34 +731,37 @@ object TypeReconstruction {
   }
 
   /**
-    * Reconstructs types in the given ext-pattern.
+    * Reconstructs types in the given ext pattern.
     */
-  private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = {
-    def visitVarOrWild(varOrWild0: KindedAst.ExtPattern.VarOrWild): TypedAst.ExtPattern.VarOrWild = varOrWild0 match {
-      case KindedAst.ExtPattern.Wild(tvar, loc) =>
-        TypedAst.ExtPattern.Wild(subst(tvar), loc)
+  private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
+    case KindedAst.ExtPattern.Default(tvar, loc) =>
+      TypedAst.ExtPattern.Default(subst(tvar), loc)
 
-      case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
-        val tpe = subst(tvar)
-        val bnd = TypedAst.Binder(sym, tpe)
-        TypedAst.ExtPattern.Var(bnd, tpe, loc)
+    case KindedAst.ExtPattern.Tag(label, pats, tvar, loc) =>
+      val ps = pats.map(visitExtTagPat)
+      TypedAst.ExtPattern.Tag(label, ps, subst(tvar), loc)
 
-      case KindedAst.ExtPattern.Error(tvar, loc) =>
-        TypedAst.ExtPattern.Error(subst(tvar), loc)
-    }
-
-    pat0 match {
-      case KindedAst.ExtPattern.Wild(tvar, loc) =>
-        TypedAst.ExtPattern.Wild(subst(tvar), loc)
-
-      case KindedAst.ExtPattern.Tag(label, pats, tvar, loc) =>
-        val ps = pats.map(visitVarOrWild)
-        TypedAst.ExtPattern.Tag(label, ps, subst(tvar), loc)
-
-      case KindedAst.ExtPattern.Error(tvar, loc) =>
-        TypedAst.ExtPattern.Error(subst(tvar), loc)
-    }
+    case KindedAst.ExtPattern.Error(tvar, loc) =>
+      TypedAst.ExtPattern.Error(subst(tvar), loc)
   }
+
+
+  /**
+    * Reconstructs types in the given ext tag pattern.
+    */
+  private def visitExtTagPat(pat0: KindedAst.ExtTagPattern)(implicit subst: SubstitutionTree): TypedAst.ExtTagPattern = pat0 match {
+    case KindedAst.ExtTagPattern.Wild(tvar, loc) =>
+      TypedAst.ExtTagPattern.Wild(subst(tvar), loc)
+
+    case KindedAst.ExtTagPattern.Var(sym, tvar, loc) =>
+      val tpe = subst(tvar)
+      val bnd = TypedAst.Binder(sym, tpe)
+      TypedAst.ExtTagPattern.Var(bnd, tpe, loc)
+
+    case KindedAst.ExtTagPattern.Error(tvar, loc) =>
+      TypedAst.ExtTagPattern.Error(subst(tvar), loc)
+  }
+
   /**
     * Reconstructs types in the given head predicate.
     */
