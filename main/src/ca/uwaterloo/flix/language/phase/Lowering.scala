@@ -841,10 +841,17 @@ object Lowering {
       val mergedExp = mergeExps(exps, loc)
       val argExps = mergedExp :: Nil
       val solvedExp = LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
-      optPreds match {
-        case Some(preds) => mergeExps(preds.map(pred => projectSym(mkPredSym(pred), solvedExp, loc)), loc)
-        case None => solvedExp
+      val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)
+      val letBodyExp = optPreds match {
+        case Some(preds) =>
+          mergeExps(preds.map(pred => {
+            val varExp = LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+            projectSym(mkPredSym(pred), varExp, loc)
+          }), loc)
+        case None => LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
       }
+      LoweredAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, loc)
+
 
     case TypedAst.Expr.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
