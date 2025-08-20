@@ -604,11 +604,11 @@ object TypeReconstruction {
       val eff = Type.Pure
       TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.FixpointSolveWithProject(exps, mode, optPreds, tvar, loc) =>
+    case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
       val es = exps.map(visitExp)
       val tpe = subst(tvar)
       val eff = Type.mkUnion(es.map(_.eff), loc)
-      TypedAst.Expr.FixpointSolveWithProject(es, mode, optPreds, tpe, eff, loc)
+      TypedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -629,7 +629,7 @@ object TypeReconstruction {
       // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
       // See Weeder for more details.
       val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolveWithProject(mergeExp :: Nil, SolveMode.Default, None, e1.tpe, eff , loc)
+      val solveExp = TypedAst.Expr.FixpointSolveWithProject(mergeExp :: Nil, None, SolveMode.Default, e1.tpe, eff, loc)
       TypedAst.Expr.FixpointProject(pred, arity, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, evar) =>

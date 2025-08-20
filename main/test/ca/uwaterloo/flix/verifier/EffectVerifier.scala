@@ -390,7 +390,7 @@ object EffectVerifier {
       }
       // TODO ?
       ()
-    case Expr.FixpointSolveWithProject(exps, mode, optIdents, tpe, eff, loc) =>
+    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO ?
       ()

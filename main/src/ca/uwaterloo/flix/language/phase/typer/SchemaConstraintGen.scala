@@ -87,13 +87,7 @@ object SchemaConstraintGen {
       case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val selectRow = visitHeadPredicate(select)
-        val (withRow, resultRow) = withh.foldRight((mkAnySchemaRowType(loc1), mkAnySchemaRowType(loc1))) {
-          case (pred, (acc1, acc2)) =>
-            val relType = Type.freshVar(Kind.Predicate, loc1)
-            val withRow1 = Type.mkSchemaRowExtend(pred, relType, acc1, loc1)
-            val resultRow1 = Type.mkSchemaRowExtend(pred, relType, acc2, loc1)
-            (withRow1, resultRow1)
-        }
+        val (withRow, resultRow) = mkSchemaRowPair(withh, loc1)
         c.unifyAllTypes(Type.mkSchema(withRow, loc1) :: Type.mkSchema(selectRow, loc1) :: tpes, loc1)
         val resTpe = Type.mkVector(Type.mkExtensible(resultRow, loc1), loc1)
         val resEff = Type.mkUnion(effs, loc1)
@@ -105,22 +99,20 @@ object SchemaConstraintGen {
   def visitFixpointSolveWithProject(e: KindedAst.Expr.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointSolveWithProject(exps, _, optPreds, tvar, loc) =>
+      case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, _, tvar, loc) =>
         //
-        //  exp : #{ ... | b }    optPreds: P1 :: P2 :: ... :: Nil
+        //  exp = exps₁ <+> exps₂ <+> ... <+> expsₘ
+        //
+        //  exp : #{ P₁, P₂, ..., Pₖ, Pₖ₊₁, ..., Pₙ | b }    optPreds: P₁ ::  P₂ :: ... :: Pₖ :: Nil
         //  ---------------
-        //  solve exp project P1, P2, ... : #{ P1(...), P2(...), ... }
+        //  solve exp project P₁, P₂, ... : #{ P₁, P₂, ..., Pₖ | c }
         //
         val (tpes, effs) = exps.map(visitExp).unzip
         val freshSchemaRow = Type.freshVar(Kind.SchemaRow, loc)
         c.unifyAllTypes(Type.mkSchema(freshSchemaRow, loc) :: tpes, loc)
         val resultSchemaRow = optPreds match {
           case Some(preds) =>
-            val (fullSchemaRow, resultSchemaRow) = preds.foldRight((mkAnySchemaRowType(loc), mkAnySchemaRowType(loc))) {
-              case (pred, (acc1, acc2)) =>
-                val fresh = Type.freshVar(Kind.Predicate, loc)
-                (Type.mkSchemaRowExtend(pred, fresh, acc1, loc), Type.mkSchemaRowExtend(pred, fresh, acc2, loc))
-            }
+            val (fullSchemaRow, resultSchemaRow) = mkSchemaRowPair(preds, loc)
             c.unifyType(freshSchemaRow, fullSchemaRow, loc)
             resultSchemaRow
           case None => freshSchemaRow
@@ -132,7 +124,6 @@ object SchemaConstraintGen {
 
     }
   }
-
 
   def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
@@ -334,6 +325,17 @@ object SchemaConstraintGen {
     traits.map(trt => TraitConstraint(TraitSymUse(trt, loc), tpe, loc))
   }
 
+  /**
+    * Returns a pair of open schema rows each consisting of predicate names in `predicates`.
+    */
+  private def mkSchemaRowPair(predicates: List[Name.Pred], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
+    predicates.foldRight((mkAnySchemaRowType(loc), mkAnySchemaRowType(loc))) {
+      case (pred, (acc1, acc2)) =>
+        val fresh = Type.freshVar(Kind.Predicate, loc)
+        (Type.mkSchemaRowExtend(pred, fresh, acc1, loc), Type.mkSchemaRowExtend(pred, fresh, acc2, loc))
+    }
+  }
 
   private def mkAnySchemaRowType(loc: SourceLocation)(implicit scope: Scope, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 }

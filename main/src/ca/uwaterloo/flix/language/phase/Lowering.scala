@@ -832,17 +832,17 @@ object Lowering {
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
-    case TypedAst.Expr.FixpointSolveWithProject(exps0, mode, optPreds, _, eff, loc) =>
-      val solveDefn = mode match {
+    case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, _, eff, loc) =>
+      val defn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
         case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
       }
       val exps = exps0.map(visitExp)
       val mergedExp = mergeExps(exps, loc)
       val argExps = mergedExp :: Nil
-      val solvedExp = LoweredAst.Expr.ApplyDef(solveDefn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
+      val solvedExp = LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
       optPreds match {
-        case Some(preds) => mergeExps(preds.map(pred => filterExp(mkPredSym(pred), solvedExp, loc)), loc)
+        case Some(preds) => mergeExps(preds.map(pred => projectSym(mkPredSym(pred), solvedExp, loc)), loc)
         case None => solvedExp
       }
 
@@ -1736,12 +1736,16 @@ object Lowering {
         LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, exp.eff, loc)
     }
 
-  private def filterExp(predSym: LoweredAst.Expr, datalog: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr = {
+  /**
+    * Returns a new `Datalog` from `datalog` containing only facts from the predicate given by the `PredSym` `predSym`
+    * using `Defs.Filter`.
+    */
+  private def projectSym(predSymExp: LoweredAst.Expr, datalogExp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr = {
     val defn = Defs.lookup(Defs.Filter)
-    val argExps = predSym :: datalog :: Nil
+    val argExps = predSymExp :: datalogExp :: Nil
     val resultType = Types.Datalog
     val itpe = Types.FilterType
-    LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, datalog.eff, loc)
+    LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, datalogExp.eff, loc)
   }
 
   /**

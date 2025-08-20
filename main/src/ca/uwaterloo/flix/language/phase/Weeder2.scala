@@ -2128,7 +2128,7 @@ object Weeder2 {
       mapN(traverse(expressions)(visitExpr)) {
         exprs =>
           val optPreds = if (idents.isEmpty) None else Some(idents.map(Name.mkPred))
-          Expr.FixpointSolveWithProject(exprs, solveMode, optPreds, tree.loc)
+          Expr.FixpointSolveWithProject(exprs, optPreds, solveMode, tree.loc)
       }
     }
 

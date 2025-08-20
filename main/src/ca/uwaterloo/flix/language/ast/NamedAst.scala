@@ -220,7 +220,7 @@ object NamedAst {
 
     case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
-    case class FixpointSolveWithProject(exps: List[Expr], mode: SolveMode, optPreds: Option[List[Name.Pred]], loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointFilter(pred: Name.Pred, exp: Expr, loc: SourceLocation) extends Expr
 
