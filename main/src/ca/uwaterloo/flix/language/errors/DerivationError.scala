@@ -49,7 +49,7 @@ object DerivationError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+      s"${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     })
   }
 
