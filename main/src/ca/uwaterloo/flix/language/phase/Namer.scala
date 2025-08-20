@@ -1079,7 +1079,7 @@ object Namer {
   /**
     * Names the given ext tag pattern `pat0`.
     */
-  def visitExtTagPattern(pat0: DesugaredAst.ExtTagPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtTagPattern = pat0 match {
+  private def visitExtTagPattern(pat0: DesugaredAst.ExtTagPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtTagPattern = pat0 match {
     case DesugaredAst.ExtTagPattern.Wild(loc) =>
       NamedAst.ExtTagPattern.Wild(loc)
 
