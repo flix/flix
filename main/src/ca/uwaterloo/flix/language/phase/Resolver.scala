@@ -1973,7 +1973,7 @@ object Resolver {
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
   private def resolveExtPattern(pat0: NamedAst.ExtPattern): (ResolvedAst.ExtPattern, List[LocalScope]) = {
-    def visitVarOrWild(varOrWild0: NamedAst.ExtPattern.VarOrWild): (ResolvedAst.ExtPattern.VarOrWild, List[LocalScope]) = varOrWild0 match {
+    def visitVarOrWild(varOrWild0: NamedAst.ExtPattern.ExtTagPattern): (ResolvedAst.ExtPattern.VarOrWild, List[LocalScope]) = varOrWild0 match {
       case NamedAst.ExtPattern.Wild(loc) =>
         (ResolvedAst.ExtPattern.Wild(loc), List.empty)
 
