@@ -1737,7 +1737,7 @@ object Lowering {
     }
 
   /**
-    * Returns a new `Datalog` from `datalog` containing only facts from the predicate given by the `PredSym` `predSym`
+    * Returns a new `Datalog` from `datalogExp` containing only facts from the predicate given by the `PredSym` `predSymExp`
     * using `Defs.Filter`.
     */
   private def projectSym(predSymExp: LoweredAst.Expr, datalogExp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr = {
