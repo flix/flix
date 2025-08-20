@@ -2367,7 +2367,7 @@ object Weeder2 {
       val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
       mapN(pickQName(tree), traverseOpt(maybePat)(visitExtTagTermsPat(_, seen))) {
         (qname, maybePat) =>
-          if (qname.namespace.nonEmpty) {
+          if (!qname.isUnqualified) {
             val error = IllegalQualifiedExtPattern(qname)
             sctx.errors.add(error)
           }
