@@ -745,6 +745,12 @@ mod TestRedBlackTree {
         RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
             |> RedBlackTree.toList |> List.sort == (2, 2) :: (3, 3) :: (4, 4) :: Nil
 
+    @test
+    def filter04(): Bool =
+        Filterable.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+                    |> RedBlackTree.toList |> List.sort == (2, 2) :: (3, 3) :: (4, 4) :: Nil
+
+
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////

@@ -974,15 +974,6 @@ mod RedBlackTree {
     /// Returns a new copy of tree `t` with just the nodes that satisfy the predicate `f`.
     ///
     pub def filter(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
-        filterImplementation(f, t)
-
-    ///
-    /// Temporary hack!
-    /// A concrete implementation of `filter` that the `Filterable` instance can use.
-    /// If `Filterable.filter` calls `filter` it appears to invoke a cycle and the concrete
-    /// implementation is never called.
-    ///
-    def filterImplementation(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         foldLeft((acc, k, v) -> if (f(v)) insert(k, v, acc) else acc, empty(), t)
 
     ///
