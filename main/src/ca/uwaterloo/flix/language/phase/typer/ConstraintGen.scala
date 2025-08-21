@@ -1085,7 +1085,10 @@ object ConstraintGen {
   /**
     * Generates constraints for the patterns inside the ext pattern.
     *
-    * Returns the type of the pattern.
+    * Returns either the tag name along with the types of its term patterns or the type variable of the pattern.
+    *
+    * The [[Either]] type is required since the caller must eventually separate non-tag patterns from tag patterns
+    * to build schema rows.
     */
   private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: Scope, flix: Flix): Either[(Name.Pred, List[Type]), Type.Var] = pat0 match {
     case ExtPattern.Default(tvar, _) =>
