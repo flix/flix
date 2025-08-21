@@ -478,7 +478,7 @@ object ConstraintGen {
 
       case Expr.ExtMatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
-        val (patTypes, branchExpTypes, effs) = rules.map(visitExtMatchRule).unzip3
+        val (patTypes, ruleBodyTypes, effs) = rules.map(visitExtMatchRule).unzip3
         val expectedRowType =
           patTypes.collect { case Left(value) => value }
             .foldRight(Type.mkSchemaRowEmpty(loc.asSynthetic)) {
@@ -489,8 +489,8 @@ object ConstraintGen {
         val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
         val tvars = patTypes.collect { case Right(value) => value }
         c.unifyAllTypes(tpe :: expectedExtensibleType :: tvars, loc)
-        c.unifyAllTypes(branchExpTypes, loc)
-        val resTpe = branchExpTypes.head // Note: We are guaranteed to have one rule.
+        c.unifyAllTypes(ruleBodyTypes, loc)
+        val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
