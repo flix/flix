@@ -221,7 +221,7 @@ mod List {
     ///
     /// Returns `l2` appended to `reverse(l1)`.
     ///
-    /// More efficient implementation than `append(reverse(l1), l2)` as it has 1 less reverse.
+    /// More efficient than `append(reverse(l1), l2)` as it does not use reverse.
     ///
     def reverseAppend(l1: List[a], l2: List[a]): List[a] =
         foldLeft((acc, x) -> x :: acc, l2, l1)
@@ -956,11 +956,11 @@ mod List {
     def groupByHelper(value: a, f: (a, a) -> Bool, currentNels: List[Nel[a]]): List[Nel[a]] =
         // Record seen elements in reverse order in `acc`.
         def loop(cur, acc) = match cur {
-            case Nil => (Nel.singleton(value) :: acc) |> List.reverse
+            case Nil => reverse((Nel.singleton(value) :: acc))
             case x :: xs =>
                 if (Nel.forAll(v -> f(value, v) and f(v, value), x)) {
                     let newNel = Nel.cons(value, x);
-                    List.reverse(newNel :: acc) ::: xs
+                    reverseAppend(acc, newNel :: xs)
                 } else {
                     loop(xs, x :: acc)
                 }
