@@ -193,7 +193,7 @@ class TypeContext {
     while (es.nonEmpty && as.nonEmpty) {
       val expectedType = es.head
       val actualType = as.head
-      val loc = actualLocs.head
+      val loc = ls.head
 
       val prov = Provenance.ExpectArgument(expectedType, actualType, sym, idx, loc)
       val constr = TypeConstraint.Equality(expectedType, actualType, prov)

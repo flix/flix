@@ -160,33 +160,25 @@ object DisplayType {
   case class SchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   //////////////////////////////
-  // Extensible Variants Schemas
+  // Extensible Variants
   //////////////////////////////
 
   /**
-    * A schema constructor. `arg` should be a variable or a Hole.
+    * An extensible constructor.
+    *
+    * `arg` should be a variable or a Hole.
     */
-  case class ExtSchemaConstructor(arg: DisplayType) extends DisplayType
+  case class ExtensibleUnknown(arg: DisplayType) extends DisplayType
+
+  /** An unextended extensible type. */
+  case class Extensible(fields: List[PredicateFieldType]) extends DisplayType
 
   /**
-    * An unextended schema.
+    * An extended extensible type.
+    *
+    * `arg` should be a variable or a Hole.
     */
-  case class ExtSchema(fields: List[PredicateFieldType]) extends DisplayType
-
-  /**
-    * An extended schema. `arg` should be a variable or a Hole.
-    */
-  case class ExtSchemaExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
-
-  /**
-    * An unextended schema row.
-    */
-  case class ExtSchemaRow(fields: List[PredicateFieldType]) extends DisplayType
-
-  /**
-    * An extended schema row. `arg` should be a variable or a Hole.
-    */
-  case class ExtSchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
+  case class ExtensibleExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   ////////////////////
   // Boolean Operators
@@ -472,12 +464,12 @@ object DisplayType {
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. { ? }
-            case Nil => ExtSchemaConstructor(Hole)
+            case Nil => ExtensibleUnknown(Hole)
             // Case 2: One row argument. Extract its values.
             case tpe :: Nil => tpe match {
-              case SchemaRow(fields) => ExtSchema(fields)
-              case SchemaRowExtend(fields, rest) => ExtSchemaExtend(fields, rest)
-              case nonSchema => ExtSchemaConstructor(nonSchema)
+              case SchemaRow(fields) => Extensible(fields)
+              case SchemaRowExtend(fields, rest) => ExtensibleExtend(fields, rest)
+              case nonSchema => ExtensibleUnknown(nonSchema)
             }
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
