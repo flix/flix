@@ -2373,7 +2373,7 @@ object Weeder2 {
           }
           maybePat match {
             case None => ExtPattern.Tag(Name.mkLabel(qname.ident), List.empty, tree.loc)
-            case Some(elms) => ExtPattern.Tag(Name.mkLabel(qname.ident), elms.toList, tree.loc)
+            case Some(elms) => ExtPattern.Tag(Name.mkLabel(qname.ident), elms, tree.loc)
           }
       }
     }
@@ -2446,12 +2446,12 @@ object Weeder2 {
       }
     }
 
-    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Nel[ExtTagPattern], CompilationMessage] = {
+    private def visitExtTagTermsPat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[List[ExtTagPattern], CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => Nel(ExtTagPattern.Wild(tree.loc), Nil)
-        case x :: xs => Nel(restrictToVarOrWild(x), xs.map(restrictToVarOrWild))
+        case Nil => List(ExtTagPattern.Wild(tree.loc))
+        case xs => xs.map(restrictToVarOrWild)
       }
     }
 
