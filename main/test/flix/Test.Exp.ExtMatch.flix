@@ -436,6 +436,35 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// `ematch` should support matching on default patterns.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchDefault01(): Bool = {
+        ematch xvar A(1) {
+            case _ => true
+        }
+    }
+
+    @Test
+    def testExtMatchDefault02(): Bool = {
+        ematch xvar A(1) {
+            case A(x) => x == 1
+            case _ => false
+        }
+    }
+
+    @Test
+    def testExtMatchDefault03(): Bool = {
+        ematch xvar A(1) {
+            case B(_) => false
+            case _ => true
+        }
+    }
+
+
     ///////////////////////////////////////////////////////////////////////////
     /// Unsorted.
     ///////////////////////////////////////////////////////////////////////////
