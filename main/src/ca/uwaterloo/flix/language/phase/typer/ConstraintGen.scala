@@ -1096,7 +1096,7 @@ object ConstraintGen {
     *
     * Returns the type of the pattern.
     */
-  def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext): Type = pat0 match {
+  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext): Type = pat0 match {
     case ExtTagPattern.Wild(tvar, _) =>
       tvar
 
