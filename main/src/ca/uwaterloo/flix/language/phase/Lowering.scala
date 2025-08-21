@@ -1032,17 +1032,28 @@ object Lowering {
   }
 
   private def visitExtMatchRule(rule0: TypedAst.ExtMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.ExtMatchRule = rule0 match {
-    case TypedAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPat)
+    case TypedAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPat(pat)
       val e = visitExp(exp)
-      LoweredAst.ExtMatchRule(label, ps, e, loc)
+      LoweredAst.ExtMatchRule(p, e, loc)
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
-    case TypedAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
-    case TypedAst.ExtPattern.Unit(tpe, loc) => LoweredAst.ExtPattern.Unit(tpe, loc)
-    case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
+    case TypedAst.ExtPattern.Default(_, loc) => throw InternalCompilerException("unexpected default ext pattern", loc)
+
+    case TypedAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+      val ps = pats.map(visitExtTagPat)
+      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+
     case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+
+  }
+
+  private def visitExtTagPat(pat0: TypedAst.ExtTagPattern): LoweredAst.ExtTagPattern = pat0 match {
+    case TypedAst.ExtTagPattern.Wild(tpe, loc) => LoweredAst.ExtTagPattern.Wild(tpe, loc)
+    case TypedAst.ExtTagPattern.Unit(tpe, loc) => LoweredAst.ExtTagPattern.Unit(tpe, loc)
+    case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) => LoweredAst.ExtTagPattern.Var(bnd.sym, tpe, loc)
+    case TypedAst.ExtTagPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
   /**
@@ -2164,10 +2175,10 @@ object Lowering {
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
-        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
-          val ps = pats.map(substExtPattern(_, subst))
+        case LoweredAst.ExtMatchRule(pat, exp1, loc1) =>
+          val p = substExtPattern(pat, subst)
           val e1 = substExp(exp1, subst)
-          LoweredAst.ExtMatchRule(label, ps, e1, loc1)
+          LoweredAst.ExtMatchRule(p, e1, loc1)
       }
       LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
@@ -2276,10 +2287,24 @@ object Lowering {
     * Applies the given substitution `subst` to the given ext pattern `pattern0`.
     */
   private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
-    case LoweredAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
-    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+    case LoweredAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+      val ps = pats.map(substVarOrWild(_, subst))
+      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+  }
+
+  /**
+    * Applies the given substitution `subst` to the given ext tag pattern `pattern0`.
+    */
+  private def substVarOrWild(pattern0: LoweredAst.ExtTagPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtTagPattern = pattern0 match {
+    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
+      LoweredAst.ExtTagPattern.Wild(tpe, loc)
+
+   case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
+      LoweredAst.ExtTagPattern.Unit(tpe, loc)
+
+    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
-      LoweredAst.ExtPattern.Var(s, tpe, loc)
+      LoweredAst.ExtTagPattern.Var(s, tpe, loc)
   }
 
 }

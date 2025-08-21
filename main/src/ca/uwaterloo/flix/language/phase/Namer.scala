@@ -947,10 +947,10 @@ object Namer {
     * Performs naming on the given ext match rule `rule0`.
     */
   private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
-    case DesugaredAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPattern)
+    case DesugaredAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPattern(pat)
       val e = visitExp(exp)
-      NamedAst.ExtMatchRule(label, ps, e, loc)
+      NamedAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -1065,19 +1065,34 @@ object Namer {
     * Names the given ext pattern `pat0`.
     */
   private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
-    case DesugaredAst.ExtPattern.Wild(loc) =>
-      NamedAst.ExtPattern.Wild(loc)
+    case DesugaredAst.ExtPattern.Default(loc) =>
+      NamedAst.ExtPattern.Default(loc)
 
-    case DesugaredAst.ExtPattern.Unit(loc) =>
-      NamedAst.ExtPattern.Unit(loc)
-
-    case DesugaredAst.ExtPattern.Var(ident, loc) =>
-      // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      NamedAst.ExtPattern.Var(sym, loc)
+    case DesugaredAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(visitExtTagPattern)
+      NamedAst.ExtPattern.Tag(label, ps, loc)
 
     case DesugaredAst.ExtPattern.Error(loc) =>
       NamedAst.ExtPattern.Error(loc)
+  }
+
+  /**
+    * Names the given ext tag pattern `pat0`.
+    */
+  private def visitExtTagPattern(pat0: DesugaredAst.ExtTagPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtTagPattern = pat0 match {
+    case DesugaredAst.ExtTagPattern.Wild(loc) =>
+      NamedAst.ExtTagPattern.Wild(loc)
+
+    case DesugaredAst.ExtTagPattern.Unit(loc) =>
+      NamedAst.ExtTagPattern.Unit(loc)
+
+    case DesugaredAst.ExtTagPattern.Var(ident, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      NamedAst.ExtTagPattern.Var(sym, loc)
+
+    case DesugaredAst.ExtTagPattern.Error(loc) =>
+      NamedAst.ExtTagPattern.Error(loc)
   }
 
   /**

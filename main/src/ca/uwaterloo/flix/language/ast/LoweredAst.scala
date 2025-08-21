@@ -174,11 +174,23 @@ object LoweredAst {
 
   object ExtPattern {
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tpe: Type, loc: SourceLocation) extends ExtPattern
 
-    case class Unit(tpe: Type, loc: SourceLocation) extends ExtPattern
+  }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtPattern
+  sealed trait ExtTagPattern {
+    def tpe: Type
+
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtTagPattern
 
   }
 
@@ -228,7 +240,7 @@ object LoweredAst {
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
 

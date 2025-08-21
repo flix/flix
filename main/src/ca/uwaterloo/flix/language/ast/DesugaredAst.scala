@@ -271,13 +271,28 @@ object DesugaredAst {
 
   object ExtPattern {
 
-    case class Wild(loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Unit(loc: SourceLocation) extends ExtPattern
-
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
     case class Error(loc: SourceLocation) extends ExtPattern
+
+  }
+
+  sealed trait ExtTagPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate
@@ -414,7 +429,7 @@ object DesugaredAst {
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 

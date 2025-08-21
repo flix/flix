@@ -753,14 +753,14 @@ object Visitor {
   }
 
   private def visitExtMatchRule(rule: ExtMatchRule)(implicit a: Acceptor, c: Consumer): Unit = rule match {
-    case ExtMatchRule(_, pats, exp, loc) =>
+    case ExtMatchRule(pat, exp, loc) =>
       if (!a.accept(loc)) {
         return
       }
 
       c.consumeExtMatchRule(rule)
 
-      pats.foreach(visitExtPattern)
+      visitExtPattern(pat)
       visitExpr(exp)
   }
 
@@ -894,9 +894,12 @@ object Visitor {
     c.consumeExtPattern(pat)
 
     pat match {
-      case ExtPattern.Wild(_, _) => ()
-      case ExtPattern.Unit(_, _) => ()
-      case ExtPattern.Var(bnd, _, _) => visitBinder(bnd)
+      case ExtPattern.Default(_, _) => ()
+      case ExtPattern.Tag(_, pats, _, _) =>
+        pats.foreach {
+          case ExtTagPattern.Var(bnd, _, _) => visitBinder(bnd)
+          case _ => ()
+        }
       case ExtPattern.Error(_, _) => ()
     }
   }
