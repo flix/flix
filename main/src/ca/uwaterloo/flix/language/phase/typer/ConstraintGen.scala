@@ -477,8 +477,8 @@ object ConstraintGen {
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case Expr.ExtMatch(exp, rules, loc) =>
-        val (tpe, eff) = visitExp(exp)
-        val (patTypes, ruleBodyTypes, effs) = rules.map(visitExtMatchRule).unzip3
+        val (scrutineeType, scrutineeEff) = visitExp(exp)
+        val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
         val expectedRowType =
           patTypes.collect { case Left(tag) => tag }
             .foldRight(Type.mkSchemaRowEmpty(loc.asSynthetic)) {
@@ -488,10 +488,10 @@ object ConstraintGen {
             }
         val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
         val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }
-        c.unifyAllTypes(tpe :: expectedExtensibleType :: defaultPatternTvars, loc)
+        c.unifyAllTypes(scrutineeType :: expectedExtensibleType :: defaultPatternTvars, loc)
         c.unifyAllTypes(ruleBodyTypes, loc)
         val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
-        val resEff = Type.mkUnion(eff :: effs, loc)
+        val resEff = Type.mkUnion(scrutineeEff :: ruleBodyEffs, loc)
         (resTpe, resEff)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
