@@ -542,11 +542,11 @@ object Monomorpher {
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
       val rs = rules.map {
-        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
-          val (ps, symMaps) = pats.map(specializeExtPat(_, subst)).unzip
-          val extendedEnv = symMaps.foldLeft(env0)(_ ++ _)
+        case LoweredAst.ExtMatchRule(pat, exp1, loc1) =>
+          val (p, env1) = specializeExtPat(pat, subst)
+          val extendedEnv = env0 ++ env1
           val e1 = specializeExp(exp1, extendedEnv, subst)
-          MonoAst.ExtMatchRule(label, ps, e1, loc1)
+          MonoAst.ExtMatchRule(p, e1, loc1)
       }
       MonoAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
 
@@ -726,11 +726,28 @@ object Monomorpher {
       (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
   }
 
+  /**
+    * Specializes `pat0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
+    * symbols.
+    */
   private def specializeExtPat(pat0: LoweredAst.ExtPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
-    case LoweredAst.ExtPattern.Wild(tpe, loc) => (MonoAst.ExtPattern.Wild(subst(tpe), loc), Map.empty)
-    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+    case LoweredAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+      val (ps, symMaps) = pats.map(specializeExtTagPat(_, subst)).unzip
+      val env = symMaps.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (MonoAst.ExtPattern.Tag(label, ps, subst(tpe), loc), env)
+  }
+
+  /**
+    * Specializes `pat0` w.r.t. `subst` and returns a mapping from variable symbols to fresh variable
+    * symbols.
+    */
+  private def specializeExtTagPat(pat0: LoweredAst.ExtTagPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Wild(subst(tpe), loc), Map.empty)
+
+    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.ExtPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
+      (MonoAst.ExtTagPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Specializes `method` w.r.t. `subst`. */

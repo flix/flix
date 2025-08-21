@@ -282,11 +282,26 @@ object KindedAst {
 
   object ExtPattern {
 
-    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+    case class Default(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
-    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
     case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+
+  }
+
+  sealed trait ExtTagPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate
@@ -339,7 +354,7 @@ object KindedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 

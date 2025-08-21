@@ -572,6 +572,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a qualified extensible variant pattern.
+    *
+    * @param qname the offending qualified name.
+    */
+  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
+    override val loc: SourceLocation = qname.loc
+
+    override def summary: String = "Unexpected qualified extensible variant pattern."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected qualified extensible variant pattern.
+         |
+         |${code(loc, "unexpected qualified pattern")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      underline("Tip:") + " Extensible variants can never be qualified, i.e., A.B is not allowed. Consider using just B instead."
+    })
+  }
+
+  /**
     * An error raised to indicate that the extension of a record pattern is malformed.
     *
     * @param loc the location where the error occurred.

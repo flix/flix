@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, Pattern, RestrictableChoosePattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, ExtTagPattern, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -608,8 +608,8 @@ object Dependencies {
   }
 
   private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = r match {
-    case ExtMatchRule(_, pats, exp, _) =>
-      pats.foreach(visitExtPattern)
+    case ExtMatchRule(pat, exp, _) =>
+      visitExtPattern(pat)
       visitExp(exp)
   }
 
@@ -633,14 +633,26 @@ object Dependencies {
   }
 
   private def visitExtPattern(p: TypedAst.ExtPattern)(implicit sctx: SharedContext): Unit = p match {
-    case ExtPattern.Wild(tpe, _) =>
+    case ExtPattern.Default(tpe, _) =>
       visitType(tpe)
 
-    case ExtPattern.Var(bnd, tpe, _) =>
-      visitBinder(bnd)
+    case ExtPattern.Tag(_, pats, tpe, _) =>
+      pats.foreach(visitExtTagPattern)
       visitType(tpe)
 
     case ExtPattern.Error(tpe, _) =>
+      visitType(tpe)
+  }
+
+  private def visitExtTagPattern(v: TypedAst.ExtTagPattern)(implicit sctx: SharedContext): Unit = v match {
+    case ExtTagPattern.Wild(tpe, _) =>
+      visitType(tpe)
+
+    case ExtTagPattern.Var(bnd, tpe, _) =>
+      visitBinder(bnd)
+      visitType(tpe)
+
+    case ExtTagPattern.Error(tpe, _) =>
       visitType(tpe)
   }
 
