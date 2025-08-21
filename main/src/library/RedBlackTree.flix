@@ -225,26 +225,26 @@ mod RedBlackTree {
     /// Otherwise, returns `t`.
     ///
     pub def remove(k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
-        def loop(tt, sk) = match tt {
-        case Node(Color.Red, Leaf, k1, _, Leaf)   => sk(if ((k <=> k1) == Comparison.EqualTo) Leaf else tt)
-        case Node(Color.Black, Leaf, k1, _, Leaf) => sk(if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt)
-        case Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
-            match k <=> k2 {
-                case Comparison.LessThan    => loop(Node(Color.Red, Leaf, k1, v1, Leaf), ks -> sk(Node(Color.Black, ks, k2, v2, Leaf)))
-                case Comparison.EqualTo     => sk(Node(Color.Black, Leaf, k1, v1, Leaf))
-                case Comparison.GreaterThan => sk(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf))
-            }
-        case Node(c, a, k1, v1, b) =>
-            match k <=> k1 {
-                case Comparison.LessThan => loop(a, ks -> sk(rotate(Node(c, ks, k1, v1, b))))
-                case Comparison.EqualTo  =>
-                    let (k2, v2, e) = minDelete(b);
-                    sk(rotate(Node(c, a, k2, v2, e)))
-                case Comparison.GreaterThan => loop(b, ks -> sk(rotate(Node(c, a, k1, v1, ks))))
-            }
-            case _ => sk(tt)
+        def loop(tt) = match tt {
+            case Node(Color.Red, Leaf, k1, _, Leaf)   => if ((k <=> k1) == Comparison.EqualTo) Leaf else tt
+            case Node(Color.Black, Leaf, k1, _, Leaf) => if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt
+            case Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
+                match k <=> k2 {
+                    case Comparison.LessThan    => Node(Color.Black, loop(Node(Color.Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
+                    case Comparison.EqualTo     => Node(Color.Black, Leaf, k1, v1, Leaf)
+                    case Comparison.GreaterThan => Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf)
+                }
+            case Node(c, a, k1, v1, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan => rotate(Node(c, loop(a), k1, v1, b))
+                    case Comparison.EqualTo  =>
+                        let (k2, v2, e) = minDelete(b);
+                        rotate(Node(c, a, k2, v2, e))
+                    case Comparison.GreaterThan => rotate(Node(c, a, k1, v1, loop(b)))
+                }
+            case _ => tt
         };
-        redden(loop(t, identity))
+        redden(loop(t))
 
     ///
     /// Returns `Some(v)` if `k => v` is in `t`.
@@ -576,15 +576,17 @@ mod RedBlackTree {
     /// Helper function for `delete`.
     ///
     def minDelete(t: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
-        def loop(tt, sk) = match tt {
-            case Node(Color.Red, Leaf, k1, v1, Leaf)   => sk((k1, v1, Leaf))
-            case Node(Color.Black, Leaf, k1, v1, Leaf) => sk((k1, v1, DoubleBlackLeaf))
+        def loop(tt) = match tt {
+            case Node(Color.Red, Leaf, k1, v1, Leaf)   => (k1, v1, Leaf)
+            case Node(Color.Black, Leaf, k1, v1, Leaf) => (k1, v1, DoubleBlackLeaf)
             case Node(Color.Black, Leaf, k1, v1, Node(Color.Red, Leaf, k2, v2, Leaf)) =>
-                sk((k1, v1, Node(Color.Black, Leaf, k2, v2, Leaf)))
-            case Node(c, a, k1, v1, b) => loop(a, match (k3, v3, e) -> sk((k3, v3, rotate(Node(c, e, k1, v1, b)))))
+                (k1, v1, Node(Color.Black, Leaf, k2, v2, Leaf))
+            case Node(c, a, k1, v1, b) =>
+                let (k, v, child) = loop(a);
+                (k, v, rotate(Node(c, child, k1, v1, b)))
             case _ => unreachable!()
         };
-        loop(t, identity)
+        loop(t)
 
     ///
     /// Applies `f` to all key-value pairs from `t` where `p(k)` returns `Comparison.EqualTo`.
