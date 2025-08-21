@@ -1071,6 +1071,18 @@ object ConstraintGen {
   }
 
   /**
+    * Generates constraints for the given extensible match rule.
+    *
+    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
+    */
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, scope: Scope, root: KindedAst.Root, flix: Flix): (Either[(Name.Pred, List[Type]), Type.Var], Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(pat, exp, _) =>
+      val patTpe = visitExtPattern(pat)
+      val (tpe, eff) = visitExp(exp)
+      (patTpe, tpe, eff)
+  }
+
+  /**
     * Generates constraints for the patterns inside the ext pattern.
     *
     * Returns the type of the pattern.
@@ -1135,18 +1147,6 @@ object ConstraintGen {
           c.expectType(expected = Type.Bool, actual = guardTpe, g.loc)
           c.expectType(expected = Type.Pure, actual = guardEff, g.loc)
       }
-      val (tpe, eff) = visitExp(exp)
-      (patTpe, tpe, eff)
-  }
-
-  /**
-    * Generates constraints for the given extensible match rule.
-    *
-    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
-    */
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, scope: Scope, root: KindedAst.Root, flix: Flix): (Either[(Name.Pred, List[Type]), Type.Var], Type, Type) = rule match {
-    case KindedAst.ExtMatchRule(pat, exp, _) =>
-      val patTpe = visitExtPattern(pat)
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
   }
