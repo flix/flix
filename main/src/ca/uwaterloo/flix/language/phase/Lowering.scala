@@ -833,6 +833,12 @@ object Lowering {
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
     case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, _, eff, loc) =>
+      // Rewrites
+      //     solve e₁, e₂, e₃ project P₁, P₂, P₃
+      // to
+      //     let tmp% = solve e₁ <+> e₂ <+> e₃;
+      //     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
+      //
       val defn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
         case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
