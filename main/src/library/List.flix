@@ -956,7 +956,7 @@ mod List {
     def groupByHelper(value: a, f: (a, a) -> Bool, currentNels: List[Nel[a]]): List[Nel[a]] =
         // Record seen elements in reverse order in `acc`.
         def loop(cur, acc) = match cur {
-            case Nil => reverse((Nel.singleton(value) :: acc))
+            case Nil => reverse(Nel.singleton(value) :: acc)
             case x :: xs =>
                 if (Nel.forAll(v -> f(value, v) and f(v, value), x)) {
                     let newNel = Nel.cons(value, x);
