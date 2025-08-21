@@ -1074,6 +1074,8 @@ object ConstraintGen {
     * Generates constraints for the given extensible match rule.
     *
     * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
+    *
+    * See [[visitExtPattern]] for more information on the return type.
     */
   private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, scope: Scope, root: KindedAst.Root, flix: Flix): (Either[(Name.Pred, List[Type]), Type.Var], Type, Type) = rule match {
     case KindedAst.ExtMatchRule(pat, exp, _) =>
