@@ -480,18 +480,23 @@ object ConstraintGen {
         val (scrutineeType, scrutineeEff) = visitExp(exp)
         val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
         val tagPatTypes = patTypes.collect { case Left(tag) => tag }
+        val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
+        val defaultSchemaRow =
+          if (defaultPatternTvars.isEmpty)
+            Type.mkSchemaRowEmpty(loc.asSynthetic)
+          else
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
         val expectedRowType =
           if (tagPatTypes.isEmpty)
             freshVar(Kind.SchemaRow, loc.asSynthetic)
           else
             tagPatTypes
-              .foldRight(Type.mkSchemaRowEmpty(loc.asSynthetic)) {
+              .foldRight(defaultSchemaRow) {
                 case ((pred, tpes), acc) =>
                   val relation = Type.mkRelation(tpes, pred.loc.asSynthetic)
                   Type.mkSchemaRowExtend(pred, relation, acc, pred.loc.asSynthetic)
               }
         val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
-        val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
         println(s"scrutineeType: $scrutineeType")
         println(s"expectedExtensibleType: $expectedExtensibleType")
         println(s"defaultPatternTvars: $defaultPatternTvars")
