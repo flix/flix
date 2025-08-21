@@ -808,8 +808,9 @@ object Desugar {
       val es = visitExps(exps)
       DesugaredAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
-    case WeededAst.Expr.FixpointSolveWithProject(exps, mode, optIdents, loc) =>
-      desugarFixpointSolveWithProject(exps, mode, optIdents, loc)
+    case WeededAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
+      val es = visitExps(exps)
+      DesugaredAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
     case WeededAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
       val es = visitExps(exps)
@@ -1438,58 +1439,6 @@ object Desugar {
     val es = visitExps(exps0)
     val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
     mkApplyFqn(fqn, List(vectorLit), loc0)
-  }
-
-  /**
-    * Rewrites a [[WeededAst.Expr.FixpointSolveWithProject]] into a series of solve and merges.
-    *
-    * E.g.,
-    * {{{
-    * solve e1, e2, e3 project P1, P2, P3
-    * }}}
-    * becomes
-    * {{{
-    *   let tmp%  solve (merge e1, 2, e3);
-    *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
-    * }}}
-    */
-  private def desugarFixpointSolveWithProject(exps0: List[WeededAst.Expr], mode: SolveMode, idents0: Option[List[Name.Ident]], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps0)
-
-    // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
-    val freshVar = flix.genSym.freshId()
-    val localVar = Name.Ident(s"tmp" + Flix.Delimiter + freshVar, loc0.asSynthetic)
-
-    // Merge all the exps into one Datalog program value.
-    val mergeExp = es.reduceRight[DesugaredAst.Expr] {
-      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
-    }
-    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, mode, loc0)
-
-    // Any projections?
-    val bodyExp = idents0 match {
-      case None =>
-        // Case 1: No projections: Simply return the minimal model or prepare provenance, depending on mode.
-        DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, localVar, localVar.loc), loc0)
-
-      case Some(idents) =>
-        // Case 2: A non-empty sequence of predicate symbols to project.
-
-        // Construct a list of each projection.
-        val projectExps = idents.map {
-          case ident =>
-            val varExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, localVar, localVar.loc), loc0)
-            DesugaredAst.Expr.FixpointFilter(Name.Pred(ident.name, loc0), varExp, loc0)
-        }
-
-        // Merge all of the projections into one result.
-        projectExps.reduceRight[DesugaredAst.Expr] {
-          case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
-        }
-    }
-
-    // Bind the tmp% variable to the minimal model and combine it with the body expression.
-    DesugaredAst.Expr.Let(localVar, modelExp, bodyExp, loc0.asReal)
   }
 
   /**
