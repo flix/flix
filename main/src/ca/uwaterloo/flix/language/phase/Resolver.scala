@@ -1483,10 +1483,10 @@ object Resolver {
           ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
       }
 
-    case NamedAst.Expr.FixpointSolve(exp, mode, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointSolve(e, mode, loc)
+    case NamedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      mapN(esVal) {
+        es => ResolvedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
       }
 
     case NamedAst.Expr.FixpointFilter(pred, exp, loc) =>

@@ -100,7 +100,7 @@ object TypedAstPrinter {
     case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointSolve(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointFilter(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
@@ -173,7 +173,7 @@ object TypedAstPrinter {
   private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = {
     pattern match {
       case ExtPattern.Default(_, _) => DocAst.Expr.Wild
-      case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printVarOrWild))
+      case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
       case ExtPattern.Error(_, _) => DocAst.Expr.Error
     }
   }
@@ -181,7 +181,7 @@ object TypedAstPrinter {
   /**
     * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
-  private def printVarOrWild(pattern: TypedAst.ExtTagPattern): DocAst.Expr = pattern match {
+  private def printExtTagPattern(pattern: TypedAst.ExtTagPattern): DocAst.Expr = pattern match {
     case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
     case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
     case ExtTagPattern.Var(TypedAst.Binder(sym, _), _, _) => DocAst.Expr.Var(sym)
