@@ -607,6 +607,7 @@ object Redundancy {
         case ExtMatchRule(pat: ExtPattern.Tag, _, _) => pat
       }
 
+      // We drop match rules until we find the first default rule (if it exists).
       val unreachableCases = rules.dropWhile {
         case ExtMatchRule(_: ExtPattern.Default, _, _) => false
         case _ => true
