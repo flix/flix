@@ -661,12 +661,30 @@ object RedundancyError {
     * @param defaultLoc the location of the default case.
     * @param loc        the location of the unreachable case.
     */
-  case class UnreachableCase(defaultLoc: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+  case class UnreachableCase(defaultLoc: SourceLocation, loc: SourceLocation) extends RedundancyError {
 
     override def summary: String = "Unreachable case."
 
-    override def message(formatter: Formatter): String = ""
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unreachable case. It is shadowed by a '_' pattern.
+         |
+         |${code(loc, "unreachable case.")}
+         |
+         |Shadowed by the following pattern:
+         |
+         |${code(defaultLoc, "shadowing pattern.")}
+         |""".stripMargin
+    }
 
-    override def explain(formatter: Formatter): Option[String] = None
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """
+        |Possible fixes:
+        |
+        |  (1)  Remove the shadowed cases.
+        |  (2)  Remove the shadowing '_' case.
+        |
+        |""".stripMargin
+    })
   }
 }
