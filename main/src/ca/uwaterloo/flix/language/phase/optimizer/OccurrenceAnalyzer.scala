@@ -408,9 +408,6 @@ object OccurrenceAnalyzer {
     case MonoAst.ExtTagPattern.Wild(_, _) =>
       (pat0, Set.empty) // Always reuse pat0.
 
-    case MonoAst.ExtTagPattern.Unit(_, _) =>
-      (pat0, Set.empty) // Always reuse pat0.
-
     case MonoAst.ExtTagPattern.Var(sym, tpe, occur0, loc) =>
       val occur = ctx.get(sym)
       if (occur eq occur0) {
@@ -418,6 +415,9 @@ object OccurrenceAnalyzer {
       } else {
         (MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc), Set(sym))
       }
+
+    case MonoAst.ExtTagPattern.Unit(_, _) =>
+      (pat0, Set.empty) // Always reuse pat0.
   }
 
   private def visitFormalParam(fparam0: MonoAst.FormalParam, ctx: ExprContext): MonoAst.FormalParam = {

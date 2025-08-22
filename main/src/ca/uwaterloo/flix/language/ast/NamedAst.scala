@@ -298,9 +298,9 @@ object NamedAst {
 
     case class Wild(loc: SourceLocation) extends ExtTagPattern
 
-    case class Unit(loc: SourceLocation) extends ExtTagPattern
-
     case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
 
     case class Error(loc: SourceLocation) extends ExtTagPattern
 

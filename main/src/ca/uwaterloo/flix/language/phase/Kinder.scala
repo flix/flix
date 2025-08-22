@@ -982,12 +982,12 @@ object Kinder {
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.ExtTagPattern.Wild(tvar, loc)
 
-    case ResolvedAst.ExtTagPattern.Unit(loc) =>
-      KindedAst.ExtTagPattern.Unit(loc)
-
     case ResolvedAst.ExtTagPattern.Var(sym, loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
       KindedAst.ExtTagPattern.Var(sym, tvar, loc)
+
+    case ResolvedAst.ExtTagPattern.Unit(loc) =>
+      KindedAst.ExtTagPattern.Unit(loc)
 
     case ResolvedAst.ExtTagPattern.Error(loc) =>
       val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)

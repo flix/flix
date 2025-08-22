@@ -648,11 +648,11 @@ object Dependencies {
     case ExtTagPattern.Wild(tpe, _) =>
       visitType(tpe)
 
-    case ExtTagPattern.Unit(tpe, _) =>
-      visitType(tpe)
-
     case ExtTagPattern.Var(bnd, tpe, _) =>
       visitBinder(bnd)
+      visitType(tpe)
+
+    case ExtTagPattern.Unit(tpe, _) =>
       visitType(tpe)
 
     case ExtTagPattern.Error(tpe, _) =>

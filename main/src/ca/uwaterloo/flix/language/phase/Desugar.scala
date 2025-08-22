@@ -904,8 +904,8 @@ object Desugar {
     */
   private def visitExtTagPattern(pat0: WeededAst.ExtTagPattern): DesugaredAst.ExtTagPattern = pat0 match {
     case WeededAst.ExtTagPattern.Wild(loc) => DesugaredAst.ExtTagPattern.Wild(loc)
-    case WeededAst.ExtTagPattern.Unit(loc) => DesugaredAst.ExtTagPattern.Unit(loc)
     case WeededAst.ExtTagPattern.Var(ident, loc) => DesugaredAst.ExtTagPattern.Var(ident, loc)
+    case WeededAst.ExtTagPattern.Unit(loc) => DesugaredAst.ExtTagPattern.Unit(loc)
     case WeededAst.ExtTagPattern.Error(loc) => DesugaredAst.ExtTagPattern.Error(loc)
   }
 

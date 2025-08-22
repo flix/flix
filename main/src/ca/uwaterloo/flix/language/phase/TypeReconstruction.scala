@@ -753,13 +753,13 @@ object TypeReconstruction {
     case KindedAst.ExtTagPattern.Wild(tvar, loc) =>
       TypedAst.ExtTagPattern.Wild(subst(tvar), loc)
 
-    case KindedAst.ExtTagPattern.Unit(loc) =>
-      TypedAst.ExtTagPattern.Unit(Type.Unit, loc)
-
     case KindedAst.ExtTagPattern.Var(sym, tvar, loc) =>
       val tpe = subst(tvar)
       val bnd = TypedAst.Binder(sym, tpe)
       TypedAst.ExtTagPattern.Var(bnd, tpe, loc)
+
+    case KindedAst.ExtTagPattern.Unit(loc) =>
+      TypedAst.ExtTagPattern.Unit(Type.Unit, loc)
 
     case KindedAst.ExtTagPattern.Error(tvar, loc) =>
       TypedAst.ExtTagPattern.Error(subst(tvar), loc)

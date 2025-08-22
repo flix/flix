@@ -1117,12 +1117,12 @@ object ConstraintGen {
     case ExtTagPattern.Wild(tvar, _) =>
       tvar
 
-    case ExtTagPattern.Unit(_) =>
-      Type.Unit
-
     case ExtTagPattern.Var(sym, tvar, loc) =>
       c.unifyType(sym.tvar, tvar, loc)
       tvar
+
+    case ExtTagPattern.Unit(_) =>
+      Type.Unit
 
     case ExtTagPattern.Error(tvar, _) =>
       tvar

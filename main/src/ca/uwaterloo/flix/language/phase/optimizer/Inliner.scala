@@ -432,9 +432,6 @@ object Inliner {
     case MonoAst.ExtTagPattern.Wild(tpe, loc) =>
       (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
 
-    case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
-      (MonoAst.ExtTagPattern.Unit(tpe, loc), Map.empty)
-
     case MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc) => occur match {
       case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
 
@@ -449,6 +446,9 @@ object Inliner {
         val freshVarSym = Symbol.freshVarSym(sym)
         (MonoAst.ExtTagPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
     }
+
+    case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Unit(tpe, loc), Map.empty)
   }
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */

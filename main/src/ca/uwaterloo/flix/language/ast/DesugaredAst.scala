@@ -287,9 +287,9 @@ object DesugaredAst {
 
     case class Wild(loc: SourceLocation) extends ExtTagPattern
 
-    case class Unit(loc: SourceLocation) extends ExtTagPattern
-
     case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
 
     case class Error(loc: SourceLocation) extends ExtTagPattern
 
