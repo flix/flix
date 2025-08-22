@@ -2071,7 +2071,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
 
