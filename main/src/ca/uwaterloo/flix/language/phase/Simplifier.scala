@@ -1024,6 +1024,7 @@ object Simplifier {
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
       case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Default(_, _), exp1, _), _) =>
         // Note: If we have a default case, there is only 1 single default case, and it is the last rule.
+        // This invariant is ensured by the unreachable case check in Redunancy.
         visitExp(exp1)
 
       case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _, _), exp1, loc1), branch2) =>
