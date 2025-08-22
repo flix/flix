@@ -2156,4 +2156,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
+
+  test("TypeError.ExtMatch.07") {
+    val input =
+      """
+        |def f(): Unit =
+        |    let p = #{ A(). };
+        |    let v = pquery p select A() with {A};
+        |    ematch Vector.get(0, v) {
+        |        case A => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedTypes](result)
+  }
 }
