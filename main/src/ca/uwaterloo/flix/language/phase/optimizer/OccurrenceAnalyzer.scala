@@ -418,6 +418,9 @@ object OccurrenceAnalyzer {
       } else {
         (MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc), Set(sym))
       }
+
+    case MonoAst.ExtTagPattern.Unit(_, _) =>
+      (pat0, Set.empty) // Always reuse pat0.
   }
 
   private def visitFormalParam(fparam0: MonoAst.FormalParam, ctx: ExprContext): MonoAst.FormalParam = {

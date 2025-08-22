@@ -1037,6 +1037,7 @@ object Simplifier {
           case ((MonoAst.ExtTagPattern.Var(sym, _, _, _), idx), acc1) =>
             val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
             SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
+          case ((MonoAst.ExtTagPattern.Unit(_, _), _), acc1) => acc1
         }
         SimplifiedAst.Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
     }

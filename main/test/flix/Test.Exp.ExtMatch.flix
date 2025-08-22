@@ -436,6 +436,34 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    @Test
+    def testExtMatchUnit05(): Bool = {
+        ematch xvar Q() {
+            case Q() => true
+        }
+    }
+
+    @Test
+    def testExtMatchUnit06(): Bool = {
+        ematch xvar Q() {
+            case Q(u) => u == ()
+        }
+    }
+
+    @Test
+    def testExtMatchUnit07(): Bool = {
+        ematch xvar Q(()) {
+            case Q() => true
+        }
+    }
+
+    @Test
+    def testExtMatchUnit08(): Bool = {
+        ematch xvar A((), ()) {
+            case A(x, y) => x == () and y == ()
+        }
+    }
+
 
     ///////////////////////////////////////////////////////////////////////////
     /// `ematch` should support matching on default patterns.
@@ -468,6 +496,17 @@ mod Test.Exp.ExtMatch {
     ///////////////////////////////////////////////////////////////////////////
     /// Unsorted.
     ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchDatalog01(): Bool = {
+        let p = #{
+            A(1).
+        };
+        let v = pquery p select A(1) with {A};
+        ematch Vector.get(0, v) {
+            case A(x) => x == 1
+        }
+    }
 
     @Test
     def testExtMatchCall01(): Bool = {

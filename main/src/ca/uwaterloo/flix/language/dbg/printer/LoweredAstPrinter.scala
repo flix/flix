@@ -160,6 +160,7 @@ object LoweredAstPrinter {
   private def printExtTagPattern(pattern: LoweredAst.ExtTagPattern): DocAst.Expr = pattern match {
     case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
     case ExtTagPattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
   }
 
   /**

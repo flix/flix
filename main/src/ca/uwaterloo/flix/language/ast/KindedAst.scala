@@ -300,6 +300,8 @@ object KindedAst {
 
     case class Var(sym: Symbol.VarSym, tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
 
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
+
     case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtTagPattern
 
   }

@@ -2464,7 +2464,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Tuple)
       val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
-        case Nil => List(ExtTagPattern.Wild(tree.loc))
+        case Nil => List(ExtTagPattern.Unit(tree.loc))
         case xs => xs.map(restrictToVarOrWild)
       }
     }

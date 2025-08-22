@@ -1154,6 +1154,7 @@ object Redundancy {
   private def freeVars(pat0: ExtTagPattern): Set[Symbol.VarSym] = pat0 match {
     case ExtTagPattern.Wild(_, _) => Set.empty
     case ExtTagPattern.Var(Binder(sym, _), _, _) => Set(sym)
+    case ExtTagPattern.Unit(_, _) => Set.empty
     case ExtTagPattern.Error(_, _) => Set.empty
   }
 
