@@ -792,6 +792,8 @@ object SemanticTokensProvider {
       val t = SemanticToken(o, Nil, loc)
       Iterator(t)
 
+    case ExtTagPattern.Unit(_, _) => Iterator.empty
+
     case ExtTagPattern.Error(_, _) => Iterator.empty
   }
 

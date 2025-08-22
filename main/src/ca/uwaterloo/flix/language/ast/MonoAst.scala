@@ -164,6 +164,8 @@ object MonoAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, occur: Occur, loc: SourceLocation) extends ExtTagPattern
 
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
   }
 
   case class Case(sym: Symbol.CaseSym, tpes: List[Type], loc: SourceLocation)

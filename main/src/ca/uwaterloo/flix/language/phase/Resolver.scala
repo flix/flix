@@ -1994,6 +1994,9 @@ object Resolver {
     case NamedAst.ExtTagPattern.Var(sym, loc) =>
       (ResolvedAst.ExtTagPattern.Var(sym, loc), List(mkVarScp(sym)))
 
+    case NamedAst.ExtTagPattern.Unit(loc) =>
+      (ResolvedAst.ExtTagPattern.Unit(loc), List.empty)
+
     case NamedAst.ExtTagPattern.Error(loc) =>
       (ResolvedAst.ExtTagPattern.Error(loc), List.empty)
   }

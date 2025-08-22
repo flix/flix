@@ -359,6 +359,8 @@ object TypedAst {
 
     case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtTagPattern
 
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
     case class Error(tpe: Type, loc: SourceLocation) extends ExtTagPattern
 
   }

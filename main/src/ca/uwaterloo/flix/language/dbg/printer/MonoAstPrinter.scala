@@ -109,6 +109,7 @@ object MonoAstPrinter {
   private def printExtTagPattern(pattern: MonoAst.ExtTagPattern): DocAst.Expr = pattern match {
     case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
     case ExtTagPattern.Var(sym, _, _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
   }
 
   /** Returns the [[DocAst.Expr]] representation of `sym`. */

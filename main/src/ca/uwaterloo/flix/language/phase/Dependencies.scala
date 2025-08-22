@@ -652,6 +652,9 @@ object Dependencies {
       visitBinder(bnd)
       visitType(tpe)
 
+    case ExtTagPattern.Unit(tpe, _) =>
+      visitType(tpe)
+
     case ExtTagPattern.Error(tpe, _) =>
       visitType(tpe)
   }

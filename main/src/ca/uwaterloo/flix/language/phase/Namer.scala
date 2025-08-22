@@ -1088,6 +1088,9 @@ object Namer {
       val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
       NamedAst.ExtTagPattern.Var(sym, loc)
 
+    case DesugaredAst.ExtTagPattern.Unit(loc) =>
+      NamedAst.ExtTagPattern.Unit(loc)
+
     case DesugaredAst.ExtTagPattern.Error(loc) =>
       NamedAst.ExtTagPattern.Error(loc)
   }

@@ -446,6 +446,9 @@ object Inliner {
         val freshVarSym = Symbol.freshVarSym(sym)
         (MonoAst.ExtTagPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
     }
+
+    case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Unit(tpe, loc), Map.empty)
   }
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */

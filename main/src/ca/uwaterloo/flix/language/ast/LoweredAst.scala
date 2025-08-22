@@ -190,6 +190,8 @@ object LoweredAst {
 
     case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtTagPattern
 
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate {

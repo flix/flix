@@ -437,6 +437,28 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalExtPattern](result)
   }
 
+  test("IllegalExtPattern.08") {
+    val input =
+      """
+        |def f(): Bool = ematch xvar ABC() {
+        |    case ABC(()) => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
+  test("IllegalExtPattern.09") {
+    val input =
+      """
+        |def f(): Bool = ematch xvar ABC((), ()) {
+        |    case ABC((), ()) => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalExtPattern](result)
+  }
+
   test("IllegalFixedAtom.01") {
     val input =
       """def f(): Unit =

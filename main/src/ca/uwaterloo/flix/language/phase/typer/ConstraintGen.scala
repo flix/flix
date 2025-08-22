@@ -1121,6 +1121,9 @@ object ConstraintGen {
       c.unifyType(sym.tvar, tvar, loc)
       tvar
 
+    case ExtTagPattern.Unit(_) =>
+      Type.Unit
+
     case ExtTagPattern.Error(tvar, _) =>
       tvar
   }

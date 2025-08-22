@@ -167,6 +167,7 @@ object ResolvedAstPrinter {
   private def printExtTagPattern(pat: ResolvedAst.ExtTagPattern): DocAst.Expr = pat match {
     case ExtTagPattern.Wild(_) => DocAst.Expr.Wild
     case ExtTagPattern.Var(sym, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_) => DocAst.Expr.Unit
     case ExtTagPattern.Error(_) => DocAst.Expr.Error
   }
 

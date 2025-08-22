@@ -1070,6 +1070,7 @@ object Lowering {
   private def visitExtTagPat(pat0: TypedAst.ExtTagPattern): LoweredAst.ExtTagPattern = pat0 match {
     case TypedAst.ExtTagPattern.Wild(tpe, loc) => LoweredAst.ExtTagPattern.Wild(tpe, loc)
     case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) => LoweredAst.ExtTagPattern.Var(bnd.sym, tpe, loc)
+    case TypedAst.ExtTagPattern.Unit(tpe, loc) => LoweredAst.ExtTagPattern.Unit(tpe, loc)
     case TypedAst.ExtTagPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
@@ -2331,6 +2332,9 @@ object Lowering {
     case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
       LoweredAst.ExtTagPattern.Var(s, tpe, loc)
+
+   case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
+      LoweredAst.ExtTagPattern.Unit(tpe, loc)
   }
 
 }
