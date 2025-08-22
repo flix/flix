@@ -625,7 +625,7 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that a case of a pattern match is unreachable due to an earlier default case.
+    * An error raised to indicate that a case of an `ematch` expression is unreachable due to an earlier default case.
     *
     * @param defaultLoc the location of the default case.
     * @param loc        the location of the unreachable case.
