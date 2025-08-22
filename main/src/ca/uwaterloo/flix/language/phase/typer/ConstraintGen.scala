@@ -488,6 +488,9 @@ object ConstraintGen {
             }
         val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
         val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }
+        println(s"scrutineeType: $scrutineeType")
+        println(s"expectedExtensibleType: $expectedExtensibleType")
+        println(s"defaultPatternTvars: $defaultPatternTvars")
         c.unifyAllTypes(scrutineeType :: expectedExtensibleType :: defaultPatternTvars, loc)
         c.unifyAllTypes(ruleBodyTypes, loc)
         val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
