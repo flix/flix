@@ -53,9 +53,9 @@ object RedundancyError {
   /**
     * An error raised to indicate that the extensible variant constructor `label` was used multiple times.
     *
-    * @param label    the name of the extensible variant constructor.
-    * @param loc1     the location of the first pattern.
-    * @param loc2     the location of the second pattern.
+    * @param label the name of the extensible variant constructor.
+    * @param loc1  the location of the first pattern.
+    * @param loc2  the location of the second pattern.
     */
   case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
     def summary: String = s"Duplicate extensible variant pattern '${label.name}'."
@@ -653,5 +653,20 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that a case of a pattern match is unreachable due to an earlier default case.
+    *
+    * @param defaultLoc the location of the default case.
+    * @param loc        the location of the unreachable case.
+    */
+  case class UnreachableCase(defaultLoc: SourceLocation, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+
+    override def summary: String = "Unreachable case."
+
+    override def message(formatter: Formatter): String = ""
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }
