@@ -636,13 +636,13 @@ object RedundancyError {
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unreachable case. It is shadowed by a '_' pattern.
+      s""">> Unreachable case. It is covered by a '_' pattern.
          |
          |${code(loc, "unreachable case.")}
          |
-         |Shadowed by the following pattern:
+         |Covered by the following pattern:
          |
-         |${code(defaultLoc, "shadowing pattern.")}
+         |${code(defaultLoc, "covering pattern.")}
          |""".stripMargin
     }
 
@@ -650,8 +650,8 @@ object RedundancyError {
       """
         |Possible fixes:
         |
-        |  (1)  Remove the shadowed case.
-        |  (2)  Remove the shadowing '_' case.
+        |  (1)  Remove the covered case.
+        |  (2)  Remove the covering '_' case.
         |
         |""".stripMargin
     })
