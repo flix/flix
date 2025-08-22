@@ -963,6 +963,62 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnreachableCase](result)
   }
 
+  test("UnreachableExtPattern.02") {
+    val input =
+      """
+        |def f(): Bool = ematch A() {
+        |    case B() => false
+        |    case _   => true
+        |    case A() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableCase](result)
+  }
+
+  test("UnreachableExtPattern.03") {
+    val input =
+      """
+        |def f(): Bool = ematch B() {
+        |    case A() => false
+        |    case A() => false
+        |    case _   => true
+        |    case B() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableCase](result)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
+  test("UnreachableExtPattern.04") {
+    val input =
+      """
+        |def f(): Bool = ematch B() {
+        |    case A() => false
+        |    case _   => true
+        |    case _   => false
+        |    case B() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableCase](result)
+  }
+
+  test("UnreachableExtPattern.05") {
+    val input =
+      """
+        |def f(): Bool = ematch C() {
+        |    case A() => false
+        |    case _   => true
+        |    case _   => false
+        |    case B() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableCase](result)
+  }
+
   test("UnusedStructSym.01") {
     val input =
       s"""
