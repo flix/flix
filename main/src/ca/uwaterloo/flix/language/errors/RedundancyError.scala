@@ -681,7 +681,7 @@ object RedundancyError {
       """
         |Possible fixes:
         |
-        |  (1)  Remove the shadowed cases.
+        |  (1)  Remove the shadowed case.
         |  (2)  Remove the shadowing '_' case.
         |
         |""".stripMargin
