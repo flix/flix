@@ -481,7 +481,7 @@ object ConstraintGen {
         val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
         val tagPatTypes = patTypes.collect { case Left(tag) => tag }
         val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
-        val defaultSchemaRow =
+        val defaultSchemaRow = // Note: An empty list of patterns cannot occur and errors are treated as default cases.
           if (defaultPatternTvars.isEmpty)
             Type.mkSchemaRowEmpty(loc.asSynthetic)
           else
