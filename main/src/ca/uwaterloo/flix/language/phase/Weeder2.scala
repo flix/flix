@@ -2757,6 +2757,9 @@ object Weeder2 {
             val exprs0 = traverse(pickAll(TreeKind.Expr.Expr, tree))(Exprs.visitExpr)
             val maybeLatTerm = tryPickLatticeTermExpr(tree)
             mapN(exprs0, maybeLatTerm) {
+              case (Expr.Tuple(Nil, loc) :: Nil, None) =>
+                val unitExpr = List(Expr.Tuple(List(Expr.Tuple(Nil, loc.asSynthetic)), loc))
+                Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, unitExpr, tree.loc)
               case (exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, tree.loc)
               case (exprs, Some(term)) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, tree.loc)
             }
