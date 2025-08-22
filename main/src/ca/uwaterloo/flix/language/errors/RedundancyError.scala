@@ -625,37 +625,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an expression is useless.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class UselessExpression(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Useless expression."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Useless expression: It has no side-effect(s) and its result is discarded.
-         |
-         |${code(loc, "useless expression.")}
-         |
-         |The expression has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the result computed by the expression.
-         |  (2)  Remove the expression statement.
-         |  (3)  Introduce a let-binding with a wildcard name.
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate that a case of a pattern match is unreachable due to an earlier default case.
     *
     * @param defaultLoc the location of the default case.
@@ -687,4 +656,36 @@ object RedundancyError {
         |""".stripMargin
     })
   }
+
+  /**
+    * An error raised to indicate that an expression is useless.
+    *
+    * @param tpe the type of the expression.
+    * @param loc the location of the expression.
+    */
+  case class UselessExpression(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
+    def summary: String = "Useless expression."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Useless expression: It has no side-effect(s) and its result is discarded.
+         |
+         |${code(loc, "useless expression.")}
+         |
+         |The expression has type '${FormatType.formatType(tpe)}'
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the result computed by the expression.
+         |  (2)  Remove the expression statement.
+         |  (3)  Introduce a let-binding with a wildcard name.
+         |
+         |""".stripMargin
+    })
+  }
+
 }
