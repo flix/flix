@@ -273,6 +273,20 @@ mod Test.Exp.Fixpoint.Project {
     }
 
     @Test
+    def testProjectSingleWithRules02(): Bool = {
+        let p = #{
+            A(1). A(2). A(3).
+            P(x) :- A(x).
+            Q(x) :- P(x).
+            B(10). B(20).
+        };
+        let q = solve p project Q;
+        let expected = Vector#{1, 2, 3};
+        let actual = query q select x from Q(x);
+        expected `Assert.eq` actual
+    }
+
+    @Test
     def testProjectDoubleWithRules01(): Bool = {
         let p = #{
             A(1). A(2).
@@ -286,6 +300,40 @@ mod Test.Exp.Fixpoint.Project {
         let actualP = query q select x from P(x);
         let actualQ = query q select x from Q(x);
         expectedP `Assert.eq` actualP and expectedQ `Assert.eq` actualQ
+    }
+
+    @Test
+    def testProjectDoubleWithRules02(): Bool = {
+        let p = #{
+            A(1). A(2).
+            P(x) :- A(x).
+            B(3). B(4).
+            Q(x) :- B(x).
+        };
+        let q = solve p project P, Q;
+        let expectedP = Vector#{1, 2};
+        let expectedQ = Vector#{3, 4};
+        let actualP = query q select x from P(x);
+        let actualQ = query q select x from Q(x);
+        expectedP `Assert.eq` actualP and expectedQ `Assert.eq` actualQ
+    }
+
+    @Test
+    def testProjectTripleWithRules01(): Bool = {
+        let p = #{
+            A(1). A(2).
+            P(x) :- A(x).
+            Q(x) :- P(x).
+            R(x) :- Q(x).
+        };
+        let q = solve p project P, Q, R;
+        let expectedP = Vector#{1, 2};
+        let expectedQ = Vector#{1, 2};
+        let expectedR = Vector#{1, 2};
+        let actualP = query q select x from P(x);
+        let actualQ = query q select x from Q(x);
+        let actualR = query q select x from R(x);
+        expectedP `Assert.eq` actualP and expectedQ `Assert.eq` actualQ and expectedR `Assert.eq` actualR
     }
 
     @Test

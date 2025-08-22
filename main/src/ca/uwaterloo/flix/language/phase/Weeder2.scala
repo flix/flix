@@ -2127,8 +2127,8 @@ object Weeder2 {
       val idents = pickAll(TreeKind.Ident, tree).map(tokenToIdent)
       mapN(traverse(expressions)(visitExpr)) {
         exprs =>
-          val optIdents = if (idents.isEmpty) None else Some(idents)
-          Expr.FixpointSolveWithProject(exprs, solveMode, optIdents, tree.loc)
+          val optPreds = if (idents.isEmpty) None else Some(idents.map(Name.mkPred))
+          Expr.FixpointSolveWithProject(exprs, optPreds, solveMode, tree.loc)
       }
     }
 
