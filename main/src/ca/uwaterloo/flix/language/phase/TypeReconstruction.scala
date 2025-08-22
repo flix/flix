@@ -601,7 +601,7 @@ object TypeReconstruction {
     case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc) =>
       val es = exps.map(visitExp)
       val s = visitHeadPredicate(select)
-      val eff = Type.Pure
+      val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
 
     case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
