@@ -1104,6 +1104,7 @@ object ConstraintGen {
       val ps = pats.map(visitExtTagPattern)
       val freshRowVar = freshVar(Kind.SchemaRow, loc)
       val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc.asSynthetic), freshRowVar, loc)
+      println(s"extpat tpe: $tpe")
       c.unifyType(tpe, tvar, loc)
       Left((name, ps))
 
