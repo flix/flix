@@ -960,7 +960,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnreachableCase](result)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
   }
 
   test("UnreachableExtPattern.02") {
@@ -973,7 +973,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnreachableCase](result)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
   }
 
   test("UnreachableExtPattern.03") {
@@ -987,7 +987,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnreachableCase](result)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
     expectError[RedundancyError.DuplicateExtPattern](result)
   }
 
@@ -1002,7 +1002,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnreachableCase](result)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
   }
 
   test("UnreachableExtPattern.05") {
@@ -1016,7 +1016,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnreachableCase](result)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
   }
 
   test("UnusedStructSym.01") {

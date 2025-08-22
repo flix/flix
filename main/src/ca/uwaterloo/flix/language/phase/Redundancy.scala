@@ -620,7 +620,7 @@ object Redundancy {
 
         case defaultCase :: unreachableRules =>
           // One default case followed by 0 or more unreachable rules
-          unreachableRules.map(rule => RedundancyError.UnreachableCase(defaultCase.loc, rule.loc))
+          unreachableRules.map(rule => RedundancyError.UnreachableExtMatchCase(defaultCase.loc, rule.loc))
       }
 
       val duplicatePatterns: List[RedundancyError] =

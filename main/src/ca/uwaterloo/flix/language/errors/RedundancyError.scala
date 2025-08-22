@@ -630,7 +630,7 @@ object RedundancyError {
     * @param defaultLoc the location of the default case.
     * @param loc        the location of the unreachable case.
     */
-  case class UnreachableCase(defaultLoc: SourceLocation, loc: SourceLocation) extends RedundancyError {
+  case class UnreachableExtMatchCase(defaultLoc: SourceLocation, loc: SourceLocation) extends RedundancyError {
 
     override def summary: String = "Unreachable case."
 
