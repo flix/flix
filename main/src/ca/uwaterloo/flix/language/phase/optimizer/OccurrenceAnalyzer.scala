@@ -394,6 +394,9 @@ object OccurrenceAnalyzer {
   }
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern, ctx: ExprContext): (MonoAst.ExtPattern, Set[VarSym]) = pat0 match {
+    case MonoAst.ExtPattern.Default(_, _) =>
+      (pat0, Set.empty) // Always reuse pat0.
+
     case MonoAst.ExtPattern.Tag(label, pats, tpe, loc) =>
       val (ps, nestedSyms) = pats.map(visitExtTagPattern(_, ctx)).unzip
       val syms = nestedSyms.foldLeft(Set.empty[VarSym])(_ ++ _)

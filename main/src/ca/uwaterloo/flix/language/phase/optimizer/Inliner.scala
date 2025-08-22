@@ -422,6 +422,9 @@ object Inliner {
   }
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtPattern.Default(tpe, loc) =>
+      (MonoAst.ExtPattern.Default(tpe, loc), Map.empty)
+
     case MonoAst.ExtPattern.Tag(label, pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitExtTagPattern).unzip
       val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
