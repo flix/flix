@@ -1805,7 +1805,7 @@ object Lowering {
       (pred, termTypesOfRelation(rel, loc2)) :: predicatesOfSchemaRow(tpe2, loc1)
     case Type.Var(_, _) => Nil
     case Type.SchemaRowEmpty => Nil
-    case t => throw InternalCompilerException(s"Got unexpected ${t}", loc)
+    case t => throw InternalCompilerException(s"Got unexpected type ${t}", loc)
   }
 
   /**
@@ -1815,7 +1815,8 @@ object Lowering {
     def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
       case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
-      case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
+      case Type.Var(_, _) => Nil
+      case t => throw InternalCompilerException(s"Got unexpected type ${t}", loc0)
     }
 
     f(rel, loc).reverse
