@@ -497,9 +497,6 @@ object ConstraintGen {
                   Type.mkSchemaRowExtend(pred, relation, acc, pred.loc.asSynthetic)
               }
         val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
-        println(s"scrutineeType: $scrutineeType")
-        println(s"expectedExtensibleType: $expectedExtensibleType")
-        println(s"defaultPatternTvars: $defaultPatternTvars")
         c.unifyAllTypes(scrutineeType :: expectedExtensibleType :: defaultPatternTvars, loc)
         c.unifyAllTypes(ruleBodyTypes, loc)
         val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
