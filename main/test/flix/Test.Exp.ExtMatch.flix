@@ -488,11 +488,19 @@ mod Test.Exp.ExtMatch {
 
     @Test
     def testExtMatchCall02(): Bool = {
-        matchesA(xvar A(1))
+        ematch generatesA() {
+            case B(i) => i == 1
+            case A(i) => i == 1
+        }
     }
 
     @Test
     def testExtMatchCall03(): Bool = {
+        matchesA(xvar A(1))
+    }
+
+    @Test
+    def testExtMatchCall04(): Bool = {
         not matchesA(xvar B(1))
     }
 
