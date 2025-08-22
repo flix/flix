@@ -509,6 +509,44 @@ mod Test.Exp.ExtMatch {
     }
 
     @Test
+    def testExtMatchMultipleScrutinees01(): Bool = {
+        let scrutinee = if (true) xvar A(1) else xvar B(1);
+        ematch scrutinee {
+            case A(x) => x == 1
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees02(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case A(x) => x == 1
+            case B(_) => false
+            case C(x) => x
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees03(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case B(_) => false
+            case C(x) => x
+            case A(x) => x == 1
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees04(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case B(_) => false
+            case _ => true
+        }
+    }
+
+    @Test
     def testExtMatchCall01(): Bool = {
         ematch generatesA() {
             case A(i) => i == 1
