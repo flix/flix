@@ -150,6 +150,7 @@ object LoweredAstPrinter {
     * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
   private def printExtPattern(pattern: LoweredAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Default(_, _) => DocAst.Pattern.Default
     case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
   }
 

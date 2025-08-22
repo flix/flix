@@ -464,6 +464,35 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// `ematch` should support matching on default patterns.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchDefault01(): Bool = {
+        ematch xvar A(1) {
+            case _ => true
+        }
+    }
+
+    @Test
+    def testExtMatchDefault02(): Bool = {
+        ematch xvar A(1) {
+            case A(x) => x == 1
+            case _ => false
+        }
+    }
+
+    @Test
+    def testExtMatchDefault03(): Bool = {
+        ematch xvar A(1) {
+            case B(_) => false
+            case _ => true
+        }
+    }
+
+
     ///////////////////////////////////////////////////////////////////////////
     /// Unsorted.
     ///////////////////////////////////////////////////////////////////////////
@@ -476,6 +505,44 @@ mod Test.Exp.ExtMatch {
         let v = pquery p select A(1) with {A};
         ematch Vector.get(0, v) {
             case A(x) => x == 1
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees01(): Bool = {
+        let scrutinee = if (true) xvar A(1) else xvar B(1);
+        ematch scrutinee {
+            case A(x) => x == 1
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees02(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case A(x) => x == 1
+            case B(_) => false
+            case C(x) => x
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees03(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case B(_) => false
+            case C(x) => x
+            case A(x) => x == 1
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees04(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case B(_) => false
+            case _ => true
         }
     }
 
