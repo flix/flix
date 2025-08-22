@@ -83,22 +83,24 @@ mod Process {
 
     use IoError.ErrorKind
     use IoError.IoError
+    use Peekable.readLine
     use ProcessHandle.ProcessHandle
-
-    import java.lang.IllegalArgumentException
-    import java.lang.IllegalThreadStateException
-    import java.lang.InterruptedException
-    import java.lang.UnsupportedOperationException
-    import java.io.IOException
-    import java.lang.ProcessBuilder
-    import java.lang.Runtime
-    import java.io.{File => JFile}
-    import java.io.InputStream
-    import java.io.OutputStream
-    import java.util.concurrent.{TimeUnit => JTimeUnit}
     use Process.StdIn.StdIn
     use Process.StdErr.StdErr
     use Process.StdOut.StdOut
+
+    import java.io.IOException
+    import java.lang.ProcessBuilder
+    import java.io.{File => JFile}
+    import java.io.InputStream
+    import java.io.OutputStream
+    import java.lang.IllegalArgumentException
+    import java.lang.IllegalThreadStateException
+    import java.lang.InterruptedException
+    import java.lang.Runtime
+    import java.lang.UnsupportedOperationException
+    import java.nio.charset.StandardCharsets
+    import java.util.concurrent.{TimeUnit => JTimeUnit}
 
     pub enum StdIn(OutputStream)
     instance Writable[StdIn] {
@@ -213,8 +215,35 @@ mod Process {
                 let ProcessHandle(jProc) = ph;
                 k(StdErr(jProc.getErrorStream()))
 
-            def output(ph, k) = ???
-
+            def output(ph, k) = {
+                let ProcessHandle(jProc) = ph;
+                let stdOut = StdOut(jProc.getInputStream());
+                let utf8 = CharacterSet.CharacterSet(StandardCharsets.UTF_8);
+                def getOutput(): Result[IoError, String] = {
+                    forM(
+                        outString <- region rc {
+                            let sb = StringBuilder.empty(rc);
+                            let decodingReader = DecodingReader.wrap(rc, utf8, stdOut);
+                            let reader = BufReader.withDefaultCapacity(rc, decodingReader);
+                            def readAll() = {
+                                match readLine(reader) {
+                                    case Err(e) => Err(e) // Error
+                                    case Ok("") => Ok(StringBuilder.toString(sb)) // EOF
+                                    case Ok(l) => {
+                                        StringBuilder.appendLine(l, sb);
+                                        readAll()
+                                    }
+                                }
+                            };
+                            readAll()
+                        }
+                    ) yield outString
+                };
+                match getOutput() {
+                    case Err(e) => k(Err(e))
+                    case Ok(out) => k(Ok(out))
+                }
+            }
 
             def stop(ph, k) =
                 try {
