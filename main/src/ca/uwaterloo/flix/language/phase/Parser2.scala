@@ -3645,23 +3645,16 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
-      termList()
+      // Check for `A` or `A(...)`
+      if (at(TokenKind.ParenL)) {
+        termList()
+      }
       close(mark, TreeKind.Predicate.Head)
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
-      // Check for missing term list.
-      if (!at(TokenKind.ParenL)) {
-        closeWithError(open(), UnexpectedToken(
-          expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)),
-          actual = Some(nth(0)),
-          sctx = sctx,
-          hint = Some("provide a list of terms."),
-          loc = previousSourceLocation())
-        )
-      }
 
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,
@@ -3765,7 +3758,10 @@ object Parser2 {
       eat(TokenKind.KeywordNot)
       eat(TokenKind.KeywordFix)
       nameUnqualified(NAME_PREDICATE)
-      patternList()
+      // Check for `A` or `A(...)`
+      if (at(TokenKind.ParenL)) {
+        patternList()
+      }
       close(mark, TreeKind.Predicate.Atom)
     }
 

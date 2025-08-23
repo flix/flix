@@ -2752,17 +2752,30 @@ object Weeder2 {
   private object Predicates {
     def pickHead(tree: Tree)(implicit sctx: SharedContext): Validation[Predicate.Head.Atom, CompilationMessage] = {
       flatMapN(pick(TreeKind.Predicate.Head, tree))(tree => {
-        flatMapN(pickNameIdent(tree), pick(TreeKind.Predicate.TermList, tree)) {
-          (ident, tree) => {
-            val exprs0 = traverse(pickAll(TreeKind.Expr.Expr, tree))(Exprs.visitExpr)
-            val maybeLatTerm = tryPickLatticeTermExpr(tree)
-            mapN(exprs0, maybeLatTerm) {
+        mapN(pickNameIdent(tree), visitTermList(tree)) {
+          (ident, exprsAndLat) => exprsAndLat match {
               case (exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, tree.loc)
               case (exprs, Some(term)) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, tree.loc)
-            }
           }
         }
       })
+    }
+
+    private def visitTermList(tree: Tree)(implicit sctx: SharedContext): Validation[(List[Expr], Option[Expr]), CompilationMessage] = {
+      tryPick(TreeKind.Predicate.TermList, tree) match {
+        // A(...)
+        case Some(t) =>
+          val rawList = traverse(pickAll(TreeKind.Expr.Expr, t))(Exprs.visitExpr)
+          val maybeLatTerm = tryPickLatticeTermExpr(t)
+          mapN(rawList, maybeLatTerm) {
+            // A() => A(())
+            case (Nil, latTerm) =>
+              (List(Expr.Cst(Constant.Unit, t.loc)), latTerm)
+            case (nonEmpty, latTerm) => (nonEmpty, latTerm)
+          }
+        // A
+        case None => Validation.Success((List(), None))
+      }
     }
 
     def visitBody(parentTree: Tree)(implicit sctx: SharedContext): Validation[Predicate.Body, CompilationMessage] = {
@@ -2780,12 +2793,8 @@ object Weeder2 {
       expect(tree, TreeKind.Predicate.Atom)
       val fixity = if (hasToken(TokenKind.KeywordFix, tree)) Fixity.Fixed else Fixity.Loose
       val polarity = if (hasToken(TokenKind.KeywordNot, tree)) Polarity.Negative else Polarity.Positive
-
-      flatMapN(pickNameIdent(tree), pick(TreeKind.Predicate.PatternList, tree))(
-        (ident, tree) => {
-          val exprs = traverse(pickAll(TreeKind.Pattern.Pattern, tree))(tree => Patterns.visitPattern(tree))
-          val maybeLatTerm = tryPickLatticeTermPattern(tree)
-          mapN(exprs, maybeLatTerm) {
+      flatMapN(pickNameIdent(tree), visitPatternList(tree))(
+        (ident, exprsAndLat) => exprsAndLat match {
             case (pats, None) =>
               // Check for `[[IllegalFixedAtom]]`.
               val isNegativePolarity = polarity == Polarity.Negative
@@ -2795,13 +2804,28 @@ object Weeder2 {
                 val error = IllegalFixedAtom(tree.loc)
                 sctx.errors.add(error)
               }
-              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
-
+              Validation.Success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc))
             case (pats, Some(term)) =>
-              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc)
-          }
-        })
+              Validation.Success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc))
+        }
+      )
     }
+
+    private def visitPatternList(tree: Tree)(implicit  sctx: SharedContext): Validation[(List[Pattern], Option[Pattern]), CompilationMessage] =
+      tryPick(TreeKind.Predicate.PatternList, tree) match {
+        // A(...)
+        case Some(t) =>
+          val rawList = traverse(pickAll(TreeKind.Pattern.Pattern, t))(tree => Patterns.visitPattern(tree))
+          val maybeLatTerm = tryPickLatticeTermPattern(t)
+          mapN(rawList, maybeLatTerm) {
+            // A() => A(())
+            case (Nil, latTerm) =>
+              (List(Pattern.Cst(Constant.Unit, t.loc)), latTerm)
+            case (nonEmpty, latTerm) => (nonEmpty, latTerm)
+          }
+        // A
+        case None => Validation.Success((List(), None))
+      }
 
     private def visitGuard(tree: Tree)(implicit sctx: SharedContext): Validation[Predicate.Body.Guard, CompilationMessage] = {
       expect(tree, TreeKind.Predicate.Guard)
