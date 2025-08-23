@@ -240,8 +240,6 @@ object SyntaxTree {
 
       case object Foreach extends Expr
 
-      case object ForeachYield extends Expr
-
       case object ForMonadic extends Expr
 
       case object ForFragmentGenerator extends Expr

@@ -2184,12 +2184,9 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordForeach))
       val mark = open()
-      var kind: TreeKind = TreeKind.Expr.Foreach
+      val kind: TreeKind = TreeKind.Expr.Foreach
       expect(TokenKind.KeywordForeach)
       forFragments()
-      if (eat(TokenKind.KeywordYield)) {
-        kind = TreeKind.Expr.ForeachYield
-      }
       expression()
       close(mark, kind)
     }
