@@ -58,11 +58,6 @@ eff Process {
     def stderr(ph: ProcessHandle): Process.StdErr
 
     ///
-    /// Returns Process output as a string.
-    ///
-    def output(ph: ProcessHandle): Result[IoError, String]
-
-    ///
     /// Stops the process.
     ///
     def stop(ph: ProcessHandle): Unit
@@ -212,9 +207,6 @@ mod Process {
             def stderr(ph, k) =
                 let ProcessHandle(jProc) = ph;
                 k(StdErr(jProc.getErrorStream()))
-
-            def output(ph, k) = ???
-
 
             def stop(ph, k) =
                 try {

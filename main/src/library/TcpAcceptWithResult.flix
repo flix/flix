@@ -46,7 +46,7 @@ mod TcpAcceptWithResult {
                     let outputStream = socket.getOutputStream();
                     resume(Ok(TcpSocket.TcpSocket(socket, inputStream, outputStream)))
                 } catch {
-                    case ex: SocketTimeoutException => resume(Err(IoError(???, ex.getMessage())))
+                    case ex: SocketTimeoutException => resume(Err(IoError(ErrorKind.Timeout, ex.getMessage())))
                     case ex: IOException            => resume(Err(IoError(ErrorKind.Other, ex.getMessage())))
                 }
             }
