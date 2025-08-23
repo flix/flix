@@ -607,13 +607,30 @@ object Redundancy {
         case ExtMatchRule(pat: ExtPattern.Tag, _, _) => pat
       }
 
+      // We drop match rules until we find the first default rule (if it exists).
+      val unreachableCases = rules.dropWhile {
+        case ExtMatchRule(_: ExtPattern.Default, _, _) => false
+        case _ => true
+      } match {
+        case Nil =>
+          // No default case, so nothing unreachable
+          List.empty
+        case _ :: Nil =>
+          // One default case, and it is the last one, so nothing is unreachable
+          List.empty
+
+        case defaultCase :: unreachableRules =>
+          // One default case followed by 0 or more unreachable rules
+          unreachableRules.map(rule => RedundancyError.UnreachableExtMatchCase(defaultCase.loc, rule.loc))
+      }
+
       val duplicatePatterns: List[RedundancyError] =
         SeqOps.getDuplicates(tagPatterns, (pat: ExtPattern.Tag) => pat.label).map {
           case (pat1, pat2) =>
             RedundancyError.DuplicateExtPattern(pat1.label, pat1.label.loc, pat2.label.loc)
         }
 
-      Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
+      Used(Set.empty, duplicatePatterns.toSet ++ unreachableCases) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)

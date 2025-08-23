@@ -731,6 +731,9 @@ object Monomorpher {
     * symbols.
     */
   private def specializeExtPat(pat0: LoweredAst.ExtPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case LoweredAst.ExtPattern.Default(tpe, loc) =>
+      (MonoAst.ExtPattern.Default(subst(tpe), loc), Map.empty)
+
     case LoweredAst.ExtPattern.Tag(label, pats, tpe, loc) =>
       val (ps, symMaps) = pats.map(specializeExtTagPat(_, subst)).unzip
       val env = symMaps.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)

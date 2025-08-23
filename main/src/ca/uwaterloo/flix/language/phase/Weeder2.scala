@@ -2351,6 +2351,7 @@ object Weeder2 {
       tree.children.headOption match {
         case Some(subtree: Tree) => subtree.kind match {
           case TreeKind.Pattern.Tag => visitExtTagPattern(subtree, seen)
+          case TreeKind.Pattern.Variable => visitExtTagDefaultPattern(subtree)
           // Avoid double reporting errors by returning a success here
           case TreeKind.ErrorTree(_) => Validation.Success(ExtPattern.Error(subtree.loc))
           case _ =>
@@ -2375,6 +2376,19 @@ object Weeder2 {
             case None => ExtPattern.Tag(Name.mkLabel(qname.ident), List.empty, tree.loc)
             case Some(elms) => ExtPattern.Tag(Name.mkLabel(qname.ident), elms, tree.loc)
           }
+      }
+    }
+
+    private def visitExtTagDefaultPattern(tree: SyntaxTree.Tree)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.Variable)
+      mapN(pickNameIdent(tree)) {
+        case ident if ident.name == "_" =>
+          ExtPattern.Default(tree.loc)
+
+        case ident =>
+          val error = IllegalExtPattern(ident.loc)
+          sctx.errors.add(error)
+          ExtPattern.Error(tree.loc)
       }
     }
 
