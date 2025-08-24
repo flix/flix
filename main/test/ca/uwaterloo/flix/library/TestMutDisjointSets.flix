@@ -82,9 +82,7 @@ mod TestMutDisjointSets {
     def find01(): Bool = region rc {
         let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(-10, 20), s);
-        let actual = foreach (
-            x <- List.range(-10, 20)
-        ) yield MutDisjointSets.find(x, s);
+        let actual = List.range(-10, 20) |> List.map(x -> MutDisjointSets.find(x, s));
         Assert.eq(List.range(-10, 20) |> List.map(Some), actual)
     }
 
@@ -92,9 +90,7 @@ mod TestMutDisjointSets {
     def find02(): Bool = region rc {
         let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("x" :: "y" :: "z" :: Nil, s);
-        let actual = foreach (
-            x <- "x" :: "y" :: "z" :: Nil
-        ) yield MutDisjointSets.find(x, s);
+        let actual = ("x" :: "y" :: "z" :: Nil) |> List.map(x -> MutDisjointSets.find(x, s));
         Assert.eq(("x" :: "y" :: "z" :: Nil) |> List.map(Some), actual)
     }
 
@@ -107,9 +103,7 @@ mod TestMutDisjointSets {
         MutDisjointSets.union(4, 5, s);
         MutDisjointSets.union(6, 7, s);
         MutDisjointSets.union(8, 9, s);
-        let actual = foreach (
-            x <- 0 :: 2 :: 4 :: 6 :: 8 :: Nil
-        ) yield MutDisjointSets.find(x, s);
+        let actual = (0 :: 2 :: 4 :: 6 :: 8 :: Nil) |> List.map(x -> MutDisjointSets.find(x, s));
         Assert.eq((1 :: 3 :: 5 :: 7 :: 9 :: Nil) |> List.map(Some), actual)
     }
 
@@ -122,9 +116,7 @@ mod TestMutDisjointSets {
         MutDisjointSets.union(4, 5, s);
         MutDisjointSets.union(6, 7, s);
         MutDisjointSets.union(8, 9, s);
-        let actual = foreach (
-            x <- 1 :: 3 :: 5 :: 7 :: 9 :: Nil
-        ) yield MutDisjointSets.find(x, s);
+        let actual = (1 :: 3 :: 5 :: 7 :: 9 :: Nil) |> List.map(x -> MutDisjointSets.find(x, s));
         Assert.eq((1 :: 3 :: 5 :: 7 :: 9 :: Nil) |> List.map(Some), actual)
     }
 
