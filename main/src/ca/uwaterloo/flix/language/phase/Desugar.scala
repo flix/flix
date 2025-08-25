@@ -1525,9 +1525,7 @@ object Desugar {
   }
 
   /**
-    * Returns an ext-match lambda, i.e. a lambda with an extensible pattern match on its arguments.
-    *
-    * This is also known as [[WeededAst.Expr.LambdaExtMatch]].
+    * Desugars a [[WeededAst.Expr.LambdaExtMatch]] into a lambda with an extensible pattern match on its arguments.
     *
     * {{{
     *   (ematch A(x, y) -> exp)
