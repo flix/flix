@@ -19,27 +19,27 @@ mod Test.Exp.Lambda.ExtMatch {
     def testLambdaExtMatch06(): #| A(Int32), B(Bool) |# -> Int32 = ematch _ -> 42
 
     @Test
-    def testLambdaExtMatch07(): Int32 = (ematch A(x) -> x)(xvar A(1))
+    def testLambdaExtMatch07(): Bool = (ematch A(x) -> x)(xvar A(1)) == 1
 
     @Test
-    def testLambdaExtMatch08(): Int32 = (ematch A(x, y) -> ((x + y) : Int32))(xvar A(1, 2))
+    def testLambdaExtMatch08(): Bool = (ematch A(x, y) -> ((x + y) : Int32))(xvar A(1, 2)) == 3
 
     @Test
-    def testLambdaExtMatch09(): Int32 = (ematch A(x, y, z) -> ((x + y + z) : Int32))(xvar A(1, 2, 3))
+    def testLambdaExtMatch09(): Bool = (ematch A(x, y, z) -> ((x + y + z) : Int32))(xvar A(1, 2, 3)) == 6
 
     @Test
-    def testLambdaExtMatch10(): Int32 = (ematch A(x, y, z, _) -> ((x + y + z) : Int32))(xvar A(1, 2, 3, 4))
+    def testLambdaExtMatch10(): Bool = (ematch A(x, y, z, _) -> ((x + y + z) : Int32))(xvar A(1, 2, 3, 4)) == 6
 
     @Test
-    def testLambdaExtMatch11(): Int32 = (ematch _ -> 42)(xvar A(0))
+    def testLambdaExtMatch11(): Bool = (ematch _ -> 42)(xvar A(0)) == 42
 
     @Test
-    def testLambdaExtMatch12(): Int32 = (ematch _ -> 42)(xvar B(0))
+    def testLambdaExtMatch12(): Bool = (ematch _ -> 42)(xvar B(0)) == 42
 
     @Test
-    def testLambdaExtMatch13(): Int32 = (ematch _ -> 42)(if (true) xvar A(0) else xvar B(0))
+    def testLambdaExtMatch13(): Bool = (ematch _ -> 42)(if (true) xvar A(0) else xvar B(0)) == 42
 
     @Test
-    def testLambdaExtMatch14(): Int32 = (ematch _ -> 42)(if (true) xvar A(0) else if (true) xvar B(0) else xvar C(0))
+    def testLambdaExtMatch14(): Bool = (ematch _ -> 42)(if (true) xvar A(0) else if (true) xvar B(0) else xvar C(0)) == 42
 
 }
