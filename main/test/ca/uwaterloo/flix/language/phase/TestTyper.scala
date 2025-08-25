@@ -117,6 +117,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestMismatchedNullaryTypes.01") {
+    val input = "def foo(): #{A(Unit)| x} = #{A.}"
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
+  test("TestMismatchedNullaryTypes.02") {
+    val input = "def foo(): #{A| x} = #{A()}"
+    val result = compile(input, Options.DefaultTest)
+    expectError[TypeError](result)
+  }
+
   test("TestMismatchedTypes.01") {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
