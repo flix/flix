@@ -360,7 +360,7 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, Nil)
+            Dependency.FlixDependency(repo, username, projectName, _, Trust.PlainFlix)
           }
 
 
@@ -368,11 +368,11 @@ object ManifestParser {
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
-          val permKey = "permissions"
+          val permKey = "trust"
 
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
-            perm <- getPermissions(depTbl, permKey, p)
+            perm <- getTrust(depTbl, permKey, p)
           ) yield FlixDependency(repo, username, projectName, ver, perm)
         } else {
           Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
@@ -398,25 +398,23 @@ object ManifestParser {
   }
 
   /**
-    * Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`.
+    * Retrieve a trust from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
-    // Ensure the permissions are an Array.
-    if (!depTbl.isArray(key)) {
+  private def getTrust(depTbl: TomlTable, key: String, p: Path): Result[Trust, ManifestError] = {
+    // Ensure the permissions is a string.
+    if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, perms))
+      if (perms == null) {
+        Ok(Trust.PlainFlix)
+      } else {
+        Err(ManifestError.FlixDependencyTrustTypeError(Some(p), key, perms))
+      }
     } else {
-      val permArray = depTbl.getArray(key)
-      val permissions = permArray.toList.asScala.toList.map({
-        // Ensure the contents of the array are strings.
-        case s: String => Permission.mkPermission(s) match {
-          case Some(p) => p
-          case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
-        }
-        // If an entry is not a string, return an error.
-        case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, permArray))
-      })
-      Ok(permissions)
+      val permRaw = depTbl.getString(key)
+      Trust.fromString(permRaw) match {
+        case Some(p) => Ok(p)
+        case None => Err(ManifestError.FlixUnknownTrustError(p, key, permRaw))
+      }
     }
   }
 
