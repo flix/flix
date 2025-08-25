@@ -9,6 +9,52 @@ mod Test.Term.Lit {
         let p = #{ R(x) :- A(x). };
         solve f, p project R
 
+    @test
+    def testUnitLit02(): Bool =
+        let pp = #{
+            A(()).
+        };
+        Vector#{42} == query pp select 42 from A(())
+
+    @test
+    def testUnitLit03(): Bool =
+        let pp = #{ };
+        Vector#{} == query pp select 42 from A(())
+
+    @test
+    def testUnitLit04(): Bool =
+        let pp = #{
+            A().
+        };
+        Vector#{42} == query pp select 42 from A()
+
+    @test
+    def testUnitLit05(): Bool =
+        let pp = #{ };
+        Vector#{} == query pp select 42 from A()
+
+    @test
+    def testUnitLit06(): Bool =
+        let pp = #{
+            A().
+        };
+        Vector#{42} == query pp select 42 from A(())
+
+    @test
+    def testUnitLit07(): Bool =
+        let pp = #{
+            A(()).
+        };
+        Vector#{42} == query pp select 42 from A()
+
+    @test
+    def testUnitLit08(): Bool =
+        let pp = #{
+            A().
+            B(42) :- A(()).
+        };
+        Vector#{42} == query pp select x from B(x)
+
     ///////////////////////////////////////////////////////////////////////////////
     /// Bool                                                                    ///
     ///////////////////////////////////////////////////////////////////////////////

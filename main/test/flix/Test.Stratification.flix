@@ -73,17 +73,17 @@ mod Test.Stratification {
             A007(1).
             A007(2).
             A007(3).
-            N007() :- not A007(1).
-            N007() :- not A007(2).
-            N007() :- not A007(3).
+            N007 :- not A007(1).
+            N007 :- not A007(2).
+            N007 :- not A007(3).
         }
 
         @test
         def test0NonRecursiveStratification08(): #{ A008(Int32), B008(Int32), N008() } = solve #{
             A008(1). A008(2).
             B008(1). B008(2).
-            N008() :- not A008(1), not B008(1).
-            N008() :- not A008(2), not B008(2).
+            N008 :- not A008(1), not B008(1).
+            N008 :- not A008(2), not B008(2).
         }
 
         //
@@ -115,11 +115,11 @@ mod Test.Stratification {
             };
             let p2 = #{
                 A101(101).
-                B101(x) :- not C101(x), A101(x), P2Diff101().
+                B101(x) :- not C101(x), A101(x), P2Diff101.
             };
             let p3 = #{
                 B101(12). A101(101).
-                C101(x) :- A101(x), P3Diff101().
+                C101(x) :- A101(x), P3Diff101.
             };
             (query p1 select x from A101(x) |> Vector.length) +
             (query p2 select x from B101(x) |> Vector.length) +
@@ -164,7 +164,7 @@ mod Test.Stratification {
         def test2ArityFilteredStratification02(): Bool =
             let p1 = #{
                 B702("s").
-                A702(x) :- B702(x), C702().
+                A702(x) :- B702(x), C702.
             };
             let p2 = #{
                 C702("a").
@@ -434,11 +434,11 @@ mod Test.Stratification {
             };
             let p2 = #{
                 A601(601).
-                B601(x) :- fix C601(x), A601(x), P2Diff601().
+                B601(x) :- fix C601(x), A601(x), P2Diff601.
             };
             let p3 = #{
                 B601(12). A601(601).
-                C601(x) :- A601(x), P3Diff601().
+                C601(x) :- A601(x), P3Diff601.
             };
             (query p1 select x from A601(x) |> Vector.length) +
             (query p2 select x from B601(x) |> Vector.length) +
@@ -483,7 +483,7 @@ mod Test.Stratification {
         def test7ArityFilteredStratification02(): Bool =
             let p1 = #{
                 B702("s").
-                A702(x) :- B702(x), C702().
+                A702(x) :- B702(x), C702.
             };
             let p2 = #{
                 A702("a"). C702("a").
