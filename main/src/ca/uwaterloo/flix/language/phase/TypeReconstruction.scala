@@ -735,14 +735,14 @@ object TypeReconstruction {
     */
   private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
     case KindedAst.ExtPattern.Default(tvar, loc) =>
-      TypedAst.ExtPattern.Default(subst(tvar), loc)
+      TypedAst.ExtPattern.Default(loc)
 
-    case KindedAst.ExtPattern.Tag(label, pats, tvar, loc) =>
+    case KindedAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPat)
-      TypedAst.ExtPattern.Tag(label, ps, subst(tvar), loc)
+      TypedAst.ExtPattern.Tag(label, ps, loc)
 
     case KindedAst.ExtPattern.Error(tvar, loc) =>
-      TypedAst.ExtPattern.Error(subst(tvar), loc)
+      TypedAst.ExtPattern.Error(loc)
   }
 
 

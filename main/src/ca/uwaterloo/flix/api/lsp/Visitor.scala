@@ -894,13 +894,13 @@ object Visitor {
     c.consumeExtPattern(pat)
 
     pat match {
-      case ExtPattern.Default(_, _) => ()
-      case ExtPattern.Tag(_, pats, _, _) =>
+      case ExtPattern.Default(_) => ()
+      case ExtPattern.Tag(_, pats, _) =>
         pats.foreach {
           case ExtTagPattern.Var(bnd, _, _) => visitBinder(bnd)
           case _ => ()
         }
-      case ExtPattern.Error(_, _) => ()
+      case ExtPattern.Error(_) => ()
     }
   }
 
