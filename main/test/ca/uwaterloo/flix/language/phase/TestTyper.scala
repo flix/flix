@@ -2201,4 +2201,16 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedArg](result)
   }
+
+  test("TypeError.ExtMatch.10") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    let scrutinee = if (true) xvar A(false) else xvar B(true);
+        |    (ematch A(x) -> x)(scrutinee)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
 }

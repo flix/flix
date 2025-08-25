@@ -873,6 +873,7 @@ object Weeder2 {
         case TreeKind.Expr.Literal => visitLiteralExpr(tree)
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
+        case TreeKind.Expr.LambdaExtMatch => visitLambdaExtMatchExpr(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatchExpr(tree)
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
         case TreeKind.Expr.Binary => visitBinaryExpr(tree)
@@ -1177,6 +1178,13 @@ object Weeder2 {
             case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, l)
           }
         }
+      }
+    }
+
+    private def visitLambdaExtMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.LambdaExtMatch)
+      mapN(Patterns.pickExtPattern(tree), pickExpr(tree)) {
+        (pat, expr) => Expr.LambdaExtMatch(pat, expr, tree.loc)
       }
     }
 
