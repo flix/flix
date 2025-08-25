@@ -133,8 +133,6 @@ object WeededAst {
 
     case class MonadicFor(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
-
     case class LetMatch(pat: Pattern, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr

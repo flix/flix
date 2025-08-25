@@ -586,9 +586,6 @@ object Desugar {
     case WeededAst.Expr.MonadicFor(frags, exp, loc) =>
       desugarMonadicFor(frags, exp, loc)
 
-    case WeededAst.Expr.ForEachYield(frags, exp, loc) =>
-      desugarForEachYield(frags, exp, loc)
-
     case WeededAst.Expr.LetMatch(pat, tpe, exp1, exp2, loc) =>
       desugarLetMatch(pat, tpe, exp1, exp2, loc)
 
@@ -1205,94 +1202,6 @@ object Desugar {
         val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
         DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
-  }
-
-  /**
-    *
-    * Rewrites a `ForEachYield` loop into a series of iterators
-    * wrapped in a `Collectable.collect` call:
-    * {{{
-    * foreach (x <- xs) yield x
-    * }}}
-    *
-    * desugars to
-    * {{{
-    *     region rc {
-    *         Collectable.collect(
-    *             Iterator.flatMap(
-    *                 match x -> Iterator.singleton(rc, x),
-    *                 Iterable.iterator(rc, xs)
-    *             )
-    *         )
-    *     }
-    * }}}
-    */
-  private def desugarForEachYield(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Expr = {
-    // Declare functions
-    val fqnEmpty = "Iterator.empty"
-    val fqnSingleton = "Iterator.singleton"
-    val fqnFlatMap = "Iterator.flatMap"
-    val fqnIterator = "Iterable.iterator"
-    val fqnCollect = "Collectable.collect"
-
-    // Make region variable
-    val regionSym = "forEachYieldIteratorRegion" + Flix.Delimiter + flix.genSym.freshId()
-    val regionIdent = Name.Ident(regionSym, loc0.asSynthetic)
-    val regionVar = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, regionIdent, regionIdent.loc), loc0)
-
-    // Desugar yield-exp
-    //    ... yield x
-    // Becomes
-    //     Iterator.singleton(rc, x)
-    val e = visitExp(exp0)
-    val yieldExp = mkApplyFqn(fqnSingleton, List(regionVar, e), loc0)
-
-    // Desugar loop
-    val loop = frags0.foldRight(yieldExp) {
-      case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
-        // Case 1: a generator fragment i.e. `pat <- exp`
-        // This should be desugared into
-        //     Iterator.flatMap(match pat -> accExp, Iterator.iterator(exp))
-        val p1 = visitPattern(pat1)
-        val e1 = visitExp(exp1)
-
-        // 1. Create iterator from exp1
-        val iter = mkApplyFqn(fqnIterator, List(regionVar, e1), loc1)
-
-        // 2. Create match-lambda with pat1 as params and acc as body
-        val lambda = desugarLambdaMatch(p1, acc, loc1)
-
-        // 3. Wrap in flatmap call
-        val fparams = List(lambda, iter)
-        mkApplyFqn(fqnFlatMap, fparams, loc1)
-
-      case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
-        // Case 2: a guard fragment i.e. `if exp`
-        // This should be desugared into
-        //     if (exp) accExp else Iterator.empty(rc)
-        val e1 = visitExp(exp1)
-
-        // 1. Create empty iterator
-        val empty = mkApplyFqn(fqnEmpty, List(regionVar), loc1)
-
-        // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.empty(empty)
-        DesugaredAst.Expr.IfThenElse(e1, acc, empty, loc1)
-
-      case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
-        // Rewrite to pattern match
-        val p1 = visitPattern(pat1)
-        val e1 = visitExp(exp1)
-        val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
-        DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
-    }
-
-    // Wrap in Collectable.collect function.
-    // The nested calls to Iterator.flatMap are wrapped in
-    // this function.
-    val resultExp = mkApplyFqn(fqnCollect, List(loop), loc0)
-
-    // Wrap in region
-    DesugaredAst.Expr.Scope(regionIdent, resultExp, loc0)
   }
 
   /**
