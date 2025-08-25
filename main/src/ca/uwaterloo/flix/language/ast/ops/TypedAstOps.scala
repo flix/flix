@@ -467,9 +467,9 @@ object TypedAstOps {
     * Returns the free variables in the given extensible pattern `pat0`.
     */
   private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
-    case ExtPattern.Default(_, _) => Set.empty
-    case ExtPattern.Tag(_, pats, _, _) => pats.toSet.flatMap((v: ExtTagPattern) => freeVars(v))
-    case ExtPattern.Error(_, _) => Set.empty
+    case ExtPattern.Default(_) => Set.empty
+    case ExtPattern.Tag(_, pats, _) => pats.toSet.flatMap((v: ExtTagPattern) => freeVars(v))
+    case ExtPattern.Error(_) => Set.empty
   }
 
   /**

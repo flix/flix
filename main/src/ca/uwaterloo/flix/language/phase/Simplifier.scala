@@ -1022,12 +1022,12 @@ object Simplifier {
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
-      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Default(_, _), exp1, _), _) =>
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Default(_), exp1, _), _) =>
         // Note: If we have a default case, there is only 1 single default case, and it is the last rule.
         // This invariant is ensured by the unreachable case check in Redunancy.
         visitExp(exp1)
 
-      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _, _), exp1, loc1), branch2) =>
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _), exp1, loc1), branch2) =>
         val e1 = visitExp(exp1)
         val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)

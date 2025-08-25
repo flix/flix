@@ -966,8 +966,7 @@ object Kinder {
 
     case ResolvedAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPattern)
-      val tvar = Type.freshVar(Kind.SchemaRow, loc.asSynthetic)
-      KindedAst.ExtPattern.Tag(label, ps, tvar, loc)
+      KindedAst.ExtPattern.Tag(label, ps, loc)
 
     case ResolvedAst.ExtPattern.Error(loc) =>
       val tvar = Type.freshVar(Kind.SchemaRow, loc.asSynthetic)

@@ -765,18 +765,18 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given extensible pattern `pat0`.
     */
   private def visitExtPat(pat0: ExtPattern): Iterator[SemanticToken] = pat0 match {
-    case ExtPattern.Default(_, loc) =>
+    case ExtPattern.Default(loc) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, loc)
       Iterator(t)
 
-    case ExtPattern.Tag(label, pats, _, _) =>
+    case ExtPattern.Tag(label, pats, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, label.loc)
       val ts = pats.foldRight(Iterator.empty[SemanticToken]) {
         case (p, acc) => visitExtTagPattern(p) ++ acc
       }
       Iterator(t) ++ ts
 
-    case ExtPattern.Error(_, _) => Iterator.empty
+    case ExtPattern.Error(_) => Iterator.empty
   }
 
   /**

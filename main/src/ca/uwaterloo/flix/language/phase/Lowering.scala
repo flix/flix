@@ -1057,14 +1057,14 @@ object Lowering {
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
-    case TypedAst.ExtPattern.Default(tpe, loc) =>
-      LoweredAst.ExtPattern.Default(tpe, loc)
+    case TypedAst.ExtPattern.Default(loc) =>
+      LoweredAst.ExtPattern.Default(loc)
 
-    case TypedAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+    case TypedAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPat)
-      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+      LoweredAst.ExtPattern.Tag(label, ps, loc)
 
-    case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+    case TypedAst.ExtPattern.Error(loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
 
   }
 
@@ -2318,12 +2318,12 @@ object Lowering {
     * Applies the given substitution `subst` to the given ext pattern `pattern0`.
     */
   private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
-    case LoweredAst.ExtPattern.Default(tpe, loc) =>
-      LoweredAst.ExtPattern.Default(tpe, loc)
+    case LoweredAst.ExtPattern.Default(loc) =>
+      LoweredAst.ExtPattern.Default(loc)
 
-    case LoweredAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+    case LoweredAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(substVarOrWild(_, subst))
-      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+      LoweredAst.ExtPattern.Tag(label, ps, loc)
   }
 
   /**

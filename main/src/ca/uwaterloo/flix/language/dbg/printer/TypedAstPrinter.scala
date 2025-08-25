@@ -172,9 +172,9 @@ object TypedAstPrinter {
     */
   private def printExtPattern(pattern: TypedAst.ExtPattern): DocAst.Expr = {
     pattern match {
-      case ExtPattern.Default(_, _) => DocAst.Expr.Wild
-      case ExtPattern.Tag(label, pats, _, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
-      case ExtPattern.Error(_, _) => DocAst.Expr.Error
+      case ExtPattern.Default(_) => DocAst.Expr.Wild
+      case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+      case ExtPattern.Error(_) => DocAst.Expr.Error
     }
   }
 

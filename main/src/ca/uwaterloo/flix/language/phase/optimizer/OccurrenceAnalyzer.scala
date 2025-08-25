@@ -394,16 +394,16 @@ object OccurrenceAnalyzer {
   }
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern, ctx: ExprContext): (MonoAst.ExtPattern, Set[VarSym]) = pat0 match {
-    case MonoAst.ExtPattern.Default(_, _) =>
+    case MonoAst.ExtPattern.Default(_) =>
       (pat0, Set.empty) // Always reuse pat0.
 
-    case MonoAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+    case MonoAst.ExtPattern.Tag(label, pats, loc) =>
       val (ps, nestedSyms) = pats.map(visitExtTagPattern(_, ctx)).unzip
       val syms = nestedSyms.foldLeft(Set.empty[VarSym])(_ ++ _)
       if (ps eq pats) {
         (pat0, syms) // Reuse pat0.
       } else {
-        (MonoAst.ExtPattern.Tag(label, ps, tpe, loc), syms)
+        (MonoAst.ExtPattern.Tag(label, ps, loc), syms)
       }
   }
 
