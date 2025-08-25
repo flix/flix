@@ -1412,7 +1412,7 @@ object Parser2 {
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             nameUnqualified(Set(TokenKind.NameLowerCase))
-            // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation.
+            // Check if method invocation, field assignment or field read.
             if (at(TokenKind.ParenL)) {
               // expr.method()
               arguments()
