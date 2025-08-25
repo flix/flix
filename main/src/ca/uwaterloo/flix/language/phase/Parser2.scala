@@ -1412,11 +1412,18 @@ object Parser2 {
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
             nameUnqualified(Set(TokenKind.NameLowerCase))
-            // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation.
+            // Check if method invocation, field assignment or field read.
             if (at(TokenKind.ParenL)) {
+              // expr.method()
               arguments()
               lhs = close(mark, TreeKind.Expr.InvokeMethod)
-            } else {
+            } else if (eat(TokenKind.Equal)) {
+              // expr.field = expr
+              exprDelimited()
+              lhs = close(mark, TreeKind.Expr.PutField)
+            }
+            else {
+              // expr.field
               lhs = close(mark, TreeKind.Expr.GetField)
             }
             lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
