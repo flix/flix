@@ -16,7 +16,7 @@ mod Test.Exp.Lambda.ExtMatch {
     def testLambdaExtMatch05(): #| A(Int32) |# -> Int32 = ematch _ -> 42
 
     @test
-    def testLambdaExtMatch06(): #| A(Int32) | r |# -> Int32 = ematch _ -> 42
+    def testLambdaExtMatch06(): #| A(Int32), B(Bool) |# -> Int32 = ematch _ -> 42
 
     @test
     def testLambdaExtMatch07(): Int32 = (ematch A(x) -> x)(xvar A(1))
