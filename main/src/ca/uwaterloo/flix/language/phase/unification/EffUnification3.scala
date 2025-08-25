@@ -434,7 +434,7 @@ object EffUnification3 {
     implicit val renv: RigidityEnv = RigidityEnv.empty
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
-    val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
+    val f0 = toSetFormula(tpe)(withSlack = true, scope, renv, bimap)
     val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
     val f1 = Zhegalkin.toSetFormula(z)
 
