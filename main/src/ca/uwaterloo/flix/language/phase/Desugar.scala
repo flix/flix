@@ -1525,7 +1525,7 @@ object Desugar {
   }
 
   /**
-    * Desugars a [[WeededAst.Expr.LambdaExtMatch]] into a lambda with an extensible pattern match on its arguments.
+    * Desugars a [[WeededAst.Expr.LambdaExtMatch]] into a lambda with an extensible pattern match on its argument.
     *
     * {{{
     *   (ematch A(x, y) -> exp)
@@ -1539,7 +1539,7 @@ object Desugar {
     *   )
     * }}}
     *
-    * @param pat0 the ext pattern.
+    * @param pat0 the ext pattern of the original match-lambda.
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
     */
