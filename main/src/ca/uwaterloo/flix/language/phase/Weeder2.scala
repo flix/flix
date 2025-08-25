@@ -889,7 +889,6 @@ object Weeder2 {
         case TreeKind.Expr.Foreach => visitForeachExpr(tree)
         case TreeKind.Expr.ForMonadic => visitForMonadicExpr(tree)
         case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
-        case TreeKind.Expr.ForeachYield => visitForeachYieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
         case TreeKind.Expr.LiteralRecord => visitLiteralRecordExpr(tree)
@@ -1516,25 +1515,6 @@ object Weeder2 {
       }
     }
 
-    private def visitForeachYieldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.ForeachYield)
-      mapN(pickForFragments(tree), pickExpr(tree)) {
-        case (Nil, _) =>
-          val error = EmptyForFragment(tree.loc)
-          sctx.errors.add(error)
-          Expr.Error(error)
-        case (fragments, expr) =>
-          // It's okay to do head rather than headOption here because we check for Nil above.
-          fragments.head match {
-            // Check that fragments start with a generator.
-            case _: ForFragment.Generator => Expr.ForEachYield(fragments, expr, tree.loc)
-            case f =>
-              val error = IllegalForFragment(f.loc)
-              sctx.errors.add(error)
-              Expr.Error(error)
-          }
-      }
-    }
 
     private def pickForFragments(tree: Tree)(implicit sctx: SharedContext): Validation[List[ForFragment], CompilationMessage] = {
       val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree)
