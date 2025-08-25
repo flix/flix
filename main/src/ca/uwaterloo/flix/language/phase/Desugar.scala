@@ -517,7 +517,7 @@ object Desugar {
     case WeededAst.Expr.LambdaMatch(pat, exp, loc) =>
       val p = visitPattern(pat)
       val e = visitExp(exp)
-      mkLambdaMatch(p, e, loc)
+      desugarLambdaMatch(p, e, loc)
 
     case WeededAst.Expr.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
@@ -1112,7 +1112,7 @@ object Desugar {
     val lambda = frags0.foldRight(yieldExp) {
       case (WeededAst.ForFragment.Generator(pat, _, loc1), acc) =>
         val p = visitPattern(pat)
-        mkLambdaMatch(p, acc, loc1)
+        desugarLambdaMatch(p, acc, loc1)
     }
 
     // Apply first fragment to Functor.map
@@ -1148,7 +1148,7 @@ object Desugar {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val lambda = mkLambdaMatch(p1, acc, loc1)
+        val lambda = desugarLambdaMatch(p1, acc, loc1)
         val fparams = List(lambda, e1)
         mkApplyFqn(fqnForEach, fparams, loc1.asSynthetic)
 
@@ -1189,7 +1189,7 @@ object Desugar {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
-        val lambda = mkLambdaMatch(p1, acc, loc1)
+        val lambda = desugarLambdaMatch(p1, acc, loc1)
         val fparams = List(lambda, e1)
         mkApplyFqn(fqnFlatMap, fparams, loc1)
 
@@ -1260,7 +1260,7 @@ object Desugar {
         val iter = mkApplyFqn(fqnIterator, List(regionVar, e1), loc1)
 
         // 2. Create match-lambda with pat1 as params and acc as body
-        val lambda = mkLambdaMatch(p1, acc, loc1)
+        val lambda = desugarLambdaMatch(p1, acc, loc1)
 
         // 3. Wrap in flatmap call
         val fparams = List(lambda, iter)
@@ -1520,25 +1520,24 @@ object Desugar {
   }
 
   /**
-    * Returns a match lambda, i.e. a lambda with a pattern match on its arguments.
+    * Returns a match-lambda, i.e., a lambda with a pattern match on its arguments.
     *
-    * This is also known as `ParsedAst.Expression.LambdaMatch`
+    * This is also known as [[WeededAst.Expr.LambdaMatch]].
     *
-    * @param pat0 the pattern of the parameter
-    * @param exp0 the body of the lambda
-    * @param loc0 the [[SourceLocation]] of the lambda
-    * @return A lambda that matches on its parameter i.e. a [[DesugaredAst.Expr.Lambda]] that has a pattern match in its body.
+    * @param pat0 the pattern of the original match-lambda.
+    * @param exp0 the body of the lambda.
+    * @param loc0 the location of the entire lambda.
     */
-  private def mkLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+  private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
     val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
-    val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc0.asSynthetic)
+    val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
 
