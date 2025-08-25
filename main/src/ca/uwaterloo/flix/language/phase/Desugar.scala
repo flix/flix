@@ -1545,7 +1545,7 @@ object Desugar {
     */
   private def mkLambdaExtMatch(pat0: DesugaredAst.ExtPattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
-    val ident = Name.Ident("pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
+    val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
