@@ -1529,6 +1529,18 @@ object Desugar {
     *
     * This is also known as [[WeededAst.Expr.LambdaExtMatch]].
     *
+    * {{{
+    *   (ematch A(x, y) -> exp)
+    * }}}
+    * desugars to
+    * {{{
+    *   (
+    *     param -> ematch param {
+    *       case A(x, y) => exp
+    *     }
+    *   )
+    * }}}
+    *
     * @param pat0 the ext pattern.
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
