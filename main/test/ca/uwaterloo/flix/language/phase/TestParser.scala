@@ -640,7 +640,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
   test("BadType.04") {
     val input =
       """
-        |def foo(): #{ Node() | = ???
+        |def foo(): #{ Node | = ???
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
