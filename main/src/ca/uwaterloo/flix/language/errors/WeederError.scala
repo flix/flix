@@ -396,7 +396,7 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      underline("Tip:") + " Only tags with wild or variable patterns are allowed, e.g., A(x, _, z)."
+      underline("Tip:") + " Only a default pattern or tags with wild or variable patterns are allowed, e.g., '_' or 'A(x, _, z)', respectively."
     })
   }
 

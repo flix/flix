@@ -479,15 +479,24 @@ object ConstraintGen {
       case Expr.ExtMatch(exp, rules, loc) =>
         val (scrutineeType, scrutineeEff) = visitExp(exp)
         val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
+        val tagPatTypes = patTypes.collect { case Left(tag) => tag }
+        val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
+        val defaultSchemaRow = // Note: An empty list of patterns cannot occur and errors are treated as default cases.
+          if (defaultPatternTvars.isEmpty)
+            Type.mkSchemaRowEmpty(loc.asSynthetic)
+          else
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
         val expectedRowType =
-          patTypes.collect { case Left(tag) => tag }
-            .foldRight(Type.mkSchemaRowEmpty(loc.asSynthetic)) {
-              case ((pred, tpes), acc) =>
-                val relation = Type.mkRelation(tpes, pred.loc.asSynthetic)
-                Type.mkSchemaRowExtend(pred, relation, acc, pred.loc.asSynthetic)
-            }
+          if (tagPatTypes.isEmpty)
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
+          else
+            tagPatTypes
+              .foldRight(defaultSchemaRow) {
+                case ((pred, tpes), acc) =>
+                  val relation = Type.mkRelation(tpes, pred.loc.asSynthetic)
+                  Type.mkSchemaRowExtend(pred, relation, acc, pred.loc.asSynthetic)
+              }
         val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
-        val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }
         c.unifyAllTypes(scrutineeType :: expectedExtensibleType :: defaultPatternTvars, loc)
         c.unifyAllTypes(ruleBodyTypes, loc)
         val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.

@@ -174,6 +174,8 @@ object LoweredAst {
 
   object ExtPattern {
 
+    case class Default(tpe: Type, loc: SourceLocation) extends ExtPattern
+
     case class Tag(label: Name.Label, pats: List[ExtTagPattern], tpe: Type, loc: SourceLocation) extends ExtPattern
 
   }

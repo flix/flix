@@ -509,6 +509,9 @@ object DocAst {
     def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
       Expr.Tag(Sym(label), exprs)
 
+    def Default: Expr =
+      Expr.Wild
+
   }
 
   case class Sym(private val symbol: String) {

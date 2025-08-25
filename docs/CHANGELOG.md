@@ -1,5 +1,11 @@
 # Changelog
 
+Version 0.61.0:
+- Compiler: Reworked `foreach` to use the `ForEach` trait (thanks Ry!)
+- Library: Added completely new Datalog engine with much improved performance (thanks Adam and Casper!)
+- Library: Added algebraic effects for networking (thanks Cade!)
+- Library: Added `Readable`, `Writable`, and `Peekable` traits (thanks Ry!)
+
 Version 0.60.0:
 - Compiler: Introduced brand new inliner (thanks Jakob!)
 - Compiler: Improved JVM bytecode generation (thanks Jonathan and Jakob!)

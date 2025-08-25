@@ -961,7 +961,7 @@ object Kinder {
     */
   private def visitExtPattern(pat0: ResolvedAst.ExtPattern)(implicit scope: Scope, flix: Flix): KindedAst.ExtPattern = pat0 match {
     case ResolvedAst.ExtPattern.Default(loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val tvar = Type.freshVar(Kind.SchemaRow, loc.asSynthetic)
       KindedAst.ExtPattern.Default(tvar, loc)
 
     case ResolvedAst.ExtPattern.Tag(label, pats, loc) =>
@@ -970,7 +970,7 @@ object Kinder {
       KindedAst.ExtPattern.Tag(label, ps, tvar, loc)
 
     case ResolvedAst.ExtPattern.Error(loc) =>
-      val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+      val tvar = Type.freshVar(Kind.SchemaRow, loc.asSynthetic)
       KindedAst.ExtPattern.Error(tvar, loc)
   }
 
