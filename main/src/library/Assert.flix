@@ -21,10 +21,6 @@ pub eff Assert {
 
     ///
     /// Asserts that the given condition `cond` is `true` with a message `msg`.
-    /// The provided functions in the associated module treat this message as
-    /// the reason of failure, but it does not necessarily have to be that.
-    ///
-    /// If the assertion fails, the behavior depends on the effect handler.
     ///
     def assert(cond: Bool, msg: String): Unit
 
@@ -60,26 +56,26 @@ mod Assert {
     ///
     /// Asserts that the given values `expected` and `actual` are equal.
     ///
-    pub def assertEq(exp: {expected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
-        Assert.assert(actual == exp#expected, "Assertion failed: expected `${exp#expected}`, but got `${actual}`")
+    pub def assertEq(expected: {expected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
+        Assert.assert(actual == expected#expected, "Assertion failed: expected `${expected#expected}`, but got `${actual}`")
 
     ///
     /// Asserts that the given values `expected` and `actual` are equal with the given message `msg`.
     ///
-    pub def assertEqWithMsg(exp: {expected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
-        Assert.assert(actual == exp#expected, msg)
+    pub def assertEqWithMsg(expected: {expected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
+        Assert.assert(actual == expected#expected, msg)
 
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal.
     ///
-    pub def assertNeq(unexp: {unexpected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
-        Assert.assert(actual != unexp#unexpected, "Assertion failed: expected values to be different, but both were `${actual}`")
+    pub def assertNeq(unexpected: {unexpected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
+        Assert.assert(actual != unexpected#unexpected, "Assertion failed: expected values to be different, but both were `${actual}`")
 
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal with the given message `msg`.
     ///
-    pub def assertNeqWithMsg(unexp: {unexpected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
-        Assert.assert(actual != unexp#unexpected, msg)
+    pub def assertNeqWithMsg(unexpected: {unexpected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
+        Assert.assert(actual != unexpected#unexpected, msg)
 
     ///
     /// Asserts that the given Option `o` is `Some(v)`.
@@ -116,13 +112,11 @@ mod Assert {
     ///
     /// In other words, re-interprets the `Assert` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) =
-        x ->
+    pub def handle(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
         run {
             f(x)
         } with handler Assert {
-            def assert(cond, msg, resume) =
-            {
+            def assert(cond, msg, resume) = {
                 if (cond)
                     resume(())
                 else {
