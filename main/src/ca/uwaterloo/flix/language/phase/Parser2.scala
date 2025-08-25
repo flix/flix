@@ -2025,27 +2025,27 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordMatch)
       // Detect match lambda.
-      val isLambda = isMatchLambda(mark) match {
-        case Result.Ok(b) => b
-        case Result.Err(errMark) => return errMark
-      }
-      if (isLambda) {
-        Pattern.pattern()
-        expect(TokenKind.ArrowThinR)
-        expression()
-        close(mark, TreeKind.Expr.LambdaMatch)
-      } else {
-        expression()
-        oneOrMore(
-          namedTokenSet = NamedTokenSet.MatchRule,
-          checkForItem = _ == TokenKind.KeywordCase,
-          getItem = matchRule,
-          breakWhen = _.isRecoverExpr,
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
-          separation = Separation.Optional(TokenKind.Comma)
-        )
-        close(mark, TreeKind.Expr.Match)
+      isMatchLambda(mark) match {
+        case Result.Err(errMark) => errMark
+        case Result.Ok(isLambda) =>
+          if (isLambda) {
+            Pattern.pattern()
+            expect(TokenKind.ArrowThinR)
+            expression()
+            close(mark, TreeKind.Expr.LambdaMatch)
+          } else {
+            expression()
+            oneOrMore(
+              namedTokenSet = NamedTokenSet.MatchRule,
+              checkForItem = _ == TokenKind.KeywordCase,
+              getItem = matchRule,
+              breakWhen = _.isRecoverExpr,
+              delimiterL = TokenKind.CurlyL,
+              delimiterR = TokenKind.CurlyR,
+              separation = Separation.Optional(TokenKind.Comma)
+            )
+            close(mark, TreeKind.Expr.Match)
+          }
       }
     }
 
