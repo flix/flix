@@ -888,6 +888,7 @@ object Weeder2 {
         case TreeKind.Expr.Foreach => visitForeachExpr(tree)
         case TreeKind.Expr.ForMonadic => visitForMonadicExpr(tree)
         case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
+        case TreeKind.Expr.PutField => visitPutFieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
         case TreeKind.Expr.LiteralRecord => visitLiteralRecordExpr(tree)
@@ -1924,6 +1925,16 @@ object Weeder2 {
       val method = pickNameIdent(tree)
       mapN(baseExp, method) {
         case (b, m) => Expr.GetField(b, m, tree.loc)
+      }
+    }
+
+    private def visitPutFieldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.PutField)
+      val exps = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+      val ident = pickNameIdent(tree)
+      mapN(exps, ident) {
+        case (lhs :: rhs :: Nil, field) => Expr.PutField(lhs, field, rhs, tree.loc)
+        case _ => Expr.Error(Malformed(NamedTokenSet.PutField, SyntacticContext.Expr.OtherExpr, None, tree.loc)) // Parser has already reported an error.
       }
     }
 

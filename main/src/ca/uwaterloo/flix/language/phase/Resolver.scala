@@ -1355,6 +1355,14 @@ object Resolver {
           ResolvedAst.Expr.GetField(e, name, loc)
       }
 
+    case NamedAst.Expr.PutField(exp1, name, exp2, loc) =>
+      val e1Val = resolveExp(exp1, scp0)
+      val e2Val = resolveExp(exp2, scp0)
+      mapN(e1Val, e2Val) {
+        case (e1, e2) =>
+          ResolvedAst.Expr.PutField(???, ???, e1, e2, loc)
+      }
+
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
       flatMapN(resolveType(tpe, Some(Kind.Star), Wildness.ForbidWild, scp0, taenv, ns0, root), traverse(methods)(visitJvmMethod(_, scp0))) {
         case (t, ms) =>

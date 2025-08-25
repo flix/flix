@@ -194,6 +194,8 @@ object NamedAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
+    case class PutField(exp1: Expr, fieldName: Name.Ident, exp2: Expr, loc: SourceLocation) extends Expr
+
     case class NewObject(name: String, tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr

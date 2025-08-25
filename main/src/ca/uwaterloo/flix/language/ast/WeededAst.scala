@@ -201,6 +201,8 @@ object WeededAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
+    case class PutField(exp1: Expr, fieldName: Name.Ident, exp2: Expr, loc: SourceLocation) extends Expr
+
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr

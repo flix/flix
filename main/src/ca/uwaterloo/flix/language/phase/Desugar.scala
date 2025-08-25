@@ -742,6 +742,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.GetField(e, name, loc)
 
+    case WeededAst.Expr.PutField(exp1, name, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Expr.PutField(e1, name, e2, loc)
+
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
