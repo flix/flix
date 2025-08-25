@@ -1858,17 +1858,28 @@ object Parser2 {
       assert(at(TokenKind.KeywordEMatch))
       val mark = open()
       expect(TokenKind.KeywordEMatch)
-      expression()
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.ExtMatchRule,
-        checkForItem = _ == TokenKind.KeywordCase,
-        getItem = extMatchRule,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.Optional(TokenKind.Comma)
-      )
-      close(mark, TreeKind.Expr.ExtMatch)
+      isMatchLambda(mark) match {
+        case Result.Err(errMark) => errMark
+        case Result.Ok(isLambda) =>
+          if (isLambda) {
+            Pattern.pattern()
+            expect(TokenKind.ArrowThinR)
+            expression()
+            close(mark, TreeKind.Expr.LambdaExtMatch)
+          } else {
+            expression()
+            oneOrMore(
+              namedTokenSet = NamedTokenSet.ExtMatchRule,
+              checkForItem = _ == TokenKind.KeywordCase,
+              getItem = extMatchRule,
+              breakWhen = _.isRecoverExpr,
+              delimiterL = TokenKind.CurlyL,
+              delimiterR = TokenKind.CurlyR,
+              separation = Separation.Optional(TokenKind.Comma)
+            )
+            close(mark, TreeKind.Expr.ExtMatch)
+          }
+      }
     }
 
     private def extTagExpr()(implicit s: State): Mark.Closed = {
