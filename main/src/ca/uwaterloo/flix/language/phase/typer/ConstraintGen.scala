@@ -1108,8 +1108,7 @@ object ConstraintGen {
     case ExtPattern.Tag(label, pats, tvar, loc) =>
       val name = Name.Pred(label.name, label.loc)
       val ps = pats.map(visitExtTagPattern)
-      val freshRowVar = freshVar(Kind.SchemaRow, loc)
-      val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc.asSynthetic), freshRowVar, loc)
+      val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc.asSynthetic), Type.mkSchemaRowEmpty(loc), loc)
       c.unifyType(tpe, tvar, loc)
       Left((name, ps))
 
