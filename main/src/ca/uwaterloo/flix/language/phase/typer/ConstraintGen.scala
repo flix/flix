@@ -492,7 +492,7 @@ object ConstraintGen {
         //              case Tag_n(x_n_1, ..., x_n_m) => exp_n
         //           } : t
         //
-        // Lastly, if `case _ => exp_default` occurs, then
+        // Lastly, if `case _ => exp_default` occurs (or an error pattern), then
         //   Gamma |- exp_default : t                // This is just a special case of the second rule from the top.
         // and the last constraint from above is changed to have a fresh row variable, i.e., for fresh variable `r`:
         //   Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) | r |#
