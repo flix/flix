@@ -69,7 +69,7 @@ mod Test.Stratification {
         }
 
         @test
-        def test0NonRecursiveStratification07(): #{ A007(Int32), N007() } = solve #{
+        def test0NonRecursiveStratification07(): #{ A007(Int32), N007 } = solve #{
             A007(1).
             A007(2).
             A007(3).
@@ -79,7 +79,7 @@ mod Test.Stratification {
         }
 
         @test
-        def test0NonRecursiveStratification08(): #{ A008(Int32), B008(Int32), N008() } = solve #{
+        def test0NonRecursiveStratification08(): #{ A008(Int32), B008(Int32), N008 } = solve #{
             A008(1). A008(2).
             B008(1). B008(2).
             N008() :- not A008(1), not B008(1).

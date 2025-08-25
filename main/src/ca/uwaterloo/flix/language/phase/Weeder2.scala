@@ -3004,13 +3004,24 @@ object Weeder2 {
           }
 
         case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
-          val types = pickAll(TreeKind.Type.Type, tree)
-          val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree)
-          mapN(pickQName(tree), traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
-            case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
-            case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
+          tryPick(TreeKind.Type.ArgumentList, tree) match {
+            case None =>
+              mapN(pickQName(tree))(
+                qname => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, Nil, acc, tree.loc)
+              )
+            case Some(typeTree) =>
+              pickAll(TreeKind.Type.Type, typeTree) match {
+                case Nil =>
+                  val error = IllegalEmptyPredicateArgument(typeTree.loc)
+                  Failure(error)
+                case types =>
+                  val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, typeTree)
+                  mapN(pickQName(tree), traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
+                    case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
+                    case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
+                  }
+              }
           }
-
         case (_, acc) => Validation.Success(acc)
       }
     }

@@ -3575,17 +3575,22 @@ object Parser2 {
         arguments()
         close(mark, TreeKind.Type.PredicateWithAlias)
       } else {
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.Type,
-          getItem = () => ttype(),
-          checkForItem = _.isFirstType,
-          breakWhen = _.isRecoverType,
-          optionallyWith = Some((TokenKind.Semi, () => {
-            val mark = open()
-            ttype()
-            close(mark, TreeKind.Predicate.LatticeTerm)
-          }))
-        )
+
+        if(at(TokenKind.ParenL)) {
+          val argMark = open()
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.Type,
+            getItem = () => ttype(),
+            checkForItem = _.isFirstType,
+            breakWhen = _.isRecoverType,
+            optionallyWith = Some((TokenKind.Semi, () => {
+              val mark = open()
+              ttype()
+              close(mark, TreeKind.Predicate.LatticeTerm)
+            }))
+          )
+          close(argMark, TreeKind.Type.ArgumentList)
+        }
         close(mark, TreeKind.Type.PredicateWithTypes)
       }
     }

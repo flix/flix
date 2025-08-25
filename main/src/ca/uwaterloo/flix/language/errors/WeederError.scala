@@ -677,6 +677,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate illegal syntax: empty argument list of predicate.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalEmptyPredicateArgument(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal syntax: empty argument list of predicate."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal syntax: empty argument list of predicate..
+         |
+         |${code(loc, "empty argument list of predicate")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal trait constraint parameter.
     *
     * @param loc the location where the error occurred.
