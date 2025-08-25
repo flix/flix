@@ -969,4 +969,48 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp) `Assert.eq` Vector#{"A(3)"}
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    /// Provenance should compute the shortest path.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryShortestPath01(): Bool = {
+        let db = #{
+            A(1). A(2). A(3). A(4). A(5).
+        };
+        let pr = #{
+            B(1) :- not A(-1).
+            B(x + 1) :- B(x), A(x).
+            C(-1) :- not B(-2).
+            C(x) :- B(x).
+            C(x) :- A(x), C(-1).
+        };
+        let pp = pquery db, pr select C(5) with {A, B, C};
+        Vector.map(v -> ematch v {
+            case A(x) => x
+            case B(x) => x
+            case C(x) => x
+        }, pp) `Assert.eq` Vector#{5, 5, -1}
+    }
+
+    @Test
+    def testPQueryShortestPath02(): Bool = {
+        let db = #{
+            A(1). A(2). A(3). A(4). A(5).
+        };
+        let pr = #{
+            B(1) :- not A(-1).
+            B(x + 1) :- B(x), A(x).
+            C(-1) :- not B(-2).
+            C(x) :- B(x).
+            C(x) :- A(x), C(-1).
+        };
+        let pp = pquery db, pr select C(4) with {A, B, C};
+        Vector.map(v -> ematch v {
+            case A(x) => x
+            case B(x) => x
+            case C(x) => x
+        }, pp) `Assert.eq` Vector#{4, 4, -1}
+    }
+
 }

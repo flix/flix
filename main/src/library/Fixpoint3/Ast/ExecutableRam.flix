@@ -157,6 +157,11 @@ mod Fixpoint3.Ast.ExecutableRam {
     /// fact in index `newIndex`. For `den == Latticenal` we only insert if the
     /// lattice-value is greater than the current and we insert with least uppber bound.
     ///
+    /// `ProvProject(terms, newIndex, fullIndex)` constructs a tuple from `terms` and inserts it a
+    /// fact in index `newIndex`. Values are only inserted if the depth in `terms` is less than
+    /// the (potential) depth of the fact in `fullIndex` and less than the current `depth` in the
+    /// fact found in `newIndex`.
+    ///
     /// `If(bools, body)` evaluates `body` if `bools` is true.
     ///
     @Internal
@@ -165,6 +170,7 @@ mod Fixpoint3.Ast.ExecutableRam {
         case Query(Int32, Int32, Int32, Denotation, Vector[WriteTuple], RelOp)
         case Functional(Int32, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], Vector[WriteTuple], RelOp, Vector[UnifiedTypePos])
         case Project(Vector[RamTerm], Int32, Denotation)
+        case ProvProject(Vector[RamTerm], Int32, Int32)
         case If(Vector[BoolExp], RelOp)
     }
 
@@ -181,6 +187,8 @@ mod Fixpoint3.Ast.ExecutableRam {
                 case RelOp.Functional(id, _, terms, _, body, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Project(terms, ramSym, _) =>
+                    "project (${terms |> Vector.join(", ")}) into ${ramSym}"
+                case RelOp.ProvProject(terms, ramSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
