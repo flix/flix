@@ -1520,9 +1520,19 @@ object Desugar {
   }
 
   /**
-    * Returns a match-lambda, i.e., a lambda with a pattern match on its arguments.
+    * Desugars a [[WeededAst.Expr.LambdaMatch]] into a lambda with a pattern match on its argument.
     *
-    * This is also known as [[WeededAst.Expr.LambdaMatch]].
+    * {{{
+    *   (match A(x, y) -> exp)
+    * }}}
+    * desugars to
+    * {{{
+    *   (
+    *     param -> match param {
+    *       case A(x, y) => exp
+    *     }
+    *   )
+    * }}}
     *
     * @param pat0 the pattern of the original match-lambda.
     * @param exp0 the body of the lambda.
@@ -1530,7 +1540,7 @@ object Desugar {
     */
   private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
-    val ident = Name.Ident("pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
+    val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
