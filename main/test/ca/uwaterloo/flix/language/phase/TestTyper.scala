@@ -2158,4 +2158,47 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
   }
+
+  test("TypeError.ExtMatch.07") {
+    val input =
+      """
+        |def f(var: #| A(Int32), B(Int32) | r |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.08") {
+    val input =
+      """
+        |def f(var: #| A(Int32), B(Int32) | r |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |        case B(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.09") {
+    val input =
+      """
+        |def g(): Bool = f(xvar C(1))
+        |
+        |def f(var: #| A(Int32), B(Int32) |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |        case B(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedArg](result)
+  }
 }
