@@ -573,7 +573,7 @@ mod Test.Exp.ExtMatch {
 
     @Test
     def testExtMatchCall05(): Bool = {
-        not matchesAOpen(xvar A(1))
+        matchesAOpen(xvar A(1))
     }
 
     @Test
