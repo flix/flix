@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -2014,40 +2014,10 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordMatch)
       // Detect match lambda.
-      val isLambda = {
-        var lookAhead = 0
-        var isLambda = false
-        var continue = true
-        // We need to track the parenthesis nesting level to handle match-expressions
-        // that include lambdas, e.g., `match f(x -> g(x)) { case ... }`.
-        // In these cases the ArrowThin __does not__ indicate that the expression being parsed is
-        // a match lambda.
-        var parenNestingLevel = 0
-        while (continue && !eof()) {
-          nth(lookAhead) match {
-            // match `expr { case ... }`.
-            case TokenKind.KeywordCase => continue = false
-            // match `pattern -> expr`.
-            case TokenKind.ArrowThinR if parenNestingLevel == 0 => isLambda = true; continue = false
-            case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
-            case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
-            case TokenKind.Eof =>
-              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
-              return closeWithError(mark, error)
-            case t if t.isFirstDecl =>
-              // Advance past the erroneous region to the next stable token
-              // (the start of the declaration).
-              for (_ <- 0 until lookAhead) {
-                advance()
-              }
-              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
-              return closeWithError(mark, error)
-            case _ => lookAhead += 1
-          }
-        }
-        isLambda
+      val isLambda = isMatchLambda(mark) match {
+        case Result.Ok(b) => b
+        case Result.Err(errMark) => return errMark
       }
-
       if (isLambda) {
         Pattern.pattern()
         expect(TokenKind.ArrowThinR)
@@ -2066,6 +2036,50 @@ object Parser2 {
         )
         close(mark, TreeKind.Expr.Match)
       }
+    }
+
+    /**
+      * Returns `Result.Ok(true)` if starting a (e)match-lambda, i.e., given a `match` or `ematch` keyword it appears in the position `(match ... -> ...)`.
+      * Returns `Result.Ok(false)` if this is not the case.
+      * Returns `Result.Err(closeWithError(mark))` if a parser error occurs.
+      *
+      * We use the `Result` type here to allow the caller to perform an early return in the case of a parser error.
+      *
+      * @param mark the mark opened before the `match` or `ematch` keyword, i.e., `(*mark* match ... -> ...)`.
+      *             Additionally, the caller must have consumed the `match` or `ematch` keyword, so the cursor is immediately after the keyword, i.e., `(match *cursor* ... -> ...)`.
+      */
+    private def isMatchLambda(mark: Mark.Opened)(implicit sctx: SyntacticContext, s: State): Result[Boolean, Mark.Closed] = {
+      var lookAhead = 0
+      var result = false
+      var continue = true
+      // We need to track the parenthesis nesting level to handle match-expressions
+      // that include lambdas, e.g., `match f(x -> g(x)) { case ... }`.
+      // In these cases the ArrowThin __does not__ indicate that the expression being parsed is
+      // a match lambda.
+      var parenNestingLevel = 0
+      while (continue && !eof()) {
+        nth(lookAhead) match {
+          // match `expr { case ... }`.
+          case TokenKind.KeywordCase => continue = false
+          // match `pattern -> expr`.
+          case TokenKind.ArrowThinR if parenNestingLevel == 0 => result = true; continue = false
+          case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
+          case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
+          case TokenKind.Eof =>
+            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
+            return Result.Err(closeWithError(mark, error))
+          case t if t.isFirstDecl =>
+            // Advance past the erroneous region to the next stable token
+            // (the start of the declaration).
+            for (_ <- 0 until lookAhead) {
+              advance()
+            }
+            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
+            return Result.Err(closeWithError(mark, error))
+          case _ => lookAhead += 1
+        }
+      }
+      Result.Ok(result)
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
