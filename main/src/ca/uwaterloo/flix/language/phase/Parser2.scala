@@ -1855,12 +1855,9 @@ object Parser2 {
 
     private def extMatchExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordEMatch))
-      val mark = open()
-      expect(TokenKind.KeywordEMatch)
-      isMatchLambda(mark) match {
-        case Result.Err(errMark) => errMark
-        case Result.Ok(isLambda) =>
+      detectMatchLambda(TokenKind.KeywordEMatch) match {
+        case Result.Err(mark) => mark
+        case Result.Ok((isLambda, mark)) =>
           if (isLambda) {
             Pattern.pattern()
             expect(TokenKind.ArrowThinR)
@@ -2021,13 +2018,9 @@ object Parser2 {
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordMatch))
-      val mark = open()
-      expect(TokenKind.KeywordMatch)
-      // Detect match lambda.
-      isMatchLambda(mark) match {
+      detectMatchLambda(TokenKind.KeywordMatch) match {
         case Result.Err(errMark) => errMark
-        case Result.Ok(isLambda) =>
+        case Result.Ok((isLambda, mark)) =>
           if (isLambda) {
             Pattern.pattern()
             expect(TokenKind.ArrowThinR)
@@ -2059,7 +2052,10 @@ object Parser2 {
       * @param mark the mark opened before the `match` or `ematch` keyword, i.e., `(*mark* match ... -> ...)`.
       *             Additionally, the caller must have consumed the `match` or `ematch` keyword, so the cursor is immediately after the keyword, i.e., `(match *cursor* ... -> ...)`.
       */
-    private def isMatchLambda(mark: Mark.Opened)(implicit sctx: SyntacticContext, s: State): Result[Boolean, Mark.Closed] = {
+    private def detectMatchLambda(tokenKind: TokenKind)(implicit sctx: SyntacticContext, s: State): Result[(Boolean, Mark.Opened), Mark.Closed] = {
+      assert(at(tokenKind))
+      val mark = open()
+      expect(tokenKind)
       var lookAhead = 0
       var result = false
       var continue = true
@@ -2090,7 +2086,7 @@ object Parser2 {
           case _ => lookAhead += 1
         }
       }
-      Result.Ok(result)
+      Result.Ok((result, mark))
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
