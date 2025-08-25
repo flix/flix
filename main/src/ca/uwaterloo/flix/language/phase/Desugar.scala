@@ -517,7 +517,7 @@ object Desugar {
     case WeededAst.Expr.LambdaExtMatch(pat, exp, loc) =>
       val p = visitExtPattern(pat)
       val e = visitExp(exp)
-      mkLambdaExtMatch(p, e, loc)
+      desugarLambdaExtMatch(p, e, loc)
 
     case WeededAst.Expr.LambdaMatch(pat, exp, loc) =>
       val p = visitPattern(pat)
@@ -1543,7 +1543,7 @@ object Desugar {
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
     */
-  private def mkLambdaExtMatch(pat0: DesugaredAst.ExtPattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+  private def desugarLambdaExtMatch(pat0: DesugaredAst.ExtPattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
