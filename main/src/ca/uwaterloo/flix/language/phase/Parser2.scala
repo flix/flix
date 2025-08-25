@@ -2043,19 +2043,28 @@ object Parser2 {
     }
 
     /**
-      * Returns `Result.Ok(true)` if starting a (e)match-lambda, i.e., given a `match` or `ematch` keyword it appears in the position `(match ... -> ...)`.
-      * Returns `Result.Ok(false)` if this is not the case.
-      * Returns `Result.Err(closeWithError(mark))` if a parser error occurs.
+      * Detects a match-lambda expression, returning `true` if is a match-lambda along with an opened mark.
+      * It is up to the caller to close the mark again by parsing the rest.
+      * The opened mark is always opened right before the keyword, i.e.,
+      * `*mark* keyword ... -> ...` or `*mark* keyword ... { case ... => ... }`.
+      * The cursor is placed *after* the keyword, since this function consumes `keyword`.
+      * In other words, if the expression is well-formed, then the cursor is placed as follows:
+      * `keyword *cursor* pat -> ...` or `keyword *cursor* exp { ... }`.
       *
-      * We use the `Result` type here to allow the caller to perform an early return in the case of a parser error.
+      * Returns `Ok((true, mark))` it detects a match-lambda.
       *
-      * @param mark the mark opened before the `match` or `ematch` keyword, i.e., `(*mark* match ... -> ...)`.
-      *             Additionally, the caller must have consumed the `match` or `ematch` keyword, so the cursor is immediately after the keyword, i.e., `(match *cursor* ... -> ...)`.
+      * Returns `Ok((false, mark))` if it does not detect a match-lambda.
+      *
+      * Returns `Err(mark)` if invalid syntax is encountered.
+      *
+      * @param keyword the keyword to expect at the start of the expression. Will be consumed by this function.
+      *                Must be either [[TokenKind.KeywordMatch]] or [[TokenKind.KeywordEMatch]].
       */
-    private def detectMatchLambda(tokenKind: TokenKind)(implicit sctx: SyntacticContext, s: State): Result[(Boolean, Mark.Opened), Mark.Closed] = {
-      assert(at(tokenKind))
+    private def detectMatchLambda(keyword: TokenKind)(implicit sctx: SyntacticContext, s: State): Result[(Boolean, Mark.Opened), Mark.Closed] = {
+      assert(TokenKind.KeywordMatch == keyword || TokenKind.KeywordEMatch == keyword, "expected 'match' or 'ematch' keyword as start of match-lambda")
+      assert(at(keyword))
       val mark = open()
-      expect(tokenKind)
+      expect(keyword)
       var lookAhead = 0
       var result = false
       var continue = true
