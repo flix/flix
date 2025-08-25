@@ -1,19 +1,19 @@
 mod Test.Exp.Jvm.PutField {
     import java.awt.Point
 
-    @test
+    @Test
     def testPutField01(): Bool \ IO =
         let p = new Point(42, 43);
         p.x = 100;
         p.x == 100
 
-    @test
+    @Test
     def testPutField02(): Bool \ IO =
         let p = new Point(42, 43);
         p.y = 200;
         p.y == 200
 
-    @test
+    @Test
     def testPutField03(): Bool \ IO =
         let f = x -> x.y = 100;
         let p1 = new Point(42, 43);
