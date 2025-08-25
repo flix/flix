@@ -1360,7 +1360,7 @@ object Resolver {
       val e2Val = resolveExp(exp2, scp0)
       mapN(e1Val, e2Val) {
         case (e1, e2) =>
-          ResolvedAst.Expr.PutField(???, ???, e1, e2, loc)
+          ResolvedAst.Expr.PutField(e1, name, e2, loc)
       }
 
     case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>

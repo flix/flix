@@ -901,15 +901,19 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = Type.getFlixType(field.getType)
-        val classType = Type.getFlixType(clazz)
+      case Expr.PutField(exp1, fieldName, exp2, jvar, tvar, evar, loc) =>
+        // Γ ⊢ e1 : τ    Γ ⊢ ι ~ JvmFieldMethod(τ, m)
+        // Γ ⊢ e2 : JvmFieldMethod(τ, m)
+        // ---------------------------------------------------------------
+        // Γ ⊢ e1.f = e2 : Unit \ JvmToEff[ι]
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.expectType(expected = classType, actual = tpe1, exp1.loc)
-        c.expectType(expected = fieldType, actual = tpe2, exp2.loc)
+        c.unifyType(jvar, Type.UnresolvedJvmType(Type.JvmMember.JvmField(exp1.loc, tpe1, fieldName), loc), loc)
+        c.unifyType(tvar, Type.JvmToType(jvar, loc), loc) // unify field type
+        c.unifyType(tvar, tpe2, loc)
+        c.unifyType(evar, Type.mkUnion(Type.IO :: eff1 :: eff2 :: Nil, loc), loc) // unify effects
         val resTpe = Type.Unit
-        val resEff = Type.mkUnion(eff1, eff2, Type.IO, loc)
+        val resEff = evar
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, _) =>
