@@ -504,6 +504,16 @@ mod Test.Exp.ExtMatch {
         not matchesA(xvar B(1))
     }
 
+    @Test
+    def testExtMatchCall05(): Bool = {
+        not matchesAOpen(xvar A(1))
+    }
+
+    @Test
+    def testExtMatchCall06(): Bool = {
+        not matchesAOpen(xvar C(1))
+    }
+
     def generatesA(): #| A(Int32) |# = xvar A(1)
 
     def generatesAOpen(): #| A(Int32) | r |# = xvar A(1)
@@ -511,6 +521,12 @@ mod Test.Exp.ExtMatch {
     def matchesA(var: #| A(Int32), B(Int32) |#): Bool = ematch var {
         case A(_) => true
         case B(_) => false
+    }
+
+    def matchesAOpen(var: #| A(Int32), B(Int32) | r |#): Bool = ematch var {
+        case A(_) => true
+        case B(_) => false
+        case _ => false
     }
 
 }
