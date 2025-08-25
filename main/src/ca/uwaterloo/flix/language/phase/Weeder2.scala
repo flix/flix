@@ -3013,7 +3013,8 @@ object Weeder2 {
               pickAll(TreeKind.Type.Type, typeTree) match {
                 case Nil =>
                   val error = IllegalEmptyPredicateArgument(typeTree.loc)
-                  Failure(error)
+                  sctx.errors.add(error)
+                  Success(Type.Error(typeTree.loc))
                 case types =>
                   val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, typeTree)
                   mapN(pickQName(tree), traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
