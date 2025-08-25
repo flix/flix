@@ -514,6 +514,11 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Lambda(fparam1, e, loc)
 
+    case WeededAst.Expr.LambdaExtMatch(pat, exp, loc) =>
+      val p = visitExtPattern(pat)
+      val e = visitExp(exp)
+      mkLambdaExtMatch(p, e, loc)
+
     case WeededAst.Expr.LambdaMatch(pat, exp, loc) =>
       val p = visitPattern(pat)
       val e = visitExp(exp)
@@ -1517,6 +1522,28 @@ object Desugar {
       val locPart = s"[${loc0.formatWithLine}]"
       val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
       locPart + srcPart
+  }
+
+  /**
+    * Returns an ext-match lambda, i.e. a lambda with an extensible pattern match on its arguments.
+    *
+    * This is also known as [[WeededAst.Expr.LambdaExtMatch]].
+    *
+    * @param pat0 the ext pattern.
+    * @param exp0 the body of the lambda.
+    * @param loc0 the location of the entire lambda.
+    */
+  private def mkLambdaExtMatch(pat0: DesugaredAst.ExtPattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+    // The name of the lambda parameter.
+    val ident = Name.Ident("pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
+
+    // Construct the body of the lambda expression.
+    val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val rule = DesugaredAst.ExtMatchRule(pat0, exp0, loc0.asSynthetic)
+
+    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
+    DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
 
   /**
