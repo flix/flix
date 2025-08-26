@@ -51,8 +51,8 @@
     def augmentProgramInternal(program: RamProgram): RamProgram = match program {
         case RamProgram.Program(stmt, facts, predicates, indexInfo) => unsafely IO run {
             let (f1, f2) = facts;
-            let augmentedF1 = f1 |> Map.map(augmentFacts);
-            let augmentedF2 = f2 |> Map.map(augmentFacts);
+            let augmentedF1 = Map.map(augmentFacts, f1);
+            let augmentedF2 = Map.map(augmentFacts, f2);
             let augmentedFacts = (augmentedF1, augmentedF2);
             let augmentedStmt = augmentStmt(stmt);
             RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo) |>
@@ -82,12 +82,12 @@
     /// Augments `RelOp`'s in `stmt` with `ProvMax` terms.
     ///
     def augmentStmt(stmt: RamStmt): RamStmt \ r= match stmt {
-        case RamStmt.Insert(op)         => augmentOp(Nil, op) |> RamStmt.Insert
+        case RamStmt.Insert(op)         => RamStmt.Insert(augmentOp(Nil, op))
         case RamStmt.MergeInto(_, _)    => stmt
         case RamStmt.Swap(_, _)         => stmt
         case RamStmt.Purge(_)           => stmt
-        case RamStmt.Seq(stmts)         => Vector.map(augmentStmt, stmts) |> RamStmt.Seq
-        case RamStmt.Par(stmts)         => Vector.map(augmentStmt, stmts) |> RamStmt.Par
+        case RamStmt.Seq(stmts)         => RamStmt.Seq(Vector.map(augmentStmt, stmts))
+        case RamStmt.Par(stmts)         => RamStmt.Par(Vector.map(augmentStmt, stmts))
         case RamStmt.Until(bools, rest) => RamStmt.Until(bools, augmentStmt(rest))
         case RamStmt.Comment(_)         => stmt
     }
@@ -112,7 +112,7 @@
                 RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), RamId.Id(-1))
             };
             RelOp.Project(newTerms, relSym, ruleNum)
-        case RelOp.If(boolExps, body) =>
-            augmentOp(rowVarsArity, body) |> RelOp.If(boolExps)
+        case RelOp.If(boolExps, body) => RelOp.If(boolExps, augmentOp(rowVarsArity, body))
     }
+
 }

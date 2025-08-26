@@ -191,8 +191,8 @@ mod Fixpoint3.PrecedenceGraph {
             };
             foreach ((u, neighbors) <- g->adjList) {
                 foreach (v <- neighbors) {
-                    let uSCC = MutMap.get(u, rootMap) |> getOrCrash;
-                    let vSCC = MutMap.get(v, rootMap) |> getOrCrash;
+                    let uSCC = getOrCrash(MutMap.get(u, rootMap));
+                    let vSCC = getOrCrash(MutMap.get(v, rootMap));
                     if (uSCC != vSCC) {
                         addEdge(uSCC, vSCC, condensation)
                     } else ()
@@ -205,7 +205,7 @@ mod Fixpoint3.PrecedenceGraph {
             topologicalSort(condensation)
                 |> List.map(u ->
                     componentMap
-                        |> MutMap.get(Map.get(u, inverseRootMap) |> getOrCrash)
+                        |> MutMap.get(getOrCrash(Map.get(u, inverseRootMap)))
                         |> getOrCrash
             )
         }

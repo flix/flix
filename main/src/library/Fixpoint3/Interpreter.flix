@@ -313,9 +313,8 @@ mod Fixpoint3.Interpreter {
                         BPlusTree.forEach(evalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel))
                 } else {
                     // We are allowed to spawn threads. Try to do so.
-                    let newCtx = (db, env, boxing);
                     lookupIndex(searchIndex, db) |>
-                        BPlusTree.parForEach(parEvalSearchOrQueryOp(rc, tuplePos, writes, body, newCtx, parLevel - 1))
+                        BPlusTree.parForEach(parEvalSearchOrQueryOp(rc, tuplePos, writes, body, ctx, parLevel - 1))
                 }
             case RelOp.Query(tuplePos, searchIndex, _, Relational, writes, body) =>
                 let (minEnv, maxEnv, _, _) = env;
@@ -358,9 +357,8 @@ mod Fixpoint3.Interpreter {
                         BPlusTree.forEach(evalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
                 } else {
                     // We are allowed to spawn threads. Try to do so.
-                    let newCtx = (db, env, boxing);
                     lookupIndex(searchIndex, db) |>
-                        BPlusTree.parForEach(parEvalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, newCtx, parLevel))
+                        BPlusTree.parForEach(parEvalSearchOrQueryOpLattice(rc, tuplePos, meetWith, bot, leq, glb, writes, body, ctx, parLevel))
                 }
             case RelOp.Query(tuplePos, searchIndex, meetWith, Latticenal(bot, leq, _, glb), writes, body) =>
                 let (minEnv, maxEnv, _, _) = env;
@@ -380,7 +378,7 @@ mod Fixpoint3.Interpreter {
                 if (latVal `leq` bot) ()
                 else BPlusTree.putWith(lub, tuple, latVal, relIndex)
             case RelOp.Functional(tupleIndex, f, terms, writes, body, i2) =>
-                let args = terms |> Vector.map(evalBoxedTerm(env, boxing));
+                let args = Vector.map(evalBoxedTerm(env, boxing), terms);
                 let result = f(args)|>
                     Vector.map(vec ->
                         Vector.mapWithIndex(i -> x -> unboxWith(x, Vector.get(i, i2), boxing), vec)
@@ -421,8 +419,8 @@ mod Fixpoint3.Interpreter {
     ///
     def copyCtx(rc: Region[r], ctx: Context[r]): Context[r] \ r = {
         let (db, (minEnv, maxEnv, tupleEnv, latEnv), boxing) = ctx;
-        let threadMinEnv = minEnv |> Vector.map(Array.copy(rc));
-        let threadMaxEnv = maxEnv |> Vector.map(Array.copy(rc));
+        let threadMinEnv = Vector.map(Array.copy(rc), minEnv);
+        let threadMaxEnv = Vector.map(Array.copy(rc), maxEnv);
         let threadTupleEnv = Array.copy(rc, tupleEnv);
         let threadLatEnv = Array.copy(rc, latEnv);
         let threadEnv = (threadMinEnv, threadMaxEnv, threadTupleEnv, threadLatEnv);
@@ -570,11 +568,10 @@ mod Fixpoint3.Interpreter {
                 let len = Vector.length(terms);
                 let tuple = evalTermsWithLat(ctx, terms);
                 let latVal = evalBoxedTerm(env, boxing, Vector.get(len - 1, terms));
-                let curLatVal = BPlusTree.getWithDefault(tuple, Boxed.NoValue, relIndex);
-                if (curLatVal == Boxed.NoValue)
-                    true
-                else
-                    not (latVal `leq` curLatVal)
+                match BPlusTree.getWithDefault(tuple, Boxed.NoValue, relIndex) {
+                    case Boxed.NoValue => true
+                    case curLatVal     => not (latVal `leq` curLatVal)
+                }
             case BoolExp.Eq(lhs, rhs) => evalTerm(env, boxing, lhs) == evalTerm(env, boxing, rhs)
             case BoolExp.Leq(lhs, leq, index) =>
                 let (_, _, _, latEnv) = env;
@@ -612,7 +609,7 @@ mod Fixpoint3.Interpreter {
     /// are `true`.
     ///
     def evalBoolExps(ctx: Context[r], exps: Vector[BoolExp]): Bool \ r =
-        exps |> Vector.forAll(evalBoolExp(ctx))
+        Vector.forAll(evalBoolExp(ctx), exps)
 
     ///
     /// Evaluate `term` under `env` using `boxing` to box/unbox values as needed.
