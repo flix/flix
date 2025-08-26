@@ -483,7 +483,6 @@ object ConstraintGen {
         //
         // Gamma |- x_i_j : t_i_j
         // Gamma, x_i_1 : t_i_1, ..., x_i_m : t_i_m |- exp_i : t // This is the result type
-        // Gamma |- Tag_i(x_i_1, ..., x_i_m) : #( Tag_i(t_i_1, ..., t_i_m) )
         // Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) |#
         // ef = Union(effs(exp_0), effs(exp_1), ..., effs(exp_n))
         // -----------------------------------------------
