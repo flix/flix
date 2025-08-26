@@ -67,4 +67,14 @@ mod Test.Exp.Fixpoint.Large {
         let result = pquery pr select R(8192) with {R};
         Assert.eq(8192, Vector.length(result))
 
+    @Test
+    def testPQueryLargePath03(): Bool =
+        let db = inject Vector.map(x -> (x, x + 1), Vector.range(0, 65536)) into Helper/2;
+        let pr = #{
+            R(0, 1).
+            R(x, y) :- R(_, x), Helper(x, y).
+        };
+        let result = pquery db, pr select R(65535, 65536) with {R};
+        Assert.eq(65536, Vector.length(result))
+
 }
