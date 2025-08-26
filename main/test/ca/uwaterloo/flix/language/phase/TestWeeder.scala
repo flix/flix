@@ -268,6 +268,32 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  test("IllegalEmptyPredicateArgument.01") {
+    val input =
+      """
+        |def a() : #| A() |# = xvar A
+        |
+        |@test
+        |def main3438472856(): Unit = let _ = a(); ()
+        |
+        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyPredicateArgument](result)
+  }
+
+  test("IllegalEmptyPredicateArgument.02") {
+    val input =
+      """
+        |def a() : #{ A() }# = #{}
+        |
+        |@test
+        |def main3438472856(): Unit = let _ = a(); ()
+        |
+        """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEmptyPredicateArgument](result)
+  }
+
   test("IllegalEnum.01") {
     val input =
       """
