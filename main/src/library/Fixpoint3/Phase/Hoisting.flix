@@ -393,7 +393,7 @@ mod Fixpoint3.Phase.Hoisting {
         match MutMap.get(rv, idToBool) {
             case None => Nil
             case Some(v) =>
-                v |> MutList.toList |> List.filter(isBoolGround(termMap, equalitySets))
+                MutList.toList(v) |> List.filter(isBoolGround(termMap, equalitySets))
         }
     }
 
@@ -492,7 +492,7 @@ mod Fixpoint3.Phase.Hoisting {
         rv: RowVar,
         index: Int32
     ): Set[RowVar] \ r =
-        let repLoad = MutDisjointSets.find((rv, index), equalitySets) |> getOrCrash;
+        let repLoad = getOrCrash(MutDisjointSets.find((rv, index), equalitySets));
         match Map.get(repLoad, termMap) {
             case None => Set#{rv}
             case Some(rep) => match rep {
@@ -545,7 +545,7 @@ mod Fixpoint3.Phase.Hoisting {
     ): RamTerm \ r =
         let getRep = term -> match term {
             case RamTerm.RowLoad(rv, i, _) =>
-                let load = MutDisjointSets.find((rv, i), equalitySets) |> getOrCrash;
+                let load = getOrCrash(MutDisjointSets.find((rv, i), equalitySets));
                 match Map.get(load, termMap) {
                     case None => term
                     case Some(rep) => rep
@@ -583,7 +583,7 @@ mod Fixpoint3.Phase.Hoisting {
             case BoolExp.NotMemberOf(terms, _) => Vector.forAll(termGround, terms)
             case BoolExp.NotBot(t1, _, _) => termGround(t1)
             case BoolExp.Leq(_, rv, relSym) =>
-                Map.memberOf(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets) |> getOrCrash, termMap)
+                Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)
             case BoolExp.Eq(t1, t2) => termGround(t1) and termGround(t2)
             case BoolExp.Guard1(_, t1) => termGround(t1)
             case BoolExp.Guard2(_, t1, t2) => termGround(t1) and termGround(t2)
@@ -609,7 +609,7 @@ mod Fixpoint3.Phase.Hoisting {
             case RamTerm.ProvMax(loads) =>
                 loads |>
                     Vector.forAll(load -> {
-                        Map.memberOf(MutDisjointSets.find(load, equalitySets) |> getOrCrash, termMap)
+                        Map.memberOf(getOrCrash(MutDisjointSets.find(load, equalitySets)), termMap)
                     })
             case RamTerm.RowLoad(rv, i, _) =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, i), equalitySets)), termMap)

@@ -409,7 +409,7 @@ mod Fixpoint3.Provenance {
             }
         };
         loop(0, MutMap.toMap(varSymToVal));
-        bodyValues |> Array.filterMap(rc, identity)
+        Array.filterMap(rc, identity, bodyValues)
     }
 
     ///
@@ -445,7 +445,7 @@ mod Fixpoint3.Provenance {
                 }
                 case BodyTerm.Lit(val) => ((i, val) :: acc, i + 1)
             });
-        List.reverse(filterAsList) |> List.toVector
+        List.toVector(List.reverse(filterAsList))
 
 
     ///

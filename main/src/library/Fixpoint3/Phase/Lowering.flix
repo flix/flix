@@ -259,8 +259,8 @@ mod Fixpoint3.Phase.Lowering {
                 } else {
                     ExecutableRam.RamStmt.Seq(purges)
                 }
-            case Ram.RamStmt.Seq(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ExecutableRam.RamStmt.Seq
-            case Ram.RamStmt.Par(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ExecutableRam.RamStmt.Par
+            case Ram.RamStmt.Seq(xs) => ExecutableRam.RamStmt.Seq(Vector.map(x -> lowerStmtRec(x), xs))
+            case Ram.RamStmt.Par(xs) => ExecutableRam.RamStmt.Par(Vector.map(x -> lowerStmtRec(x), xs))
             case Ram.RamStmt.Until(test, body) =>
                 let newTests = test |>
                     Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, (Nil, MutDisjointSets.empty(rc))));
