@@ -464,6 +464,8 @@ mod BPlusTree {
     /// Updates the tree `t` with the mapping `k => v`. Replaces any
     /// existing mapping.
     ///
+    /// Updates both the key and value of the mapping.
+    ///
     /// Thread-safe.
     ///
     pub def put(k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
@@ -1010,6 +1012,7 @@ mod BPlusTree {
             let size = node->size;
             if (index >= 0) {
                 // We now have a write lock and can insert before releasing lock
+                Array.put(key, index, node->keys);
                 Array.put(val, index, node->values);
                 Lock.unlockWrite(writeStamp, node->lock);
                 None
