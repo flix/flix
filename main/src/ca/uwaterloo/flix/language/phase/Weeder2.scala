@@ -2766,29 +2766,27 @@ object Weeder2 {
   private object Predicates {
     def pickHead(tree: Tree)(implicit sctx: SharedContext): Validation[Predicate.Head.Atom, CompilationMessage] = {
       flatMapN(pick(TreeKind.Predicate.Head, tree))(tree => {
-        mapN(pickNameIdent(tree), visitTermList(tree)) {
-          (ident, exprsAndLat) => exprsAndLat match {
-              case (exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, tree.loc)
-              case (exprs, Some(term)) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, tree.loc)
+        val maybeTermList = tryPick(TreeKind.Predicate.TermList, tree)
+        mapN(pickNameIdent(tree), traverseOpt(maybeTermList)(visitTermList)) {
+          (ident, maybeTermList) => maybeTermList match {
+            case None =>
+              Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, Nil, tree.loc)
+            case Some((exprs, None)) =>
+              Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, tree.loc)
+            case Some((exprs, Some(term))) =>
+              Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, tree.loc)
           }
         }
       })
     }
 
     private def visitTermList(tree: Tree)(implicit sctx: SharedContext): Validation[(List[Expr], Option[Expr]), CompilationMessage] = {
-      tryPick(TreeKind.Predicate.TermList, tree) match {
-        // A(...)
-        case Some(t) =>
-          val rawList = traverse(pickAll(TreeKind.Expr.Expr, t))(Exprs.visitExpr)
-          val maybeLatTerm = tryPickLatticeTermExpr(t)
-          mapN(rawList, maybeLatTerm) {
-            // A() => A(())
-            case (Nil, latTerm) =>
-              (List(Expr.Cst(Constant.Unit, t.loc)), latTerm)
-            case (nonEmpty, latTerm) => (nonEmpty, latTerm)
-          }
-        // A
-        case None => Validation.Success((List(), None))
+      val rawList = traverse(pickAll(TreeKind.Expr.Expr, tree))(Exprs.visitExpr)
+      val maybeLatTerm = tryPickLatticeTermExpr(tree)
+      mapN(rawList, maybeLatTerm) {
+        // A() => A(())
+        case (Nil, latTerm) => (List(Expr.Cst(Constant.Unit, tree.loc)), latTerm)
+        case (nonEmpty, latTerm) => (nonEmpty, latTerm)
       }
     }
 
