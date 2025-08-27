@@ -564,30 +564,30 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // getPair                                                                 //
+    // getKeyAndValue                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def getPair01(): Bool = region rc {
+    def getKeyAndValue01(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
-        BPlusTree.getPair(0, tree) |> Option.isEmpty
+        BPlusTree.getKeyAndValue(0, tree) |> Option.isEmpty
     }
 
     @test
-    def getPair02(): Bool = region rc {
+    def getKeyAndValue02(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(0, 1, tree);
-        match BPlusTree.getPair(0, tree) {
+        match BPlusTree.getKeyAndValue(0, tree) {
             case Some(v) => v == (0, 1)
             case None => false
         }
     }
 
     @test
-    def getPair03(): Bool = region rc {
+    def getKeyAndValue03(): Bool = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(0, 1, tree);
-        BPlusTree.getPair(1, tree) |> Option.isEmpty
+        BPlusTree.getKeyAndValue(1, tree) |> Option.isEmpty
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -808,7 +808,7 @@ mod TestBPlusTree {
                         BPlusTree.putIf(putIfPreferSome, PutIfEnum.PutIfEnum(i, -1), Some(1), tree)
             ): _ \ rc) as _ \ IO) @ rc2)
         };
-        List.range(0, totalInsertNumInt32()) |> List.forAll(i -> Some((PutIfEnum.PutIfEnum(i, -1), Some(1))) == BPlusTree.getPair(PutIfEnum.PutIfEnum(i, 1), tree))
+        List.range(0, totalInsertNumInt32()) |> List.forAll(i -> Some((PutIfEnum.PutIfEnum(i, -1), Some(1))) == BPlusTree.getKeyAndValue(PutIfEnum.PutIfEnum(i, 1), tree))
     }
 
 

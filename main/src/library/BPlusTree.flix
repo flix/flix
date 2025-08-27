@@ -406,9 +406,9 @@ mod BPlusTree {
     ///
     /// Thread-safe.
     ///
-    pub def getPair(k: k, t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+    pub def getKeyAndValue(k: k, t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
-        Node.getPair(k, stamp, leaf, t)
+        Node.getKeyAndValue(k, stamp, leaf, t)
     }
 
     ///
@@ -974,7 +974,7 @@ mod BPlusTree {
         /// Returns `Some((key, value))` if `key => val` is in `tree`. Otherwise return `None`.
         ///
         @Internal
-        pub def getPair(key: k, stamp: Int64, node: Node[k, v, r], tree: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] =
+        pub def getKeyAndValue(key: k, stamp: Int64, node: Node[k, v, r], tree: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             let result = if (index < 0)
                 None
@@ -983,7 +983,7 @@ mod BPlusTree {
             if (not Lock.valid(stamp, node->lock)) {
                 // Restart
                 Lock.yieldBasedOn(node->lock);
-                BPlusTree.getPair(key, tree)
+                BPlusTree.getKeyAndValue(key, tree)
             } else {
                 result
             }
