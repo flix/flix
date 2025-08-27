@@ -564,6 +564,33 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // getPair                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def getPair01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.getPair(0, tree) |> Option.isEmpty
+    }
+
+    @test
+    def getPair02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(0, 1, tree);
+        match BPlusTree.getPair(0, tree) {
+            case Some(v) => v == (0, 1)
+            case None => false
+        }
+    }
+
+    @test
+    def getPair03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(0, 1, tree);
+        BPlusTree.getPair(1, tree) |> Option.isEmpty
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // computeIfAbsent                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -675,6 +702,113 @@ mod TestBPlusTree {
         BPlusTree.put(4, -3, tree);
         BPlusTree.put(5, -6, tree);
         BPlusTree.minimumKey(tree) == Option.Some((-1, -4))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // putIf                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def putIf01(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(_ -> _ -> _ -> _ -> true, 3, 4, tree);
+        BPlusTree.memberOfPair(1, 2, tree) and
+            BPlusTree.memberOfPair(3, 4, tree) and
+            not BPlusTree.memberOfPair(1, 4, tree)
+    }
+
+    @test
+    def putIf02(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(k1 -> _ -> k2 -> _ -> k1 == k2, 1, 4, tree);
+        BPlusTree.memberOfPair(1, 4, tree)
+    }
+
+    @test
+    def putIf03(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(_ -> v1 -> _ -> _ -> v1 == 4, 1, 4, tree);
+        BPlusTree.memberOfPair(1, 4, tree)
+    }
+
+    @test
+    def putIf04(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(_ -> _ -> _ -> v2 -> v2 == 4, 1, 4, tree);
+        BPlusTree.memberOfPair(1, 2, tree)
+    }
+
+    enum PutIfEnum {
+        case PutIfEnum(Int32, Int32)
+    }
+
+    instance Eq[PutIfEnum] {
+        ///
+        /// Returns `true` if and only if `x` is equal to `y`.
+        ///
+        pub def eq(x: PutIfEnum, y: PutIfEnum): Bool = match (x, y) {
+            case (PutIfEnum.PutIfEnum(x1, _), PutIfEnum.PutIfEnum(x2, _)) => x1 == x2
+        }
+    }
+
+    instance Order[PutIfEnum] {
+        ///
+        /// Returns `true` if and only if `x` is equal to `y`.
+        ///
+        pub def compare(x: PutIfEnum, y: PutIfEnum): Comparison = match (x, y) {
+            case (PutIfEnum.PutIfEnum(x1, _), PutIfEnum.PutIfEnum(x2, _)) => x1 <=> x2
+        }
+    }
+
+    @test
+    def putIf05(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let key1 = PutIfEnum.PutIfEnum(1, 2);
+        let key2 = PutIfEnum.PutIfEnum(1, 3);
+        BPlusTree.put(key1, 2, tree);
+        BPlusTree.putIf(k1 -> _ -> _ -> _ -> match k1 {
+            case PutIfEnum.PutIfEnum(_, y) => y == 3
+        }, key2, 4, tree);
+        BPlusTree.memberOfPair(key1, 4, tree)
+    }
+
+    @test
+    def putIf06(): Bool = region rc {
+        let tree = BPlusTree.empty(rc);
+        let key1 = PutIfEnum.PutIfEnum(1, 2);
+        let key2 = PutIfEnum.PutIfEnum(1, 3);
+        BPlusTree.put(key1, 2, tree);
+        BPlusTree.putIf(_ -> _ -> k2 -> _ -> match k2 {
+            case PutIfEnum.PutIfEnum(_, y) => y == 3
+        }, key2, 4, tree);
+        BPlusTree.memberOfPair(key1, 2, tree)
+    }
+
+    def putIfPreferSome(_: PutIfEnum, l: Option[Int32], _: PutIfEnum, _: Option[Int32]): Bool = match l {
+        case None => false
+        case Some(_) => true
+    }
+
+    @test
+    pub def putIf07(): Bool \ IO = region rc {
+        let tree = BPlusTree.empty(rc);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i ->
+                        BPlusTree.putIf(putIfPreferSome, PutIfEnum.PutIfEnum(i, 1), None, tree)
+                    ): _ \ rc) as _ \ IO) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i ->
+                        BPlusTree.putIf(putIfPreferSome, PutIfEnum.PutIfEnum(i, -1), Some(1), tree)
+            ): _ \ rc) as _ \ IO) @ rc2)
+        };
+        List.range(0, totalInsertNumInt32()) |> List.forAll(i -> Some((PutIfEnum.PutIfEnum(i, -1), Some(1))) == BPlusTree.getPair(PutIfEnum.PutIfEnum(i, 1), tree))
     }
 
 
