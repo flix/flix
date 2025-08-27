@@ -2237,7 +2237,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
@@ -2253,7 +2253,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    println("Hello World!")
         |
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.MismatchedPredicateArity](result)
   }
 
