@@ -2810,7 +2810,7 @@ object Weeder2 {
       flatMapN(pickNameIdent(tree), traverseOpt(maybePatList)(visitPatternList))(
         (ident, maybePatList) => maybePatList match {
           case None =>
-            Validation.Success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, Nil, tree.loc))
+            Validation.Success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, Nil, tree.loc))
           case Some((pats, None)) =>
             // Check for `[[IllegalFixedAtom]]`.
             val isNegativePolarity = polarity == Polarity.Negative
