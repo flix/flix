@@ -2346,7 +2346,7 @@ object Lowering {
       val s = subst.getOrElse(sym, sym)
       LoweredAst.ExtTagPattern.Var(s, tpe, loc)
 
-    case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
+   case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
       LoweredAst.ExtTagPattern.Unit(tpe, loc)
   }
 
