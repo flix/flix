@@ -26,6 +26,9 @@
 /// Time/depth should be understood as follows: If a fact depend on some fact
 /// which has time/depth `k` then this facts has at most time/depth `k + 1`.
 ///
+/// This module removes `BoolExp.NotMemberOf` as the `ProvProject` introduced by `Lowering`
+/// must ensure this property.
+///
  mod Fixpoint3.Phase.Provenance {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, RamId, BoolExp}
@@ -88,7 +91,7 @@
         case RamStmt.Purge(_)           => stmt
         case RamStmt.Seq(stmts)         => RamStmt.Seq(Vector.map(augmentStmt, stmts))
         case RamStmt.Par(stmts)         => RamStmt.Par(Vector.map(augmentStmt, stmts))
-        case RamStmt.Until(bools, rest) => RamStmt.Until(bools, augmentStmt(rest))
+        case RamStmt.Until(bools, rest) => RamStmt.Until(removeNotMemberOf(bools), augmentStmt(rest))
         case RamStmt.Comment(_)         => stmt
     }
 
@@ -101,7 +104,7 @@
                 RelOp.Search(rowVar, relSym)
         case RelOp.Query(rowVar, relSym, bools, index, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
-                RelOp.Query(rowVar, relSym, bools, index)
+                RelOp.Query(rowVar, relSym, removeNotMemberOf(bools), index)
         case RelOp.Functional(rowVar, func, terms, body, arity) =>
             // Do not add this to `rowVarsArity`. We use this in `ProvMax` as `Functional`
             // has no concept of depth.
@@ -112,7 +115,22 @@
                 RamTerm.Lit(BoxedInt64(Int32.toInt64(ruleNum)), RamId.Id(-1))
             };
             RelOp.Project(newTerms, relSym, ruleNum)
-        case RelOp.If(boolExps, body) => RelOp.If(boolExps, augmentOp(rowVarsArity, body))
+        case RelOp.If(boolExps, body) =>
+            RelOp.If(removeNotMemberOf(boolExps), augmentOp(rowVarsArity, body))
+    }
+
+
+    ///
+    /// Returns the `BoolExp`'s in `boolExps` without `NotMemberOf`.
+    ///
+    def removeNotMemberOf(boolExps: Vector[BoolExp]): Vector[BoolExp] = Vector.filterMap(notNotMemberOf, boolExps)
+
+    ///
+    /// Returns `Some(boolExp)` if `boolExp` is not `NotMemberOf`. Otherwise returns `None`.
+    ///
+    def notNotMemberOf(boolExp: BoolExp): Option[BoolExp] = match boolExp {
+        case BoolExp.NotMemberOf(_, _) => None
+        case _ => Some(boolExp)
     }
 
 }
