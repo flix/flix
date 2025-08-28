@@ -219,6 +219,14 @@ mod List {
         foldRight((x, acc) -> x :: acc, l2, l1)
 
     ///
+    /// Returns `l2` appended to `reverse(l1)`.
+    ///
+    /// More efficient than `append(reverse(l1), l2)` as it does not use reverse.
+    ///
+    def reverseAppend(l1: List[a], l2: List[a]): List[a] =
+        foldLeft((acc, x) -> x :: acc, l2, l1)
+
+    ///
     /// Returns `true` if and only if `l` contains the element `x`.
     ///
     pub def memberOf(a: a, l: List[a]): Bool with Eq[a] = match l {
@@ -468,7 +476,7 @@ mod List {
     ///
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
-    pub def update(i: Int32, a: a, l: List[a]): List[a] \ ef = {
+    pub def update(i: Int32, a: a, l: List[a]): List[a] =
         def loop(ll, j, acc) = match (j, ll) {
             case (_, Nil)     => l
             case (0, _ :: xs) => reverseAppend(acc, a :: xs)
@@ -808,7 +816,7 @@ mod List {
         };
         match l {
             case Nil => None
-            case x :: xs => reverse(loop(xs, x :: Nil))
+            case _ => Some(reverse(loop(l, Nil)))
         }
 
     ///
@@ -1442,17 +1450,16 @@ mod List {
     /// If two elements compare `EqualTo`, then the element of `l1` is first in the result.
     ///
     pub def merge(l1: List[a], l2: List[a]): List[a] with Order[a] =
-        def loop(acc1, acc2, k) = match (acc1, acc2) {
+        def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
                 let cmp = x <=> y;
-                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo) loop(xs, acc2, ks -> k(x :: ks))
-                else                                   loop(acc1, ys, ks -> k(y :: ks))
+                if (cmp == Comparison.LessThan or cmp == Comparison.EqualTo) loop(xs, ll2, x :: acc)
+                else                                   loop(ll1, ys, y :: acc)
             }
-            case (Nil    , y :: ys) => k(y :: ys)
-            case (x :: xs, Nil    ) => k(x :: xs)
-            case (Nil    , Nil    ) => k(Nil)
+            case (Nil    , _) => reverse(reverseAppend(ll2, acc))
+            case (_, Nil    ) => reverse(reverseAppend(ll1, acc))
         };
-        loop(l1, l2, identity)
+        loop(l1, l2, Nil)
 
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
