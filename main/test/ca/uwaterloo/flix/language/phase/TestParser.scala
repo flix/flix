@@ -792,6 +792,33 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("MissingDotInDatalogConstraint.01") {
+    val input =
+      """def main(): Unit =
+        |    let _ = #{
+        |        Edge(1, 2)
+        |    };
+        |    ()
+        |"""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingDotInDatalogConstraint.02") {
+    val input =
+      """def main(): Unit =
+        |    let _ = #{
+        |        Edge(1, 2).
+        |        Path(x, y) :- Edge(x, y)
+        |    };
+        |    ()
+        |"""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("MissingWithInPQuery") {
     val input =
       """def main(): Unit =

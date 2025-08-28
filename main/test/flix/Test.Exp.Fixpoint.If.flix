@@ -276,7 +276,7 @@ mod Test.Exp.Fixpoint.If {
         let f = inject tuples into Edge/2;
         let r = #{
             Path(x, y; Down.Down(1)) :- Edge(x, y).
-            Path(x, z; l + Down.Down(1)) :- Path(x, y; l), Edge(y, z), if (l == Down.Down(0))
+            Path(x, z; l + Down.Down(1)) :- Path(x, y; l), Edge(y, z), if (l == Down.Down(0)).
         };
         let res = query f, r select (x, y) from Path(x, y; l);
         res `Assert.eq` tuples

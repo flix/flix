@@ -263,7 +263,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             A(1).
             A(2).
             B(;x) :- A(x).
-            R(x) :- fix B(;x)
+            R(x) :- fix B(;x).
         };
         let mm = query pr select x from R(x);
         Vector#{2} `Assert.eq` mm
@@ -274,7 +274,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
             A(1).
             A(2).
             B(;x) :- A(x).
-            R(x) :- fix B(;x)
+            R(x) :- fix B(;x).
         };
         let mm = query pr select x from R(x);
         Vector#{2} `Assert.eq` mm

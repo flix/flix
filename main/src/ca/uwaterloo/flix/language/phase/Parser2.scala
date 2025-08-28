@@ -2872,13 +2872,14 @@ object Parser2 {
         getItem = fixpointConstraint,
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
-        separation = Separation.Required(TokenKind.DotWhiteSpace, allowTrailing = true),
+        separation = Separation.None,
         breakWhen = _.isRecoverExpr,
       )
       close(mark, TreeKind.Expr.FixpointConstraintSet)
     }
 
     private def fixpointConstraint()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       Predicate.head()
       if (eat(TokenKind.ColonMinus)) {
@@ -2887,6 +2888,7 @@ object Parser2 {
           Predicate.body()
         }
       }
+      expect(TokenKind.DotWhiteSpace, hint = Some("Datalog constraints must end with a '.'"))
       close(mark, TreeKind.Expr.FixpointConstraint)
     }
 
