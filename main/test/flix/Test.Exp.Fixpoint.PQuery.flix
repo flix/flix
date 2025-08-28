@@ -84,6 +84,14 @@ mod Test.Exp.Fixpoint.PQuery {
         let pp = pquery pr select A((1, 2)) with {A};
         Vector.map(v -> ematch v { case A(x) => x }, pp) `Assert.eq` Vector#{(1, 2)}
 
+    @Test
+    def testPQueryNullary(): Bool =
+        let pr = #{
+            A.
+        };
+        let pp = pquery pr select A with {A};
+        Vector.map(v -> ematch v { case A => 42 }, pp) `Assert.eq` Vector#{42}
+
     ///////////////////////////////////////////////////////////////////////////
     // Provenance at depth 2
     ///////////////////////////////////////////////////////////////////////////
@@ -187,6 +195,16 @@ mod Test.Exp.Fixpoint.PQuery {
         };
         let pp = pquery pr select R((1, 2)) with {A};
         Vector.map(v -> ematch v { case A(x) => x }, pp) `Assert.eq` Vector#{(1, 2), (1, 2)}
+
+    @Test
+    def testPQueryDepth2Nullary(): Bool =
+        let pr = #{
+            A.
+            B :- A.
+            R :- B, B.
+        };
+        let pp = pquery pr select R with {A};
+        Vector.map(v -> ematch v { case A => 42 }, pp) `Assert.eq` Vector#{42, 42}
 
     ///////////////////////////////////////////////////////////////////////////
     // Provenance for cycles
