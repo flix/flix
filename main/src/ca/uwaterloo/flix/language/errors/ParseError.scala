@@ -111,6 +111,10 @@ object ParseError {
       def display(fmt: Formatter): String = fmt.cyan("<parameter>")
     }
 
+    case object PutField extends NamedTokenSet {
+      def display(fmt: Formatter): String = fmt.cyan("<put-field>")
+    }
+
     case object Pattern extends NamedTokenSet {
       def display(fmt: Formatter): String = fmt.cyan("<pattern>")
     }

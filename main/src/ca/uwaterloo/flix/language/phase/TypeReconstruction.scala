@@ -498,12 +498,18 @@ object TypeReconstruction {
           TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
       }
 
-    case KindedAst.Expr.PutField(field, _, exp1, exp2, loc) =>
+    case KindedAst.Expr.PutField(exp1, _, exp2, jvar, tvar, evar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val tpe = Type.Unit
-      val eff = Type.mkUnion(e1.eff, e2.eff, Type.IO, loc)
-      TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
+      subst(tvar)
+      val jvarType = subst(jvar)
+      val eff = subst(evar)
+      jvarType match {
+        case Type.Cst(TypeConstructor.JvmField(field), loc1) =>
+          TypedAst.Expr.PutField(field, e1, e2, Type.Unit, eff, loc1)
+        case _ =>
+          TypedAst.Expr.Error(TypeError.UnresolvedField(loc), jvarType, eff)
+      }
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
       val tpe = getFlixType(field.getType)
