@@ -468,13 +468,13 @@ mod List {
     ///
     /// Returns `l` if `i < 0` or `i > length(l)-1`.
     ///
-    pub def update(i: Int32, a: a, l: List[a]): List[a] =
-        def loop(ll, j, k) = match (j, ll) {
-            case (_, Nil)     => k(Nil)
-            case (0, _ :: xs) => k(a :: xs)
-            case (_, x :: xs) => loop(xs, j - 1, ks -> k(x :: ks))
+    pub def update(i: Int32, a: a, l: List[a]): List[a] \ ef = {
+        def loop(ll, j, acc) = match (j, ll) {
+            case (_, Nil)     => l
+            case (0, _ :: xs) => reverseAppend(acc, a :: xs)
+            case (_, x :: xs) => loop(xs, j - 1, x :: acc)
         };
-        loop(l, i, identity)
+        loop(l, i, Nil)
 
     ///
     /// Returns `l` with every occurrence of `src` replaced by `dst`.
@@ -490,16 +490,16 @@ mod List {
     /// If patching occurs at index `i+j` in `l2`, then the element at index `j` in `l1` is used.
     ///
     pub def patch(i: Int32, n: Int32, l1: List[a], l2: List[a]): List[a] =
-        def loop(ll1, ll2, c, k) = match (ll1, ll2) {
+        def loop(ll1, ll2, c, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) => {
                 if (c >= i and c < i + n)
-                    loop(xs, ys, c + 1, ks -> k(x :: ks))
+                    loop(xs, ys, c + 1, x :: acc)
                 else
-                    loop(l1, ys, c + 1, ks -> k(y :: ks))
+                    loop(l1, ys, c + 1, y :: acc)
             }
-            case _ => k(ll2)
+            case _ => reverseAppend(acc, ll2)
         };
-        loop(drop(-i, l1), l2, 0, identity)
+        loop(drop(-i, l1), l2, 0, Nil)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.
@@ -587,21 +587,25 @@ mod List {
     /// Returns `l` with `x` added to the beginning of each element in `l`.
     ///
     def applyHelper(a: a, l: List[List[a]]): List[List[a]] =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => loop(xs, ks -> k((a :: x) :: ks))
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, (a :: x) :: acc)
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Returns `l` with `x` inserted between every two adjacent elements.
     ///
     pub def intersperse(a: a, l: List[a]): List[a] =
-        def loop(ll, k) = match ll {
-            case x1 :: x2 :: xs => loop(x2 :: xs, ks -> k(x1 :: a :: ks))
-            case _              => k(ll)
+        def loop(ll, acc) = match ll {
+            case x1 :: Nil      => x1 :: acc
+            case x1 :: xs       => loop(xs, a :: x1 :: acc)
+            case _              => unreachable!()
         };
-        loop(l, identity)
+        match l {
+            case Nil => Nil
+            case _ => reverse(loop(l, Nil))
+        }
 
     ///
     /// Returns the concatenation of the elements in `l2` with the elements of `l1` inserted between every two adjacent elements.
@@ -609,12 +613,15 @@ mod List {
     /// That is, returns `y1 :: x1 ... xn :: y2 :: ... yn-1 :: x1 :: ... :: xn :: yn :: Nil`.
     ///
     pub def intercalate(l1: List[a], l2: List[List[a]]): List[a] =
-        def loop(ll, k) = match ll {
-            case Nil            => k(Nil)
-            case y :: Nil       => k(y)
-            case y1 :: y2 :: ys => loop(y2 :: ys, ks -> k(y1 ::: l1 ::: ks))
+        def loop(ll, acc) = match ll {
+            case x :: Nil       => reverseAppend(x, acc)
+            case x1 :: xs       => loop(xs, reverseAppend(l1, reverseAppend(x1, acc)))
+            case _              => unreachable!()
         };
-        loop(l2, identity)
+        match l2 {
+            case Nil => Nil
+            case _ => reverse(loop(l2, Nil))
+        }
 
     ///
     /// Returns the transpose of `l`.
@@ -753,11 +760,11 @@ mod List {
     /// Returns the concatenation of the elements in `l`.
     ///
     pub def flatten(l: List[List[a]]): List[a] =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => loop(xs, ks -> k(x ::: ks))
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, reverseAppend(x, acc))
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Returns `true` if and only if at least one element in `l` satisfies the predicate `f`.
@@ -794,12 +801,15 @@ mod List {
     /// Returns `None` if the list `l` is `Nil`.
     ///
     pub def init(l: List[a]): Option[List[a]] =
-        def loop(ll, k) = match ll {
-            case Nil      => None
-            case _ :: Nil => Some(k(Nil))
-            case x :: xs  => loop(xs, ks -> k(x :: ks))
+        def loop(ll, acc) = match ll {
+            case _ :: Nil => acc
+            case x :: xs  => loop(xs, x :: acc)
+            case Nil      => unreachable!()
         };
-        loop(l, identity)
+        match l {
+            case Nil => None
+            case x :: xs => reverse(loop(xs, x :: Nil))
+        }
 
     ///
     /// Returns the sublist of `l` from index `start` (inclusive) to index `end` (exclusive).
@@ -808,17 +818,17 @@ mod List {
     /// Note: Indices that are out of bounds in `l` are not considered (i.e. slice(start, end, l) = slice(max(0, start), min(length(l), end), l)).
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, l: List[a]): List[a] =
-        def loop(ll, i, k) = match ll {
-            case Nil     => k(Nil)
+        def loop(ll, i, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
                 if (i < start#start)
-                    loop(xs, i + 1, k)
+                    loop(xs, i + 1, acc)
                 else if (i >= end#end)
-                    k(Nil)
+                    acc
                 else
-                    loop(xs, i + 1, ks -> k(x :: ks))
+                    loop(xs, i + 1, x :: acc)
         };
-        if (start#start < end#end) loop(l, 0, identity) else Nil
+        if (start#start < end#end) reverse(loop(l, 0, Nil)) else Nil
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -883,15 +893,15 @@ mod List {
     /// Returns `Nil` if `n < 0`.
     ///
     pub def take(n: Int32, l: List[a]): List[a] =
-        def loop(ll, i, k) =
+        def loop(ll, i, acc) =
             if (i <= 0)
-                k(Nil)
+                acc
             else
                 match ll {
-                    case Nil     => k(Nil)
-                    case x :: xs => loop(xs, i - 1, ks -> k(x :: ks))
+                    case Nil     => acc
+                    case x :: xs => loop(xs, i - 1, x :: acc)
                 };
-        loop(l, n, identity)
+        reverse(loop(l, n, Nil))
 
     ///
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
@@ -959,11 +969,11 @@ mod List {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zip(l1: List[a], l2: List[b]): List[(a, b)] =
-        def loop(ll1, ll2, k) = match (ll1, ll2) {
-            case (x :: xs, y :: ys) => loop(xs, ys, ks -> k((x, y) :: ks))
-            case _                  => k(Nil)
+        def loop(ll1, ll2, acc) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) => loop(xs, ys, (x, y) :: acc)
+            case _                  => acc
         };
-        loop(l1, l2, identity)
+        reverse(loop(l1, l2, Nil))
 
     ///
     /// Returns a list where the element at index `i` is `f(a, b)` where
@@ -985,11 +995,11 @@ mod List {
     /// is the index of `e`.
     ///
     pub def zipWithIndex(l: List[a]): List[(Int32, a)] =
-        def loop(ll, i, k) = match ll {
-            case Nil       => k(Nil)
-            case (x :: xs) => loop(xs, i + 1, ks -> k((i, x) :: ks))
+        def loop(ll, i, acc) = match ll {
+            case Nil       => acc
+            case (x :: xs) => loop(xs, i + 1, (i, x) :: acc)
         };
-        loop(l, 0, identity)
+        reverse(loop(l, 0, Nil))
 
     ///
     /// Generalize `zipWith` to an applicative functor `f`.
@@ -1008,11 +1018,12 @@ mod List {
     /// and the second containing all second components in `l`.
     ///
     pub def unzip(l: List[(a, b)]): (List[a], List[b]) =
-        def loop(ll, k) = match ll {
-            case Nil            => k((Nil, Nil))
-            case (x1, x2) :: xs => loop(xs, match (ks, ls) -> k((x1 :: ks, x2 :: ls)))
+        def loop(ll, acc1, acc2) = match ll {
+            case Nil            => (acc1, acc2)
+            case (x1, x2) :: xs => loop(xs, x1 :: acc1, x2 :: acc2)
         };
-        loop(l, identity)
+        let (l1, l2) = loop(l, Nil, Nil);
+        (reverse(l1), reverse(l2))
 
     ///
     /// Returns a list where the element at index `i` is `(a, b, c)` where
