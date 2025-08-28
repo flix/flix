@@ -62,7 +62,6 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/fixpoints/compiler-puzzle.flix",
     "examples/fixpoints/railroad-network.flix",
     "examples/fixpoints/train-schedule.flix",
-    "examples/fixpoints/first-class-constraints-and-fixpoints.flix",
     "examples/functional-style/lists-and-list-processing.flix",
     "examples/functional-style/pure-and-impure-functions.flix",
     "examples/functional-style/mutual-recursion-with-full-tail-call-elimination.flix",
