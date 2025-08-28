@@ -97,7 +97,7 @@ mod Fixpoint3.Phase.Stratifier {
     /// See `addDepEdges`.
     ///
     def addDepEdge(graph: MutGraph[r], dst: HeadPredicate, src: BodyPredicate): Unit \ r = match (dst, src) {
-        case (HeadAtom(PredSym.PredSym(_, dstId), _, _), BodyAtom(PredSym.PredSym(_, srcId), _, _, _, _)) => {
+        case (HeadAtom(PredSym.PredSym(_, dstId), _, _), BodyAtom(PredSym.PredSym(_, srcId), _, _, _, _, _)) => {
             if (dstId != srcId) {
                 MutGraph.addEdge(toInt32(srcId), toInt32(dstId), graph)
             } else (
@@ -136,7 +136,7 @@ mod Fixpoint3.Phase.Stratifier {
     /// See `addPredSymsFrom`.
     ///
     def addPredSymsOf(predMap: PredIdToName[r], body: BodyPredicate): Unit \ r = match body {
-        case (BodyAtom(PredSym.PredSym(name, id), _, _, _, _)) => {
+        case (BodyAtom(PredSym.PredSym(name, id), _, _, _, _, _)) => {
             Array.put(name, toInt32(id), predMap);
             ()
         }
