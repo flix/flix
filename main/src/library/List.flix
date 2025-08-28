@@ -612,7 +612,7 @@ mod List {
         };
         match l {
             case Nil => Nil
-            case _ => reverse(loop(l, Nil))
+            case _   => reverse(loop(l, Nil))
         }
 
     ///
