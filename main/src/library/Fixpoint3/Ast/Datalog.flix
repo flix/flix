@@ -224,7 +224,7 @@ mod Fixpoint3.Ast.Datalog {
 
     @Internal
     pub enum BodyPredicate {
-        case BodyAtom(PredSym, Denotation, Polarity, Fixity, Vector[BodyTerm])
+        case BodyAtom(PredSym, Denotation, Polarity, Fixity, ProvSuppressed, Vector[BodyTerm])
         case Functional(Vector[VarSym], Vector[Boxed] -> Vector[Vector[Boxed]], Vector[VarSym])
         case Guard0(Unit -> Bool)
         case Guard1(Boxed -> Bool, VarSym)
@@ -236,16 +236,16 @@ mod Fixpoint3.Ast.Datalog {
 
     instance PredSymsOf[BodyPredicate] {
         pub def predSymsOf(x: BodyPredicate): Set[PredSym] = match x {
-            case BodyPredicate.BodyAtom(predSym, _, _, _, _) => Set.singleton(predSym)
+            case BodyPredicate.BodyAtom(predSym, _, _, _, _, _) => Set.singleton(predSym)
             case _                                           => Set.empty()
         }
     }
 
     instance SubstitutePredSym[BodyPredicate] {
         pub def substitute(x: BodyPredicate, s: Map[PredSym, PredSym]): BodyPredicate = match x {
-            case BodyPredicate.BodyAtom(predSym, den, polarity, fixity, terms) =>
+            case BodyPredicate.BodyAtom(predSym, den, polarity, fixity, suppressed, terms) =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
-                BodyPredicate.BodyAtom(newSym, den, polarity, fixity, terms)
+                BodyPredicate.BodyAtom(newSym, den, polarity, fixity, suppressed, terms)
             case _ => x
         }
     }
@@ -260,15 +260,19 @@ mod Fixpoint3.Ast.Datalog {
                 case Fixity.Fixed => "fix "
                 case Fixity.Loose => ""
             };
+            def suppressedPrefix(f) = match f {
+                case ProvSuppressed.Hidden => "@Suppress "
+                case ProvSuppressed.Shown => ""
+            };
             match body {
-                case BodyPredicate.BodyAtom(predSym, Relational, p, f, terms) =>
-                    "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
-                case BodyPredicate.BodyAtom(predSym, Latticenal(_, _, _, _), p, f, terms) =>
+                case BodyPredicate.BodyAtom(predSym, Relational, p, f, s, terms) =>
+                    "${suppressedPrefix(s)}${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${terms |> Vector.join(", ")})"
+                case BodyPredicate.BodyAtom(predSym, Latticenal(_, _, _, _), p, f, s, terms) =>
                     let n = Vector.length(terms)-1;
                     let (keyTerms, latticeTerms) = (Vector.take(n, terms), Vector.drop(n, terms));
                     match Vector.head(latticeTerms) {
-                        case None    => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
-                        case Some(l) => "${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
+                        case None    => "${suppressedPrefix(s)}${polarityPrefix(p)}${fixityPrefix(f)}${predSym}()"
+                        case Some(l) => "${suppressedPrefix(s)}${polarityPrefix(p)}${fixityPrefix(f)}${predSym}(${keyTerms |> Vector.join(", ")}; ${l})"
                     }
                 case BodyPredicate.Functional(boundVars, _, freeVars) => "<loop>(${boundVars}, ${freeVars})"
                 case BodyPredicate.Guard0(_)                          => "<clo>()"
@@ -343,6 +347,16 @@ mod Fixpoint3.Ast.Datalog {
     pub enum Fixity {
         case Loose,
         case Fixed
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // ProvSuppressed                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Internal
+    pub enum ProvSuppressed {
+        case Hidden,
+        case Shown
     }
 
     /////////////////////////////////////////////////////////////////////////////

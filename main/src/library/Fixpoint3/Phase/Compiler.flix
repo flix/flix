@@ -273,7 +273,7 @@ mod Fixpoint3.Phase.Compiler {
                     let loopBody = RelOp.If(join, projection);
                     let insert = (loopBody, augBody)
                         ||> Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
-                            case BodyAtom(_, _, Polarity.Positive, _, _) =>
+                            case BodyAtom(_, _, Polarity.Positive, _, _, _) =>
                                 RelOp.Search(rowVar, Predicate.bodyAtomToRelSym(atom, Full, predicates), acc)
                             case Functional(boundVars, f, freeVars) =>
                                 let terms = Vector.map(v -> getOrCrash(Map.get(v, env)), freeVars);
@@ -340,7 +340,7 @@ mod Fixpoint3.Phase.Compiler {
                         );
                         let insert = (loopBody, augBody)
                             ||> Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
-                                case BodyAtom(_, den, Polarity.Positive, _, _) =>
+                                case BodyAtom(_, den, Polarity.Positive, _, _, _) =>
                                     let ramSym = if (rowVar == delta and isRelational(den)) {
                                         Predicate.bodyAtomToRelSym(atom, Delta, predicates)
                                     } else {
@@ -359,7 +359,7 @@ mod Fixpoint3.Phase.Compiler {
 
             let positiveIDBAtoms = body
                 |> Vector.mapWithIndex(i -> atom -> match atom {
-                    case BodyAtom(PredSym(_, id), _, Polarity.Positive, Fixity.Loose, _) =>
+                    case BodyAtom(PredSym(_, id), _, Polarity.Positive, Fixity.Loose, _, _) =>
                         if (Set.memberOf(id, idbSet)) {
                             i
                         } else {
@@ -417,7 +417,7 @@ mod Fixpoint3.Phase.Compiler {
     ///
     def augmentBody(body: Vector[BodyPredicate], counter: Counter[r]): Vector[(BodyPredicate, RowVar)] \ r =
         Vector.map(atom -> match atom {
-            case BodyAtom(_, _, Polarity.Positive, _, _) => (atom, RowVar.Named(Counter.getAndIncrement(counter)))
+            case BodyAtom(_, _, Polarity.Positive, _, _, _) => (atom, RowVar.Named(Counter.getAndIncrement(counter)))
             case Functional(_, _, _)                     => (atom, RowVar.Named(Counter.getAndIncrement(counter)))
             case _ => (atom, RowVar.Named(-1))
         }, body)
@@ -437,7 +437,7 @@ mod Fixpoint3.Phase.Compiler {
             acc -> atomVar ->
             let (atom, rowVar) = atomVar;
             match atom {
-            case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
+            case BodyAtom(_, denotation, Polarity.Positive, _, _, terms) =>
                 let termsWithIndexes = Vector.mapWithIndex(i -> term -> (term, i), terms);
                 (acc, termsWithIndexes) ||>
                     Vector.foldRight(termI -> acc1 ->
@@ -455,7 +455,7 @@ mod Fixpoint3.Phase.Compiler {
                             }
                             case _ => acc1
                     })
-            case BodyAtom(_, _, Polarity.Negative, _, _) => acc
+            case BodyAtom(_, _, Polarity.Negative, _, _, _) => acc
             case Functional(boundVars, _, freeVars) =>
                 let funcRelSym = functionalRelSym(Vector.length(freeVars));
                 let varsWithIndexes = Vector.mapWithIndex(i -> var -> (var, i), boundVars);
@@ -497,8 +497,7 @@ mod Fixpoint3.Phase.Compiler {
     def isImpossible(body: Vector[(BodyPredicate, RowVar)]): Bool =
         Vector.exists(match (atom, _) ->
             match atom {
-                case BodyAtom(_, _, _, _, _)  => false
-                case BodyAtom(_, _, _, _, _)  => false
+                case BodyAtom(_, _, _, _, _, _)  => false
                 case Functional(_, _, _)      => false
                 case Guard0(f)                =>
                     if (f()) false
@@ -524,7 +523,7 @@ mod Fixpoint3.Phase.Compiler {
                     case BodyTerm.Lit(v)    => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)))
                 };
                 match atom {
-                    case BodyAtom(_, denotation, Polarity.Positive, _, terms) =>
+                    case BodyAtom(_, denotation, Polarity.Positive, _, _, terms) =>
                         Vector.mapWithIndex(compileBodyTerm, terms)
                             |> Vector.zip(Vector.range(0, Vector.length(terms)))
                             |> Vector.map(match (i, t) -> match denotation {
@@ -536,7 +535,7 @@ mod Fixpoint3.Phase.Compiler {
                                     else
                                         compileBoolForLatticeenal(t, leq, bot, rowVar, toFullSym(atom))
                             })
-                    case BodyAtom(_, _, Polarity.Negative, _, terms) =>
+                    case BodyAtom(_, _, Polarity.Negative, _, _, terms) =>
                         let ramTerms = Vector.mapWithIndex(compileBodyTerm, terms);
                         Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates))}
                     case Functional(_, _, _) => Vector.empty()
