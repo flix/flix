@@ -332,13 +332,13 @@ mod List {
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
-        def loop(ll, k, acc) = match ll {
-            case Nil     => k(Nil)
+        def loop(ll, bacc, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
-                let y = f(acc, x);
-                loop(xs, ks -> k(y :: ks), y)
+                let y = f(bacc, x);
+                loop(xs, y, y :: acc)
         };
-        loop(l, ks -> s :: ks, s)
+        reverse(loop(l, s, s :: Nil))
 
     ///
     /// Accumulates the result of applying `f` to `l` going right to left.
@@ -419,13 +419,13 @@ mod List {
     /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
-        def loop(ll, i, k) = match ll {
-            case Nil     => k(Nil)
+        def loop(ll, i, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
                 let y = f(i, x);
-                loop(xs, i + 1, ys -> k(y :: ys))
+                loop(xs, i + 1, y :: acc)
         };
-        loop(l, 0, identity)
+        reverse(loop(l, 0, Nil))
 
     ///
     /// Returns the result of applying `f` to every element in `l` and concatenating the results.
@@ -564,7 +564,7 @@ mod List {
     ///
     pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, l: List[a]): List[a] \ ef = {
         def loop(head, acc, ll) = match ll {
-            case Nil     => List.reverse(acc)
+            case Nil     => acc
             case x :: xs =>
                 if (f(head, x)) {
                     loop(head, acc, xs)
@@ -574,7 +574,7 @@ mod List {
         };
         match l {
             case Nil     => Nil
-            case x :: xs => loop(x, x :: Nil, xs)
+            case x :: xs => reverse(loop(x, x :: Nil, xs))
         }
     }
 
@@ -798,11 +798,11 @@ mod List {
     /// Returns a list of every element in `l` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else loop(xs, k)
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => if (f(x)) loop(xs, x :: acc) else loop(xs, acc)
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Returns the sublist of `l` without the last element.
@@ -845,15 +845,16 @@ mod List {
     /// `l2` contains all elements of `l` that do not satisfy the predicate `f`.
     ///
     pub def partition(f: a -> Bool \ ef, l: List[a]): (List[a], List[a]) \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k((Nil, Nil))
+        def loop(ll, acc1, acc2) = match ll {
+            case Nil     => (acc1, acc2)
             case x :: xs =>
                 if (f(x))
-                    loop(xs, match (ks, ls) -> k((x :: ks, ls)))
+                    loop(xs, x :: acc1, acc2)
                 else
-                    loop(xs, match (ks, ls) -> k((ks, x :: ls)))
+                    loop(xs, acc1, x :: acc2)
         };
-        loop(l, identity)
+        let (l1, l2) = loop(l, Nil, Nil);
+        (reverse(l1), reverse(l2))
 
     ///
     /// Returns a pair of lists `(l1, l2)`.
@@ -864,15 +865,16 @@ mod List {
     /// The function `f` must be pure.
     ///
     pub def span(f: a -> Bool, l: List[a]): (List[a], List[a]) =
-        def loop(ll, k) = match ll {
-            case Nil     => k((Nil, Nil))
+        def loop(ll, acc) = match ll {
+            case Nil     => (acc, Nil)
             case x :: xs =>
                 if (f(x))
-                    loop(xs, match (ks, ls) -> k((x :: ks, ls)))
+                    loop(xs, x :: acc)
                 else
-                    k((Nil, ll))
+                    (acc, ll)
         };
-        loop(l, identity)
+        let (l1, l2) = loop(l, Nil);
+        (reverse(l1), l2)
 
     ///
     /// Returns `l` without the first `n` elements.
@@ -915,11 +917,11 @@ mod List {
     /// Returns the longest prefix of `l` that satisfies the predicate `f`.
     ///
     pub def takeWhile(f: a -> Bool \ ef, l: List[a]): List[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
-            case x :: xs => if (f(x)) loop(xs, ks -> k(x :: ks)) else k(Nil)
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => if (f(x)) loop(xs, x :: acc) else acc
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Split the list `xs` at the position `n` returning the left and right parts.
@@ -990,13 +992,13 @@ mod List {
     /// If either `l1` or `l2` becomes depleted, then no further elements are added to the resulting list.
     ///
     pub def zipWith(f: (a, b) -> c \ ef, l1: List[a], l2: List[b]): List[c] \ ef =
-        def loop(ll1, ll2, k) = match (ll1, ll2) {
+        def loop(ll1, ll2, acc) = match (ll1, ll2) {
             case (x :: xs, y :: ys) =>
                 let z = f(x, y);
-                loop(xs, ys, ks -> k(z :: ks))
-            case _ => k(Nil)
+                loop(xs, ys, z :: acc)
+            case _ => acc
         };
-        loop(l1, l2, identity)
+        reverse(loop(l1, l2, Nil))
 
     ///
     /// Returns a list where each element `e` is mapped to `(i, e)` where `i`
@@ -1051,13 +1053,13 @@ mod List {
     /// If any one of `l1`, `l2` or `l3` become depleted, then no further elements are added to the resulting list.
     ///
     pub def zipWith3(f: (a, b, c) -> d \ ef, l1: List[a], l2: List[b], l3: List[c]): List[d] \ ef =
-        def loop(ll1, ll2, ll3, k) = match (ll1, ll2, ll3) {
+        def loop(ll1, ll2, ll3, acc) = match (ll1, ll2, ll3) {
             case (x :: xs, y :: ys, z :: zs) =>
                 let r = f(x, y, z);
-                loop(xs, ys, zs, ks -> k(r :: ks))
-            case _ => k(Nil)
+                loop(xs, ys, zs, r :: acc)
+            case _ => acc
         };
-        loop(l1, l2, l3, identity)
+        reverse(loop(l1, l2, l3, Nil))
 
     ///
     /// Returns a triple of lists, the first containing all first components in `l`
@@ -1106,14 +1108,14 @@ mod List {
     /// Collects the results of applying the partial function `f` to every element in `l`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, l: List[a]): List[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(Nil)
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
             case x :: xs => match f(x) {
-                case None    => loop(xs, k)
-                case Some(v) => loop(xs, ks -> k(v :: ks))
+                case None    => loop(xs, acc)
+                case Some(v) => loop(xs, v :: acc)
             }
         };
-        loop(l, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Returns the first non-None result of applying the partial function `f` to each element of `l`.
@@ -1296,11 +1298,11 @@ mod List {
     /// `f` should return `None` to signal the end of building the list.
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
-        def loop(sst, k) = match f(sst) {
-            case None           => k(Nil)
-            case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
+        def loop(sst, acc) = match f(sst) {
+            case None           => acc
+            case Some((a, st1)) => loop(st1, a :: acc)
         };
-        loop(st, identity)
+        reverse(loop(st, Nil))
 
     ///
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -1311,11 +1313,11 @@ mod List {
     /// `next` should return `None` to signal the end of building the list.
     ///
     pub def unfoldWithIter(next: Unit -> Option[a] \ ef): List[a] \ ef =
-        def loop(k) = match next() {
-            case None    => k(Nil)
-            case Some(x) => loop(ks -> k(x :: ks))
+        def loop(acc) = match next() {
+            case None    => acc
+            case Some(x) => loop(x :: acc)
         };
-        loop(identity)
+        reverse(loop(Nil))
 
     ///
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -1328,12 +1330,15 @@ mod List {
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
     pub def unfoldWithOkIter(next: Unit -> Result[e, Option[a]] \ ef): Result[e, List[a]] \ ef =
-        def loop(k) = match next() {
-            case Ok(None)    => k(Ok(Nil))
-            case Err(e)      => k(Err(e))
-            case Ok(Some(x)) => loop(Result.flatMap(ks -> k(Ok(x :: ks))))
+        def loop(acc) = match next() {
+            case Ok(None)    => Ok(acc)
+            case Ok(Some(x)) => loop(x :: acc)
+            case Err(e)      => Err(e)
         };
-        loop(identity)
+        match loop(Nil) {
+            case Ok(l) => Ok(reverse(l))
+            case Err(err) => Err(err)
+        }
 
     ///
     /// Returns the list `l` with duplicates removed. The first occurrence of
@@ -1344,15 +1349,15 @@ mod List {
     /// need a custom equality test.
     ///
     pub def distinct(l: List[a]): List[a] with Eq[a] =
-        def loop(ll1, ll2, k) = match ll1 {
-            case Nil     => k(Nil)
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
-                if (memberOf(x, ll2))
-                    loop(xs, ll2, k)
+                if (memberOf(x, acc))
+                    loop(xs, acc)
                 else
-                    loop(xs, x :: ll2, ks -> k(x :: ks))
+                    loop(xs, x :: acc)
         };
-        loop(l, Nil, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Returns the list `l` with duplicates removed using the supplied function
@@ -1360,15 +1365,15 @@ mod List {
     /// for the removal of subsequent duplicates the order of `l` is preserved.
     ///
     pub def distinctWith(f: (a, a) -> Bool, l: List[a]): List[a] =
-        def loop(ll1, ll2, k) = match ll1 {
-            case Nil     => k(Nil)
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
-                if (exists(f(x), ll2))
-                    loop(xs, ll2, k)
+                if (exists(f(x), acc))
+                    loop(xs, acc)
                 else
-                    loop(xs, x :: ll2, ks -> k(x :: ks))
+                    loop(xs, x :: acc)
         };
-        loop(l, Nil, identity)
+        reverse(loop(l, Nil))
 
     ///
     /// Returns the sum of all elements in the list `l`.
