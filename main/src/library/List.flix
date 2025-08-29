@@ -346,13 +346,13 @@ mod List {
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
-        def loop(ll, accRes, acc) = match ll {
-            case Nil     => accRes
+        def loop(ll, bacc, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
-                let y = f(x, acc);
-                loop(xs, y :: accRes, y)
+                let y = f(x, bacc);
+                loop(xs, y, y :: acc)
         };
-        loop(reverse(l), s :: Nil, s)
+        loop(reverse(l), s, s :: Nil)
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
