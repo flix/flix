@@ -332,13 +332,13 @@ mod List {
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
-        def loop(ll, k, acc) = match ll {
-            case Nil     => k(Nil)
+        def loop(ll, accRes, acc) = match ll {
+            case Nil     => accRes
             case x :: xs =>
                 let y = f(acc, x);
-                loop(xs, ks -> k(y :: ks), y)
+                loop(xs, y :: accRes, y)
         };
-        loop(l, ks -> s :: ks, s)
+        reverse(loop(l, s :: Nil, s))
 
     ///
     /// Accumulates the result of applying `f` to `l` going right to left.
@@ -564,7 +564,7 @@ mod List {
     ///
     pub def removeAdjDupsWith(f: a -> a -> Bool \ ef, l: List[a]): List[a] \ ef = {
         def loop(head, acc, ll) = match ll {
-            case Nil     => List.reverse(acc)
+            case Nil     => acc
             case x :: xs =>
                 if (f(head, x)) {
                     loop(head, acc, xs)
@@ -574,7 +574,7 @@ mod List {
         };
         match l {
             case Nil     => Nil
-            case x :: xs => loop(x, x :: Nil, xs)
+            case x :: xs => reverse(loop(x, x :: Nil, xs))
         }
     }
 
@@ -1298,11 +1298,11 @@ mod List {
     /// `f` should return `None` to signal the end of building the list.
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): List[a] \ ef =
-        def loop(sst, k) = match f(sst) {
-            case None           => k(Nil)
-            case Some((a, st1)) => loop(st1, ks -> k(a :: ks))
+        def loop(sst, acc) = match f(sst) {
+            case None           => acc
+            case Some((a, st1)) => loop(st1, a :: acc)
         };
-        loop(st, identity)
+        reverse(loop(st, Nil))
 
     ///
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -1313,11 +1313,11 @@ mod List {
     /// `next` should return `None` to signal the end of building the list.
     ///
     pub def unfoldWithIter(next: Unit -> Option[a] \ ef): List[a] \ ef =
-        def loop(k) = match next() {
-            case None    => k(Nil)
-            case Some(x) => loop(ks -> k(x :: ks))
+        def loop(acc) = match next() {
+            case None    => acc
+            case Some(x) => loop(x :: acc)
         };
-        loop(identity)
+        reverse(loop(Nil))
 
     ///
     /// Build a list by applying the function `next` to `()`. `next` is expected to encapsulate
@@ -1330,12 +1330,15 @@ mod List {
     /// `next` should return `Err(e)` to signal that an error occurred. The function returns `Err(e)`.
     ///
     pub def unfoldWithOkIter(next: Unit -> Result[e, Option[a]] \ ef): Result[e, List[a]] \ ef =
-        def loop(k) = match next() {
-            case Ok(None)    => k(Ok(Nil))
-            case Err(e)      => k(Err(e))
-            case Ok(Some(x)) => loop(Result.flatMap(ks -> k(Ok(x :: ks))))
+        def loop(acc) = match next() {
+            case Ok(None)    => Ok(acc)
+            case Err(e)      => Err(e)
+            case Ok(Some(x)) => loop(x :: acc)
         };
-        loop(identity)
+        match loop(Nil) {
+            case Ok(l) => Ok(reverse(l))
+            case Err(err) => Err(err)
+        }
 
     ///
     /// Returns the list `l` with duplicates removed. The first occurrence of
