@@ -346,13 +346,13 @@ mod List {
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s :: Nil)
-            case x :: xs => loop(xs, ks -> match ks {
-                case ss :: _ => k(f(x, ss) :: ks)
-                case _       => unreachable!()})
+        def loop(ll, bacc, acc) = match ll {
+            case Nil     => acc
+            case x :: xs =>
+                let y = f(x, bacc);
+                loop(xs, y, y :: acc)
         };
-        loop(l, x -> checked_ecast(x))
+        loop(reverse(l), s, s :: Nil)
 
     ///
     /// Returns the result of applying `f` to every element in `l`.
@@ -712,11 +712,11 @@ mod List {
     /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, s))...)`.
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(s)
-            case x :: xs => loop(xs, ks -> k(f(x, ks)))
+        def loop(ll, acc) = match ll {
+            case Nil     => acc
+            case x :: xs => loop(xs, f(x, acc))
         };
-        loop(l, x -> checked_ecast(x))
+        loop(reverse(l), s)
 
     ///
     /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
@@ -749,14 +749,14 @@ mod List {
     /// Returns `None` if `l` is empty.
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, l: List[a]): Option[a] \ ef =
-        def loop(ll, k) = match ll {
-            case Nil     => k(None)
-            case x :: xs => loop(xs, ks -> k(match ks {
-                case None    => Some(x)
-                case Some(v) => Some(f(x, v))
-            }))
+        def loop(ll, acc) = match ll {
+            case Nil     => Some(acc)
+            case x :: xs => loop(xs, f(x, acc))
         };
-        loop(l, x -> checked_ecast(x))
+        match reverse(l) {
+            case Nil => None
+            case x :: xs => loop(xs, x)
+        }
 
     ///
     /// Returns the number of elements in `l` that satisfy the predicate `f`.
@@ -1090,13 +1090,11 @@ mod List {
     /// starting with the initial value `c` and going from right to left.
     ///
     pub def foldRight2(f: (a, b, c) -> c \ ef, c: c, l1: List[a], l2: List[b]): c \ ef =
-        def loop(ll1, ll2, k) = match (ll1, ll2) {
-            case (x :: xs, y :: ys) => loop(xs, ys, ks -> k(f(x, y, ks)))
-            case _                  => k(c)
+        def loop(ll1, ll2, acc) = match (ll1, ll2) {
+            case (x :: xs, y :: ys) => loop(xs, ys, f(x, y, acc))
+            case _                  => acc
         };
-        let len1 = length(l1);
-        let len2 = length(l2);
-        loop(drop(len1 - len2, l1), drop(len2 - len1, l2), x -> checked_ecast(x))
+        loop(reverse(l1), reverse(l2), c)
 
     ///
     /// Returns the result of mapping each element and combining the results.
