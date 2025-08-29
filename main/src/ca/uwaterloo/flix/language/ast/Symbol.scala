@@ -40,6 +40,7 @@ object Symbol {
   val Net: EffSym = mkEffSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffSym = mkEffSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
   val Sys: EffSym = mkEffSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Assert: EffSym = mkEffSym(Name.RootNS, Ident("Assert", SourceLocation.Unknown))
 
   /**
     * The set of all primitive effects defined in the Prelude.

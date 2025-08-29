@@ -400,6 +400,11 @@ object Type {
   val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys, Kind.Eff), SourceLocation.Unknown)
 
   /**
+    * Represents the Assert effect.
+    */
+  val Assert: Type = Type.Cst(TypeConstructor.Effect(Symbol.Assert, Kind.Eff), SourceLocation.Unknown)
+
+  /**
     * Represents the universal effect set.
     */
   val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)

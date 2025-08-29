@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -57,7 +58,8 @@ object EntryPoints {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
-    val (root2, errs2) = CheckEntryPoints.run(root1)
+    val root_with_wrapped_tests = WrapTest.run(root1)
+    val (root2, errs2) = CheckEntryPoints.run(root_with_wrapped_tests)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
     val (root3, errs3) = WrapMain.run(root2)
     // WrapMain might change main, so FindEntryPoints must be after.
@@ -593,6 +595,65 @@ object EntryPoints {
       val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
       TypedAst.Def(sym, spec, printCall, SourceLocation.Unknown)
+    }
+
+  }
+
+  private object WrapTest {
+
+
+    /**
+      * WrapTest takes all tests and wraps them in a default handler for Assert
+      *
+      * Then, it returns a new root with these new tests
+      *
+      */
+    def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+      val updatedDefs = ParOps.parMapValues(root.defs)( defn =>
+        if( isTest(defn))
+          mkTest(defn, root)
+        else defn
+      )
+      root.copy(defs = updatedDefs)
+    }
+    /**
+      * mkTest takes a test function and creates a new test function with a
+      * default Assert handler by using Assert.runWithIO.
+      *
+      * Takes def oldTest(arg1:t1, ...) : ret \ ef = exp
+      * Returns def oldTest(arg1:t1, ...) : ret \ IO + Sys + (ef - Assert) = Assert.runWithIO(_ -> exp)
+      */
+    private def mkTest(oldTest: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+      // The new type is the same as the wrapped test with an effect set of
+      // `IO + Sys + (eff - Assert)` where `eff` is the effect set of the old test.
+      val eff = Type.mkUnion(Type.IO, Type.Sys, Type.mkDifference(oldTest.spec.eff, Type.Assert, SourceLocation.Unknown)
+                            , SourceLocation.Unknown)
+      val tpe = Type.mkCurriedArrowWithEffect(oldTest.spec.fparams.map(_.tpe), eff, oldTest.spec.retTpe, SourceLocation.Unknown)
+      val spec = oldTest.spec.copy(
+        declaredScheme = oldTest.spec.declaredScheme.copy(base=tpe),
+        eff = eff,
+      )
+      // Get Assert.runWithIO symbol
+      val runWithIOSym = DefSymUse(root.defs(new Symbol.DefnSym(namespace=List("Assert"), text="runWithIO", loc=SourceLocation.Unknown, id=None)).sym, SourceLocation.Unknown)
+      // Create _ -> exp
+      val innerLambda = TypedAst.Expr.Lambda(fparam=TypedAst.FormalParam(
+                                                          bnd = TypedAst.Binder(sym = Symbol.freshVarSym("_", FormalParam, SourceLocation.Unknown), tpe = Type.Unit),
+                                                          mod = Modifiers(Nil),
+                                                          tpe = Type.Unit,
+                                                          src = TypeSource.Inferred,
+                                                          loc=SourceLocation.Unknown
+                                                          ),
+                                            exp=oldTest.exp,
+        tpe=Type.mkArrowWithEffect(Type.Unit, oldTest.spec.eff, oldTest.spec.retTpe, loc = SourceLocation.Unknown),
+        loc=SourceLocation.Unknown
+      )
+      // Create the instantiated type of runWithIO
+      val runWithIOArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, oldTest.spec.retTpe, SourceLocation.Unknown)
+      // Create Assert.runWithIO(_ -> exp)
+      val runWithIOCall = TypedAst.Expr.ApplyDef(runWithIOSym, List(innerLambda), List(innerLambda.tpe), runWithIOArrowType, oldTest.spec.retTpe, eff, SourceLocation.Unknown)
+
+      oldTest.copy(spec=spec,exp=runWithIOCall)
+
     }
 
   }
