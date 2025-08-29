@@ -332,13 +332,13 @@ mod List {
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): List[b] \ ef =
-        def loop(ll, accRes, acc) = match ll {
-            case Nil     => accRes
+        def loop(ll, bacc, acc) = match ll {
+            case Nil     => acc
             case x :: xs =>
-                let y = f(acc, x);
-                loop(xs, y :: accRes, y)
+                let y = f(bacc, x);
+                loop(xs, y, y :: acc)
         };
-        reverse(loop(l, s :: Nil, s))
+        reverse(loop(l, s, s :: Nil))
 
     ///
     /// Accumulates the result of applying `f` to `l` going right to left.
@@ -1332,8 +1332,8 @@ mod List {
     pub def unfoldWithOkIter(next: Unit -> Result[e, Option[a]] \ ef): Result[e, List[a]] \ ef =
         def loop(acc) = match next() {
             case Ok(None)    => Ok(acc)
-            case Err(e)      => Err(e)
             case Ok(Some(x)) => loop(x :: acc)
+            case Err(e)      => Err(e)
         };
         match loop(Nil) {
             case Ok(l) => Ok(reverse(l))
