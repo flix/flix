@@ -26,6 +26,9 @@
 /// Time/depth should be understood as follows: If a fact depend on some fact
 /// which has time/depth `k` then this facts has at most time/depth `k + 1`.
 ///
+/// This module removes `BoolExp.NotMemberOf` as the `ProvProject` introduced by `Lowering`
+/// must ensure this property.
+///
  mod Fixpoint3.Phase.Provenance {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, RamId, BoolExp}
@@ -51,8 +54,8 @@
     def augmentProgramInternal(program: RamProgram): RamProgram = match program {
         case RamProgram.Program(stmt, facts, predicates, indexInfo) => unsafely IO run {
             let (f1, f2) = facts;
-            let augmentedF1 = f1 |> Map.map(augmentFacts);
-            let augmentedF2 = f2 |> Map.map(augmentFacts);
+            let augmentedF1 = Map.map(augmentFacts, f1);
+            let augmentedF2 = Map.map(augmentFacts, f2);
             let augmentedFacts = (augmentedF1, augmentedF2);
             let augmentedStmt = augmentStmt(stmt);
             RamProgram.Program(augmentedStmt, augmentedFacts, predicates, indexInfo) |>
@@ -82,13 +85,13 @@
     /// Augments `RelOp`'s in `stmt` with `ProvMax` terms.
     ///
     def augmentStmt(stmt: RamStmt): RamStmt \ r= match stmt {
-        case RamStmt.Insert(op)         => augmentOp(Nil, op) |> RamStmt.Insert
+        case RamStmt.Insert(op)         => RamStmt.Insert(augmentOp(Nil, op))
         case RamStmt.MergeInto(_, _)    => stmt
         case RamStmt.Swap(_, _)         => stmt
         case RamStmt.Purge(_)           => stmt
-        case RamStmt.Seq(stmts)         => Vector.map(augmentStmt, stmts) |> RamStmt.Seq
-        case RamStmt.Par(stmts)         => Vector.map(augmentStmt, stmts) |> RamStmt.Par
-        case RamStmt.Until(bools, rest) => RamStmt.Until(bools, augmentStmt(rest))
+        case RamStmt.Seq(stmts)         => RamStmt.Seq(Vector.map(augmentStmt, stmts))
+        case RamStmt.Par(stmts)         => RamStmt.Par(Vector.map(augmentStmt, stmts))
+        case RamStmt.Until(bools, rest) => RamStmt.Until(removeNotMemberOf(bools), augmentStmt(rest))
         case RamStmt.Comment(_)         => stmt
     }
 
@@ -101,7 +104,7 @@
                 RelOp.Search(rowVar, relSym)
         case RelOp.Query(rowVar, relSym, bools, index, body) =>
             augmentOp((rowVar, arityOf(relSym)) :: rowVarsArity, body) |>
-                RelOp.Query(rowVar, relSym, bools, index)
+                RelOp.Query(rowVar, relSym, removeNotMemberOf(bools), index)
         case RelOp.Functional(rowVar, func, terms, body, arity) =>
             // Do not add this to `rowVarsArity`. We use this in `ProvMax` as `Functional`
             // has no concept of depth.
@@ -113,6 +116,21 @@
             };
             RelOp.Project(newTerms, relSym, ruleNum)
         case RelOp.If(boolExps, body) =>
-            augmentOp(rowVarsArity, body) |> RelOp.If(boolExps)
+            RelOp.If(removeNotMemberOf(boolExps), augmentOp(rowVarsArity, body))
     }
+
+
+    ///
+    /// Returns the `BoolExp`'s in `boolExps` without `NotMemberOf`.
+    ///
+    def removeNotMemberOf(boolExps: Vector[BoolExp]): Vector[BoolExp] = Vector.filterMap(notNotMemberOf, boolExps)
+
+    ///
+    /// Returns `Some(boolExp)` if `boolExp` is not `NotMemberOf`. Otherwise returns `None`.
+    ///
+    def notNotMemberOf(boolExp: BoolExp): Option[BoolExp] = match boolExp {
+        case BoolExp.NotMemberOf(_, _) => None
+        case _ => Some(boolExp)
+    }
+
 }

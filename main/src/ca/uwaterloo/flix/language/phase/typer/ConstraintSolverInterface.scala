@@ -116,6 +116,7 @@ object ConstraintSolverInterface {
   private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
     case TypeConstraint.Equality(Type.UnresolvedJvmType(member, _), _, prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+
     case TypeConstraint.Equality(_, Type.UnresolvedJvmType(member, _), prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
 
@@ -137,8 +138,18 @@ object ConstraintSolverInterface {
           List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
       }
 
-    case TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(baseTpe1, baseTpe2, loc)) =>
-      List(mkMismatchedTypesOrEffects(subst(baseTpe1), subst(baseTpe2), tpe1, tpe2, renv, loc))
+    case TypeConstraint.Equality(baseType1, baseType2, Provenance.Match(fullType1, fullType2, loc)) =>
+      val default = List(mkMismatchedTypesOrEffects(subst(baseType1), subst(baseType2), subst(fullType1), subst(fullType2), renv, loc))
+
+      (fullType1.typeConstructor, fullType1.typeConstructor) match {
+        case (Some(TypeConstructor.SchemaRowExtend(pred1)), Some(TypeConstructor.SchemaRowExtend(pred2))) if pred1 == pred2 =>
+          (baseType1.typeConstructor, baseType2.typeConstructor) match {
+            case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
+              List(TypeError.MismatchedPredicateArity(pred1, arity1, arity2, baseType1.loc, baseType2.loc, loc))
+            case _ => default
+          }
+        case _ => default
+      }
 
     case TypeConstraint.Equality(tpe1, tpe2, prov) =>
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
@@ -147,6 +158,7 @@ object ConstraintSolverInterface {
     // TODO We should establish invariants on conflicted/equality cases.
     case TypeConstraint.Conflicted(Type.UnresolvedJvmType(member, _), _, prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
+
     case TypeConstraint.Conflicted(_, Type.UnresolvedJvmType(member, _), prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
 
