@@ -56,9 +56,8 @@ object Symbol {
   /**
     * The set of effects allowed in tests.
     */
-  val TestEffs: SortedSet[EffSym] = SortedSet.from(List(
-    Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys, Assert
-  ))
+  val TestEffs: SortedSet[EffSym] =  PrimitiveEffs + Assert
+
 
   /**
     * Returns `true` if the given effect symbol is a primitive effect.
