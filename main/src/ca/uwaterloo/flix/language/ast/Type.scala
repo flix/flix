@@ -380,6 +380,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), SourceLocation.Unknown)
 
   /**
+    * Represents the Assert effect.
+    */
+  val Assert: Type = Type.Cst(TypeConstructor.Effect(Symbol.Assert, Kind.Eff), SourceLocation.Unknown)
+
+  /**
     * Represents the Chan effect.
     */
   val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan, Kind.Eff), SourceLocation.Unknown)
