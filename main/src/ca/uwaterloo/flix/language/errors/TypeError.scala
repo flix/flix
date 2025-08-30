@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Denotation
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -153,6 +154,34 @@ object TypeError {
          |${code(loc1, s"here '${pred.name}' has arity $arity1.")}
          |
          |${code(loc2, s"here '${pred.name}' has arity $arity2.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Denotation.
+    *
+    * @param pred the predicate label.
+    * @param den1 the first denotation.
+    * @param den2 the second denotation.
+    * @param loc1 the location where the predicate is used with the first denotation.
+    * @param loc2 the location where the predicate is used with the second denotation.
+    * @param loc  the location where the unification error occurred.
+    */
+  case class MismatchedPredicateDenotation(pred: Name.Pred, den1: Denotation, den2: Denotation, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Mismatched predicate denotation for '${pred.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      def pretty(den: Denotation): String = den match {
+        case Denotation.Relational => "relation"
+        case Denotation.Latticenal => "lattice"
+      }
+      s""">> Mismatched predicate denotation for '${cyan(pred.name)}'.
+         |
+         |${code(loc1, s"here '${pred.name}' is a ${pretty(den1)}.")}
+         |
+         |${code(loc2, s"here '${pred.name}' is a ${pretty(den2)}.")}
          |""".stripMargin
     }
   }
