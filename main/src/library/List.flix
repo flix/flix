@@ -1067,11 +1067,11 @@ mod List {
     /// third components in `l`.
     ///
     pub def unzip3(l: List[(a, b, c)]): (List[a], List[b], List[c]) =
-        def loop(ll, k) = match ll {
-            case Nil             => k((Nil, Nil, Nil))
-            case (x, y, z) :: xs => loop(xs, match (ks, ls, ms) -> k((x :: ks, y :: ls, z :: ms)))
+        def loop(ll, acc1, acc2, acc3) = match ll {
+            case Nil             => (reverse(acc1), reverse(acc2), reverse(acc3))
+            case (x, y, z) :: xs => loop(xs, x :: acc1, y :: acc2, z :: acc3)
         };
-        loop(l, identity)
+        loop(l, Nil, Nil, Nil)
 
     ///
     /// Alias for `foldLeft2`.
