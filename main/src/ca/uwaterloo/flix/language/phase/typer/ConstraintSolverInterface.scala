@@ -18,14 +18,13 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, EqualityConstraint, Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{KindedAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, Kind}
+import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Denotation, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
-
 
 import scala.annotation.tailrec
 
@@ -146,8 +145,19 @@ object ConstraintSolverInterface {
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Relation(arity1)), Some(TypeConstructor.Relation(arity2))) if arity1 != arity2 =>
               List(TypeError.MismatchedPredicateArity(pred1, arity1, arity2, baseType1.loc, baseType2.loc, loc))
+
+            case (Some(TypeConstructor.Lattice(arity1)), Some(TypeConstructor.Lattice(arity2))) if arity1 != arity2 =>
+              List(TypeError.MismatchedPredicateArity(pred1, arity1, arity2, baseType1.loc, baseType2.loc, loc))
+
+            case (Some(TypeConstructor.Relation(_)), Some(TypeConstructor.Lattice(_))) =>
+              List(TypeError.MismatchedPredicateDenotation(pred1, Denotation.Relational, Denotation.Latticenal, baseType1.loc, baseType2.loc, loc))
+
+            case (Some(TypeConstructor.Lattice(_)), Some(TypeConstructor.Relation(_))) =>
+              List(TypeError.MismatchedPredicateDenotation(pred1, Denotation.Latticenal, Denotation.Relational, baseType1.loc, baseType2.loc, loc))
+
             case _ => default
           }
+
         case _ => default
       }
 
@@ -178,7 +188,7 @@ object ConstraintSolverInterface {
       List(mkMismatchedTypesOrEffects(subst(tpe1), subst(tpe2), subst(tpe1), subst(tpe2), renv, prov.loc))
 
     case TypeConstraint.Trait(sym, tpe, loc) =>
-     tpe.typeConstructor match {
+      tpe.typeConstructor match {
         case Some(TypeConstructor.Arrow(_)) => List(TypeError.MissingInstanceArrow(sym, subst(tpe), renv, loc))
         case _ =>
           if (sym == PredefinedTraits.lookupTraitSym("Eq", root)) {
@@ -196,8 +206,8 @@ object ConstraintSolverInterface {
   }
 
   /**
-   *  Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
-   */
+    * Create either the MismatchedTypes or MismatchedEffects error based on the kind of the type.
+    */
   private def mkMismatchedTypesOrEffects(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     baseType1.kind match {
       case Kind.Eff =>
