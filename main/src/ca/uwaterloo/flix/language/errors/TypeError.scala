@@ -179,9 +179,9 @@ object TypeError {
       }
       s""">> Mismatched predicate denotation for '${cyan(pred.name)}'.
          |
-         |${code(loc1, s"here '${pred.name}' is a ${pretty(den1)}.")}
+         |${code(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.")}
          |
-         |${code(loc2, s"here '${pred.name}' is a ${pretty(den2)}.")}
+         |${code(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.")}
          |""".stripMargin
     }
   }
