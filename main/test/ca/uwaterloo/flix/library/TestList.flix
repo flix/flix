@@ -49,7 +49,7 @@ mod TestList {
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def isEmpty01(): Bool = List.isEmpty(Nil) == true
+    def isEmpty01(): Unit \ Assert = Assert.assertTrue(List.isEmpty(Nil))
 
     @Test
     def isEmpty02(): Bool = List.isEmpty(1 :: Nil) == false
