@@ -669,6 +669,6 @@ mod TestFoldable {
                 resume(x)
             }
         };
-        Assert.eq(List#{1, 2}, filtered) and Assert.eq(List#{3, 4}, MutList.toList(effects))
+        List#{1, 2} == filtered and List#{3, 4} == MutList.toList(effects)
     }
 }
