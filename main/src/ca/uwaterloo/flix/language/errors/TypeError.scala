@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
+import ca.uwaterloo.flix.language.ast.shared.Denotation
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -75,8 +74,8 @@ object TypeError {
     * Java field not found type error.
     *
     * @param base the source location of the receiver expression.
-    * @param tpe the type of the receiver object.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the receiver object.
+    * @param loc  the location where the error occurred.
     */
   case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
@@ -131,6 +130,58 @@ object TypeError {
          |
          |Type One: ${cyan(formatType(fullType1, Some(renv)))}
          |Type Two: ${magenta(formatType(fullType2, Some(renv), minimizeEffs = true))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Arity.
+    *
+    * @param pred   the predicate label.
+    * @param arity1 the first arity.
+    * @param arity2 the second arity.
+    * @param loc1   the location where the predicate is used with the first arity.
+    * @param loc2   the location where the predicate is used with the second arity.
+    * @param loc    the location where the unification error occurred.
+    */
+  case class MismatchedPredicateArity(pred: Name.Pred, arity1: Int, arity2: Int, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Mismatched predicate arity: '${pred.name}/$arity1' and '${pred.name}/$arity2'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Mismatched predicate arity: '${cyan(pred.name)}/$arity1' and '${cyan(pred.name)}/$arity2'.
+         |
+         |${code(loc1, s"here '${pred.name}' has arity $arity1.")}
+         |
+         |${code(loc2, s"here '${pred.name}' has arity $arity2.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Denotation.
+    *
+    * @param pred the predicate label.
+    * @param den1 the first denotation.
+    * @param den2 the second denotation.
+    * @param loc1 the location where the predicate is used with the first denotation.
+    * @param loc2 the location where the predicate is used with the second denotation.
+    * @param loc  the location where the unification error occurred.
+    */
+  case class MismatchedPredicateDenotation(pred: Name.Pred, den1: Denotation, den2: Denotation, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Mismatched predicate denotation for '${pred.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      def pretty(den: Denotation): String = den match {
+        case Denotation.Relational => "relation"
+        case Denotation.Latticenal => "lattice"
+      }
+      s""">> Mismatched predicate denotation for '${cyan(pred.name)}'.
+         |
+         |${code(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.")}
+         |
+         |${code(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.")}
          |""".stripMargin
     }
   }
@@ -532,9 +583,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved constructor type error.
-   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
-   */
+    * Unresolved constructor type error.
+    * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
+    */
   case class UnresolvedConstructor(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved constructor"
 
@@ -542,9 +593,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved field type error.
-   * This is a dummy error used in Java field type reconstruction for GetField.
-   */
+    * Unresolved field type error.
+    * This is a dummy error used in Java field type reconstruction for GetField.
+    */
   case class UnresolvedField(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved field"
 
@@ -552,9 +603,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeMethod.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeMethod.
+    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved method"
 
@@ -562,9 +613,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
+    */
   case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved static method"
 

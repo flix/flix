@@ -377,6 +377,19 @@ mod Fixpoint3.Interpreter {
                 let latVal = evalBoxedTerm(env, boxing, Vector.get(len - 1, terms));
                 if (latVal `leq` bot) ()
                 else BPlusTree.putWith(lub, tuple, latVal, relIndex)
+            case RelOp.ProvProject(terms, rel, fullRel) =>
+                let relIndex = lookupIndex(rel, db);
+                let fullIndex = lookupIndex(fullRel, db);
+                let tuple = Vector.map(evalTerm(env, boxing), terms);
+                let depthPos = Vector.length(terms) - 2;
+                let chooseSmallest = k1 -> _v1 -> k2 -> _v2 -> Vector.get(depthPos, k1) < Vector.get(depthPos, k2);
+                match BPlusTree.getKeyAndValue(tuple, fullIndex) {
+                    case None =>
+                        BPlusTree.putIf(chooseSmallest, tuple, Boxed.NoValue, relIndex)
+                    case Some((k, v)) if (chooseSmallest(tuple, Boxed.NoValue, k, v)) =>
+                        BPlusTree.putIf(chooseSmallest, tuple, Boxed.NoValue, relIndex)
+                    case _ => ()
+                }
             case RelOp.Functional(tupleIndex, f, terms, writes, body, i2) =>
                 let args = Vector.map(evalBoxedTerm(env, boxing), terms);
                 let result = f(args)|>

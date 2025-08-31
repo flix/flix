@@ -1814,7 +1814,7 @@ object Lowering {
     */
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
-      case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+      case Type.Cst(TypeConstructor.Relation(_), _) => Nil
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }

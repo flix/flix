@@ -84,6 +84,14 @@ mod Test.Exp.Fixpoint.PQuery {
         let pp = pquery pr select A((1, 2)) with {A};
         Vector.map(v -> ematch v { case A(x) => x }, pp) `Assert.eq` Vector#{(1, 2)}
 
+    @Test
+    def testPQueryNullary(): Bool =
+        let pr = #{
+            A.
+        };
+        let pp = pquery pr select A with {A};
+        Vector.map(v -> ematch v { case A => 42 }, pp) `Assert.eq` Vector#{42}
+
     ///////////////////////////////////////////////////////////////////////////
     // Provenance at depth 2
     ///////////////////////////////////////////////////////////////////////////
@@ -187,6 +195,16 @@ mod Test.Exp.Fixpoint.PQuery {
         };
         let pp = pquery pr select R((1, 2)) with {A};
         Vector.map(v -> ematch v { case A(x) => x }, pp) `Assert.eq` Vector#{(1, 2), (1, 2)}
+
+    @Test
+    def testPQueryDepth2Nullary(): Bool =
+        let pr = #{
+            A.
+            B :- A.
+            R :- B, B.
+        };
+        let pp = pquery pr select R with {A};
+        Vector.map(v -> ematch v { case A => 42 }, pp) `Assert.eq` Vector#{42, 42}
 
     ///////////////////////////////////////////////////////////////////////////
     // Provenance for cycles
@@ -967,6 +985,50 @@ mod Test.Exp.Fixpoint.PQuery {
         Vector.map(v -> ematch v {
             case A(x) => "A(${x})"
         }, pp) `Assert.eq` Vector#{"A(3)"}
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    /// Provenance should compute the shortest path.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryShortestPath01(): Bool = {
+        let db = #{
+            A(1). A(2). A(3). A(4). A(5).
+        };
+        let pr = #{
+            B(1) :- not A(-1).
+            B(x + 1) :- B(x), A(x).
+            C(-1) :- not B(-2).
+            C(x) :- B(x).
+            C(x) :- A(x), C(-1).
+        };
+        let pp = pquery db, pr select C(5) with {A, B, C};
+        Vector.map(v -> ematch v {
+            case A(x) => x
+            case B(x) => x
+            case C(x) => x
+        }, pp) `Assert.eq` Vector#{5, 5, -1}
+    }
+
+    @Test
+    def testPQueryShortestPath02(): Bool = {
+        let db = #{
+            A(1). A(2). A(3). A(4). A(5).
+        };
+        let pr = #{
+            B(1) :- not A(-1).
+            B(x + 1) :- B(x), A(x).
+            C(-1) :- not B(-2).
+            C(x) :- B(x).
+            C(x) :- A(x), C(-1).
+        };
+        let pp = pquery db, pr select C(4) with {A, B, C};
+        Vector.map(v -> ematch v {
+            case A(x) => x
+            case B(x) => x
+            case C(x) => x
+        }, pp) `Assert.eq` Vector#{4, 4, -1}
     }
 
 }

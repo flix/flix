@@ -2225,4 +2225,82 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedType](result)
   }
+
+  test("TypeError.MismatchedPredicateArity.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |        Foo(1, 2, 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(;1).
+        |        Foo(1; 2).
+        |        Foo(1, 2; 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1, 2).
+        |        Foo(1; 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1; 2).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
 }
