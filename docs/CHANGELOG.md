@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.61.1:
+- Compiler: Improve type error messages (thanks Magnus!)
+
 Version 0.61.0:
 - Compiler: Reworked `foreach` to use the `ForEach` trait (thanks Ry!)
 - Library: Added completely new Datalog engine with much improved performance (thanks Adam and Casper!)
