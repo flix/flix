@@ -11,7 +11,7 @@ mod Test.Handler.ZeroShot.Recursive {
         } with handler Exc {
             def raise(_k) = 42
         };
-        Assert.eq(0, r(0))
+        0 == r(0)
 
     @Test
     def testRecursiveTryWith02(): Bool =
@@ -20,7 +20,7 @@ mod Test.Handler.ZeroShot.Recursive {
         } with handler Exc {
             def raise(_k) = 42
         };
-        Assert.eq(42, r(1))
+        42 == r(1)
 
     @Test
     def testRecursiveTryWith03(): Bool =
@@ -29,7 +29,7 @@ mod Test.Handler.ZeroShot.Recursive {
         } with handler Exc {
             def raise(_k) = 42
         };
-        Assert.eq(42, r(2))
+        42 == r(2)
 
     @Test
     def testRecursiveTryWith04(): Bool =
@@ -38,7 +38,7 @@ mod Test.Handler.ZeroShot.Recursive {
         } with handler Exc {
             def raise(_k) = 42
         };
-        Assert.eq(42, r(3))
+        42 == r(3)
 
     @Test
     def testRecursiveTryWith05(): Bool =
@@ -47,6 +47,6 @@ mod Test.Handler.ZeroShot.Recursive {
         } with handler Exc {
             def raise(_k) = 42
         };
-        Assert.eq(42, r(10))
+        42 == r(10)
 
 }
