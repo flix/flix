@@ -739,8 +739,7 @@ object Weeder2 {
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
       TokenKind.KeywordOverride,
-      TokenKind.KeywordMut,
-      TokenKind.KeywordInline)
+      TokenKind.KeywordMut)
 
     private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit sctx: SharedContext): Modifiers = {
       tryPick(TreeKind.ModifierList, tree) match {
