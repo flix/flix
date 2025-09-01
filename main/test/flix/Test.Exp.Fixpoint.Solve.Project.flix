@@ -1,11 +1,13 @@
 mod Test.Exp.Fixpoint.Project {
 
+    use Assert.assertEq;
+
     /////////////////////////////////////////////////////////////////////////////
     // Tests with single predicate projection                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testProjectSingleInt01(): Bool = {
+    def testProjectSingleInt01(): Unit \ Assert = {
         let p = #{
             A(1). A(2). A(3).
             B(10). B(20).
@@ -14,11 +16,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project A;
         let expected = Vector#{1, 2, 3};
         let actual = query q select x from A(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectSingleInt02(): Bool = {
+    def testProjectSingleInt02(): Unit \ Assert = {
         let p = #{
             A(42).
             B(1). B(2). B(3).
@@ -27,11 +29,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project B;
         let expected = Vector#{1, 2, 3};
         let actual = query q select x from B(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectSingleString01(): Bool = {
+    def testProjectSingleString01(): Unit \ Assert = {
         let p = #{
             A("a"). A("b").
             B("x"). B("y"). B("z").
@@ -40,11 +42,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project A;
         let expected = Vector#{"a", "b"};
         let actual = query q select x from A(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectSingleString02(): Bool = {
+    def testProjectSingleString02(): Unit \ Assert = {
         let p = #{
             A("p").
             B("q"). B("r"). B("s").
@@ -53,11 +55,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project B;
         let expected = Vector#{"q", "r", "s"};
         let actual = query q select x from B(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectSingleBool01(): Bool = {
+    def testProjectSingleBool01(): Unit \ Assert = {
         let p = #{
             A(true). A(false).
             B(true).
@@ -66,11 +68,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project A;
         let expected = Vector#{false, true};
         let actual = query q select x from A(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectSingleChar01(): Bool = {
+    def testProjectSingleChar01(): Unit \ Assert = {
         let p = #{
             A('a'). A('b'). A('c').
             B('x'). B('y').
@@ -79,7 +81,7 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project A;
         let expected = Vector#{'a', 'b', 'c'};
         let actual = query q select x from A(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -87,7 +89,7 @@ mod Test.Exp.Fixpoint.Project {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testProjectDoubleInt01(): Bool = {
+    def testProjectDoubleInt01(): Unit \ Assert = {
         let p = #{
             A(1). A(2).
             B(10). B(20).
@@ -98,11 +100,12 @@ mod Test.Exp.Fixpoint.Project {
         let expectedB = Vector#{10, 20};
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB)
     }
 
     @Test
-    def testProjectDoubleInt02(): Bool = {
+    def testProjectDoubleInt02(): Unit \ Assert = {
         let p = #{
             A(5).
             B(15). B(25). B(35).
@@ -113,11 +116,12 @@ mod Test.Exp.Fixpoint.Project {
         let expectedC = Vector#{50, 60};
         let actualB = query q select x from B(x);
         let actualC = query q select x from C(x);
-        expectedB `Assert.eq` actualB and expectedC `Assert.eq` actualC
+        assertEq(expected = expectedB, actualB);
+        assertEq(expected = expectedC, actualC)
     }
 
     @Test
-    def testProjectDoubleString01(): Bool = {
+    def testProjectDoubleString01(): Unit \ Assert = {
         let p = #{
             A("a"). A("b").
             B("x"). B("y").
@@ -128,11 +132,12 @@ mod Test.Exp.Fixpoint.Project {
         let expectedC = Vector#{"p", "q", "r"};
         let actualA = query q select x from A(x);
         let actualC = query q select x from C(x);
-        expectedA `Assert.eq` actualA and expectedC `Assert.eq` actualC
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedC, actualC)
     }
 
     @Test
-    def testProjectDoubleMixed01(): Bool = {
+    def testProjectDoubleMixed01(): Unit \ Assert = {
         let p = #{
             A(42). A(99).
             B("x"). B("y"). B("z").
@@ -143,11 +148,12 @@ mod Test.Exp.Fixpoint.Project {
         let expectedB = Vector#{"x", "y", "z"};
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB)
     }
 
     @Test
-    def testProjectDoubleMixed02(): Bool = {
+    def testProjectDoubleMixed02(): Unit \ Assert = {
         let p = #{
             A('x'). A('y'). A('z').
             B(7). B(8).
@@ -158,7 +164,8 @@ mod Test.Exp.Fixpoint.Project {
         let expectedB = Vector#{7, 8};
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -166,7 +173,7 @@ mod Test.Exp.Fixpoint.Project {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testProjectTripleInt01(): Bool = {
+    def testProjectTripleInt01(): Unit \ Assert = {
         let p = #{
             A(1). A(2).
             B(10). B(20).
@@ -180,11 +187,13 @@ mod Test.Exp.Fixpoint.Project {
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
         let actualC = query q select x from C(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB and expectedC `Assert.eq` actualC
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB);
+        assertEq(expected = expectedC, actualC)
     }
 
     @Test
-    def testProjectTripleInt02(): Bool = {
+    def testProjectTripleInt02(): Unit \ Assert = {
         let p = #{
             A(3). A(6). A(9).
             B(12). B(15).
@@ -198,11 +207,13 @@ mod Test.Exp.Fixpoint.Project {
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
         let actualD = query q select x from D(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB and expectedD `Assert.eq` actualD
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB);
+        assertEq(expected = expectedD, actualD)
     }
 
     @Test
-    def testProjectTripleString01(): Bool = {
+    def testProjectTripleString01(): Unit \ Assert = {
         let p = #{
             A("a"). A("b").
             B("x"). B("y"). B("z").
@@ -216,11 +227,13 @@ mod Test.Exp.Fixpoint.Project {
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
         let actualC = query q select x from C(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB and expectedC `Assert.eq` actualC
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB);
+        assertEq(expected = expectedC, actualC)
     }
 
     @Test
-    def testProjectTripleMixed01(): Bool = {
+    def testProjectTripleMixed01(): Unit \ Assert = {
         let p = #{
             A(100). A(200). A(300).
             B("a"). B("b").
@@ -234,11 +247,13 @@ mod Test.Exp.Fixpoint.Project {
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
         let actualC = query q select x from C(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB and expectedC `Assert.eq` actualC
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB);
+        assertEq(expected = expectedC, actualC)
     }
 
     @Test
-    def testProjectTripleMixed02(): Bool = {
+    def testProjectTripleMixed02(): Unit \ Assert = {
         let p = #{
             A('p'). A('q').
             B(777). B(888). B(999).
@@ -252,7 +267,9 @@ mod Test.Exp.Fixpoint.Project {
         let actualA = query q select x from A(x);
         let actualB = query q select x from B(x);
         let actualC = query q select x from C(x);
-        expectedA `Assert.eq` actualA and expectedB `Assert.eq` actualB and expectedC `Assert.eq` actualC
+        assertEq(expected = expectedA, actualA);
+        assertEq(expected = expectedB, actualB);
+        assertEq(expected = expectedC, actualC)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -260,7 +277,7 @@ mod Test.Exp.Fixpoint.Project {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testProjectSingleWithRules01(): Bool = {
+    def testProjectSingleWithRules01(): Unit \ Assert = {
         let p = #{
             A(1). A(2). A(3).
             P(x) :- A(x).
@@ -269,11 +286,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project P;
         let expected = Vector#{1, 2, 3};
         let actual = query q select x from P(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectSingleWithRules02(): Bool = {
+    def testProjectSingleWithRules02(): Unit \ Assert = {
         let p = #{
             A(1). A(2). A(3).
             P(x) :- A(x).
@@ -283,11 +300,11 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project Q;
         let expected = Vector#{1, 2, 3};
         let actual = query q select x from Q(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testProjectDoubleWithRules01(): Bool = {
+    def testProjectDoubleWithRules01(): Unit \ Assert = {
         let p = #{
             A(1). A(2).
             P(x) :- A(x).
@@ -299,11 +316,12 @@ mod Test.Exp.Fixpoint.Project {
         let expectedQ = Vector#{1, 2};
         let actualP = query q select x from P(x);
         let actualQ = query q select x from Q(x);
-        expectedP `Assert.eq` actualP and expectedQ `Assert.eq` actualQ
+        assertEq(expected = expectedP, actualP);
+        assertEq(expected = expectedQ, actualQ)
     }
 
     @Test
-    def testProjectDoubleWithRules02(): Bool = {
+    def testProjectDoubleWithRules02(): Unit \ Assert = {
         let p = #{
             A(1). A(2).
             P(x) :- A(x).
@@ -315,11 +333,12 @@ mod Test.Exp.Fixpoint.Project {
         let expectedQ = Vector#{3, 4};
         let actualP = query q select x from P(x);
         let actualQ = query q select x from Q(x);
-        expectedP `Assert.eq` actualP and expectedQ `Assert.eq` actualQ
+        assertEq(expected = expectedP, actualP);
+        assertEq(expected = expectedQ, actualQ)
     }
 
     @Test
-    def testProjectTripleWithRules01(): Bool = {
+    def testProjectTripleWithRules01(): Unit \ Assert = {
         let p = #{
             A(1). A(2).
             P(x) :- A(x).
@@ -333,11 +352,13 @@ mod Test.Exp.Fixpoint.Project {
         let actualP = query q select x from P(x);
         let actualQ = query q select x from Q(x);
         let actualR = query q select x from R(x);
-        expectedP `Assert.eq` actualP and expectedQ `Assert.eq` actualQ and expectedR `Assert.eq` actualR
+        assertEq(expected = expectedP, actualP);
+        assertEq(expected = expectedQ, actualQ);
+        assertEq(expected = expectedR, actualR)
     }
 
     @Test
-    def testProjectEmptyResult01(): Bool = {
+    def testProjectEmptyResult01(): Unit \ Assert = {
         let p = #{
             A(1). A(2).
             B("a").
@@ -345,7 +366,7 @@ mod Test.Exp.Fixpoint.Project {
         let q = solve p project C;
         let expected = (Vector.empty(): Vector[Int32]);
         let actual = query q select x from C(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
 }
