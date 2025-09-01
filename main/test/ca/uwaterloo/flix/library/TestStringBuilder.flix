@@ -663,7 +663,7 @@ def setLength01(): Bool = region rc {
     let sb = StringBuilder.empty(rc);
     StringBuilder.append("1234567890", sb);
     StringBuilder.setLength(4, sb);
-    1234 == StringBuilder.toString(sb)
+    "1234" == StringBuilder.toString(sb)
 }
 
 @test
