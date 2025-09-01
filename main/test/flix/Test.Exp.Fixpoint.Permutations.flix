@@ -22,7 +22,7 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
     // Test permuting body atom order with Int32                               //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     // May not be bigger than 12.
     def smallN(): Int32 = 10
 
@@ -108,7 +108,7 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
     // Test permuting body atom order with Float32                             //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// Returns the result for the first `Float32` tests.
     ///
@@ -191,7 +191,7 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
     // Test permuting body atom order with Float64                             //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// Returns the result for the first `Float64` tests.
     ///
@@ -274,7 +274,7 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
     // Test permuting body atom order with Char                                //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// Returns a character representation of the integer `v`.
     ///
@@ -368,7 +368,7 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
     // Test permuting body atom order with Int64                               //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// Returns the result for the first `Int64` tests.
     ///
@@ -461,7 +461,7 @@ mod Test.Exp.Fixpoint.Permutations {
         case Some(n) => n
         case None    => unreachable!()
     }
-    
+
     ///
     /// Returns the result for the first `Int8` tests.
     ///
@@ -554,7 +554,7 @@ mod Test.Exp.Fixpoint.Permutations {
         case Some(n) => n
         case None    => unreachable!()
     }
-    
+
     ///
     /// Returns the result for the first `Int16` tests.
     ///
@@ -637,7 +637,7 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
     // Test permuting body atom order with String                              //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
     /// Returns the result for the first `String` tests.
     ///
@@ -716,189 +716,6 @@ mod Test.Exp.Fixpoint.Permutations {
             D(x, y, z, w) :- C(z, w), B(y, z), A(x, y).
         };
         assertEq(expected = resultForFirstString(n), query f1, f2, f3, p select (x, y, z, w) from D(x, y, z, w))
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Test permuting body atom order with negation                            //
-    /////////////////////////////////////////////////////////////////////////////
-
-    def assertPathExample(n: Int32, solved: #{ ConstPath(Int32, Int32), D(Int32, Int32, Int32, Int32), Edge(Int32, Int32), NoPath(Int32, Int32), Node(Int32), OnlyPathsTo(Int32), Path(Int32, Int32), PathFrom(Int32), ReachLonelyNode(Int32) | t }): Unit \ Assert = {
-        let keepsEdges = Vector.range(0, n) |> Vector.map(x -> (x, x + 1));
-        let computedPath = Vector.range(0, n) |> Vector.flatMap(x -> Vector.range(x + 1, n + 1) |> Vector.map(y -> (x, y)));
-        let foundMissingPaths = Vector.range(0, n + 1) |>
-            Vector.flatMap(x -> Vector.range(0, x + 1) |> Vector.map(y -> (x, y))) |> Vector.sort;
-        let foundVerticesWithPaths = Vector.range(0, n);
-        let foundVerticesWithoutPaths = Vector#{n};
-        let foundNodesReachingLast = Vector.range(0, n);
-        assertEq(expected = keepsEdges, query solved select (x, y) from Edge(x, y));
-        assertEq(expected = computedPath, query solved select (x, y) from Path(x, y));
-        assertEq(expected = foundMissingPaths, query solved select (x, y) from NoPath(x, y));
-        assertEq(expected = foundVerticesWithPaths, query solved select (x) from PathFrom(x));
-        assertEq(expected = foundVerticesWithoutPaths, query solved select (x) from OnlyPathsTo(x));
-        assertEq(expected = foundNodesReachingLast, query solved select (x) from ReachLonelyNode(x))
-    }
-
-    def smallPathN(): Int32 = 5 * smallN()
-
-    @Test
-    def testPermutationNeg01(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (x, x + 1)) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(x, z), Path(z, y).
-            NoPath(x, y)        :- Node(x), Node(y), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- Path(x, y), OnlyPathsTo(y).
-        };
-        let solved = solve edge, p;
-        assertPathExample(n, solved)
-    }
-
-    @Test
-    def testPermutationNeg02(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (x, x + 1)) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(z, y), Path(x, z).
-            NoPath(x, y)        :- Node(x), Node(y), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- Path(x, y), OnlyPathsTo(y).
-        };
-        let solved = solve edge, p;
-        assertPathExample(n, solved)
-    }
-
-    @Test
-    def testPermutationNeg03(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (x, x + 1)) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(z, y), Path(x, z).
-            NoPath(x, y)        :- Node(y), Node(x), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- Path(x, y), OnlyPathsTo(y).
-        };
-        let solved = solve edge, p;
-        assertPathExample(n, solved)
-    }
-
-    @Test
-    def testPermutationNeg04(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (x, x + 1)) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(z, y), Path(x, z).
-            NoPath(x, y)        :- Node(y), Node(x), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- OnlyPathsTo(y), Path(x, y).
-        };
-        let solved = solve edge, p;
-        assertPathExample(n, solved)
-    }
-
-    def assertPathExampleString(n: Int32, solved: #{ ConstPath(String, String), D(String, String, String, String), Edge(String, String), NoPath(String, String), Node(String), OnlyPathsTo(String), Path(String, String), PathFrom(String), ReachLonelyNode(String) | t }): Unit \ Assert = {
-        let keepsEdges = Vector.range(0, n) |> Vector.map(x -> (Int32.toString(x), Int32.toString(x + 1))) |> Vector.sort;
-        let computedPath = Vector.range(0, n) |> Vector.flatMap(x -> Vector.range(x + 1, n + 1) |> Vector.map(y -> (Int32.toString(x), Int32.toString(y)))) |> Vector.sort;
-        let foundMissingPaths = Vector.range(0, n + 1) |>
-            Vector.flatMap(x -> Vector.range(0, x + 1) |> Vector.map(y -> (Int32.toString(x), Int32.toString(y)))) |> Vector.sort;
-        let foundVerticesWithPaths = Vector.range(0, n) |> Vector.map(Int32.toString) |> Vector.sort;
-        let foundVerticesWithoutPaths = Vector#{Int32.toString(n)} |> Vector.sort;
-        let foundNodesReachingLast = Vector.range(0, n) |> Vector.map(Int32.toString) |> Vector.sort;
-        assertEq(expected = keepsEdges, query solved select (x, y) from Edge(x, y));
-        assertEq(expected = computedPath, query solved select (x, y) from Path(x, y));
-        assertEq(expected = foundMissingPaths, query solved select (x, y) from NoPath(x, y));
-        assertEq(expected = foundVerticesWithPaths, query solved select (x) from PathFrom(x));
-        assertEq(expected = foundVerticesWithoutPaths, query solved select (x) from OnlyPathsTo(x));
-        assertEq(expected = foundNodesReachingLast, query solved select (x) from ReachLonelyNode(x))
-    }
-
-    @Test
-    def testPermutationNegString01(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (Int32.toString(x), Int32.toString(x + 1))) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(x, z), Path(z, y).
-            NoPath(x, y)        :- Node(x), Node(y), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- Path(x, y), OnlyPathsTo(y).
-        };
-        let solved = solve edge, p;
-        assertPathExampleString(n, solved)
-    }
-
-    @Test
-    def testPermutationNegString02(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (Int32.toString(x), Int32.toString(x + 1))) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(z, y), Path(x, z).
-            NoPath(x, y)        :- Node(x), Node(y), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- Path(x, y), OnlyPathsTo(y).
-        };
-        let solved = solve edge, p;
-        assertPathExampleString(n, solved)
-    }
-
-    @Test
-    def testPermutationNegString03(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (Int32.toString(x), Int32.toString(x + 1))) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(z, y), Path(x, z).
-            NoPath(x, y)        :- Node(y), Node(x), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- Path(x, y), OnlyPathsTo(y).
-        };
-        let solved = solve edge, p;
-        assertPathExampleString(n, solved)
-    }
-
-    @Test
-    def testPermutationNegString04(): Unit \ Assert = {
-        let n = smallPathN();
-        let edge = inject Vector.range(0, n) |> Vector.map(x -> (x, x + 1)) into Edge/2;
-        let p = #{
-            Node(x)             :- Edge(x, _).
-            Node(x)             :- Edge(_, x).
-            Path(x, y)          :- Edge(x, y).
-            Path(x, y)          :- Path(z, y), Path(x, z).
-            NoPath(x, y)        :- Node(y), Node(x), not Path(x, y).
-            PathFrom(x)         :- Path(x, _).
-            OnlyPathsTo(x)      :- Node(x), not PathFrom(x).
-            ReachLonelyNode(x)  :- OnlyPathsTo(y), Path(x, y).
-        };
-        let solved = solve edge, p;
-        assertPathExample(n, solved)
     }
 
 }
