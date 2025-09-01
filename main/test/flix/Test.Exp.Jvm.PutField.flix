@@ -22,4 +22,20 @@ mod Test.Exp.Jvm.PutField {
         f(p2);
         p1.x == 42 and p2.x == 0 and p1.y == p1.y and p1.y == 100
 
+    @Test
+    def testPutField04(): Unit \ IO =
+        new Point(42, 43).x = 1
+
+    @Test
+    def testPutField05(): Unit \ IO =
+        new Point(42, 43).x=1
+
+    @Test
+    def testPutField06(): Unit \ IO =
+        (new Point(42, 43).x) = 1
+
+    @Test
+    def testPutField07(): Unit \ IO =
+        { rp = { p = new Point(42, 43) } }#rp#p.y=100
+
 }
