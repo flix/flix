@@ -724,12 +724,19 @@ mod Test.Exp.Fixpoint.Permutations {
     /////////////////////////////////////////////////////////////////////////////
 
     def assertPathExample(n: Int32, solved: #{ ConstPath(Int32, Int32), D(Int32, Int32, Int32, Int32), Edge(Int32, Int32), NoPath(Int32, Int32), Node(Int32), OnlyPathsTo(Int32), Path(Int32, Int32), PathFrom(Int32), ReachLonelyNode(Int32) | t }): Unit \ Assert = {
-        assertEq(expected = Vector.range(0, n) |> Vector.map(x -> (x, x + 1)), query solved select (x, y) from Edge(x, y));
-        assertEq(expected = Vector.range(0, n) |> Vector.flatMap(x -> Vector.range(x + 1, n + 1) |> Vector.map(y -> (x, y))), query solved select (x, y) from Path(x, y));
-        assertEq(expected = Vector.range(0, n + 1) |> Vector.flatMap(x -> Vector.range(0, x + 1) |> Vector.map(y -> (x, y))) |> Vector.sort, query solved select (x, y) from NoPath(x, y));
-        assertEq(expected = Vector.range(0, n), query solved select (x) from PathFrom(x));
-        assertEq(expected = Vector#{n}, query solved select (x) from OnlyPathsTo(x));
-        assertEq(expected = Vector.range(0, n), query solved select (x) from ReachLonelyNode(x))
+        let keepsEdges = Vector.range(0, n) |> Vector.map(x -> (x, x + 1));
+        let computedPath = Vector.range(0, n) |> Vector.flatMap(x -> Vector.range(x + 1, n + 1) |> Vector.map(y -> (x, y)));
+        let foundMissingPaths = Vector.range(0, n + 1) |>
+            Vector.flatMap(x -> Vector.range(0, x + 1) |> Vector.map(y -> (x, y))) |> Vector.sort;
+        let foundVerticesWithPaths = Vector.range(0, n);
+        let foundVerticesWithoutPaths = Vector#{n};
+        let foundNodesReachingLast = Vector.range(0, n);
+        assertEq(expected = keepsEdges, query solved select (x, y) from Edge(x, y));
+        assertEq(expected = computedPath, query solved select (x, y) from Path(x, y));
+        assertEq(expected = foundMissingPaths, query solved select (x, y) from NoPath(x, y));
+        assertEq(expected = foundVerticesWithPaths, query solved select (x) from PathFrom(x));
+        assertEq(expected = foundVerticesWithoutPaths, query solved select (x) from OnlyPathsTo(x));
+        assertEq(expected = foundNodesReachingLast, query solved select (x) from ReachLonelyNode(x))
     }
 
     def smallPathN(): Int32 = 5 * smallN()
@@ -807,12 +814,19 @@ mod Test.Exp.Fixpoint.Permutations {
     }
 
     def assertPathExampleString(n: Int32, solved: #{ ConstPath(String, String), D(String, String, String, String), Edge(String, String), NoPath(String, String), Node(String), OnlyPathsTo(String), Path(String, String), PathFrom(String), ReachLonelyNode(String) | t }): Unit \ Assert = {
-        assertEq(expected = Vector.range(0, n) |> Vector.map(x -> (Int32.toString(x), Int32.toString(x + 1))) |> Vector.sort, query solved select (x, y) from Edge(x, y));
-        assertEq(expected = Vector.range(0, n) |> Vector.flatMap(x -> Vector.range(x + 1, n + 1) |> Vector.map(y -> (Int32.toString(x), Int32.toString(y)))) |> Vector.sort, query solved select (x, y) from Path(x, y));
-        assertEq(expected = Vector.range(0, n + 1) |> Vector.flatMap(x -> Vector.range(0, x + 1) |> Vector.map(y -> (Int32.toString(x), Int32.toString(y)))) |> Vector.sort, query solved select (x, y) from NoPath(x, y));
-        assertEq(expected = Vector.range(0, n) |> Vector.map(Int32.toString) |> Vector.sort, query solved select (x) from PathFrom(x));
-        assertEq(expected = Vector#{Int32.toString(n)} |> Vector.sort, query solved select (x) from OnlyPathsTo(x));
-        assertEq(expected = Vector.range(0, n) |> Vector.map(Int32.toString) |> Vector.sort, query solved select (x) from ReachLonelyNode(x))
+        let keepsEdges = Vector.range(0, n) |> Vector.map(x -> (Int32.toString(x), Int32.toString(x + 1))) |> Vector.sort;
+        let computedPath = Vector.range(0, n) |> Vector.flatMap(x -> Vector.range(x + 1, n + 1) |> Vector.map(y -> (Int32.toString(x), Int32.toString(y)))) |> Vector.sort;
+        let foundMissingPaths = Vector.range(0, n + 1) |>
+            Vector.flatMap(x -> Vector.range(0, x + 1) |> Vector.map(y -> (Int32.toString(x), Int32.toString(y)))) |> Vector.sort;
+        let foundVerticesWithPaths = Vector.range(0, n) |> Vector.map(Int32.toString) |> Vector.sort;
+        let foundVerticesWithoutPaths = Vector#{Int32.toString(n)} |> Vector.sort;
+        let foundNodesReachingLast = Vector.range(0, n) |> Vector.map(Int32.toString) |> Vector.sort;
+        assertEq(expected = keepsEdges, query solved select (x, y) from Edge(x, y));
+        assertEq(expected = computedPath, query solved select (x, y) from Path(x, y));
+        assertEq(expected = foundMissingPaths, query solved select (x, y) from NoPath(x, y));
+        assertEq(expected = foundVerticesWithPaths, query solved select (x) from PathFrom(x));
+        assertEq(expected = foundVerticesWithoutPaths, query solved select (x) from OnlyPathsTo(x));
+        assertEq(expected = foundNodesReachingLast, query solved select (x) from ReachLonelyNode(x))
     }
 
     @Test
