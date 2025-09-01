@@ -748,7 +748,8 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let result = run {
         |        mutual1(10)
         |    } with handler AskTell ;
-        |    Assert.eq(Some(84), result)
+        |    true
+        |
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
