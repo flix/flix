@@ -17,6 +17,8 @@
 
 mod Test.Exp.Fixpoint.Functional {
 
+    use Assert.assertEq;
+
     /////////////////////////////////////////////////////////////////////////////
     // Tests with functional predicates                                        //
     /////////////////////////////////////////////////////////////////////////////
@@ -33,7 +35,7 @@ mod Test.Exp.Fixpoint.Functional {
         Vector.range(b, e) |> Vector.filter(isPrime)
 
     @Test
-    def testFunctional01(): Bool = {
+    def testFunctional01(): Unit \ Assert = {
         let p = #{
             P(100).
             Primes(x) :- P(y), let x = primesInRange(0, y).
@@ -42,11 +44,11 @@ mod Test.Exp.Fixpoint.Functional {
             2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
             43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
         };
-        res `Assert.eq` query p select (x) from Primes(x)
+        assertEq(expected = res, query p select (x) from Primes(x))
     }
 
     @Test
-    def testFunctional02(): Bool = {
+    def testFunctional02(): Unit \ Assert = {
         let startinPrimes = inject Vector#{2, 3, 5, 7, 11} into PrimesUntil/1;
         let p = #{
             PrimesPlus20(x + 20):- PrimesUntil(x).
@@ -68,11 +70,11 @@ mod Test.Exp.Fixpoint.Functional {
             787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
             859, 863, 877, 881, 883, 887
         };
-        res `Assert.eq` query startinPrimes, p select (x) from PrimesUntil(x)
+        assertEq(expected = res, query startinPrimes, p select (x) from PrimesUntil(x))
     }
 
     @Test
-    def testFunctional03(): Bool = {
+    def testFunctional03(): Unit \ Assert = {
         let p = #{
             Start(1).
             End(10).
@@ -81,11 +83,11 @@ mod Test.Exp.Fixpoint.Functional {
             Succ(p) :- Nat(x), let p = Vector#{x + 1}, End(y), if(p <= y).
         };
         let res = Vector#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        res `Assert.eq` query p select x from Nat(x)
+        assertEq(expected = res, query p select x from Nat(x))
     }
 
     @Test
-    def testFunctional04(): Bool = {
+    def testFunctional04(): Unit \ Assert = {
         let p = #{
             Start(10).
             End(1).
@@ -94,11 +96,11 @@ mod Test.Exp.Fixpoint.Functional {
             Pre(p) :- Nat(x), let p = Vector#{x - 1}, End(y), if(p >= y).
         };
         let res = Vector#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        res `Assert.eq` query p select x from Nat(x)
+        assertEq(expected = res, query p select x from Nat(x))
     }
 
     @Test
-    def testFunctional05(): Bool = {
+    def testFunctional05(): Unit \ Assert = {
         let p = #{
             Start(0).
             End(10).
@@ -107,36 +109,36 @@ mod Test.Exp.Fixpoint.Functional {
             Ranges(p, q) :- Start(x), End(y), let p = Vector.range(x, y), Start2(a), End2(b), let q = Vector.range(a, b).
         };
         let res = Vector.range(0, 10) |> Vector.flatMap(x -> Vector.range(10, 20) |> Vector.map(y -> (x, y))) |> Vector.sort;
-        res `Assert.eq` query p select (x, y) from Ranges(x, y)
+        assertEq(expected = res, query p select (x, y) from Ranges(x, y))
     }
 
     @Test
-    def testFunctionalZero01(): Bool = {
+    def testFunctionalZero01(): Unit \ Assert = {
         let p = #{
             Empty(p) :- let p = Vector#{}.
         };
         let res: Vector[Int32] = Vector#{};
-        res `Assert.eq` query p select x from Empty(x)
+        assertEq(expected = res, query p select x from Empty(x))
     }
 
     @Test
-    def testFunctionalZero02(): Bool = {
+    def testFunctionalZero02(): Unit \ Assert = {
         let p = #{
             NonEmpty(p) :- let p = Vector#{1}.
         };
-        Vector#{1} `Assert.eq` query p select x from NonEmpty(x)
+        assertEq(expected = Vector#{1}, query p select x from NonEmpty(x))
     }
 
     @Test
-    def testFunctionalZero03(): Bool = {
+    def testFunctionalZero03(): Unit \ Assert = {
         let p = #{
             Range(p) :- let p = Vector.range(0, 10).
         };
-        Vector.range(0, 10) `Assert.eq` query p select x from Range(x)
+        assertEq(expected = Vector.range(0, 10), query p select x from Range(x))
     }
 
     @Test
-    def testFunctionalZero04(): Bool = {
+    def testFunctionalZero04(): Unit \ Assert = {
         let p = #{
             Primes(x) :- let x = primesInRange(0, 100).
         };
@@ -144,72 +146,72 @@ mod Test.Exp.Fixpoint.Functional {
             2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
             43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
         };
-        res `Assert.eq` query p select (x) from Primes(x)
+        assertEq(expected = res, query p select (x) from Primes(x))
     }
 
     @Test
-    def testFunctionalZero05(): Bool = {
+    def testFunctionalZero05(): Unit \ Assert = {
         let p = #{
             NonEmpty(x) :- let x = Vector#{"SomeString"}.
         };
-        Vector#{"SomeString"} `Assert.eq` query p select (x) from NonEmpty(x)
+        assertEq(expected = Vector#{"SomeString"}, query p select (x) from NonEmpty(x))
     }
 
     @Test
-    def testFunctionalZero06(): Bool = {
+    def testFunctionalZero06(): Unit \ Assert = {
         let p = #{
             NonEmpty(x) :- let x = Vector#{(1, 2)}.
         };
-        Vector#{(1, 2)} `Assert.eq` query p select (x) from NonEmpty(x)
+        assertEq(expected = Vector#{(1, 2)}, query p select (x) from NonEmpty(x))
     }
 
     @Test
-    def testFunctionalZero07(): Bool = {
+    def testFunctionalZero07(): Unit \ Assert = {
         let p = #{
             NonEmpty(x) :- let x = Vector#{1i64}.
         };
-        Vector#{1i64} `Assert.eq` query p select (x) from NonEmpty(x)
+        assertEq(expected = Vector#{1i64}, query p select (x) from NonEmpty(x))
     }
 
     @Test
-    def testFunctionalZero08(): Bool = {
+    def testFunctionalZero08(): Unit \ Assert = {
         let p = #{
             NonEmpty(x) :- let x = Vector#{1f64}.
         };
-        Vector#{1f64} `Assert.eq` query p select (x) from NonEmpty(x)
+        assertEq(expected = Vector#{1f64}, query p select (x) from NonEmpty(x))
     }
 
     @Test
-    def testFunctionalUnusedVar01(): Bool = {
+    def testFunctionalUnusedVar01(): Unit \ Assert = {
         let db = #{
             A(1). A(3). A(5).
         };
         let pr = #{
             R(x) :- A(x), let y = Vector#{3}, if (y + x > 5 and x + y < 7).
         };
-        Vector#{3} `Assert.eq` query db, pr select x from R(x)
+        assertEq(expected = Vector#{3}, query db, pr select x from R(x))
     }
 
     @Test
-    def testFunctionalUnusedVar02(): Bool = {
+    def testFunctionalUnusedVar02(): Unit \ Assert = {
         let db = #{
             A(1). A(3). A(5).
         };
         let pr = #{
             R(x) :- A(x), let y = Vector#{3}.
         };
-        Vector#{1, 3, 5} `Assert.eq` query db, pr select x from R(x)
+        assertEq(expected = Vector#{1, 3, 5}, query db, pr select x from R(x))
     }
 
     @Test
-    def testFunctionalUnusedVar03(): Bool = {
+    def testFunctionalUnusedVar03(): Unit \ Assert = {
         let db = #{
             A(1). A(3). A(5).
         };
         let pr = #{
             R(10) :- A(x), let y = Vector#{x}.
         };
-        Vector#{10} `Assert.eq` query db, pr select x from R(x)
+        assertEq(expected = Vector#{10}, query db, pr select x from R(x))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -217,13 +219,13 @@ mod Test.Exp.Fixpoint.Functional {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testFunctional06(): Bool = {
+    def testFunctional06(): Unit \ Assert = {
         let p = #{
             Start(;0).
             End(;10).
             InRange(p) :- let p = Vector.range(x, y), Start(;x), End(;y).
         };
-        Vector.range(0, 10) `Assert.eq` query p select x from InRange(x)
+        assertEq(expected = Vector.range(0, 10), query p select x from InRange(x))
     }
 
     def vectorRangeFromDown(x: Down[Int32], y: Down[Int32]): Vector[Int32] = {
@@ -233,24 +235,24 @@ mod Test.Exp.Fixpoint.Functional {
     }
 
     @Test
-    def testFunctional07(): Bool = {
+    def testFunctional07(): Unit \ Assert = {
         let p = #{
             Start(;Down.Down(0)).
             Mid(;Down.Down(3)).
             End(;Down.Down(10)).
             InRange(p) :- let p = vectorRangeFromDown(x, y), Start(;x), Mid(;x), End(;y).
         };
-        Vector.range(3, 10) `Assert.eq` query p select x from InRange(x)
+        assertEq(expected = Vector.range(3, 10), query p select x from InRange(x))
     }
 
     @Test
-    def testFunctional08(): Bool = {
+    def testFunctional08(): Unit \ Assert = {
         let p = #{
             Start(;Down.Down(0)).
             Mid(;Down.Down(3)).
             End(;Down.Down(10)).
             InRange(p) :- let p = vectorRangeFromDown(x, y), Mid(;x), Start(;x), End(;y).
         };
-        Vector.range(3, 10) `Assert.eq` query p select x from InRange(x)
+        assertEq(expected = Vector.range(3, 10), query p select x from InRange(x))
     }
 }
