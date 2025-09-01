@@ -773,7 +773,6 @@ object Weeder2 {
         sctx.errors.add(error)
       }
       token.kind match {
-        // TODO: there is no Modifier for 'inline'
         case TokenKind.KeywordSealed => Modifier.Sealed
         case TokenKind.KeywordLawful => Modifier.Lawful
         case TokenKind.KeywordPub => Modifier.Public
