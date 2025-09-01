@@ -93,7 +93,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordIf => "'if'"
       case TokenKind.KeywordImport => "'import'"
       case TokenKind.KeywordInject => "'inject'"
-      case TokenKind.KeywordInline => "'inline'"
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
@@ -253,7 +252,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordIf => true
     case TokenKind.KeywordImport => true
     case TokenKind.KeywordInject => true
-    case TokenKind.KeywordInline => true
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
@@ -412,7 +410,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordLawful
          | TokenKind.KeywordPub
          | TokenKind.KeywordMut
-         | TokenKind.KeywordInline
          | TokenKind.KeywordOverride => true
     case _ => false
   }
@@ -619,7 +616,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordFix
          | TokenKind.KeywordForall
          | TokenKind.KeywordFrom
-         | TokenKind.KeywordInline
          | TokenKind.KeywordInstance
          | TokenKind.KeywordInstanceOf
          | TokenKind.KeywordInto
@@ -984,8 +980,6 @@ object TokenKind {
   case object KeywordImport extends TokenKind
 
   case object KeywordInject extends TokenKind
-
-  case object KeywordInline extends TokenKind
 
   case object KeywordInstance extends TokenKind
 

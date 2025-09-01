@@ -49,7 +49,7 @@ mod Test.Handler.NewObject {
             let r = Ref.fresh(rc, 0);
             newAskRunnable(r).$run();
             let result = Ref.get(r);
-            Assert.eq(42, result)
+            42 == result
         }
 
     @Test
@@ -58,7 +58,7 @@ mod Test.Handler.NewObject {
             let r = Ref.fresh(rc, 0);
             newGenRunnable(r).$run();
             let result = Ref.get(r);
-            Assert.eq(42, result)
+            42 == result
         }
 
     @Test
@@ -67,7 +67,7 @@ mod Test.Handler.NewObject {
             let r = Ref.fresh(rc, 0);
             newGenAskRunnable(r).$run();
             let result = Ref.get(r);
-            Assert.eq(84, result)
+            84 == result
         }
 
 }
