@@ -49,38 +49,38 @@ mod Test.Handler.Ask.String {
 
     @Test
     def testSample01(): Bool =
-        Assert.eq(Nil, sample("a"))
+        Nil == sample("a")
 
     @Test
     def testSample02(): Bool =
-        Assert.eq("a" :: Nil, sample("b"))
+        "a" :: Nil == sample("b")
 
     @Test
     def testSample03(): Bool =
-        Assert.eq("a" :: "b" :: Nil, sample("c"))
+        "a" :: "b" :: Nil == sample("c")
 
     @Test
     def testSample04(): Bool =
-        Assert.eq("a" :: "b" :: "c" :: Nil, sample("d"))
+        "a" :: "b" :: "c" :: Nil == sample("d")
 
     @Test
     def testSample05(): Bool =
-        Assert.eq("a" :: "b" :: "c" :: "d" :: Nil, sample("e"))
+        "a" :: "b" :: "c" :: "d" :: Nil == sample("e")
 
     @Test
     def testSample06(): Bool =
-        Assert.eq("a" :: "b" :: "c" :: "d" :: "e" :: Nil, sample("f"))
+        "a" :: "b" :: "c" :: "d" :: "e" :: Nil == sample("f")
 
     @Test
     def testSample07(): Bool =
-        Assert.eq("a" :: "b" :: "c" :: "d" :: "e" :: "f" :: Nil, sample("g"))
+        "a" :: "b" :: "c" :: "d" :: "e" :: "f" :: Nil == sample("g")
 
     @Test
     def testSample08(): Bool =
-        Assert.eq(range("a", "k"), sample("k"))
+        range("a", "k") == sample("k")
 
     @Test
     def testSample09(): Bool =
-        Assert.eq(range("a", "z"), sample("z"))
+        range("a", "z") == sample("z")
 
 }

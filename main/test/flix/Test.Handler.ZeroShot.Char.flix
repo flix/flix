@@ -12,7 +12,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testLinear02(): Bool =
@@ -23,7 +23,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testLinear03(): Bool =
@@ -35,7 +35,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testRecursiveLetRec01(): Bool =
@@ -46,7 +46,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testRecursiveLetRec02(): Bool =
@@ -57,7 +57,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testRecursiveLetRec03(): Bool =
@@ -68,7 +68,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testMutualRecursive01(): Bool =
@@ -77,7 +77,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testMutualRecursive02(): Bool =
@@ -86,7 +86,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testMutualRecursive03(): Bool =
@@ -95,7 +95,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testMutualRecursive04(): Bool =
@@ -104,7 +104,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testMutualRecursive05(): Bool =
@@ -113,7 +113,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'a'
         };
-        Assert.eq('a', result)
+        'a' == result
 
     @Test
     def testMutualRecursive06(): Bool =
@@ -122,7 +122,7 @@ mod Test.Handler.ZeroShot.Char {
         } with handler Exc {
             def raise(_k) = 'b'
         };
-        Assert.eq('b', result)
+        'b' == result
 
     def f(): Char \ Exc =
          Exc.raise();
