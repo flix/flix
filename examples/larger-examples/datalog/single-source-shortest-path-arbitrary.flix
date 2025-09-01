@@ -280,24 +280,24 @@ mod ShortestPathN {
 
     @Test
     def testExampleGraphShortestPaths01(): Bool =
-        Assert.eq(Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 3, 4, 2}, 3 => Vector#{0, 1, 3}, 4 => Vector#{0, 1, 3, 4}, 5 => Vector#{0, 1, 3, 4, 2, 5}}, ssspn(0, exampleGraph01()))
+        ssspn(0, exampleGraph01()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 3, 4, 2}, 3 => Vector#{0, 1, 3}, 4 => Vector#{0, 1, 3, 4}, 5 => Vector#{0, 1, 3, 4, 2, 5}}
 
     @Test
     def testExampleGraphShortestPaths02(): Bool =
-        Assert.eq(Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 1, 4}, 5 => Vector#{0, 1, 4, 5}}, ssspn(0, exampleGraph02()))
+        ssspn(0, exampleGraph02()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 1, 4}, 5 => Vector#{0, 1, 4, 5}}
 
     @Test
     def testExampleGraphShortestPaths03(): Bool =
-        Assert.eq(Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}}, ssspn(0, exampleGraph03()))
+        ssspn(0, exampleGraph03()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}}
 
     @Test
     def testExampleGraphShortestPaths04(): Bool =
-        Assert.eq(Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}, 4 => Vector#{0, 4},
+        ssspn(0, exampleGraph04()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 1, 2, 3}, 4 => Vector#{0, 4},
             5 => Vector#{0, 1, 2, 5}, 6 => Vector#{0, 1, 2, 5, 6}, 7 => Vector#{0, 1, 2, 5, 7}, 8 => Vector#{0, 1, 2, 5, 7, 8},
-            9 => Vector#{0, 1, 2, 5, 6, 9}, 10 => Vector#{0, 1, 2, 3, 10}}, ssspn(0, exampleGraph04()))
+            9 => Vector#{0, 1, 2, 5, 6, 9}, 10 => Vector#{0, 1, 2, 3, 10}}
 
     @Test
     def testExampleGraphShortestPaths05(): Bool =
-        Assert.eq(Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 3, 4}, 5 => Vector#{0, 1, 5}, 6 => Vector#{0, 1, 5, 6}}, ssspn(0, exampleGraph05()))
+        ssspn(0, exampleGraph05()) == Map#{1 => Vector#{0, 1}, 2 => Vector#{0, 1, 2}, 3 => Vector#{0, 3}, 4 => Vector#{0, 3, 4}, 5 => Vector#{0, 1, 5}, 6 => Vector#{0, 1, 5, 6}}
 
 }
