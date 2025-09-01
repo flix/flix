@@ -98,11 +98,12 @@ mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.ExecutableRam.WriteTuple
     use Fixpoint3.Ast.Ram
-    use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, getTermRamId, IndexInformation, RamId, RelSym, RowVar, Search, toDenotation}
+    use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, getTermRamId, IndexInformation, Predicates, RamId, RelSym, RowVar, Search, toDenotation}
     use Fixpoint3.Ast.Shared.{Denotation, PredSym}
     use Fixpoint3.Boxed
     use Fixpoint3.Boxing
     use Fixpoint3.BoxingType.{Boxing, RamIdToPos};
+    use Fixpoint3.Predicate.{getRelSymAsType, PredType}
     use Fixpoint3.UniqueInts
     use Fixpoint3.Util.getOrCrash
 
@@ -167,7 +168,7 @@ mod Fixpoint3.Phase.Lowering {
             let idToIndex = UniqueInts.empty(rc);
             let (boxing, newFacts, idToBoxing) = Boxing.initialize(rc, withProv, program);
             let writeTo = (MutMap.empty(rc), MutMap.empty(rc));
-            let loweredStmt = lowerStmt(rc, idToIndex, (idToBoxing, boxing), writeTo, indexInfo, stmt);
+            let loweredStmt = lowerStmt(rc, idToIndex, (idToBoxing, boxing), writeTo, indexInfo, meta, withProv, stmt);
 
             let constWrites = snd(writeTo)
                 |> MutMap.foldWithKey(acc1 -> outerPos -> inner ->
@@ -202,12 +203,14 @@ mod Fixpoint3.Phase.Lowering {
         boxingInfo: (RamIdToPos, Boxing[r]),
         writeTo: (WriteTos[r], ConstWrites[r]),
         indexInfo: IndexInformation,
+        predicates: Predicates,
+        withProv: Bool,
         stmt: Ram.RamStmt
     ): ExecutableRam.RamStmt \ r =
-        let lowerStmtRec = lowerStmt(rc, idToIndex, boxingInfo, writeTo, indexInfo);
+        let lowerStmtRec = lowerStmt(rc, idToIndex, boxingInfo, writeTo, indexInfo, predicates, withProv);
         match stmt {
             case Ram.RamStmt.Insert(op) =>
-                let newOp = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, (Nil, MutDisjointSets.empty(rc)), op);
+                let newOp = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, (Nil, MutDisjointSets.empty(rc)), predicates, withProv, op);
                 ExecutableRam.RamStmt.Insert(newOp)
             case Ram.RamStmt.MergeInto(newRel, otherRel) =>
                 // `MergeInto` should simply be repeated for all indexes built on `deltaRel`.
@@ -259,8 +262,8 @@ mod Fixpoint3.Phase.Lowering {
                 } else {
                     ExecutableRam.RamStmt.Seq(purges)
                 }
-            case Ram.RamStmt.Seq(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ExecutableRam.RamStmt.Seq
-            case Ram.RamStmt.Par(xs) => Vector.map(x -> lowerStmtRec(x), xs) |> ExecutableRam.RamStmt.Par
+            case Ram.RamStmt.Seq(xs) => ExecutableRam.RamStmt.Seq(Vector.map(x -> lowerStmtRec(x), xs))
+            case Ram.RamStmt.Par(xs) => ExecutableRam.RamStmt.Par(Vector.map(x -> lowerStmtRec(x), xs))
             case Ram.RamStmt.Until(test, body) =>
                 let newTests = test |>
                     Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, (Nil, MutDisjointSets.empty(rc))));
@@ -281,10 +284,12 @@ mod Fixpoint3.Phase.Lowering {
         writeTo: (WriteTos[r], ConstWrites[r]),
         indexInfo: IndexInformation,
         meetWithMap: MeetWithMap[r],
+        predicates: Predicates,
+        withProv: Bool,
         op: Ram.RelOp
     ): ExecutableRam.RelOp \ r =
-        let lowerOpRec = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, meetWithMap);
-        let lowerOpRecNewRowVar = rv -> lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, addRowVarToMeetWithMap(rv, meetWithMap));
+        let lowerOpRec = lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, meetWithMap, predicates, withProv);
+        let lowerOpRecNewRowVar = rv -> lowerOp(rc, idToIndex, boxingInfo, writeTo, indexInfo, addRowVarToMeetWithMap(rv, meetWithMap), predicates, withProv);
         match op {
             case Ram.RelOp.Search(rv, relSym, body) =>
                 let den = toDenotation(relSym);
@@ -337,9 +342,13 @@ mod Fixpoint3.Phase.Lowering {
                 let newRelPos = getOrCrash(Map.get((s, 0), placements));
                 let den = toDenotation(s);
                 let loweredTerms = Vector.map(lowerTerm(idToIndex, boxingInfo, meetWithMap), terms);
-                ExecutableRam.RelOp.Project(
-                    loweredTerms, newRelPos, den
-                )
+                if (not withProv) {
+                    ExecutableRam.RelOp.Project(loweredTerms, newRelPos, den)
+                } else {
+                    // Have to get the full relation to be able to get the depth of it.
+                    let relPos = getOrCrash(Map.get((getRelSymAsType(s, PredType.Full, predicates), 0), placements));
+                    ExecutableRam.RelOp.ProvProject(loweredTerms, newRelPos, relPos)
+                }
             case Ram.RelOp.If(boolExps, body) =>
                 ExecutableRam.RelOp.If(Vector.filterMap(lowerBool(idToIndex, boxingInfo, indexInfo, meetWithMap), boolExps), lowerOpRec(body))
         }

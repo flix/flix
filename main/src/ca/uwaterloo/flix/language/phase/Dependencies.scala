@@ -633,15 +633,14 @@ object Dependencies {
   }
 
   private def visitExtPattern(p: TypedAst.ExtPattern)(implicit sctx: SharedContext): Unit = p match {
-    case ExtPattern.Default(tpe, _) =>
-      visitType(tpe)
+    case ExtPattern.Default(_) =>
+      ()
 
-    case ExtPattern.Tag(_, pats, tpe, _) =>
+    case ExtPattern.Tag(_, pats, _) =>
       pats.foreach(visitExtTagPattern)
-      visitType(tpe)
 
-    case ExtPattern.Error(tpe, _) =>
-      visitType(tpe)
+    case ExtPattern.Error(_) =>
+      ()
   }
 
   private def visitExtTagPattern(v: TypedAst.ExtTagPattern)(implicit sctx: SharedContext): Unit = v match {

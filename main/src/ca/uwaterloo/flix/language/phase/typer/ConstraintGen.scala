@@ -477,17 +477,37 @@ object ConstraintGen {
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case Expr.ExtMatch(exp, rules, loc) =>
+        // Note that x_i_m mean last variable term `x` of tag `i`. Think of `m` as shorthand for `max` or `last`.
+        // Thus, it may be the case that `|x_i_1, ..., x_i_m| != |x_j_1, ..., x_j_m|` but equality may occur.
+        // This also means `t_i_k != t_j_k` can happen and that equality can also occur.
+        //
+        // Gamma |- x_i_j : t_i_j
+        // Gamma, x_i_1 : t_i_1, ..., x_i_m : t_i_m |- exp_i : t // This is the result type
+        // Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) |#
+        // ef = Union(effs(exp_0), effs(exp_1), ..., effs(exp_n))
+        // -----------------------------------------------
+        // Gamma |- ematch exp_0 {
+        //              case Tag_1(x_1_1, ..., x_1_m) => exp_1
+        //              ...
+        //              case Tag_n(x_n_1, ..., x_n_m) => exp_n
+        //           } : t \ ef
+        //
+        // Lastly, if `case _ => exp_default` occurs (or an error pattern), then
+        //   Gamma |- exp_default : t                // This is just a special case of the second rule from the top.
+        // and the type of exp_0 is updated to have a fresh row variable, i.e., for fresh variable `r`:
+        //   Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) | r |#
+        //
         val (scrutineeType, scrutineeEff) = visitExp(exp)
         val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
         val tagPatTypes = patTypes.collect { case Left(tag) => tag }
         val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
         val defaultSchemaRow = // Note: An empty list of patterns cannot occur and errors are treated as default cases.
-          if (defaultPatternTvars.isEmpty)
+          if (defaultPatternTvars.isEmpty) // Implies that Tag pattern is present
             Type.mkSchemaRowEmpty(loc.asSynthetic)
           else
             freshVar(Kind.SchemaRow, loc.asSynthetic)
         val expectedRowType =
-          if (tagPatTypes.isEmpty)
+          if (tagPatTypes.isEmpty) // Implies that error or default case is present
             freshVar(Kind.SchemaRow, loc.asSynthetic)
           else
             tagPatTypes
@@ -1109,12 +1129,9 @@ object ConstraintGen {
     case ExtPattern.Default(tvar, _) =>
       Right(tvar)
 
-    case ExtPattern.Tag(label, pats, tvar, loc) =>
+    case ExtPattern.Tag(label, pats, loc) =>
       val name = Name.Pred(label.name, label.loc)
       val ps = pats.map(visitExtTagPattern)
-      val freshRowVar = freshVar(Kind.SchemaRow, loc)
-      val tpe = Type.mkSchemaRowExtend(name, Type.mkRelation(ps, loc.asSynthetic), freshRowVar, loc)
-      c.unifyType(tpe, tvar, loc)
       Left((name, ps))
 
     case ExtPattern.Error(tvar, _) =>

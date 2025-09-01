@@ -103,6 +103,8 @@ object WeededAst {
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
+    case class LambdaExtMatch(pat: ExtPattern, exp: Expr, loc: SourceLocation) extends Expr
+
     case class LambdaMatch(pat: Pattern, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr

@@ -284,7 +284,7 @@ object KindedAst {
 
     case class Default(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 
-    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tvar: Type.Var, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
     case class Error(tvar: Type.Var, loc: SourceLocation) extends ExtPattern
 

@@ -268,6 +268,8 @@ object SyntaxTree {
 
       case object Lambda extends Expr
 
+      case object LambdaExtMatch extends Expr
+
       case object LambdaMatch extends Expr
 
       case object LetMatch extends Expr

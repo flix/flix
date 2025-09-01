@@ -1057,14 +1057,14 @@ object Lowering {
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
-    case TypedAst.ExtPattern.Default(tpe, loc) =>
-      LoweredAst.ExtPattern.Default(tpe, loc)
+    case TypedAst.ExtPattern.Default(loc) =>
+      LoweredAst.ExtPattern.Default(loc)
 
-    case TypedAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+    case TypedAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPat)
-      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+      LoweredAst.ExtPattern.Tag(label, ps, loc)
 
-    case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+    case TypedAst.ExtPattern.Error(loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
 
   }
 
@@ -1814,7 +1814,7 @@ object Lowering {
     */
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
-      case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+      case Type.Cst(TypeConstructor.Relation(_), _) => Nil
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
@@ -2318,12 +2318,12 @@ object Lowering {
     * Applies the given substitution `subst` to the given ext pattern `pattern0`.
     */
   private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
-    case LoweredAst.ExtPattern.Default(tpe, loc) =>
-      LoweredAst.ExtPattern.Default(tpe, loc)
+    case LoweredAst.ExtPattern.Default(loc) =>
+      LoweredAst.ExtPattern.Default(loc)
 
-    case LoweredAst.ExtPattern.Tag(label, pats, tpe, loc) =>
+    case LoweredAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(substVarOrWild(_, subst))
-      LoweredAst.ExtPattern.Tag(label, ps, tpe, loc)
+      LoweredAst.ExtPattern.Tag(label, ps, loc)
   }
 
   /**

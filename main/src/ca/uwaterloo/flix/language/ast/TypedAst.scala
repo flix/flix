@@ -332,18 +332,16 @@ object TypedAst {
   }
 
   sealed trait ExtPattern {
-    def tpe: Type
-
     def loc: SourceLocation
   }
 
   object ExtPattern {
 
-    case class Default(tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Tag(label: Name.Label, pats: List[ExtTagPattern], tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
-    case class Error(tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Error(loc: SourceLocation) extends ExtPattern
 
   }
 

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -1862,20 +1862,28 @@ object Parser2 {
 
     private def extMatchExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordEMatch))
-      val mark = open()
-      expect(TokenKind.KeywordEMatch)
-      expression()
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.ExtMatchRule,
-        checkForItem = _ == TokenKind.KeywordCase,
-        getItem = extMatchRule,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR,
-        separation = Separation.Optional(TokenKind.Comma)
-      )
-      close(mark, TreeKind.Expr.ExtMatch)
+      detectMatchLambda(TokenKind.KeywordEMatch) match {
+        case Result.Err(mark) => mark
+        case Result.Ok((isLambda, mark)) =>
+          if (isLambda) {
+            Pattern.pattern()
+            expect(TokenKind.ArrowThinR)
+            expression()
+            close(mark, TreeKind.Expr.LambdaExtMatch)
+          } else {
+            expression()
+            oneOrMore(
+              namedTokenSet = NamedTokenSet.ExtMatchRule,
+              checkForItem = _ == TokenKind.KeywordCase,
+              getItem = extMatchRule,
+              breakWhen = _.isRecoverExpr,
+              delimiterL = TokenKind.CurlyL,
+              delimiterR = TokenKind.CurlyR,
+              separation = Separation.Optional(TokenKind.Comma)
+            )
+            close(mark, TreeKind.Expr.ExtMatch)
+          }
+      }
     }
 
     private def extTagExpr()(implicit s: State): Mark.Closed = {
@@ -2017,62 +2025,84 @@ object Parser2 {
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordMatch))
-      val mark = open()
-      expect(TokenKind.KeywordMatch)
-      // Detect match lambda.
-      val isLambda = {
-        var lookAhead = 0
-        var isLambda = false
-        var continue = true
-        // We need to track the parenthesis nesting level to handle match-expressions
-        // that include lambdas, e.g., `match f(x -> g(x)) { case ... }`.
-        // In these cases the ArrowThin __does not__ indicate that the expression being parsed is
-        // a match lambda.
-        var parenNestingLevel = 0
-        while (continue && !eof()) {
-          nth(lookAhead) match {
-            // match `expr { case ... }`.
-            case TokenKind.KeywordCase => continue = false
-            // match `pattern -> expr`.
-            case TokenKind.ArrowThinR if parenNestingLevel == 0 => isLambda = true; continue = false
-            case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
-            case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
-            case TokenKind.Eof =>
-              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
-              return closeWithError(mark, error)
-            case t if t.isFirstDecl =>
-              // Advance past the erroneous region to the next stable token
-              // (the start of the declaration).
-              for (_ <- 0 until lookAhead) {
-                advance()
-              }
-              val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
-              return closeWithError(mark, error)
-            case _ => lookAhead += 1
+      detectMatchLambda(TokenKind.KeywordMatch) match {
+        case Result.Err(errMark) => errMark
+        case Result.Ok((isLambda, mark)) =>
+          if (isLambda) {
+            Pattern.pattern()
+            expect(TokenKind.ArrowThinR)
+            expression()
+            close(mark, TreeKind.Expr.LambdaMatch)
+          } else {
+            expression()
+            oneOrMore(
+              namedTokenSet = NamedTokenSet.MatchRule,
+              checkForItem = _ == TokenKind.KeywordCase,
+              getItem = matchRule,
+              breakWhen = _.isRecoverExpr,
+              delimiterL = TokenKind.CurlyL,
+              delimiterR = TokenKind.CurlyR,
+              separation = Separation.Optional(TokenKind.Comma)
+            )
+            close(mark, TreeKind.Expr.Match)
           }
-        }
-        isLambda
       }
+    }
 
-      if (isLambda) {
-        Pattern.pattern()
-        expect(TokenKind.ArrowThinR)
-        expression()
-        close(mark, TreeKind.Expr.LambdaMatch)
-      } else {
-        expression()
-        oneOrMore(
-          namedTokenSet = NamedTokenSet.MatchRule,
-          checkForItem = _ == TokenKind.KeywordCase,
-          getItem = matchRule,
-          breakWhen = _.isRecoverExpr,
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR,
-          separation = Separation.Optional(TokenKind.Comma)
-        )
-        close(mark, TreeKind.Expr.Match)
+    /**
+      * Detects a match-lambda expression, returning `true` if is a match-lambda along with an opened mark.
+      * It is up to the caller to close the mark again by parsing the rest.
+      * The opened mark is always opened right before the keyword, i.e.,
+      * `*mark* keyword ... -> ...` or `*mark* keyword ... { case ... => ... }`.
+      * The cursor is placed *after* the keyword, since this function consumes `keyword`.
+      * In other words, if the expression is well-formed, then the cursor is placed as follows:
+      * `keyword *cursor* pat -> ...` or `keyword *cursor* exp { ... }`.
+      *
+      * Returns `Ok((true, mark))` it detects a match-lambda.
+      *
+      * Returns `Ok((false, mark))` if it does not detect a match-lambda.
+      *
+      * Returns `Err(mark)` if invalid syntax is encountered.
+      *
+      * @param keyword the keyword to expect at the start of the expression. Will be consumed by this function.
+      *                Must be either [[TokenKind.KeywordMatch]] or [[TokenKind.KeywordEMatch]].
+      */
+    private def detectMatchLambda(keyword: TokenKind)(implicit sctx: SyntacticContext, s: State): Result[(Boolean, Mark.Opened), Mark.Closed] = {
+      assert(TokenKind.KeywordMatch == keyword || TokenKind.KeywordEMatch == keyword, "expected 'match' or 'ematch' keyword as start of match-lambda")
+      assert(at(keyword))
+      val mark = open()
+      expect(keyword)
+      var lookAhead = 0
+      var result = false
+      var continue = true
+      // We need to track the parenthesis nesting level to handle match-expressions
+      // that include lambdas, e.g., `match f(x -> g(x)) { case ... }`.
+      // In these cases the ArrowThin __does not__ indicate that the expression being parsed is
+      // a match lambda.
+      var parenNestingLevel = 0
+      while (continue && !eof()) {
+        nth(lookAhead) match {
+          // match `expr { case ... }`.
+          case TokenKind.KeywordCase => continue = false
+          // match `pattern -> expr`.
+          case TokenKind.ArrowThinR if parenNestingLevel == 0 => result = true; continue = false
+          case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
+          case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
+          case TokenKind.Eof =>
+            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = None, sctx, loc = currentSourceLocation())
+            return Result.Err(closeWithError(mark, error))
+          case t if t.isFirstDecl =>
+            // Advance past the erroneous region to the next stable token
+            // (the start of the declaration).
+            for (_ <- 0 until lookAhead) {
+              advance()
+            }
+            val error = UnexpectedToken(expected = NamedTokenSet.Expression, actual = Some(t), sctx, loc = currentSourceLocation())
+            return Result.Err(closeWithError(mark, error))
+          case _ => lookAhead += 1
+        }
       }
+      Result.Ok((result, mark))
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
@@ -2849,13 +2879,14 @@ object Parser2 {
         getItem = fixpointConstraint,
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
-        separation = Separation.Required(TokenKind.DotWhiteSpace, allowTrailing = true),
+        separation = Separation.None,
         breakWhen = _.isRecoverExpr,
       )
       close(mark, TreeKind.Expr.FixpointConstraintSet)
     }
 
     private def fixpointConstraint()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       Predicate.head()
       if (eat(TokenKind.ColonMinus)) {
@@ -2864,6 +2895,7 @@ object Parser2 {
           Predicate.body()
         }
       }
+      expect(TokenKind.DotWhiteSpace, hint = Some("Datalog constraints must end with a '.'"))
       close(mark, TreeKind.Expr.FixpointConstraint)
     }
 
@@ -3649,23 +3681,16 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
-      termList()
+      // Check for `A` or `A(...)`
+      if (at(TokenKind.ParenL)) {
+        termList()
+      }
       close(mark, TreeKind.Predicate.Head)
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
       val mark = open()
-      // Check for missing term list.
-      if (!at(TokenKind.ParenL)) {
-        closeWithError(open(), UnexpectedToken(
-          expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)),
-          actual = Some(nth(0)),
-          sctx = sctx,
-          hint = Some("provide a list of terms."),
-          loc = previousSourceLocation())
-        )
-      }
 
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,
@@ -3769,7 +3794,10 @@ object Parser2 {
       eat(TokenKind.KeywordNot)
       eat(TokenKind.KeywordFix)
       nameUnqualified(NAME_PREDICATE)
-      patternList()
+      // Check for `A` or `A(...)`
+      if (at(TokenKind.ParenL)) {
+        patternList()
+      }
       close(mark, TreeKind.Predicate.Atom)
     }
 

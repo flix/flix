@@ -402,6 +402,16 @@ mod BPlusTree {
         Node.get(k, stamp, leaf, t)
 
     ///
+    /// Returns `Some((k, v))` if `k => v` is in `t`. Otherwise, returns `None`.
+    ///
+    /// Thread-safe.
+    ///
+    pub def getKeyAndValue(k: k, t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        Node.getKeyAndValue(k, stamp, leaf, t)
+    }
+
+    ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
@@ -464,10 +474,34 @@ mod BPlusTree {
     /// Updates the tree `t` with the mapping `k => v`. Replaces any
     /// existing mapping.
     ///
+    /// Updates both the key and value of the mapping.
+    ///
     /// Thread-safe.
     ///
     pub def put(k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
         fixRoot(putInternal(k, v, t), t)
+
+    ///
+    /// Updates the tree `t` with the mapping `k => v`. Replaces any
+    /// existing mapping, `k2 => v2`, if `decider(k, v, k2, v2) == true`.
+    ///
+    /// Thread-safe and atomic.
+    ///
+    pub def putIf(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
+        fixRoot(putIfInternal(decider, k, v, t), t)
+
+
+    ///
+    /// Internal method for `putIf`.
+    ///
+    /// Called when restarting.
+    ///
+    /// Returns the `Some(newRoot, stamp)` if the root was split where `stamp` is a write-stamp
+    /// on `rootLock`.
+    ///
+    def putIfInternal(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        Node.insertIntoLeafIf(decider, k, v, leaf, stamp, t)
 
     ///
     /// Internal method for `put`.
@@ -939,6 +973,24 @@ mod BPlusTree {
             }
 
         ///
+        /// Returns `Some((key, value))` if `key => val` is in `tree`. Otherwise return `None`.
+        ///
+        @Internal
+        pub def getKeyAndValue(key: k, stamp: Int64, node: Node[k, v, r], tree: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] =
+            let index = binarySearch(key, BPlusTree.search(tree), node);
+            let result = if (index < 0)
+                None
+            else
+                Some((Array.get(index, node->keys), Array.get(index, node->values)));
+            if (not Lock.valid(stamp, node->lock)) {
+                // Restart
+                Lock.yieldBasedOn(node->lock);
+                BPlusTree.getKeyAndValue(key, tree)
+            } else {
+                result
+            }
+
+        ///
         /// Returns `val` if `key => val` is in `tree`. Otherwise return `d`.
         ///
         @Internal
@@ -988,6 +1040,82 @@ mod BPlusTree {
         }
 
         ///
+        /// Inserts the mapping `key => val` into the leaf `node` if it is not already present
+        /// Otherwise if the mapping `key2 => val2` is presents overwrite the mapping by `key => val`,
+        /// if `decider(key, val, key2, val2) == true`. If a split is caused return the new root.
+        ///
+        /// Lock invariants:
+        ///
+        /// - On invocation, `stamp` is an optimistic stamp on `node->lock`.
+        ///
+        /// - On return, the thread has no lock on the tree if the returned value is None.
+        ///   Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
+        ///
+        @Internal
+        pub def insertIntoLeafIf(
+            decider: k -> v -> k -> v -> Bool,
+            key: k,
+            val: v,
+            node: Node[k, v, r],
+            stamp: Int64,
+            tree: BPlusTree[k, v, r]
+        ): Option[(Node[k, v, r], Int64)] \ r with Order[k] = {
+            let search = BPlusTree.search(tree);
+            let index = binarySearch(key, search, node);
+            if(index < 0) {
+                // `key` is not currently in tree. Attempt to gain the write lock and add it.
+                insertIntoLeafForceIf(decider, key, val, node, stamp, index, tree)
+            } else {
+                let oldKey = Array.get(index, node->keys);
+                let oldVal = Array.get(index, node->values);
+                // Verify that the pair is legal/not corrupted.
+                if (not Lock.valid(stamp, node->lock)) {
+                    // Restart
+                    Lock.yieldBasedOn(node->lock);
+                    BPlusTree.putIfInternal(decider, key, val, tree)
+                } else {
+                    if(decider(key, val, oldKey, oldVal)) {
+                        insertIntoLeafForceIf(decider, key, val, node, stamp, index, tree)
+                    } else {
+                        // At some point `oldKey => oldVal` was in the tree. We observed it and
+                        // decided to not insert `key => val`, by `decider`.
+                        None
+                    }
+                }
+            }
+        }
+
+        ///
+        /// Attempts to grab the lock of `node` and insert the `key => val` mapping. Restarts with
+        /// `putIfInternal` if this is not successfull.
+        ///
+        /// Lock invariants:
+        ///
+        /// - On invocation, `stamp` is an optimistic stamp on `node->lock`.
+        ///
+        /// - On return, the thread has no lock on the tree if the returned value is None.
+        ///   Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
+        ///
+        def insertIntoLeafForceIf(
+            decider: k -> v -> k -> v -> Bool,
+            key: k,
+            val: v,
+            node: Node[k, v, r],
+            stamp: Int64,
+            index: Int32,
+            tree: BPlusTree[k, v, r]
+        ): Option[(Node[k, v, r], Int64)] \ r with Order[k] = {
+            let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+            if (not Lock.valid(writeStamp, node->lock)) {
+                // Restart
+                Lock.yieldBasedOn(node->lock);
+                BPlusTree.putIfInternal(decider, key, val, tree)
+            } else {
+                insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
+            }
+        }
+
+        ///
         /// Inserts the mapping `key => val` into the leaf `node`, potentially causing a
         /// split and returning a new root.
         ///
@@ -1010,6 +1138,7 @@ mod BPlusTree {
             let size = node->size;
             if (index >= 0) {
                 // We now have a write lock and can insert before releasing lock
+                Array.put(key, index, node->keys);
                 Array.put(val, index, node->values);
                 Lock.unlockWrite(writeStamp, node->lock);
                 None

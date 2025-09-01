@@ -42,7 +42,7 @@ mod Test.Handler.Spawn {
             spawn runGen(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(42, result)
+        42 == result
 
     @Test
     def testSpawn02(): Bool \ {Chan, NonDet} =
@@ -51,7 +51,7 @@ mod Test.Handler.Spawn {
             spawn runAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(42, result)
+        42 == result
 
     @Test
     def testSpawn03(): Bool \ {Chan, NonDet} =
@@ -60,6 +60,6 @@ mod Test.Handler.Spawn {
             spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(84, result)
+        84 == result
 
 }
