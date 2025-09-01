@@ -17,8 +17,10 @@
 
 mod Test.Exp.Fixpoint.Stratification {
 
+    use Assert.assertEq;
+
     @Test
-    def testStratification01(): Bool = {
+    def testStratification01(): Unit \ Assert = {
         let pr = #{
             A1(1).
             B1(x) :- A1(x).
@@ -26,15 +28,15 @@ mod Test.Exp.Fixpoint.Stratification {
             D1(x) :- C1(x).
         };
         let mm = solve pr;
-        Vector#{1} `Assert.eq` query mm select (x) from A1(x) and
-        Vector#{1} `Assert.eq` query mm select (x) from B1(x) and
-        Vector#{1} `Assert.eq` query mm select (x) from C1(x) and
-        Vector#{1} `Assert.eq` query mm select (x) from D1(x)
+        assertEq(expected = Vector#{1}, query mm select (x) from A1(x));
+        assertEq(expected = Vector#{1}, query mm select (x) from B1(x));
+        assertEq(expected = Vector#{1}, query mm select (x) from C1(x));
+        assertEq(expected = Vector#{1}, query mm select (x) from D1(x))
 
     }
 
     @Test
-    def testStratification02(): Bool = {
+    def testStratification02(): Unit \ Assert = {
         let pr = #{
             A2(1).
             B2(x) :- A2(x).
@@ -42,14 +44,14 @@ mod Test.Exp.Fixpoint.Stratification {
             D2(x + y + z) :- A2(x), B2(y), C2(z).
         };
         let mm = solve pr;
-        Vector#{1} `Assert.eq` query mm select (x) from A2(x) and
-        Vector#{1} `Assert.eq` query mm select (x) from B2(x) and
-        Vector#{1 + 1} `Assert.eq` query mm select (x) from C2(x) and
-        Vector#{1 + 1 + 2} `Assert.eq` query mm select (x) from D2(x)
+        assertEq(expected = Vector#{1}, query mm select (x) from A2(x));
+        assertEq(expected = Vector#{1}, query mm select (x) from B2(x));
+        assertEq(expected = Vector#{1 + 1}, query mm select (x) from C2(x));
+        assertEq(expected = Vector#{1 + 1 + 2}, query mm select (x) from D2(x))
     }
 
     @Test
-    def testStratification03(): Bool = {
+    def testStratification03(): Unit \ Assert = {
         let pr = #{
             A(1, 2).
             A(2, 3).
@@ -59,14 +61,14 @@ mod Test.Exp.Fixpoint.Stratification {
             D(9) :- A(_, 3), C(_, 4).
         };
         let mm = solve pr;
-        Vector#{(1, 2), (2, 3), (3, 4)} `Assert.eq` query mm select (x, y) from A(x, y) and
-        Vector#{(2, 4)} `Assert.eq` query mm select (x, y) from B(x, y) and
-        Vector#{(3, 4)} `Assert.eq` query mm select (x, y) from C(x, y) and
-        Vector#{9} `Assert.eq` query mm select (x) from D(x)
+        assertEq(expected = Vector#{(1, 2), (2, 3), (3, 4)}, query mm select (x, y) from A(x, y));
+        assertEq(expected = Vector#{(2, 4)}, query mm select (x, y) from B(x, y));
+        assertEq(expected = Vector#{(3, 4)}, query mm select (x, y) from C(x, y));
+        assertEq(expected = Vector#{9}, query mm select (x) from D(x))
     }
 
     @Test
-    def testStratification04(): Bool = {
+    def testStratification04(): Unit \ Assert = {
         let pr = #{
             A(1, 2).
             A(2, 3).
@@ -76,14 +78,14 @@ mod Test.Exp.Fixpoint.Stratification {
             D(9) :- C(_, 4), A(_, 3).
         };
         let mm = solve pr;
-        Vector#{(1, 2), (2, 3), (3, 4)} `Assert.eq` query mm select (x, y) from A(x, y) and
-        Vector#{(2, 4)} `Assert.eq` query mm select (x, y) from B(x, y) and
-        Vector#{(3, 4)} `Assert.eq` query mm select (x, y) from C(x, y) and
-        Vector#{9} `Assert.eq` query mm select (x) from D(x)
+        assertEq(expected = Vector#{(1, 2), (2, 3), (3, 4)}, query mm select (x, y) from A(x, y));
+        assertEq(expected = Vector#{(2, 4)}, query mm select (x, y) from B(x, y));
+        assertEq(expected = Vector#{(3, 4)}, query mm select (x, y) from C(x, y));
+        assertEq(expected = Vector#{9}, query mm select (x) from D(x))
     }
 
     @Test
-    def testStratification05(): Bool = {
+    def testStratification05(): Unit \ Assert = {
         let pr = #{
             A("1", "2").
             A("2", "3").
@@ -93,14 +95,14 @@ mod Test.Exp.Fixpoint.Stratification {
             D("9") :- C(_, "4"), A(_, "3").
         };
         let mm = solve pr;
-        Vector#{("1", "2"), ("2", "3"), ("3", "4")} `Assert.eq` query mm select (x, y) from A(x, y) and
-        Vector#{("2", "4")} `Assert.eq` query mm select (x, y) from B(x, y) and
-        Vector#{("3", "4")} `Assert.eq` query mm select (x, y) from C(x, y) and
-        Vector#{"9"} `Assert.eq` query mm select (x) from D(x)
+        assertEq(expected = Vector#{("1", "2"), ("2", "3"), ("3", "4")}, query mm select (x, y) from A(x, y));
+        assertEq(expected = Vector#{("2", "4")}, query mm select (x, y) from B(x, y));
+        assertEq(expected = Vector#{("3", "4")}, query mm select (x, y) from C(x, y));
+        assertEq(expected = Vector#{"9"}, query mm select (x) from D(x))
     }
 
     @Test
-    def testStratification06(): Bool = {
+    def testStratification06(): Unit \ Assert = {
         let pr = #{
             A(1).
             A(2).
@@ -109,13 +111,13 @@ mod Test.Exp.Fixpoint.Stratification {
             C(x) :- B(x), not A(x).
         };
         let mm = solve pr;
-        Vector#{1, 2} `Assert.eq` query mm select (x) from A(x) and
-        Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
-        Vector#{3} `Assert.eq` query mm select (x) from C(x)
+        assertEq(expected = Vector#{1, 2}, query mm select (x) from A(x));
+        assertEq(expected = Vector#{1, 2, 3}, query mm select (x) from B(x));
+        assertEq(expected = Vector#{3}, query mm select (x) from C(x))
     }
 
     @Test
-    def testStratification07(): Bool = {
+    def testStratification07(): Unit \ Assert = {
         let pr = #{
             A(1).
             A(2).
@@ -124,13 +126,13 @@ mod Test.Exp.Fixpoint.Stratification {
             C(x) :- fix B(x), not A(x).
         };
         let mm = solve pr;
-        Vector#{1, 2} `Assert.eq` query mm select (x) from A(x) and
-        Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
-        Vector#{3} `Assert.eq` query mm select (x) from C(x)
+        assertEq(expected = Vector#{1, 2}, query mm select (x) from A(x));
+        assertEq(expected = Vector#{1, 2, 3}, query mm select (x) from B(x));
+        assertEq(expected = Vector#{3}, query mm select (x) from C(x))
     }
 
     @Test
-    def testStratification08(): Bool = {
+    def testStratification08(): Unit \ Assert = {
         let pr = #{
             A(1).
             A(2).
@@ -139,13 +141,13 @@ mod Test.Exp.Fixpoint.Stratification {
             C(x) :- B(x), not A(x).
         };
         let mm = solve pr;
-        Vector#{1, 2} `Assert.eq` query mm select (x) from A(x) and
-        Vector#{1, 2, 3} `Assert.eq` query mm select (x) from B(x) and
-        Vector#{3} `Assert.eq` query mm select (x) from C(x)
+        assertEq(expected = Vector#{1, 2}, query mm select (x) from A(x));
+        assertEq(expected = Vector#{1, 2, 3}, query mm select (x) from B(x));
+        assertEq(expected = Vector#{3}, query mm select (x) from C(x))
     }
 
     @Test
-    def testStratification09(): Bool = {
+    def testStratification09(): Unit \ Assert = {
         let pr = #{
             A("1").
             A("2").
@@ -154,8 +156,8 @@ mod Test.Exp.Fixpoint.Stratification {
             C(x) :- B(x), not A(x).
         };
         let mm = solve pr;
-        Vector#{"1", "2"} `Assert.eq` query mm select (x) from A(x) and
-        Vector#{"1", "2", "3"} `Assert.eq` query mm select (x) from B(x) and
-        Vector#{"3"} `Assert.eq` query mm select (x) from C(x)
+        assertEq(expected = Vector#{"1", "2"}, query mm select (x) from A(x));
+        assertEq(expected = Vector#{"1", "2", "3"}, query mm select (x) from B(x));
+        assertEq(expected = Vector#{"3"}, query mm select (x) from C(x))
     }
 }
