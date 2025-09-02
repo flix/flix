@@ -832,6 +832,39 @@ object Lowering {
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
+    case TypedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tpe, eff, loc) =>
+      val loweredExps = exps.map(visitExp)
+      val loweredQueryExp = visitExp(queryExp)
+
+      // Compute the arity of the predicate symbol.
+      // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
+      val (_, targs) = Type.eraseAliases(tpe) match {
+        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
+          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
+          case Some(TypeConstructor.Unit) => (tycon, Nil)
+          case _ => (innerType, List(innerType))
+        }
+        case t => throw InternalCompilerException(s"Unexpected non-foldable type: '${t}'.", loc)
+      }
+
+      val arity = selects.length
+
+      // Compute the symbol of the function.
+      val sym = Defs.Facts(arity)
+
+      // The type of the function.
+      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
+
+      // Merge exps.
+      val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
+
+      // Solve the merged exp.
+      val solvedExp = LoweredAst.Expr.ApplyDef(Defs.Solve, mergedExp :: Nil, List.empty, Types.SolveType, Types.Datalog, eff, loc)
+
+      // Put everything together.
+      val argExps = mkPredSym(pred) :: solvedExp :: Nil
+      LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
+
     case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, _, eff, loc) =>
       // Rewrites
       //     solve e₁, e₂, e₃ project P₁, P₂, P₃
@@ -857,7 +890,6 @@ object Lowering {
         case None => LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
       }
       LoweredAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, loc)
-
 
     case TypedAst.Expr.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)

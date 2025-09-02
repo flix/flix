@@ -589,6 +589,13 @@ object Visitor {
         exps.foreach(visitExpr)
         visitPredicate(select)
 
+      case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+        exps.foreach(visitExpr)
+        visitExpr(queryExp)
+        selects.foreach(visitExpr)
+        from.foreach(visitPredicate)
+        where.foreach(visitExpr)
+
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
         exps.foreach(visitExpr)
 

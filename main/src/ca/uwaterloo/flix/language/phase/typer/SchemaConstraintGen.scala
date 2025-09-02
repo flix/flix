@@ -96,6 +96,35 @@ object SchemaConstraintGen {
     }
   }
 
+  def visitFixpointQueryWithSelect(e: KindedAst.Expr.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    implicit val scope: Scope = c.getScope
+    e match {
+      case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
+        //
+        //  exp = exps[0] <+> exps[1] <+> ...
+        //
+        //  exp: freshRestSchemaVar
+        //  queryExp: #{$freshRelOrLat(α₁, α₂, ...) | freshRestSchemaVar }
+        //  --------------------------------------------------------------------
+        //  FixpointQueryWithSelect(exps, queryExp, ...) : Array[(α₁, α₂, ...)]
+        //
+        val arity = selects.length
+        val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(arity, Kind.Predicate), loc)
+        val freshElemVars = List.range(0, arity).map(_ => Type.freshVar(Kind.Star, loc))
+        val tuple = Type.mkTuplish(freshElemVars, loc)
+        val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
+        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkApply(freshRelOrLat, freshElemVars, loc), freshRestSchemaVar, loc), loc)
+        val (tpes, effs) = exps.map(visitExp).unzip
+        val (tpe, eff) = visitExp(queryExp)
+        c.unifyAllTypes(Type.mkSchema(freshRestSchemaVar, loc) :: tpes, loc)
+        c.unifyType(tpe, expectedSchemaType, loc)
+        c.unifyType(tvar, Type.mkVector(tuple, loc), loc)
+        val resTpe = tvar
+        val resEff = Type.mkUnion(eff :: effs, loc)
+        (resTpe, resEff)
+    }
+  }
+
   def visitFixpointSolveWithProject(e: KindedAst.Expr.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {

@@ -508,6 +508,15 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      from.foreach(visitConstraintBody)
+      where.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.FixpointSolveWithProject(exps, _, _, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
