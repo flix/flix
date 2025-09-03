@@ -1,74 +1,78 @@
-/*
- *  Copyright 2020 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestUpperBound {
-    use UpperBound.maxValue
 
-    @test
-    def testUnit(): Bool = maxValue() == ()
+    use Assert.{assertEq};
+    use UpperBound.maxValue;
 
-    @test
-    def testBool(): Bool = maxValue() == true
+    @Test
+    def maxValue_Unit01(): Unit \ Assert = 
+        assertEq(expected = (), maxValue())
 
-    @test
-    def testInt8(): Bool = maxValue() == 127i8
+    @Test
+    def maxValue_Bool01(): Unit \ Assert = 
+        assertEq(expected = true, maxValue())
 
-    @test
-    def testInt16(): Bool = maxValue() == 32_767i16
+    @Test
+    def maxValue_Int801(): Unit \ Assert = 
+        assertEq(expected = 127i8, maxValue())
 
-    @test
-    def testInt32(): Bool = maxValue() == 2_147_483_647
+    @Test
+    def maxValue_Int1601(): Unit \ Assert = 
+        assertEq(expected = 32_767i16, maxValue())
 
-    @test
-    def testInt64(): Bool = maxValue() == 9_223_372_036_854_775_807i64
+    @Test
+    def maxValue_Int3201(): Unit \ Assert = 
+        assertEq(expected = 2_147_483_647, maxValue())
 
-    @test
-    def testFloat32(): Bool = maxValue() == Float32.maxValue()
+    @Test
+    def maxValue_Int6401(): Unit \ Assert = 
+        assertEq(expected = 9_223_372_036_854_775_807i64, maxValue())
 
-    @test
-    def testFloat64(): Bool = maxValue() == Float64.maxValue()
+    @Test
+    def maxValue_Float3201(): Unit \ Assert = 
+        assertEq(expected = Float32.maxValue(), maxValue())
 
-    @test
-    def testChar(): Bool = maxValue() == '\uffff'
+    @Test
+    def maxValue_Float6401(): Unit \ Assert = 
+        assertEq(expected = Float64.maxValue(), maxValue())
 
-    @test
-    def testTuple2(): Bool = maxValue() == ('\uffff', '\uffff')
+    @Test
+    def maxValue_Char01(): Unit \ Assert = 
+        assertEq(expected = '\uffff', maxValue())
 
-    @test
-    def testTuple3(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple201(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple4(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple301(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple5(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple401(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple6(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple501(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple7(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple601(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple8(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple701(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple9(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple801(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
 
-    @test
-    def testTuple10(): Bool = maxValue() == ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff')
+    @Test
+    def maxValue_Tuple901(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
+
+    @Test
+    def maxValue_Tuple1001(): Unit \ Assert = 
+        assertEq(expected = ('\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff', '\uffff'), maxValue())
 
 }
