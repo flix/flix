@@ -4,18 +4,18 @@ mod TestBool {
 
     @Test
     def runIf01(): Unit \ {IO, Assert} =
-        assertEq(expected = (), runIf(_ -> println("Hello, World!")) (true))
+        assertEq(expected = (), Bool.runIf(_ -> println("Hello, World!")) (true))
 
     @Test
     def runIf02(): Unit \ {IO, Assert} =
-        assertEq(expected = (), runIf(_ -> println("Hello, World!")) (false))
+        assertEq(expected = (), Bool.runIf(_ -> println("Hello, World!")) (false))
 
     @Test
     def runIf03(): Unit \ Assert =
-        assertEq(expected = (), runIf(_ -> ()) (true))
+        assertEq(expected = (), Bool.runIf(_ -> ()) (true))
 
     @Test
     def runIf04(): Unit \ Assert =
-        assertEq(expected = (), runIf(_ -> ()) (false))
+        assertEq(expected = (), Bool.runIf(_ -> ()) (false))
 
 }
