@@ -13,13 +13,13 @@ mod Test.Import {
     def testImport01(): Bool \ IO =
         let sb = new StringBuffer("Hello world");
         let subStr = unchecked_cast(sb.subSequence(6, 11) as String);
-        Assert.eq(subStr, "world")
+        subStr == "world"
 
     @test
     def testImport02(): Bool \ IO =
         let sb = new StringBuffer("Hello world");
         let subStr = unchecked_cast(sb.subSequence(6, 11) as String);
-        Assert.eq(subStr, "world")
+        subStr == "world"
 }
 
 mod Test.Import {
@@ -32,7 +32,7 @@ mod Test.Import {
     def testImport03(): Bool \ IO =
         let sb = new RenamedBuffer1("Hello world");
         let subStr = unchecked_cast(sb.subSequence(6, 11) as String);
-        Assert.eq(subStr, "world")
+        subStr == "world"
 
     @test
     def testImport04(): Time \ IO =
