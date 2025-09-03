@@ -48,7 +48,9 @@
 
     * Use `assertEq(x, y)` instead of `assertTrue(x == y)`.
     * Use `assertSome(o)` instead of `assertTrue(Option.nonEmpty(o))`.
+    * Use `assertSome(o)` instead of `assertTrue(o != None)`.
     * Use `fail(<reason>)` instead of `assertTrue(false)`.
+    * Avoid over-use of `Assert.true`. Use one of the above assertions instead.
 
 ---
 
