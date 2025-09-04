@@ -1,6 +1,5 @@
 mod TestOption {
 
-    use Hash.hash;
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertSome, assertNone};
 
     /////////////////////////////////////////////////////////////////////////////
@@ -852,19 +851,19 @@ mod TestOption {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def hash01(): Unit \ Assert = assertEq(expected = hash((None: Option[Unit])), hash((None: Option[Unit])))
+    def hash01(): Unit \ Assert = assertEq(expected = Hash.hash((None: Option[Unit])), Hash.hash((None: Option[Unit])))
 
     @Test
-    def hash02(): Unit \ Assert = assertEq(expected = hash(Some(1)), hash(Some(1)))
+    def hash02(): Unit \ Assert = assertEq(expected = Hash.hash(Some(1)), Hash.hash(Some(1)))
 
     @Test
-    def hash03(): Unit \ Assert = assertEq(expected = hash(Some((1, 1))), hash(Some((1, 1))))
+    def hash03(): Unit \ Assert = assertEq(expected = Hash.hash(Some((1, 1))), Hash.hash(Some((1, 1))))
 
     @Test
-    def hash04(): Unit \ Assert = assertTrue(hash(Some((1, 2))) != hash(Some((2, 1))))
+    def hash04(): Unit \ Assert = assertTrue(Hash.hash(Some((1, 2))) != Hash.hash(Some((2, 1))))
 
     @Test
-    def hash05(): Unit \ Assert = assertTrue(hash((None: Option[Unit])) != hash(Some((()))))
+    def hash05(): Unit \ Assert = assertTrue(Hash.hash((None: Option[Unit])) != Hash.hash(Some((()))))
 
 
     /////////////////////////////////////////////////////////////////////////////
