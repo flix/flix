@@ -1,5 +1,6 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2025 Magnus Madsen
+ * Copyright 2025 Daniel Neo López Martínez
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +101,30 @@ mod Assert {
     ///
     pub def assertErr(r: Result[e, a]): Unit \ Assert =
         Assert.assert(Result.isErr(r), "Assertion failed: expected Err(_), but got Ok(_)")
+
+    ///
+    /// Asserts that the given foldable `ma` is empty.
+    ///
+    pub def assertEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
+        Assert.assert(Foldable.isEmpty(ma), "Assertion failed: expected empty collection, but got `${ma}`")
+
+    ///
+    /// Asserts that the given foldable `ma` is non-empty.
+    ///
+    pub def assertNonEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
+        Assert.assert(Foldable.nonEmpty(ma), "Assertion failed: expected non-empty collection, but got `${ma}`")
+
+    ///
+    /// Asserts that the given element `x` is a member of the given foldable `ma`.
+    ///
+    pub def assertMemberOf(x: a, ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], Eq[a], ToString[a], ToString[m[a]] =
+        Assert.assert(Foldable.memberOf(x, ma), "Assertion failed: expected `${x}` to be a member of `${ma}`")
+
+    ///
+    /// Unconditionally succeeds with the given message `msg`.
+    ///
+    pub def success(msg: String): Unit \ Assert =
+        Assert.assert(true, msg)
 
     ///
     /// Unconditionally fails with the given message `msg`.
