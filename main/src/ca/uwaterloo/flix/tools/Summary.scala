@@ -291,9 +291,7 @@ object Summary {
     case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
       exps.map(countCheckedEcasts).sum + countCheckedEcasts(queryExp) + selects.map(countCheckedEcasts).sum + where.map(countCheckedEcasts).sum
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.FixpointFilter(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.FixpointProject(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Error(_, _, _) => 0
   }
 

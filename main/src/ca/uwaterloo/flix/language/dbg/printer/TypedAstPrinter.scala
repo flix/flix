@@ -102,9 +102,7 @@ object TypedAstPrinter {
     case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointFilter(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_, _, _) => DocAst.Expr.Error
   }
 

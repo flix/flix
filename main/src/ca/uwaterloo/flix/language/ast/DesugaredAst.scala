@@ -211,11 +211,7 @@ object DesugaredAst {
 
     case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, loc: SourceLocation) extends Expr
-
     case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
-
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc

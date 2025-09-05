@@ -891,12 +891,6 @@ object Lowering {
       }
       LoweredAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, loc)
 
-    case TypedAst.Expr.FixpointFilter(pred, exp, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Filter)
-      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.FilterType, resultType, eff, loc)
-
     case TypedAst.Expr.FixpointInjectInto(exps, predsAndArities, _, _, loc) =>
       val loweredExps = exps.zip(predsAndArities).map {
         case (exp, PredicateAndArity(pred, _)) =>
@@ -921,28 +915,6 @@ object Lowering {
           LoweredAst.Expr.ApplyDef(sym, argExps, targ :: targs, defTpe, Types.Datalog, exp.eff, loc)
       }
       mergeExps(loweredExps, loc)
-
-    case TypedAst.Expr.FixpointProject(pred, arity, exp, tpe, eff, loc) =>
-      // Compute the arity of the predicate symbol.
-      // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
-      val (_, targs) = Type.eraseAliases(tpe) match {
-        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-          case Some(TypeConstructor.Unit) => (tycon, Nil)
-          case _ => (innerType, List(innerType))
-        }
-        case _ => throw InternalCompilerException(s"Unexpected non-foldable type: '${exp.tpe}'.", loc)
-      }
-
-      // Compute the symbol of the function.
-      val sym = Defs.Facts(arity)
-
-      // The type of the function.
-      val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
-
-      // Put everything together.
-      val argExps = mkPredSym(pred) :: visitExp(exp) :: Nil
-      LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
 
     case TypedAst.Expr.Error(m, _, _) =>
       throw InternalCompilerException(s"Unexpected error expression near", m.loc)

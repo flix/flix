@@ -434,17 +434,9 @@ object Stratifier {
       val es = exps.map(visitExp)
       Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointFilter(pred, e, tpe, eff, loc)
-
     case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.FixpointInjectInto(es, predsAndArities, tpe, eff, loc)
-
-    case Expr.FixpointProject(pred, arity, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointProject(pred, arity, e, tpe, eff, loc)
 
     case Expr.Error(m, tpe, eff) =>
       Expr.Error(m, tpe, eff)

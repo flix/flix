@@ -223,11 +223,7 @@ object KindedAst {
 
     case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
-
     case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
-
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage, tvar: Type.Var, evar: Type.Var) extends Expr {
       override def loc: SourceLocation = m.loc

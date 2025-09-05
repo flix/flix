@@ -399,16 +399,8 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-      visitExp(exp)
-      // TODO ?
-      ()
     case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       exps.foreach(visitExp)
-      // TODO ?
-      ()
-    case Expr.FixpointProject(pred, _, exp, tpe, eff, loc) =>
-      visitExp(exp)
       // TODO ?
       ()
     case Expr.Error(m, tpe, eff) => ()

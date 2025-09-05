@@ -708,14 +708,8 @@ object SemanticTokensProvider {
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
-
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       visitExps(exps)
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.Error(_, _, _) =>
       Iterator.empty

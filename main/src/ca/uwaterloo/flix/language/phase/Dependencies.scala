@@ -522,18 +522,8 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointFilter(_, exp, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
     case Expr.FixpointInjectInto(exps, _, tpe, eff, _) =>
       exps.foreach(visitExp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.FixpointProject(_, _, exp, tpe, eff, _) =>
-      visitExp(exp)
       visitType(tpe)
       visitType(eff)
 

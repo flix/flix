@@ -278,11 +278,7 @@ object TypedAst {
 
     case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage, tpe: Type, eff: Type) extends Expr {
       override def loc: SourceLocation = m.loc

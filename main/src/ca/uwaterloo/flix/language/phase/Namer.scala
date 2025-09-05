@@ -922,18 +922,9 @@ object Namer {
       val w = where.map(visitExp)
       NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
 
-    case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointFilter(ident, e, loc)
-
     case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
-
-    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)

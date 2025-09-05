@@ -1040,9 +1040,7 @@ object ConstraintGen {
       case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
       case e: Expr.FixpointQueryWithSelect => SchemaConstraintGen.visitFixpointQueryWithSelect(e)
       case e: Expr.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
-      case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
       case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
-      case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
 
       case Expr.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.
