@@ -59,7 +59,7 @@ object EntryPoints {
   /**
     * Symbol of the Assert.runWithIO function
     */
-  private val runWithIOSym = new Symbol.DefnSym(None, List("Assert"), "runWithIO", SourceLocation.Unknown)
+  private val RunWithIOSym = new Symbol.DefnSym(None, List("Assert"), "runWithIO", SourceLocation.Unknown)
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
@@ -118,6 +118,10 @@ object EntryPoints {
   /** Returns `true` if `defn` is a test. */
   private def isTest(defn: TypedAst.Def): Boolean =
     defn.spec.ann.isTest
+
+  /** Returns `true` if `defn` has the Assert effect. */
+  private def hasAssert(defn: TypedAst.Def): Boolean =
+    defn.spec.eff.effects.contains(Symbol.Assert)
 
   /** Returns `true` if `defn` is an exported function. */
   private def isExport(defn: TypedAst.Def): Boolean =
@@ -652,7 +656,7 @@ object EntryPoints {
       */
     def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
       val defsWithDefaultAssertHandler = ParOps.parMapValues(root.defs)(
-        defn => if (isTest(defn)) wrapDefWithAssertHandler(defn, root) else defn
+        defn => if (isTest(defn) && hasAssert(defn)) wrapDefWithAssertHandler(defn, root) else defn
       )
       root.copy(defs = defsWithDefaultAssertHandler)
     }
@@ -685,7 +689,7 @@ object EntryPoints {
         eff = eff,
       )
       // Get Assert.runWithIO symbol use
-      val runWithIODef = root.defs(runWithIOSym)
+      val runWithIODef = root.defs(RunWithIOSym)
       val runWithIOSymUse = DefSymUse(runWithIODef.sym, runWithIODef.loc)
       // Create _ -> exp
       val innerLambda = TypedAst.Expr.Lambda(TypedAst.FormalParam(

@@ -138,24 +138,4 @@ mod Assert {
     ///
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO + Sys = handle(f)()
 
-    ///
-    /// Asserts that `expected` must equal `actual`.
-    ///
-    /// Aborts execution if the two values are un-equal.
-    ///
-    pub def eq(expected: a, actual: a): Bool with Eq[a], ToString[a] = unchecked_cast({
-        if (expected == actual)
-            true
-        else {
-            use Chalk.{green, red};
-            Environment.runWithIO(() -> {
-                println("Assertion Error");
-                println("  Expected: ${green(expected)}");
-                println("  Actual:   ${red(actual)}");
-                println("");
-                ?assertEq
-            })
-        }
-    } as _ \ {})
-
 }
