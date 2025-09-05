@@ -187,7 +187,7 @@ object KindedAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(exp1: Expr, fieldName: Name.Ident, exp2: Expr, jvar: Type.Var, tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class GetStaticField(field: Field, loc: SourceLocation) extends Expr
 

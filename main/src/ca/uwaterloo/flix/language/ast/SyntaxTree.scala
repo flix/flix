@@ -250,6 +250,8 @@ object SyntaxTree {
 
       case object GetField extends Expr
 
+      case object PutField extends Expr
+
       case object Handler extends Expr
 
       case object Hole extends Expr

@@ -204,7 +204,7 @@ object ResolvedAst {
 
     case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class PutField(field: Field, clazz: java.lang.Class[?], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class PutField(exp1: Expr, fieldName: Name.Ident, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class GetStaticField(field: Field, loc: SourceLocation) extends Expr
 
