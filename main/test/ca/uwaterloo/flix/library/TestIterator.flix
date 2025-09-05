@@ -1,49 +1,34 @@
-/*
- * Copyright 2021 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestIterator {
     use Iterator.Iterator
+    use Assert.{assertEq, assertTrue, assertFalse};
 
     /////////////////////////////////////////////////////////////////////////////
     // next                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def next01(): Bool = region rc {
-        Iterator.empty(rc) |> Iterator.next == (None: Option[Int32])
+    @Test
+    def next01(): Unit \ Assert = region rc {
+        assertEq(expected = (None: Option[Int32]), Iterator.empty(rc) |> Iterator.next)
     }
 
-    @test
-    def next02(): Bool = region rc {
+    @Test
+    def next02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.next(iter) == Some(1)
+        assertEq(expected = Some(1), Iterator.next(iter))
     }
 
-    @test
-    def next03(): Bool = region rc {
+    @Test
+    def next03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
         discard Iterator.next(iter);
-        Iterator.next(iter) == None
+        assertEq(expected = None, Iterator.next(iter))
     }
 
-    @test
-    def next04(): Bool = region rc {
+    @Test
+    def next04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
         discard Iterator.next(iter);
-        Iterator.next(iter) == Some(2)
+        assertEq(expected = Some(2), Iterator.next(iter))
     }
 
 
@@ -51,29 +36,29 @@ mod TestIterator {
     // range                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def range01(): Bool = region rc {
-        Iterator.range(rc, 0, 0) |> Iterator.toList == Nil
+    @Test
+    def range01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Iterator.range(rc, 0, 0) |> Iterator.toList)
     }
 
-    @test
-    def range02(): Bool = region rc {
-        Iterator.range(rc, 10, 0) |> Iterator.toList == Nil
+    @Test
+    def range02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Iterator.range(rc, 10, 0) |> Iterator.toList)
     }
 
-    @test
-    def range03(): Bool = region rc {
-        Iterator.range(rc, 1, 4) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    @Test
+    def range03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.range(rc, 1, 4) |> Iterator.toList)
     }
 
-    @test
-    def range04(): Bool = region rc {
-        Iterator.range(rc, -1, 2) |> Iterator.toList == -1 :: 0 :: 1 :: Nil
+    @Test
+    def range04(): Unit \ Assert = region rc {
+        assertEq(expected = -1 :: 0 :: 1 :: Nil, Iterator.range(rc, -1, 2) |> Iterator.toList)
     }
 
-    @test
-    def range05(): Bool = region rc {
-        Iterator.range(rc, -100, 200) |> Iterator.toList == List.range(-100, 200)
+    @Test
+    def range05(): Unit \ Assert = region rc {
+        assertEq(expected = List.range(-100, 200), Iterator.range(rc, -100, 200) |> Iterator.toList)
     }
 
 
@@ -81,24 +66,24 @@ mod TestIterator {
     // repeat                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def repeat01(): Bool = region rc {
-        Iterator.repeat(rc, 0, 10) |> Iterator.toList == Nil
+    @Test
+    def repeat01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Iterator.repeat(rc, 0, 10) |> Iterator.toList)
     }
 
-    @test
-    def repeat02(): Bool = region rc {
-        Iterator.repeat(rc, -100, 2) |> Iterator.toList == Nil
+    @Test
+    def repeat02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Iterator.repeat(rc, -100, 2) |> Iterator.toList)
     }
 
-    @test
-    def repeat03(): Bool = region rc {
-        Iterator.repeat(rc, 100, 2) |> Iterator.toList == List.repeat(100, 2)
+    @Test
+    def repeat03(): Unit \ Assert = region rc {
+        assertEq(expected = List.repeat(100, 2), Iterator.repeat(rc, 100, 2) |> Iterator.toList)
     }
 
-    @test
-    def repeat04(): Bool = region rc {
-        Iterator.repeat(rc, 3, 1) |> Iterator.toList == 1 :: 1 :: 1 :: Nil
+    @Test
+    def repeat04(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 1 :: 1 :: Nil, Iterator.repeat(rc, 3, 1) |> Iterator.toList)
     }
 
 
@@ -106,39 +91,39 @@ mod TestIterator {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool = region rc {
-        List.iterator(rc, Nil) |> Iterator.sum == 0
+    @Test
+    def sum01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, List.iterator(rc, Nil) |> Iterator.sum)
     }
 
-    @test
-    def sum02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.sum == 1
+    @Test
+    def sum02(): Unit \ Assert = region rc {
+        assertEq(expected = 1, List.iterator(rc, 1 :: Nil) |> Iterator.sum)
     }
 
-    @test
-    def sum03(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: Nil) |> Iterator.sum == 6
+    @Test
+    def sum03(): Unit \ Assert = region rc {
+        assertEq(expected = 6, List.iterator(rc, 1 :: 2 :: 3 :: Nil) |> Iterator.sum)
     }
 
-    @test
-    def sum04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sum == 3
+    @Test
+    def sum04(): Unit \ Assert = region rc {
+        assertEq(expected = 3, List.iterator(rc, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sum)
     }
 
-    @test
-    def sum05(): Bool = region rc {
-        List.iterator(rc, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sum == -10
+    @Test
+    def sum05(): Unit \ Assert = region rc {
+        assertEq(expected = -10, List.iterator(rc, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sum)
     }
 
-    @test
-    def sum06(): Bool = region rc {
-        List.iterator(rc, 10 :: -10 :: Nil) |> Iterator.sum == 0
+    @Test
+    def sum06(): Unit \ Assert = region rc {
+        assertEq(expected = 0, List.iterator(rc, 10 :: -10 :: Nil) |> Iterator.sum)
     }
 
-    @test
-    def sum07(): Bool = region rc {
-        Iterator.range(rc, 1, 101) |> Iterator.sum == 5050
+    @Test
+    def sum07(): Unit \ Assert = region rc {
+        assertEq(expected = 5050, Iterator.range(rc, 1, 101) |> Iterator.sum)
     }
 
 
@@ -146,34 +131,34 @@ mod TestIterator {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool = region rc {
-        List.iterator(rc, Nil) |> Iterator.sumWith(x -> x + 1) == 0
+    @Test
+    def sumWith01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, List.iterator(rc, Nil) |> Iterator.sumWith(x -> x + 1))
     }
 
-    @test
-    def sumWith02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
+    @Test
+    def sumWith02(): Unit \ Assert = region rc {
+        assertEq(expected = 2, List.iterator(rc, 1 :: Nil) |> Iterator.sumWith(x -> x + 1))
     }
 
-    @test
-    def sumWith03(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: Nil) |> Iterator.sumWith(x -> x + 1) == 9
+    @Test
+    def sumWith03(): Unit \ Assert = region rc {
+        assertEq(expected = 9, List.iterator(rc, 1 :: 2 :: 3 :: Nil) |> Iterator.sumWith(x -> x + 1))
     }
 
-    @test
-    def sumWith04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sumWith(x -> x + 1) == 7
+    @Test
+    def sumWith04(): Unit \ Assert = region rc {
+        assertEq(expected = 7, List.iterator(rc, 1 :: 2 :: 3 :: -3 :: Nil) |> Iterator.sumWith(x -> x + 1))
     }
 
-    @test
-    def sumWith05(): Bool = region rc {
-        List.iterator(rc, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sumWith(x -> x + 1) == -6
+    @Test
+    def sumWith05(): Unit \ Assert = region rc {
+        assertEq(expected = -6, List.iterator(rc, -1 :: -2 :: -3 :: -4 :: Nil) |> Iterator.sumWith(x -> x + 1))
     }
 
-    @test
-    def sumWith06(): Bool = region rc {
-        List.iterator(rc, 10 :: -10 :: Nil) |> Iterator.sumWith(x -> x + 1) == 2
+    @Test
+    def sumWith06(): Unit \ Assert = region rc {
+        assertEq(expected = 2, List.iterator(rc, 10 :: -10 :: Nil) |> Iterator.sumWith(x -> x + 1))
     }
 
 
@@ -181,24 +166,24 @@ mod TestIterator {
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toList == Nil
+    @Test
+    def toList01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toList)
     }
 
-    @test
-    def toList02(): Bool = region rc {
-        Iterator.range(rc, -10, -5) |> Iterator.toList == -10 :: -9 :: -8 :: -7 :: -6 :: Nil
+    @Test
+    def toList02(): Unit \ Assert = region rc {
+        assertEq(expected = -10 :: -9 :: -8 :: -7 :: -6 :: Nil, Iterator.range(rc, -10, -5) |> Iterator.toList)
     }
 
-    @test
-    def toList03(): Bool = region rc {
-        Iterator.repeat(rc, 3, 1) |> Iterator.toList == 1 :: 1 ::  1 :: Nil
+    @Test
+    def toList03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 1 ::  1 :: Nil, Iterator.repeat(rc, 3, 1) |> Iterator.toList)
     }
 
-    @test
-    def toList04(): Bool = region rc {
-        Iterator.range(rc, -100, 200) |> Iterator.toList == List.range(-100, 200)
+    @Test
+    def toList04(): Unit \ Assert = region rc {
+        assertEq(expected = List.range(-100, 200), Iterator.range(rc, -100, 200) |> Iterator.toList)
     }
 
 
@@ -206,24 +191,24 @@ mod TestIterator {
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toChain01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toChain == Chain.empty()
+    @Test
+    def toChain01(): Unit \ Assert = region rc {
+        assertEq(expected = Chain.empty(), (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toChain)
     }
 
-    @test
-    def toChain02(): Bool = region rc {
-        Iterator.range(rc, -10, -5) |> Iterator.toChain == List.toChain(-10 :: -9 :: -8 :: -7 :: -6 :: Nil)
+    @Test
+    def toChain02(): Unit \ Assert = region rc {
+        assertEq(expected = List.toChain(-10 :: -9 :: -8 :: -7 :: -6 :: Nil), Iterator.range(rc, -10, -5) |> Iterator.toChain)
     }
 
-    @test
-    def toChain03(): Bool = region rc {
-        Iterator.repeat(rc, 3, 1) |> Iterator.toChain == List.toChain(1 :: 1 ::  1 :: Nil)
+    @Test
+    def toChain03(): Unit \ Assert = region rc {
+        assertEq(expected = List.toChain(1 :: 1 ::  1 :: Nil), Iterator.repeat(rc, 3, 1) |> Iterator.toChain)
     }
 
-    @test
-    def toChain04(): Bool = region rc {
-        Iterator.range(rc, -100, 200) |> Iterator.toChain == Chain.range(-100, 200)
+    @Test
+    def toChain04(): Unit \ Assert = region rc {
+        assertEq(expected = Chain.range(-100, 200), Iterator.range(rc, -100, 200) |> Iterator.toChain)
     }
 
 
@@ -231,43 +216,43 @@ mod TestIterator {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toArray(rc) `Array.sameElements` Array#{} @ rc
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
+        assertTrue((Nil: List[Int32]) |> List.iterator(rc) |> Iterator.toArray(rc) `Array.sameElements` Array#{} @ rc)
     }
 
-    @test
-    def toArray02(): Bool = region rc {
-        Iterator.range(rc, -10, -5) |> Iterator.toArray(rc) `Array.sameElements` Array#{-10, -9, -8, -7, -6} @ rc
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        assertTrue(Iterator.range(rc, -10, -5) |> Iterator.toArray(rc) `Array.sameElements` Array#{-10, -9, -8, -7, -6} @ rc)
     }
 
-    @test
-    def toArray03(): Bool = region rc {
-        Iterator.repeat(rc, 3, 1) |> Iterator.toArray(rc) `Array.sameElements` Array#{1, 1, 1} @ rc
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        assertTrue(Iterator.repeat(rc, 3, 1) |> Iterator.toArray(rc) `Array.sameElements` Array#{1, 1, 1} @ rc)
     }
 
-    @test
-    def toArray04(): Bool = region rc {
-        Iterator.range(rc, -100, 200) |> Iterator.toArray(rc) `Array.sameElements` Array.range(rc, -100, 200)
+    @Test
+    def toArray04(): Unit \ Assert = region rc {
+        assertTrue(Iterator.range(rc, -100, 200) |> Iterator.toArray(rc) `Array.sameElements` Array.range(rc, -100, 200))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toVector01(): Bool = region rc {
-        (Iterator.empty(rc) |> Iterator.toVector) `Vector.equals` (Vector.empty() : Vector[Int32])
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
+        assertTrue((Iterator.empty(rc) |> Iterator.toVector) `Vector.equals` (Vector.empty() : Vector[Int32]))
     }
 
-    @test
-    def toVector02(): Bool = region rc {
-        (Iterator.singleton(rc, 0) |> Iterator.toVector) `Vector.equals` Vector.singleton(0)
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
+        assertTrue((Iterator.singleton(rc, 0) |> Iterator.toVector) `Vector.equals` Vector.singleton(0))
     }
 
-    @test
-    def toVector03(): Bool = region rc {
-        (Iterator.range(rc, 1, 4) |> Iterator.toVector) `Vector.equals` Vector.range(1, 4)
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
+        assertTrue((Iterator.range(rc, 1, 4) |> Iterator.toVector) `Vector.equals` Vector.range(1, 4))
     }
 
 
@@ -275,19 +260,19 @@ mod TestIterator {
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMap01(): Bool = region rc {
-        Map.empty() |> Map.iterator(rc) |> Iterator.toMap == (Map.empty(): Map[Int32, Int32])
+    @Test
+    def toMap01(): Unit \ Assert = region rc {
+        assertEq(expected = (Map.empty(): Map[Int32, Int32]), Map.empty() |> Map.iterator(rc) |> Iterator.toMap)
     }
 
-    @test
-    def toMap02(): Bool = region rc {
-        Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.iterator(rc) |> Iterator.toMap == Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}
+    @Test
+    def toMap02(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4}, Map#{"A" => 1, "B" => 2, "C" => 3, "D" => 4} |> Map.iterator(rc) |> Iterator.toMap)
     }
 
-    @test
-    def toMap03(): Bool = region rc {
-        Map#{1 => 2, 2 => 3, 3 => 4} |> Map.iterator(rc) |> Iterator.toMap == Map#{1 => 2, 2 => 3, 3 => 4}
+    @Test
+    def toMap03(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map#{1 => 2, 2 => 3, 3 => 4} |> Map.iterator(rc) |> Iterator.toMap)
     }
 
 
@@ -295,35 +280,35 @@ mod TestIterator {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMutDeque01(): Bool = region rc {
+    @Test
+    def toMutDeque01(): Unit \ Assert = region rc {
         let iter = (Iterator.empty(rc): Iterator[Int32, rc, rc]);
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
+        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque02(): Bool = region rc {
+    @Test
+    def toMutDeque02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
         let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
-        Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
+        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque03(): Bool = region rc {
+    @Test
+    def toMutDeque03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
         let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
-        Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
+        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque04(): Bool = region rc {
+    @Test
+    def toMutDeque04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
         let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
-        Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
+        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
     }
 
 
@@ -331,19 +316,19 @@ mod TestIterator {
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNel01(): Bool = region rc {
-        Nil |> List.iterator(rc) |> Iterator.toNel == (None: Option[Nel[Int32]])
+    @Test
+    def toNel01(): Unit \ Assert = region rc {
+        assertEq(expected = (None: Option[Nel[Int32]]), Nil |> List.iterator(rc) |> Iterator.toNel)
     }
 
-    @test
-    def toNel02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |> Iterator.toNel == Some(Nel.Nel(1, Nil))
+    @Test
+    def toNel02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(Nel.Nel(1, Nil)), (1 :: Nil) |> List.iterator(rc) |> Iterator.toNel)
     }
 
-    @test
-    def toNel03(): Bool = region rc {
-        Iterator.range(rc, 0, 1000) |> Iterator.toNel == Some(Nel.Nel(0, List.range(1, 1000)))
+    @Test
+    def toNel03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(Nel.Nel(0, List.range(1, 1000))), Iterator.range(rc, 0, 1000) |> Iterator.toNel)
     }
 
 
@@ -351,34 +336,34 @@ mod TestIterator {
     // toNec                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNec01(): Bool = region rc {
+    @Test
+    def toNec01(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, (Nil: List[Unit]));
-        Iterator.toNec(iter) == None
+        assertEq(expected = None, Iterator.toNec(iter))
     }
 
-    @test
-    def toNec02(): Bool = region rc {
+    @Test
+    def toNec02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.singleton(1))
+        assertEq(expected = Some(Nec.singleton(1)), Iterator.toNec(iter))
     }
 
-    @test
-    def toNec03(): Bool = region rc {
+    @Test
+    def toNec03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(2)))
+        assertEq(expected = Some(Nec.cons(1, Nec.singleton(2))), Iterator.toNec(iter))
     }
 
-    @test
-    def toNec04(): Bool = region rc {
+    @Test
+    def toNec04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(1, Nec.singleton(1)))
+        assertEq(expected = Some(Nec.cons(1, Nec.singleton(1))), Iterator.toNec(iter))
     }
 
-    @test
-    def toNec05(): Bool = region rc {
+    @Test
+    def toNec05(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 2 :: 1 :: Nil);
-        Iterator.toNec(iter) == Some(Nec.cons(2, Nec.singleton(1)))
+        assertEq(expected = Some(Nec.cons(2, Nec.singleton(1))), Iterator.toNec(iter))
     }
 
 
@@ -386,19 +371,19 @@ mod TestIterator {
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toSet01(): Bool = region rc {
-        Set.empty() |> Set.iterator(rc) |> Iterator.toSet == (Set.empty(): Set[Int32])
+    @Test
+    def toSet01(): Unit \ Assert = region rc {
+        assertEq(expected = (Set.empty(): Set[Int32]), Set.empty() |> Set.iterator(rc) |> Iterator.toSet)
     }
 
-    @test
-    def toSet02(): Bool = region rc {
-        Set#{"a", "b", "c", "d"} |> Set.iterator(rc) |> Iterator.toSet == Set#{"a", "b", "c", "d"}
+    @Test
+    def toSet02(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{"a", "b", "c", "d"}, Set#{"a", "b", "c", "d"} |> Set.iterator(rc) |> Iterator.toSet)
     }
 
-    @test
-    def toSet03(): Bool = region rc {
-        Set.range(0, 10000) |> Set.iterator(rc) |> Iterator.toSet == Set.range(0, 10000)
+    @Test
+    def toSet03(): Unit \ Assert = region rc {
+        assertEq(expected = Set.range(0, 10000), Set.range(0, 10000) |> Set.iterator(rc) |> Iterator.toSet)
     }
 
 
@@ -406,44 +391,44 @@ mod TestIterator {
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filter01(): Bool = region rc {
-        Nil |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def filter01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Nil |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter02(): Bool = region rc {
-        (2 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def filter02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (2 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter03(): Bool = region rc {
-        (4 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 4 :: Nil
+    @Test
+    def filter03(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: Nil, (4 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter04(): Bool = region rc {
-        (1 :: 3 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def filter04(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (1 :: 3 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter05(): Bool = region rc {
-        (1 :: 8 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 8 :: Nil
+    @Test
+    def filter05(): Unit \ Assert = region rc {
+        assertEq(expected = 8 :: Nil, (1 :: 8 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter06(): Bool = region rc {
-        (8 :: 1 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 8 :: Nil
+    @Test
+    def filter06(): Unit \ Assert = region rc {
+        assertEq(expected = 8 :: Nil, (8 :: 1 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter07(): Bool = region rc {
-        (8 :: 9 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 8 :: 9 :: Nil
+    @Test
+    def filter07(): Unit \ Assert = region rc {
+        assertEq(expected = 8 :: 9 :: Nil, (8 :: 9 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def filter08(): Bool = region rc {
-        (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList == 4 :: 11 :: 17 :: Nil
+    @Test
+    def filter08(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: 11 :: 17 :: Nil, (1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) |> List.iterator(rc) |> Iterator.filter(i -> i > 3) |> Iterator.toList)
     }
 
 
@@ -451,46 +436,46 @@ mod TestIterator {
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def map01(): Bool = region rc {
-        Nil |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == Nil
+    @Test
+    def map01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Nil |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
-    @test
-    def map02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == false :: Nil
+    @Test
+    def map02(): Unit \ Assert = region rc {
+        assertEq(expected = false :: Nil, (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
-    @test
-    def map03(): Bool = region rc {
-        (3 :: Nil) |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == true :: Nil
+    @Test
+    def map03(): Unit \ Assert = region rc {
+        assertEq(expected = true :: Nil, (3 :: Nil) |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
-    @test
-    def map04(): Bool = region rc {
-        (1 :: 2 :: Nil) |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == false :: false :: Nil
+    @Test
+    def map04(): Unit \ Assert = region rc {
+        assertEq(expected = false :: false :: Nil, (1 :: 2 :: Nil) |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
-    @test
-    def map05(): Bool = region rc {
-        (1 :: 8 :: Nil) |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == false :: true :: Nil
+    @Test
+    def map05(): Unit \ Assert = region rc {
+        assertEq(expected = false :: true :: Nil, (1 :: 8 :: Nil) |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
-    @test
-    def map06(): Bool = region rc {
-        (8 :: 1 :: Nil) |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == true :: false :: Nil
+    @Test
+    def map06(): Unit \ Assert = region rc {
+        assertEq(expected = true :: false :: Nil, (8 :: 1 :: Nil) |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
-    @test
-    def map07(): Bool = region rc {
-        (7 :: 8 :: Nil) |> List.iterator(rc) |>
-            Iterator.map(i -> i > 2) |> Iterator.toList == true :: true :: Nil
+    @Test
+    def map07(): Unit \ Assert = region rc {
+        assertEq(expected = true :: true :: Nil, (7 :: 8 :: Nil) |> List.iterator(rc) |>
+            Iterator.map(i -> i > 2) |> Iterator.toList)
     }
 
 
@@ -498,46 +483,46 @@ mod TestIterator {
     // mapWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapWithIndex01(): Bool = region rc {
-        Nil |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == Nil
+    @Test
+    def mapWithIndex01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Nil |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
-    @test
-    def mapWithIndex02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
+    @Test
+    def mapWithIndex02(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: Nil, (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
-    @test
-    def mapWithIndex03(): Bool = region rc {
-        (3 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == 0 :: Nil
+    @Test
+    def mapWithIndex03(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: Nil, (3 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
-    @test
-    def mapWithIndex04(): Bool = region rc {
-        (1 :: 2 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 2 :: Nil
+    @Test
+    def mapWithIndex04(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: 2 :: Nil, (1 :: 2 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
-    @test
-    def mapWithIndex05(): Bool = region rc {
-        (1 :: 8 :: 10 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
+    @Test
+    def mapWithIndex05(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: 8 :: 0 :: Nil, (1 :: 8 :: 10 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
-    @test
-    def mapWithIndex06(): Bool = region rc {
-        (10 :: 8 :: 1 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: Nil
+    @Test
+    def mapWithIndex06(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: 8 :: 0 :: Nil, (10 :: 8 :: 1 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
-    @test
-    def mapWithIndex07(): Bool = region rc {
-        (1 :: 8 :: 10 :: 14 :: Nil) |> List.iterator(rc) |>
-            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList == 0 :: 8 :: 0 :: 14 :: Nil
+    @Test
+    def mapWithIndex07(): Unit \ Assert = region rc {
+        assertEq(expected = 0 :: 8 :: 0 :: 14 :: Nil, (1 :: 8 :: 10 :: 14 :: Nil) |> List.iterator(rc) |>
+            Iterator.mapWithIndex((ix, i) -> if (ix `Int32.remainder` 2 == 0) 0 else i) |> Iterator.toList)
     }
 
 
@@ -545,152 +530,152 @@ mod TestIterator {
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let res = Ref.fresh(rc, 21);
         Nil |> List.iterator(rc) |>
             Iterator.forEach(x -> Ref.put(x, res));
-        21 == Ref.get(res)
+        assertEq(expected = 21, Ref.get(res))
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let res = Ref.fresh(rc, 21);
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
             Iterator.forEach(x -> Ref.put(x, res));
-        3 == Ref.get(res)
+        assertEq(expected = 3, Ref.get(res))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachWithIndex01(): Bool = region rc {
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
         let res = Ref.fresh(rc, 21);
         Nil |> List.iterator(rc) |>
             Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
-        21 == Ref.get(res)
+        assertEq(expected = 21, Ref.get(res))
     }
 
-    @test
-    def forEachWithIndex02(): Bool = region rc {
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
         let res = Ref.fresh(rc, 21);
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
             Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
-        2 == Ref.get(res)
+        assertEq(expected = 2, Ref.get(res))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def replace01(): Bool = region rc {
-        List.iterator(rc, Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == Nil
+    @Test
+    def replace01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: Nil
+    @Test
+    def replace02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace03(): Bool = region rc {
-        List.iterator(rc, 3 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: Nil
+    @Test
+    def replace03(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: Nil, List.iterator(rc, 3 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace04(): Bool = region rc {
-        List.iterator(rc, 4 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: Nil
+    @Test
+    def replace04(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: Nil, List.iterator(rc, 4 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace05(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: 2 :: Nil
+    @Test
+    def replace05(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: Nil, List.iterator(rc, 1 :: 2 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace06(): Bool = region rc {
-        List.iterator(rc, 1 :: 3 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: 4 :: Nil
+    @Test
+    def replace06(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 4 :: Nil, List.iterator(rc, 1 :: 3 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace07(): Bool = region rc {
-        List.iterator(rc, 3 :: 4 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: 4 :: Nil
+    @Test
+    def replace07(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: 4 :: Nil, List.iterator(rc, 3 :: 4 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
-    @test
-    def replace08(): Bool = region rc {
-        List.iterator(rc, 3 :: 3 :: Nil) |>
-            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: 4 :: Nil
+    @Test
+    def replace08(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: 4 :: Nil, List.iterator(rc, 3 :: 3 :: Nil) |>
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def append01(): Bool = region rc {
+    @Test
+    def append01(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, (Nil: List[Unit]));
         let iter2 = List.iterator(rc, (Nil: List[Unit]));
-        Iterator.append(iter1, iter2) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append02(): Bool = region rc {
+    @Test
+    def append02(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, Nil);
         let iter2 = List.iterator(rc, 1 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: Nil
+        assertEq(expected = 1 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append03(): Bool = region rc {
+    @Test
+    def append03(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, Nil);
         let iter2 = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+        assertEq(expected = 1 :: 2 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append04(): Bool = region rc {
+    @Test
+    def append04(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, 1 :: Nil);
         let iter2 = List.iterator(rc, Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: Nil
+        assertEq(expected = 1 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append05(): Bool = region rc {
+    @Test
+    def append05(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, 1 :: 2 :: Nil);
         let iter2 = List.iterator(rc, Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+        assertEq(expected = 1 :: 2 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append06(): Bool = region rc {
+    @Test
+    def append06(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, 1 :: Nil);
         let iter2 = List.iterator(rc, 2 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: Nil
+        assertEq(expected = 1 :: 2 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append07(): Bool = region rc {
+    @Test
+    def append07(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, 1 :: 2 :: Nil);
         let iter2 = List.iterator(rc, 3 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    @test
-    def append08(): Bool = region rc {
+    @Test
+    def append08(): Unit \ Assert = region rc {
         let iter1 = List.iterator(rc, 1 :: Nil);
         let iter2 = List.iterator(rc, 2 :: 3 :: Nil);
-        Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
     // TODO - multiple region tests currently disabled
@@ -708,46 +693,46 @@ mod TestIterator {
     // zip                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zip01(): Bool = region rc {
+    @Test
+    def zip01(): Unit \ Assert = region rc {
         let iterA = (Nil: List[Int32]) |> List.iterator(rc);
         let iterB = Iterator.repeat(rc, 1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterator.zip(iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zip02(): Bool = region rc {
+    @Test
+    def zip02(): Unit \ Assert = region rc {
         let iterA = (Nil: List[Int32]) |> List.iterator(rc);
         let iterB = Iterator.repeat(rc, 1000, "b");
-        Iterator.zip(iterB, iterA) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterator.zip(iterB, iterA) |> Iterator.toList)
     }
 
-    @test
-    def zip03(): Bool = region rc {
+    @Test
+    def zip03(): Unit \ Assert = region rc {
         let iterA = Iterator.repeat(rc, 500,  "a");
         let iterB = Iterator.repeat(rc, 1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+        assertEq(expected = List.repeat(500, ("a", "b")), Iterator.zip(iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zip04(): Bool = region rc {
+    @Test
+    def zip04(): Unit \ Assert = region rc {
         let iterA = Iterator.repeat(rc, 1000, "a");
         let iterB = Iterator.repeat(rc, 500,  "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(500, ("a", "b"))
+        assertEq(expected = List.repeat(500, ("a", "b")), Iterator.zip(iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zip05(): Bool = region rc {
+    @Test
+    def zip05(): Unit \ Assert = region rc {
         let iterA = Iterator.repeat(rc, 1000, "a");
         let iterB = Iterator.repeat(rc, 1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.repeat(1000, ("a", "b"))
+        assertEq(expected = List.repeat(1000, ("a", "b")), Iterator.zip(iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zip06(): Bool = region rc {
+    @Test
+    def zip06(): Unit \ Assert = region rc {
         let iterA = Iterator.range(rc, 0, 500);
         let iterB = Iterator.repeat(rc, 1000, "b");
-        Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
+        assertEq(expected = List.zip(List.range(0, 500), List.repeat(500, "b")), Iterator.zip(iterA, iterB) |> Iterator.toList)
     }
 
     // TODO - multiple region tests currently disabled
@@ -765,54 +750,54 @@ mod TestIterator {
     // zipWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zipWith01(): Bool = region rc {
+    @Test
+    def zipWith01(): Unit \ Assert = region rc {
         let iterA = List.iterator(rc, Nil);
         let iterB = List.iterator(rc, Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zipWith02(): Bool = region rc {
+    @Test
+    def zipWith02(): Unit \ Assert = region rc {
         let iterA = List.iterator(rc, 1 :: Nil);
         let iterB = List.iterator(rc, Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zipWith03(): Bool = region rc {
+    @Test
+    def zipWith03(): Unit \ Assert = region rc {
         let iterA = List.iterator(rc, Nil);
         let iterB = List.iterator(rc, true :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zipWith04(): Bool = region rc {
+    @Test
+    def zipWith04(): Unit \ Assert = region rc {
         let iterA = List.iterator(rc, 1 :: Nil);
         let iterB = List.iterator(rc, true :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 2 :: Nil
+        assertEq(expected = 2 :: Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zipWith05(): Bool = region rc {
+    @Test
+    def zipWith05(): Unit \ Assert = region rc {
         let iterA = List.iterator(rc, 1 :: Nil);
         let iterB = List.iterator(rc, false :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: Nil
+        assertEq(expected = 1 :: Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zipWith06(): Bool = region rc {
+    @Test
+    def zipWith06(): Unit \ Assert = region rc {
         let iterA = List.iterator(rc, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         let iterB = List.iterator(rc, false :: true :: true :: false :: false :: true :: true :: true :: Nil);
-        Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+        assertEq(expected = 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
     }
 
-    @test
-    def zipWith07(): Bool = region rc1 {
+    @Test
+    def zipWith07(): Unit \ Assert = region rc1 {
         let iterA = List.iterator(rc1, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         region rc2 {
             let iterB = List.iterator(rc2, false :: true :: true :: false :: false :: true :: true :: true :: Nil);
-            Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList == 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil
+            assertEq(expected = 1 :: 3 :: 4 :: 4 :: 5 :: 7 :: 8 :: 9 :: Nil, Iterator.zipWith((a, b) -> if (b) a + 1 else a, iterA, iterB) |> Iterator.toList)
         }
     }
 
@@ -821,29 +806,29 @@ mod TestIterator {
     // zipWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zipWithIndex01(): Bool = region rc {
-        Iterator.zipWithIndex((Iterator.empty(rc): Iterator[Int32, rc, rc])) |> Iterator.toList == Nil
+    @Test
+    def zipWithIndex01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, Iterator.zipWithIndex((Iterator.empty(rc): Iterator[Int32, rc, rc])) |> Iterator.toList)
     }
 
-    @test
-    def zipWithIndex02(): Bool = region rc {
-        Iterator.zipWithIndex(Iterator.singleton(rc, 2)) |> Iterator.toList == (0, 2) :: Nil
+    @Test
+    def zipWithIndex02(): Unit \ Assert = region rc {
+        assertEq(expected = (0, 2) :: Nil, Iterator.zipWithIndex(Iterator.singleton(rc, 2)) |> Iterator.toList)
     }
 
-    @test
-    def zipWithIndex03(): Bool = region rc {
-        Iterator.zipWithIndex(List.iterator(rc, 1 :: 8 :: Nil)) |> Iterator.toList == (0, 1) :: (1, 8) :: Nil
+    @Test
+    def zipWithIndex03(): Unit \ Assert = region rc {
+        assertEq(expected = (0, 1) :: (1, 8) :: Nil, Iterator.zipWithIndex(List.iterator(rc, 1 :: 8 :: Nil)) |> Iterator.toList)
     }
 
-    @test
-    def zipWithIndex04(): Bool = region rc {
-        Iterator.zipWithIndex(List.iterator(rc, 8 :: 1 :: Nil)) |> Iterator.toList == (0, 8) :: (1, 1) :: Nil
+    @Test
+    def zipWithIndex04(): Unit \ Assert = region rc {
+        assertEq(expected = (0, 8) :: (1, 1) :: Nil, Iterator.zipWithIndex(List.iterator(rc, 8 :: 1 :: Nil)) |> Iterator.toList)
     }
 
-    @test
-    def zipWithIndex05(): Bool = region rc {
-        Iterator.zipWithIndex(List.iterator(rc, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList == (0, 1) :: (1, 4) :: (2, 11) :: (3, 2) :: (4, -22) :: (5, 17) :: Nil
+    @Test
+    def zipWithIndex05(): Unit \ Assert = region rc {
+        assertEq(expected = (0, 1) :: (1, 4) :: (2, 11) :: (3, 2) :: (4, -22) :: (5, 17) :: Nil, Iterator.zipWithIndex(List.iterator(rc, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) |> Iterator.toList)
     }
 
 
@@ -851,28 +836,28 @@ mod TestIterator {
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldLeft01(): Bool = region rc {
+    @Test
+    def foldLeft01(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 100
+        assertEq(expected = 100, Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldLeft02(): Bool = region rc {
+    @Test
+    def foldLeft02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 198
+        assertEq(expected = 198, Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldLeft03(): Bool = region rc {
+    @Test
+    def foldLeft03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 196
+        assertEq(expected = 196, Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldLeft04(): Bool = region rc {
+    @Test
+    def foldLeft04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 386
+        assertEq(expected = 386, Iterator.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
 
@@ -880,28 +865,28 @@ mod TestIterator {
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRight01(): Bool = region rc {
+    @Test
+    def foldRight01(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 100
+        assertEq(expected = 100, Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldRight02(): Bool = region rc {
+    @Test
+    def foldRight02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 198
+        assertEq(expected = 198, Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldRight03(): Bool = region rc {
+    @Test
+    def foldRight03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 194
+        assertEq(expected = 194, Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldRight04(): Bool = region rc {
+    @Test
+    def foldRight04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 382
+        assertEq(expected = 382, Iterator.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
 
@@ -909,28 +894,28 @@ mod TestIterator {
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRightWithCont01(): Bool = region rc {
+    @Test
+    def foldRightWithCont01(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 100
+        assertEq(expected = 100, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldRightWithCont02(): Bool = region rc {
+    @Test
+    def foldRightWithCont02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 198
+        assertEq(expected = 198, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldRightWithCont03(): Bool = region rc {
+    @Test
+    def foldRightWithCont03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 194
+        assertEq(expected = 194, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
-    @test
-    def foldRightWithCont04(): Bool = region rc {
+    @Test
+    def foldRightWithCont04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter) == 382
+        assertEq(expected = 382, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
     }
 
 
@@ -938,29 +923,29 @@ mod TestIterator {
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldMap01(): Bool = region rc {
-        Iterator.foldMap(x -> 2 * x, List.iterator(rc, Nil)) == 0
+    @Test
+    def foldMap01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Iterator.foldMap(x -> 2 * x, List.iterator(rc, Nil)))
     }
 
-    @test
-    def foldMap02(): Bool = region rc {
-        Iterator.foldMap(x -> 2 * x, List.iterator(rc, 1 :: 2 :: Nil)) == 6
+    @Test
+    def foldMap02(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Iterator.foldMap(x -> 2 * x, List.iterator(rc, 1 :: 2 :: Nil)))
     }
 
-    @test
-    def foldMap03(): Bool = region rc {
-        Iterator.foldMap(x -> if (x == "a") "b" else x, List.iterator(rc, "a" :: Nil)) == "b"
+    @Test
+    def foldMap03(): Unit \ Assert = region rc {
+        assertEq(expected = "b", Iterator.foldMap(x -> if (x == "a") "b" else x, List.iterator(rc, "a" :: Nil)))
     }
 
-    @test
-    def foldMap04(): Bool = region rc {
-        Iterator.foldMap(x -> if (x == "c") "b" else x, List.iterator(rc, "a" :: "b" :: "c" :: Nil)) == "abb"
+    @Test
+    def foldMap04(): Unit \ Assert = region rc {
+        assertEq(expected = "abb", Iterator.foldMap(x -> if (x == "c") "b" else x, List.iterator(rc, "a" :: "b" :: "c" :: Nil)))
     }
 
-    @test
-    def foldMap05(): Bool = region rc {
-        Iterator.foldMap(Int32.toString, List.iterator(rc, 1 :: 2 :: 3 :: Nil)) == "123"
+    @Test
+    def foldMap05(): Unit \ Assert = region rc {
+        assertEq(expected = "123", Iterator.foldMap(Int32.toString, List.iterator(rc, 1 :: 2 :: 3 :: Nil)))
     }
 
 
@@ -968,34 +953,34 @@ mod TestIterator {
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceLeft01(): Bool = region rc {
+    @Test
+    def reduceLeft01(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, (Nil: List[Int32]));
-        Iterator.reduceLeft((a, b) -> a - b, iter) == None
+        assertEq(expected = None, Iterator.reduceLeft((a, b) -> a - b, iter))
     }
 
-    @test
-    def reduceLeft02(): Bool = region rc {
+    @Test
+    def reduceLeft02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(1)
+        assertEq(expected = Some(1), Iterator.reduceLeft((a, b) -> a - b, iter))
     }
 
-    @test
-    def reduceLeft03(): Bool = region rc {
+    @Test
+    def reduceLeft03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-1)
+        assertEq(expected = Some(-1), Iterator.reduceLeft((a, b) -> a - b, iter))
     }
 
-    @test
-    def reduceLeft04(): Bool = region rc {
+    @Test
+    def reduceLeft04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-4)
+        assertEq(expected = Some(-4), Iterator.reduceLeft((a, b) -> a - b, iter))
     }
 
-    @test
-    def reduceLeft05(): Bool = region rc {
+    @Test
+    def reduceLeft05(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: 4 :: Nil);
-        Iterator.reduceLeft((a, b) -> a - b, iter) == Some(-8)
+        assertEq(expected = Some(-8), Iterator.reduceLeft((a, b) -> a - b, iter))
     }
 
 
@@ -1003,52 +988,52 @@ mod TestIterator {
     // takeWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhile01(): Bool = region rc {
-        List.iterator(rc, (Nil: List[Int32])) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def takeWhile01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, (Nil: List[Int32])) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def takeWhile02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 1 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile03(): Bool = region rc {
-        List.iterator(rc, 4 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 4 :: Nil
+    @Test
+    def takeWhile03(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: Nil, List.iterator(rc, 4 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def takeWhile04(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 1 :: 2 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile05(): Bool = region rc {
-        List.iterator(rc, 1 :: 5 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def takeWhile05(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 1 :: 5 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile06(): Bool = region rc {
-        List.iterator(rc, 5 :: 1 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 5 :: Nil
+    @Test
+    def takeWhile06(): Unit \ Assert = region rc {
+        assertEq(expected = 5 :: Nil, List.iterator(rc, 5 :: 1 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile07(): Bool = region rc {
-        List.iterator(rc, 5 :: 8 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 5 :: 8 :: Nil
+    @Test
+    def takeWhile07(): Unit \ Assert = region rc {
+        assertEq(expected = 5 :: 8 :: Nil, List.iterator(rc, 5 :: 8 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def takeWhile08(): Bool = region rc {
-        List.iterator(rc, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Iterator.takeWhile(i -> i > 3) |> Iterator.toList == 4 :: 6 :: Nil
+    @Test
+    def takeWhile08(): Unit \ Assert = region rc {
+        assertEq(expected = 4 :: 6 :: Nil, List.iterator(rc, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Iterator.takeWhile(i -> i > 3) |> Iterator.toList)
     }
 
 
@@ -1056,52 +1041,52 @@ mod TestIterator {
     // dropWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhile01(): Bool = region rc {
-        List.iterator(rc, Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def dropWhile01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: Nil
+    @Test
+    def dropWhile02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile03(): Bool = region rc {
-        List.iterator(rc, 4 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def dropWhile03(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 4 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: 2 :: Nil
+    @Test
+    def dropWhile04(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: Nil, List.iterator(rc, 1 :: 2 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile05(): Bool = region rc {
-        List.iterator(rc, 1 :: 5 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: 5 :: Nil
+    @Test
+    def dropWhile05(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 5 :: Nil, List.iterator(rc, 1 :: 5 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile06(): Bool = region rc {
-        List.iterator(rc, 5 :: 1 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == 1 :: Nil
+    @Test
+    def dropWhile06(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 5 :: 1 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile07(): Bool = region rc {
-        List.iterator(rc, 5 :: 8 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == Nil
+    @Test
+    def dropWhile07(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 5 :: 8 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
-    @test
-    def dropWhile08(): Bool = region rc {
-        List.iterator(rc, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Iterator.dropWhile(i -> i > 3) |> Iterator.toList == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+    @Test
+    def dropWhile08(): Unit \ Assert = region rc {
+        assertEq(expected = -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil, List.iterator(rc, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Iterator.dropWhile(i -> i > 3) |> Iterator.toList)
     }
 
 
@@ -1109,53 +1094,53 @@ mod TestIterator {
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def flatMap01(): Bool = region rc {
-        (List.iterator(rc, Nil): Iterator[Int32, _, _]) |>
+    @Test
+    def flatMap01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (List.iterator(rc, Nil): Iterator[Int32, _, _]) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
-            Iterator.toList == Nil
+            Iterator.toList)
     }
 
-    @test
-    def flatMap02(): Bool = region rc {
-        List.iterator(rc, 0 :: Nil) |>
+    @Test
+    def flatMap02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 0 :: Nil) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
-            Iterator.toList == Nil
+            Iterator.toList)
     }
 
-    @test
-    def flatMap03(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |>
+    @Test
+    def flatMap03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: Nil) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
-            Iterator.toList == 1 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def flatMap04(): Bool = region rc {
-        List.iterator(rc, 2 :: Nil) |>
+    @Test
+    def flatMap04(): Unit \ Assert = region rc {
+        assertEq(expected = 2 :: 2 :: Nil, List.iterator(rc, 2 :: Nil) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
-            Iterator.toList == 2 :: 2 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def flatMap05(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |>
+    @Test
+    def flatMap05(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 2 :: Nil, List.iterator(rc, 1 :: 2 :: Nil) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
-            Iterator.toList == 1 :: 2 :: 2 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def flatMap06(): Bool = region rc {
-        List.iterator(rc, 2 :: 3 :: Nil) |>
+    @Test
+    def flatMap06(): Unit \ Assert = region rc {
+        assertEq(expected = 2 :: 2 :: 3 :: 3 :: 3 :: Nil, List.iterator(rc, 2 :: 3 :: Nil) |>
             Iterator.flatMap(i -> Iterator.repeat(rc, i, i)) |>
-            Iterator.toList == 2 :: 2 :: 3 :: 3 :: 3 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def flatMap07(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: 4 :: Nil) |>
+    @Test
+    def flatMap07(): Unit \ Assert = region rc {
+        assertEq(expected = 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil, List.iterator(rc, 1 :: 2 :: 3 :: 4 :: Nil) |>
             Iterator.flatMap(i -> if (i `Int32.remainder` 2 == 0) Iterator.repeat(rc, i, i) else Iterator.empty(rc)) |>
-            Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
+            Iterator.toList)
     }
 
     // TODO - multiple region tests currently disabled
@@ -1173,39 +1158,39 @@ mod TestIterator {
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intersperse01(): Bool = region rc {
-        List.iterator(rc, Nil) |>
+    @Test
+    def intersperse01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, Nil) |>
             Iterator.intersperse(11) |>
-            Iterator.toList == Nil
+            Iterator.toList)
     }
 
-    @test
-    def intersperse02(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |>
+    @Test
+    def intersperse02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: Nil) |>
             Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def intersperse03(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |>
+    @Test
+    def intersperse03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 11 :: 2 :: Nil, List.iterator(rc, 1 :: 2 :: Nil) |>
             Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: 11 :: 2 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def intersperse04(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: Nil) |>
+    @Test
+    def intersperse04(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 11 :: 2 :: 11 :: 3 :: Nil, List.iterator(rc, 1 :: 2 :: 3 :: Nil) |>
             Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: 11 :: 2 :: 11 :: 3 :: Nil
+            Iterator.toList)
     }
 
-    @test
-    def intersperse05(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: 4 :: Nil) |>
+    @Test
+    def intersperse05(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil, List.iterator(rc, 1 :: 2 :: 3 :: 4 :: Nil) |>
             Iterator.intersperse(11) |>
-            Iterator.toList == 1 :: 11 :: 2 :: 11 :: 3 :: 11 :: 4 :: Nil
+            Iterator.toList)
     }
 
 
@@ -1213,85 +1198,85 @@ mod TestIterator {
     // intercalate                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intercalate01(): Bool = region rc {
+    @Test
+    def intercalate01(): Unit \ Assert = region rc {
         let sep: List[Int32] = Nil;
         let iter = Nil |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |> Iterator.toList == (Nil: List[Int32])
+        assertEq(expected = (Nil: List[Int32]), Iterator.intercalate(sep, iter) |> Iterator.toList)
     }
 
-    @test
-    def intercalate02(): Bool = region rc {
+    @Test
+    def intercalate02(): Unit \ Assert = region rc {
         let sep: List[Int32] = Nil;
         let iterA1 = (1 :: Nil) |> List.iterator(rc);
         let iter  = (iterA1 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |>
-            Iterator.toList == 1 :: Nil
+        assertEq(expected = 1 :: Nil, Iterator.intercalate(sep, iter) |>
+            Iterator.toList)
     }
 
-    @test
-    def intercalate03(): Bool = region rc {
+    @Test
+    def intercalate03(): Unit \ Assert = region rc {
         let sep = 11 :: 12 :: 13 :: Nil;
         let iter = Nil |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |>
-            Iterator.toList ==  Nil
+        assertEq(expected = Nil, Iterator.intercalate(sep, iter) |>
+            Iterator.toList)
     }
 
-    @test
-    def intercalate04(): Bool = region rc {
+    @Test
+    def intercalate04(): Unit \ Assert = region rc {
         let sep: List[Int32] = Nil;
         let iterA1 = (1 :: Nil) |> List.iterator(rc);
         let iterA2 = (2 :: 3 :: Nil) |> List.iterator(rc);
         let iter = (iterA1 :: iterA2 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |>
-            Iterator.toList == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.intercalate(sep, iter) |>
+            Iterator.toList)
     }
 
-    @test
-    def intercalate05(): Bool = region rc {
+    @Test
+    def intercalate05(): Unit \ Assert = region rc {
         let sep  = 11 :: 12 :: 13 :: Nil;
         let iterA1 = (1 :: Nil) |> List.iterator(rc);
         let iterA2 = (2 :: 3 :: Nil) |> List.iterator(rc);
         let iter = (iterA1 :: iterA2 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |>
-            Iterator.toList == 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 11 :: 12 :: 13 :: 2 :: 3 :: Nil, Iterator.intercalate(sep, iter) |>
+            Iterator.toList)
     }
 
-    @test
-    def intercalate06(): Bool = region rc {
+    @Test
+    def intercalate06(): Unit \ Assert = region rc {
         let sep = Nil;
         let iterA1 = (1 :: Nil) |> List.iterator(rc);
         let iterA2 = (2 :: 3 :: Nil) |> List.iterator(rc);
         let iterA3 = (4 :: Nil) |> List.iterator(rc);
         let iter = (iterA1 :: iterA2 :: iterA3 :: Nil) |> List.iterator(rc);
-        Iterator.intercalate(sep, iter) |>
-            Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, Iterator.intercalate(sep, iter) |>
+            Iterator.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithOk                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def unfoldWithOk01(): Bool = region rc {
+    @Test
+    def unfoldWithOk01(): Unit \ Assert = region rc {
         let iter = Iterator.unfoldWithOk(rc, () -> Err(0));
-        Iterator.toList(iter) == (Nil: List[Int32])
+        assertEq(expected = (Nil: List[Int32]), Iterator.toList(iter))
     }
 
-    @test
-    def unfoldWithOk02(): Bool = region rc {
+    @Test
+    def unfoldWithOk02(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
-        Iterator.unfoldWithOk(rc, () -> {Iterator.next(iter) |> Option.toOk("Done")}) |>
-            Iterator.toList == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: 5 :: Nil, Iterator.unfoldWithOk(rc, () -> {Iterator.next(iter) |> Option.toOk("Done")}) |>
+            Iterator.toList)
         }
 
-    @test
-    def unfoldWithOk03(): Bool = region rc {
+    @Test
+    def unfoldWithOk03(): Unit \ Assert = region rc {
         let iter = (1 :: 2 :: 3 :: 4 :: 5 :: Nil) |>
             List.map(x -> if (x == 4) Err("Done") else Ok(x)) |>
             List.iterator(rc);
-        Iterator.unfoldWithOk(rc, () -> {Iterator.next(iter) |> Option.getWithDefault(Err("Done"))}) |>
-            Iterator.toList == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.unfoldWithOk(rc, () -> {Iterator.next(iter) |> Option.getWithDefault(Err("Done"))}) |>
+            Iterator.toList)
         }
 
 
@@ -1299,39 +1284,39 @@ mod TestIterator {
     // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def drop01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |>
-            Iterator.drop(1) |> Iterator.toList == Nil
+    @Test
+    def drop01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Nil: List[Int32]) |> List.iterator(rc) |>
+            Iterator.drop(1) |> Iterator.toList)
     }
-    @test
-    def drop02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.drop(1) |> Iterator.toList == Nil
-    }
-
-    @test
-    def drop03(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.drop(2) |> Iterator.toList == 3 :: Nil
+    @Test
+    def drop02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.drop(1) |> Iterator.toList)
     }
 
-    @test
-    def drop04(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.drop(3) |> Iterator.toList == Nil
+    @Test
+    def drop03(): Unit \ Assert = region rc {
+        assertEq(expected = 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.drop(2) |> Iterator.toList)
     }
 
-    @test
-    def drop05(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.drop(4) |> Iterator.toList == Nil
+    @Test
+    def drop04(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.drop(3) |> Iterator.toList)
     }
 
-    @test
-    def drop06(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.drop(0) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    @Test
+    def drop05(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.drop(4) |> Iterator.toList)
+    }
+
+    @Test
+    def drop06(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.drop(0) |> Iterator.toList)
     }
 
 
@@ -1339,92 +1324,92 @@ mod TestIterator {
     // take                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def take01(): Bool = region rc {
-        List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(-1) |> Iterator.toList == Nil
+    @Test
+    def take01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(-1) |> Iterator.toList)
     }
 
-    @test
-    def take02(): Bool = region rc {
-        List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(0) |> Iterator.toList == Nil
+    @Test
+    def take02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(0) |> Iterator.toList)
     }
 
-    @test
-    def take03(): Bool = region rc {
-        List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(1) |> Iterator.toList == Nil
+    @Test
+    def take03(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, (Nil: List[Unit])) |> Iterator.take(1) |> Iterator.toList)
     }
 
-    @test
-    def take04(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.take(-1) |> Iterator.toList == Nil
+    @Test
+    def take04(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 1 :: Nil) |> Iterator.take(-1) |> Iterator.toList)
     }
 
-    @test
-    def take05(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
+    @Test
+    def take05(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 1 :: Nil) |> Iterator.take(0) |> Iterator.toList)
     }
 
-    @test
-    def take06(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+    @Test
+    def take06(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: Nil) |> Iterator.take(1) |> Iterator.toList)
     }
 
-    @test
-    def take07(): Bool = region rc {
-        List.iterator(rc, 1 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: Nil
+    @Test
+    def take07(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: Nil) |> Iterator.take(2) |> Iterator.toList)
     }
 
-    @test
-    def take08(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |> Iterator.take(0) |> Iterator.toList == Nil
+    @Test
+    def take08(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, List.iterator(rc, 1 :: 2 :: Nil) |> Iterator.take(0) |> Iterator.toList)
     }
 
-    @test
-    def take09(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |> Iterator.take(1) |> Iterator.toList == 1 :: Nil
+    @Test
+    def take09(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, List.iterator(rc, 1 :: 2 :: Nil) |> Iterator.take(1) |> Iterator.toList)
     }
 
-    @test
-    def take10(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+    @Test
+    def take10(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: Nil, List.iterator(rc, 1 :: 2 :: Nil) |> Iterator.take(2) |> Iterator.toList)
     }
 
-    @test
-    def take11(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(2) |> Iterator.toList == 1 :: 2 :: Nil
+    @Test
+    def take11(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: Nil, List.iterator(rc, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(2) |> Iterator.toList)
     }
 
-    @test
-    def take12(): Bool = region rc {
-        List.iterator(rc, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(4) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    @Test
+    def take12(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, List.iterator(rc, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> Iterator.take(4) |> Iterator.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def join01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |>
-            Iterator.join(",") == ""
+    @Test
+    def join01(): Unit \ Assert = region rc {
+        assertEq(expected = "", (Nil: List[Int32]) |> List.iterator(rc) |>
+            Iterator.join(","))
     }
 
-    @test
-    def join02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.join(",") == "1"
+    @Test
+    def join02(): Unit \ Assert = region rc {
+        assertEq(expected = "1", (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.join(","))
     }
 
-    @test
-    def join03(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.join(",") == "1,2,3"
+    @Test
+    def join03(): Unit \ Assert = region rc {
+        assertEq(expected = "1,2,3", (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.join(","))
     }
 
-    @test
-    def join04(): Bool = region rc {
-        ("1" :: "2" :: "3" :: Nil) |> List.iterator(rc) |>
-            Iterator.join(",") == "1,2,3"
+    @Test
+    def join04(): Unit \ Assert = region rc {
+        assertEq(expected = "1,2,3", ("1" :: "2" :: "3" :: Nil) |> List.iterator(rc) |>
+            Iterator.join(","))
     }
 
 
@@ -1432,28 +1417,28 @@ mod TestIterator {
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |>
-            Iterator.joinWith(x -> "${x + 1}", ",") == ""
+    @Test
+    def joinWith01(): Unit \ Assert = region rc {
+        assertEq(expected = "", (Nil: List[Int32]) |> List.iterator(rc) |>
+            Iterator.joinWith(x -> "${x + 1}", ","))
     }
 
-    @test
-    def joinWith02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.joinWith(x -> "${x + 1}", ",") == "2"
+    @Test
+    def joinWith02(): Unit \ Assert = region rc {
+        assertEq(expected = "2", (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.joinWith(x -> "${x + 1}", ","))
     }
 
-    @test
-    def joinWith03(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+    @Test
+    def joinWith03(): Unit \ Assert = region rc {
+        assertEq(expected = "2,3,4", (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.joinWith(x -> "${x + 1}", ","))
     }
 
-    @test
-    def joinWith04(): Bool = region rc {
-        ("1" :: "2" :: "3" :: Nil) |> List.iterator(rc) |>
-            Iterator.joinWith(x -> x + x, ",") == "11,22,33"
+    @Test
+    def joinWith04(): Unit \ Assert = region rc {
+        assertEq(expected = "11,22,33", ("1" :: "2" :: "3" :: Nil) |> List.iterator(rc) |>
+            Iterator.joinWith(x -> x + x, ","))
     }
 
 
@@ -1461,77 +1446,77 @@ mod TestIterator {
     // filterMap                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filterMap01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList == Nil
+    @Test
+    def filterMap01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Nil: List[Int32]) |> List.iterator(rc) |>
+            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList)
     }
-    @test
-    def filterMap02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList == Nil
-    }
-
-    @test
-    def filterMap03(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: Nil
+    @Test
+    def filterMap02(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (1 :: Nil) |> List.iterator(rc) |>
+            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList)
     }
 
-    @test
-    def filterMap04(): Bool = region rc {
-        (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.iterator(rc) |>
-            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList == 2 :: 4 :: 6 :: Nil
+    @Test
+    def filterMap03(): Unit \ Assert = region rc {
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
+            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList)
+    }
+
+    @Test
+    def filterMap04(): Unit \ Assert = region rc {
+        assertEq(expected = 2 :: 4 :: 6 :: Nil, (1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) |> List.iterator(rc) |>
+            Iterator.filterMap(x -> if (x `Int32.remainder` 2 == 0) Some(x) else None) |> Iterator.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // cons                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def cons01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |>
-            Iterator.cons(1) |> Iterator.toList == 1 :: Nil
+    @Test
+    def cons01(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: Nil, (Nil: List[Int32]) |> List.iterator(rc) |>
+            Iterator.cons(1) |> Iterator.toList)
     }
 
-    @test
-    def cons02(): Bool = region rc {
-        (2 :: (Nil: List[Int32])) |> List.iterator(rc) |>
-            Iterator.cons(1) |> Iterator.toList == 1 :: 2 :: Nil
+    @Test
+    def cons02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: Nil, (2 :: (Nil: List[Int32])) |> List.iterator(rc) |>
+            Iterator.cons(1) |> Iterator.toList)
     }
 
-    @test
-    def cons03(): Bool = region rc {
-        (3 :: (Nil: List[Int32])) |> List.iterator(rc) |>
-            Iterator.cons(2) |> Iterator.cons(1) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    @Test
+    def cons03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, (3 :: (Nil: List[Int32])) |> List.iterator(rc) |>
+            Iterator.cons(2) |> Iterator.cons(1) |> Iterator.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def flatten01(): Bool = region rc {
-        (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
-            Iterator.flatten |> Iterator.toList == Nil
+    @Test
+    def flatten01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Nil: List[Int32]) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
+            Iterator.flatten |> Iterator.toList)
     }
 
-    @test
-    def flatten02(): Bool = region rc {
-        (1 :: Nil) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
-            Iterator.flatten |> Iterator.toList == 1 :: 1 :: Nil
+    @Test
+    def flatten02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 1 :: Nil, (1 :: Nil) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
+            Iterator.flatten |> Iterator.toList)
     }
 
-    @test
-    def flatten03(): Bool = region rc {
-        (1 :: 2 :: Nil) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
-            Iterator.flatten |> Iterator.toList == 1 :: 1 :: 2 :: 2 :: Nil
+    @Test
+    def flatten03(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 1 :: 2 :: 2 :: Nil, (1 :: 2 :: Nil) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
+            Iterator.flatten |> Iterator.toList)
     }
 
-    @test
-    def flatten04(): Bool = region rc {
-        (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
-            Iterator.flatten |> Iterator.toList == 1 :: 1 :: 2 :: 2 :: 3 :: 3 :: Nil
+    @Test
+    def flatten04(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 1 :: 2 :: 2 :: 3 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |> Iterator.map(i -> Iterator.repeat(rc, 2, i)) |>
+            Iterator.flatten |> Iterator.toList)
     }
 
 }
