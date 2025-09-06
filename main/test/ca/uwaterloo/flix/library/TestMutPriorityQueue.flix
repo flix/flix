@@ -1,43 +1,29 @@
-/*
- * Copyright 2023 Xavier deSouza
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestMutPriorityQueue {
+
+    use Assert.{assertEq, assertTrue, assertFalse};
 
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def emptyWithCapacity01(): Bool = region rc {
+    @Test
+    def emptyWithCapacity01(): Unit \ Assert = region rc {
         let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 10);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {}"
+        assertEq(expected = "MutPriorityQueue {}", MutPriorityQueue.toString(mq))
     }
 
-    @test
-    def emptyWithCapacity02(): Bool = region rc {
+    @Test
+    def emptyWithCapacity02(): Unit \ Assert = region rc {
         let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, -1);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {}"
+        assertEq(expected = "MutPriorityQueue {}", MutPriorityQueue.toString(mq))
     }
 
-    @test
-    def emptyWithCapacity03(): Bool = region rc {
+    @Test
+    def emptyWithCapacity03(): Unit \ Assert = region rc {
         let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.emptyWithCapacity(rc, 0);
         MutPriorityQueue.enqueue(4, mq);
         MutPriorityQueue.enqueue(5, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {5, 4}"
+        assertEq(expected = "MutPriorityQueue {5, 4}", MutPriorityQueue.toString(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -45,25 +31,25 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testToString01(): Bool = region rc {
+    def toString01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Char, rc]);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {}"
+        assertEq(expected = "MutPriorityQueue {}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testToString02(): Bool = region rc {
+    def toString02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(3, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {3}"
+        assertEq(expected = "MutPriorityQueue {3}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testToString03(): Bool = region rc {
+    def toString03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {6, 4, 5, 1, 3, 2}"
+        assertEq(expected = "MutPriorityQueue {6, 4, 5, 1, 3, 2}", MutPriorityQueue.toString(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -71,9 +57,9 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testEmpty01(): Bool = region rc {
+    def empty01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
-        MutPriorityQueue.size(mq) == 0
+        assertEq(expected = 0, MutPriorityQueue.size(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -81,24 +67,24 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testSize01(): Bool = region rc {
+    def size01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
-        MutPriorityQueue.size(mq) == 0
+        assertEq(expected = 0, MutPriorityQueue.size(mq))
     }
 
     @Test
-    def testSize02(): Bool = region rc {
+    def size02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll("a" :: "b" :: "c" :: "d" :: "e" :: Nil, mq);
-        MutPriorityQueue.size(mq) == 5
+        assertEq(expected = 5, MutPriorityQueue.size(mq))
     }
 
     @Test
-    def testSize03(): Bool = region rc {
+    def size03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.size(mq) == 7
+        assertEq(expected = 7, MutPriorityQueue.size(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -106,35 +92,36 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testIsEmpty01(): Bool = region rc {
+    def isEmpty01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
-        MutPriorityQueue.isEmpty(mq)
+        assertTrue(MutPriorityQueue.isEmpty(mq))
     }
 
     @Test
-    def testIsEmpty02(): Bool = region rc {
+    def isEmpty02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue("a", mq);
-        not MutPriorityQueue.isEmpty(mq)
+        assertFalse(MutPriorityQueue.isEmpty(mq))
     }
 
     @Test
-    def testIsEmpty03(): Bool = region rc {
+    def isEmpty03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.isEmpty(mq)
+        assertTrue(MutPriorityQueue.isEmpty(mq))
     }
 
-    @Test def testIsEmpty04(): Bool = region rc {
+    @Test 
+    def isEmpty04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.enqueue(1, mq);
-        not MutPriorityQueue.isEmpty(mq)
+        assertFalse(MutPriorityQueue.isEmpty(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -142,36 +129,36 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testNonEmpty01(): Bool = region rc {
+    def nonEmpty01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
-        not MutPriorityQueue.nonEmpty(mq)
+        assertFalse(MutPriorityQueue.nonEmpty(mq))
     }
 
     @Test
-    def testNonEmpty02(): Bool = region rc {
+    def nonEmpty02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue("a", mq);
-        MutPriorityQueue.nonEmpty(mq)
+        assertTrue(MutPriorityQueue.nonEmpty(mq))
     }
 
     @Test
-    def testNonEmpty03(): Bool = region rc {
+    def nonEmpty03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        not MutPriorityQueue.nonEmpty(mq)
+        assertFalse(MutPriorityQueue.nonEmpty(mq))
     }
 
     @Test
-    def testNonEmpty04(): Bool = region rc {
+    def nonEmpty04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.enqueue(1, mq);
-        MutPriorityQueue.nonEmpty(mq)
+        assertTrue(MutPriorityQueue.nonEmpty(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -179,41 +166,41 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testPeek01(): Bool = region rc {
+    def peek01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(3, mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.peek(mq) == None
+        assertEq(expected = None, MutPriorityQueue.peek(mq))
     }
 
     @Test
-    def testPeek02(): Bool = region rc {
+    def peek02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(1, mq);
-        MutPriorityQueue.peek(mq) == Some(1)
+        assertEq(expected = Some(1), MutPriorityQueue.peek(mq))
     }
 
     @Test
-    def testPeek03(): Bool = region rc {
+    def peek03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 9 :: 2 :: 8 :: 3 :: 7 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.peek(mq) == Some(8)
+        assertEq(expected = Some(8), MutPriorityQueue.peek(mq))
     }
 
     @Test
-    def testPeek04(): Bool = region rc {
+    def peek04(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        MutPriorityQueue.peek(mq) == None
+        assertEq(expected = None, MutPriorityQueue.peek(mq))
     }
 
     @Test
-    def testPeek05(): Bool = region rc {
+    def peek05(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(5, mq);
         MutPriorityQueue.enqueue(5, mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.peek(mq) == Some(5)
+        assertEq(expected = Some(5), MutPriorityQueue.peek(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -221,41 +208,41 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testEnqueue01(): Bool = region rc {
+    def enqueue01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue("a", mq);
-        MutPriorityQueue.size(mq) == 1
+        assertEq(expected = 1, MutPriorityQueue.size(mq))
     }
 
     @Test
-    def testEnqueue02(): Bool = region rc {
+    def enqueue02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(3, mq);
         MutPriorityQueue.enqueue(2, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {3, 2}"
+        assertEq(expected = "MutPriorityQueue {3, 2}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testEnqueue03(): Bool = region rc {
+    def enqueue03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(2, mq);
         MutPriorityQueue.enqueue(3, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {3, 2}"
+        assertEq(expected = "MutPriorityQueue {3, 2}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testEnqueue04(): Bool = region rc {
+    def enqueue04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue("a", mq);
         MutPriorityQueue.enqueue("b", mq);
         MutPriorityQueue.enqueue("c", mq);
         MutPriorityQueue.enqueue("a", mq);
         MutPriorityQueue.enqueue("a", mq);
-        MutPriorityQueue.peek(mq) == Some("c")
+        assertEq(expected = Some("c"), MutPriorityQueue.peek(mq))
     }
 
     @Test
-    def testEnqueue05(): Bool = region rc {
+    def enqueue05(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(3, mq);
         MutPriorityQueue.enqueue(4, mq);
@@ -266,7 +253,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.enqueue(7, mq);
         MutPriorityQueue.enqueue(14, mq);
         MutPriorityQueue.enqueue(20, mq);
-        MutPriorityQueue.peek(mq) == Some(20)
+        assertEq(expected = Some(20), MutPriorityQueue.peek(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -274,43 +261,43 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testDequeue01(): Bool = region rc {
+    def dequeue01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.size(mq) == 0
+        assertEq(expected = 0, MutPriorityQueue.size(mq))
     }
 
     @Test
-    def testDequeue02(): Bool = region rc {
+    def dequeue02(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        MutPriorityQueue.dequeue(mq) == None
+        assertEq(expected = None, MutPriorityQueue.dequeue(mq))
     }
 
     @Test
-    def testDequeue03(): Bool = region rc {
+    def dequeue03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.size(mq) == 3
+        assertEq(expected = 3, MutPriorityQueue.size(mq))
     }
 
     @Test
-    def testDequeue04(): Bool = region rc {
+    def dequeue04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.dequeue(mq) == Some(4)
+        assertEq(expected = Some(4), MutPriorityQueue.dequeue(mq))
     }
 
     @Test
-    def testDequeue05(): Bool = region rc {
+    def dequeue05(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.size(mq) == 0
+        assertEq(expected = 0, MutPriorityQueue.size(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -318,36 +305,36 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testEnqueueAll01(): Bool = region rc {
+    def enqueueAll01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(Nil, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {}"
+        assertEq(expected = "MutPriorityQueue {}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testEnqueueAll02(): Bool = region rc {
+    def enqueueAll02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(Nil, mq);
         MutPriorityQueue.enqueueAll(1 :: Nil, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {1}"
+        assertEq(expected = "MutPriorityQueue {1}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testEnqueueAll03(): Bool = region rc {
+    def enqueueAll03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(Nil, mq);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: Nil, mq);
         MutPriorityQueue.enqueueAll(4 :: 5 :: 6 :: Nil, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {6, 4, 5, 1, 3, 2}"
+        assertEq(expected = "MutPriorityQueue {6, 4, 5, 1, 3, 2}", MutPriorityQueue.toString(mq))
     }
 
     @Test
-    def testEnqueueAll04(): Bool = region rc {
+    def enqueueAll04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(Nil, mq);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.enqueueAll(Nil, mq);
-        MutPriorityQueue.toString(mq) == "MutPriorityQueue {8, 7, 6, 4, 3, 2, 5, 1}"
+        assertEq(expected = "MutPriorityQueue {8, 7, 6, 4, 3, 2, 5, 1}", MutPriorityQueue.toString(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -355,15 +342,15 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def forEach01(): Bool = region rc {
+    def forEach01(): Unit \ Assert = region rc {
         let ml = MutList.empty(rc);
         let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.empty(rc);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
-        MutList.isEmpty(ml)
+        assertTrue(MutList.isEmpty(ml))
     }
 
     @Test
-    def forEach02(): Bool = region rc {
+    def forEach02(): Unit \ Assert = region rc {
         let startVec = Vector#{1};
         let sortedStart = startVec |> Vector.sort;
         let ml = MutList.empty(rc);
@@ -371,11 +358,11 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.enqueueAll(startVec, mq);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
         let resultVec = MutList.toVector(ml) |> Vector.sort;
-        resultVec == sortedStart
+        assertEq(expected = sortedStart, resultVec)
     }
 
     @Test
-    def forEach03(): Bool = region rc {
+    def forEach03(): Unit \ Assert = region rc {
         let startVec = Vector#{8, 1, 2, 8, 9, 5, 6};
         let sortedStart = startVec |> Vector.sort;
         let ml = MutList.empty(rc);
@@ -383,11 +370,11 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.enqueueAll(startVec, mq);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
         let resultVec = MutList.toVector(ml) |> Vector.sort;
-        resultVec == sortedStart
+        assertEq(expected = sortedStart, resultVec)
     }
 
     @Test
-    def forEach04(): Bool = region rc {
+    def forEach04(): Unit \ Assert = region rc {
         let startVec = Vector#{8, 1, 2, 8, 9, 5, 6, 3};
         let sortedStart = startVec |> Vector.sort;
         let ml = MutList.empty(rc);
@@ -395,11 +382,11 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.enqueueAll(startVec, mq);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
         let resultVec = MutList.toVector(ml) |> Vector.sort;
-        resultVec == sortedStart
+        assertEq(expected = sortedStart, resultVec)
     }
 
     @Test
-    def forEach05(): Bool = region rc {
+    def forEach05(): Unit \ Assert = region rc {
         let startVec = Vector#{8, 1, 2, 8, 9, 5, 6, 3, 2};
         let sortedStart = startVec |> Vector.sort;
         let ml = MutList.empty(rc);
@@ -407,12 +394,12 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.enqueueAll(startVec, mq);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
         let resultVec = MutList.toVector(ml) |> Vector.sort;
-        resultVec == sortedStart
+        assertEq(expected = sortedStart, resultVec)
     }
 
 
     @Test
-    def forEach06(): Bool = region rc {
+    def forEach06(): Unit \ Assert = region rc {
         let startVec = Vector#{(8, 1), (1, 2), (2, 4), (8, 9), (8, 9), (5, 3), (6, 2), (3, 9), (2, 20)};
         let sortedStart = startVec |> Vector.sort;
         let ml = MutList.empty(rc);
@@ -420,13 +407,12 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.enqueueAll(startVec, mq);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
         let resultVec = MutList.toVector(ml) |> Vector.sort;
-        resultVec == sortedStart
+        assertEq(expected = sortedStart, resultVec)
     }
 
     @Test
-    def forEach07(): Bool = region rc {
+    def forEach07(): Unit \ Assert = region rc {
         let startVec = Vector#{8, 1, 2, 8, 9, 5, 6, 3, 2};
-        // Remove 8 and 9 from the result.
         let sortedStart = Vector#{8, 1, 2, 5, 6, 3, 2} |> Vector.sort;
         let ml = MutList.empty(rc);
         let mq: MutPriorityQueue[Int32, rc] = MutPriorityQueue.empty(rc);
@@ -435,7 +421,7 @@ mod TestMutPriorityQueue {
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.forEach(x -> MutList.push(x, ml), mq);
         let resultVec = MutList.toVector(ml) |> Vector.sort;
-        resultVec == sortedStart
+        assertEq(expected = sortedStart, resultVec)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -443,30 +429,30 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testIterator01(): Bool = region rc {
+    def iterator01(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         let it = MutPriorityQueue.iterator(rc, mq);
         let sum = Ref.fresh(rc, 0);
         Iterator.forEach(x -> Ref.put(Ref.get(sum) + x, sum), it);
-        Ref.get(sum) == 0
+        assertEq(expected = 0, Ref.get(sum))
     }
 
     @Test
-    def testIterator02(): Bool = region rc {
+    def iterator02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: Nil, mq);
         let it = MutPriorityQueue.iterator(rc, mq);
-        Iterator.toList(it) == 1 :: Nil
+        assertEq(expected = 1 :: Nil, Iterator.toList(it))
     }
 
     @Test
-    def testIterator03(): Bool = region rc {
+    def iterator03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll("a" :: "c" :: "g" :: "t" :: Nil, mq);
         let it = MutPriorityQueue.iterator(rc, mq);
         let str = Ref.fresh(rc, "");
         Iterator.forEach(x -> Ref.put(String.concat(x, Ref.get(str)), str), it);
-        Ref.get(str) == "acgt"
+        assertEq(expected = "acgt", Ref.get(str))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -474,46 +460,46 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testToList01(): Bool = region rc {
+    def toList01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        MutPriorityQueue.toList(mq) == Nil
+        assertEq(expected = Nil, MutPriorityQueue.toList(mq))
     }
 
     @Test
-    def testToList02(): Bool = region rc {
+    def toList02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(1, mq);
-        MutPriorityQueue.toList(mq) == 1 :: Nil
+        assertEq(expected = 1 :: Nil, MutPriorityQueue.toList(mq))
     }
 
     @Test
-    def testToList03(): Bool = region rc {
+    def toList03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: Nil, mq);
-        MutPriorityQueue.toList(mq) == 2 :: 1 :: Nil
+        assertEq(expected = 2 :: 1 :: Nil, MutPriorityQueue.toList(mq))
     }
 
     @Test
-    def testToList04(): Bool = region rc {
+    def toList04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: Nil, mq);
-        MutPriorityQueue.toList(mq) == 2 :: 1 :: Nil
+        assertEq(expected = 2 :: 1 :: Nil, MutPriorityQueue.toList(mq))
     }
 
     @Test
-    def testToList05(): Bool = region rc {
+    def toList05(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
-        MutPriorityQueue.toList(mq) == 8 :: 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil
+        assertEq(expected = 8 :: 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil, MutPriorityQueue.toList(mq))
     }
 
     @Test
-    def testToList06(): Bool = region rc {
+    def toList06(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.toList(mq) == 6 :: 4 :: 5 :: 1 :: 3 :: 2 :: Nil
+        assertEq(expected = 6 :: 4 :: 5 :: 1 :: 3 :: 2 :: Nil, MutPriorityQueue.toList(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -521,39 +507,39 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testToNel01(): Bool = region rc {
+    def toNel01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        MutPriorityQueue.toNel(mq) == None
+        assertEq(expected = None, MutPriorityQueue.toNel(mq))
     }
 
     @Test
-    def testToNel02(): Bool = region rc {
+    def toNel02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueue(1, mq);
-        MutPriorityQueue.toNel(mq) == Some(Nel.Nel(1, Nil))
+        assertEq(expected = Some(Nel.Nel(1, Nil)), MutPriorityQueue.toNel(mq))
     }
 
     @Test
-    def testToNel03(): Bool = region rc {
+    def toNel03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: Nil, mq);
-        MutPriorityQueue.toNel(mq) == Some(Nel.Nel(3, 1 :: 2 :: Nil))
+        assertEq(expected = Some(Nel.Nel(3, 1 :: 2 :: Nil)), MutPriorityQueue.toNel(mq))
     }
 
     @Test
-    def testToNel04(): Bool = region rc {
+    def toNel04(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
-        MutPriorityQueue.toNel(mq) == Some(Nel.Nel(8, 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil))
+        assertEq(expected = Some(Nel.Nel(8, 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil)), MutPriorityQueue.toNel(mq))
     }
 
     @Test
-    def testToNel05(): Bool = region rc {
+    def toNel05(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.toNel(mq) == Some(Nel.Nel(6, 4 :: 5 :: 1 :: 3 :: 2 :: Nil))
+        assertEq(expected = Some(Nel.Nel(6, 4 :: 5 :: 1 :: 3 :: 2 :: Nil)), MutPriorityQueue.toNel(mq))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -561,46 +547,46 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testToArray01(): Bool = region rc {
+    def toArray01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{}"
+        assertEq(expected = "Array#{}", Array.toString(MutPriorityQueue.toArray(rc, mq)))
     }
 
     @Test
-    def testToArray02(): Bool = region rc {
+    def toArray02(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueue(1, mq);
-        Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{1}"
+        assertEq(expected = "Array#{1}", Array.toString(MutPriorityQueue.toArray(rc, mq)))
     }
 
     @Test
-    def testToArray03(): Bool = region rc {
+    def toArray03(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(1 :: 2 :: Nil, mq);
-        Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{2, 1}"
+        assertEq(expected = "Array#{2, 1}", Array.toString(MutPriorityQueue.toArray(rc, mq)))
     }
 
     @Test
-    def testToArray04(): Bool = region rc {
+    def toArray04(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(2 :: 1 :: Nil, mq);
-        Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{2, 1}"
+        assertEq(expected = "Array#{2, 1}", Array.toString(MutPriorityQueue.toArray(rc, mq)))
     }
 
     @Test
-    def testToArray05(): Bool = region rc {
+    def toArray05(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
-        Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{8, 7, 6, 4, 3, 2, 5, 1}"
+        assertEq(expected = "Array#{8, 7, 6, 4, 3, 2, 5, 1}", Array.toString(MutPriorityQueue.toArray(rc, mq)))
     }
 
     @Test
-    def testToArray06(): Bool = region rc {
+    def toArray06(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        Array.toString(MutPriorityQueue.toArray(rc, mq)) == "Array#{6, 4, 5, 1, 3, 2}"
+        assertEq(expected = "Array#{6, 4, 5, 1, 3, 2}", Array.toString(MutPriorityQueue.toArray(rc, mq)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -608,46 +594,46 @@ mod TestMutPriorityQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testToVector01(): Bool = region rc {
+    def toVector01(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
-        MutPriorityQueue.toVector(mq) == (Vector#{} : Vector[Int32])
+        assertEq(expected = (Vector#{} : Vector[Int32]), MutPriorityQueue.toVector(mq))
     }
 
     @Test
-    def testToVector02(): Bool = region rc {
+    def toVector02(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueue(1, mq);
-        MutPriorityQueue.toVector(mq) == Vector#{1}
+        assertEq(expected = Vector#{1}, MutPriorityQueue.toVector(mq))
     }
 
     @Test
-    def testToVector03(): Bool = region rc {
+    def toVector03(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(1 :: 2 :: Nil, mq);
-        MutPriorityQueue.toVector(mq) == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, MutPriorityQueue.toVector(mq))
     }
 
     @Test
-    def testToVector04(): Bool = region rc {
+    def toVector04(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(2 :: 1 :: Nil, mq);
-        MutPriorityQueue.toVector(mq) == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, MutPriorityQueue.toVector(mq))
     }
 
     @Test
-    def testToVector05(): Bool = region rc {
+    def toVector05(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
-        MutPriorityQueue.toVector(mq) == Vector#{8, 7, 6, 4, 3, 2, 5, 1}
+        assertEq(expected = Vector#{8, 7, 6, 4, 3, 2, 5, 1}, MutPriorityQueue.toVector(mq))
     }
 
     @Test
-    def testToVector06(): Bool = region rc {
+    def toVector06(): Unit \ Assert = region rc {
         let mq = (MutPriorityQueue.empty(rc) : MutPriorityQueue[Int32, rc]);
         MutPriorityQueue.enqueueAll(1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil, mq);
         MutPriorityQueue.dequeue(mq);
         MutPriorityQueue.dequeue(mq);
-        MutPriorityQueue.toVector(mq) == Vector#{6, 4, 5, 1, 3, 2}
+        assertEq(expected = Vector#{6, 4, 5, 1, 3, 2}, MutPriorityQueue.toVector(mq))
     }
 
 }
