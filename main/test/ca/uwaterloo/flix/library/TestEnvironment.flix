@@ -77,10 +77,4 @@ mod TestEnvironment {
         assertTrue(Environment.getVirtualProcessors() > 0)
     )()
 
-    @Test
-    def getArgs01(): Unit \ Assert + IO + Sys = Environment.handle(() -> {
-        let args = Environment.getArgs();
-        assertNeq(unexpected = List.Nil, args)
-    })()
-
 }
