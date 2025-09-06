@@ -604,33 +604,25 @@ object TypeReconstruction {
       val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
 
+    case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tvar, loc) =>
+      val es = exps.map(visitExp)
+      val qe = visitExp(queryExp)
+      val ss = selects.map(visitExp)
+      val f = from.map(visitBodyPredicate)
+      val w = where.map(visitExp)
+      val effs = es.map(_.eff) ::: ss.map(_.eff) ::: w.map(_.eff)
+      val eff = Type.mkUnion(effs, loc)
+      TypedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, subst(tvar), eff, loc)
+
     case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
       val es = exps.map(visitExp)
       val tpe = subst(tvar)
       val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
-    case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.FixpointFilter(pred, e, subst(tvar), eff, loc)
-
     case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       TypedAst.Expr.FixpointInjectInto(es, predsAndArities, subst(tvar), subst(evar), loc)
-
-    case KindedAst.Expr.FixpointProject(pred, arity, exp1, exp2, tvar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val tpe = subst(tvar)
-      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-
-      // Note: This transformation should happen in the Weeder but it is here because
-      // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
-      // See Weeder for more details.
-      val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolveWithProject(mergeExp :: Nil, None, SolveMode.Default, e1.tpe, eff, loc)
-      TypedAst.Expr.FixpointProject(pred, arity, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, evar) =>
       val tpe = subst(tvar)
