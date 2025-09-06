@@ -678,17 +678,6 @@ mod TestIterator {
         assertEq(expected = 1 :: 2 :: 3 :: Nil, Iterator.append(iter1, iter2) |> Iterator.toList)
     }
 
-    // TODO - multiple region tests currently disabled
-    // @test
-    // def append09(): Bool = region rc1 {
-    //     let iter1 = List.iterator(rc1, 1 :: Nil);
-    //     region rc2 {
-    //         let iter2 = List.iterator(rc2, 2 :: 3 :: Nil);
-    //         Iterator.append(iter1, iter2) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
-    //     }
-    // }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
     /////////////////////////////////////////////////////////////////////////////
@@ -734,17 +723,6 @@ mod TestIterator {
         let iterB = Iterator.repeat(rc, 1000, "b");
         assertEq(expected = List.zip(List.range(0, 500), List.repeat(500, "b")), Iterator.zip(iterA, iterB) |> Iterator.toList)
     }
-
-    // TODO - multiple region tests currently disabled
-    // @test
-    // def zip07(): Bool = region rc1 {
-    //     let iterA = Iterator.range(rc1, 0, 500);
-    //     region rc2 {
-    //         let iterB = Iterator.repeat(rc2, 1000, "b");
-    //         Iterator.zip(iterA, iterB) |> Iterator.toList == List.zip(List.range(0, 500), List.repeat(500, "b"))
-    //     }
-    // }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
@@ -1142,17 +1120,6 @@ mod TestIterator {
             Iterator.flatMap(i -> if (i `Int32.remainder` 2 == 0) Iterator.repeat(rc, i, i) else Iterator.empty(rc)) |>
             Iterator.toList)
     }
-
-    // TODO - multiple region tests currently disabled
-    // @test
-    // def flatMap08(): Bool = region rc1 {
-    //     region rc2 {
-    //         List.iterator(rc1, 1 :: 2 :: 3 :: 4 :: Nil) |>
-    //             Iterator.flatMap(i -> if (i `Int32.remainder` 2 == 0) Iterator.repeat(rc2, i, i) else Iterator.empty(rc2)) |>
-    //             Iterator.toList == 2 :: 2 :: 4 :: 4 :: 4 :: 4 :: Nil
-    //     }
-    // }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //

@@ -1,21 +1,6 @@
-/*
- *  Copyright 2021 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestMonad {
 
+    use Assert.{assertEq}
     use Monad.{flatten, kleisliLeft, kleisliRight}
     use Monad.{=<<, >>=, >=>, <=<}
 
@@ -24,95 +9,95 @@ mod TestMonad {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def flatten01(): Bool =
+    def flatten01(): Unit \ Assert =
         let x: Option[Option[Int32]] = None;
-        flatten(x) == None
+        assertEq(expected = None, flatten(x))
 
     @Test
-    def flatten02(): Bool =
+    def flatten02(): Unit \ Assert =
         let x: Option[Option[Int32]] = Some(None);
-        flatten(x) == None
+        assertEq(expected = None, flatten(x))
 
     @Test
-    def flatten03(): Bool =
+    def flatten03(): Unit \ Assert =
         let x: Option[Option[Int32]] = Some(Some(1));
-        flatten(x) == Some(1)
+        assertEq(expected = Some(1), flatten(x))
 
     /////////////////////////////////////////////////////////////////////////////
     // kleisliLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def kleisliLeft01(): Bool =
-        kleisliLeft(_ -> (None: Option[Int32]), x2 -> Some(ToString.toString(x2)), 1) == None
+    def kleisliLeft01(): Unit \ Assert =
+        assertEq(expected = None, kleisliLeft(_ -> (None: Option[Int32]), x2 -> Some(ToString.toString(x2)), 1))
 
     @Test
-    def kleisliLeft02(): Bool =
-        kleisliLeft(x1 -> Some(x1 + 1), x2 -> Some(ToString.toString(x2)), 1) == Some("2")
+    def kleisliLeft02(): Unit \ Assert =
+        assertEq(expected = Some("2"), kleisliLeft(x1 -> Some(x1 + 1), x2 -> Some(ToString.toString(x2)), 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // kleisliRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def kleisliRight01(): Bool =
-        kleisliRight(x1 -> Some(ToString.toString(x1)), _ -> (None: Option[Int32]), 1) == None
+    def kleisliRight01(): Unit \ Assert =
+        assertEq(expected = None, kleisliRight(x1 -> Some(ToString.toString(x1)), _ -> (None: Option[Int32]), 1))
 
     @Test
-    def kleisliRight02(): Bool =
-        kleisliRight(x1 -> Some(ToString.toString(x1)), x2 -> Some(x2 + 1), 1) == Some("2")
+    def kleisliRight02(): Unit \ Assert =
+        assertEq(expected = Some("2"), kleisliRight(x1 -> Some(ToString.toString(x1)), x2 -> Some(x2 + 1), 1))
 
     /////////////////////////////////////////////////////////////////////////////
     // symFlatMap (=<<)                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def symFlatMap01(): Bool =
-        (x -> Some(x + 1)) =<< None == None
+    def symFlatMap01(): Unit \ Assert =
+        assertEq(expected = None, (x -> Some(x + 1)) =<< None)
 
     @Test
-    def symFlatMap02(): Bool =
-        (x -> Some(x + 1)) =<< Some(1) == Some(2)
+    def symFlatMap02(): Unit \ Assert =
+        assertEq(expected = Some(2), (x -> Some(x + 1)) =<< Some(1))
 
     /////////////////////////////////////////////////////////////////////////////
     // symBind (>>=)                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def symBind01(): Bool =
-        None >>= (x -> Some(x + 1)) == None
+    def symBind01(): Unit \ Assert =
+        assertEq(expected = None, None >>= (x -> Some(x + 1)))
 
     @Test
-    def symBind02(): Bool =
-        Some(1) >>= (x -> Some(x + 1)) == Some(2)
+    def symBind02(): Unit \ Assert =
+        assertEq(expected = Some(2), Some(1) >>= (x -> Some(x + 1)))
 
     /////////////////////////////////////////////////////////////////////////////
     // symKleisliLeft (>=>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def symKleisliLeft01(): Bool =
+    def symKleisliLeft01(): Unit \ Assert =
         let mf = (_ -> (None: Option[Int32])) >=> (x2 -> Some(ToString.toString(x2)));
-        mf(1) == None
+        assertEq(expected = None, mf(1))
 
     @Test
-    def symKleisliLeft02(): Bool =
+    def symKleisliLeft02(): Unit \ Assert =
         let mf = (x1 -> Some(x1 + 1)) >=> (x2 -> Some(ToString.toString(x2)));
-        mf(1) == Some("2")
+        assertEq(expected = Some("2"), mf(1))
 
     /////////////////////////////////////////////////////////////////////////////
     // symKleisliRight (<=<)                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def symKleisliRight01(): Bool =
+    def symKleisliRight01(): Unit \ Assert =
         let mf = (x1 -> Some(ToString.toString(x1))) <=< (_ -> (None: Option[Int32]));
-        mf(1) == None
+        assertEq(expected = None, mf(1))
 
     @Test
-    def symKleisliRight02(): Bool =
+    def symKleisliRight02(): Unit \ Assert =
         let mf = (x1 -> Some(ToString.toString(x1))) <=< (x2 -> Some(x2 + 1));
-        mf(1) == Some("2")
+        assertEq(expected = Some("2"), mf(1))
 
 }
 
