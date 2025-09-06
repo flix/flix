@@ -1,320 +1,380 @@
-/*
- *  Copyright 2025 Ry Wiese
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+mod TestBufReader {
 
- mod TestBufReader {
-     use TestReader.mkTestBufReader
+    use Assert.{assertEq, assertTrue};
+    use TestReader.mkTestBufReader
+
+    struct TestReader[t, r] {
+        stream: Array[t, r],
+        mut cursor: Int32
+    }
+
+    instance Readable[TestReader[t, rr]] {
+        type Elm = t
+        type Aef = rr
+        pub def read(buffer: Array[t, rb], reader: TestReader[t, rr]): Result[IoError, Int32] \ rb + rr = TestReader.read(buffer, reader)
+    }
+
+    mod TestReader {
+
+        pub def mkEmptyBufReader(rc: Region[r], capacity: Int32): BufReader[t, TestReader[t, r], r] \ r =
+            let stream: Array[t, r] = Array#{} @ rc;
+            mkTestBufReader(rc, capacity, stream)
+
+        pub def mkTestBufReader(rc: Region[r], capacity: Int32, stream: Array[t, r]): BufReader[t, TestReader[t, r], r] \ r =
+            let testReader = fromArray(rc, stream);
+            BufReader.withCapacity(rc, capacity, testReader)
+
+        pub def fromArray(rc: Region[r], stream: Array[t, r]): TestReader[t, r] \ r =
+            new TestReader @ rc {
+                stream = stream,
+                cursor = 0
+            }
+
+        pub def read(buffer: Array[t, rb], reader: TestReader[t, rr]): Result[IoError, Int32] \ rb + rr =
+            let bufferSize = Array.size(buffer);
+            let streamSize = Array.size(reader->stream) - reader->cursor;
+            if (streamSize > 0) {
+                let bytesToRead = Int32.min(bufferSize, streamSize);
+                Array.copyInto(
+                    srcPos = reader->cursor,
+                    dstPos = 0,
+                    len = bytesToRead,
+                    src = reader->stream,
+                    buffer
+                );
+                reader->cursor = reader->cursor + bytesToRead;
+                Ok(bytesToRead)
+            } else {
+                Ok(0)
+            }
+
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // read                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def read01(): Bool = region rc {
+    @Test
+    def read01(): Unit \ Assert = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 0);
         let actualDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read02(): Bool = region rc {
+    @Test
+    def read02(): Unit \ Assert = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 8);
         let dest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bytesRead = Readable.read(dest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(dest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(dest, expectedDest))
     }
 
-    @test
-    def read03(): Bool = region rc {
+    @Test
+    def read03(): Unit \ Assert = region rc {
         let capacity = 0;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read04(): Bool = region rc {
+    @Test
+    def read04(): Unit \ Assert = region rc {
         let capacity = 1;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read05(): Bool = region rc {
+    @Test
+    def read05(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read06(): Bool = region rc {
+    @Test
+    def read06(): Unit \ Assert = region rc {
         let capacity = 3;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read07(): Bool = region rc {
+    @Test
+    def read07(): Unit \ Assert = region rc {
         let capacity = 4;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read08(): Bool = region rc {
+    @Test
+    def read08(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read09(): Bool = region rc {
+    @Test
+    def read09(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read10(): Bool = region rc {
+    @Test
+    def read10(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read11(): Bool = region rc {
+    @Test
+    def read11(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read12(): Bool = region rc {
+    @Test
+    def read12(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read13(): Bool = region rc {
+    @Test
+    def read13(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read14(): Bool = region rc {
+    @Test
+    def read14(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 8, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read15(): Bool = region rc {
+    @Test
+    def read15(): Unit \ Assert = region rc {
         let capacity = 0;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read16(): Bool = region rc {
+    @Test
+    def read16(): Unit \ Assert = region rc {
         let capacity = 1;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read17(): Bool = region rc {
+    @Test
+    def read17(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read18(): Bool = region rc {
+    @Test
+    def read18(): Unit \ Assert = region rc {
         let capacity = 3;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read19(): Bool = region rc {
+    @Test
+    def read19(): Unit \ Assert = region rc {
         let capacity = 4;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read20(): Bool = region rc {
+    @Test
+    def read20(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read21(): Bool = region rc {
+    @Test
+    def read21(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read22(): Bool = region rc {
+    @Test
+    def read22(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read23(): Bool = region rc {
+    @Test
+    def read23(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read24(): Bool = region rc {
+    @Test
+    def read24(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read25(): Bool = region rc {
+    @Test
+    def read25(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read26(): Bool = region rc {
+    @Test
+    def read26(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 12, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8, 0i8, 0i8, 0i8, 0i8} @ rc;
-        (bytesRead == Ok(8)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(8), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read27(): Bool = region rc {
+    @Test
+    def read27(): Unit \ Assert = region rc {
         let capacity = 0;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read28(): Bool = region rc {
+    @Test
+    def read28(): Unit \ Assert = region rc {
         let capacity = 0;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -322,11 +382,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read29(): Bool = region rc {
+    @Test
+    def read29(): Unit \ Assert = region rc {
         let capacity = 0;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -335,25 +396,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read30(): Bool = region rc {
-        let capacity = 0;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
-    }
-
-    @test
-    def read31(): Bool = region rc {
+    @Test
+    def read30(): Unit \ Assert = region rc {
         let capacity = 0;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -361,25 +409,42 @@
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
+        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
+    }
+
+    @Test
+    def read31(): Unit \ Assert = region rc {
+        let capacity = 0;
+        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader = mkTestBufReader(rc, capacity, array);
+        let actualDest = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read32(): Bool = region rc {
+    @Test
+    def read32(): Unit \ Assert = region rc {
         let capacity = 1;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read33(): Bool = region rc {
+    @Test
+    def read33(): Unit \ Assert = region rc {
         let capacity = 1;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -387,64 +452,69 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read34(): Bool = region rc {
-        let capacity = 1;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
-    }
-
-    @test
-    def read35(): Bool = region rc {
-        let capacity = 1;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
-    }
-
-    @test
-    def read36(): Bool = region rc {
+    @Test
+    def read34(): Unit \ Assert = region rc {
         let capacity = 1;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
+        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
+    }
+
+    @Test
+    def read35(): Unit \ Assert = region rc {
+        let capacity = 1;
+        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader = mkTestBufReader(rc, capacity, array);
+        let actualDest = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read37(): Bool = region rc {
+    @Test
+    def read36(): Unit \ Assert = region rc {
+        let capacity = 1;
+        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader = mkTestBufReader(rc, capacity, array);
+        let actualDest = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
+        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
+    }
+
+    @Test
+    def read37(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read38(): Bool = region rc {
+    @Test
+    def read38(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -452,11 +522,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read39(): Bool = region rc {
+    @Test
+    def read39(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -465,11 +536,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read40(): Bool = region rc {
+    @Test
+    def read40(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -479,11 +551,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read41(): Bool = region rc {
+    @Test
+    def read41(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -494,22 +567,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read42(): Bool = region rc {
+    @Test
+    def read42(): Unit \ Assert = region rc {
         let capacity = 3;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read43(): Bool = region rc {
+    @Test
+    def read43(): Unit \ Assert = region rc {
         let capacity = 3;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -517,11 +592,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read44(): Bool = region rc {
+    @Test
+    def read44(): Unit \ Assert = region rc {
         let capacity = 3;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -530,25 +606,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read45(): Bool = region rc {
-        let capacity = 3;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
-    }
-
-    @test
-    def read46(): Bool = region rc {
+    @Test
+    def read45(): Unit \ Assert = region rc {
         let capacity = 3;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -556,25 +619,42 @@
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
+        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
+    }
+
+    @Test
+    def read46(): Unit \ Assert = region rc {
+        let capacity = 3;
+        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader = mkTestBufReader(rc, capacity, array);
+        let actualDest = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read47(): Bool = region rc {
+    @Test
+    def read47(): Unit \ Assert = region rc {
         let capacity = 4;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read48(): Bool = region rc {
+    @Test
+    def read48(): Unit \ Assert = region rc {
         let capacity = 4;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -582,64 +662,69 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read49(): Bool = region rc {
-        let capacity = 4;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
-    }
-
-    @test
-    def read50(): Bool = region rc {
-        let capacity = 4;
-        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
-        let bufReader = mkTestBufReader(rc, capacity, array);
-        let actualDest = Array.repeat(rc, 3, 0i8);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let _ = Readable.read(actualDest, bufReader);
-        let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
-    }
-
-    @test
-    def read51(): Bool = region rc {
+    @Test
+    def read49(): Unit \ Assert = region rc {
         let capacity = 4;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
+        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
+    }
+
+    @Test
+    def read50(): Unit \ Assert = region rc {
+        let capacity = 4;
+        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader = mkTestBufReader(rc, capacity, array);
+        let actualDest = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read52(): Bool = region rc {
+    @Test
+    def read51(): Unit \ Assert = region rc {
+        let capacity = 4;
+        let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
+        let bufReader = mkTestBufReader(rc, capacity, array);
+        let actualDest = Array.repeat(rc, 3, 0i8);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let _ = Readable.read(actualDest, bufReader);
+        let bytesRead = Readable.read(actualDest, bufReader);
+        let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
+    }
+
+    @Test
+    def read52(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read53(): Bool = region rc {
+    @Test
+    def read53(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -647,11 +732,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read54(): Bool = region rc {
+    @Test
+    def read54(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -660,11 +746,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read55(): Bool = region rc {
+    @Test
+    def read55(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -674,11 +761,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read56(): Bool = region rc {
+    @Test
+    def read56(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -689,22 +777,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read57(): Bool = region rc {
+    @Test
+    def read57(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read58(): Bool = region rc {
+    @Test
+    def read58(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -712,11 +802,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read59(): Bool = region rc {
+    @Test
+    def read59(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -725,11 +816,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read60(): Bool = region rc {
+    @Test
+    def read60(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -739,11 +831,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read61(): Bool = region rc {
+    @Test
+    def read61(): Unit \ Assert = region rc {
         let capacity = 6;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -754,22 +847,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read62(): Bool = region rc {
+    @Test
+    def read62(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read63(): Bool = region rc {
+    @Test
+    def read63(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -777,11 +872,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read64(): Bool = region rc {
+    @Test
+    def read64(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -790,11 +886,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read65(): Bool = region rc {
+    @Test
+    def read65(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -804,11 +901,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read66(): Bool = region rc {
+    @Test
+    def read66(): Unit \ Assert = region rc {
         let capacity = 7;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -819,22 +917,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read67(): Bool = region rc {
+    @Test
+    def read67(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read68(): Bool = region rc {
+    @Test
+    def read68(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -842,11 +942,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read69(): Bool = region rc {
+    @Test
+    def read69(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -855,11 +956,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read70(): Bool = region rc {
+    @Test
+    def read70(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -869,11 +971,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read71(): Bool = region rc {
+    @Test
+    def read71(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -884,22 +987,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read72(): Bool = region rc {
+    @Test
+    def read72(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read73(): Bool = region rc {
+    @Test
+    def read73(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -907,11 +1012,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read74(): Bool = region rc {
+    @Test
+    def read74(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -920,11 +1026,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read75(): Bool = region rc {
+    @Test
+    def read75(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -934,11 +1041,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read76(): Bool = region rc {
+    @Test
+    def read76(): Unit \ Assert = region rc {
         let capacity = 9;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -949,22 +1057,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read77(): Bool = region rc {
+    @Test
+    def read77(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read78(): Bool = region rc {
+    @Test
+    def read78(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -972,11 +1082,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read79(): Bool = region rc {
+    @Test
+    def read79(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -985,11 +1096,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read80(): Bool = region rc {
+    @Test
+    def read80(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -999,11 +1111,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read81(): Bool = region rc {
+    @Test
+    def read81(): Unit \ Assert = region rc {
         let capacity = 10;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1014,22 +1127,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read82(): Bool = region rc {
+    @Test
+    def read82(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read83(): Bool = region rc {
+    @Test
+    def read83(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1037,11 +1152,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read84(): Bool = region rc {
+    @Test
+    def read84(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1050,11 +1166,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read85(): Bool = region rc {
+    @Test
+    def read85(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1064,11 +1181,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read86(): Bool = region rc {
+    @Test
+    def read86(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1079,22 +1197,24 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read87(): Bool = region rc {
+    @Test
+    def read87(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let actualDest = Array.repeat(rc, 3, 0i8);
         let bytesRead = Readable.read(actualDest, bufReader);
-        let expectedDeset = Array#{0i8, 1i8, 2i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDeset))
+        let expectedDest = Array#{0i8, 1i8, 2i8} @ rc;
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read88(): Bool = region rc {
+    @Test
+    def read88(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1102,11 +1222,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{3i8, 4i8, 5i8} @ rc;
-        (bytesRead == Ok(3)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(3), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read89(): Bool = region rc {
+    @Test
+    def read89(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1115,11 +1236,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(2)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(2), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read90(): Bool = region rc {
+    @Test
+    def read90(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1129,11 +1251,12 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
-    @test
-    def read91(): Bool = region rc {
+    @Test
+    def read91(): Unit \ Assert = region rc {
         let capacity: Int32 = 16;
         let array: Array[Int8, rc] = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
@@ -1144,1572 +1267,1597 @@
         let _ = Readable.read(actualDest, bufReader);
         let bytesRead = Readable.read(actualDest, bufReader);
         let expectedDest = Array#{6i8, 7i8, 5i8} @ rc;
-        (bytesRead == Ok(0)) and (Array.sameElements(actualDest, expectedDest))
+        assertEq(expected = Ok(0), bytesRead);
+        assertTrue(Array.sameElements(actualDest, expectedDest))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // peek                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def peek01(): Bool = region rc {
+    @Test
+    def peek01(): Unit \ Assert = region rc {
         let bufReader: BufReader[Int8, TestReader[Int8, rc], rc] = TestReader.mkEmptyBufReader(rc, 0);
         let peeked = Peekable.peek(bufReader);
-        peeked == Ok(None)
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def peek02(): Bool = region rc {
+    @Test
+    def peek02(): Unit \ Assert = region rc {
         let bufReader: BufReader[Int8, TestReader[Int8, rc], rc] = TestReader.mkEmptyBufReader(rc, 0);
         let peeked1 = Peekable.peek(bufReader);
         let peeked2 = Peekable.peek(bufReader);
-        peeked1 == Ok(None) and peeked2 == Ok(None)
+        assertEq(expected = Ok(None), peeked1);
+        assertEq(expected = Ok(None), peeked2)
     }
 
-    @test
-    def peek03(): Bool = region rc {
+    @Test
+    def peek03(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let peeked = Peekable.peek(bufReader);
-        peeked == Ok(Some(0i8))
+        assertEq(expected = Ok(Some(0i8)), peeked)
     }
 
-    @test
-    def peek04(): Bool = region rc {
+    @Test
+    def peek04(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let peeked1 = Peekable.peek(bufReader);
         let peeked2 = Peekable.peek(bufReader);
-        peeked1 == Ok(Some(0i8)) and peeked2 == Ok(Some(0i8))
+        assertEq(expected = Ok(Some(0i8)), peeked1);
+        assertEq(expected = Ok(Some(0i8)), peeked2)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // skip                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def skip01(): Bool = region rc {
+    @Test
+    def skip01(): Unit \ Assert = region rc {
         let bufReader: BufReader[Int8, TestReader[Int8, rc], rc] = TestReader.mkEmptyBufReader(rc, 0);
         let skipped = Peekable.skip(0, bufReader);
         let peeked = Peekable.peek(bufReader);
-        peeked == Ok(None) and skipped == Ok(0)
+        assertEq(expected = Ok(None), peeked);
+        assertEq(expected = Ok(0), skipped)
     }
 
-    @test
-    def skip02(): Bool = region rc {
+    @Test
+    def skip02(): Unit \ Assert = region rc {
         let bufReader: BufReader[Int8, TestReader[Int8, rc], rc] = TestReader.mkEmptyBufReader(rc, 0);
         let skipped = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        peeked == Ok(None) and skipped == Ok(0)
+        assertEq(expected = Ok(None), peeked);
+        assertEq(expected = Ok(0), skipped)
     }
 
-    @test
-    def skip03(): Bool = region rc {
+    @Test
+    def skip03(): Unit \ Assert = region rc {
         let bufReader: BufReader[Int8, TestReader[Int8, rc], rc] = TestReader.mkEmptyBufReader(rc, 0);
         let skipped = Peekable.skip(-1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        peeked == Ok(None) and skipped == Ok(0)
+        assertEq(expected = Ok(None), peeked);
+        assertEq(expected = Ok(0), skipped)
     }
 
-    @test
-    def skip04(): Bool = region rc {
+    @Test
+    def skip04(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(0, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(0) and peeked == Ok(Some(0i8))
+        assertEq(expected = Ok(0), skipped);
+        assertEq(expected = Ok(Some(0i8)), peeked)
     }
 
-    @test
-    def skip05(): Bool = region rc {
+    @Test
+    def skip05(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(-1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(0) and peeked == Ok(Some(0i8))
+        assertEq(expected = Ok(0), skipped);
+        assertEq(expected = Ok(Some(0i8)), peeked)
     }
 
-    @test
-    def skip06(): Bool = region rc {
+    @Test
+    def skip06(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(1) and peeked == Ok(Some(1i8))
+        assertEq(expected = Ok(1), skipped);
+        assertEq(expected = Ok(Some(1i8)), peeked)
     }
 
-    @test
-    def skip07(): Bool = region rc {
+    @Test
+    def skip07(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(2, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(2) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(2), skipped);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip08(): Bool = region rc {
+    @Test
+    def skip08(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped1 = Peekable.skip(1, bufReader);
         let skipped2 = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped1 == Ok(1) and skipped2 == Ok(1) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(1), skipped1);
+        assertEq(expected = Ok(1), skipped2);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip09(): Bool = region rc {
+    @Test
+    def skip09(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(3, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(3) and peeked == Ok(Some(3i8))
+        assertEq(expected = Ok(3), skipped);
+        assertEq(expected = Ok(Some(3i8)), peeked)
     }
 
-    @test
-    def skip10(): Bool = region rc {
+    @Test
+    def skip10(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(4, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(4) and peeked == Ok(Some(4i8))
+        assertEq(expected = Ok(4), skipped);
+        assertEq(expected = Ok(Some(4i8)), peeked)
     }
 
-    @test
-    def skip11(): Bool = region rc {
+    @Test
+    def skip11(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(5, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(5) and peeked == Ok(Some(5i8))
+        assertEq(expected = Ok(5), skipped);
+        assertEq(expected = Ok(Some(5i8)), peeked)
     }
 
-    @test
-    def skip12(): Bool = region rc {
+    @Test
+    def skip12(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(6, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(6) and peeked == Ok(Some(6i8))
+        assertEq(expected = Ok(6), skipped);
+        assertEq(expected = Ok(Some(6i8)), peeked)
     }
 
-    @test
-    def skip13(): Bool = region rc {
+    @Test
+    def skip13(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(7, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(7) and peeked == Ok(Some(7i8))
+        assertEq(expected = Ok(7), skipped);
+        assertEq(expected = Ok(Some(7i8)), peeked)
     }
 
-    @test
-    def skip14(): Bool = region rc {
+    @Test
+    def skip14(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(8, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip15(): Bool = region rc {
+    @Test
+    def skip15(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(9, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip16(): Bool = region rc {
+    @Test
+    def skip16(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(100, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip17(): Bool = region rc {
+    @Test
+    def skip17(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(1) and peeked == Ok(Some(1i8))
+        assertEq(expected = Ok(1), skipped);
+        assertEq(expected = Ok(Some(1i8)), peeked)
     }
 
-    @test
-    def skip18(): Bool = region rc {
+    @Test
+    def skip18(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(2, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(2) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(2), skipped);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip19(): Bool = region rc {
+    @Test
+    def skip19(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped1 = Peekable.skip(1, bufReader);
         let skipped2 = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped1 == Ok(1) and skipped2 == Ok(1) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(1), skipped1);
+        assertEq(expected = Ok(1), skipped2);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip20(): Bool = region rc {
+    @Test
+    def skip20(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(3, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(3) and peeked == Ok(Some(3i8))
+        assertEq(expected = Ok(3), skipped);
+        assertEq(expected = Ok(Some(3i8)), peeked)
     }
 
-    @test
-    def skip21(): Bool = region rc {
+    @Test
+    def skip21(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(4, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(4) and peeked == Ok(Some(4i8))
+        assertEq(expected = Ok(4), skipped);
+        assertEq(expected = Ok(Some(4i8)), peeked)
     }
 
-    @test
-    def skip22(): Bool = region rc {
+    @Test
+    def skip22(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(5, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(5) and peeked == Ok(Some(5i8))
+        assertEq(expected = Ok(5), skipped);
+        assertEq(expected = Ok(Some(5i8)), peeked)
     }
 
-    @test
-    def skip23(): Bool = region rc {
+    @Test
+    def skip23(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(6, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(6) and peeked == Ok(Some(6i8))
+        assertEq(expected = Ok(6), skipped);
+        assertEq(expected = Ok(Some(6i8)), peeked)
     }
 
-    @test
-    def skip24(): Bool = region rc {
+    @Test
+    def skip24(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(7, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(7) and peeked == Ok(Some(7i8))
+        assertEq(expected = Ok(7), skipped);
+        assertEq(expected = Ok(Some(7i8)), peeked)
     }
 
-    @test
-    def skip25(): Bool = region rc {
+    @Test
+    def skip25(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(8, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip26(): Bool = region rc {
+    @Test
+    def skip26(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(9, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip27(): Bool = region rc {
+    @Test
+    def skip27(): Unit \ Assert = region rc {
         let capacity = 5;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(100, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip28(): Bool = region rc {
+    @Test
+    def skip28(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(1) and peeked == Ok(Some(1i8))
+        assertEq(expected = Ok(1), skipped);
+        assertEq(expected = Ok(Some(1i8)), peeked)
     }
 
-    @test
-    def skip29(): Bool = region rc {
+    @Test
+    def skip29(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(2, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(2) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(2), skipped);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip30(): Bool = region rc {
+    @Test
+    def skip30(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped1 = Peekable.skip(1, bufReader);
         let skipped2 = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped1 == Ok(1) and skipped2 == Ok(1) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(1), skipped1);
+        assertEq(expected = Ok(1), skipped2);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip31(): Bool = region rc {
+    @Test
+    def skip31(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(3, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(3) and peeked == Ok(Some(3i8))
+        assertEq(expected = Ok(3), skipped);
+        assertEq(expected = Ok(Some(3i8)), peeked)
     }
 
-    @test
-    def skip32(): Bool = region rc {
+    @Test
+    def skip32(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(4, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(4) and peeked == Ok(Some(4i8))
+        assertEq(expected = Ok(4), skipped);
+        assertEq(expected = Ok(Some(4i8)), peeked)
     }
 
-    @test
-    def skip33(): Bool = region rc {
+    @Test
+    def skip33(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(5, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(5) and peeked == Ok(Some(5i8))
+        assertEq(expected = Ok(5), skipped);
+        assertEq(expected = Ok(Some(5i8)), peeked)
     }
 
-    @test
-    def skip34(): Bool = region rc {
+    @Test
+    def skip34(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(6, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(6) and peeked == Ok(Some(6i8))
+        assertEq(expected = Ok(6), skipped);
+        assertEq(expected = Ok(Some(6i8)), peeked)
     }
 
-    @test
-    def skip35(): Bool = region rc {
+    @Test
+    def skip35(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(7, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(7) and peeked == Ok(Some(7i8))
+        assertEq(expected = Ok(7), skipped);
+        assertEq(expected = Ok(Some(7i8)), peeked)
     }
 
-    @test
-    def skip36(): Bool = region rc {
+    @Test
+    def skip36(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(8, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip37(): Bool = region rc {
+    @Test
+    def skip37(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(9, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip38(): Bool = region rc {
+    @Test
+    def skip38(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(100, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip39(): Bool = region rc {
+    @Test
+    def skip39(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(1) and peeked == Ok(Some(1i8))
+        assertEq(expected = Ok(1), skipped);
+        assertEq(expected = Ok(Some(1i8)), peeked)
     }
 
-    @test
-    def skip40(): Bool = region rc {
+    @Test
+    def skip40(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(2, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(2) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(2), skipped);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip41(): Bool = region rc {
+    @Test
+    def skip41(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped1 = Peekable.skip(1, bufReader);
         let skipped2 = Peekable.skip(1, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped1 == Ok(1) and skipped2 == Ok(1) and peeked == Ok(Some(2i8))
+        assertEq(expected = Ok(1), skipped1);
+        assertEq(expected = Ok(1), skipped2);
+        assertEq(expected = Ok(Some(2i8)), peeked)
     }
 
-    @test
-    def skip42(): Bool = region rc {
+    @Test
+    def skip42(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(3, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(3) and peeked == Ok(Some(3i8))
+        assertEq(expected = Ok(3), skipped);
+        assertEq(expected = Ok(Some(3i8)), peeked)
     }
 
-    @test
-    def skip43(): Bool = region rc {
+    @Test
+    def skip43(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(4, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(4) and peeked == Ok(Some(4i8))
+        assertEq(expected = Ok(4), skipped);
+        assertEq(expected = Ok(Some(4i8)), peeked)
     }
 
-    @test
-    def skip44(): Bool = region rc {
+    @Test
+    def skip44(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(5, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(5) and peeked == Ok(Some(5i8))
+        assertEq(expected = Ok(5), skipped);
+        assertEq(expected = Ok(Some(5i8)), peeked)
     }
 
-    @test
-    def skip45(): Bool = region rc {
+    @Test
+    def skip45(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(6, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(6) and peeked == Ok(Some(6i8))
+        assertEq(expected = Ok(6), skipped);
+        assertEq(expected = Ok(Some(6i8)), peeked)
     }
 
-    @test
-    def skip46(): Bool = region rc {
+    @Test
+    def skip46(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(7, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(7) and peeked == Ok(Some(7i8))
+        assertEq(expected = Ok(7), skipped);
+        assertEq(expected = Ok(Some(7i8)), peeked)
     }
 
-    @test
-    def skip47(): Bool = region rc {
+    @Test
+    def skip47(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(8, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip48(): Bool = region rc {
+    @Test
+    def skip48(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(9, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
-    @test
-    def skip49(): Bool = region rc {
+    @Test
+    def skip49(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{0i8, 1i8, 2i8, 3i8, 4i8, 5i8, 6i8, 7i8} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let skipped = Peekable.skip(100, bufReader);
         let peeked = Peekable.peek(bufReader);
-        skipped == Ok(8) and peeked == Ok(None)
+        assertEq(expected = Ok(8), skipped);
+        assertEq(expected = Ok(None), peeked)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // readWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def readWhile01(): Bool = region rc {
+    @Test
+    def readWhile01(): Unit \ Assert = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 0);
         let res = Peekable.readWhile(_ -> true, bufReader);
-        match res {
+        assertTrue(match res {
             case Ok(read) => Vector.isEmpty(read)
             case _ => false
-        }
+        })
     }
 
-    @test
-    def readWhile02(): Bool = region rc {
+    @Test
+    def readWhile02(): Unit \ Assert = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 0);
         let res = Peekable.readWhile(_ -> false, bufReader);
-        match res {
+        assertTrue(match res {
             case Ok(read) => Vector.isEmpty(read)
             case _ => false
-        }
+        })
     }
 
-    @test
-    def readWhile03(): Bool = region rc {
+    @Test
+    def readWhile03(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(_ -> true, bufReader);
-        res == Ok(String.toVector("hello world\n"))
+        assertEq(expected = Ok(String.toVector("hello world\n")), res)
     }
 
-    @test
-    def readWhile04(): Bool = region rc {
+    @Test
+    def readWhile04(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(_ -> false, bufReader);
-        match res {
+        assertTrue(match res {
             case Ok(read) => Vector.isEmpty(read)
             case _ => false
-        }
+        })
     }
 
-    @test
-    def readWhile05(): Bool = region rc {
+    @Test
+    def readWhile05(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile06(): Bool = region rc {
+    @Test
+    def readWhile06(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile07(): Bool = region rc {
+    @Test
+    def readWhile07(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile08(): Bool = region rc {
+    @Test
+    def readWhile08(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readWhile09(): Bool = region rc {
+    @Test
+    def readWhile09(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readWhile10(): Bool = region rc {
+    @Test
+    def readWhile10(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile11(): Bool = region rc {
+    @Test
+    def readWhile11(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile12(): Bool = region rc {
+    @Test
+    def readWhile12(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile13(): Bool = region rc {
+    @Test
+    def readWhile13(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readWhile14(): Bool = region rc {
+    @Test
+    def readWhile14(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readWhile15(): Bool = region rc {
+    @Test
+    def readWhile15(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile16(): Bool = region rc {
+    @Test
+    def readWhile16(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile17(): Bool = region rc {
+    @Test
+    def readWhile17(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile18(): Bool = region rc {
+    @Test
+    def readWhile18(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readWhile19(): Bool = region rc {
+    @Test
+    def readWhile19(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readWhile20(): Bool = region rc {
+    @Test
+    def readWhile20(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile21(): Bool = region rc {
+    @Test
+    def readWhile21(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile22(): Bool = region rc {
+    @Test
+    def readWhile22(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile23(): Bool = region rc {
+    @Test
+    def readWhile23(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readWhile24(): Bool = region rc {
+    @Test
+    def readWhile24(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readWhile25(): Bool = region rc {
+    @Test
+    def readWhile25(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile26(): Bool = region rc {
+    @Test
+    def readWhile26(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile27(): Bool = region rc {
+    @Test
+    def readWhile27(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readWhile(c -> c != '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readWhile28(): Bool = region rc {
+    @Test
+    def readWhile28(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readWhile29(): Bool = region rc {
+    @Test
+    def readWhile29(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readWhile(c -> c != ' ' and c != '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // readUntil                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def readUntil01(): Bool = region rc {
+    @Test
+    def readUntil01(): Unit \ Assert = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 0);
         let res = Peekable.readUntil(_ -> true, bufReader);
-        match res {
+        assertTrue(match res {
             case Ok(read) => Vector.isEmpty(read)
             case _ => false
-        }
+        })
     }
 
-    @test
-    def readUntil02(): Bool = region rc {
+    @Test
+    def readUntil02(): Unit \ Assert = region rc {
         let bufReader = TestReader.mkEmptyBufReader(rc, 0);
         let res = Peekable.readUntil(_ -> false, bufReader);
-        match res {
+        assertTrue(match res {
             case Ok(read) => Vector.isEmpty(read)
             case _ => false
-        }
+        })
     }
 
-    @test
-    def readUntil03(): Bool = region rc {
+    @Test
+    def readUntil03(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(_ -> false, bufReader);
-        res == Ok(String.toVector("hello world\n"))
+        assertEq(expected = Ok(String.toVector("hello world\n")), res)
     }
 
-    @test
-    def readUntil04(): Bool = region rc {
+    @Test
+    def readUntil04(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(_ -> true, bufReader);
-        match res {
+        assertTrue(match res {
             case Ok(read) => Vector.isEmpty(read)
             case _ => false
-        }
+        })
     }
 
-    @test
-    def readUntil05(): Bool = region rc {
+    @Test
+    def readUntil05(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil06(): Bool = region rc {
+    @Test
+    def readUntil06(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil07(): Bool = region rc {
+    @Test
+    def readUntil07(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil08(): Bool = region rc {
+    @Test
+    def readUntil08(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readUntil09(): Bool = region rc {
+    @Test
+    def readUntil09(): Unit \ Assert = region rc {
         let capacity = 2;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readUntil10(): Bool = region rc {
+    @Test
+    def readUntil10(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil11(): Bool = region rc {
+    @Test
+    def readUntil11(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil12(): Bool = region rc {
+    @Test
+    def readUntil12(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil13(): Bool = region rc {
+    @Test
+    def readUntil13(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readUntil14(): Bool = region rc {
+    @Test
+    def readUntil14(): Unit \ Assert = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readUntil15(): Bool = region rc {
+    @Test
+    def readUntil15(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil16(): Bool = region rc {
+    @Test
+    def readUntil16(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil17(): Bool = region rc {
+    @Test
+    def readUntil17(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil18(): Bool = region rc {
+    @Test
+    def readUntil18(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readUntil19(): Bool = region rc {
+    @Test
+    def readUntil19(): Unit \ Assert = region rc {
         let capacity = 11;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readUntil20(): Bool = region rc {
+    @Test
+    def readUntil20(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil21(): Bool = region rc {
+    @Test
+    def readUntil21(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil22(): Bool = region rc {
+    @Test
+    def readUntil22(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil23(): Bool = region rc {
+    @Test
+    def readUntil23(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readUntil24(): Bool = region rc {
+    @Test
+    def readUntil24(): Unit \ Assert = region rc {
         let capacity = 12;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
-    @test
-    def readUntil25(): Bool = region rc {
+    @Test
+    def readUntil25(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil26(): Bool = region rc {
+    @Test
+    def readUntil26(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil27(): Bool = region rc {
+    @Test
+    def readUntil27(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n', 'j', 'u', 'n', 'k', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let res = Peekable.readUntil(c -> c == '\n', bufReader);
-        res == Ok(String.toVector("hello world"))
+        assertEq(expected = Ok(String.toVector("hello world")), res)
     }
 
-    @test
-    def readUntil28(): Bool = region rc {
+    @Test
+    def readUntil28(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector(""))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("")), word2)
     }
 
-    @test
-    def readUntil29(): Bool = region rc {
+    @Test
+    def readUntil29(): Unit \ Assert = region rc {
         let capacity = 16;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = mkTestBufReader(rc, capacity, array);
         let word1 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
         let _ = Peekable.skip(1, bufReader);
         let word2 = Peekable.readUntil(c -> c == ' ' or c == '\n', bufReader);
-        word1 == Ok(String.toVector("hello")) and word2 == Ok(String.toVector("world"))
+        assertEq(expected = Ok(String.toVector("hello")), word1);
+        assertEq(expected = Ok(String.toVector("world")), word2)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // readLine                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def readLine01(): Bool \ IO = region rc {
+    @Test
+    def readLine01(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine02(): Bool \ IO = region rc {
+    @Test
+    def readLine02(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\n'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine03(): Bool \ IO = region rc {
+    @Test
+    def readLine03(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\r'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine04(): Bool \ IO = region rc {
+    @Test
+    def readLine04(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\r', '\n'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine05(): Bool \ IO = region rc {
+    @Test
+    def readLine05(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello world")
+        assertEq(expected = Ok("hello world"), line)
     }
 
-    @test
-    def readLine06(): Bool \ IO = region rc {
+    @Test
+    def readLine06(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\n'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello world")
+        assertEq(expected = Ok("hello world"), line)
     }
 
-    @test
-    def readLine07(): Bool \ IO = region rc {
+    @Test
+    def readLine07(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\r'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello world")
+        assertEq(expected = Ok("hello world"), line)
     }
 
-    @test
-    def readLine08(): Bool \ IO = region rc {
+    @Test
+    def readLine08(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '\r', '\n'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello world")
+        assertEq(expected = Ok("hello world"), line)
     }
 
-    @test
-    def readLine09(): Bool \ IO = region rc {
+    @Test
+    def readLine09(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine10(): Bool \ IO = region rc {
+    @Test
+    def readLine10(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine11(): Bool \ IO = region rc {
+    @Test
+    def readLine11(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine12(): Bool \ IO = region rc {
+    @Test
+    def readLine12(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine13(): Bool \ IO = region rc {
+    @Test
+    def readLine13(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine14(): Bool \ IO = region rc {
+    @Test
+    def readLine14(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine15(): Bool \ IO = region rc {
+    @Test
+    def readLine15(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine16(): Bool \ IO = region rc {
+    @Test
+    def readLine16(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine17(): Bool \ IO = region rc {
+    @Test
+    def readLine17(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine18(): Bool \ IO = region rc {
+    @Test
+    def readLine18(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine19(): Bool \ IO = region rc {
+    @Test
+    def readLine19(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine20(): Bool \ IO = region rc {
+    @Test
+    def readLine20(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine21(): Bool \ IO = region rc {
+    @Test
+    def readLine21(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine22(): Bool \ IO = region rc {
+    @Test
+    def readLine22(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine23(): Bool \ IO = region rc {
+    @Test
+    def readLine23(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine24(): Bool \ IO = region rc {
+    @Test
+    def readLine24(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine25(): Bool \ IO = region rc {
+    @Test
+    def readLine25(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine26(): Bool \ IO = region rc {
+    @Test
+    def readLine26(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine27(): Bool \ IO = region rc {
+    @Test
+    def readLine27(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine28(): Bool \ IO = region rc {
+    @Test
+    def readLine28(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine29(): Bool \ IO = region rc {
+    @Test
+    def readLine29(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine30(): Bool \ IO = region rc {
+    @Test
+    def readLine30(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine31(): Bool \ IO = region rc {
+    @Test
+    def readLine31(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\n', '\n', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine32(): Bool \ IO = region rc {
+    @Test
+    def readLine32(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine33(): Bool \ IO = region rc {
+    @Test
+    def readLine33(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine34(): Bool \ IO = region rc {
+    @Test
+    def readLine34(): Unit \ Assert + IO = region rc {
         let capacity = 6;
         let array = Array#{'h', 'e', 'l', 'l', 'o', '\r', '\r', 'w', 'o', 'r', 'l', 'd'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("world")
+        assertEq(expected = Ok("world"), line)
     }
 
-    @test
-    def readLine35(): Bool \ IO = region rc {
+    @Test
+    def readLine35(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine36(): Bool \ IO = region rc {
+    @Test
+    def readLine36(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine37(): Bool \ IO = region rc {
+    @Test
+    def readLine37(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine38(): Bool \ IO = region rc {
+    @Test
+    def readLine38(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine39(): Bool \ IO = region rc {
+    @Test
+    def readLine39(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\r', '\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine40(): Bool \ IO = region rc {
+    @Test
+    def readLine40(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\r', '\n', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
 
-    @test
-    def readLine41(): Bool \ IO = region rc {
+    @Test
+    def readLine41(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\n', '\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine42(): Bool \ IO = region rc {
+    @Test
+    def readLine42(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\n', '\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("")
+        assertEq(expected = Ok(""), line)
     }
 
-    @test
-    def readLine43(): Bool \ IO = region rc {
+    @Test
+    def readLine43(): Unit \ Assert + IO = region rc {
         let capacity = 8;
         let array = Array#{'\n', '\r', 'h', 'e', 'l', 'l', 'o'} @ rc;
         let bufReader = TestReader.mkTestBufReader(rc, capacity, array);
         let _ = bufReader |> Peekable.readLine;
         let _ = bufReader |> Peekable.readLine;
         let line = bufReader |> Peekable.readLine;
-        line == Ok("hello")
+        assertEq(expected = Ok("hello"), line)
     }
-
-}
-
-struct TestReader[t, r] {
-    stream: Array[t, r],
-    mut cursor: Int32
-}
-
-instance Readable[TestReader[t, rr]] {
-
-    type Elm = t
-
-    type Aef = rr
-
-    pub def read(buffer: Array[t, rb], reader: TestReader[t, rr]): Result[IoError, Int32] \ rb + rr = TestReader.read(buffer, reader)
-
-}
-
-mod TestReader {
-
-    pub def mkEmptyBufReader(rc: Region[r], capacity: Int32): BufReader[t, TestReader[t, r], r] \ r =
-        let stream: Array[t, r] = Array#{} @ rc;
-        mkTestBufReader(rc, capacity, stream)
-
-    pub def mkTestBufReader(rc: Region[r], capacity: Int32, stream: Array[t, r]): BufReader[t, TestReader[t, r], r] \ r =
-        let testReader = fromArray(rc, stream);
-        BufReader.withCapacity(rc, capacity, testReader)
-
-    pub def fromArray(rc: Region[r], stream: Array[t, r]): TestReader[t, r] \ r =
-        new TestReader @ rc {
-            stream = stream,
-            cursor = 0
-        }
-
-    pub def read(buffer: Array[t, rb], reader: TestReader[t, rr]): Result[IoError, Int32] \ rb + rr =
-        let bufferSize = Array.size(buffer);
-        let streamSize = Array.size(reader->stream) - reader->cursor;
-        if (streamSize > 0) {
-            let bytesToRead = Int32.min(bufferSize, streamSize);
-            Array.copyInto(
-                srcPos = reader->cursor,
-                dstPos = 0,
-                len = bytesToRead,
-                src = reader->stream,
-                buffer
-            );
-            reader->cursor = reader->cursor + bytesToRead;
-            Ok(bytesToRead)
-        } else {
-            Ok(0)
-        }
 
 }
