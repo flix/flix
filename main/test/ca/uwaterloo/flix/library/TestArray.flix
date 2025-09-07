@@ -1595,73 +1595,73 @@ mod TestArray {
     }
 
     @Test
-    def patch19(): Bool = region rc {
+    def patch19(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3} @ rc;
         Array.patch(2, 1, Array#{4} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1, 2, 4} @ rc))
     }
 
     @Test
-    def patch20(): Bool = region rc {
+    def patch20(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3} @ rc;
         Array.patch(0, 2, Array#{4, 5} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4, 5, 3} @ rc))
     }
 
     @Test
-    def patch21(): Bool = region rc {
+    def patch21(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3} @ rc;
         Array.patch(1, 2, Array#{4, 5} @ rc, a);
-        Array.sameElements(a, Array#{1, 4, 5} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1, 4, 5} @ rc))
     }
 
     @Test
-    def patch22(): Bool = region rc {
+    def patch22(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3} @ rc;
         Array.patch(0, 2, Array#{4, 5, 6} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4, 5, 3} @ rc))
     }
 
     @Test
-    def patch23(): Bool = region rc {
+    def patch23(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3} @ rc;
         Array.patch(0, 3, Array#{4, 5, 6} @ rc, a);
-        Array.sameElements(a, Array#{4, 5, 6} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4, 5, 6} @ rc))
     }
 
     @Test
-    def patch24(): Bool = region rc {
+    def patch24(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
         Array.patch(2, 4, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1, 2, 14, 15, 16, 17, 7} @ rc))
     }
 
     @Test
-    def patch25(): Bool = region rc {
+    def patch25(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
         Array.patch(-2, 4, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc)
+        assertTrue(Array.sameElements(a, Array#{16, 17, 3, 4, 5, 6, 7} @ rc))
     }
 
     @Test
-    def patch26(): Bool = region rc {
+    def patch26(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
         Array.patch(4, 5, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 16} @ rc))
     }
 
     @Test
-    def patch27(): Bool = region rc {
+    def patch27(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
         Array.patch(4, 2, Array#{14, 15, 16, 17} @ rc, a);
-        Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1, 2, 3, 4, 14, 15, 7} @ rc))
     }
 
     @Test
-    def patch28(): Bool = region rc {
+    def patch28(): Unit \ Assert = region rc {
         let a = Array#{1, 2, 3, 4, 5, 6, 7} @ rc;
         Array.patch(-1, 10, Array#{-1, -2, -3, -4, -5, -6, -7, -8} @ rc, a);
-        Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc)
+        assertTrue(Array.sameElements(a, Array#{-2, -3, -4, -5, -6, -7, -8} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1669,33 +1669,33 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def intersperse01(): Bool = region rc {
+    def intersperse01(): Unit \ Assert = region rc {
         let a = Array.intersperse(rc, 11, Array#{} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def intersperse02(): Bool = region rc {
+    def intersperse02(): Unit \ Assert = region rc {
         let a = Array.intersperse(rc, 11, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def intersperse03(): Bool = region rc {
+    def intersperse03(): Unit \ Assert = region rc {
         let a = Array.intersperse(rc, 11, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{1,11,2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,11,2} @ rc))
     }
 
     @Test
-    def intersperse04(): Bool = region rc {
+    def intersperse04(): Unit \ Assert = region rc {
         let a = Array.intersperse(rc, 11, Array#{1,2,3} @ rc);
-        Array.sameElements(a, Array#{1,11,2,11,3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,11,2,11,3} @ rc))
     }
 
     @Test
-    def intersperse05(): Bool = region rc {
+    def intersperse05(): Unit \ Assert = region rc {
         let a = Array.intersperse(rc, 11, Array#{1,2,3,4} @ rc);
-        Array.sameElements(a, Array#{1,11,2,11,3,11,4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,11,2,11,3,11,4} @ rc))
     }
 
 
@@ -1704,45 +1704,45 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def intercalate01(): Bool = region rc {
+    def intercalate01(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @Test
-    def intercalate02(): Bool = region rc {
+    def intercalate02(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def intercalate03(): Bool = region rc {
+    def intercalate03(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, Array#{11,12,13} @ rc, ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @Test
-    def intercalate04(): Bool = region rc {
+    def intercalate04(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc, Array#{2,3} @ rc} @ rc);
-        Array.sameElements(a, Array#{1,2,3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc))
     }
 
     @Test
-    def intercalate05(): Bool = region rc {
+    def intercalate05(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, Array#{11,12,13} @ rc, Array#{Array#{1} @ rc, Array#{2,3} @ rc} @ rc);
-        Array.sameElements(a, Array#{1,11,12,13,2,3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,11,12,13,2,3} @ rc))
     }
 
     @Test
-    def intercalate06(): Bool = region rc {
+    def intercalate06(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc, Array#{2,3} @ rc, Array#{4} @ rc} @ rc);
-        Array.sameElements(a, Array#{1,2,3,4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
     }
 
     @Test
-    def intercalate07(): Bool = region rc {
+    def intercalate07(): Unit \ Assert = region rc {
         let a = Array.intercalate(rc, Array#{11,12,13} @ rc, Array#{Array#{1} @ rc, Array#{2,3} @ rc, Array#{4} @ rc} @ rc);
-        Array.sameElements(a, Array#{1,11,12,13,2,3,11,12,13,4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,11,12,13,2,3,11,12,13,4} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1750,157 +1750,157 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def transpose01(): Bool = region rc {
+    def transpose01(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        (b: List[List[Unit]]) == Nil
+        assertEq(expected = Nil, (b: List[List[Unit]]))
     }
 
     @Test
-    def transpose02(): Bool = region rc {
+    def transpose02(): Unit \ Assert = region rc {
         let a: Array[Array[Int32, _], _] = Array.transpose(rc, Array#{Array#{} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == Nil :: Nil
+        assertEq(expected = Nil :: Nil, b)
     }
 
     @Test
-    def transpose03(): Bool = region rc {
+    def transpose03(): Unit \ Assert = region rc {
         let a: Array[Array[Int32, _], _] = Array.transpose(rc, Array#{Array#{} @ rc, Array#{} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == Nil :: Nil :: Nil
+        assertEq(expected = Nil :: Nil :: Nil, b)
     }
 
     @Test
-    def transpose04(): Bool = region rc {
+    def transpose04(): Unit \ Assert = region rc {
         let a: Array[Array[Int32, _], _] = Array.transpose(rc, Array#{Array#{} @ rc, Array#{} @ rc, Array#{} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == Nil :: Nil :: Nil :: Nil
+        assertEq(expected = Nil :: Nil :: Nil :: Nil, b)
     }
 
     @Test
-    def transpose05(): Bool = region rc {
+    def transpose05(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{ Array#{1} @ rc } @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: Nil) :: Nil
+        assertEq(expected = (1 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose06(): Bool = region rc {
+    def transpose06(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1,2} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: Nil) :: (2 :: Nil) :: Nil
+        assertEq(expected = (1 :: Nil) :: (2 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose07(): Bool = region rc {
+    def transpose07(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil
+        assertEq(expected = (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose08(): Bool = region rc {
+    def transpose08(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3, 4} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil
+        assertEq(expected = (1 :: Nil) :: (2 :: Nil) :: (3 :: Nil) :: (4 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose09(): Bool = region rc {
+    def transpose09(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1} @ rc, Array#{2} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b ==   (1 :: 2 :: Nil) :: Nil
+        assertEq(expected = (1 :: 2 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose10(): Bool = region rc {
+    def transpose10(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1} @ rc, Array#{2} @ rc, Array#{3} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b ==  (1 :: 2 :: 3 :: Nil) :: Nil
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose11(): Bool = region rc {
+    def transpose11(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1} @ rc, Array#{2} @ rc, Array#{3} @ rc, Array#{4} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 2 :: 3 :: 4 :: Nil) :: Nil
+        assertEq(expected = (1 :: 2 :: 3 :: 4 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose12(): Bool = region rc {
+    def transpose12(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil
+        assertEq(expected = (1 :: 3 :: Nil) :: (2 :: 4 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose13(): Bool = region rc {
+    def transpose13(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5, 6} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil
+        assertEq(expected = (1 :: 4 :: Nil) :: (2 :: 5 :: Nil) :: (3 :: 6 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose14(): Bool = region rc {
+    def transpose14(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3, 4} @ rc, Array#{5, 6, 7, 8} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil
+        assertEq(expected = (1 :: 5 :: Nil) :: (2 :: 6 :: Nil) :: (3 :: 7 :: Nil) :: (4 :: 8 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose15(): Bool = region rc {
+    def transpose15(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3, 4, 5} @ rc, Array#{6, 7, 8, 9, 10} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil
+        assertEq(expected = (1 :: 6 :: Nil) :: (2 :: 7 :: Nil) :: (3 :: 8 :: Nil) :: (4 :: 9 :: Nil) :: (5 :: 10 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose16(): Bool = region rc {
+    def transpose16(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc, Array#{5, 6} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil
+        assertEq(expected = (1 :: 3 :: 5 :: Nil) :: (2 :: 4 :: 6 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose17(): Bool = region rc {
+    def transpose17(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc, Array#{5, 6} @ rc, Array#{7,8} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil
+        assertEq(expected = (1 :: 3 :: 5 :: 7 :: Nil) :: (2 :: 4 :: 6 :: 8 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose18(): Bool = region rc {
+    def transpose18(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2} @ rc, Array#{3, 4} @ rc, Array#{5, 6} @ rc, Array#{7, 8} @ rc, Array#{9, 10} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil
+        assertEq(expected = (1 :: 3 :: 5 :: 7 :: 9 :: Nil) :: (2 :: 4 :: 6 :: 8 :: 10 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose19(): Bool = region rc {
+    def transpose19(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5, 6} @ rc, Array#{7, 8, 9} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil
+        assertEq(expected = (1 :: 4 :: 7 :: Nil) :: (2 :: 5 :: 8 :: Nil) :: (3 :: 6 :: 9 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose20(): Bool = region rc {
+    def transpose20(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5} @ rc, Array#{7, 8, 9} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: Nil) :: (7 :: 8 :: 9 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose21(): Bool = region rc {
+    def transpose21(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{} @ rc, Array#{7, 8, 9} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: Nil :: (7 :: 8 :: 9 :: Nil) :: Nil, b)
     }
 
     @Test
-    def transpose22(): Bool = region rc {
+    def transpose22(): Unit \ Assert = region rc {
         let a = Array.transpose(rc, Array#{Array#{1, 2, 3} @ rc, Array#{4, 5, 6} @ rc, Array#{7, 8, 9, 10} @ rc} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b == (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil
+        assertEq(expected = (1 :: 2 :: 3 :: Nil) :: (4 :: 5 :: 6 :: Nil) :: (7 :: 8 :: 9 :: 10 :: Nil) :: Nil, b)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1908,68 +1908,68 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def isPrefixOf01(): Bool = region rc {
-        Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]))
+    def isPrefixOf01(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def isPrefixOf02(): Bool = region rc {
-        Array.isPrefixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])) == false
+    def isPrefixOf02(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def isPrefixOf03(): Bool = region rc {
-        Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc)
+    def isPrefixOf03(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc))
     }
 
     @Test
-    def isPrefixOf04(): Bool = region rc {
-        Array.isPrefixOf(Array#{1} @ rc, Array#{1} @ rc)
+    def isPrefixOf04(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(Array#{1} @ rc, Array#{1} @ rc))
     }
 
     @Test
-    def isPrefixOf05(): Bool = region rc {
-        Array.isPrefixOf(Array#{2} @ rc, Array#{1} @ rc) == false
+    def isPrefixOf05(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{2} @ rc, Array#{1} @ rc))
     }
 
     @Test
-    def isPrefixOf06(): Bool = region rc {
-        Array.isPrefixOf(Array#{1,2} @ rc, Array#{1} @ rc) == false
+    def isPrefixOf06(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,2} @ rc, Array#{1} @ rc))
     }
 
     @Test
-    def isPrefixOf07(): Bool = region rc {
-        Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc)
+    def isPrefixOf07(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc))
     }
 
     @Test
-    def isPrefixOf08(): Bool = region rc {
-        Array.isPrefixOf(Array#{1} @ rc, Array#{1,2} @ rc)
+    def isPrefixOf08(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(Array#{1} @ rc, Array#{1,2} @ rc))
     }
 
     @Test
-    def isPrefixOf09(): Bool = region rc {
-        Array.isPrefixOf(Array#{2} @ rc, Array#{1,2} @ rc) == false
+    def isPrefixOf09(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{2} @ rc, Array#{1,2} @ rc))
     }
 
     @Test
-    def isPrefixOf10(): Bool = region rc {
-        Array.isPrefixOf(Array#{1,2} @ rc, Array#{1,2} @ rc)
+    def isPrefixOf10(): Unit \ Assert = region rc {
+        assertTrue(Array.isPrefixOf(Array#{1,2} @ rc, Array#{1,2} @ rc))
     }
 
     @Test
-    def isPrefixOf11(): Bool = region rc {
-        Array.isPrefixOf(Array#{1,3} @ rc, Array#{1,2} @ rc) == false
+    def isPrefixOf11(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,3} @ rc, Array#{1,2} @ rc))
     }
 
     @Test
-    def isPrefixOf12(): Bool = region rc {
-        Array.isPrefixOf(Array#{1,2,3} @ rc, Array#{1,2} @ rc) == false
+    def isPrefixOf12(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,2,3} @ rc, Array#{1,2} @ rc))
     }
 
     @Test
-    def isPrefixOf13(): Bool = region rc {
-        Array.isPrefixOf(Array#{1,2,3} @ rc, Array#{89,11,1,2,3,4} @ rc) == false
+    def isPrefixOf13(): Unit \ Assert = region rc {
+        assertFalse(Array.isPrefixOf(Array#{1,2,3} @ rc, Array#{89,11,1,2,3,4} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1977,13 +1977,13 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def isInfixOf01(): Bool = region rc {
-        Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]))
+    def isInfixOf01(): Unit \ Assert = region rc {
+        assertTrue(Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def isInfixOf02(): Bool = region rc {
-        Array.isInfixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])) == false
+    def isInfixOf02(): Unit \ Assert = region rc {
+        assertFalse(Array.isInfixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
