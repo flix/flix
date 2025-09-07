@@ -34,7 +34,7 @@ mod TestList {
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def isEmpty01(): Unit \ Assert = Assert.assertTrue(List.isEmpty(Nil))
+    def isEmpty01(): Unit \ Assert = assertTrue(List.isEmpty(Nil))
 
     @Test
     def isEmpty02(): Unit \ Assert = assertEq(expected = false, List.isEmpty(1 :: Nil))
@@ -486,16 +486,16 @@ mod TestList {
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def ap01(): Bool = List.ap(Nil, Nil) == (Nil: List[Int32])
+    def ap01(): Unit \ Assert = assertEq(expected = (Nil: List[Int32]), List.ap(Nil, Nil))
 
     @Test
-    def ap02(): Bool = List.ap((x -> x+1) :: Nil, Nil) == Nil
+    def ap02(): Unit \ Assert = assertEq(expected = Nil, List.ap((x -> x+1) :: Nil, Nil))
 
     @Test
-    def ap03(): Bool = List.ap(Nil, 5 :: Nil) == (Nil: List[Int32])
+    def ap03(): Unit \ Assert = assertEq(expected = (Nil: List[Int32]), List.ap(Nil, 5 :: Nil))
 
     @Test
-    def ap04(): Bool = List.ap((x -> x+1) :: Nil, 5 :: Nil) == 6 :: Nil
+    def ap04(): Unit \ Assert = assertEq(expected = 6 :: Nil, List.ap((x -> x+1) :: Nil, 5 :: Nil))
 
     @Test
     def ap05(): Unit \ Assert = assertEq(expected = 1 :: 6 :: Nil, List.ap((x -> x+1) :: Nil, 0 :: 5 :: Nil))
@@ -978,22 +978,22 @@ mod TestList {
     def isPrefixOf12(): Unit \ Assert = assertEq(expected = false, List.isPrefixOf(1 :: 2 :: 3 :: Nil, 1 :: 2 :: Nil))
 
     @Test
-    def isPrefixOf13(): Bool = List.isPrefixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 2 :: 3 :: 4 :: Nil) == false
+    def isPrefixOf13(): Unit \ Assert = assertEq(expected = false, List.isPrefixOf(1 :: 2 :: 3 :: Nil, 89 :: 11 :: 1 :: 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // isInfixOf                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def isInfixOf01(): Bool = List.isInfixOf((Nil: List[Unit]), Nil) == true
+    def isInfixOf01(): Unit \ Assert = assertEq(expected = true, List.isInfixOf((Nil: List[Unit]), Nil))
 
     @Test
-    def isInfixOf02(): Bool = List.isInfixOf(1 :: Nil, Nil) == false
+    def isInfixOf02(): Unit \ Assert = assertEq(expected = false, List.isInfixOf(1 :: Nil, Nil))
 
     @Test
-    def isInfixOf03(): Bool = List.isInfixOf(Nil, 1 :: Nil) == true
+    def isInfixOf03(): Unit \ Assert = assertEq(expected = true, List.isInfixOf(Nil, 1 :: Nil))
 
     @Test
-    def isInfixOf04(): Bool = List.isInfixOf(1 :: Nil, 1 :: Nil) == true
+    def isInfixOf04(): Unit \ Assert = assertEq(expected = true, List.isInfixOf(1 :: Nil, 1 :: Nil))
 
     @Test
     def isInfixOf05(): Unit \ Assert = assertEq(expected = false, List.isInfixOf(2 :: Nil, 1 :: Nil))
@@ -1068,432 +1068,430 @@ mod TestList {
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def fold01(): Bool = List.fold((Nil: List[String])) == ""
+    def fold01(): Unit \ Assert = assertEq(expected = "", List.fold((Nil: List[String])))
 
     @Test
-    def fold02(): Bool = List.fold("a" :: Nil) == "a"
+    def fold02(): Unit \ Assert = assertEq(expected = "a", List.fold("a" :: Nil))
 
     @Test
-    def fold03(): Bool = List.fold("a" :: "b" :: "c" :: Nil) == "abc"
+    def fold03(): Unit \ Assert = assertEq(expected = "abc", List.fold("a" :: "b" :: "c" :: Nil))
 
     @Test
-    def fold04(): Bool = List.fold(("a", "b") :: ("c", "d") :: ("e", "f") :: Nil) == ("ace", "bdf")
+    def fold04(): Unit \ Assert = assertEq(expected = ("ace", "bdf"), List.fold(("a", "b") :: ("c", "d") :: ("e", "f") :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def foldLeft01(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, Nil) == 100
+    def foldLeft01(): Unit \ Assert = assertEq(expected = 100, List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, Nil))
 
     @Test
-    def foldLeft02(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
+    def foldLeft02(): Unit \ Assert = assertEq(expected = 198, List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
 
     @Test
-    def foldLeft03(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 196
+    def foldLeft03(): Unit \ Assert = assertEq(expected = 196, List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
 
     @Test
-    def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 386
+    def foldLeft04(): Unit \ Assert = assertEq(expected = 386, List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def foldRight01(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
+    def foldRight01(): Unit \ Assert = assertEq(expected = 100, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
 
     @Test
-    def foldRight02(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
+    def foldRight02(): Unit \ Assert = assertEq(expected = 198, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
 
     @Test
-    def foldRight03(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+    def foldRight03(): Unit \ Assert = assertEq(expected = 194, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
 
     @Test
-    def foldRight04(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+    def foldRight04(): Unit \ Assert = assertEq(expected = 382, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def foldRight05(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
+    def foldRight05(): Unit \ Assert = assertEq(expected = 100, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
 
     @Test
-    def foldRight06(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
+    def foldRight06(): Unit \ Assert = assertEq(expected = 198, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
 
     @Test
-    def foldRight07(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+    def foldRight07(): Unit \ Assert = assertEq(expected = 194, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
 
     @Test
-    def foldRight08(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+    def foldRight08(): Unit \ Assert = assertEq(expected = 382, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def foldRightWithCont01(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
+    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = 100, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
 
     @Test
-    def foldRightWithCont02(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
+    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = 198, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
 
     @Test
-    def foldRightWithCont03(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = 194, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
 
     @Test
-    def foldRightWithCont04(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+    def foldRightWithCont04(): Unit \ Assert = assertEq(expected = 382, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def foldRightWithCont05(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
+    def foldRightWithCont05(): Unit \ Assert = assertEq(expected = 100, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
 
     @Test
-    def foldRightWithCont06(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
+    def foldRightWithCont06(): Unit \ Assert = assertEq(expected = 198, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
 
     @Test
-    def foldRightWithCont07(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+    def foldRightWithCont07(): Unit \ Assert = assertEq(expected = 194, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
 
     @Test
-    def foldRightWithCont08(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+    def foldRightWithCont08(): Unit \ Assert = assertEq(expected = 382, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def reduceLeft01(): Bool = List.reduceLeft((a, b) -> a-b, (Nil: List[Int32])) == None
+    def reduceLeft01(): Unit \ Assert = assertEq(expected = None, List.reduceLeft((a, b) -> a-b, (Nil: List[Int32])))
 
     @Test
-    def reduceLeft02(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: Nil) == Some(1)
+    def reduceLeft02(): Unit \ Assert = assertEq(expected = Some(1), List.reduceLeft((a, b) -> a-b, 1 :: Nil))
 
     @Test
-    def reduceLeft03(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: Nil) == Some(-1)
+    def reduceLeft03(): Unit \ Assert = assertEq(expected = Some(-1), List.reduceLeft((a, b) -> a-b, 1 :: 2 :: Nil))
 
     @Test
-    def reduceLeft04(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) == Some(-4)
+    def reduceLeft04(): Unit \ Assert = assertEq(expected = Some(-4), List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def reduceLeft05(): Bool = List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) == Some(-8)
+    def reduceLeft05(): Unit \ Assert = assertEq(expected = Some(-8), List.reduceLeft((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def reduceRight01(): Bool = List.reduceRight((a, b) -> a-b, (Nil: List[Int32])) == None
+    def reduceRight01(): Unit \ Assert = assertEq(expected = None, List.reduceRight((a, b) -> a-b, (Nil: List[Int32])))
 
     @Test
-    def reduceRight02(): Bool = List.reduceRight((a, b) -> a-b, 1 :: Nil) == Some(1)
+    def reduceRight02(): Unit \ Assert = assertEq(expected = Some(1), List.reduceRight((a, b) -> a-b, 1 :: Nil))
 
     @Test
-    def reduceRight03(): Bool = List.reduceRight((a, b) -> a-b, 1 :: 2 :: Nil) == Some(-1)
+    def reduceRight03(): Unit \ Assert = assertEq(expected = Some(-1), List.reduceRight((a, b) -> a-b, 1 :: 2 :: Nil))
 
     @Test
-    def reduceRight04(): Bool = List.reduceRight((a, b) -> a-b, 1 :: 2 :: 3 :: Nil) == Some(2)
+    def reduceRight04(): Unit \ Assert = assertEq(expected = Some(2), List.reduceRight((a, b) -> a-b, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def reduceRight05(): Bool = List.reduceRight((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil) == Some(-2)
+    def reduceRight05(): Unit \ Assert = assertEq(expected = Some(-2), List.reduceRight((a, b) -> a-b, 1 :: 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def count01(): Bool = List.count(i -> i > 3, Nil) == 0
+    def count01(): Unit \ Assert = assertEq(expected = 0, List.count(i -> i > 3, Nil))
 
     @Test
-    def count02(): Bool = List.count(i -> i > 3, 1 :: Nil) == 0
+    def count02(): Unit \ Assert = assertEq(expected = 0, List.count(i -> i > 3, 1 :: Nil))
 
     @Test
-    def count03(): Bool = List.count(i -> i > 3, 4 :: Nil) == 1
+    def count03(): Unit \ Assert = assertEq(expected = 1, List.count(i -> i > 3, 4 :: Nil))
 
     @Test
-    def count04(): Bool = List.count(i -> i > 3, 1 :: 2 :: Nil) == 0
+    def count04(): Unit \ Assert = assertEq(expected = 0, List.count(i -> i > 3, 1 :: 2 :: Nil))
 
     @Test
-    def count05(): Bool = List.count(i -> i > 3, 1 :: 8 :: Nil) == 1
+    def count05(): Unit \ Assert = assertEq(expected = 1, List.count(i -> i > 3, 1 :: 8 :: Nil))
 
     @Test
-    def count06(): Bool = List.count(i -> i > 3, 8 :: 1 :: Nil) == 1
+    def count06(): Unit \ Assert = assertEq(expected = 1, List.count(i -> i > 3, 8 :: 1 :: Nil))
 
     @Test
-    def count07(): Bool = List.count(i -> i > 3, 6 :: 7 :: Nil) == 2
+    def count07(): Unit \ Assert = assertEq(expected = 2, List.count(i -> i > 3, 6 :: 7 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def flatten01(): Bool = List.flatten((Nil: List[List[Unit]])) == Nil
+    def flatten01(): Unit \ Assert = assertEq(expected = Nil, List.flatten((Nil: List[List[Unit]])))
 
     @Test
-    def flatten02(): Bool = (List.flatten(Nil :: Nil): List[Unit]) == Nil
+    def flatten02(): Unit \ Assert = assertEq(expected = Nil, (List.flatten(Nil :: Nil): List[Unit]))
 
     @Test
-    def flatten03(): Bool = List.flatten((1 :: Nil) :: Nil) == 1 :: Nil
+    def flatten03(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.flatten((1 :: Nil) :: Nil))
 
     @Test
-    def flatten04(): Bool = List.flatten((1 :: 2 :: Nil) :: Nil) == 1 :: 2 :: Nil
+    def flatten04(): Unit \ Assert = assertEq(expected = 1 :: 2 :: Nil, List.flatten((1 :: 2 :: Nil) :: Nil))
 
     @Test
-    def flatten05(): Bool = (List.flatten(Nil :: Nil :: Nil): List[Unit]) == Nil
+    def flatten05(): Unit \ Assert = assertEq(expected = Nil, (List.flatten(Nil :: Nil :: Nil): List[Unit]))
 
     @Test
-    def flatten06(): Bool = List.flatten((1 :: Nil) :: Nil :: Nil) == 1 :: Nil
+    def flatten06(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.flatten((1 :: Nil) :: Nil :: Nil))
 
     @Test
-    def flatten07(): Bool = List.flatten(Nil :: (1 :: Nil) :: Nil) == 1 :: Nil
+    def flatten07(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.flatten(Nil :: (1 :: Nil) :: Nil))
 
     @Test
-    def flatten08(): Bool = List.flatten((1 :: Nil) :: (2 :: Nil) :: Nil) == 1 :: 2 :: Nil
+    def flatten08(): Unit \ Assert = assertEq(expected = 1 :: 2 :: Nil, List.flatten((1 :: Nil) :: (2 :: Nil) :: Nil))
 
     @Test
-    def flatten09(): Bool = List.flatten((1 :: 2 :: Nil) :: (3 :: 4 :: 5 :: Nil) :: Nil) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    def flatten09(): Unit \ Assert = assertEq(expected = 1 :: 2 :: 3 :: 4 :: 5 :: Nil, List.flatten((1 :: 2 :: Nil) :: (3 :: 4 :: 5 :: Nil) :: Nil))
 
     @Test
-    def flatten10(): Bool = List.flatten((1 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: Nil) :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+    def flatten10(): Unit \ Assert = assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, List.flatten((1 :: Nil) :: (2 :: 3 :: Nil) :: (4 :: Nil) :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def exists01(): Bool = List.exists(i -> i > 3, Nil) == false
+    def exists01(): Unit \ Assert = assertEq(expected = false, List.exists(i -> i > 3, Nil))
 
     @Test
-    def exists02(): Bool = List.exists(i -> i > 3, 1 :: Nil) == false
+    def exists02(): Unit \ Assert = assertEq(expected = false, List.exists(i -> i > 3, 1 :: Nil))
 
     @Test
-    def exists03(): Bool = List.exists(i -> i > 3, 5 :: Nil) == true
+    def exists03(): Unit \ Assert = assertEq(expected = true, List.exists(i -> i > 3, 5 :: Nil))
 
     @Test
-    def exists04(): Bool = List.exists(i -> i > 3, 1 :: 2 :: Nil) == false
+    def exists04(): Unit \ Assert = assertEq(expected = false, List.exists(i -> i > 3, 1 :: 2 :: Nil))
 
     @Test
-    def exists05(): Bool = List.exists(i -> i > 3, 1 :: 6 :: Nil) == true
+    def exists05(): Unit \ Assert = assertEq(expected = true, List.exists(i -> i > 3, 1 :: 6 :: Nil))
 
     @Test
-    def exists06(): Bool = List.exists(i -> i > 3, 6 :: 1 :: Nil) == true
+    def exists06(): Unit \ Assert = assertEq(expected = true, List.exists(i -> i > 3, 6 :: 1 :: Nil))
 
     @Test
-    def exists07(): Bool = List.exists(i -> i > 3, 16 :: 6 :: Nil) == true
+    def exists07(): Unit \ Assert = assertEq(expected = true, List.exists(i -> i > 3, 16 :: 6 :: Nil))
 
     @Test
-    def exists08(): Bool = List.exists(i -> i > 3, 1 :: -9 :: 3 :: Nil) == false
+    def exists08(): Unit \ Assert = assertEq(expected = false, List.exists(i -> i > 3, 1 :: -9 :: 3 :: Nil))
 
     @Test
-    def exists09(): Bool = List.exists(i -> i > 3, 1 :: 9 :: 3 :: Nil) == true
+    def exists09(): Unit \ Assert = assertEq(expected = true, List.exists(i -> i > 3, 1 :: 9 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def forAll01(): Bool = List.forAll(i -> i > 3, Nil) == true
+    def forAll01(): Unit \ Assert = assertEq(expected = true, List.forAll(i -> i > 3, Nil))
 
     @Test
-    def forAll02(): Bool = List.forAll(i -> i > 3, 1 :: Nil) == false
+    def forAll02(): Unit \ Assert = assertEq(expected = false, List.forAll(i -> i > 3, 1 :: Nil))
 
     @Test
-    def forAll03(): Bool = List.forAll(i -> i > 3, 5 :: Nil) == true
+    def forAll03(): Unit \ Assert = assertEq(expected = true, List.forAll(i -> i > 3, 5 :: Nil))
 
     @Test
-    def forAll04(): Bool = List.forAll(i -> i > 3, 1 :: 2 :: Nil) == false
+    def forAll04(): Unit \ Assert = assertEq(expected = false, List.forAll(i -> i > 3, 1 :: 2 :: Nil))
 
     @Test
-    def forAll05(): Bool = List.forAll(i -> i > 3, 1 :: 6 :: Nil) == false
+    def forAll05(): Unit \ Assert = assertEq(expected = false, List.forAll(i -> i > 3, 1 :: 6 :: Nil))
 
     @Test
-    def forAll06(): Bool = List.forAll(i -> i > 3, 6 :: 1 :: Nil) == false
+    def forAll06(): Unit \ Assert = assertEq(expected = false, List.forAll(i -> i > 3, 6 :: 1 :: Nil))
 
     @Test
-    def forAll07(): Bool = List.forAll(i -> i > 3, 16 :: 6 :: Nil) == true
+    def forAll07(): Unit \ Assert = assertEq(expected = true, List.forAll(i -> i > 3, 16 :: 6 :: Nil))
 
     @Test
-    def forAll08(): Bool = List.forAll(i -> i > 3, 1 :: -9 :: 3 :: Nil) == false
+    def forAll08(): Unit \ Assert = assertEq(expected = false, List.forAll(i -> i > 3, 1 :: -9 :: 3 :: Nil))
 
     @Test
-    def forAll09(): Bool = List.forAll(i -> i > 3, 1 :: 9 :: 3 :: Nil) == false
+    def forAll09(): Unit \ Assert = assertEq(expected = false, List.forAll(i -> i > 3, 1 :: 9 :: 3 :: Nil))
 
     @Test
-    def forAll10(): Bool = List.forAll(i -> i > 3, 11 :: 9 :: 31 :: Nil) == true
+    def forAll10(): Unit \ Assert = assertEq(expected = true, List.forAll(i -> i > 3, 11 :: 9 :: 31 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def filter01(): Bool = List.filter(i -> i > 3, Nil) == Nil
+    def filter01(): Unit \ Assert = assertEq(expected = Nil, List.filter(i -> i > 3, Nil))
 
     @Test
-    def filter02(): Bool = List.filter(i -> i > 3, 2 :: Nil) == Nil
+    def filter02(): Unit \ Assert = assertEq(expected = Nil, List.filter(i -> i > 3, 2 :: Nil))
 
     @Test
-    def filter03(): Bool = List.filter(i -> i > 3, 4 :: Nil) == 4 :: Nil
+    def filter03(): Unit \ Assert = assertEq(expected = 4 :: Nil, List.filter(i -> i > 3, 4 :: Nil))
 
     @Test
-    def filter04(): Bool = List.filter(i -> i > 3, 1 :: 3 :: Nil) == Nil
+    def filter04(): Unit \ Assert = assertEq(expected = Nil, List.filter(i -> i > 3, 1 :: 3 :: Nil))
 
     @Test
-    def filter05(): Bool = List.filter(i -> i > 3, 1 :: 8 :: Nil) == 8 :: Nil
+    def filter05(): Unit \ Assert = assertEq(expected = 8 :: Nil, List.filter(i -> i > 3, 1 :: 8 :: Nil))
 
     @Test
-    def filter06(): Bool = List.filter(i -> i > 3, 8 :: 1 :: Nil) == 8 :: Nil
+    def filter06(): Unit \ Assert = assertEq(expected = 8 :: Nil, List.filter(i -> i > 3, 8 :: 1 :: Nil))
 
     @Test
-    def filter07(): Bool = List.filter(i -> i > 3, 8 :: 9 :: Nil) == 8 :: 9 :: Nil
+    def filter07(): Unit \ Assert = assertEq(expected = 8 :: 9 :: Nil, List.filter(i -> i > 3, 8 :: 9 :: Nil))
 
     @Test
-    def filter08(): Bool = List.filter(i -> i > 3, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil) == 4 :: 11 :: 17 :: Nil
+    def filter08(): Unit \ Assert = assertEq(expected = 4 :: 11 :: 17 :: Nil, List.filter(i -> i > 3, 1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                  //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def init01(): Bool = List.init((Nil: List[Unit])) == None
+    def init01(): Unit \ Assert = assertEq(expected = None, List.init((Nil: List[Unit])))
 
     @Test
-    def init02(): Bool = List.init(0 :: Nil) == Some(Nil)
+    def init02(): Unit \ Assert = assertEq(expected = Some(Nil), List.init(0 :: Nil))
 
     @Test
-    def init03(): Bool = List.init(0 :: 1 :: Nil) == Some(0 :: Nil)
+    def init03(): Unit \ Assert = assertEq(expected = Some(0 :: Nil), List.init(0 :: 1 :: Nil))
 
     @Test
-    def init04(): Bool = List.init(2 :: 1 :: 0 :: Nil) == Some(2 :: 1 :: Nil)
+    def init04(): Unit \ Assert = assertEq(expected = Some(2 :: 1 :: Nil), List.init(2 :: 1 :: 0 :: Nil))
 
     @Test
-    def init05(): Bool = List.init('a' :: 'b' :: 'c' :: 'd' :: Nil) == Some('a' :: 'b' :: 'c' :: Nil)
+    def init05(): Unit \ Assert = assertEq(expected = Some('a' :: 'b' :: 'c' :: Nil), List.init('a' :: 'b' :: 'c' :: 'd' :: Nil))
 
     @Test
-    def init06(): Bool = List.init("test1" :: "test2" :: "test3" :: Nil) == Some("test1" :: "test2" :: Nil)
+    def init06(): Unit \ Assert = assertEq(expected = Some("test1" :: "test2" :: Nil), List.init("test1" :: "test2" :: "test3" :: Nil))
 
     @Test
-    def init07(): Bool = List.init(2 :: 1 :: 0 :: -1 :: Nil) == Some(2 :: 1 :: 0 :: Nil)
+    def init07(): Unit \ Assert = assertEq(expected = Some(2 :: 1 :: 0 :: Nil), List.init(2 :: 1 :: 0 :: -1 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // slice                                                                   //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def slice01(): Bool = List.slice(start = 0, end = 0, (Nil: List[Unit])) == Nil
+    def slice01(): Unit \ Assert = assertEq(expected = Nil, List.slice(start = 0, end = 0, (Nil: List[Unit])))
 
     @Test
-    def slice02(): Bool = List.slice(start = -1, end = 1, (Nil: List[Unit])) == Nil
+    def slice02(): Unit \ Assert = assertEq(expected = Nil, List.slice(start = -1, end = 1, (Nil: List[Unit])))
 
     @Test
-    def slice03(): Bool = List.slice(start = 0, end = 0, 1 :: Nil) == Nil
+    def slice03(): Unit \ Assert = assertEq(expected = Nil, List.slice(start = 0, end = 0, 1 :: Nil))
 
     @Test
-    def slice04(): Bool = List.slice(start = 0, end = 1, 1 :: Nil) == 1 :: Nil
+    def slice04(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.slice(start = 0, end = 1, 1 :: Nil))
 
     @Test
-    def slice05(): Bool = List.slice(start = 0, end = 2, 1 :: Nil) == 1 :: Nil
+    def slice05(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.slice(start = 0, end = 2, 1 :: Nil))
 
     @Test
-    def slice06(): Bool = List.slice(start = 2, end = 5, 1 :: Nil) == Nil
+    def slice06(): Unit \ Assert = assertEq(expected = Nil, List.slice(start = 2, end = 5, 1 :: Nil))
 
     @Test
-    def slice07(): Bool = List.slice(start = -1, end = 1, 1 :: Nil) == 1 :: Nil
+    def slice07(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.slice(start = -1, end = 1, 1 :: Nil))
 
     @Test
-    def slice08(): Bool = List.slice(start = 0, end = 1, 1 :: 2 :: Nil) == 1 :: Nil
+    def slice08(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.slice(start = 0, end = 1, 1 :: 2 :: Nil))
 
     @Test
-    def slice09(): Bool = List.slice(start = 0, end = 2, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+    def slice09(): Unit \ Assert = assertEq(expected = 1 :: 2 :: Nil, List.slice(start = 0, end = 2, 1 :: 2 :: Nil))
 
     @Test
-    def slice10(): Bool = List.slice(start = 1, end = 2, 1 :: 2 :: Nil) == 2 :: Nil
+    def slice10(): Unit \ Assert = assertEq(expected = 2 :: Nil, List.slice(start = 1, end = 2, 1 :: 2 :: Nil))
 
     @Test
-    def slice11(): Bool = List.slice(start = 0, end = 3, 1 :: 2 :: 3 :: Nil) == 1 :: 2 :: 3 :: Nil
+    def slice11(): Unit \ Assert = assertEq(expected = 1 :: 2 :: 3 :: Nil, List.slice(start = 0, end = 3, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def slice12(): Bool = List.slice(start = 0, end = 2, 1 :: 2 :: 3 :: Nil) == 1 :: 2 :: Nil
+    def slice12(): Unit \ Assert = assertEq(expected = 1 :: 2 :: Nil, List.slice(start = 0, end = 2, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def slice13(): Bool = List.slice(start = 1, end = 3, 1 :: 2 :: 3 :: Nil) == 2 :: 3 :: Nil
+    def slice13(): Unit \ Assert = assertEq(expected = 2 :: 3 :: Nil, List.slice(start = 1, end = 3, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def slice14(): Bool = List.slice(start = 1, end = 2, 1 :: 2 :: 3 :: Nil) == 2 :: Nil
+    def slice14(): Unit \ Assert = assertEq(expected = 2 :: Nil, List.slice(start = 1, end = 2, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // partition                                                               //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def partition01(): Bool = List.partition(i -> i > 3, Nil) == (Nil, Nil)
+    def partition01(): Unit \ Assert = assertEq(expected = (Nil, Nil), List.partition(i -> i > 3, Nil))
 
     @Test
-    def partition02(): Bool = List.partition(i -> i > 3, 1 :: Nil) == (Nil, 1 :: Nil)
+    def partition02(): Unit \ Assert = assertEq(expected = (Nil, 1 :: Nil), List.partition(i -> i > 3, 1 :: Nil))
 
     @Test
-    def partition03(): Bool = List.partition(i -> i > 3, 4 :: Nil) == (4 :: Nil, Nil)
+    def partition03(): Unit \ Assert = assertEq(expected = (4 :: Nil, Nil), List.partition(i -> i > 3, 4 :: Nil))
 
     @Test
-    def partition04(): Bool = List.partition(i -> i > 3, 1 :: 2 :: Nil) == (Nil, 1 :: 2 :: Nil)
+    def partition04(): Unit \ Assert = assertEq(expected = (Nil, 1 :: 2 :: Nil), List.partition(i -> i > 3, 1 :: 2 :: Nil))
 
     @Test
-    def partition05(): Bool = List.partition(i -> i > 3, 1 :: 5 :: Nil) == (5 :: Nil, 1 :: Nil)
+    def partition05(): Unit \ Assert = assertEq(expected = (5 :: Nil, 1 :: Nil), List.partition(i -> i > 3, 1 :: 5 :: Nil))
 
     @Test
-    def partition06(): Bool = List.partition(i -> i > 3, 5 :: 1 :: Nil) == (5 :: Nil, 1 :: Nil)
+    def partition06(): Unit \ Assert = assertEq(expected = (5 :: Nil, 1 :: Nil), List.partition(i -> i > 3, 5 :: 1 :: Nil))
 
     @Test
-    def partition07(): Bool = List.partition(i -> i > 3, 5 :: 8 :: Nil) == (5 :: 8 :: Nil, Nil)
+    def partition07(): Unit \ Assert = assertEq(expected = (5 :: 8 :: Nil, Nil), List.partition(i -> i > 3, 5 :: 8 :: Nil))
 
     @Test
-    def partition08(): Bool = List.partition(i -> i > 3, 4 :: -3 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) ==
-                            (4 :: 16 :: 7 :: 7 :: Nil, -3 :: -5 :: 1 :: 2 :: 1 :: Nil)
+    def partition08(): Unit \ Assert = assertEq(expected = (4 :: 16 :: 7 :: 7 :: Nil, -3 :: -5 :: 1 :: 2 :: 1 :: Nil), List.partition(i -> i > 3, 4 :: -3 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // span                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def span01(): Bool = List.span(i -> i > 3, Nil) == (Nil, Nil)
+    def span01(): Unit \ Assert = assertEq(expected = (Nil, Nil), List.span(i -> i > 3, Nil))
 
     @Test
-    def span02(): Bool = List.span(i -> i > 3, 1 :: Nil) == (Nil, 1 :: Nil)
+    def span02(): Unit \ Assert = assertEq(expected = (Nil, 1 :: Nil), List.span(i -> i > 3, 1 :: Nil))
 
     @Test
-    def span03(): Bool = List.span(i -> i > 3, 4 :: Nil) == (4 :: Nil, Nil)
+    def span03(): Unit \ Assert = assertEq(expected = (4 :: Nil, Nil), List.span(i -> i > 3, 4 :: Nil))
 
     @Test
-    def span04(): Bool = List.span(i -> i > 3, 1 :: 2 :: Nil) == (Nil, 1 :: 2 :: Nil)
+    def span04(): Unit \ Assert = assertEq(expected = (Nil, 1 :: 2 :: Nil), List.span(i -> i > 3, 1 :: 2 :: Nil))
 
     @Test
-    def span05(): Bool = List.span(i -> i > 3, 1 :: 5 :: Nil) == (Nil, 1 :: 5 :: Nil)
+    def span05(): Unit \ Assert = assertEq(expected = (Nil, 1 :: 5 :: Nil), List.span(i -> i > 3, 1 :: 5 :: Nil))
 
     @Test
-    def span06(): Bool = List.span(i -> i > 3, 5 :: 1 :: Nil) == (5 :: Nil, 1 :: Nil)
+    def span06(): Unit \ Assert = assertEq(expected = (5 :: Nil, 1 :: Nil), List.span(i -> i > 3, 5 :: 1 :: Nil))
 
     @Test
-    def span07(): Bool = List.span(i -> i > 3, 5 :: 8 :: Nil) == (5 :: 8 :: Nil, Nil)
+    def span07(): Unit \ Assert = assertEq(expected = (5 :: 8 :: Nil, Nil), List.span(i -> i > 3, 5 :: 8 :: Nil))
 
     @Test
-    def span08(): Bool = List.span(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) ==
-                            (4 :: 6 :: Nil, -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil)
+    def span08(): Unit \ Assert = assertEq(expected = (4 :: 6 :: Nil, -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil), List.span(i -> i > 3, 4 :: 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test
-    def drop01(): Bool = List.drop(-1, (Nil: List[Unit])) == Nil
+    def drop01(): Unit \ Assert = assertEq(expected = Nil, List.drop(-1, (Nil: List[Unit])))
 
     @Test
-    def drop02(): Bool = List.drop(0, (Nil: List[Unit])) == Nil
+    def drop02(): Unit \ Assert = assertEq(expected = Nil, List.drop(0, (Nil: List[Unit])))
 
     @Test
-    def drop03(): Bool = List.drop(1, (Nil: List[Unit])) == Nil
+    def drop03(): Unit \ Assert = assertEq(expected = Nil, List.drop(1, (Nil: List[Unit])))
 
     @Test
-    def drop04(): Bool = List.drop(-1, 1 :: Nil) == 1 :: Nil
+    def drop04(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.drop(-1, 1 :: Nil))
 
     @Test
-    def drop05(): Bool = List.drop(0, 1 :: Nil) == 1 :: Nil
+    def drop05(): Unit \ Assert = assertEq(expected = 1 :: Nil, List.drop(0, 1 :: Nil))
 
     @Test
-    def drop06(): Bool = List.drop(1, 1 :: Nil) == Nil
+    def drop06(): Unit \ Assert = assertEq(expected = Nil, List.drop(1, 1 :: Nil))
 
     @Test
-    def drop07(): Bool = List.drop(2, 1 :: Nil) == Nil
+    def drop07(): Unit \ Assert = assertEq(expected = Nil, List.drop(2, 1 :: Nil))
 
     @Test
-    def drop08(): Bool = List.drop(0, 1 :: 2 :: Nil) == 1 :: 2 :: Nil
+    def drop08(): Unit \ Assert = assertEq(expected = 1 :: 2 :: Nil, List.drop(0, 1 :: 2 :: Nil))
 
     @Test
-    def drop09(): Bool = List.drop(1, 1 :: 2 :: Nil) == 2 :: Nil
+    def drop09(): Unit \ Assert = assertEq(expected = 2 :: Nil, List.drop(1, 1 :: 2 :: Nil))
 
     @Test
-    def drop10(): Bool = List.drop(2, 1 :: 2 :: Nil) == Nil
+    def drop10(): Unit \ Assert = assertEq(expected = Nil, List.drop(2, 1 :: 2 :: Nil))
 
     @Test
-    def drop11(): Bool = List.drop(2, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) == 3 :: 4 :: 5 :: 6 :: Nil
+    def drop11(): Unit \ Assert = assertEq(expected = 3 :: 4 :: 5 :: 6 :: Nil, List.drop(2, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil))
 
     @Test
-    def drop12(): Bool = List.drop(4, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil) == 5 :: 6 :: Nil
+    def drop12(): Unit \ Assert = assertEq(expected = 5 :: 6 :: Nil, List.drop(4, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile                                                               //
@@ -2317,31 +2315,31 @@ mod TestList {
         (List.sortBy(x -> -x, a) == List.sortWith(flip(cmp),a))
 
     @Test
-    def sortBy01(): Bool = testSortByVsSort((Nil: List[Int32]))
+    def sortBy01(): Unit \ Assert = assertTrue(testSortByVsSort((Nil: List[Int32])))
 
     @Test
-    def sortBy02(): Bool = testSortByVsSort(0 :: Nil)
+    def sortBy02(): Unit \ Assert = assertTrue(testSortByVsSort(0 :: Nil))
 
     @Test
-    def sortBy03(): Bool = testSortByVsSort(0 :: 1 :: Nil)
+    def sortBy03(): Unit \ Assert = assertTrue(testSortByVsSort(0 :: 1 :: Nil))
 
     @Test
-    def sortBy04(): Bool = testSortByVsSort(1 :: 0 :: Nil)
+    def sortBy04(): Unit \ Assert = assertTrue(testSortByVsSort(1 :: 0 :: Nil))
 
     @Test
-    def sortBy05(): Bool = testSortByVsSort(1 :: 1 :: Nil)
+    def sortBy05(): Unit \ Assert = assertTrue(testSortByVsSort(1 :: 1 :: Nil))
 
     @Test
-    def sortBy06(): Bool = testSortByVsSort(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    def sortBy06(): Unit \ Assert = assertTrue(testSortByVsSort(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
     @Test
-    def sortBy07(): Bool = testSortByVsSort(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    def sortBy07(): Unit \ Assert = assertTrue(testSortByVsSort(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @Test
-    def sortBy08(): Bool = testSortByVsSort(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+    def sortBy08(): Unit \ Assert = assertTrue(testSortByVsSort(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     @Test
-    def sortBy09(): Bool = testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)
+    def sortBy09(): Unit \ Assert = assertTrue(testSortByVsSort(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2349,35 +2347,35 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unfold01(): Bool =
-        List.unfold(s -> if (true) None else Some((s + 48, s + 1)), 0) == Nil
+    def unfold01(): Unit \ Assert =
+        assertEq(expected = Nil, List.unfold(s -> if (true) None else Some((s + 48, s + 1)), 0))
 
     @Test
-    def unfold02(): Bool =
-        List.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0) == 48 :: Nil
+    def unfold02(): Unit \ Assert =
+        assertEq(expected = 48 :: Nil, List.unfold(s -> if (s > 0) None else Some((s + 48, s + 1)), 0))
 
     @Test
-    def unfold03(): Bool =
-        List.unfold(s -> if (s > 1) None else Some((s + 48, s + 1)), 0) == 48 :: 49 :: Nil
+    def unfold03(): Unit \ Assert =
+        assertEq(expected = 48 :: 49 :: Nil, List.unfold(s -> if (s > 1) None else Some((s + 48, s + 1)), 0))
 
     @Test
-    def unfold04(): Bool =
-        List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 0) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+    def unfold04(): Unit \ Assert =
+        assertEq(expected = 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil, List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 0))
 
     @Test
-    def unfold05(): Bool =
-        List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 5) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+    def unfold05(): Unit \ Assert =
+        assertEq(expected = 53 :: 54 :: 55 :: 56 :: 57 :: Nil, List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 1)), 5))
 
     @Test
-    def unfold06(): Bool =
-        List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 2)), 0) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
+    def unfold06(): Unit \ Assert =
+        assertEq(expected = 48 :: 50 :: 52 :: 54 :: 56 :: Nil, List.unfold(s -> if (s >= 10) None else Some((s + 48, s + 2)), 0))
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithIter                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unfoldWithIter01(): Bool = region rc {
+    def unfoldWithIter01(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (true)
@@ -2387,11 +2385,11 @@ mod TestList {
                 Ref.put(Ref.get(x) + 1, x);
                 c
             };
-        List.unfoldWithIter(step) == Nil
+        assertEq(expected = Nil, List.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter02(): Bool = region rc {
+    def unfoldWithIter02(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) > 0)
@@ -2401,11 +2399,11 @@ mod TestList {
                 Ref.put(Ref.get(x) + 1, x);
                 c
             };
-        List.unfoldWithIter(step) == 48 :: Nil
+        assertEq(expected = 48 :: Nil, List.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter03(): Bool = region rc {
+    def unfoldWithIter03(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) > 1)
@@ -2415,11 +2413,11 @@ mod TestList {
                 Ref.put(Ref.get(x) + 1, x);
                 c
             };
-        List.unfoldWithIter(step) == 48 :: 49 :: Nil
+        assertEq(expected = 48 :: 49 :: Nil, List.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter04(): Bool = region rc {
+    def unfoldWithIter04(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) >= 10)
@@ -2429,11 +2427,11 @@ mod TestList {
                 Ref.put(Ref.get(x) + 1, x);
                 c
             };
-        List.unfoldWithIter(step) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+        assertEq(expected = 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil, List.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter05(): Bool = region rc {
+    def unfoldWithIter05(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 5);
         let step = () ->
             if (Ref.get(x) >= 10)
@@ -2443,11 +2441,11 @@ mod TestList {
                 Ref.put(Ref.get(x) + 1, x);
                 c
             };
-        List.unfoldWithIter(step) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
+        assertEq(expected = 53 :: 54 :: 55 :: 56 :: 57 :: Nil, List.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter06(): Bool = region rc {
+    def unfoldWithIter06(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) >= 10)
@@ -2457,7 +2455,7 @@ mod TestList {
                 Ref.put(Ref.get(x) + 2, x);
                 c
             };
-        List.unfoldWithIter(step) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil
+        assertEq(expected = 48 :: 50 :: 52 :: 54 :: 56 :: Nil, List.unfoldWithIter(step))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2465,7 +2463,7 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unfoldWithOkIter01(): Bool = region rc {
+    def unfoldWithOkIter01(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (true) {
@@ -2473,11 +2471,11 @@ mod TestList {
             } else {
                 Ok(Some(Ref.get(x)))
             };
-        (List.unfoldWithOkIter(step): Result[Unit, _]) == Ok(Nil)
+        assertEq(expected = Ok(Nil), (List.unfoldWithOkIter(step): Result[Unit, _]))
     }
 
     @Test
-    def unfoldWithOkIter02(): Bool = region rc {
+    def unfoldWithOkIter02(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (true) {
@@ -2485,7 +2483,7 @@ mod TestList {
             } else {
                 Ok(Some(Ref.get(x)))
             };
-        List.unfoldWithOkIter(step) == Err(0)
+        assertEq(expected = Err(0), List.unfoldWithOkIter(step))
     }
 
     @Test
