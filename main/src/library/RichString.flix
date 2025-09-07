@@ -140,37 +140,37 @@ mod RichString {
     /// Returns a `RichString` with the given text `s` in red color.
     ///
     pub def red(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(255, 0, 0)))
+        fromSpan(Span.withColor(s, Color.Rgb(205, 49, 49)))
 
     ///
     /// Returns a `RichString` with the given text `s` in green color.
     ///
     pub def green(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0, 255, 0)))
+        fromSpan(Span.withColor(s, Color.Rgb(13, 188, 121)))
 
     ///
     /// Returns a `RichString` with the given text `s` in yellow color.
     ///
     pub def yellow(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(255, 255, 0)))
+        fromSpan(Span.withColor(s, Color.Rgb(229, 192, 123)))
 
     ///
     /// Returns a `RichString` with the given text `s` in blue color.
     ///
     pub def blue(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0, 0, 255)))
+        fromSpan(Span.withColor(s, Color.Rgb(36, 114, 200)))
 
     ///
     /// Returns a `RichString` with the given text `s` in magenta color.
     ///
     pub def magenta(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(255, 0, 255)))
+        fromSpan(Span.withColor(s, Color.Rgb(188, 63, 188)))
 
     ///
     /// Returns a `RichString` with the given text `s` in cyan color.
     ///
     pub def cyan(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0, 255, 255)))
+        fromSpan(Span.withColor(s, Color.Rgb(17, 168, 205)))
 
     ///
     /// Returns a `RichString` with the given text `s` in white color.
