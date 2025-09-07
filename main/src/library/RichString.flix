@@ -179,6 +179,54 @@ mod RichString {
         fromSpan(Span.withColor(s, Color.Rgb(255, 255, 255)))
 
     ///
+    /// Returns a `RichString` with the given text `s` on black background.
+    ///
+    pub def bgBlack(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(0, 0, 0)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on red background.
+    ///
+    pub def bgRed(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(205, 49, 49)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on green background.
+    ///
+    pub def bgGreen(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(13, 188, 121)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on yellow background.
+    ///
+    pub def bgYellow(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(229, 192, 123)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on blue background.
+    ///
+    pub def bgBlue(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(36, 114, 200)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on magenta background.
+    ///
+    pub def bgMagenta(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(188, 63, 188)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on cyan background.
+    ///
+    pub def bgCyan(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(17, 168, 205)))
+
+    ///
+    /// Returns a `RichString` with the given text `s` on white background.
+    ///
+    pub def bgWhite(s: String): RichString =
+        fromSpan(Span.withBgColor(s, Color.Rgb(255, 255, 255)))
+
+    ///
     /// Returns the concatenation of `rs1` and `rs2`.
     ///
     /// The spans from `rs1` appear first, followed by the spans from `rs2`.
