@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 ///
 /// A rich string composed of multiple styled spans.
 ///
@@ -18,12 +34,16 @@ mod RichString {
     ///
     /// Represents a color with RGB components.
     ///
+    /// Each component is an 8-bit value representing red, green, and blue intensity.
+    ///
     pub enum Color {
         case Rgb(Int8, Int8, Int8)  // Red, Green, Blue components
     }
 
     ///
     /// Represents text styling options.
+    ///
+    /// Defines the visual appearance of text spans beyond color.
     ///
     pub enum Style {
         case Normal,
@@ -34,6 +54,8 @@ mod RichString {
     ///
     /// A text span with content, color, and style.
     ///
+    /// A span represents a contiguous piece of text with uniform styling.
+    ///
     pub enum Span {
         case Span({text = String, color = Color, style = Style})
     }
@@ -42,7 +64,7 @@ mod RichString {
         use RichString.{Color, Style, Span};
 
         ///
-        /// Create a span from text and color with normal style.
+        /// Returns a span with the given `text` and `color` using normal style.
         ///
         pub def withColor(text: String, color: Color): Span =
             Span({text = text, color = color, style = Style.Normal})
@@ -50,67 +72,69 @@ mod RichString {
     }
 
     ///
-    /// Create an empty RichString.
+    /// Returns an empty `RichString`.
     ///
     pub def empty(): RichString =
         RichString(Chain.empty())
 
     ///
-    /// Create a RichString from a single span.
+    /// Returns a `RichString` containing the given `span`.
     ///
     pub def fromSpan(span: Span): RichString =
         RichString(Chain.singleton(span))
 
     ///
-    /// Create a black RichString from text.
+    /// Returns a `RichString` with the given text `s` in black color.
     ///
     pub def black(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(0i8, 0i8, 0i8)))
 
     ///
-    /// Create a red RichString from text.
+    /// Returns a `RichString` with the given text `s` in red color.
     ///
     pub def red(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(127i8, 0i8, 0i8)))
 
     ///
-    /// Create a green RichString from text.
+    /// Returns a `RichString` with the given text `s` in green color.
     ///
     pub def green(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(0i8, 127i8, 0i8)))
 
     ///
-    /// Create a yellow RichString from text.
+    /// Returns a `RichString` with the given text `s` in yellow color.
     ///
     pub def yellow(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(127i8, 127i8, 0i8)))
 
     ///
-    /// Create a blue RichString from text.
+    /// Returns a `RichString` with the given text `s` in blue color.
     ///
     pub def blue(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(0i8, 0i8, 127i8)))
 
     ///
-    /// Create a magenta RichString from text.
+    /// Returns a `RichString` with the given text `s` in magenta color.
     ///
     pub def magenta(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(127i8, 0i8, 127i8)))
 
     ///
-    /// Create a cyan RichString from text.
+    /// Returns a `RichString` with the given text `s` in cyan color.
     ///
     pub def cyan(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(0i8, 127i8, 127i8)))
 
     ///
-    /// Create a white RichString from text.
+    /// Returns a `RichString` with the given text `s` in white color.
     ///
     pub def white(s: String): RichString =
         fromSpan(Span.withColor(s, Color.Rgb(127i8, 127i8, 127i8)))
 
     ///
-    /// Combine two RichStrings into one.
+    /// Returns the concatenation of `rs1` and `rs2`.
+    ///
+    /// The spans from `rs1` appear first, followed by the spans from `rs2`.
     ///
     pub def combine(rs1: RichString, rs2: RichString): RichString = match (rs1, rs2) {
         case (RichString(spans1), RichString(spans2)) =>
@@ -118,7 +142,9 @@ mod RichString {
     }
 
     ///
-    /// Convert a RichString to plain text.
+    /// Returns the plain text representation of the `RichString` `rs`.
+    ///
+    /// All styling and color information is discarded.
     ///
     pub def toString(rs: RichString): String = match rs {
         case RichString(spans) =>
@@ -126,7 +152,9 @@ mod RichString {
     }
 
     ///
-    /// Convert a RichString to a String with ANSI escape codes.
+    /// Returns the string representation of the `RichString` `rs` with ANSI escape codes.
+    ///
+    /// The returned string includes ANSI color and style codes for terminal display.
     ///
     pub def toAnsiString(rs: RichString): String = match rs {
         case RichString(spans) =>
