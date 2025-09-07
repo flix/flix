@@ -3187,45 +3187,43 @@ mod TestArray {
 
     }
     @Test
-    def take06(): Bool = region rc {
+    def take06(): Unit \ Assert = region rc {
         let a = Array.take(rc, 1, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
-
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
     @Test
-    def take07(): Bool = region rc {
+    def take07(): Unit \ Assert = region rc {
         let a = Array.take(rc, 2, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
-
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
     @Test
-    def take08(): Bool = region rc {
+    def take08(): Unit \ Assert = region rc {
         let a = Array.take(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def take09(): Bool = region rc {
+    def take09(): Unit \ Assert = region rc {
         let a = Array.take(rc, 1, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def take10(): Bool = region rc {
+    def take10(): Unit \ Assert = region rc {
         let a = Array.take(rc, 2, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{1,2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
     }
 
     @Test
-    def take11(): Bool = region rc {
+    def take11(): Unit \ Assert = region rc {
         let a = Array.take(rc, 2, Array#{1,2,3,4,5,6} @ rc);
-        Array.sameElements(a, Array#{1,2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
     }
 
     @Test
-    def take12(): Bool = region rc {
+    def take12(): Unit \ Assert = region rc {
         let a = Array.take(rc, 4, Array#{1,2,3,4,5,6} @ rc);
-        Array.sameElements(a, Array#{1,2,3,4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3233,75 +3231,75 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def takeLeft01(): Bool = region rc {
+    def takeLeft01(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeLeft02(): Bool = region rc {
+    def takeLeft02(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeLeft03(): Bool = region rc {
+    def takeLeft03(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeLeft04(): Bool = region rc {
+    def takeLeft04(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, -1, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeLeft05(): Bool = region rc {
+    def takeLeft05(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 0, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeLeft06(): Bool = region rc {
+    def takeLeft06(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 1, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def takeLeft07(): Bool = region rc {
+    def takeLeft07(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 2, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def takeLeft08(): Bool = region rc {
+    def takeLeft08(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeLeft09(): Bool = region rc {
+    def takeLeft09(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 1, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def takeLeft10(): Bool = region rc {
+    def takeLeft10(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 2, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{1,2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
     }
 
     @Test
-    def takeLeft11(): Bool = region rc {
+    def takeLeft11(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 2, Array#{1,2,3,4,5,6} @ rc);
-        Array.sameElements(a, Array#{1,2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
     }
 
     @Test
-    def takeLeft12(): Bool = region rc {
+    def takeLeft12(): Unit \ Assert = region rc {
         let a = Array.takeLeft(rc, 4, Array#{1,2,3,4,5,6} @ rc);
-        Array.sameElements(a, Array#{1,2,3,4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2,3,4} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3309,75 +3307,75 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def takeRight01(): Bool = region rc {
+    def takeRight01(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeRight02(): Bool = region rc {
+    def takeRight02(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeRight03(): Bool = region rc {
+    def takeRight03(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeRight04(): Bool = region rc {
+    def takeRight04(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, -1, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeRight05(): Bool = region rc {
+    def takeRight05(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 0, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeRight06(): Bool = region rc {
+    def takeRight06(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 1, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def takeRight07(): Bool = region rc {
+    def takeRight07(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 2, Array#{1} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def takeRight08(): Bool = region rc {
+    def takeRight08(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeRight09(): Bool = region rc {
+    def takeRight09(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 1, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
     }
 
     @Test
-    def takeRight10(): Bool = region rc {
+    def takeRight10(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 2, Array#{1,2} @ rc);
-        Array.sameElements(a, Array#{1,2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc))
     }
 
     @Test
-    def takeRight11(): Bool = region rc {
+    def takeRight11(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 2, Array#{1,2,3,4,5,6} @ rc);
-        Array.sameElements(a, Array#{5,6} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5,6} @ rc))
     }
 
     @Test
-    def takeRight12(): Bool = region rc {
+    def takeRight12(): Unit \ Assert = region rc {
         let a = Array.takeRight(rc, 4, Array#{1,2,3,4,5,6} @ rc);
-        Array.sameElements(a, Array#{3,4,5,6} @ rc)
+        assertTrue(Array.sameElements(a, Array#{3,4,5,6} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3385,51 +3383,51 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def takeWhile01(): Bool = region rc {
+    def takeWhile01(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhile02(): Bool = region rc {
+    def takeWhile02(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhile03(): Bool = region rc {
+    def takeWhile03(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, Array#{4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
     }
 
     @Test
-    def takeWhile04(): Bool = region rc {
+    def takeWhile04(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhile05(): Bool = region rc {
+    def takeWhile05(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{1,5} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhile06(): Bool = region rc {
+    def takeWhile06(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{5,1} @ rc);
-        Array.sameElements(a, Array#{5} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5} @ rc))
     }
 
     @Test
-    def takeWhile07(): Bool = region rc {
+    def takeWhile07(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, Array#{5,8} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc))
     }
 
     @Test
-    def takeWhile08(): Bool = region rc {
+    def takeWhile08(): Unit \ Assert = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
-        Array.sameElements(a, Array#{4, 6} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3437,51 +3435,51 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def takeWhileLeft01(): Bool = region rc {
+    def takeWhileLeft01(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileLeft02(): Bool = region rc {
+    def takeWhileLeft02(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileLeft03(): Bool = region rc {
+    def takeWhileLeft03(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, Array#{4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
     }
 
     @Test
-    def takeWhileLeft04(): Bool = region rc {
+    def takeWhileLeft04(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileLeft05(): Bool = region rc {
+    def takeWhileLeft05(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1,5} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileLeft06(): Bool = region rc {
+    def takeWhileLeft06(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{5,1} @ rc);
-        Array.sameElements(a, Array#{5} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5} @ rc))
     }
 
     @Test
-    def takeWhileLeft07(): Bool = region rc {
+    def takeWhileLeft07(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, Array#{5,8} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc))
     }
 
     @Test
-    def takeWhileLeft08(): Bool = region rc {
+    def takeWhileLeft08(): Unit \ Assert = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
-        Array.sameElements(a, Array#{4, 6} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3489,51 +3487,51 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def takeWhileRight01(): Bool = region rc {
+    def takeWhileRight01(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileRight02(): Bool = region rc {
+    def takeWhileRight02(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileRight03(): Bool = region rc {
+    def takeWhileRight03(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, Array#{4} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4} @ rc))
     }
 
     @Test
-    def takeWhileRight04(): Bool = region rc {
+    def takeWhileRight04(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileRight05(): Bool = region rc {
+    def takeWhileRight05(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1,5} @ rc);
-        Array.sameElements(a, Array#{5} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5} @ rc))
     }
 
     @Test
-    def takeWhileRight06(): Bool = region rc {
+    def takeWhileRight06(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{5,1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def takeWhileRight07(): Bool = region rc {
+    def takeWhileRight07(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, Array#{5,8} @ rc)
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc))
     }
 
     @Test
-    def takeWhileRight08(): Bool = region rc {
+    def takeWhileRight08(): Unit \ Assert = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
-        Array.sameElements(a, Array#{7} @ rc)
+        assertTrue(Array.sameElements(a, Array#{7} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3541,52 +3539,52 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def groupBy01(): Bool = region rc {
+    def groupBy01(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, ((Array#{} @ rc): Array[Int32, rc]));
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == Nil
+        assertEq(expected = Nil, xs)
     }
 
     @Test
-    def groupBy02(): Bool = region rc {
+    def groupBy02(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == (1 :: Nil) :: Nil
+        assertEq(expected = (1 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy03(): Bool = region rc {
+    def groupBy03(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1,4} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == (1 :: Nil) :: (4 :: Nil) :: Nil
+        assertEq(expected = (1 :: Nil) :: (4 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy04(): Bool = region rc {
+    def groupBy04(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1,9} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == (1 :: 9 :: Nil) :: Nil
+        assertEq(expected = (1 :: 9 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy05(): Bool = region rc {
+    def groupBy05(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, Array#{1, 4, 7, 6, 9, 2, 4, 4, 8, 16} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil
+        assertEq(expected = (1 :: 9 :: 16 :: Nil) :: (4 :: 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: (2 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy06(): Bool = region rc {
+    def groupBy06(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a > -6 or a*b >= 0, Array#{-1, -11, 4, -11, 0, 8, 2, 1, -3, -24} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil
+        assertEq(expected = (-1 :: -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: (4 :: 8 :: 2 :: 1 :: Nil) :: Nil, xs)
     }
 
     @Test
-    def groupBy07(): Bool = region rc {
+    def groupBy07(): Unit \ Assert = region rc {
         let arr = Array.groupBy(rc, (a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), Array#{-5, 6, 11, 8, 8, -11, -1, 0, 4, -1} @ rc);
         let xs = Array.toList(arr) |> List.map(Array.toList);
-        xs == (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil
+        assertEq(expected = (-5 :: 11 :: -11 :: -1 :: -1 :: Nil) :: (6 :: Nil) :: (8 :: 8 :: Nil) :: (0 :: Nil) :: (4 :: Nil) :: Nil, xs)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3594,45 +3592,45 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def zip01(): Bool = region rc {
+    def zip01(): Unit \ Assert = region rc {
         let a = Array.zip(rc, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _])))
     }
 
     @Test
-    def zip02(): Bool = region rc {
+    def zip02(): Unit \ Assert = region rc {
         let a = Array.zip(rc, Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _])))
     }
 
     @Test
-    def zip03(): Bool = region rc {
+    def zip03(): Unit \ Assert = region rc {
         let a = Array.zip(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{2} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _])))
     }
 
     @Test
-    def zip04(): Bool = region rc {
+    def zip04(): Unit \ Assert = region rc {
         let a = Array.zip(rc, Array#{1} @ rc, Array#{2} @ rc);
-        Array.sameElements(a, Array#{(1, 2)} @ rc)
+        assertTrue(Array.sameElements(a, Array#{(1, 2)} @ rc))
     }
 
     @Test
-    def zip05(): Bool = region rc {
+    def zip05(): Unit \ Assert = region rc {
         let a = Array.zip(rc, Array#{1,3} @ rc, Array#{2,4} @ rc);
-        Array.sameElements(a, Array#{(1, 2), (3, 4)} @ rc)
+        assertTrue(Array.sameElements(a, Array#{(1, 2), (3, 4)} @ rc))
     }
 
     @Test
-    def zip06(): Bool = region rc {
+    def zip06(): Unit \ Assert = region rc {
         let a = Array.zip(rc, Array#{1,3,5} @ rc, Array#{2,4,6} @ rc);
-        Array.sameElements(a, Array#{(1, 2), (3, 4), (5, 6)} @ rc)
+        assertTrue(Array.sameElements(a, Array#{(1, 2), (3, 4), (5, 6)} @ rc))
     }
 
     @Test
-    def zip07(): Bool = region rc {
+    def zip07(): Unit \ Assert = region rc {
         let a = Array.zip(rc, Array#{1,3,5,7} @ rc, Array#{2,4,6,8} @ rc);
-        Array.sameElements(a, Array#{(1, 2), (3, 4), (5, 6), (7, 8)} @ rc)
+        assertTrue(Array.sameElements(a, Array#{(1, 2), (3, 4), (5, 6), (7, 8)} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3640,41 +3638,41 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def zipWith01(): Bool = region rc {
+    def zipWith01(): Unit \ Assert = region rc {
         let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _]));
-        Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def zipWith02(): Bool = region rc {
+    def zipWith02(): Unit \ Assert = region rc {
         let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _]));
-        Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def zipWith03(): Bool = region rc {
+    def zipWith03(): Unit \ Assert = region rc {
         let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc);
-        Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def zipWith04(): Bool = region rc {
+    def zipWith04(): Unit \ Assert = region rc {
         let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, Array#{true} @ rc);
-        Array.sameElements(arr, Array#{2} @ rc)
+        assertTrue(Array.sameElements(arr, Array#{2} @ rc))
     }
 
     @Test
-    def zipWith05(): Bool = region rc {
+    def zipWith05(): Unit \ Assert = region rc {
         let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, Array#{false} @ rc);
-        Array.sameElements(arr, Array#{1} @ rc)
+        assertTrue(Array.sameElements(arr, Array#{1} @ rc))
     }
 
     @Test
-    def zipWith06(): Bool = region rc {
+    def zipWith06(): Unit \ Assert = region rc {
         let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a,
                         Array#{1, 2, 3, 4, 5, 6, 7, 8} @ rc,
                         Array#{false, true, true, false, false, true, true, true} @ rc);
-        Array.sameElements(arr, Array#{1, 3, 4, 4, 5, 7, 8, 9} @ rc)
+        assertTrue(Array.sameElements(arr, Array#{1, 3, 4, 4, 5, 7, 8, 9} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
