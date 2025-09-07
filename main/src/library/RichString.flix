@@ -34,10 +34,10 @@ mod RichString {
     ///
     /// Represents a color with RGB components.
     ///
-    /// Each component is an 8-bit value representing red, green, and blue intensity.
+    /// Each component is a value from 0 to 255 representing red, green, and blue intensity.
     ///
     pub enum Color {
-        case Rgb(Int8, Int8, Int8)  // Red, Green, Blue components
+        case Rgb(Int32, Int32, Int32)  // Red, Green, Blue components
     }
 
     ///
@@ -87,49 +87,49 @@ mod RichString {
     /// Returns a `RichString` with the given text `s` in black color.
     ///
     pub def black(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0i8, 0i8, 0i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(0, 0, 0)))
 
     ///
     /// Returns a `RichString` with the given text `s` in red color.
     ///
     pub def red(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(127i8, 0i8, 0i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(255, 0, 0)))
 
     ///
     /// Returns a `RichString` with the given text `s` in green color.
     ///
     pub def green(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0i8, 127i8, 0i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(0, 255, 0)))
 
     ///
     /// Returns a `RichString` with the given text `s` in yellow color.
     ///
     pub def yellow(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(127i8, 127i8, 0i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(255, 255, 0)))
 
     ///
     /// Returns a `RichString` with the given text `s` in blue color.
     ///
     pub def blue(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0i8, 0i8, 127i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(0, 0, 255)))
 
     ///
     /// Returns a `RichString` with the given text `s` in magenta color.
     ///
     pub def magenta(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(127i8, 0i8, 127i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(255, 0, 255)))
 
     ///
     /// Returns a `RichString` with the given text `s` in cyan color.
     ///
     pub def cyan(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0i8, 127i8, 127i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(0, 255, 255)))
 
     ///
     /// Returns a `RichString` with the given text `s` in white color.
     ///
     pub def white(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(127i8, 127i8, 127i8)))
+        fromSpan(Span.withColor(s, Color.Rgb(255, 255, 255)))
 
     ///
     /// Returns the concatenation of `rs1` and `rs2`.
@@ -165,10 +165,7 @@ mod RichString {
                     case Style.Bold => "1;"
                     case Style.Underline => "4;"
                 };
-                let redInt = Int8.toInt32(red);
-                let greenInt = Int8.toInt32(green);
-                let blueInt = Int8.toInt32(blue);
-                "\u001B[${styleCode}38;2;${redInt};${greenInt};${blueInt}m${r#text}\u001B[0m"
+                "\u001B[${styleCode}38;2;${red};${green};${blue}m${r#text}\u001B[0m"
             }, "", spans)
     }
 
