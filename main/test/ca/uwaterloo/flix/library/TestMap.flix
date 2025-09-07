@@ -1551,493 +1551,619 @@ mod TestMap {
         assertEq(expected = Map#{1 => 2, 2 => -5}, Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def unionWith13(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{1 => -6, 2 => 3}
+    def unionWith13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -6, 2 => 3}, Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def unionWith14(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 2, 2 => 3}
+    def unionWith14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3}, Map.unionWith((v1, v2) -> v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def unionWith15(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{1 => 2, 2 => 4}
+    def unionWith15(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 4}, Map.unionWith((v1, v2) -> v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def unionWith16(): Bool = Map.unionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33})
-                                       == Map#{2 => -1, 11 => 14, 9 => 8, 15 => 1, 1 => 2, 44 => 33}
+    def unionWith16(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => -1, 11 => 14, 9 => 8, 15 => 1, 1 => 2, 44 => 33}, Map.unionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33}))
 
     /////////////////////////////////////////////////////////////////////////////
     // unionWithKey                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unionWithKey01(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == (Map#{}: Map[Int32, Int32])
+    def unionWithKey01(): Unit \ Assert = 
+        assertEq(expected = (Map#{}: Map[Int32, Int32]), Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}))
 
     @Test
-    def unionWithKey02(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
+    def unionWithKey02(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}))
 
     @Test
-    def unionWithKey03(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2}) == Map#{1 => 2}
+    def unionWithKey03(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2}))
 
     @Test
-    def unionWithKey04(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 3 => 4}) == Map#{1 => 2, 3 => 4}
+    def unionWithKey04(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def unionWithKey05(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 3 => 4}, Map#{}) == Map#{1 => 2, 3 => 4}
+    def unionWithKey05(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def unionWithKey06(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{3 => 4}) == Map#{1 => 2, 3 => 4}
+    def unionWithKey06(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def unionWithKey07(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{1 => 5}) == Map#{1 => -2}
+    def unionWithKey07(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -2}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def unionWithKey08(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def unionWithKey08(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def unionWithKey09(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def unionWithKey09(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def unionWithKey10(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def unionWithKey10(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def unionWithKey11(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def unionWithKey11(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def unionWithKey12(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{1 => 2, 2 => -3}
+    def unionWithKey12(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => -3}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def unionWithKey13(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{1 => -5, 2 => 3}
+    def unionWithKey13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -5, 2 => 3}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def unionWithKey14(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 3, 2 => 3}
+    def unionWithKey14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 3, 2 => 3}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def unionWithKey15(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{1 => 2, 2 => 6}
+    def unionWithKey15(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 6}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def unionWithKey16(): Bool = Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33})
-                                       == Map#{2 => 1, 11 => 14, 9 => 8, 15 => 16, 1 => 2, 44 => 33}
+    def unionWithKey16(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 1, 11 => 14, 9 => 8, 15 => 16, 1 => 2, 44 => 33}, Map.unionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33}))
 
     /////////////////////////////////////////////////////////////////////////////
     // intersection                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def intersection01(): Bool = Map.intersection((Map#{}: Map[Unit, Unit]), Map#{}) == Map#{}
+    def intersection01(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection((Map#{}: Map[Unit, Unit]), Map#{}))
 
     @Test
-    def intersection02(): Bool = Map.intersection(Map#{1 => 2}, Map#{}) == Map#{}
+    def intersection02(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{1 => 2}, Map#{}))
 
     @Test
-    def intersection03(): Bool = Map.intersection(Map#{}, Map#{1 => 2}) == Map#{}
+    def intersection03(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{}, Map#{1 => 2}))
 
     @Test
-    def intersection04(): Bool = Map.intersection(Map#{}, Map#{1 => 2, 3 => 4}) == Map#{}
+    def intersection04(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def intersection05(): Bool = Map.intersection(Map#{1 => 2, 3 => 4}, Map#{}) == Map#{}
+    def intersection05(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def intersection06(): Bool = Map.intersection(Map#{1 => 2}, Map#{3 => 4}) == Map#{}
+    def intersection06(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def intersection07(): Bool = Map.intersection(Map#{1 => 2}, Map#{1 => 5}) == Map#{1 => 2}
+    def intersection07(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.intersection(Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def intersection08(): Bool = Map.intersection(Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{}
+    def intersection08(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def intersection09(): Bool = Map.intersection(Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{}
+    def intersection09(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def intersection10(): Bool = Map.intersection(Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{}
+    def intersection10(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def intersection11(): Bool = Map.intersection(Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def intersection11(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersection(Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersection12(): Bool = Map.intersection(Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{2 => 3}
+    def intersection12(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 3}, Map.intersection(Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def intersection13(): Bool = Map.intersection(Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{1 => 2}
+    def intersection13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.intersection(Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def intersection14(): Bool = Map.intersection(Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 4}
+    def intersection14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 4}, Map.intersection(Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersection15(): Bool = Map.intersection(Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{2 => 7}
+    def intersection15(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 7}, Map.intersection(Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersection16(): Bool = Map.intersection(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 1})
-                                       == Map#{2 => 7, 15 => 22, 11 => 14}
+    def intersection16(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 7, 15 => 22, 11 => 14}, Map.intersection(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 1}))
 
     /////////////////////////////////////////////////////////////////////////////
     // intersectionWith                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def intersectionWith01(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}) == (Map#{}: Map[Int32, Int32])
+    def intersectionWith01(): Unit \ Assert = 
+        assertEq(expected = (Map#{}: Map[Int32, Int32]), Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{}))
 
     @Test
-    def intersectionWith02(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{}) == Map#{}
+    def intersectionWith02(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{}))
 
     @Test
-    def intersectionWith03(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 => 2}) == Map#{}
+    def intersectionWith03(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 => 2}))
 
     @Test
-    def intersectionWith04(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 => 2, 3 => 4}) == Map#{}
+    def intersectionWith04(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def intersectionWith05(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 3 => 4}, Map#{}) == Map#{}
+    def intersectionWith05(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def intersectionWith06(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{3 => 4}) == Map#{}
+    def intersectionWith06(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def intersectionWith07(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{1 => 5}) == Map#{1 => -3}
+    def intersectionWith07(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -3}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def intersectionWith08(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{}
+    def intersectionWith08(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def intersectionWith09(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{}
+    def intersectionWith09(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def intersectionWith10(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{}
+    def intersectionWith10(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def intersectionWith11(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def intersectionWith11(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersectionWith12(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{2 => -5}
+    def intersectionWith12(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => -5}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def intersectionWith13(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{1 => -6}
+    def intersectionWith13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -6}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def intersectionWith14(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 2}
+    def intersectionWith14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersectionWith15(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{2 => 4}
+    def intersectionWith15(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 4}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersectionWith16(): Bool = Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 11})
-                                       == Map#{2 => -1, 15 => 1, 11 => 3}
+    def intersectionWith16(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => -1, 15 => 1, 11 => 3}, Map.intersectionWith((v1, v2) -> v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 11}))
     @Test
-    def intersectionWith17(): Bool = Map.intersectionWith((v1, v2) -> "${v1}|${v2}", Map#{3 => 'a', 5 => 'b'}, Map#{5 => "B", 7 => "C"})
-                                       == Map#{5 => "b|B"}
+    def intersectionWith17(): Unit \ Assert = 
+        assertEq(expected = Map#{5 => "b|B"}, Map.intersectionWith((v1, v2) -> "${v1}|${v2}", Map#{3 => 'a', 5 => 'b'}, Map#{5 => "B", 7 => "C"}))
     @Test
-    def intersectionWith18(): Bool = Map.intersectionWith((v1, v2) -> "${v1}|${v2}", Map#{3 => 'a', 5 => 'b', 7 => 'c', 10 => 'd'}, Map#{5 => "B", 7 => "C"})
-                                       == Map#{5 => "b|B", 7 => "c|C"}
+    def intersectionWith18(): Unit \ Assert = 
+        assertEq(expected = Map#{5 => "b|B", 7 => "c|C"}, Map.intersectionWith((v1, v2) -> "${v1}|${v2}", Map#{3 => 'a', 5 => 'b', 7 => 'c', 10 => 'd'}, Map#{5 => "B", 7 => "C"}))
 
     @Test
-    def intersectionWith19(): Bool = Map.intersectionWith((v1, v2) -> "${v1}|${v2}", Map#{3 => '3'}, Map#{3 => 3})
-                                       == Map#{3 => "3|3"}
+    def intersectionWith19(): Unit \ Assert = 
+        assertEq(expected = Map#{3 => "3|3"}, Map.intersectionWith((v1, v2) -> "${v1}|${v2}", Map#{3 => '3'}, Map#{3 => 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // intersectionWithKey                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def intersectionWithKey01(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}) == (Map#{}: Map[Int32, Int32])
+    def intersectionWithKey01(): Unit \ Assert = 
+        assertEq(expected = (Map#{}: Map[Int32, Int32]), Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{}))
 
     @Test
-    def intersectionWithKey02(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}) == Map#{}
+    def intersectionWithKey02(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{}))
 
     @Test
-    def intersectionWithKey03(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2}) == Map#{}
+    def intersectionWithKey03(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2}))
 
     @Test
-    def intersectionWithKey04(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 3 => 4}) == Map#{}
+    def intersectionWithKey04(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def intersectionWithKey05(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 3 => 4}, Map#{}) == Map#{}
+    def intersectionWithKey05(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def intersectionWithKey06(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{3 => 4}) == Map#{}
+    def intersectionWithKey06(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def intersectionWithKey07(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{1 => 5}) == Map#{1 => -2}
+    def intersectionWithKey07(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -2}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def intersectionWithKey08(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{}
+    def intersectionWithKey08(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def intersectionWithKey09(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{}
+    def intersectionWithKey09(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def intersectionWithKey10(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{}
+    def intersectionWithKey10(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def intersectionWithKey11(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def intersectionWithKey11(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersectionWithKey12(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{2 => -3}
+    def intersectionWithKey12(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => -3}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def intersectionWithKey13(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{1 => -5}
+    def intersectionWithKey13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => -5}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def intersectionWithKey14(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 3}
+    def intersectionWithKey14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 3}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersectionWithKey15(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{2 => 6}
+    def intersectionWithKey15(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 6}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def intersectionWithKey16(): Bool = Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 17})
-                                      == Map#{2 => 1, 15 => 16, 11 => 8}
+    def intersectionWithKey16(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 1, 15 => 16, 11 => 8}, Map.intersectionWithKey((k, v1, v2) -> k + v1 - v2, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33, 11 => 17}))
     @Test
-    def intersectionWithKey17(): Bool = Map.intersectionWithKey((k, v1, v2) -> "${k}:${v1}|${v2}", Map#{3 => 'a', 5 => 'b'}, Map#{5 => "B", 7 => "C"})
-                                       == Map#{5 => "5:b|B"}
+    def intersectionWithKey17(): Unit \ Assert = 
+        assertEq(expected = Map#{5 => "5:b|B"}, Map.intersectionWithKey((k, v1, v2) -> "${k}:${v1}|${v2}", Map#{3 => 'a', 5 => 'b'}, Map#{5 => "B", 7 => "C"}))
     @Test
-    def intersectionWithKey18(): Bool = Map.intersectionWithKey((k, v1, v2) -> "${k}:${v1}|${v2}", Map#{3 => 'a', 5 => 'b', 7 => 'c', 10 => 'd'}, Map#{5 => "B", 7 => "C"})
-                                       == Map#{5 => "5:b|B", 7 => "7:c|C"}
+    def intersectionWithKey18(): Unit \ Assert = 
+        assertEq(expected = Map#{5 => "5:b|B", 7 => "7:c|C"}, Map.intersectionWithKey((k, v1, v2) -> "${k}:${v1}|${v2}", Map#{3 => 'a', 5 => 'b', 7 => 'c', 10 => 'd'}, Map#{5 => "B", 7 => "C"}))
 
     @Test
-    def intersectionWithKey19(): Bool = Map.intersectionWithKey((k, v1, v2) -> "${k}:${v1}|${v2}", Map#{3 => '3'}, Map#{3 => 3})
-                                       == Map#{3 => "3:3|3"}
+    def intersectionWithKey19(): Unit \ Assert = 
+        assertEq(expected = Map#{3 => "3:3|3"}, Map.intersectionWithKey((k, v1, v2) -> "${k}:${v1}|${v2}", Map#{3 => '3'}, Map#{3 => 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // difference                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def difference01(): Bool = Map.difference((Map#{}: Map[Unit, Unit]), (Map#{}: Map[Unit, Unit])) == Map#{}
+    def difference01(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference((Map#{}: Map[Unit, Unit]), (Map#{}: Map[Unit, Unit])))
 
     @Test
-    def difference02(): Bool = Map.difference(Map#{1 => 2}, Map#{}) == Map#{1 => 2}
+    def difference02(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.difference(Map#{1 => 2}, Map#{}))
 
     @Test
-    def difference03(): Bool = Map.difference(Map#{}, Map#{1 => 2}) == Map#{}
+    def difference03(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference(Map#{}, Map#{1 => 2}))
 
     @Test
-    def difference04(): Bool = Map.difference(Map#{}, Map#{1 => 2, 3 => 4}) == Map#{}
+    def difference04(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference(Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def difference05(): Bool = Map.difference(Map#{1 => 2, 3 => 4}, Map#{}) == Map#{1 => 2, 3 => 4}
+    def difference05(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map.difference(Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def difference06(): Bool = Map.difference(Map#{1 => 2}, Map#{3 => 4}) == Map#{1 => 2}
+    def difference06(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.difference(Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def difference07(): Bool = Map.difference(Map#{1 => 2}, Map#{1 => 5}) == Map#{}
+    def difference07(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference(Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def difference08(): Bool = Map.difference(Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{}
+    def difference08(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference(Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def difference09(): Bool = Map.difference(Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def difference09(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.difference(Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def difference10(): Bool = Map.difference(Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{1 => 2, 2 => 3}
+    def difference10(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3}, Map.difference(Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def difference11(): Bool = Map.difference(Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{3 => 4}
+    def difference11(): Unit \ Assert = 
+        assertEq(expected = Map#{3 => 4}, Map.difference(Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def difference12(): Bool = Map.difference(Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{1 => 2}
+    def difference12(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.difference(Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def difference13(): Bool = Map.difference(Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{2 => 3}
+    def difference13(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 3}, Map.difference(Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def difference14(): Bool = Map.difference(Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def difference14(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference(Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def difference15(): Bool = Map.difference(Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def difference15(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.difference(Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def difference16(): Bool = Map.difference(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33})
-                                      == Map#{11 => 14, 9 => 8}
+    def difference16(): Unit \ Assert = 
+        assertEq(expected = Map#{11 => 14, 9 => 8}, Map.difference(Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33}))
 
     /////////////////////////////////////////////////////////////////////////////
     // differenceWith                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def differenceWith01(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}) == (Map#{}: Map[Int32, Int32])
+    def differenceWith01(): Unit \ Assert = 
+        assertEq(expected = (Map#{}: Map[Int32, Int32]), Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{}))
 
     @Test
-    def differenceWith02(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
+    def differenceWith02(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{}))
 
     @Test
-    def differenceWith03(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 => 2}) == Map#{}
+    def differenceWith03(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 => 2}))
 
     @Test
-    def differenceWith04(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 => 2, 3 => 4}) == Map#{}
+    def differenceWith04(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def differenceWith05(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 3 => 4}, Map#{}) == Map#{1 => 2, 3 => 4}
+    def differenceWith05(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def differenceWith06(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{3 => 4}) == Map#{1 => 2}
+    def differenceWith06(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def differenceWith07(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{1 => 5}) == Map#{}
+    def differenceWith07(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def differenceWith08(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 5}, Map#{1 => 4}) == Map#{1 => 5}
+    def differenceWith08(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 5}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 5}, Map#{1 => 4}))
 
     @Test
-    def differenceWith09(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{}
+    def differenceWith09(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def differenceWith10(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def differenceWith10(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def differenceWith11(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{1 => 2, 2 => 3}
+    def differenceWith11(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def differenceWith12(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{3 => 4}
+    def differenceWith12(): Unit \ Assert = 
+        assertEq(expected = Map#{3 => 4}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWith13(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{1 => 2}
+    def differenceWith13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def differenceWith14(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 9}, Map#{2 => 8}) == Map#{1 => 2, 2 => 9}
+    def differenceWith14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 9}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 9}, Map#{2 => 8}))
 
     @Test
-    def differenceWith15(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{2 => 3}
+    def differenceWith15(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 3}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def differenceWith16(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 9, 2 => 3}, Map#{1 => 8}) == Map#{1 => 9, 2 => 3}
+    def differenceWith16(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 9, 2 => 3}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 9, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def differenceWith17(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 1}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def differenceWith17(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 1}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWith18(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 4}
+    def differenceWith18(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 4}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWith19(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 => -4}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def differenceWith19(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 => -4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWith20(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{2 => 7}
+    def differenceWith20(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 7}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWith21(): Bool = Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33})
-                                      == Map#{11 => 14, 9 => 8, 15 => 22}
+    def differenceWith21(): Unit \ Assert = 
+        assertEq(expected = Map#{11 => 14, 9 => 8, 15 => 22}, Map.differenceWith((v1, v2) -> if (v1 > v2) Some(v1) else None, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33}))
 
     /////////////////////////////////////////////////////////////////////////////
     // differenceWithKey                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def differenceWithKey01(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}) == (Map#{}: Map[Int32, Int32])
+    def differenceWithKey01(): Unit \ Assert = 
+        assertEq(expected = (Map#{}: Map[Int32, Int32]), Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{}))
 
     @Test
-    def differenceWithKey02(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{}) == Map#{1 => 2}
+    def differenceWithKey02(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{}))
 
     @Test
-    def differenceWithKey03(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 => 2}) == Map#{}
+    def differenceWithKey03(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 => 2}))
 
     @Test
-    def differenceWithKey04(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 => 2, 3 => 4}) == Map#{}
+    def differenceWithKey04(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 => 2, 3 => 4}))
 
     @Test
-    def differenceWithKey05(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 3 => 4}, Map#{}) == Map#{1 => 2, 3 => 4}
+    def differenceWithKey05(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 3 => 4}, Map#{}))
 
     @Test
-    def differenceWithKey06(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{3 => 4}) == Map#{1 => 2}
+    def differenceWithKey06(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{3 => 4}))
 
     @Test
-    def differenceWithKey07(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{1 => 5}) == Map#{}
+    def differenceWithKey07(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2}, Map#{1 => 5}))
 
     @Test
-    def differenceWithKey08(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 5}, Map#{1 => 4}) == Map#{1 => 6}
+    def differenceWithKey08(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 6}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 5}, Map#{1 => 4}))
 
     @Test
-    def differenceWithKey09(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}) == Map#{}
+    def differenceWithKey09(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{}, Map#{1 => 2, 2 => 3, 3 => 4}))
 
     @Test
-    def differenceWithKey10(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}) == Map#{1 => 2, 2 => 3, 3 => 4}
+    def differenceWithKey10(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3, 3 => 4}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3, 3 => 4}, Map#{}))
 
     @Test
-    def differenceWithKey11(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3}, Map#{3 => 4}) == Map#{1 => 2, 2 => 3}
+    def differenceWithKey11(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 3}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3}, Map#{3 => 4}))
 
     @Test
-    def differenceWithKey12(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{3 => 4}, Map#{1 => 2, 2 => 3}) == Map#{3 => 4}
+    def differenceWithKey12(): Unit \ Assert = 
+        assertEq(expected = Map#{3 => 4}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{3 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWithKey13(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3}, Map#{2 => 8}) == Map#{1 => 2}
+    def differenceWithKey13(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3}, Map#{2 => 8}))
 
     @Test
-    def differenceWithKey14(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 9}, Map#{2 => 8}) == Map#{1 => 2, 2 => 11}
+    def differenceWithKey14(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 2, 2 => 11}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 9}, Map#{2 => 8}))
 
     @Test
-    def differenceWithKey15(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3}, Map#{1 => 8}) == Map#{2 => 3}
+    def differenceWithKey15(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 3}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 2, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def differenceWithKey16(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 9, 2 => 3}, Map#{1 => 8}) == Map#{1 => 10, 2 => 3}
+    def differenceWithKey16(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 10, 2 => 3}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 9, 2 => 3}, Map#{1 => 8}))
 
     @Test
-    def differenceWithKey17(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 1}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def differenceWithKey17(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 1}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWithKey18(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 4}, Map#{1 => 2, 2 => 3}) == Map#{1 => 5}
+    def differenceWithKey18(): Unit \ Assert = 
+        assertEq(expected = Map#{1 => 5}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{1 => 4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWithKey19(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 => -4}, Map#{1 => 2, 2 => 3}) == Map#{}
+    def differenceWithKey19(): Unit \ Assert = 
+        assertEq(expected = Map#{}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 => -4}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWithKey20(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 => 7}, Map#{1 => 2, 2 => 3}) == Map#{2 => 9}
+    def differenceWithKey20(): Unit \ Assert = 
+        assertEq(expected = Map#{2 => 9}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 => 7}, Map#{1 => 2, 2 => 3}))
 
     @Test
-    def differenceWithKey21(): Bool = Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33})
-                                      == Map#{11 => 14, 9 => 8, 15 => 37}
+    def differenceWithKey21(): Unit \ Assert = 
+        assertEq(expected = Map#{11 => 14, 9 => 8, 15 => 37}, Map.differenceWithKey((k, v1, v2) -> if (v1 > v2) Some(v1 + k) else None, Map#{2 => 7, 11 => 14, 9 => 8, 15 => 22}, Map#{15 => 21, 1 => 2, 2 => 8, 44 => 33}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toSet01(): Bool = Map.toSet((Map#{}: Map[Unit, Unit])) == Set#{}
+    def toSet01(): Unit \ Assert = 
+        assertEq(expected = Set#{}, Map.toSet((Map#{}: Map[Unit, Unit])))
 
     @Test
-    def toSet02(): Bool = Map.toSet(Map#{1 => 2}) == Set#{(1, 2)}
+    def toSet02(): Unit \ Assert = 
+        assertEq(expected = Set#{(1, 2)}, Map.toSet(Map#{1 => 2}))
 
     @Test
-    def toSet03(): Bool = Map.toSet(Map#{1 => 2, 3 => 4}) == Set#{(1, 2), (3, 4)}
+    def toSet03(): Unit \ Assert = 
+        assertEq(expected = Set#{(1, 2), (3, 4)}, Map.toSet(Map#{1 => 2, 3 => 4}))
 
     @Test
-    def toSet04(): Bool = Map.toSet(Map#{1 => 2, 2 => 2, 3 => 4}) == Set#{(1, 2), (2, 2), (3, 4)}
+    def toSet04(): Unit \ Assert = 
+        assertEq(expected = Set#{(1, 2), (2, 2), (3, 4)}, Map.toSet(Map#{1 => 2, 2 => 2, 3 => 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toList01(): Bool = Map.toList((Map#{}: Map[Unit, Unit])) == Nil
+    def toList01(): Unit \ Assert = 
+        assertEq(expected = Nil, Map.toList((Map#{}: Map[Unit, Unit])))
 
     @Test
-    def toList02(): Bool = Map.toList(Map#{1 => 2}) == (1, 2) :: Nil
+    def toList02(): Unit \ Assert = 
+        assertEq(expected = (1, 2) :: Nil, Map.toList(Map#{1 => 2}))
 
     @Test
-    def toList03(): Bool = Map.toList(Map#{1 => 2, 3 => 4}) == (1, 2) :: (3, 4) :: Nil
+    def toList03(): Unit \ Assert = 
+        assertEq(expected = (1, 2) :: (3, 4) :: Nil, Map.toList(Map#{1 => 2, 3 => 4}))
 
     @Test
-    def toList04(): Bool = Map.toList(Map#{1 => 2, 2 => 2, 3 => 4}) == (1, 2) :: (2, 2) :: (3, 4) :: Nil
+    def toList04(): Unit \ Assert = 
+        assertEq(expected = (1, 2) :: (2, 2) :: (3, 4) :: Nil, Map.toList(Map#{1 => 2, 2 => 2, 3 => 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toArray01(): Bool = region rc {
-        Array.sameElements(Map.toArray(rc, (Map#{}: Map[Unit, Unit])), Array#{} @ rc)
+    def toArray01(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Map.toArray(rc, (Map#{}: Map[Unit, Unit])), Array#{} @ rc))
     }
 
     @Test
-    def toArray02(): Bool = region rc {
-        Array.sameElements(Map.toArray(rc, Map#{1 => 2}), Array#{(1, 2)} @ rc)
+    def toArray02(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Map.toArray(rc, Map#{1 => 2}), Array#{(1, 2)} @ rc))
     }
 
     @Test
-    def toArray03(): Bool =  region rc {
-        Array.sameElements(Map.toArray(rc, Map#{1 => 2, 3 => 4}), Array#{(1, 2), (3, 4)} @ rc)
+    def toArray03(): Unit \ Assert =  region rc {
+        assertTrue(Array.sameElements(Map.toArray(rc, Map#{1 => 2, 3 => 4}), Array#{(1, 2), (3, 4)} @ rc))
     }
 
     @Test
-    def toArray04(): Bool = region rc {
-        Array.sameElements(Map.toArray(rc, Map#{1 => 2, 2 => 2, 3 => 4}), Array#{(1, 2), (2, 2), (3, 4)} @ rc)
+    def toArray04(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Map.toArray(rc, Map#{1 => 2, 2 => 2, 3 => 4}), Array#{(1, 2), (2, 2), (3, 4)} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2045,44 +2171,48 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toVector01(): Bool = Map.toVector((Map#{}: Map[Unit, Unit])) == (Vector#{} : Vector[(Unit, Unit)])
+    def toVector01(): Unit \ Assert = 
+        assertEq(expected = (Vector#{} : Vector[(Unit, Unit)]), Map.toVector((Map#{}: Map[Unit, Unit])))
 
     @Test
-    def toVector02(): Bool = Map.toVector(Map#{1 => 2}) == Vector#{(1, 2)}
+    def toVector02(): Unit \ Assert = 
+        assertEq(expected = Vector#{(1, 2)}, Map.toVector(Map#{1 => 2}))
 
     @Test
-    def toVector03(): Bool = Map.toVector(Map#{1 => 2, 3 => 4}) == Vector#{(1, 2), (3, 4)}
+    def toVector03(): Unit \ Assert = 
+        assertEq(expected = Vector#{(1, 2), (3, 4)}, Map.toVector(Map#{1 => 2, 3 => 4}))
 
     @Test
-    def toVector04(): Bool = Map.toVector(Map#{1 => 2, 2 => 2, 3 => 4}) == Vector#{(1, 2), (2, 2), (3, 4)}
+    def toVector04(): Unit \ Assert = 
+        assertEq(expected = Vector#{(1, 2), (2, 2), (3, 4)}, Map.toVector(Map#{1 => 2, 2 => 2, 3 => 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toMutDeque01(): Bool = region rc {
+    def toMutDeque01(): Unit \ Assert = region rc {
         let m: Map[Int32, Int32] = Map#{};
         let d1 = Map.toMutDeque(rc, m);
 
         let d2 = MutDeque.empty(rc);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
     @Test
-    def toMutDeque02(): Bool = region rc {
+    def toMutDeque02(): Unit \ Assert = region rc {
         let m = Map#{1 => 2};
         let d1 = Map.toMutDeque(rc, m);
 
         let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, 2), d2);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
     @Test
-    def toMutDeque03(): Bool = region rc {
+    def toMutDeque03(): Unit \ Assert = region rc {
         let m = Map#{1 => 2, 3 => 4, 5 => 6};
         let d1 = Map.toMutDeque(rc, m);
 
@@ -2091,11 +2221,11 @@ mod TestMap {
         MutDeque.pushBack((5, 6), d2);
         MutDeque.pushFront((1, 2), d2);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
     @Test
-    def toMutDeque04(): Bool = region rc {
+    def toMutDeque04(): Unit \ Assert = region rc {
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let d1 = Map.toMutDeque(rc, m);
 
@@ -2104,7 +2234,7 @@ mod TestMap {
         MutDeque.pushFront((2, 'b'), d2);
         MutDeque.pushFront((1, 'a'), d2);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2112,61 +2242,80 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def eq01(): Bool = (Map#{}: Map[Unit, Unit]) == Map#{}
+    def eq01(): Unit \ Assert = 
+        assertTrue((Map#{}: Map[Unit, Unit]) == Map#{})
 
     @Test
-    def eq02(): Bool = Map#{1 => 2} != Map#{}
+    def eq02(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2} != Map#{})
 
     @Test
-    def eq03(): Bool = Map#{} != Map#{1 => 2}
+    def eq03(): Unit \ Assert = 
+        assertTrue(Map#{} != Map#{1 => 2})
 
     @Test
-    def eq04(): Bool = Map#{1 => 2, 3 => 4} != Map#{}
+    def eq04(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} != Map#{})
 
     @Test
-    def eq05(): Bool = Map#{} != Map#{1 => 2, 3 => 4}
+    def eq05(): Unit \ Assert = 
+        assertTrue(Map#{} != Map#{1 => 2, 3 => 4})
 
     @Test
-    def eq06(): Bool = Map#{1 => 2} == Map#{1 => 2}
+    def eq06(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2} == Map#{1 => 2})
 
     @Test
-    def eq07(): Bool = Map#{1 => 3} != Map#{1 => 2}
+    def eq07(): Unit \ Assert = 
+        assertTrue(Map#{1 => 3} != Map#{1 => 2})
 
     @Test
-    def eq08(): Bool = Map#{1 => 2} != Map#{1 => 3}
+    def eq08(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2} != Map#{1 => 3})
 
     @Test
-    def eq09(): Bool = Map#{2 => 2} != Map#{1 => 2}
+    def eq09(): Unit \ Assert = 
+        assertTrue(Map#{2 => 2} != Map#{1 => 2})
 
     @Test
-    def eq10(): Bool = Map#{1 => 2} != Map#{4 => 2}
+    def eq10(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2} != Map#{4 => 2})
 
     @Test
-    def eq11(): Bool = Map#{1 => 2, 3 => 4} != Map#{1 => 2}
+    def eq11(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2})
 
     @Test
-    def eq12(): Bool = Map#{1 => 2} != Map#{1 => 2, 3 => 4}
+    def eq12(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2} != Map#{1 => 2, 3 => 4})
 
     @Test
-    def eq13(): Bool = Map#{1 => 2, 3 => 4} == Map#{1 => 2, 3 => 4}
+    def eq13(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} == Map#{1 => 2, 3 => 4})
 
     @Test
-    def eq14(): Bool = Map#{1 => 2, 3 => 4} == Map#{3 => 4, 1 => 2}
+    def eq14(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} == Map#{3 => 4, 1 => 2})
 
     @Test
-    def eq15(): Bool = Map#{1 => 1, 3 => 4} != Map#{1 => 2, 3 => 4}
+    def eq15(): Unit \ Assert = 
+        assertTrue(Map#{1 => 1, 3 => 4} != Map#{1 => 2, 3 => 4})
 
     @Test
-    def eq16(): Bool = Map#{4 => 2, 3 => 4} != Map#{1 => 2, 3 => 4}
+    def eq16(): Unit \ Assert = 
+        assertTrue(Map#{4 => 2, 3 => 4} != Map#{1 => 2, 3 => 4})
 
     @Test
-    def eq17(): Bool = Map#{1 => 2, 3 => 4} != Map#{1 => 2, 2 => 4}
+    def eq17(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2, 2 => 4})
 
     @Test
-    def eq18(): Bool = Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 8}
+    def eq18(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 8})
 
     @Test
-    def eq19(): Bool = Map#{1 => 2, 3 => 4, 5 => 6} != Map#{1 => 2, 3 => 4}
+    def eq19(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} != Map#{1 => 2, 3 => 4})
 
     @Test
     def eq20(): Bool = Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 4, 5 => 6}
@@ -2533,44 +2682,48 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def minimumKey01(): Bool = Map.minimumKey((Map#{}: Map[Int32, Int32])) == None
+    def minimumKey01(): Unit \ Assert = 
+        assertEq(expected = None, Map.minimumKey((Map#{}: Map[Int32, Int32])))
 
     @Test
-    def minimumKey02(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumKey02(): Unit \ Assert = 
+        assertEq(expected = Some((1, 2)), Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def minimumKey03(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
+    def minimumKey03(): Unit \ Assert = 
+        assertEq(expected = Some((0, 2)), Map.minimumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumKey04(): Bool = Map.minimumKey(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
+    def minimumKey04(): Unit \ Assert = 
+        assertEq(expected = Some((-44, 4)), Map.minimumKey(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def minimumKeyBy01(): Bool =
-        Map.minimumKeyBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])) == None
+    def minimumKeyBy01(): Unit \ Assert =
+        assertEq(expected = None, Map.minimumKeyBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])))
 
     @Test
-    def minimumKeyBy02(): Bool =
-        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumKeyBy02(): Unit \ Assert =
+        assertEq(expected = Some((1, 2)), Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def minimumKeyBy03(): Bool =
-        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((0, 2))
+    def minimumKeyBy03(): Unit \ Assert =
+        assertEq(expected = Some((0, 2)), Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumKeyBy04(): Bool =
-        Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((-44, 4))
+    def minimumKeyBy04(): Unit \ Assert =
+        assertEq(expected = Some((-44, 4)), Map.minimumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumKeyBy05(): Bool = region rc {
+    def minimumKeyBy05(): Unit \ Assert = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
         discard Map.minimumKeyBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
-        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+        assertEq(expected = List.range(1, 2000), MutList.toList(a)) // The first / left most value is ignored
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2578,51 +2731,56 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def minimumValue01(): Bool = Map.minimumValue((Map#{}: Map[Int32, Int32])) == None
+    def minimumValue01(): Unit \ Assert = 
+        assertEq(expected = None, Map.minimumValue((Map#{}: Map[Int32, Int32])))
 
     @Test
-    def minimumValue02(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumValue02(): Unit \ Assert = 
+        assertEq(expected = Some((1, 2)), Map.minimumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def minimumValue03(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+    def minimumValue03(): Unit \ Assert = 
+        assertEq(expected = Some((1, 2)), Map.minimumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumValue04(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+    def minimumValue04(): Unit \ Assert = 
+        assertEq(expected = Some((1, 2)), Map.minimumValue(Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumValue05(): Bool = Map.minimumValue(Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}) == Some((4, -44))
+    def minimumValue05(): Unit \ Assert = 
+        assertEq(expected = Some((4, -44)), Map.minimumValue(Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def minimumValueBy01(): Bool =
-        Map.minimumValueBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])) == None
+    def minimumValueBy01(): Unit \ Assert =
+        assertEq(expected = None, Map.minimumValueBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])))
 
     @Test
-    def minimumValueBy02(): Bool =
-        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((1, 2))
+    def minimumValueBy02(): Unit \ Assert =
+        assertEq(expected = Some((1, 2)), Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def minimumValueBy03(): Bool =
-        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+    def minimumValueBy03(): Unit \ Assert =
+        assertEq(expected = Some((1, 2)), Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumValueBy04(): Bool =
-        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}) == Some((1, 2))
+    def minimumValueBy04(): Unit \ Assert =
+        assertEq(expected = Some((1, 2)), Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -44 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumValueBy05(): Bool =
-        Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}) == Some((4, -44))
+    def minimumValueBy05(): Unit \ Assert =
+        assertEq(expected = Some((4, -44)), Map.minimumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 4 => -44, 5 => 5, 0 => 2}))
 
     @Test
-    def minimumValueBy06(): Bool = region rc {
+    def minimumValueBy06(): Unit \ Assert = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, List.reverse(range)) |> List.toMap;
         let a = MutList.empty(rc);
         discard Map.minimumValueBy((x, y) -> { let b = MutList.empty(rc); MutList.push(x, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
-        MutList.toList(a) == List.reverse(List.range(1, 2000)) // The first / left most value is ignored
+        assertEq(expected = List.reverse(List.range(1, 2000)), MutList.toList(a)) // The first / left most value is ignored
     }
 
 
@@ -2631,16 +2789,20 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def maximumKey01(): Bool = Map.maximumKey((Map#{}: Map[Int32, Int32])) == None
+    def maximumKey01(): Unit \ Assert = 
+        assertEq(expected = None, Map.maximumKey((Map#{}: Map[Int32, Int32])))
 
     @Test
-    def maximumKey02(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+    def maximumKey02(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def maximumKey03(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+    def maximumKey03(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumKey(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def maximumKey04(): Bool = Map.maximumKey(Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+    def maximumKey04(): Unit \ Assert = 
+        assertEq(expected = Some((107, -107)), Map.maximumKey(Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2648,24 +2810,28 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def maximumKeyBy01(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])) == None
+    def maximumKeyBy01(): Unit \ Assert = 
+        assertEq(expected = None, Map.maximumKeyBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])))
 
     @Test
-    def maximumKeyBy02(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+    def maximumKeyBy02(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def maximumKeyBy03(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+    def maximumKeyBy03(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def maximumKeyBy04(): Bool = Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}) == Some((107, -107))
+    def maximumKeyBy04(): Unit \ Assert = 
+        assertEq(expected = Some((107, -107)), Map.maximumKeyBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 107 => -107, 5 => 5, 0 => 2}))
 
     @Test
-    def maximumKeyBy05(): Bool = region rc {
+    def maximumKeyBy05(): Unit \ Assert = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
         discard Map.maximumKeyBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
-        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+        assertEq(expected = List.range(1, 2000), MutList.toList(a)) // The first / left most value is ignored
     }
 
 
@@ -2674,16 +2840,20 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def maximumValue01(): Bool = Map.maximumValue((Map#{}: Map[Int32, Int32])) == None
+    def maximumValue01(): Unit \ Assert = 
+        assertEq(expected = None, Map.maximumValue((Map#{}: Map[Int32, Int32])))
 
     @Test
-    def maximumValue02(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+    def maximumValue02(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def maximumValue03(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+    def maximumValue03(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumValue(Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def maximumValue04(): Bool = Map.maximumValue(Map#{1 => 2, 2 => 3, -107 => 107, 0 => 2}) == Some((-107, 107))
+    def maximumValue04(): Unit \ Assert = 
+        assertEq(expected = Some((-107, 107)), Map.maximumValue(Map#{1 => 2, 2 => 3, -107 => 107, 0 => 2}))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2691,24 +2861,28 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def maximumValueBy01(): Bool = Map.maximumValueBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])) == None
+    def maximumValueBy01(): Unit \ Assert = 
+        assertEq(expected = None, Map.maximumValueBy((x, y) -> x <=> y, (Map#{}: Map[Int32, Int32])))
 
     @Test
-    def maximumValueBy02(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}) == Some((5, 5))
+    def maximumValueBy02(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5}))
 
     @Test
-    def maximumValueBy03(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}) == Some((5, 5))
+    def maximumValueBy03(): Unit \ Assert = 
+        assertEq(expected = Some((5, 5)), Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, 3 => 4, 5 => 5, 0 => 2}))
 
     @Test
-    def maximumValueBy04(): Bool = Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -107 => 107,5 => 5, 0 => 2}) == Some((-107, 107))
+    def maximumValueBy04(): Unit \ Assert = 
+        assertEq(expected = Some((-107, 107)), Map.maximumValueBy((x, y) -> x <=> y, Map#{1 => 2, 2 => 3, -107 => 107,5 => 5, 0 => 2}))
 
     @Test
-    def maximumValueBy05(): Bool = region rc {
+    def maximumValueBy05(): Unit \ Assert = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
         discard Map.maximumValueBy((x, y) -> { let b = MutList.empty(rc); MutList.push(y, b); MutList.append(MutList.toList(b), a); x <=> y }, m);
-        MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
+        assertEq(expected = List.range(1, 2000), MutList.toList(a)) // The first / left most value is ignored
     }
 
 
@@ -2717,36 +2891,36 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toDelayList01(): Bool =
-        (Map.empty(): Map[Unit, Unit]) |> Map.toDelayList == DelayList.empty()
+    def toDelayList01(): Unit \ Assert =
+        assertEq(expected = DelayList.empty(), (Map.empty(): Map[Unit, Unit]) |> Map.toDelayList)
 
     @Test
-    def toDelayList02(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList == DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000))
+    def toDelayList02(): Unit \ Assert =
+        assertEq(expected = DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000)), Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList)
 
     @Test
-    def toDelayList03(): Bool =
-        Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap == Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0)
+    def toDelayList03(): Unit \ Assert =
+        assertEq(expected = Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0), Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toChain01(): Bool =
-        Map.toChain((Map#{}: Map[Int32, Int32])) == (Chain.empty(): Chain[(Int32, Int32)])
+    def toChain01(): Unit \ Assert =
+        assertEq(expected = (Chain.empty(): Chain[(Int32, Int32)]), Map.toChain((Map#{}: Map[Int32, Int32])))
 
     @Test
-    def toChain02(): Bool =
-        Map.toChain(Map#{1 => 1}) == Chain.singleton((1, 1))
+    def toChain02(): Unit \ Assert =
+        assertEq(expected = Chain.singleton((1, 1)), Map.toChain(Map#{1 => 1}))
 
     @Test
-    def toChain03(): Bool =
-        Map.toChain(Map#{1 => 1, 2 => 2}) == List.toChain((1, 1) :: (2, 2) :: Nil)
+    def toChain03(): Unit \ Assert =
+        assertEq(expected = List.toChain((1, 1) :: (2, 2) :: Nil), Map.toChain(Map#{1 => 1, 2 => 2}))
 
     @Test
-    def toChain04(): Bool =
-        Map.toChain(Map#{1 => 1, 2 => 2, 3 => 3}) == List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil)
+    def toChain04(): Unit \ Assert =
+        assertEq(expected = List.toChain((1, 1) :: (2, 2) :: (3, 3) :: Nil), Map.toChain(Map#{1 => 1, 2 => 2, 3 => 3}))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2754,35 +2928,35 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toMultiMap01(): Bool =
-        Map.toMultiMap((Map#{}: Map[Int32, Char])) |> MultiMap.toAscList == Nil
+    def toMultiMap01(): Unit \ Assert =
+        assertEq(expected = Nil, Map.toMultiMap((Map#{}: Map[Int32, Char])) |> MultiMap.toAscList)
 
     @Test
-    def toMultiMap02(): Bool =
-        Map.toMultiMap(Map#{1 => 'a'}) |> MultiMap.toAscList == (1, 'a') :: Nil
+    def toMultiMap02(): Unit \ Assert =
+        assertEq(expected = (1, 'a') :: Nil, Map.toMultiMap(Map#{1 => 'a'}) |> MultiMap.toAscList)
 
     @Test
-    def toMultiMap03(): Bool =
-        Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList == (1, 'a') :: (2, 'b') :: Nil
+    def toMultiMap03(): Unit \ Assert =
+        assertEq(expected = (1, 'a') :: (2, 'b') :: Nil, Map.toMultiMap(Map#{1 => 'a', 2 => 'b'}) |> MultiMap.toAscList)
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def iterator01(): Bool = region rc {
-        (Map.empty(): Map[Int32, Int32]) |> Map.iterator(rc) |> Iterator.toMap == Map.empty()
+    def iterator01(): Unit \ Assert = region rc {
+        assertEq(expected = Map.empty(), (Map.empty(): Map[Int32, Int32]) |> Map.iterator(rc) |> Iterator.toMap)
     }
 
     @Test
-    def iterator02(): Bool = region rc {
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iterator(rc) |> Iterator.toMap == Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+    def iterator02(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4}, Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iterator(rc) |> Iterator.toMap)
     }
 
     @Test
-    def iterator03(): Bool = region rc {
+    def iterator03(): Unit \ Assert = region rc {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iterator(rc) |> Iterator.toMap |> Map.toList == List.zip(List.range(0, 100), List.reverse(List.range(0, 100)))
+        assertEq(expected = List.zip(List.range(0, 100), List.reverse(List.range(0, 100))), List.zip(l, List.reverse(l)) |> List.toMap |> Map.iterator(rc) |> Iterator.toMap |> Map.toList)
     }
 
 
@@ -2791,19 +2965,19 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def iteratorKeys01(): Bool = region rc {
-        (Map.empty(): Map[Int32, Int32]) |> Map.iteratorKeys(rc) |> Iterator.toList == Nil
+    def iteratorKeys01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Map.empty(): Map[Int32, Int32]) |> Map.iteratorKeys(rc) |> Iterator.toList)
     }
 
     @Test
-    def iteratorKeys02(): Bool = region rc {
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorKeys(rc) |> Iterator.toList == "a" :: "b" :: "c" :: "d" :: Nil
+    def iteratorKeys02(): Unit \ Assert = region rc {
+        assertEq(expected = "a" :: "b" :: "c" :: "d" :: Nil, Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorKeys(rc) |> Iterator.toList)
     }
 
     @Test
-    def iteratorKeys03(): Bool = region rc {
+    def iteratorKeys03(): Unit \ Assert = region rc {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorKeys(rc) |> Iterator.toList == List.range(0, 100)
+        assertEq(expected = List.range(0, 100), List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorKeys(rc) |> Iterator.toList)
     }
 
 
@@ -2812,19 +2986,19 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def iteratorValues01(): Bool = region rc {
-        (Map.empty(): Map[Int32, Int32]) |> Map.iteratorValues(rc) |> Iterator.toList == Nil
+    def iteratorValues01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Map.empty(): Map[Int32, Int32]) |> Map.iteratorValues(rc) |> Iterator.toList)
     }
 
     @Test
-    def iteratorValues02(): Bool = region rc {
-        Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorValues(rc) |> Iterator.toList == 1 :: 2 :: 3 :: 4 :: Nil
+    def iteratorValues02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, Map#{"a" => 1, "b" => 2, "c" => 3, "d" => 4} |> Map.iteratorValues(rc) |> Iterator.toList)
     }
 
     @Test
-    def iteratorValues03(): Bool = region rc {
+    def iteratorValues03(): Unit \ Assert = region rc {
         let l = List.range(0, 100);
-        List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorValues(rc) |> Iterator.toList == List.range(0, 100) |> List.reverse
+        assertEq(expected = List.range(0, 100) |> List.reverse, List.zip(l, List.reverse(l)) |> List.toMap |> Map.iteratorValues(rc) |> Iterator.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3002,102 +3176,107 @@ mod TestMap {
         Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{2, 3}}) == Set#{(1, 2), (1, 3), (2, 2), (2, 3)}
 
     @Test
-    def explode03(): Bool =
-        Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}}) == Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7)}
+    def explode03(): Unit \ Assert =
+        assertEq(expected = Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7)}, Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}}))
 
     @Test
-    def explode04(): Bool =
-        Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}, 3 => Set#{0}}) == Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7), (3, 0)}
+    def explode04(): Unit \ Assert =
+        assertEq(expected = Set#{(1, 2), (1, 3), (2, 5), (2, 6), (2, 7), (3, 0)}, Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{5, 6, 7}, 3 => Set#{0}}))
 
     /////////////////////////////////////////////////////////////////////////////
     // LowerBound.minValue                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def minValue01(): Bool =
-        (LowerBound.minValue(): Map[Int32, Int32]) == Map.empty()
+    def minValue01(): Unit \ Assert =
+        assertEq(expected = Map.empty(), (LowerBound.minValue(): Map[Int32, Int32]))
 
     /////////////////////////////////////////////////////////////////////////////
     // PartialOrder.lessEqual                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def lessEqual01(): Bool = PartialOrder.lessEqual((Map.empty(): Map[Int32, Int32]), (Map.empty(): Map[Int32, Int32]))
+    def lessEqual01(): Unit \ Assert = 
+        assertTrue(PartialOrder.lessEqual((Map.empty(): Map[Int32, Int32]), (Map.empty(): Map[Int32, Int32])))
 
     @Test
-    def lessEqual02(): Bool = PartialOrder.lessEqual((Map.empty(): Map[Int32, Int32]), Map.singleton(1, 1))
+    def lessEqual02(): Unit \ Assert = 
+        assertTrue(PartialOrder.lessEqual((Map.empty(): Map[Int32, Int32]), Map.singleton(1, 1)))
 
     @Test
-    def lessEqual03(): Bool = not PartialOrder.lessEqual(Map.singleton(1, 1), (Map.empty(): Map[Int32, Int32]))
+    def lessEqual03(): Unit \ Assert = 
+        assertFalse(PartialOrder.lessEqual(Map.singleton(1, 1), (Map.empty(): Map[Int32, Int32])))
 
     @Test
-    def lessEqual04(): Bool = PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 1))
+    def lessEqual04(): Unit \ Assert = 
+        assertTrue(PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 1)))
 
     @Test
-    def lessEqual05(): Bool = not PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 10))
+    def lessEqual05(): Unit \ Assert = 
+        assertFalse(PartialOrder.lessEqual(Map.singleton(1, 1), Map.singleton(1, 10)))
 
     /////////////////////////////////////////////////////////////////////////////
     // JoinLattice.leastUpperBound                                             //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def leastUpperBound01(): Bool =
-        JoinLattice.leastUpperBound((Map.empty(): Map[Int32, Int32]), (Map.empty(): Map[Int32, Int32])) == (Map.empty(): Map[Int32, Int32])
+    def leastUpperBound01(): Unit \ Assert =
+        assertEq(expected = (Map.empty(): Map[Int32, Int32]), JoinLattice.leastUpperBound((Map.empty(): Map[Int32, Int32]), (Map.empty(): Map[Int32, Int32])))
 
     @Test
-    def leastUpperBound02(): Bool =
-        JoinLattice.leastUpperBound((Map.empty(): Map[Int32, Int32]), Map.singleton(1, 1)) == Map.singleton(1, 1)
+    def leastUpperBound02(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 1), JoinLattice.leastUpperBound((Map.empty(): Map[Int32, Int32]), Map.singleton(1, 1)))
 
     @Test
-    def leastUpperBound03(): Bool =
-        JoinLattice.leastUpperBound(Map.singleton(1, 1), (Map.empty(): Map[Int32, Int32])) == Map.singleton(1, 1)
+    def leastUpperBound03(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 1), JoinLattice.leastUpperBound(Map.singleton(1, 1), (Map.empty(): Map[Int32, Int32])))
 
     @Test
-    def leastUpperBound04(): Bool =
-        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 1)) == Map.singleton(1, 1)
+    def leastUpperBound04(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 1), JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 1)))
 
     @Test
-    def leastUpperBound05(): Bool =
-        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 10)) == Map.singleton(1, 10)
+    def leastUpperBound05(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 10), JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(1, 10)))
 
     @Test
-    def leastUpperBound06(): Bool =
-        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(2, 2)) == Map#{1 => 1, 2 => 2}
+    def leastUpperBound06(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 1, 2 => 2}, JoinLattice.leastUpperBound(Map.singleton(1, 1), Map.singleton(2, 2)))
 
     @Test
-    def leastUpperBound07(): Bool =
-        JoinLattice.leastUpperBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}) == Map#{1 => 10, 2 => 2}
+    def leastUpperBound07(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 10, 2 => 2}, JoinLattice.leastUpperBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // MeetLattice.greatestLowerBound                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def greatestLowerBound01(): Bool =
-        MeetLattice.greatestLowerBound((Map.empty(): Map[Int32, Int32]), (Map.empty(): Map[Int32, Int32])) == (Map.empty(): Map[Int32, Int32])
+    def greatestLowerBound01(): Unit \ Assert =
+        assertEq(expected = (Map.empty(): Map[Int32, Int32]), MeetLattice.greatestLowerBound((Map.empty(): Map[Int32, Int32]), (Map.empty(): Map[Int32, Int32])))
 
     @Test
-    def greatestLowerBound02(): Bool =
-        MeetLattice.greatestLowerBound((Map.empty(): Map[Int32, Int32]), Map.singleton(1, 1)) == (Map.empty(): Map[Int32, Int32])
+    def greatestLowerBound02(): Unit \ Assert =
+        assertEq(expected = (Map.empty(): Map[Int32, Int32]), MeetLattice.greatestLowerBound((Map.empty(): Map[Int32, Int32]), Map.singleton(1, 1)))
 
     @Test
-    def greatestLowerBound03(): Bool =
-        MeetLattice.greatestLowerBound(Map.singleton(1, 1), (Map.empty(): Map[Int32, Int32])) == (Map.empty(): Map[Int32, Int32])
+    def greatestLowerBound03(): Unit \ Assert =
+        assertEq(expected = (Map.empty(): Map[Int32, Int32]), MeetLattice.greatestLowerBound(Map.singleton(1, 1), (Map.empty(): Map[Int32, Int32])))
 
     @Test
-    def greatestLowerBound04(): Bool =
-        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 1)) == Map.singleton(1, 1)
+    def greatestLowerBound04(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 1), MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 1)))
 
     @Test
-    def greatestLowerBound05(): Bool =
-        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 10)) == Map.singleton(1, 1)
+    def greatestLowerBound05(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 1), MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(1, 10)))
 
     @Test
-    def greatestLowerBound06(): Bool =
-        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(2, 2)) == (Map.empty(): Map[Int32, Int32])
+    def greatestLowerBound06(): Unit \ Assert =
+        assertEq(expected = (Map.empty(): Map[Int32, Int32]), MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map.singleton(2, 2)))
 
     @Test
-    def greatestLowerBound07(): Bool =
-        MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}) == Map.singleton(1, 1)
+    def greatestLowerBound07(): Unit \ Assert =
+        assertEq(expected = Map.singleton(1, 1), MeetLattice.greatestLowerBound(Map.singleton(1, 1), Map#{1 => 10, 2 => 2}))
 
 }
