@@ -92,6 +92,39 @@ mod RichString {
         RichString(Chain.empty())
 
     ///
+    /// Returns a `RichString` with the given text `s` using default colors and normal style.
+    ///
+    pub def text(s: String): RichString =
+        fromSpan(Span.Span({text = s, fgColor = Color.Default, bgColor = Color.Default, style = Style.Normal}))
+
+    ///
+    /// Returns `rs` with all spans updated to use the given foreground `color`.
+    ///
+    pub def withColor(color: Color, rs: RichString): RichString = match rs {
+        case RichString(spans) =>
+            RichString(Chain.map(match Span.Span(r) -> 
+                Span.Span({text = r#text, fgColor = color, bgColor = r#bgColor, style = r#style}), spans))
+    }
+
+    ///
+    /// Returns `rs` with all spans updated to use the given background `color`.
+    ///
+    pub def withBgColor(color: Color, rs: RichString): RichString = match rs {
+        case RichString(spans) =>
+            RichString(Chain.map(match Span.Span(r) -> 
+                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = color, style = r#style}), spans))
+    }
+
+    ///
+    /// Returns `rs` with all spans updated to use the given `style`.
+    ///
+    pub def withStyle(style: Style, rs: RichString): RichString = match rs {
+        case RichString(spans) =>
+            RichString(Chain.map(match Span.Span(r) -> 
+                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, style = style}), spans))
+    }
+
+    ///
     /// Returns a `RichString` containing the given `span`.
     ///
     pub def fromSpan(span: Span): RichString =
