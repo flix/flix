@@ -3680,32 +3680,32 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unzip01(): Bool = region rc {
+    def unzip01(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, ((Array#{} @ rc): Array[(Unit, Unit), _]));
-        Array.sameElements(a, Array#{} @ rc) and Array.sameElements(b, Array#{} @ rc)
+        assertTrue(Array.sameElements(a, Array#{} @ rc) and Array.sameElements(b, Array#{} @ rc))
     }
 
     @Test
-    def unzip02(): Bool = region rc {
+    def unzip02(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, Array#{(1, true)} @ rc);
-        Array.sameElements(a, Array#{1} @ rc) and Array.sameElements(b, Array#{true} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc) and Array.sameElements(b, Array#{true} @ rc))
     }
 
     @Test
-    def unzip03(): Bool = region rc {
+    def unzip03(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, Array#{(1, true), (2, true)} @ rc);
-        Array.sameElements(a, Array#{1,2} @ rc)  and Array.sameElements(b, Array#{true,true} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc)  and Array.sameElements(b, Array#{true,true} @ rc))
     }
 
     @Test
-    def unzip04(): Bool = region rc {
+    def unzip04(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, Array#{(1, true), (2, true), (3, false)} @ rc);
-        Array.sameElements(a, Array#{1,2,3} @ rc) and Array.sameElements(b, Array#{true,true,false} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc) and Array.sameElements(b, Array#{true,true,false} @ rc))
     }
 
     @Test
-    def unzip05(): Bool = region rc1 { region rc2 {
-        unzip05Aux(rc1, Array#{(1, "1"), (2, "2"), (3, "3")} @ rc2) `Array.sameElements` (Array#{1, 2, 3} @ rc2)
+    def unzip05(): Unit \ Assert = region rc1 { region rc2 {
+        assertTrue(unzip05Aux(rc1, Array#{(1, "1"), (2, "2"), (3, "3")} @ rc2) `Array.sameElements` (Array#{1, 2, 3} @ rc2))
     }}
 
     def unzip05Aux(rc1: Region[r1], a: Array[(a, b), r2]): Array[a, r1] \ { r1, r2 } =
@@ -3719,54 +3719,54 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fold201(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])) == 4
+    def fold201(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])))
     }
 
     @Test
-    def fold202(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, Array#{} @ rc) == 4
+    def fold202(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, Array#{} @ rc))
     }
 
     @Test
-    def fold203(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{} @ rc, Array#{true} @ rc) == 4
+    def fold203(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{} @ rc, Array#{true} @ rc))
     }
 
     @Test
-    def fold204(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc) == 6
+    def fold204(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc))
     }
 
     @Test
-    def fold205(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc) == 8
+    def fold205(): Unit \ Assert = region rc {
+        assertEq(expected = 8, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc))
     }
 
     @Test
-    def fold206(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc) == 9
+    def fold206(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc))
     }
 
     @Test
-    def fold207(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc) == 14
+    def fold207(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc))
     }
 
     @Test
-    def fold208(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc) == 14
+    def fold208(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc))
     }
 
     @Test
-    def fold209(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc) == 24
+    def fold209(): Unit \ Assert = region rc {
+        assertEq(expected = 24, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc))
     }
 
     @Test
-    def fold210(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
-            Array#{true,false,false,true} @ rc) == -118
+    def fold210(): Unit \ Assert = region rc {
+        assertEq(expected = -118, Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
+            Array#{true,false,false,true} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3774,54 +3774,54 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def foldLeft201(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])) == 4
+    def foldLeft201(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])))
     }
 
     @Test
-    def foldLeft202(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])) == 4
+    def foldLeft202(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])))
     }
 
     @Test
-    def foldLeft203(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc) == 4
+    def foldLeft203(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc))
     }
 
     @Test
-    def foldLeft204(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc) == 6
+    def foldLeft204(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc))
     }
 
     @Test
-    def foldLeft205(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc) == 8
+    def foldLeft205(): Unit \ Assert = region rc {
+        assertEq(expected = 8, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc))
     }
 
     @Test
-    def foldLeft206(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc) == 9
+    def foldLeft206(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc))
     }
 
     @Test
-    def foldLeft207(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc) == 14
+    def foldLeft207(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc))
     }
 
     @Test
-    def foldLeft208(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc) == 14
+    def foldLeft208(): Unit \ Assert = region rc {
+        assertEq(expected = 14, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc))
     }
 
     @Test
-    def foldLeft209(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc) == 24
+    def foldLeft209(): Unit \ Assert = region rc {
+        assertEq(expected = 24, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc))
     }
 
     @Test
-    def foldLeft210(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
-            Array#{true,false,false,true} @ rc) == -118
+    def foldLeft210(): Unit \ Assert = region rc {
+        assertEq(expected = -118, Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
+            Array#{true,false,false,true} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3829,54 +3829,54 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def foldRight201(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])) == 4
+    def foldRight201(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])))
     }
 
     @Test
-    def foldRight202(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])) == 4
+    def foldRight202(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])))
     }
 
     @Test
-    def foldRight203(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc) == 4
+    def foldRight203(): Unit \ Assert = region rc {
+        assertEq(expected = 4, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc))
     }
 
     @Test
-    def foldRight204(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc) == 6
+    def foldRight204(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{true} @ rc))
     }
 
     @Test
-    def foldRight205(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc) == 8
+    def foldRight205(): Unit \ Assert = region rc {
+        assertEq(expected = 8, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{2} @ rc, Array#{false} @ rc))
     }
 
     @Test
-    def foldRight206(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc) == 9
+    def foldRight206(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,true} @ rc))
     }
 
     @Test
-    def foldRight207(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc) == 11
+    def foldRight207(): Unit \ Assert = region rc {
+        assertEq(expected = 11, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{true,false} @ rc))
     }
 
     @Test
-    def foldRight208(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc) == 18
+    def foldRight208(): Unit \ Assert = region rc {
+        assertEq(expected = 18, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,true} @ rc))
     }
 
     @Test
-    def foldRight209(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc) == 24
+    def foldRight209(): Unit \ Assert = region rc {
+        assertEq(expected = 24, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{3,2} @ rc, Array#{false,false} @ rc))
     }
 
     @Test
-    def foldRight210(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
-            Array#{true,false,false,true} @ rc) == -66
+    def foldRight210(): Unit \ Assert = region rc {
+        assertEq(expected = -66, Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{6,-4,3,2} @ rc,
+            Array#{true,false,false,true} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3884,51 +3884,51 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def filterMap01(): Bool = region rc {
+    def filterMap01(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def filterMap02(): Bool = region rc {
+    def filterMap02(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def filterMap03(): Bool = region rc {
+    def filterMap03(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{2} @ rc);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
     @Test
-    def filterMap04(): Bool = region rc {
+    def filterMap04(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,3} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def filterMap05(): Bool = region rc {
+    def filterMap05(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,4} @ rc);
-        Array.sameElements(a, Array#{2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{2} @ rc))
     }
 
     @Test
-    def filterMap06(): Bool = region rc {
+    def filterMap06(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{6,-1} @ rc);
-        Array.sameElements(a, Array#{3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{3} @ rc))
     }
 
     @Test
-    def filterMap07(): Bool = region rc {
+    def filterMap07(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{8,6} @ rc);
-        Array.sameElements(a, Array#{4,3} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4,3} @ rc))
     }
 
     @Test
-    def filterMap08(): Bool = region rc {
+    def filterMap08(): Unit \ Assert = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ rc);
-        Array.sameElements(a, Array#{0,1,2,5} @ rc)
+        assertTrue(Array.sameElements(a, Array#{0,1,2,5} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3936,43 +3936,43 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findMap01(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _])) == None
+    def findMap01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def findMap02(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1} @ rc) == None
+    def findMap02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1} @ rc))
     }
 
     @Test
-    def findMap03(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{2} @ rc) == Some(1)
+    def findMap03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{2} @ rc))
     }
 
     @Test
-    def findMap04(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,3} @ rc) == None
+    def findMap04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,3} @ rc))
     }
 
     @Test
-    def findMap05(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,4} @ rc) == Some(2)
+    def findMap05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,4} @ rc))
     }
 
     @Test
-    def findMap06(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{6,-1} @ rc) == Some(3)
+    def findMap06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{6,-1} @ rc))
     }
 
     @Test
-    def findMap07(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{8,6} @ rc) == Some(4)
+    def findMap07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{8,6} @ rc))
     }
 
     @Test
-    def findMap08(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ rc) == Some(0)
+    def findMap08(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{0,1,2,3,4,5,10} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3980,43 +3980,43 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toSet01(): Bool = region rc {
-        Array.toSet(((Array#{} @ rc): Array[Int32, _])) == Set#{}
+    def toSet01(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{}, Array.toSet(((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def toSet02(): Bool = region rc {
-        Array.toSet(Array#{1} @ rc) == Set#{1}
+    def toSet02(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1}, Array.toSet(Array#{1} @ rc))
     }
 
     @Test
-    def toSet03(): Bool = region rc {
-        Array.toSet(Array#{1,2} @ rc) == Set#{1, 2}
+    def toSet03(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2}, Array.toSet(Array#{1,2} @ rc))
     }
 
     @Test
-    def toSet04(): Bool = region rc {
-        Array.toSet(Array#{1,1} @ rc) == Set#{1}
+    def toSet04(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1}, Array.toSet(Array#{1,1} @ rc))
     }
 
     @Test
-    def toSet05(): Bool = region rc {
-        Array.toSet(Array#{1,2,3} @ rc) == Set#{1, 2, 3}
+    def toSet05(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2, 3}, Array.toSet(Array#{1,2,3} @ rc))
     }
 
     @Test
-    def toSet06(): Bool = region rc {
-        Array.toSet(Array#{1,2,1} @ rc) == Set#{1, 2}
+    def toSet06(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2}, Array.toSet(Array#{1,2,1} @ rc))
     }
 
     @Test
-    def toSet07(): Bool = region rc {
-        Array.toSet(Array#{1,1,2} @ rc) == Set#{1, 2}
+    def toSet07(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2}, Array.toSet(Array#{1,1,2} @ rc))
     }
 
     @Test
-    def toSet08(): Bool = region rc {
-        Array.toSet(Array#{2,1,2,3,4,5,6,3,3} @ rc) == Set#{1, 2, 3, 4, 5, 6}
+    def toSet08(): Unit \ Assert = region rc {
+        assertEq(expected = Set#{1, 2, 3, 4, 5, 6}, Array.toSet(Array#{2,1,2,3,4,5,6,3,3} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4024,23 +4024,23 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toMap01(): Bool = region rc {
-        Array.toMap(((Array#{} @ rc): Array[(Int32, Bool), _])) == Map#{}
+    def toMap01(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{}, Array.toMap(((Array#{} @ rc): Array[(Int32, Bool), _])))
     }
 
     @Test
-    def toMap02(): Bool = region rc {
-        Array.toMap(Array#{(1, true)} @ rc) == Map#{1 => true}
+    def toMap02(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => true}, Array.toMap(Array#{(1, true)} @ rc))
     }
 
     @Test
-    def toMap03(): Bool = region rc {
-        Array.toMap(Array#{(1, true), (2, false)} @ rc) == Map#{1 => true, 2 => false}
+    def toMap03(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => true, 2 => false}, Array.toMap(Array#{(1, true), (2, false)} @ rc))
     }
 
     @Test
-    def toMap04(): Bool = region rc {
-        Array.toMap(Array#{(1, true), (1, false)} @ rc) == Map#{1 => true}
+    def toMap04(): Unit \ Assert = region rc {
+        assertEq(expected = Map#{1 => true}, Array.toMap(Array#{(1, true), (1, false)} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4048,38 +4048,38 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findIndexOf01(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])) == None
+    def findIndexOf01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOf(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def findIndexOf02(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, Array#{1} @ rc) == None
+    def findIndexOf02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOf(i -> i > 2, Array#{1} @ rc))
     }
 
     @Test
-    def findIndexOf03(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, Array#{3} @ rc) == Some(0)
+    def findIndexOf03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOf(i -> i > 2, Array#{3} @ rc))
     }
 
     @Test
-    def findIndexOf04(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, Array#{1,2} @ rc) == None
+    def findIndexOf04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOf(i -> i > 2, Array#{1,2} @ rc))
     }
 
     @Test
-    def findIndexOf05(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, Array#{6,-6} @ rc) == Some(0)
+    def findIndexOf05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOf(i -> i > 2, Array#{6,-6} @ rc))
     }
 
     @Test
-    def findIndexOf06(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, Array#{-6,6} @ rc) == Some(1)
+    def findIndexOf06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOf(i -> i > 2, Array#{-6,6} @ rc))
     }
 
     @Test
-    def findIndexOf07(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, Array#{6,7} @ rc) == Some(0)
+    def findIndexOf07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOf(i -> i > 2, Array#{6,7} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4087,38 +4087,38 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findIndexOfLeft01(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])) == None
+    def findIndexOfLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfLeft(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def findIndexOfLeft02(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, Array#{1} @ rc) == None
+    def findIndexOfLeft02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfLeft(i -> i > 2, Array#{1} @ rc))
     }
 
     @Test
-    def findIndexOfLeft03(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, Array#{3} @ rc) == Some(0)
+    def findIndexOfLeft03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfLeft(i -> i > 2, Array#{3} @ rc))
     }
 
     @Test
-    def findIndexOfLeft04(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, Array#{1,2} @ rc) == None
+    def findIndexOfLeft04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfLeft(i -> i > 2, Array#{1,2} @ rc))
     }
 
     @Test
-    def findIndexOfLeft05(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, Array#{6,-6} @ rc) == Some(0)
+    def findIndexOfLeft05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfLeft(i -> i > 2, Array#{6,-6} @ rc))
     }
 
     @Test
-    def findIndexOfLeft06(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, Array#{-6,6} @ rc) == Some(1)
+    def findIndexOfLeft06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOfLeft(i -> i > 2, Array#{-6,6} @ rc))
     }
 
     @Test
-    def findIndexOfLeft07(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, Array#{6,7} @ rc) == Some(0)
+    def findIndexOfLeft07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfLeft(i -> i > 2, Array#{6,7} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4126,38 +4126,38 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findIndexOfRight01(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])) == None
+    def findIndexOfRight01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfRight(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def findIndexOfRight02(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, Array#{1} @ rc) == None
+    def findIndexOfRight02(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfRight(i -> i > 2, Array#{1} @ rc))
     }
 
     @Test
-    def findIndexOfRight03(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, Array#{3} @ rc) == Some(0)
+    def findIndexOfRight03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfRight(i -> i > 2, Array#{3} @ rc))
     }
 
     @Test
-    def findIndexOfRight04(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, Array#{1,2} @ rc) == None
+    def findIndexOfRight04(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.findIndexOfRight(i -> i > 2, Array#{1,2} @ rc))
     }
 
     @Test
-    def findIndexOfRight05(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, Array#{6,-6} @ rc) == Some(0)
+    def findIndexOfRight05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.findIndexOfRight(i -> i > 2, Array#{6,-6} @ rc))
     }
 
     @Test
-    def findIndexOfRight06(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, Array#{-6,6} @ rc) == Some(1)
+    def findIndexOfRight06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOfRight(i -> i > 2, Array#{-6,6} @ rc))
     }
 
     @Test
-    def findIndexOfRight07(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, Array#{6,7} @ rc) == Some(1)
+    def findIndexOfRight07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.findIndexOfRight(i -> i > 2, Array#{6,7} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4165,21 +4165,21 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findIndices01(): Bool = region rc {
+    def findIndices01(): Unit \ Assert = region rc {
         let a = Array.findIndices(rc, i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @Test
-    def findIndices02(): Bool = region rc {
+    def findIndices02(): Unit \ Assert = region rc {
         let a = Array.findIndices(rc, i -> i > 2, Array#{1} @ rc);
-        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @Test
-    def findIndices03(): Bool = region rc {
+    def findIndices03(): Unit \ Assert = region rc {
         let a = Array.findIndices(rc, i -> i > 2, Array#{3} @ rc);
-        Array.sameElements(a, Array#{0} @ rc)
+        assertTrue(Array.sameElements(a, Array#{0} @ rc))
     }
 
     @Test
