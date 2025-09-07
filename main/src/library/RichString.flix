@@ -32,12 +32,14 @@ instance ToString[RichString] {
 mod RichString {
 
     ///
-    /// Represents a color with RGB components.
+    /// Represents a color with RGB components or the terminal's default color.
     ///
-    /// Each component is a value from 0 to 255 representing red, green, and blue intensity.
+    /// For RGB, each component is a value from 0 to 255 representing red, green, and blue intensity.
+    /// Default represents no color override, using the terminal's current color settings.
     ///
     pub enum Color {
-        case Rgb(Int32, Int32, Int32)  // Red, Green, Blue components
+        case Rgb(Int32, Int32, Int32),  // Red, Green, Blue components
+        case Default                     // Use terminal's default color
     }
 
     ///
@@ -52,22 +54,34 @@ mod RichString {
     }
 
     ///
-    /// A text span with content, color, and style.
+    /// A text span with content, foreground color, background color, and style.
     ///
     /// A span represents a contiguous piece of text with uniform styling.
     ///
     pub enum Span {
-        case Span({text = String, color = Color, style = Style})
+        case Span({text = String, fgColor = Color, bgColor = Color, style = Style})
     }
 
     mod Span {
         use RichString.{Color, Style, Span};
 
         ///
-        /// Returns a span with the given `text` and `color` using normal style.
+        /// Returns a span with the given `text` and foreground `color` using normal style and default background color.
         ///
         pub def withColor(text: String, color: Color): Span =
-            Span({text = text, color = color, style = Style.Normal})
+            Span({text = text, fgColor = color, bgColor = Color.Default, style = Style.Normal})
+
+        ///
+        /// Returns a span with the given `text` and background `color` using normal style and default foreground color.
+        ///
+        pub def withBgColor(text: String, bgColor: Color): Span =
+            Span({text = text, fgColor = Color.Default, bgColor = bgColor, style = Style.Normal})
+
+        ///
+        /// Returns a span with the given `text`, foreground color, and background color using normal style.
+        ///
+        pub def withColors(text: String, fgColor: Color, bgColor: Color): Span =
+            Span({text = text, fgColor = fgColor, bgColor = bgColor, style = Style.Normal})
 
     }
 
@@ -159,13 +173,29 @@ mod RichString {
     pub def toAnsiString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> {
-                let Color.Rgb(red, green, blue) = r#color;
-                let styleCode = match r#style {
-                    case Style.Normal => ""
-                    case Style.Bold => "1;"
-                    case Style.Underline => "4;"
+                // Collect all codes in a list
+                let styleCodes = match r#style {
+                    case Style.Normal => Nil
+                    case Style.Bold => "1" :: Nil
+                    case Style.Underline => "4" :: Nil
                 };
-                "\u001B[${styleCode}38;2;${red};${green};${blue}m${r#text}\u001B[0m"
+
+                let fgCodes = match r#fgColor {
+                    case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
+                    case Color.Default => Nil
+                };
+
+                let bgCodes = match r#bgColor {
+                    case Color.Rgb(red, green, blue) => "48;2;${red};${green};${blue}" :: Nil
+                    case Color.Default => Nil
+                };
+
+                let allCodes = styleCodes ::: fgCodes ::: bgCodes;
+
+                if (List.isEmpty(allCodes))
+                    r#text
+                else
+                    "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
             }, "", spans)
     }
 
