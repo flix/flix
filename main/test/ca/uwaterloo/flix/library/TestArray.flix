@@ -4695,48 +4695,48 @@ mod TestArray {
     }
 
     @Test
-    def sort01(): Bool = region rc {
-        testSortVsSortWith(((Array#{} @ rc): Array[Int32, _]))
+    def sort01(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def sort02(): Bool = region rc {
-        testSortVsSortWith(Array#{0} @ rc)
+    def sort02(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{0} @ rc))
     }
 
     @Test
-    def sort03(): Bool = region rc {
-        testSortVsSortWith(Array#{0,1} @ rc)
+    def sort03(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{0,1} @ rc))
     }
 
     @Test
-    def sort04(): Bool = region rc {
-        testSortVsSortWith(Array#{1,0} @ rc)
+    def sort04(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{1,0} @ rc))
     }
 
     @Test
-    def sort05(): Bool = region rc {
-        testSortVsSortWith(Array#{1,1} @ rc)
+    def sort05(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{1,1} @ rc))
     }
 
     @Test
-    def sort06(): Bool = region rc {
-        testSortVsSortWith(Array#{0,1,2,3,4,5} @ rc)
+    def sort06(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
-    def sort07(): Bool = region rc {
-        testSortVsSortWith(Array#{5,4,3,2,1,0} @ rc)
+    def sort07(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{5,4,3,2,1,0} @ rc))
     }
 
     @Test
-    def sort08(): Bool = region rc {
-        testSortVsSortWith(Array#{5,3,0,4,1,2} @ rc)
+    def sort08(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{5,3,0,4,1,2} @ rc))
     }
 
     @Test
-    def sort09(): Bool = region rc {
-        testSortVsSortWith(Array#{2,3,0,4,1,2} @ rc)
+    def sort09(): Unit \ Assert = region rc {
+        assertTrue(testSortVsSortWith(Array#{2,3,0,4,1,2} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4744,93 +4744,93 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def sortBy01(): Bool = region rc {
+    def sortBy01(): Unit \ Assert = region rc {
         let a: Array[Int32, rc] = Array#{} @ rc;
         Array.sortBy(identity, a);
         let b: Array[Int32, rc] = Array#{} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{} @ rc)
-            and (b `sameElements` Array#{} @ rc)
+        assertTrue((a `sameElements` Array#{} @ rc)
+            and (b `sameElements` Array#{} @ rc))
     }
 
     @Test
-    def sortBy02(): Bool = region rc {
+    def sortBy02(): Unit \ Assert = region rc {
         let a = Array#{0} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{0} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0} @ rc)
-            and (b `sameElements` Array#{0} @ rc)
+        assertTrue((a `sameElements` Array#{0} @ rc)
+            and (b `sameElements` Array#{0} @ rc))
     }
 
     @Test
-    def sortBy03(): Bool = region rc {
+    def sortBy03(): Unit \ Assert = region rc {
         let a = Array#{0,1} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{0,1} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0,1} @ rc)
-            and (b `sameElements` Array#{0,1} @ rc)
+        assertTrue((a `sameElements` Array#{0,1} @ rc)
+            and (b `sameElements` Array#{0,1} @ rc))
     }
 
     @Test
-    def sortBy04(): Bool = region rc {
+    def sortBy04(): Unit \ Assert = region rc {
         let a = Array#{1,0} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{1,0} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0,1} @ rc)
-            and (b `sameElements` Array#{0,1} @ rc)
+        assertTrue((a `sameElements` Array#{0,1} @ rc)
+            and (b `sameElements` Array#{0,1} @ rc))
     }
 
     @Test
-    def sortBy05(): Bool = region rc {
+    def sortBy05(): Unit \ Assert = region rc {
         let a = Array#{1,1} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{1,1} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{1,1} @ rc)
-            and (b `sameElements` Array#{1,1} @ rc)
+        assertTrue((a `sameElements` Array#{1,1} @ rc)
+            and (b `sameElements` Array#{1,1} @ rc))
     }
 
     @Test
-    def sortBy06(): Bool = region rc {
+    def sortBy06(): Unit \ Assert = region rc {
         let a = Array#{0,1,2,3,4,5} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{0,1,2,3,4,5} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0,1,2,3,4,5} @ rc)
-            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc)
+        assertTrue((a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
-    def sortBy07(): Bool = region rc {
+    def sortBy07(): Unit \ Assert = region rc {
         let a = Array#{5,4,3,2,1,0} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{5,4,3,2,1,0} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0,1,2,3,4,5} @ rc)
-            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc)
+        assertTrue((a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
-    def sortBy08(): Bool = region rc {
+    def sortBy08(): Unit \ Assert = region rc {
         let a = Array#{5,3,0,4,1,2} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{5,3,0,4,1,2} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0,1,2,3,4,5} @ rc)
-            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc)
+        assertTrue((a `sameElements` Array#{0,1,2,3,4,5} @ rc)
+            and (b `sameElements` Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
-    def sortBy09(): Bool = region rc {
+    def sortBy09(): Unit \ Assert = region rc {
         let a = Array#{2,3,0,4,1,2} @ rc;
         Array.sortBy(identity, a);
         let b = Array#{2,3,0,4,1,2} @ rc;
         Array.sortBy(x -> 4 * x + 7, b);
-        (a `sameElements` Array#{0,1,2,2,3,4} @ rc)
-            and (b `sameElements` Array#{0,1,2,2,3,4} @ rc)
+        assertTrue((a `sameElements` Array#{0,1,2,2,3,4} @ rc)
+            and (b `sameElements` Array#{0,1,2,2,3,4} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4838,25 +4838,25 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def minimumBy01(): Bool = region rc {
-        Array.minimumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])) == None
+    def minimumBy01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.minimumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def minimumBy02(): Bool = region rc {
-        Array.minimumBy((x, y) -> x <=> y, Array.range(rc, 0, 5)) == Some(0)
+    def minimumBy02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.minimumBy((x, y) -> x <=> y, Array.range(rc, 0, 5)))
     }
 
     @Test
-    def minimumBy03(): Bool = region rc {
-        Array.minimumBy((x, y) -> x <=> y, Array.range(rc, 4, 10)) == Some(4)
+    def minimumBy03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), Array.minimumBy((x, y) -> x <=> y, Array.range(rc, 4, 10)))
     }
 
     @Test
-    def minimumBy04(): Bool = region rc {
+    def minimumBy04(): Unit \ Assert = region rc {
         let a = Array.range(rc, 10, 20);
         Array.put(-22, 5, a);
-        Array.minimumBy((x, y) -> x <=> y, a) == Some(-22)
+        assertEq(expected = Some(-22), Array.minimumBy((x, y) -> x <=> y, a))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4864,25 +4864,25 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def maximumBy01(): Bool = region rc {
-        Array.maximumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])) == None
+    def maximumBy01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.maximumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
-    def maximumBy02(): Bool = region rc {
-        Array.maximumBy((x, y) -> x <=> y, Array.range(rc, 0, 5)) == Some(4)
+    def maximumBy02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(4), Array.maximumBy((x, y) -> x <=> y, Array.range(rc, 0, 5)))
     }
 
     @Test
-    def maximumBy03(): Bool = region rc {
-        Array.maximumBy((x, y) -> x <=> y, Array.range(rc, 4, 10)) == Some(9)
+    def maximumBy03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(9), Array.maximumBy((x, y) -> x <=> y, Array.range(rc, 4, 10)))
     }
 
     @Test
-    def maximumBy04(): Bool = region rc {
+    def maximumBy04(): Unit \ Assert = region rc {
         let a = Array.range(rc, 10, 20);
         Array.put(42, 5, a);
-        Array.maximumBy((x, y) -> x <=> y, a) == Some(42)
+        assertEq(expected = Some(42), Array.maximumBy((x, y) -> x <=> y, a))
     }
 
 
@@ -4891,37 +4891,37 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def sum01(): Bool = region rc {
-        Array.sum(Array#{} @ rc) == 0
+    def sum01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.sum(Array#{} @ rc))
     }
 
     @Test
-    def sum02(): Bool = region rc {
-        Array.sum(Array#{1} @ rc) == 1
+    def sum02(): Unit \ Assert = region rc {
+        assertEq(expected = 1, Array.sum(Array#{1} @ rc))
     }
 
     @Test
-    def sum03(): Bool = region rc {
-        Array.sum(Array#{1, 2, 3} @ rc) == 6
+    def sum03(): Unit \ Assert = region rc {
+        assertEq(expected = 6, Array.sum(Array#{1, 2, 3} @ rc))
     }
 
     @Test
-    def sum04(): Bool = region rc {
-        Array.sum(Array#{1, 2, 3, -3} @ rc) == 3
+    def sum04(): Unit \ Assert = region rc {
+        assertEq(expected = 3, Array.sum(Array#{1, 2, 3, -3} @ rc))
     }
 
     @Test
-    def sum05(): Bool = region rc {
-        Array.sum(Array#{-1, -2, -3, -4} @ rc) == -10
+    def sum05(): Unit \ Assert = region rc {
+        assertEq(expected = -10, Array.sum(Array#{-1, -2, -3, -4} @ rc))
     }
     @Test
-    def sum06(): Bool = region rc {
-        Array.sum(Array#{10, -10} @ rc) == 0
+    def sum06(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.sum(Array#{10, -10} @ rc))
     }
 
     @Test
-    def sum07(): Bool = region rc {
-        Array.range(rc, 1, 101) |> Array.sum == 5050
+    def sum07(): Unit \ Assert = region rc {
+        assertEq(expected = 5050, Array.range(rc, 1, 101) |> Array.sum)
     }
 
 
@@ -4930,33 +4930,33 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def sumWith01(): Bool = region rc {
-        Array.sumWith(x -> x + 1, Array#{} @ rc) == 0
+    def sumWith01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, Array.sumWith(x -> x + 1, Array#{} @ rc))
     }
 
     @Test
-    def sumWith02(): Bool = region rc {
-        Array.sumWith(x -> x + 1, Array#{1} @ rc) == 2
+    def sumWith02(): Unit \ Assert = region rc {
+        assertEq(expected = 2, Array.sumWith(x -> x + 1, Array#{1} @ rc))
     }
 
     @Test
-    def sumWith03(): Bool = region rc {
-        Array.sumWith(x -> x + 1, Array#{1, 2, 3} @ rc) == 9
+    def sumWith03(): Unit \ Assert = region rc {
+        assertEq(expected = 9, Array.sumWith(x -> x + 1, Array#{1, 2, 3} @ rc))
     }
 
     @Test
-    def sumWith04(): Bool = region rc {
-        Array.sumWith(x -> x + 1, Array#{1, 2, 3, -3} @ rc) == 7
+    def sumWith04(): Unit \ Assert = region rc {
+        assertEq(expected = 7, Array.sumWith(x -> x + 1, Array#{1, 2, 3, -3} @ rc))
     }
 
     @Test
-    def sumWith05(): Bool = region rc {
-        Array.sumWith(x -> x + 1, Array#{-1, -2, -3, -4} @ rc) == -6
+    def sumWith05(): Unit \ Assert = region rc {
+        assertEq(expected = -6, Array.sumWith(x -> x + 1, Array#{-1, -2, -3, -4} @ rc))
     }
 
     @Test
-    def sumWith06(): Bool = region rc {
-        Array.sumWith(x -> x + 1, Array#{10, -10} @ rc) == 2
+    def sumWith06(): Unit \ Assert = region rc {
+        assertEq(expected = 2, Array.sumWith(x -> x + 1, Array#{10, -10} @ rc))
     }
 
 
@@ -4965,23 +4965,23 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toDelayList01(): Bool = region rc {
-        ((Array#{} @ rc: Array[Unit, _])) |> Array.toDelayList == DelayList.empty()
+    def toDelayList01(): Unit \ Assert = region rc {
+        assertEq(expected = DelayList.empty(), ((Array#{} @ rc: Array[Unit, _])) |> Array.toDelayList)
     }
 
     @Test
-    def toDelayList02(): Bool = region rc {
-        (Array.empty(rc, 0): Array[String, rc]) |> Array.toDelayList == DelayList.empty()
+    def toDelayList02(): Unit \ Assert = region rc {
+        assertEq(expected = DelayList.empty(), (Array.empty(rc, 0): Array[String, rc]) |> Array.toDelayList)
     }
 
     @Test
-    def toDelayList03(): Bool = region rc {
-        Array.range(rc, -1000, 1000) |> Array.toDelayList == DelayList.range(-1000, 1000)
+    def toDelayList03(): Unit \ Assert = region rc {
+        assertEq(expected = DelayList.range(-1000, 1000), Array.range(rc, -1000, 1000) |> Array.toDelayList)
     }
 
     @Test
-    def toDelayList04(): Bool = region rc {
-        Array.range(rc, -1000, 1000) |> Array.toDelayList |> DelayList.toArray(rc) `sameElements` Array.range(rc, -1000, 1000)
+    def toDelayList04(): Unit \ Assert = region rc {
+        assertTrue(Array.range(rc, -1000, 1000) |> Array.toDelayList |> DelayList.toArray(rc) `sameElements` Array.range(rc, -1000, 1000))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4989,23 +4989,23 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toChain01(): Bool = region rc {
-        Array.toChain(((Array#{} @ rc: Array[Unit, _]))) == (Chain.empty(): Chain[Unit])
+    def toChain01(): Unit \ Assert = region rc {
+        assertEq(expected = (Chain.empty(): Chain[Unit]), Array.toChain(((Array#{} @ rc: Array[Unit, _]))))
     }
 
     @Test
-    def toChain02(): Bool = region rc {
-        Array.toChain(Array#{1} @ rc) == Chain.singleton(1)
+    def toChain02(): Unit \ Assert = region rc {
+        assertEq(expected = Chain.singleton(1), Array.toChain(Array#{1} @ rc))
     }
 
     @Test
-    def toChain03(): Bool = region rc {
-        Array.toChain(Array#{1,2} @ rc) == List.toChain(1 :: 2 :: Nil)
+    def toChain03(): Unit \ Assert = region rc {
+        assertEq(expected = List.toChain(1 :: 2 :: Nil), Array.toChain(Array#{1,2} @ rc))
     }
 
     @Test
-    def toChain04(): Bool = region rc {
-        Array.toChain(Array#{1,2,3} @ rc) == List.toChain(1 :: 2 :: 3 :: Nil)
+    def toChain04(): Unit \ Assert = region rc {
+        assertEq(expected = List.toChain(1 :: 2 :: 3 :: Nil), Array.toChain(Array#{1,2,3} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5013,23 +5013,23 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toNec01(): Bool = region rc {
-        Array.toNec(((Array#{} @ rc: Array[Unit, _]))) == None
+    def toNec01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.toNec(((Array#{} @ rc: Array[Unit, _]))))
     }
 
     @Test
-    def toNec02(): Bool = region rc {
-        Array.toNec(Array#{1} @ rc) == Some(Nec.singleton(1))
+    def toNec02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(Nec.singleton(1)), Array.toNec(Array#{1} @ rc))
     }
 
     @Test
-    def toNec03(): Bool = region rc {
-        Array.toNec(Array#{1,2} @ rc) == List.toNec(1 :: 2 :: Nil)
+    def toNec03(): Unit \ Assert = region rc {
+        assertEq(expected = List.toNec(1 :: 2 :: Nil), Array.toNec(Array#{1,2} @ rc))
     }
 
     @Test
-    def toNec04(): Bool = region rc {
-        Array.toNec(Array#{1,2,3} @ rc) == List.toNec(1 :: 2 :: 3 :: Nil)
+    def toNec04(): Unit \ Assert = region rc {
+        assertEq(expected = List.toNec(1 :: 2 :: 3 :: Nil), Array.toNec(Array#{1,2,3} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5038,101 +5038,101 @@ mod TestArray {
 
     // Test copying between arrays for primitive values
     @Test
-    def copyInto01(): Bool = region rc {
+    def copyInto01(): Unit \ Assert = region rc {
         let src = Array#{true, false, true, false, false} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
     @Test
-    def copyInto02(): Bool = region rc {
+    def copyInto02(): Unit \ Assert = region rc {
         let src = Array#{1i8, 4i8, 5i8, 42i8, 123i8} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
     @Test
-    def copyInto04(): Bool = region rc {
+    def copyInto04(): Unit \ Assert = region rc {
         let src = Array#{1i16, 4i16, 5i16, 42i16, 123i16} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
     @Test
-    def copyInto05(): Bool = region rc {
+    def copyInto05(): Unit \ Assert = region rc {
         let src = Array#{1i32, 4i32, 5i32, 42i32, 123i32} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
 
     @Test
-    def copyInto06(): Bool = region rc {
+    def copyInto06(): Unit \ Assert = region rc {
         let src = Array#{1i64, 4i64, 5i64, 42i64, 123i64} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
 
     @Test
-    def copyInto07(): Bool = region rc {
+    def copyInto07(): Unit \ Assert = region rc {
         let src = Array#{1f32, 4f32, 5f32, 42f32, 123f32} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
     @Test
-    def copyInto08(): Bool = region rc {
+    def copyInto08(): Unit \ Assert = region rc {
         let src = Array#{1f64, 4f64, 5f64, 42f64, 123f64} @ rc;
         let dst = Array.empty(rc, 5);
         Array.copyInto(srcPos = 0, dstPos = 0, len = 5, src = src, dst);
-        src `sameElements` dst
+        assertTrue(src `sameElements` dst)
     }
 
     @Test
-    def copyInto09(): Bool = region rc {
+    def copyInto09(): Unit \ Assert = region rc {
         let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
         let dst = Array#{0, 0, 0, 0} @ rc;
         Array.copyInto(srcPos = 3, dstPos = 1, len = 2, src = src, dst);
         let copiedCorrectly = dst `sameElements` Array#{0, 4, 5, 0} @ rc;
         let sourceUnchanged = src `sameElements` Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
-        copiedCorrectly and sourceUnchanged
+        assertTrue(copiedCorrectly and sourceUnchanged)
     }
 
     @Test
-    def copyInto10(): Bool = region rc {
+    def copyInto10(): Unit \ Assert = region rc {
         let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
         let dst = Array#{0,0,0,0} @ rc;
         Array.copyInto(srcPos = 3, dstPos = 1, len = 0, src = src, dst);
-        dst `sameElements` Array#{0,0,0,0} @ rc
+        assertTrue(dst `sameElements` Array#{0,0,0,0} @ rc)
     }
 
     @Test
-    def copyInto11(): Bool = region rc {
+    def copyInto11(): Unit \ Assert = region rc {
         let src = Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
         Array.copyInto(srcPos = 0, dstPos = 5, len = 5, src = src, src);
-        src `sameElements` Array#{1, 2, 3, 4, 5, 1, 2, 3, 4, 5} @ rc
+        assertTrue(src `sameElements` Array#{1, 2, 3, 4, 5, 1, 2, 3, 4, 5} @ rc)
     }
 
     @Test
-    def copyInto12(): Bool = region rc {
+    def copyInto12(): Unit \ Assert = region rc {
         let src = Array#{1, 2, 3, 4, 5} @ rc;
         Array.copyInto(srcPos = 0, dstPos = 1, len = 4, src = src, src);
-        src `sameElements` Array#{1, 1, 2, 3, 4} @ rc
+        assertTrue(src `sameElements` Array#{1, 1, 2, 3, 4} @ rc)
     }
 
     @Test
-    def copyInto13(): Bool = region rc {
+    def copyInto13(): Unit \ Assert = region rc {
         let src = Array#{Some(1), None, Some(2), None, Some(3), None, Some(4)} @ rc;
         let dst = Array#{Some(-1),Some(-1),Some(-1),Some(-1),Some(-1),Some(-1)} @ rc;
         Array.copyInto(srcPos = 1, dstPos = 2, len = 4, src = src, dst);
-        dst `sameElements` Array#{Some(-1), Some(-1), None, Some(2), None, Some(3)} @ rc
+        assertTrue(dst `sameElements` Array#{Some(-1), Some(-1), None, Some(2), None, Some(3)} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5140,43 +5140,43 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def copy01(): Bool = region rc {
-        Array.copy(rc, Array#{true, false, true} @ rc) `sameElements` Array#{true, false, true} @ rc
+    def copy01(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{true, false, true} @ rc) `sameElements` Array#{true, false, true} @ rc)
     }
 
     @Test
-    def copy02(): Bool = region rc {
-        Array.copy(rc, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'a', 'b', 'c'} @ rc
+    def copy02(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{'a', 'b', 'c'} @ rc) `sameElements` Array#{'a', 'b', 'c'} @ rc)
     }
 
     @Test
-    def copy03(): Bool = region rc {
-        Array.copy(rc, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{1.0f32, 2.0f32, 3.0f32} @ rc
+    def copy03(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1.0f32, 2.0f32, 3.0f32} @ rc) `sameElements` Array#{1.0f32, 2.0f32, 3.0f32} @ rc)
     }
 
     @Test
-    def copy04(): Bool = region rc {
-        Array.copy(rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{1.0f64, 2.0f64, 3.0f64} @ rc
+    def copy04(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1.0f64, 2.0f64, 3.0f64} @ rc) `sameElements` Array#{1.0f64, 2.0f64, 3.0f64} @ rc)
     }
 
     @Test
-    def copy05(): Bool = region rc {
-        Array.copy(rc, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{1i8, 2i8, 3i8} @ rc
+    def copy05(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1i8, 2i8, 3i8} @ rc) `sameElements` Array#{1i8, 2i8, 3i8} @ rc)
     }
 
     @Test
-    def copy06(): Bool = region rc {
-        Array.copy(rc, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{1i16, 2i16, 3i16} @ rc
+    def copy06(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1i16, 2i16, 3i16} @ rc) `sameElements` Array#{1i16, 2i16, 3i16} @ rc)
     }
 
     @Test
-    def copy07(): Bool = region rc {
-        Array.copy(rc, Array#{1, 2, 3} @ rc) `sameElements` Array#{1, 2, 3} @ rc
+    def copy07(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1, 2, 3} @ rc) `sameElements` Array#{1, 2, 3} @ rc)
     }
 
     @Test
-    def copy08(): Bool = region rc {
-        Array.copy(rc, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{1i64, 2i64, 3i64} @ rc
+    def copy08(): Unit \ Assert = region rc {
+        assertTrue(Array.copy(rc, Array#{1i64, 2i64, 3i64} @ rc) `sameElements` Array#{1i64, 2i64, 3i64} @ rc)
     }
 
     @Test
