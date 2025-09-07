@@ -66,22 +66,22 @@ mod RichString {
         use RichString.{Color, Style, Span};
 
         ///
-        /// Returns a span with the given `text` and foreground `color` using normal style and default background color.
+        /// Returns a span with the given text `s` and foreground color `c` using normal style and default background color.
         ///
-        pub def withColor(text: String, color: Color): Span =
-            Span({text = text, fgColor = color, bgColor = Color.Default, style = Style.Normal})
+        pub def withColor(s: String, c: Color): Span =
+            Span({text = s, fgColor = c, bgColor = Color.Default, style = Style.Normal})
 
         ///
-        /// Returns a span with the given `text` and background `color` using normal style and default foreground color.
+        /// Returns a span with the given text `s` and background color `c` using normal style and default foreground color.
         ///
-        pub def withBgColor(text: String, bgColor: Color): Span =
-            Span({text = text, fgColor = Color.Default, bgColor = bgColor, style = Style.Normal})
+        pub def withBgColor(s: String, c: Color): Span =
+            Span({text = s, fgColor = Color.Default, bgColor = c, style = Style.Normal})
 
         ///
-        /// Returns a span with the given `text`, foreground color, and background color using normal style.
+        /// Returns a span with the given text `s`, foreground color, and background color using normal style.
         ///
-        pub def withColors(text: String, fgColor: Color, bgColor: Color): Span =
-            Span({text = text, fgColor = fgColor, bgColor = bgColor, style = Style.Normal})
+        pub def withColors(s: String, fgColor: Color, bgColor: Color): Span =
+            Span({text = s, fgColor = fgColor, bgColor = bgColor, style = Style.Normal})
 
     }
 
@@ -98,21 +98,21 @@ mod RichString {
         fromSpan(Span.Span({text = s, fgColor = Color.Default, bgColor = Color.Default, style = Style.Normal}))
 
     ///
-    /// Returns `rs` with all spans updated to use the given foreground `color`.
+    /// Returns `rs` with all spans updated to use the given foreground color `c`.
     ///
-    pub def withColor(color: Color, rs: RichString): RichString = match rs {
+    pub def withColor(c: Color, rs: RichString): RichString = match rs {
         case RichString(spans) =>
             RichString(Chain.map(match Span.Span(r) -> 
-                Span.Span({text = r#text, fgColor = color, bgColor = r#bgColor, style = r#style}), spans))
+                Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, style = r#style}), spans))
     }
 
     ///
-    /// Returns `rs` with all spans updated to use the given background `color`.
+    /// Returns `rs` with all spans updated to use the given background color `c`.
     ///
-    pub def withBgColor(color: Color, rs: RichString): RichString = match rs {
+    pub def withBgColor(c: Color, rs: RichString): RichString = match rs {
         case RichString(spans) =>
             RichString(Chain.map(match Span.Span(r) -> 
-                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = color, style = r#style}), spans))
+                Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, style = r#style}), spans))
     }
 
     ///
@@ -125,10 +125,10 @@ mod RichString {
     }
 
     ///
-    /// Returns a `RichString` containing the given `span`.
+    /// Returns a `RichString` containing the given span `s`.
     ///
-    pub def fromSpan(span: Span): RichString =
-        RichString(Chain.singleton(span))
+    pub def fromSpan(s: Span): RichString =
+        RichString(Chain.singleton(s))
 
     ///
     /// Returns a `RichString` with the given text `s` in black color.
