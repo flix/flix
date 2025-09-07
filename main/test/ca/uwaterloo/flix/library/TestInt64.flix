@@ -1168,37 +1168,37 @@ mod TestInt64 {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def longValue01(): Bool =
+    def longValue01(): Unit \ Assert =
         let i = Int64.valueOf(0i64);
-        Int64.longValue(i) == 0i64
+        assertEq(expected = 0i64, Int64.longValue(i))
 
     @Test
-    def longValue02(): Bool =
+    def longValue02(): Unit \ Assert =
         let i = Int64.valueOf(1i64);
-        Int64.longValue(i) == 1i64
+        assertEq(expected = 1i64, Int64.longValue(i))
 
     @Test
-    def shortValue03(): Bool =
+    def longValue03(): Unit \ Assert =
         let i = Int64.valueOf(-1i64);
-        Int64.longValue(i) == -1i64
+        assertEq(expected = -1i64, Int64.longValue(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // valueOf                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def valueOf01(): Bool =
+    def valueOf01(): Unit \ Assert =
         let i = Int64.valueOf(0i64);
-        i.equals(Int64.valueOf(0i64))
+        assertTrue(i.equals(Int64.valueOf(0i64)))
 
     @Test
-    def valueOf02(): Bool =
+    def valueOf02(): Unit \ Assert =
         let i = Int64.valueOf(1i64);
-        i.equals(Int64.valueOf(1i64))
+        assertTrue(i.equals(Int64.valueOf(1i64)))
 
     @Test
-    def valueOf03(): Bool =
+    def valueOf03(): Unit \ Assert =
         let i = Int64.valueOf(-1i64);
-        i.equals(Int64.valueOf(-1i64))
+        assertTrue(i.equals(Int64.valueOf(-1i64)))
 
 }
