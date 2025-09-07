@@ -2318,39 +2318,45 @@ mod TestMap {
         assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} != Map#{1 => 2, 3 => 4})
 
     @Test
-    def eq20(): Bool = Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 4, 5 => 6}
+    def eq20(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 4, 5 => 6})
 
     @Test
-    def eq21(): Bool = Map#{1 => 2, 3 => 4, 5 => 6} == Map#{1 => 2, 3 => 4, 5 => 6}
+    def eq21(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{1 => 2, 3 => 4, 5 => 6})
 
     @Test
-    def eq22(): Bool = Map#{1 => 2, 3 => 4, 5 => 6} == Map#{1 => 2, 5 => 6, 3 => 4}
+    def eq22(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{1 => 2, 5 => 6, 3 => 4})
 
     @Test
-    def eq23(): Bool = Map#{1 => 2, 3 => 4, 5 => 6} == Map#{3 => 4, 5 => 6, 1 => 2}
+    def eq23(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{3 => 4, 5 => 6, 1 => 2})
 
     @Test
-    def eq24(): Bool = Map#{1 => 2, 3 => 4, 5 => 6} == Map#{5 => 6, 3 => 4, 1 => 2}
+    def eq24(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{5 => 6, 3 => 4, 1 => 2})
 
     @Test
-    def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8, 1 => 2, 3 => 4, 9 => 10, 5 => 6}
+    def eq25(): Unit \ Assert = 
+        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8, 1 => 2, 3 => 4, 9 => 10, 5 => 6})
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def forEach01(): Bool = region rc {
+    def forEach01(): Unit \ Assert = region rc {
         let ri = Ref.fresh(rc, 21);
         Map.forEach((k, _) -> Ref.put(k, ri), Map#{});
-        21 == Ref.get(ri)
+        assertEq(expected = 21, Ref.get(ri))
     }
 
     @Test
-    def forEach02(): Bool = region rc {
+    def forEach02(): Unit \ Assert = region rc {
         let ri = Ref.fresh(rc, 21);
         Map.forEach((k, _) -> Ref.put(k, ri), Map#{1 => "Hello World!"});
-        1 == Ref.get(ri)
+        assertEq(expected = 1, Ref.get(ri))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2358,17 +2364,17 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def forEachWithIndex01(): Bool = region rc {
+    def forEachWithIndex01(): Unit \ Assert = region rc {
         let ri = Ref.fresh(rc, 21);
         Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{});
-        21 == Ref.get(ri)
+        assertEq(expected = 21, Ref.get(ri))
     }
 
     @Test
-    def forEachWithIndex02(): Bool = region rc {
+    def forEachWithIndex02(): Unit \ Assert = region rc {
         let ri = Ref.fresh(rc, 21);
         Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{1 => "Hello World!"});
-        0 == Ref.get(ri)
+        assertEq(expected = 0, Ref.get(ri))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2376,35 +2382,35 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unfold01(): Bool =
-        Map.unfold(s -> if (true) None else Some((s, s + 48, s + 1)), 0) == Map#{}
+    def unfold01(): Unit \ Assert =
+        assertEq(expected = Map#{}, Map.unfold(s -> if (true) None else Some((s, s + 48, s + 1)), 0))
 
     @Test
-    def unfold02(): Bool =
-        Map.unfold(s -> if (s > 0) None else Some((s, s + 48, s + 1)), 0) == Map#{0 => 48}
+    def unfold02(): Unit \ Assert =
+        assertEq(expected = Map#{0 => 48}, Map.unfold(s -> if (s > 0) None else Some((s, s + 48, s + 1)), 0))
 
     @Test
-    def unfold03(): Bool =
-        Map.unfold(s -> if (s > 1) None else Some((s, s + 48, s + 1)), 0) == Map#{0 => 48, 1 => 49}
+    def unfold03(): Unit \ Assert =
+        assertEq(expected = Map#{0 => 48, 1 => 49}, Map.unfold(s -> if (s > 1) None else Some((s, s + 48, s + 1)), 0))
 
     @Test
-    def unfold04(): Bool =
-        Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 1)), 0) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
+    def unfold04(): Unit \ Assert =
+        assertEq(expected = Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}, Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 1)), 0))
 
     @Test
-    def unfold05(): Bool =
-        Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 1)), 5) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
+    def unfold05(): Unit \ Assert =
+        assertEq(expected = Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}, Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 1)), 5))
 
     @Test
-    def unfold06(): Bool =
-        Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 2)), 0) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
+    def unfold06(): Unit \ Assert =
+        assertEq(expected = Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}, Map.unfold(s -> if (s >= 10) None else Some((s, s + 48, s + 2)), 0))
 
     /////////////////////////////////////////////////////////////////////////////
     // unfoldWithIter                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def unfoldWithIter01(): Bool = region rc {
+    def unfoldWithIter01(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (true)
@@ -2415,11 +2421,11 @@ mod TestMap {
                 Ref.put(Ref.get(x) + 1, x);
                 Some((k, v))
             };
-        Map.unfoldWithIter(step) == Map#{}
+        assertEq(expected = Map#{}, Map.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter02(): Bool = region rc {
+    def unfoldWithIter02(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) > 0)
@@ -2430,11 +2436,11 @@ mod TestMap {
                 Ref.put(Ref.get(x) + 1, x);
                 Some((k, v))
             };
-        Map.unfoldWithIter(step) == Map#{0 => 48}
+        assertEq(expected = Map#{0 => 48}, Map.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter03(): Bool = region rc {
+    def unfoldWithIter03(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) > 1)
@@ -2445,11 +2451,11 @@ mod TestMap {
                 Ref.put(Ref.get(x) + 1, x);
                 Some((k, v))
             };
-        Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49}
+        assertEq(expected = Map#{0 => 48, 1 => 49}, Map.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter04(): Bool = region rc {
+    def unfoldWithIter04(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) >= 10)
@@ -2460,11 +2466,11 @@ mod TestMap {
                 Ref.put(Ref.get(x) + 1, x);
                 Some((k, v))
             };
-        Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
+        assertEq(expected = Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}, Map.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter05(): Bool = region rc {
+    def unfoldWithIter05(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 5);
         let step = () ->
             if (Ref.get(x) >= 10)
@@ -2475,11 +2481,11 @@ mod TestMap {
                 Ref.put(Ref.get(x) + 1, x);
                 Some((k, v))
             };
-        Map.unfoldWithIter(step) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
+        assertEq(expected = Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}, Map.unfoldWithIter(step))
     }
 
     @Test
-    def unfoldWithIter06(): Bool = region rc {
+    def unfoldWithIter06(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 0);
         let step = () ->
             if (Ref.get(x) >= 10)
@@ -2490,7 +2496,7 @@ mod TestMap {
                 Ref.put(Ref.get(x) + 2, x);
                 Some((k, v))
             };
-        Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
+        assertEq(expected = Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}, Map.unfoldWithIter(step))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2498,91 +2504,97 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testInvert01(): Bool = Map.invert(Map#{1 => "a"}) == Map#{"a" => Set#{1}}
+    def testInvert01(): Unit \ Assert = 
+        assertEq(expected = Map#{"a" => Set#{1}}, Map.invert(Map#{1 => "a"}))
 
     @Test
-    def testInvert02(): Bool = Map.invert(Map#{1 => "a", 2 => "b"}) == Map#{"a" => Set#{1}, "b" => Set#{2}}
+    def testInvert02(): Unit \ Assert = 
+        assertEq(expected = Map#{"a" => Set#{1}, "b" => Set#{2}}, Map.invert(Map#{1 => "a", 2 => "b"}))
 
     @Test
-    def testInvert03(): Bool = Map.invert(Map#{1 => "a", 2 => "a"}) == Map#{"a" => Set#{1, 2}}
+    def testInvert03(): Unit \ Assert = 
+        assertEq(expected = Map#{"a" => Set#{1, 2}}, Map.invert(Map#{1 => "a", 2 => "a"}))
 
     @Test
-    def testInvert04(): Bool = Map.invert(Map#{1 => "a", 2 => "b", 3 => "a"}) == Map#{"a" => Set#{1, 3}, "b" => Set#{2}}
+    def testInvert04(): Unit \ Assert = 
+        assertEq(expected = Map#{"a" => Set#{1, 3}, "b" => Set#{2}}, Map.invert(Map#{1 => "a", 2 => "b", 3 => "a"}))
 
     @Test
-    def testInvert05(): Bool = Map.invert(Map#{1 => "a", 2 => "a", 3 => "a"}) == Map#{"a" => Set#{1, 2, 3}}
+    def testInvert05(): Unit \ Assert = 
+        assertEq(expected = Map#{"a" => Set#{1, 2, 3}}, Map.invert(Map#{1 => "a", 2 => "a", 3 => "a"}))
 
     @Test
-    def testInvert06(): Bool = Map.invert(Map#{1 => "a", 2 => "b", 3 => "a", 4 => "b"}) == Map#{"a" => Set#{1, 3}, "b" => Set#{2, 4}}
+    def testInvert06(): Unit \ Assert = 
+        assertEq(expected = Map#{"a" => Set#{1, 3}, "b" => Set#{2, 4}}, Map.invert(Map#{1 => "a", 2 => "b", 3 => "a", 4 => "b"}))
 
     /////////////////////////////////////////////////////////////////////////////
     // query                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def rangeQuery01(): Bool =
-        Map.rangeQuery(_ -> Comparison.EqualTo, (Map#{}: Map[Unit, Unit])) == Nil
+    def rangeQuery01(): Unit \ Assert =
+        assertEq(expected = Nil, Map.rangeQuery(_ -> Comparison.EqualTo, (Map#{}: Map[Unit, Unit])))
 
     @Test
-    def rangeQuery02(): Bool =
-        Map.rangeQuery(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
+    def rangeQuery02(): Unit \ Assert =
+        assertEq(expected = (1, 101) :: (2, 42) :: Nil, Map.rangeQuery(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}))
 
     @Test
-    def rangeQuery03(): Bool =
-        Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
+    def rangeQuery03(): Unit \ Assert =
+        assertEq(expected = (2, 2) :: Nil, Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}))
 
     @Test
-    def rangeQuery04(): Bool =
-        Map.rangeQuery(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
+    def rangeQuery04(): Unit \ Assert =
+        assertEq(expected = ('b', 1) :: ('c', 2) :: Nil, Map.rangeQuery(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}))
 
     @Test
-    def rangeQuery05(): Bool =
+    def rangeQuery05(): Unit \ Assert =
         let m = Map.unfold(s -> if (s > 10) None else Some((s, s, s + 1)), 5);
-        Map.rangeQuery(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
+        assertEq(expected = List.map(x -> (x, x), List.range(5, 10)), Map.rangeQuery(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m))
 
     @Test
-    def rangeQuery06(): Bool =
+    def rangeQuery06(): Unit \ Assert =
         let m = Map.unfold(s -> if (s > 75) None else Some((s, Some(s + 48), s + 1)), 25);
-        Map.rangeQuery(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
+        assertEq(expected = List.map(x -> (x, Some(x + 48)), List.range(25, 75)), Map.rangeQuery(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m))
 
     @Test
-    def rangeQuery07(): Bool =
-        Map.rangeQuery(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}) == (42, true) :: Nil
+    def rangeQuery07(): Unit \ Assert =
+        assertEq(expected = (42, true) :: Nil, Map.rangeQuery(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}))
 
     @Test
-    def rangeQuery08(): Bool =
-        Map.rangeQuery(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
+    def rangeQuery08(): Unit \ Assert =
+        assertEq(expected = (1, 2) :: Nil, Map.rangeQuery(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}))
 
     @Test
-    def rangeQuery09(): Bool =
-        Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
+    def rangeQuery09(): Unit \ Assert =
+        assertEq(expected = (2, 3) :: (3, 4) :: Nil, Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}))
 
     @Test
-    def rangeQuery10(): Bool =
-        Map.rangeQuery(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
+    def rangeQuery10(): Unit \ Assert =
+        assertEq(expected = (4, 5) :: Nil, Map.rangeQuery(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}))
 
     @Test
-    def rangeQuery11(): Bool =
+    def rangeQuery11(): Unit \ Assert =
         let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-        Map.rangeQuery(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
+        assertEq(expected = ((1, 2), 0) :: ((1, 3), 1) :: Nil, Map.rangeQuery(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m))
 
     @Test
-    def rangeQuery12(): Bool =
+    def rangeQuery12(): Unit \ Assert =
         let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-        Map.rangeQuery(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m) == ((3, 1), 5) :: Nil
+        assertEq(expected = ((3, 1), 5) :: Nil, Map.rangeQuery(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m))
 
     @Test
-    def rangeQuery13(): Bool =
+    def rangeQuery13(): Unit \ Assert =
         let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-        Map.rangeQuery(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
+        assertEq(expected = ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil, Map.rangeQuery(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m))
 
     @Test
-    def rangeQuery14(): Bool =
+    def rangeQuery14(): Unit \ Assert =
         let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-        Map.rangeQuery(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+        assertEq(expected = ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil, Map.rangeQuery(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m))
 
     @Test
-    def rangeQuery15(): Bool =
+    def rangeQuery15(): Unit \ Assert =
         let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
         let f = x -> {
             let cmp = x <=> (2, 2);
@@ -2591,10 +2603,10 @@ mod TestMap {
             else
                 Comparison.EqualTo
             };
-        Map.rangeQuery(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
+        assertEq(expected = ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil, Map.rangeQuery(f, m))
 
     @Test
-    def rangeQuery16(): Bool =
+    def rangeQuery16(): Unit \ Assert =
         let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
         let f = x -> {
             let cmp = x <=> (2, 2);
@@ -2603,10 +2615,10 @@ mod TestMap {
             else
                 Comparison.EqualTo
             };
-        Map.rangeQuery(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+        assertEq(expected = ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil, Map.rangeQuery(f, m))
 
     @Test
-    def rangeQuery17(): Bool =
+    def rangeQuery17(): Unit \ Assert =
         let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
         let f = x -> {
             let cmp = x <=> (1, 2, 3);
@@ -2615,10 +2627,10 @@ mod TestMap {
             else
                 Comparison.EqualTo
             };
-        Map.rangeQuery(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
+        assertEq(expected = ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil, Map.rangeQuery(f, m))
 
     @Test
-    def rangeQuery18(): Bool =
+    def rangeQuery18(): Unit \ Assert =
         let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
         let f = x -> {
             let cmp = x <=> (1, 2, 3);
@@ -2627,7 +2639,7 @@ mod TestMap {
             else
                 Comparison.EqualTo
             };
-        Map.rangeQuery(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+        assertEq(expected = ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil, Map.rangeQuery(f, m))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -3006,59 +3018,59 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def sequence01(): Bool =
+    def sequence01(): Unit \ Assert =
         let m: Map[Int32, Identity[Char]] = Map#{};
-        Map.sequence(m) == Identity.Identity(Map#{})
+        assertEq(expected = Identity.Identity(Map#{}), Map.sequence(m))
 
     @Test
-    def sequence02(): Bool =
+    def sequence02(): Unit \ Assert =
         let m = Map#{1 => Identity.Identity('a')};
-        Map.sequence(m) == Identity.Identity(Map#{1 => 'a'})
+        assertEq(expected = Identity.Identity(Map#{1 => 'a'}), Map.sequence(m))
 
     @Test
-    def sequence03(): Bool =
+    def sequence03(): Unit \ Assert =
         let m = Map#{1 => Identity.Identity('a'), 2 => Identity.Identity('b')};
-        Map.sequence(m) == Identity.Identity(Map#{1 => 'a', 2 => 'b'})
+        assertEq(expected = Identity.Identity(Map#{1 => 'a', 2 => 'b'}), Map.sequence(m))
 
     @Test
-    def sequence04(): Bool =
+    def sequence04(): Unit \ Assert =
         let m = Map#{1 => Identity.Identity('a'), 2 => Identity.Identity('b'), 3 => Identity.Identity('c')};
-        Map.sequence(m) == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'})
+        assertEq(expected = Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}), Map.sequence(m))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def traverse01(): Bool = region rc {
+    def traverse01(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{}) and Ref.get(st) == '#'
+        assertTrue(ans == Identity.Identity(Map#{}) and Ref.get(st) == '#')
     }
 
     @Test
-    def traverse02(): Bool = region rc {
+    def traverse02(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == 'a'
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == 'a')
     }
 
     @Test
-    def traverse03(): Bool = region rc {
+    def traverse03(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == 'b'
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == 'b')
     }
 
     @Test
-    def traverse04(): Bool = region rc {
+    def traverse04(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == 'c'
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == 'c')
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3066,35 +3078,35 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def traverseWithKey01(): Bool = region rc {
+    def traverseWithKey01(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, (0, '#'));
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{}) and Ref.get(st) == (0, '#')
+        assertTrue(ans == Identity.Identity(Map#{}) and Ref.get(st) == (0, '#'))
     }
 
     @Test
-    def traverseWithKey02(): Bool = region rc {
+    def traverseWithKey02(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == (1, 'a')
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == (1, 'a'))
     }
 
     @Test
-    def traverseWithKey03(): Bool = region rc {
+    def traverseWithKey03(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == (2, 'b')
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == (2, 'b'))
     }
 
     @Test
-    def traverseWithKey04(): Bool = region rc {
+    def traverseWithKey04(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == (3, 'c')
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == (3, 'c'))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3102,20 +3114,20 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def joinKeys01(): Bool =
-        (Map.empty(): Map[Int32, Int32]) |> Map.joinKeys(",") == ""
+    def joinKeys01(): Unit \ Assert =
+        assertEq(expected = "", (Map.empty(): Map[Int32, Int32]) |> Map.joinKeys(","))
 
     @Test
-    def joinKeys02(): Bool =
-        Map#{1 => 1} |> Map.joinKeys(",") == "1"
+    def joinKeys02(): Unit \ Assert =
+        assertEq(expected = "1", Map#{1 => 1} |> Map.joinKeys(","))
 
     @Test
-    def joinKeys03(): Bool =
-        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinKeys(",") == "0,1,2"
+    def joinKeys03(): Unit \ Assert =
+        assertEq(expected = "0,1,2", Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinKeys(","))
 
     @Test
-    def joinKeys04(): Bool =
-        Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.joinKeys(",") == "0,1,2"
+    def joinKeys04(): Unit \ Assert =
+        assertEq(expected = "0,1,2", Map#{"0" => 1, "1" => 2, "2" => 2} |> Map.joinKeys(","))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3123,20 +3135,20 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def joinValues01(): Bool =
-        (Map.empty(): Map[Int32, Int32]) |> Map.joinValues(",") == ""
+    def joinValues01(): Unit \ Assert =
+        assertEq(expected = "", (Map.empty(): Map[Int32, Int32]) |> Map.joinValues(","))
 
     @Test
-    def joinValues02(): Bool =
-        Map#{1 => 1} |> Map.joinValues(",") == "1"
+    def joinValues02(): Unit \ Assert =
+        assertEq(expected = "1", Map#{1 => 1} |> Map.joinValues(","))
 
     @Test
-    def joinValues03(): Bool =
-        Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinValues(",") == "1,2,2"
+    def joinValues03(): Unit \ Assert =
+        assertEq(expected = "1,2,2", Map#{0 => 1, 1 => 2, 2 => 2} |> Map.joinValues(","))
 
     @Test
-    def joinValues04(): Bool =
-        Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.joinValues(",") == "1,2,2"
+    def joinValues04(): Unit \ Assert =
+        assertEq(expected = "1,2,2", Map#{0 => "1", 1 => "2", 2 => "2"} |> Map.joinValues(","))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3144,23 +3156,23 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def joinWith01(): Bool =
-        (Map.empty(): Map[Int32, Int32]) |> Map.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+    def joinWith01(): Unit \ Assert =
+        assertEq(expected = "", (Map.empty(): Map[Int32, Int32]) |> Map.joinWith((k, v) -> "${k} => ${v}", ","))
 
     @Test
-    def joinWith02(): Bool =
-        Map#{1 => 1} |>
-            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "1 => 1"
+    def joinWith02(): Unit \ Assert =
+        assertEq(expected = "1 => 1", Map#{1 => 1} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", "))
 
     @Test
-    def joinWith03(): Bool =
-        Map#{0 => 1, 1 => 2, 2 => 2} |>
-            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+    def joinWith03(): Unit \ Assert =
+        assertEq(expected = "0 => 1, 1 => 2, 2 => 2", Map#{0 => 1, 1 => 2, 2 => 2} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", "))
 
     @Test
-    def joinWith04(): Bool =
-        Map#{0 => "1", 1 => "2", 2 => "2"} |>
-            Map.joinWith((k, v) -> "${k} => ${v}", ", ") == "0 => 1, 1 => 2, 2 => 2"
+    def joinWith04(): Unit \ Assert =
+        assertEq(expected = "0 => 1, 1 => 2, 2 => 2", Map#{0 => "1", 1 => "2", 2 => "2"} |>
+            Map.joinWith((k, v) -> "${k} => ${v}", ", "))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3168,12 +3180,12 @@ mod TestMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def explode01(): Bool =
-        Map.explode(Map#{1 => Set#{2, 3}}) == Set#{(1, 2), (1, 3)}
+    def explode01(): Unit \ Assert =
+        assertEq(expected = Set#{(1, 2), (1, 3)}, Map.explode(Map#{1 => Set#{2, 3}}))
 
     @Test
-    def explode02(): Bool =
-        Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{2, 3}}) == Set#{(1, 2), (1, 3), (2, 2), (2, 3)}
+    def explode02(): Unit \ Assert =
+        assertEq(expected = Set#{(1, 2), (1, 3), (2, 2), (2, 3)}, Map.explode(Map#{1 => Set#{2, 3}, 2 => Set#{2, 3}}))
 
     @Test
     def explode03(): Unit \ Assert =
