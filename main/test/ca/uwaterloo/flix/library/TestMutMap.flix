@@ -1,6 +1,6 @@
 mod TestMutMap {
     use MutMap.MutMap;
-    use Assert.{assertEq, assertTrue, assertFalse}
+    use Assert.{assertEq, assertTrue, assertFalse};
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
@@ -108,7 +108,7 @@ mod TestMutMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def merge01(): Unit \ Assert = region rc {
+    def mergeWithKey01(): Unit \ Assert = region rc {
         let m1 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         let m2 = (MutMap.empty(rc): MutMap[Int32, Int32, _]);
         MutMap.mergeWithKey((_, v, _) -> v, m1, m2);
@@ -116,7 +116,7 @@ mod TestMutMap {
     }
 
     @Test
-    def merge02(): Unit \ Assert = region rc {
+    def mergeWithKey02(): Unit \ Assert = region rc {
         let m1 = MutMap.empty(rc);
         let m2 = MutMap.empty(rc);
         MutMap.put(1, 0, m1);
