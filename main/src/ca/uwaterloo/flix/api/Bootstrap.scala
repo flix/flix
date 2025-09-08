@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
-import java.io.PrintStream
+import java.io.{Console, InputStream, PrintStream}
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
@@ -538,44 +538,60 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     *
     * Aborts if any of the directories do not contain the expected file types.
     */
-  def clean(formatter: Formatter)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def clean(formatter: Formatter)(implicit in: Console, out: PrintStream): Validation[Unit, BootstrapError] = {
     val summary1 =
       s"""${formatter.underline(formatter.bold("1. Check 'build/class' directory for non-class files."))}
          |2. Remove .class files from 'build/class'.
          |""".stripMargin
     out.println(summary1)
 
-    val classDir = getClassDirectory(projectPath)
+    val classDir = getClassDirectory(projectPath).normalize()
     if (!Files.exists(classDir)) {
       val summary2 =
         s"""1. SKIPPED! Check 'build/class' directory for non-class files.
            |2. SKIPPED! Remove .class files from 'build/class'.
            |
-           |No 'build/class' directory found. Exiting.
+           |No 'build/class' directory found. Aborting.
            |""".stripMargin
       out.println(summary2)
       return Validation.Success(())
     }
     val files = Files.walk(classDir).iterator().asScala.toList
-    val unexpectedFiles = files.filterNot(p => p.endsWith(".class"))
+      .map(_.toAbsolutePath.normalize())
+      .filterNot(p => Files.isDirectory(p))
+    val unexpectedFiles = files.filter(p => !p.toFile.getName.endsWith(".class"))
 
     if (unexpectedFiles.nonEmpty) {
-      val fileErrors = unexpectedFiles.map(_.getFileName.toString)
+      val fileErrors = unexpectedFiles.map(p => classDir.relativize(p).normalize().toString)
       Validation.Failure(BootstrapError.UnexpectedFiles(fileErrors, List(".class"), "build/class"))
     } else {
       val summary2 =
-        s""""1. Check 'build/class' directory for non-class files.
+        s"""1. Check 'build/class' directory for non-class files.
            |${formatter.underline(formatter.bold("2. Remove .class files from 'build/class'."))}
            |""".stripMargin
       out.println(summary2)
 
-      for (file <- files) {
-        out.println("removing " + file.getFileName.toString)
-        // Files.delete(file)
-      }
 
-      out.println("Success.")
-      Validation.Success(())
+      val deletionFiles = files.map(p => p.toString).mkString("- ", System.lineSeparator() + "- ", "")
+      val deletionSummary =
+        s"""
+           |Removing the following files:
+           |
+           |$deletionFiles
+           |""".stripMargin
+
+      out.println(deletionSummary)
+      val confirmation = in.readLine("Do you want to continue? [y/N] ").toLowerCase.strip()
+      if (confirmation == "y" || confirmation == "yes") {
+        for (file <- files) {
+          Files.deleteIfExists(file)
+        }
+        out.println("Success.")
+        Validation.Success(())
+      } else {
+        out.println("Aborting.")
+        Validation.Success(())
+      }
     }
   }
 

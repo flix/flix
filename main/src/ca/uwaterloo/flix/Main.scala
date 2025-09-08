@@ -208,6 +208,11 @@ object Main {
           }
 
         case Command.Clean =>
+          implicit val console: java.io.Console = System.console()
+          if (console == null) {
+            out.println("No system console found. Aborting.")
+            System.exit(1)
+          }
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken))(_.clean(formatter)).toResult match {
             case Result.Ok(_) =>
               System.exit(0)
