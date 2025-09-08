@@ -2497,7 +2497,6 @@ mod TestVector {
         assertEq(expected = Vector#{1, 2}, v)
 
     @Test
-    @Test
     def drop09(): Unit \ Assert =
         let v = Vector.drop(1, Vector#{1, 2});
         assertEq(expected = Vector#{2}, v)
