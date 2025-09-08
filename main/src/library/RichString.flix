@@ -61,29 +61,6 @@ mod RichString {
         case Span({text = String, fgColor = Color, bgColor = Color, styles = Set[Style]})
     }
 
-    mod Span {
-        use RichString.{Color, Style, Span};
-
-        ///
-        /// Returns a span with the given text `s` and foreground color `c` using no styles and default background color.
-        ///
-        pub def withColor(s: String, c: Color): Span =
-            Span({text = s, fgColor = c, bgColor = Color.Default, styles = Set.empty()})
-
-        ///
-        /// Returns a span with the given text `s` and background color `c` using no styles and default foreground color.
-        ///
-        pub def withBgColor(s: String, c: Color): Span =
-            Span({text = s, fgColor = Color.Default, bgColor = c, styles = Set.empty()})
-
-        ///
-        /// Returns a span with the given text `s`, foreground color, and background color using no styles.
-        ///
-        pub def withColors(s: String, fgColor: Color, bgColor: Color): Span =
-            Span({text = s, fgColor = fgColor, bgColor = bgColor, styles = Set.empty()})
-
-    }
-
     ///
     /// A trait for types that can be formatted as a `RichString`.
     ///
