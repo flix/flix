@@ -601,14 +601,14 @@ object TypeReconstruction {
     case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc) =>
       val es = exps.map(visitExp)
       val s = visitHeadPredicate(select)
-      val eff = Type.Pure
+      val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
 
-    case KindedAst.Expr.FixpointSolve(exp, mode, loc) =>
-      val e = visitExp(exp)
-      val tpe = e.tpe
-      val eff = e.eff
-      TypedAst.Expr.FixpointSolve(e, tpe, eff, mode, loc)
+    case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
+      val es = exps.map(visitExp)
+      val tpe = subst(tvar)
+      val eff = Type.mkUnion(es.map(_.eff), loc)
+      TypedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
     case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
       val e = visitExp(exp)
@@ -629,7 +629,7 @@ object TypeReconstruction {
       // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
       // See Weeder for more details.
       val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolve(mergeExp, e1.tpe, eff, SolveMode.Default, loc)
+      val solveExp = TypedAst.Expr.FixpointSolveWithProject(mergeExp :: Nil, None, SolveMode.Default, e1.tpe, eff, loc)
       TypedAst.Expr.FixpointProject(pred, arity, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, evar) =>
@@ -697,10 +697,10 @@ object TypeReconstruction {
     * Reconstructs types in the given ext-match rule.
     */
   private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit subst: SubstitutionTree): TypedAst.ExtMatchRule = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPat)
+    case KindedAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPat(pat)
       val e = visitExp(exp)
-      TypedAst.ExtMatchRule(label, ps, e, loc)
+      TypedAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -731,17 +731,38 @@ object TypeReconstruction {
   }
 
   /**
-    * Reconstructs types in the given ext-pattern.
+    * Reconstructs types in the given ext pattern.
     */
   private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
-    case KindedAst.ExtPattern.Wild(tvar, loc) => TypedAst.ExtPattern.Wild(subst(tvar), loc)
+    case KindedAst.ExtPattern.Default(tvar, loc) =>
+      TypedAst.ExtPattern.Default(loc)
 
-    case KindedAst.ExtPattern.Var(sym, tvar, loc) =>
+    case KindedAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(visitExtTagPat)
+      TypedAst.ExtPattern.Tag(label, ps, loc)
+
+    case KindedAst.ExtPattern.Error(tvar, loc) =>
+      TypedAst.ExtPattern.Error(loc)
+  }
+
+
+  /**
+    * Reconstructs types in the given ext tag pattern.
+    */
+  private def visitExtTagPat(pat0: KindedAst.ExtTagPattern)(implicit subst: SubstitutionTree): TypedAst.ExtTagPattern = pat0 match {
+    case KindedAst.ExtTagPattern.Wild(tvar, loc) =>
+      TypedAst.ExtTagPattern.Wild(subst(tvar), loc)
+
+    case KindedAst.ExtTagPattern.Var(sym, tvar, loc) =>
       val tpe = subst(tvar)
       val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.ExtPattern.Var(bnd, tpe, loc)
+      TypedAst.ExtTagPattern.Var(bnd, tpe, loc)
 
-    case KindedAst.ExtPattern.Error(tvar, loc) => TypedAst.ExtPattern.Error(subst(tvar), loc)
+    case KindedAst.ExtTagPattern.Unit(loc) =>
+      TypedAst.ExtTagPattern.Unit(Type.Unit, loc)
+
+    case KindedAst.ExtTagPattern.Error(tvar, loc) =>
+      TypedAst.ExtTagPattern.Error(subst(tvar), loc)
   }
 
   /**

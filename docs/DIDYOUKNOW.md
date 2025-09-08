@@ -5,7 +5,7 @@
 Did you know that:
 
 - Flix offers a unique combination of features, including: algebraic data types
-  and pattern matching, extensible records, type classes, higher-kinded types,
+  and pattern matching, extensible records, traits (type classes), higher-kinded types,
   polymorphic effects, and first-class Datalog constraints.
 
 - Flix has no global state. Any state must be passed around explicitly.
@@ -34,7 +34,7 @@ Did you know that:
 - Flix supports extensible records with row polymorphism.
 
 - Flix supports string interpolation by default, e.g. "Hello ${name}". String
-  interpolation uses the `ToString` type class.
+  interpolation uses the `ToString` trait.
 
 - Flix supports the "pipeline" operator `|>` and the Flix standard library is
   designed around it.
@@ -159,7 +159,7 @@ Did you know that:
 - the Flix VSCode extension supports auto-complete, jump to definition, hover to
   show the type and effect of an expression, find all usages, and more.
 
-- the Flix VSCode extension has built-in snippets for type class instances. Try
+- the Flix VSCode extension has built-in snippets for trait instances. Try
   `instance Eq [auto complete]`.
 
 - the Flix VSCode extension supports semantic highlighting.

@@ -951,6 +951,74 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("UnreachableExtPattern.01") {
+    val input =
+      """
+        |def f(): Bool = ematch A() {
+        |    case _   => true
+        |    case A() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
+  }
+
+  test("UnreachableExtPattern.02") {
+    val input =
+      """
+        |def f(): Bool = ematch A() {
+        |    case B() => false
+        |    case _   => true
+        |    case A() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
+  }
+
+  test("UnreachableExtPattern.03") {
+    val input =
+      """
+        |def f(): Bool = ematch B() {
+        |    case A() => false
+        |    case A() => false
+        |    case _   => true
+        |    case B() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
+    expectError[RedundancyError.DuplicateExtPattern](result)
+  }
+
+  test("UnreachableExtPattern.04") {
+    val input =
+      """
+        |def f(): Bool = ematch B() {
+        |    case A() => false
+        |    case _   => true
+        |    case _   => false
+        |    case B() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
+  }
+
+  test("UnreachableExtPattern.05") {
+    val input =
+      """
+        |def f(): Bool = ematch C() {
+        |    case A() => false
+        |    case _   => true
+        |    case _   => false
+        |    case B() => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnreachableExtMatchCase](result)
+  }
+
   test("UnusedStructSym.01") {
     val input =
       s"""
@@ -2261,57 +2329,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UnusedVarSym](result)
-  }
-
-  test("ForEachYieldUnusedVar.01") {
-    val input =
-      """
-        |def f(): List[Int32] =
-        |    foreach (
-        |        x <- 1 :: 2 :: 3 :: Nil
-        |    ) yield 10
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[RedundancyError.UnusedVarSym](result)
-  }
-
-  test("ForEachYieldUnusedVar.02") {
-    val input =
-      """
-        |def f(): List[Int32] =
-        |    foreach (
-        |        x <- 1 :: 2 :: 3 :: Nil;
-        |        y = 10
-        |    ) yield x
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[RedundancyError.UnusedVarSym](result)
-  }
-
-  test("ForEachYieldShadowedVariable.01") {
-    val input =
-      """
-        |def f(): List[Int32] =
-        |    foreach (
-        |        x <- 1 :: 2 :: 3 :: Nil;
-        |        (x, y) = (10, 20)
-        |    ) yield x * y
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[RedundancyError.ShadowedName](result)
-  }
-
-  test("ForEachYieldShadowedVariable.02") {
-    val input =
-      """
-        |def f(): List[Int32] =
-        |    foreach (
-        |        x <- 1 :: 2 :: 3 :: Nil;
-        |        (x, y) = (10, 20)
-        |    ) yield x * y
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[RedundancyError.ShadowingName](result)
   }
 
   test("ShadowedVariable.LocalDef.01") {

@@ -1022,16 +1022,22 @@ object Simplifier {
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
-      case (MonoAst.ExtMatchRule(label, pats, exp1, loc1), branch2) =>
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Default(_), exp1, _), _) =>
+        // Note: If we have a default case, there is only 1 single default case, and it is the last rule.
+        // This invariant is ensured by the unreachable case check in Redunancy.
+        visitExp(exp1)
+
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _), exp1, loc1), branch2) =>
         val e1 = visitExp(exp1)
         val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
         // Let-bind each variable in the rule / pattern
         val branch1 = pats.zipWithIndex.foldRight(e1) {
-          case ((MonoAst.ExtPattern.Wild(_, _), _), acc1) => acc1
-          case ((MonoAst.ExtPattern.Var(sym, _, _, _), idx), acc1) =>
+          case ((MonoAst.ExtTagPattern.Wild(_, _), _), acc1) => acc1
+          case ((MonoAst.ExtTagPattern.Var(sym, _, _, _), idx), acc1) =>
             val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
             SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
+          case ((MonoAst.ExtTagPattern.Unit(_, _), _), acc1) => acc1
         }
         SimplifiedAst.Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
     }

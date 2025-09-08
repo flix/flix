@@ -589,8 +589,8 @@ object Visitor {
         exps.foreach(visitExpr)
         visitPredicate(select)
 
-      case Expr.FixpointSolve(exp, _, _, _, _) =>
-        visitExpr(exp)
+      case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+        exps.foreach(visitExpr)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>
         visitExpr(exp)
@@ -753,14 +753,14 @@ object Visitor {
   }
 
   private def visitExtMatchRule(rule: ExtMatchRule)(implicit a: Acceptor, c: Consumer): Unit = rule match {
-    case ExtMatchRule(_, pats, exp, loc) =>
+    case ExtMatchRule(pat, exp, loc) =>
       if (!a.accept(loc)) {
         return
       }
 
       c.consumeExtMatchRule(rule)
 
-      pats.foreach(visitExtPattern)
+      visitExtPattern(pat)
       visitExpr(exp)
   }
 
@@ -894,9 +894,13 @@ object Visitor {
     c.consumeExtPattern(pat)
 
     pat match {
-      case ExtPattern.Wild(_, _) => ()
-      case ExtPattern.Var(bnd, _, _) => visitBinder(bnd)
-      case ExtPattern.Error(_, _) => ()
+      case ExtPattern.Default(_) => ()
+      case ExtPattern.Tag(_, pats, _) =>
+        pats.foreach {
+          case ExtTagPattern.Var(bnd, _, _) => visitBinder(bnd)
+          case _ => ()
+        }
+      case ExtPattern.Error(_) => ()
     }
   }
 

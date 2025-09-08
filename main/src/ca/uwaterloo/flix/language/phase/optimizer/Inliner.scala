@@ -249,7 +249,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0)
-        if (isSimple(e1) && exp1.eff == Type.Pure) {
+        if (isSimple(e1) && e1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -259,7 +259,7 @@ object Inliner {
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
           val freshVarSym = Symbol.freshVarSym(sym)
-          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur, exp1.eff))
           val e2 = visitExp(exp2, ctx)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
@@ -422,14 +422,24 @@ object Inliner {
   }
 
   private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
-    case MonoAst.ExtPattern.Wild(tpe, loc) =>
-      (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+    case MonoAst.ExtPattern.Default(loc) =>
+      (MonoAst.ExtPattern.Default(loc), Map.empty)
 
-    case MonoAst.ExtPattern.Var(sym, tpe, occur, loc) => occur match {
+    case MonoAst.ExtPattern.Tag(label, pats, loc) =>
+      val (ps, varSubsts) = pats.map(visitExtTagPattern).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (MonoAst.ExtPattern.Tag(label, ps, loc), varSubst)
+  }
+
+  private def visitExtTagPattern(pat0: MonoAst.ExtTagPattern)(implicit flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtTagPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
+
+    case MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc) => occur match {
       case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
 
       case Occur.Dead =>
-        (MonoAst.ExtPattern.Wild(tpe, loc), Map.empty)
+        (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
 
       case Occur.Once
            | Occur.OnceInLambda
@@ -437,8 +447,11 @@ object Inliner {
            | Occur.ManyBranch
            | Occur.Many =>
         val freshVarSym = Symbol.freshVarSym(sym)
-        (MonoAst.ExtPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+        (MonoAst.ExtTagPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
     }
+
+    case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Unit(tpe, loc), Map.empty)
   }
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
@@ -459,12 +472,11 @@ object Inliner {
   }
 
   private def visitExtMatchRule(rule: MonoAst.ExtMatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule match {
-    case MonoAst.ExtMatchRule(label, pats, exp, loc) =>
-      val (ps, varSubsts) = pats.map(visitExtPattern).unzip
-      val varSubst1 = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+    case MonoAst.ExtMatchRule(pat, exp, loc) =>
+      val (p, varSubst1) = visitExtPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
       val e = visitExp(exp, ctx)
-      MonoAst.ExtMatchRule(label, ps, e, loc)
+      MonoAst.ExtMatchRule(p, e, loc)
   }
 
   private def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
@@ -562,7 +574,7 @@ object Inliner {
     */
   private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
-      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
+      case Some(BoundKind.LetBound(exp, occur, eff)) if shouldInlineVar(sym, exp, occur, eff) =>
         Some(exp)
 
       case Some(_) =>
@@ -577,8 +589,10 @@ object Inliner {
     * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
     *
     * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    *
+    * `eff` is the original effect of `exp`. See [[BoundKind.LetBound]] for more information.
     */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, eff: Type): Boolean = (occur, eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
@@ -690,8 +704,28 @@ object Inliner {
     /** Variable is bound by either a parameter or a pattern. Its value is unknown. */
     object ParameterOrPattern extends BoundKind
 
-    /** The right-hand side of a let-bound variable along with its occurrence information. */
-    case class LetBound(expr: MonoAst.Expr, occur: Occur) extends BoundKind
+    /**
+      * The right-hand side of a let-bound variable along with its occurrence information.
+      *
+      * Due to sub-effecting `eff` is required to store the effect of the non-visited exp.
+      * When sub-effecting is enabled, the purity of an expression may change when inlining
+      * a function. Consider the following example:
+      * {{{
+      *   def f(): Int32 \ IO = { ... non-simple pure body ... }
+      *   def g(): Unit \ IO = {
+      *     let res: Int32 = f();
+      *     println(res)
+      *   }
+      * }}}
+      * The definition of `f` is pure but upcast to `IO` do to sub-effecting. Inlining
+      * `f` makes the right-hand side of `res` pure, but is no longer simple. However,
+      * when the inliner consider `res` in the last line, the inliner will think that
+      * `res` was inlined because it is used once and is pure.
+      * Storing the original effect in `eff` allows the inliner to correctly consider its
+      * previous decisions, since the purity / effect did not change during inlining.
+      * The subsequent round of inlining may then choose to inline the let-bound variable.
+      */
+    case class LetBound(expr: MonoAst.Expr, occur: Occur, eff: Type) extends BoundKind
 
   }
 

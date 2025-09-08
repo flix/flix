@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, ExtPattern, Pattern}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object LoweredAstPrinter {
@@ -120,8 +120,8 @@ object LoweredAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printExtMatchRule(rule: LoweredAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
-    case LoweredAst.ExtMatchRule(label, pats, exp, _) =>
-      (DocAst.Pattern.ExtTag(label, pats.map(printExtPattern)), print(exp))
+    case LoweredAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
   }
 
   /**
@@ -150,8 +150,17 @@ object LoweredAstPrinter {
     * Returns the [[DocAst.Expr]] representation of `pattern`.
     */
   private def printExtPattern(pattern: LoweredAst.ExtPattern): DocAst.Expr = pattern match {
-    case ExtPattern.Wild(_, _) => DocAst.Expr.Wild
-    case ExtPattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
+    case ExtPattern.Default(_) => DocAst.Pattern.Default
+    case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtTagPattern(pattern: LoweredAst.ExtTagPattern): DocAst.Expr = pattern match {
+    case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
   }
 
   /**

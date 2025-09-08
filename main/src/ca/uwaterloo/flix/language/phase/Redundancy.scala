@@ -584,9 +584,9 @@ object Redundancy {
 
       // Visit each match rule.
       val usedRules = rules.map {
-        case ExtMatchRule(_, pats, exp1, _) =>
+        case ExtMatchRule(pat, exp1, _) =>
           // Compute the free variables in the pattern.
-          val fvs = pats.flatMap(freeVars).toSet
+          val fvs = freeVars(pat)
 
           // Extend the environment with the free variables.
           val extendedEnv = env0 ++ fvs
@@ -603,14 +603,34 @@ object Redundancy {
           // Combine everything together.
           (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
       }
+      val tagPatterns = rules.collect {
+        case ExtMatchRule(pat: ExtPattern.Tag, _, _) => pat
+      }
+
+      // We drop match rules until we find the first default rule (if it exists).
+      val unreachableCases = rules.dropWhile {
+        case ExtMatchRule(_: ExtPattern.Default, _, _) => false
+        case _ => true
+      } match {
+        case Nil =>
+          // No default case, so nothing unreachable
+          List.empty
+        case _ :: Nil =>
+          // One default case, and it is the last one, so nothing is unreachable
+          List.empty
+
+        case defaultCase :: unreachableRules =>
+          // One default case followed by 0 or more unreachable rules
+          unreachableRules.map(rule => RedundancyError.UnreachableExtMatchCase(defaultCase.loc, rule.loc))
+      }
 
       val duplicatePatterns: List[RedundancyError] =
-        SeqOps.getDuplicates(rules, (rule: ExtMatchRule) => rule.label).map {
-          case (rule1, rule2) =>
-            RedundancyError.DuplicateExtPattern(rule1.label, rule1.label.loc, rule2.label.loc)
+        SeqOps.getDuplicates(tagPatterns, (pat: ExtPattern.Tag) => pat.label).map {
+          case (pat1, pat2) =>
+            RedundancyError.DuplicateExtPattern(pat1.label, pat1.label.loc, pat2.label.loc)
         }
 
-      Used(Set.empty, duplicatePatterns.toSet) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
+      Used(Set.empty, duplicatePatterns.toSet ++ unreachableCases) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -871,8 +891,8 @@ object Redundancy {
       val us2 = visitExps(terms, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      visitExps(exps, env0, rc)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
@@ -1123,10 +1143,20 @@ object Redundancy {
   /**
     * Returns the free variables in the ext pattern `pat0`.
     */
-  private def freeVars(pat0: ExtPattern): Option[Symbol.VarSym] = pat0 match {
-    case ExtPattern.Wild(_, _) => None
-    case ExtPattern.Var(Binder(sym, _), _, _) => Some(sym)
-    case ExtPattern.Error(_, _) => None
+  private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtPattern.Default(_) => Set.empty
+    case ExtPattern.Tag(_, pats, _) => pats.toSet.flatMap((v: ExtTagPattern) => freeVars(v))
+    case ExtPattern.Error(_) => Set.empty
+  }
+
+  /**
+    * Returns the free variables in the ext pattern `pat0`.
+    */
+  private def freeVars(pat0: ExtTagPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtTagPattern.Wild(_, _) => Set.empty
+    case ExtTagPattern.Var(Binder(sym, _), _, _) => Set(sym)
+    case ExtTagPattern.Unit(_, _) => Set.empty
+    case ExtTagPattern.Error(_, _) => Set.empty
   }
 
   /**

@@ -832,14 +832,32 @@ object Lowering {
       val itpe = Types.mkProvenanceOf(extVarType, loc)
       LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, tpe, eff, loc)
 
-    case TypedAst.Expr.FixpointSolve(exp, _, eff, mode, loc) =>
+    case TypedAst.Expr.FixpointSolveWithProject(exps0, optPreds, mode, _, eff, loc) =>
+      // Rewrites
+      //     solve e₁, e₂, e₃ project P₁, P₂, P₃
+      // to
+      //     let tmp% = solve e₁ <+> e₂ <+> e₃;
+      //     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
+      //
       val defn = mode match {
         case SolveMode.Default => Defs.lookup(Defs.Solve)
         case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
       }
-      val argExps = visitExp(exp) :: Nil
-      val resultType = Types.Datalog
-      LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, resultType, eff, loc)
+      val exps = exps0.map(visitExp)
+      val mergedExp = mergeExps(exps, loc)
+      val argExps = mergedExp :: Nil
+      val solvedExp = LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.SolveType, Types.Datalog, eff, loc)
+      val tmpVarSym = Symbol.freshVarSym("tmp%", BoundBy.Let, loc)
+      val letBodyExp = optPreds match {
+        case Some(preds) =>
+          mergeExps(preds.map(pred => {
+            val varExp = LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+            projectSym(mkPredSym(pred), varExp, loc)
+          }), loc)
+        case None => LoweredAst.Expr.Var(tmpVarSym, Types.Datalog, loc)
+      }
+      LoweredAst.Expr.Let(tmpVarSym, solvedExp, letBodyExp, Types.Datalog, eff, loc)
+
 
     case TypedAst.Expr.FixpointFilter(pred, exp, _, eff, loc) =>
       val defn = Defs.lookup(Defs.Filter)
@@ -1032,16 +1050,29 @@ object Lowering {
   }
 
   private def visitExtMatchRule(rule0: TypedAst.ExtMatchRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.ExtMatchRule = rule0 match {
-    case TypedAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPat)
+    case TypedAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPat(pat)
       val e = visitExp(exp)
-      LoweredAst.ExtMatchRule(label, ps, e, loc)
+      LoweredAst.ExtMatchRule(p, e, loc)
   }
 
   private def visitExtPat(pat0: TypedAst.ExtPattern): LoweredAst.ExtPattern = pat0 match {
-    case TypedAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
-    case TypedAst.ExtPattern.Var(bnd, tpe, loc) => LoweredAst.ExtPattern.Var(bnd.sym, tpe, loc)
-    case TypedAst.ExtPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+    case TypedAst.ExtPattern.Default(loc) =>
+      LoweredAst.ExtPattern.Default(loc)
+
+    case TypedAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(visitExtTagPat)
+      LoweredAst.ExtPattern.Tag(label, ps, loc)
+
+    case TypedAst.ExtPattern.Error(loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
+
+  }
+
+  private def visitExtTagPat(pat0: TypedAst.ExtTagPattern): LoweredAst.ExtTagPattern = pat0 match {
+    case TypedAst.ExtTagPattern.Wild(tpe, loc) => LoweredAst.ExtTagPattern.Wild(tpe, loc)
+    case TypedAst.ExtTagPattern.Var(bnd, tpe, loc) => LoweredAst.ExtTagPattern.Var(bnd.sym, tpe, loc)
+    case TypedAst.ExtTagPattern.Unit(tpe, loc) => LoweredAst.ExtTagPattern.Unit(tpe, loc)
+    case TypedAst.ExtTagPattern.Error(_, loc) => throw InternalCompilerException("unexpected error ext pattern", loc)
   }
 
   /**
@@ -1732,6 +1763,18 @@ object Lowering {
     }
 
   /**
+    * Returns a new `Datalog` from `datalogExp` containing only facts from the predicate given by the `PredSym` `predSymExp`
+    * using `Defs.Filter`.
+    */
+  private def projectSym(predSymExp: LoweredAst.Expr, datalogExp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root): LoweredAst.Expr = {
+    val defn = Defs.lookup(Defs.Filter)
+    val argExps = predSymExp :: datalogExp :: Nil
+    val resultType = Types.Datalog
+    val itpe = Types.FilterType
+    LoweredAst.Expr.ApplyDef(defn.sym, argExps, List.empty, itpe, resultType, datalogExp.eff, loc)
+  }
+
+  /**
     * Returns `t` from the Flix type `Vector[t]`.
     */
   private def unwrapVectorType(tpe: Type, loc: SourceLocation): Type = tpe match {
@@ -1771,7 +1814,7 @@ object Lowering {
     */
   private def termTypesOfRelation(rel: Type, loc: SourceLocation): List[Type] = {
     def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
-      case Type.Apply(Type.Cst(TypeConstructor.Relation(_), _), t, _) => t :: Nil
+      case Type.Cst(TypeConstructor.Relation(_), _) => Nil
       case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
       case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
     }
@@ -2163,10 +2206,10 @@ object Lowering {
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = substExp(exp, subst)
       val rs = rules.map {
-        case LoweredAst.ExtMatchRule(label, pats, exp1, loc1) =>
-          val ps = pats.map(substExtPattern(_, subst))
+        case LoweredAst.ExtMatchRule(pat, exp1, loc1) =>
+          val p = substExtPattern(pat, subst)
           val e1 = substExp(exp1, subst)
-          LoweredAst.ExtMatchRule(label, ps, e1, loc1)
+          LoweredAst.ExtMatchRule(p, e1, loc1)
       }
       LoweredAst.Expr.ExtMatch(e, rs, tpe, eff, loc)
 
@@ -2275,10 +2318,27 @@ object Lowering {
     * Applies the given substitution `subst` to the given ext pattern `pattern0`.
     */
   private def substExtPattern(pattern0: LoweredAst.ExtPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtPattern = pattern0 match {
-    case LoweredAst.ExtPattern.Wild(tpe, loc) => LoweredAst.ExtPattern.Wild(tpe, loc)
-    case LoweredAst.ExtPattern.Var(sym, tpe, loc) =>
+    case LoweredAst.ExtPattern.Default(loc) =>
+      LoweredAst.ExtPattern.Default(loc)
+
+    case LoweredAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(substVarOrWild(_, subst))
+      LoweredAst.ExtPattern.Tag(label, ps, loc)
+  }
+
+  /**
+    * Applies the given substitution `subst` to the given ext tag pattern `pattern0`.
+    */
+  private def substVarOrWild(pattern0: LoweredAst.ExtTagPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.ExtTagPattern = pattern0 match {
+    case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
+      LoweredAst.ExtTagPattern.Wild(tpe, loc)
+
+    case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
-      LoweredAst.ExtPattern.Var(s, tpe, loc)
+      LoweredAst.ExtTagPattern.Var(s, tpe, loc)
+
+   case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
+      LoweredAst.ExtTagPattern.Unit(tpe, loc)
   }
 
 }

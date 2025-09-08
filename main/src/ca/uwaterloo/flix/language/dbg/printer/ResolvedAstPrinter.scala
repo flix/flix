@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, Pattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -126,7 +126,7 @@ object ResolvedAstPrinter {
     case Expr.FixpointLambda(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointQueryWithProvenance(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointSolve(_, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolveWithProject(_, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointFilter(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInjectInto(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointProject(_, _, _, _, _) => DocAst.Expr.Unknown
@@ -137,8 +137,8 @@ object ResolvedAstPrinter {
     * Returns the [[DocAst]] representation of `rule`.
     */
   private def printExtMatchRule(rule: ResolvedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
-    case ResolvedAst.ExtMatchRule(label, pats, exp, _) =>
-      (DocAst.Pattern.ExtTag(label, pats.map(printExtPattern)), print(exp))
+    case ResolvedAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
   }
 
   /** Returns the [[DocAst.Expr]] representation of `pat`. */
@@ -153,12 +153,22 @@ object ResolvedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    * Returns the [[DocAst.Expr]] representation of `pat`.
     */
-  private def printExtPattern(pattern: ResolvedAst.ExtPattern): DocAst.Expr = pattern match {
-    case ExtPattern.Wild(_) => DocAst.Expr.Wild
-    case ExtPattern.Var(sym, _) => printVarSym(sym)
+  private def printExtPattern(pat: ResolvedAst.ExtPattern): DocAst.Expr = pat match {
+    case ExtPattern.Default(_) => DocAst.Expr.Wild
+    case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
     case ExtPattern.Error(_) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pat`.
+    */
+  private def printExtTagPattern(pat: ResolvedAst.ExtTagPattern): DocAst.Expr = pat match {
+    case ExtTagPattern.Wild(_) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_) => DocAst.Expr.Unit
+    case ExtTagPattern.Error(_) => DocAst.Expr.Error
   }
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */

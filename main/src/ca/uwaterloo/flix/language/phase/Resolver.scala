@@ -1483,10 +1483,10 @@ object Resolver {
           ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
       }
 
-    case NamedAst.Expr.FixpointSolve(exp, mode, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointSolve(e, mode, loc)
+    case NamedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      mapN(esVal) {
+        es => ResolvedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
       }
 
     case NamedAst.Expr.FixpointFilter(pred, exp, loc) =>
@@ -1972,16 +1972,35 @@ object Resolver {
   /**
     * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
     */
-  private def resolveExtPattern(pat0: NamedAst.ExtPattern): ResolvedAst.ExtPattern = pat0 match {
-    case NamedAst.ExtPattern.Wild(loc) =>
-      ResolvedAst.ExtPattern.Wild(loc)
+  private def resolveExtPattern(pat0: NamedAst.ExtPattern): (ResolvedAst.ExtPattern, List[LocalScope]) = pat0 match {
+    case NamedAst.ExtPattern.Default(loc) =>
+      (ResolvedAst.ExtPattern.Default(loc), List.empty)
 
-    case NamedAst.ExtPattern.Var(sym, loc) =>
-      ResolvedAst.ExtPattern.Var(sym, loc)
+    case NamedAst.ExtPattern.Tag(label, pats, loc) =>
+      val (ps, scps) = pats.map(resolveExtTagPattern).unzip
+      (ResolvedAst.ExtPattern.Tag(label, ps, loc), scps.flatten)
 
     case NamedAst.ExtPattern.Error(loc) =>
-      ResolvedAst.ExtPattern.Error(loc)
+      (ResolvedAst.ExtPattern.Error(loc), List.empty)
   }
+
+  /**
+    * Performs name resolution on the given pattern `pat0` in the namespace `ns0`.
+    */
+  private def resolveExtTagPattern(pat0: NamedAst.ExtTagPattern): (ResolvedAst.ExtTagPattern, List[LocalScope]) = pat0 match {
+    case NamedAst.ExtTagPattern.Wild(loc) =>
+      (ResolvedAst.ExtTagPattern.Wild(loc), List.empty)
+
+    case NamedAst.ExtTagPattern.Var(sym, loc) =>
+      (ResolvedAst.ExtTagPattern.Var(sym, loc), List(mkVarScp(sym)))
+
+    case NamedAst.ExtTagPattern.Unit(loc) =>
+      (ResolvedAst.ExtTagPattern.Unit(loc), List.empty)
+
+    case NamedAst.ExtTagPattern.Error(loc) =>
+      (ResolvedAst.ExtTagPattern.Error(loc), List.empty)
+  }
+
 
   /**
     * Performs name resolution on the given head predicate `h0` in the given namespace `ns0`.
@@ -2214,15 +2233,12 @@ object Resolver {
   }
 
   private def resolveExtMatchRule(rule0: NamedAst.ExtMatchRule, scp0: LocalScope)(implicit scope: Scope, ns0: Name.NName, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.ExtMatchRule, ResolutionError] = rule0 match {
-    case NamedAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(resolveExtPattern)
-      val scp = ps.foldLeft(scp0) {
-        case (acc, ResolvedAst.ExtPattern.Var(sym, _)) => acc ++ mkVarScp(sym)
-        case (acc, _) => acc
-      }
+    case NamedAst.ExtMatchRule(pat, exp, loc) =>
+      val (p, scps) = resolveExtPattern(pat)
+      val scp = scps.foldLeft(scp0)(_ ++ _)
       val eVal = resolveExp(exp, scp)
       mapN(eVal) {
-        case e => ResolvedAst.ExtMatchRule(label, ps, e, loc)
+        case e => ResolvedAst.ExtMatchRule(p, e, loc)
       }
   }
 

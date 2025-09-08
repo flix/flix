@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern}
+import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
@@ -477,16 +477,50 @@ object ConstraintGen {
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case Expr.ExtMatch(exp, rules, loc) =>
-        val (tpe, eff) = visitExp(exp)
-        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
-        val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(loc)) {
-          case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
-        }
-        val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-        c.unifyType(tpe, expectedSchemaType, exp.loc)
-        c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.head // Note: We are guaranteed to have one rule.
-        val resEff = Type.mkUnion(eff :: effs, loc)
+        // Note that x_i_m mean last variable term `x` of tag `i`. Think of `m` as shorthand for `max` or `last`.
+        // Thus, it may be the case that `|x_i_1, ..., x_i_m| != |x_j_1, ..., x_j_m|` but equality may occur.
+        // This also means `t_i_k != t_j_k` can happen and that equality can also occur.
+        //
+        // Gamma |- x_i_j : t_i_j
+        // Gamma, x_i_1 : t_i_1, ..., x_i_m : t_i_m |- exp_i : t // This is the result type
+        // Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) |#
+        // ef = Union(effs(exp_0), effs(exp_1), ..., effs(exp_n))
+        // -----------------------------------------------
+        // Gamma |- ematch exp_0 {
+        //              case Tag_1(x_1_1, ..., x_1_m) => exp_1
+        //              ...
+        //              case Tag_n(x_n_1, ..., x_n_m) => exp_n
+        //           } : t \ ef
+        //
+        // Lastly, if `case _ => exp_default` occurs (or an error pattern), then
+        //   Gamma |- exp_default : t                // This is just a special case of the second rule from the top.
+        // and the type of exp_0 is updated to have a fresh row variable, i.e., for fresh variable `r`:
+        //   Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) | r |#
+        //
+        val (scrutineeType, scrutineeEff) = visitExp(exp)
+        val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
+        val tagPatTypes = patTypes.collect { case Left(tag) => tag }
+        val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
+        val defaultSchemaRow = // Note: An empty list of patterns cannot occur and errors are treated as default cases.
+          if (defaultPatternTvars.isEmpty) // Implies that Tag pattern is present
+            Type.mkSchemaRowEmpty(loc.asSynthetic)
+          else
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
+        val expectedRowType =
+          if (tagPatTypes.isEmpty) // Implies that error or default case is present
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
+          else
+            tagPatTypes
+              .foldRight(defaultSchemaRow) {
+                case ((pred, tpes), acc) =>
+                  val relation = Type.mkRelation(tpes, pred.loc.asSynthetic)
+                  Type.mkSchemaRowExtend(pred, relation, acc, pred.loc.asSynthetic)
+              }
+        val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
+        c.unifyAllTypes(scrutineeType :: expectedExtensibleType :: defaultPatternTvars, loc)
+        c.unifyAllTypes(ruleBodyTypes, loc)
+        val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
+        val resEff = Type.mkUnion(scrutineeEff :: ruleBodyEffs, loc)
         (resTpe, resEff)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
@@ -1004,7 +1038,7 @@ object ConstraintGen {
       case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
       case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
       case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
-      case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
+      case e: Expr.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
       case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
       case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
       case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
@@ -1066,18 +1100,58 @@ object ConstraintGen {
   }
 
   /**
-    * Generates constraints for the patterns inside the record label pattern.
+    * Generates constraints for the given extensible match rule.
+    *
+    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
+    *
+    * See [[visitExtPattern]] for more information on the return type.
+    */
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, scope: Scope, root: KindedAst.Root, flix: Flix): (Either[(Name.Pred, List[Type]), Type.Var], Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(pat, exp, _) =>
+      val patTpe = visitExtPattern(pat)
+      val (tpe, eff) = visitExp(exp)
+      (patTpe, tpe, eff)
+  }
+
+  /**
+    * Generates constraints for the patterns inside the ext pattern.
+    *
+    * Returns either the tag name along with the types of its term patterns or the type variable of the pattern.
+    *
+    * The [[Either]] type is required since the caller must eventually separate non-tag patterns from tag patterns
+    * to build schema rows.
+    */
+  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: Scope, flix: Flix): Either[(Name.Pred, List[Type]), Type.Var] = pat0 match {
+    case ExtPattern.Default(tvar, _) =>
+      Right(tvar)
+
+    case ExtPattern.Tag(label, pats, loc) =>
+      val name = Name.Pred(label.name, label.loc)
+      val ps = pats.map(visitExtTagPattern)
+      Left((name, ps))
+
+    case ExtPattern.Error(tvar, _) =>
+      Right(tvar)
+  }
+
+  /**
+    * Generates constraints for the patterns inside the ext tag pattern.
     *
     * Returns the type of the pattern.
     */
-  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
-    case ExtPattern.Wild(tvar, _) => tvar
+  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext): Type = pat0 match {
+    case ExtTagPattern.Wild(tvar, _) =>
+      tvar
 
-    case ExtPattern.Var(sym, tvar, loc) =>
+    case ExtTagPattern.Var(sym, tvar, loc) =>
       c.unifyType(sym.tvar, tvar, loc)
       tvar
 
-    case ExtPattern.Error(tvar, _) => tvar
+    case ExtTagPattern.Unit(_) =>
+      Type.Unit
+
+    case ExtTagPattern.Error(tvar, _) =>
+      tvar
   }
 
   /**
@@ -1109,19 +1183,6 @@ object ConstraintGen {
       }
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
-  }
-
-  /**
-    * Generates constraints for the given extensible match rule.
-    *
-    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
-    */
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, _) =>
-      val name = Name.Pred(label.name, label.loc)
-      val patTypes = pats.map(visitExtPattern)
-      val (tpe, eff) = visitExp(exp)
-      ((name, patTypes), tpe, eff)
   }
 
   /**

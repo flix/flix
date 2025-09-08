@@ -421,11 +421,11 @@ object Stratifier {
       val ts = terms.map(visitExp)
       Expr.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
 
-    case Expr.FixpointSolve(exp, tpe, eff, mode, loc) =>
+    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
-      val e = visitExp(exp)
-      Expr.FixpointSolve(e, tpe, eff, mode, loc)
+      val es = exps.map(visitExp)
+      Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -464,9 +464,9 @@ object Stratifier {
   }
 
   private def visitExtMatchRule(rule: ExtMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ExtMatchRule = rule match {
-    case ExtMatchRule(label, pats, exp, loc) =>
+    case ExtMatchRule(pat, exp, loc) =>
       val e1 = visitExp(exp)
-      ExtMatchRule(label, pats, e1, loc)
+      ExtMatchRule(pat, e1, loc)
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {

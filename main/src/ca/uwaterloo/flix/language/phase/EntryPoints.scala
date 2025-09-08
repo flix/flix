@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -55,11 +56,19 @@ object EntryPoints {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
+  /**
+    * Symbol of the Assert.runWithIO function
+    */
+  private val RunWithIOSym = new Symbol.DefnSym(None, List("Assert"), "runWithIO", SourceLocation.Unknown)
+
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
+
     val (root2, errs2) = CheckEntryPoints.run(root1)
+    // Wrap tests to handle allowed non-primitive effects
+    val rootWithWrappedTests = WrapTest.run(root2)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
-    val (root3, errs3) = WrapMain.run(root2)
+    val (root3, errs3) = WrapMain.run(rootWithWrappedTests)
     // WrapMain might change main, so FindEntryPoints must be after.
     val root4 = findEntryPoints(root3)
     (root4, errs1 ++ errs2 ++ errs3)
@@ -109,6 +118,10 @@ object EntryPoints {
   /** Returns `true` if `defn` is a test. */
   private def isTest(defn: TypedAst.Def): Boolean =
     defn.spec.ann.isTest
+
+  /** Returns `true` if `defn` has the Assert effect. */
+  private def hasAssert(defn: TypedAst.Def): Boolean =
+    defn.spec.eff.effects.contains(Symbol.Assert)
 
   /** Returns `true` if `defn` is an exported function. */
   private def isExport(defn: TypedAst.Def): Boolean =
@@ -202,7 +215,7 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
-          checkUnitArg(defn) ++ checkPrimitiveEffect(defn)
+          checkUnitArg(defn) ++ checkTestEffects(defn)
       }
       if (errs.isEmpty) {
         defn
@@ -363,6 +376,38 @@ object EntryPoints {
           // Check that it is a set is a subset of the primitive effects.
           // s ⊆ prim <=> s - prim = {}
           val primEffs = CofiniteSet.mkSet(Symbol.PrimitiveEffs)
+          CofiniteSet.difference(s, primEffs).isEmpty
+      }
+    }
+
+    /**
+      * Returns `None` if `defn` has an effect that is a subset of the set of allowed Test effects
+      * (e.g. `IO + Console + Assert`). Returns an error otherwise.
+      */
+    private def checkTestEffects(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
+      val eff = defn.spec.eff
+      isTestEffect(eff) match {
+        case Result.Ok(true) =>
+          None
+        case Result.Ok(false) =>
+          Some(EntryPointError.IllegalEntryPointEffect(eff, eff.loc))
+        case Result.Err(ErrorOrMalformed) =>
+          // Do not report an error, since previous phases should have done already.
+          None
+      }
+    }
+
+    /**
+      * Returns `true` if `eff` is a subset of the allowed test effects.
+      *
+      * Returns `false` for all effects with either type variables or Error.
+      */
+    private def isTestEffect(eff: Type): Result[Boolean, ErrorOrMalformed.type] = {
+      eval(eff).map {
+        case s =>
+          // Check that it is a set is a subset of the allowed test effects.
+          // s ⊆ prim <=> s - prim = {}
+          val primEffs = CofiniteSet.mkSet(Symbol.TestEffs)
           CofiniteSet.difference(s, primEffs).isEmpty
       }
     }
@@ -593,6 +638,78 @@ object EntryPoints {
       val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
       TypedAst.Def(sym, spec, printCall, SourceLocation.Unknown)
+    }
+
+  }
+
+  private object WrapTest {
+
+    /**
+      * WrapTest takes a root and returns a new root where the tests' definitions
+      * have been wrapped in a default handler for any extra non-primitive effects
+      * (eg. Assert)
+      *
+      * From previous phases we know that each test function:
+      *   - Takes Unit as an argument
+      *   - Has a valid signature (without type variables, etc.)
+      *
+      */
+    def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+      val defsWithDefaultAssertHandler = ParOps.parMapValues(root.defs)(
+        defn => if (isTest(defn) && hasAssert(defn)) wrapDefWithAssertHandler(defn, root) else defn
+      )
+      root.copy(defs = defsWithDefaultAssertHandler)
+    }
+
+    /**
+      * wrapDefWithAssertHandler takes a test function and creates a new test function with a
+      * default Assert handler by using Assert.runWithIO.
+      *
+      * Takes
+      * {{{
+      * def f(arg1: tpe1, ...): tpe \ ef = exp
+      * }}}
+      * Returns
+      * {{{
+      * def f(arg1: tpe1, ...): tpe \ IO + Sys + (ef - Assert) = Assert.runWithIO(_ -> exp)
+      * }}}
+      */
+    private def wrapDefWithAssertHandler(currentDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+      // Create synthetic locations
+      val syntheticEffLocation = currentDef.spec.eff.loc.copy(isReal = false)
+      val syntheticBaseTypeLocation = currentDef.spec.declaredScheme.base.loc.copy(isReal = false)
+      val syntheticExpLocation = currentDef.exp.loc.copy(isReal = false)
+      // The new type is the same as the wrapped test with an effect set of
+      // `IO + Sys + (eff - Assert)` where `eff` is the effect set of the previous definition.
+      val eff = Type.mkUnion(Type.IO, Type.Sys, Type.mkDifference(currentDef.spec.eff, Type.Assert, syntheticEffLocation)
+        , syntheticEffLocation)
+      val tpe = Type.mkCurriedArrowWithEffect(currentDef.spec.fparams.map(_.tpe), eff, currentDef.spec.retTpe, syntheticBaseTypeLocation)
+      val spec = currentDef.spec.copy(
+        declaredScheme = currentDef.spec.declaredScheme.copy(base = tpe),
+        eff = eff,
+      )
+      // Get Assert.runWithIO symbol use
+      val runWithIODef = root.defs(RunWithIOSym)
+      val runWithIOSymUse = DefSymUse(runWithIODef.sym, runWithIODef.loc)
+      // Create _ -> exp
+      val innerLambda = TypedAst.Expr.Lambda(TypedAst.FormalParam(
+        TypedAst.Binder(Symbol.freshVarSym("_", FormalParam, syntheticExpLocation), Type.Unit),
+        Modifiers(Nil),
+        Type.Unit,
+        TypeSource.Inferred,
+        syntheticExpLocation
+      ),
+        currentDef.exp,
+        Type.mkArrowWithEffect(Type.Unit, currentDef.spec.eff, currentDef.spec.retTpe, syntheticExpLocation),
+        syntheticExpLocation
+      )
+      // Create the instantiated type of runWithIO
+      val runWithIOArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, currentDef.spec.retTpe, syntheticExpLocation)
+      // Create Assert.runWithIO(_ -> exp)
+      val runWithIOCall = TypedAst.Expr.ApplyDef(runWithIOSymUse, List(innerLambda), List(innerLambda.tpe), runWithIOArrowType, currentDef.spec.retTpe, eff, syntheticExpLocation)
+
+      currentDef.copy(spec = spec, exp = runWithIOCall)
+
     }
 
   }

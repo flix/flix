@@ -748,7 +748,8 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let result = run {
         |        mutual1(10)
         |    } with handler AskTell ;
-        |    Assert.eq(Some(84), result)
+        |    true
+        |
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -787,6 +788,33 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    try { true }
         |def main(): Int32 = 123
         |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingDotInDatalogConstraint.01") {
+    val input =
+      """def main(): Unit =
+        |    let _ = #{
+        |        Edge(1, 2)
+        |    };
+        |    ()
+        |"""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingDotInDatalogConstraint.02") {
+    val input =
+      """def main(): Unit =
+        |    let _ = #{
+        |        Edge(1, 2).
+        |        Path(x, y) :- Edge(x, y)
+        |    };
+        |    ()
+        |"""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
     expectMain(result)

@@ -373,7 +373,6 @@ object Lexer {
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject
-      case _ if isKeyword("inline") => TokenKind.KeywordInline
       case _ if isKeyword("instanceof") => TokenKind.KeywordInstanceOf
       case _ if isKeyword("instance") => TokenKind.KeywordInstance
       case _ if isKeyword("into") => TokenKind.KeywordInto

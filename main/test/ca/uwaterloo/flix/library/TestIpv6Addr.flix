@@ -1,84 +1,58 @@
-/*
- * Copyright 2025 Cade Lueker
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestIpv6Addr {
 
-    use Ipv6Addr.Ipv6Addr
-
-    /////////////////////////////////////////////////////////////////////////////
-    // fromString                                                              //
-    /////////////////////////////////////////////////////////////////////////////
+    use Ipv6Addr.Ipv6Addr;
+    use Assert.{assertEq, assertNone};
 
     @Test
-    def fromString0(): Bool =
-        Ipv6Addr.fromString("192.168.1.1") |> Option.isEmpty
+    def fromString01(): Unit \ Assert =
+        assertNone(Ipv6Addr.fromString("192.168.1.1"))
 
     @Test
-    def fromString1(): Bool =
-        Ipv6Addr.fromString("2345:0425:2CA1:0000:0000:0567:5673:23G5") |> Option.isEmpty
+    def fromString02(): Unit \ Assert =
+        assertNone(Ipv6Addr.fromString("2345:0425:2CA1:0000:0000:0567:5673:23G5"))
 
     @Test
-    def fromString2(): Bool =
-        Ipv6Addr.fromString("2345:0425:2CA1:0000:0000:0567:5673:23B5:1234") |> Option.isEmpty
+    def fromString03(): Unit \ Assert =
+        assertNone(Ipv6Addr.fromString("2345:0425:2CA1:0000:0000:0567:5673:23B5:1234"))
 
     @Test
-    def fromString3(): Bool =
-        Ipv6Addr.fromString("192:168:1") |> Option.isEmpty
+    def fromString04(): Unit \ Assert =
+        assertNone(Ipv6Addr.fromString("192:168:1"))
 
     @Test
-    def fromString4(): Bool =
-        Ipv6Addr.fromString("2345:0425:2CA1:0567:5673:") |> Option.isEmpty
+    def fromString05(): Unit \ Assert =
+        assertNone(Ipv6Addr.fromString("2345:0425:2CA1:0567:5673:"))
 
     @Test
-    def fromString5(): Bool =
+    def fromString06(): Unit \ Assert =
         let s = "2345:0425:2CA1:0000:0000:0567:5673:23B5";
-        "${Ipv6Addr.fromString(s)}" == "Some(${s})"
+        assertEq(expected = "Some(${s})", "${Ipv6Addr.fromString(s)}")
 
     @Test
-    def fromString6(): Bool =
+    def fromString07(): Unit \ Assert =
         let s = "2345:0425:2CA1:0000:0000:0567:5673:23B5";
-        "${Ipv6Addr.fromString(s)}" == "Some(${s})"
+        assertEq(expected = "Some(${s})", "${Ipv6Addr.fromString(s)}")
 
     @Test
-    def fromString7(): Bool =
+    def fromString08(): Unit \ Assert =
         let input = "2345:425:2CA1:0:0:567:5673:23B5";
         let expected = "2345:0425:2CA1:0000:0000:0567:5673:23B5";
-        "${Ipv6Addr.fromString(input)}" == "Some(${expected})"
+        assertEq(expected = "Some(${expected})", "${Ipv6Addr.fromString(input)}")
 
     @Test
-    def fromString8(): Bool =
+    def fromString09(): Unit \ Assert =
         let input = "::1234";
         let expected = "0000:0000:0000:0000:0000:0000:0000:1234";
-        "${Ipv6Addr.fromString(input)}" == "Some(${expected})"
-
+        assertEq(expected = "Some(${expected})", "${Ipv6Addr.fromString(input)}")
 
     @Test
-    def fromString9(): Bool =
+    def fromString10(): Unit \ Assert =
         let input = "FE80::1234";
         let expected = "FE80:0000:0000:0000:0000:0000:0000:1234";
-        "${Ipv6Addr.fromString(input)}" == "Some(${expected})"
-
-    /////////////////////////////////////////////////////////////////////////////
-    // localhost                                                               //
-    /////////////////////////////////////////////////////////////////////////////
+        assertEq(expected = "Some(${expected})", "${Ipv6Addr.fromString(input)}")
 
     @Test
-    def localhost0(): Bool =
-        let expected = "0000:0000:0000:0000:0000:0000:0000:0001";
-        "${Ipv6Addr.localhost()}" == expected
+    def localhost01(): Unit \ Assert =
+        assertEq(expected = "0000:0000:0000:0000:0000:0000:0000:0001", "${Ipv6Addr.localhost()}")
 
 }
-

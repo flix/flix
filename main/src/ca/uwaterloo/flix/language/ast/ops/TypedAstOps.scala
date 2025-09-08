@@ -111,7 +111,7 @@ object TypedAstOps {
     case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
-    case Expr.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.FixpointProject(_, _, exp, _, _, _) => sigSymsOf(exp)
@@ -219,12 +219,8 @@ object TypedAstOps {
 
     case Expr.ExtMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
-        case (acc, ExtMatchRule(_, pats, exp1, _)) =>
-          acc ++ freeVars(exp1) -- pats.flatMap {
-            case ExtPattern.Wild(_, _) => List.empty
-            case ExtPattern.Var(bnd, _, _) => List(bnd.sym)
-            case ExtPattern.Error(_, _) => List.empty
-          }
+        case (acc, ExtMatchRule(pat, exp1, _)) =>
+          acc ++ freeVars(exp1) -- freeVars(pat)
       }
 
     case Expr.Tag(_, exps, _, _, _) =>
@@ -404,8 +400,10 @@ object TypedAstOps {
         (acc, exp) => acc ++ freeVars(exp)
       } ++ freeVars(select)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
-      freeVars(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        (acc, exp) => acc ++ freeVars(exp)
+      }
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
       freeVars(exp)
@@ -456,10 +454,32 @@ object TypedAstOps {
     case RestrictableChoosePattern.Error(_, _) => Set.empty
   }
 
+  /**
+    * Returns the free variables in the given restrictable var-or-wild pattern `v`.
+    */
   private def freeVars(v: RestrictableChoosePattern.VarOrWild): Option[Symbol.VarSym] = v match {
     case RestrictableChoosePattern.Wild(_, _) => None
     case RestrictableChoosePattern.Var(Binder(sym, _), _, _) => Some(sym)
     case RestrictableChoosePattern.Error(_, _) => None
+  }
+
+  /**
+    * Returns the free variables in the given extensible pattern `pat0`.
+    */
+  private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtPattern.Default(_) => Set.empty
+    case ExtPattern.Tag(_, pats, _) => pats.toSet.flatMap((v: ExtTagPattern) => freeVars(v))
+    case ExtPattern.Error(_) => Set.empty
+  }
+
+  /**
+    * Returns the free variables in the given ext tag pattern `v`.
+    */
+  private def freeVars(v: ExtTagPattern): Set[Symbol.VarSym] = v match {
+    case ExtTagPattern.Wild(_, _) => Set.empty
+    case ExtTagPattern.Var(Binder(sym, _), _, _) => Set(sym)
+    case ExtTagPattern.Unit(_, _) => Set.empty
+    case ExtTagPattern.Error(_, _) => Set.empty
   }
 
   /**
@@ -491,6 +511,5 @@ object TypedAstOps {
     case Body.Guard(exp, _) => freeVars(exp)
     case Body.Functional(_, exp, _) => freeVars(exp)
   }
-
 
 }

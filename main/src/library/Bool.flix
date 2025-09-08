@@ -25,31 +25,6 @@ instance UpperBound[Bool] {
 mod Bool {
 
     ///
-    /// Alias for logical conjunction.
-    ///
-    pub def ∧(x: Bool, y: Bool): Bool = x and y
-
-    ///
-    /// Alias for logical disjunction.
-    ///
-    pub def ∨(x: Bool, y: Bool): Bool = x or y
-
-    ///
-    /// Alias for logical implication.
-    ///
-    pub def →(x: Bool, y: Bool): Bool = not x ∨ y
-
-    ///
-    /// Alias for logical bi-implication.
-    ///
-    pub def ↔(x: Bool, y: Bool): Bool = (x → y) ∧ (y → x)
-
-    ///
-    /// Alias for exclusive or.
-    ///
-    pub def ⊕(x: Bool, y: Bool): Bool = (x ∨ y) ∧ not (x ∧ y)
-
-    ///
     /// Returns `true` if `x` implies `y` logically holds.
     ///
     pub def ==>(x: Bool, y: Bool): Bool = not x or y

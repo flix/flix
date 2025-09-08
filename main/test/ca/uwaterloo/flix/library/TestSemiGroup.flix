@@ -1,461 +1,558 @@
-/*
- *  Copyright 2021 Nina Andrup Pedersen
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestSemiGroup {
 
+    use Assert.{assertEq}
     use SemiGroup.{combine, combineN}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineUnit01(): Bool = combine((), ()) == ()
+    @Test
+    def combineUnit01(): Unit \ Assert =
+        assertEq(expected = (), combine((), ()))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineInt801(): Bool = combine(0i8, 0i8) == 0i8
+    @Test
+    def combineInt801(): Unit \ Assert =
+        assertEq(expected = 0i8, combine(0i8, 0i8))
 
-    @test
-    def combineInt802(): Bool = combine(1i8, 0i8) == 1i8
+    @Test
+    def combineInt802(): Unit \ Assert =
+        assertEq(expected = 1i8, combine(1i8, 0i8))
 
-    @test
-    def combineInt803(): Bool = combine(0i8, 2i8) == 2i8
+    @Test
+    def combineInt803(): Unit \ Assert =
+        assertEq(expected = 2i8, combine(0i8, 2i8))
 
-    @test
-    def combineInt804(): Bool = combine(1i8, 2i8) == 3i8
+    @Test
+    def combineInt804(): Unit \ Assert =
+        assertEq(expected = 3i8, combine(1i8, 2i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineInt1601(): Bool = combine(0i16, 0i16) == 0i16
+    @Test
+    def combineInt1601(): Unit \ Assert =
+        assertEq(expected = 0i16, combine(0i16, 0i16))
 
-    @test
-    def combineInt1602(): Bool = combine(1i16, 0i16) == 1i16
+    @Test
+    def combineInt1602(): Unit \ Assert =
+        assertEq(expected = 1i16, combine(1i16, 0i16))
 
-    @test
-    def combineInt1603(): Bool = combine(0i16, 2i16) == 2i16
+    @Test
+    def combineInt1603(): Unit \ Assert =
+        assertEq(expected = 2i16, combine(0i16, 2i16))
 
-    @test
-    def combineInt1604(): Bool = combine(1i16, 2i16) == 3i16
+    @Test
+    def combineInt1604(): Unit \ Assert =
+        assertEq(expected = 3i16, combine(1i16, 2i16))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineInt3201(): Bool = combine(0i32, 0i32) == 0i32
+    @Test
+    def combineInt3201(): Unit \ Assert =
+        assertEq(expected = 0i32, combine(0i32, 0i32))
 
-    @test
-    def combineInt3202(): Bool = combine(1i32, 0i32) == 1i32
+    @Test
+    def combineInt3202(): Unit \ Assert =
+        assertEq(expected = 1i32, combine(1i32, 0i32))
 
-    @test
-    def combineInt3203(): Bool = combine(0i32, 2i32) == 2i32
+    @Test
+    def combineInt3203(): Unit \ Assert =
+        assertEq(expected = 2i32, combine(0i32, 2i32))
 
-    @test
-    def combineInt3204(): Bool = combine(1i32, 2i32) == 3i32
+    @Test
+    def combineInt3204(): Unit \ Assert =
+        assertEq(expected = 3i32, combine(1i32, 2i32))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineInt6401(): Bool = combine(0i64, 0i64) == 0i64
+    @Test
+    def combineInt6401(): Unit \ Assert =
+        assertEq(expected = 0i64, combine(0i64, 0i64))
 
-    @test
-    def combineInt6402(): Bool = combine(1i64, 0i64) == 1i64
+    @Test
+    def combineInt6402(): Unit \ Assert =
+        assertEq(expected = 1i64, combine(1i64, 0i64))
 
-    @test
-    def combineInt6403(): Bool = combine(0i64, 2i64) == 2i64
+    @Test
+    def combineInt6403(): Unit \ Assert =
+        assertEq(expected = 2i64, combine(0i64, 2i64))
 
-    @test
-    def combineInt6404(): Bool = combine(1i64, 2i64) == 3i64
+    @Test
+    def combineInt6404(): Unit \ Assert =
+        assertEq(expected = 3i64, combine(1i64, 2i64))
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineBigInt01(): Bool = combine(0ii, 0ii) == 0ii
+    @Test
+    def combineBigInt01(): Unit \ Assert =
+        assertEq(expected = 0ii, combine(0ii, 0ii))
 
-    @test
-    def combineBigInt02(): Bool = combine(1ii, 0ii) == 1ii
+    @Test
+    def combineBigInt02(): Unit \ Assert =
+        assertEq(expected = 1ii, combine(1ii, 0ii))
 
-    @test
-    def combineBigInt03(): Bool = combine(0ii, 2ii) == 2ii
+    @Test
+    def combineBigInt03(): Unit \ Assert =
+        assertEq(expected = 2ii, combine(0ii, 2ii))
 
-    @test
-    def combineBigInt04(): Bool = combine(1ii, 2ii) == 3ii
+    @Test
+    def combineBigInt04(): Unit \ Assert =
+        assertEq(expected = 3ii, combine(1ii, 2ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineFloat3201(): Bool = combine(0.0f32, 0.0f32) == 0.0f32
+    @Test
+    def combineFloat3201(): Unit \ Assert =
+        assertEq(expected = 0.0f32, combine(0.0f32, 0.0f32))
 
-    @test
-    def combineFloat3202(): Bool = combine(1.0f32, 0.0f32) == 1.0f32
+    @Test
+    def combineFloat3202(): Unit \ Assert =
+        assertEq(expected = 1.0f32, combine(1.0f32, 0.0f32))
 
-    @test
-    def combineFloat3203(): Bool = combine(0.0f32, 2.0f32) == 2.0f32
+    @Test
+    def combineFloat3203(): Unit \ Assert =
+        assertEq(expected = 2.0f32, combine(0.0f32, 2.0f32))
 
-    @test
-    def combineFloat3204(): Bool = combine(1.0f32, 2.0f32) == 3.0f32
+    @Test
+    def combineFloat3204(): Unit \ Assert =
+        assertEq(expected = 3.0f32, combine(1.0f32, 2.0f32))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineFloat6401(): Bool = combine(0.0f64, 0.0f64) == 0.0f64
+    @Test
+    def combineFloat6401(): Unit \ Assert =
+        assertEq(expected = 0.0f64, combine(0.0f64, 0.0f64))
 
-    @test
-    def combineFloat6402(): Bool = combine(1.0f64, 0.0f64) == 1.0f64
+    @Test
+    def combineFloat6402(): Unit \ Assert =
+        assertEq(expected = 1.0f64, combine(1.0f64, 0.0f64))
 
-    @test
-    def combineFloat6403(): Bool = combine(0.0f64, 2.0f64) == 2.0f64
+    @Test
+    def combineFloat6403(): Unit \ Assert =
+        assertEq(expected = 2.0f64, combine(0.0f64, 2.0f64))
 
-    @test
-    def combineFloat6404(): Bool = combine(1.0f64, 2.0f64) == 3.0f64
+    @Test
+    def combineFloat6404(): Unit \ Assert =
+        assertEq(expected = 3.0f64, combine(1.0f64, 2.0f64))
 
     /////////////////////////////////////////////////////////////////////////////
     // BigDecimal                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineBigDecimal01(): Bool = combine(0.0ff, 0.0ff) == 0.0ff
+    @Test
+    def combineBigDecimal01(): Unit \ Assert =
+        assertEq(expected = 0.0ff, combine(0.0ff, 0.0ff))
 
-    @test
-    def combineBigDecimal02(): Bool = combine(1.0ff, 0.0ff) == 1.0ff
+    @Test
+    def combineBigDecimal02(): Unit \ Assert =
+        assertEq(expected = 1.0ff, combine(1.0ff, 0.0ff))
 
-    @test
-    def combineBigDecimal03(): Bool = combine(0.0ff, 2.0ff) == 2.0ff
+    @Test
+    def combineBigDecimal03(): Unit \ Assert =
+        assertEq(expected = 2.0ff, combine(0.0ff, 2.0ff))
 
-    @test
-    def combineBigDecimal4(): Bool = combine(1.0ff, 2.0ff) == 3.0ff
+    @Test
+    def combineBigDecimal4(): Unit \ Assert =
+        assertEq(expected = 3.0ff, combine(1.0ff, 2.0ff))
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineString01(): Bool = combine("", "") == ""
+    @Test
+    def combineString01(): Unit \ Assert =
+        assertEq(expected = "", combine("", ""))
 
-    @test
-    def combineString02(): Bool = combine("a", "") == "a"
+    @Test
+    def combineString02(): Unit \ Assert =
+        assertEq(expected = "a", combine("a", ""))
 
-    @test
-    def combineString03(): Bool = combine("", "b") == "b"
+    @Test
+    def combineString03(): Unit \ Assert =
+        assertEq(expected = "b", combine("", "b"))
 
-    @test
-    def combineString04(): Bool = combine("a", "b") == "ab"
+    @Test
+    def combineString04(): Unit \ Assert =
+        assertEq(expected = "ab", combine("a", "b"))
 
     /////////////////////////////////////////////////////////////////////////////
     // Option                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineOption01(): Bool = combine(None, None) == (None: Option[String])
+    @Test
+    def combineOption01(): Unit \ Assert =
+        assertEq(expected = (None: Option[String]), combine(None, None))
 
-    @test
-    def combineOption02(): Bool = combine(Some("a"), None) == Some("a")
+    @Test
+    def combineOption02(): Unit \ Assert =
+        assertEq(expected = Some("a"), combine(Some("a"), None))
 
-    @test
-    def combineOption03(): Bool = combine(None, Some("b")) == Some("b")
+    @Test
+    def combineOption03(): Unit \ Assert =
+        assertEq(expected = Some("b"), combine(None, Some("b")))
 
-    @test
-    def combineOption04(): Bool = combine(Some("a"), Some("b")) == Some("ab")
+    @Test
+    def combineOption04(): Unit \ Assert =
+        assertEq(expected = Some("ab"), combine(Some("a"), Some("b")))
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineList01(): Bool = combine(Nil, Nil) == (Nil: List[Int32])
+    @Test
+    def combineList01(): Unit \ Assert =
+        assertEq(expected = (Nil: List[Int32]), combine(Nil, Nil))
 
-    @test
-    def combineList02(): Bool = combine(1 :: Nil, Nil) == 1 :: Nil
+    @Test
+    def combineList02(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, combine(1 :: Nil, Nil))
 
-    @test
-    def combineList03(): Bool = combine(Nil, 2 :: Nil) == 2 :: Nil
+    @Test
+    def combineList03(): Unit \ Assert =
+        assertEq(expected = 2 :: Nil, combine(Nil, 2 :: Nil))
 
-    @test
-    def combineList04(): Bool = combine(1 :: Nil, 2 :: Nil) == 1 :: 2 :: Nil
+    @Test
+    def combineList04(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: Nil, combine(1 :: Nil, 2 :: Nil))
 
-    @test
-    def combineList05(): Bool = combine(1 :: 2 :: Nil, 1 :: 2 :: Nil) == 1 :: 2 :: 1 :: 2 :: Nil
+    @Test
+    def combineList05(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 1 :: 2 :: Nil, combine(1 :: 2 :: Nil, 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // Map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineMap01(): Bool = combine(Map#{}, Map#{}) == (Map#{}: Map[Int32, String])
+    @Test
+    def combineMap01(): Unit \ Assert =
+        assertEq(expected = (Map#{}: Map[Int32, String]), combine(Map#{}, Map#{}))
 
-    @test
-    def combineMap02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}
+    @Test
+    def combineMap02(): Unit \ Assert =
+        assertEq(expected = Map#{1 => "A"}, combine(Map#{1 => "A"}, Map#{}))
 
-    @test
-    def combineMap03(): Bool = combine(Map#{}, Map#{1 => "a"}) == Map#{1 => "a"}
+    @Test
+    def combineMap03(): Unit \ Assert =
+        assertEq(expected = Map#{1 => "a"}, combine(Map#{}, Map#{1 => "a"}))
 
-    @test
-    def combineMap04(): Bool = combine(Map#{1 => "A"}, Map#{1 => "a"}) == Map#{1 => "Aa"}
+    @Test
+    def combineMap04(): Unit \ Assert =
+        assertEq(expected = Map#{1 => "Aa"}, combine(Map#{1 => "A"}, Map#{1 => "a"}))
 
-    @test
-    def combineMap05(): Bool = combine(Map#{1 => "A", 2 => "B", 3 => "C"}, Map#{2 => "b", 3 => "c", 4 => "d"}) == Map#{1 => "A", 2 => "Bb", 3 => "Cc", 4 => "d"}
+    @Test
+    def combineMap05(): Unit \ Assert =
+        assertEq(expected = Map#{1 => "A", 2 => "Bb", 3 => "Cc", 4 => "d"}, combine(Map#{1 => "A", 2 => "B", 3 => "C"}, Map#{2 => "b", 3 => "c", 4 => "d"}))
 
     /////////////////////////////////////////////////////////////////////////////
     // Validation                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineValidation01(): Bool = (combine(Validation.Failure(Nec.singleton("e1")), Validation.Failure(Nec.singleton("e2"))): Validation[String, String]) == Validation.Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
+    @Test
+    def combineValidation01(): Unit \ Assert =
+        assertEq(expected = Validation.Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2"))), (combine(Validation.Failure(Nec.singleton("e1")), Validation.Failure(Nec.singleton("e2"))): Validation[String, String]))
 
-    @test
-    def combineValidation02(): Bool = (combine(Validation.Success("a"), Validation.Failure(Nec.singleton("e1"))): Validation[String, String]) == Validation.Failure(Nec.singleton("e1"))
+    @Test
+    def combineValidation02(): Unit \ Assert =
+        assertEq(expected = Validation.Failure(Nec.singleton("e1")), (combine(Validation.Success("a"), Validation.Failure(Nec.singleton("e1"))): Validation[String, String]))
 
-    @test
-    def combineValidation03(): Bool = (combine(Validation.Failure(Nec.singleton("e1")), Validation.Success("1")): Validation[String, String]) == Validation.Failure(Nec.singleton("e1"))
+    @Test
+    def combineValidation03(): Unit \ Assert =
+        assertEq(expected = Validation.Failure(Nec.singleton("e1")), (combine(Validation.Failure(Nec.singleton("e1")), Validation.Success("1")): Validation[String, String]))
 
-    @test
-    def combineValidation04(): Bool = (combine(Validation.Success("a"), Validation.Success("1")): Validation[String, String]) == Validation.Success("a1")
+    @Test
+    def combineValidation04(): Unit \ Assert =
+        assertEq(expected = Validation.Success("a1"), (combine(Validation.Success("a"), Validation.Success("1")): Validation[String, String]))
 
     /////////////////////////////////////////////////////////////////////////////
     // 2-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine2Tuple01(): Bool = combine(("", ""), ("", "")) == ("", "")
+    @Test
+    def combine2Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", ""), combine(("", ""), ("", "")))
 
-    @test
-    def combine2Tuple02(): Bool = combine(("a", "b"), ("", "")) == ("a", "b")
+    @Test
+    def combine2Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b"), combine(("a", "b"), ("", "")))
 
-    @test
-    def combine2Tuple03(): Bool = combine(("", ""), ("1", "2")) == ("1", "2")
+    @Test
+    def combine2Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2"), combine(("", ""), ("1", "2")))
 
-    @test
-    def combine2Tuple04(): Bool = combine(("a", "b"), ("1", "2")) == ("a1", "b2")
+    @Test
+    def combine2Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2"), combine(("a", "b"), ("1", "2")))
 
-    @test
-    def combine2Tuple05(): Bool = combine(("a", ()), ("1", ())) == ("a1", ())
+    @Test
+    def combine2Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", ()), combine(("a", ()), ("1", ())))
 
     /////////////////////////////////////////////////////////////////////////////
     // 3-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine3Tuple01(): Bool = combine(("", "", ""), ("", "", "")) == ("", "", "")
+    @Test
+    def combine3Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", ""), combine(("", "", ""), ("", "", "")))
 
-    @test
-    def combine3Tuple02(): Bool = combine(("a", "b", "c"), ("", "", "")) == ("a", "b", "c")
+    @Test
+    def combine3Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c"), combine(("a", "b", "c"), ("", "", "")))
 
-    @test
-    def combine3Tuple03(): Bool = combine(("", "", ""), ("1", "2", "3")) == ("1", "2", "3")
+    @Test
+    def combine3Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3"), combine(("", "", ""), ("1", "2", "3")))
 
-    @test
-    def combine3Tuple04(): Bool = combine(("a", "b", "c"), ("1", "2", "3")) == ("a1", "b2", "c3")
+    @Test
+    def combine3Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3"), combine(("a", "b", "c"), ("1", "2", "3")))
 
-    @test
-    def combine3Tuple05(): Bool = combine(("a", (), "b"), ("1", (), "2")) == ("a1", (), "b2")
+    @Test
+    def combine3Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2"), combine(("a", (), "b"), ("1", (), "2")))
 
     /////////////////////////////////////////////////////////////////////////////
     // 4-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine4Tuple01(): Bool = combine(("", "", "", ""), ("", "", "", "")) == ("", "", "", "")
+    @Test
+    def combine4Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", ""), combine(("", "", "", ""), ("", "", "", "")))
 
-    @test
-    def combine4Tuple02(): Bool = combine(("a", "b", "c", "d"), ("", "", "", "")) == ("a", "b", "c", "d")
+    @Test
+    def combine4Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d"), combine(("a", "b", "c", "d"), ("", "", "", "")))
 
-    @test
-    def combine4Tuple03(): Bool = combine(("", "", "", ""), ("1", "2", "3", "4")) == ("1", "2", "3", "4")
+    @Test
+    def combine4Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4"), combine(("", "", "", ""), ("1", "2", "3", "4")))
 
-    @test
-    def combine4Tuple04(): Bool = combine(("a", "b", "c", "d"), ("1", "2", "3", "4")) == ("a1", "b2", "c3", "d4")
+    @Test
+    def combine4Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4"), combine(("a", "b", "c", "d"), ("1", "2", "3", "4")))
 
-    @test
-    def combine4Tuple05(): Bool = combine(("a", (), "b", ()), ("1", (), "2", ())) == ("a1", (), "b2", ())
+    @Test
+    def combine4Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", ()), combine(("a", (), "b", ()), ("1", (), "2", ())))
 
     /////////////////////////////////////////////////////////////////////////////
     // 5-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine5Tuple01(): Bool = combine(("", "", "", "", ""), ("", "", "", "", "")) == ("", "", "", "", "")
+    @Test
+    def combine5Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", "", ""), combine(("", "", "", "", ""), ("", "", "", "", "")))
 
-    @test
-    def combine5Tuple02(): Bool = combine(("a", "b", "c", "d", "e"), ("", "", "", "", "")) == ("a", "b", "c", "d", "e")
+    @Test
+    def combine5Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d", "e"), combine(("a", "b", "c", "d", "e"), ("", "", "", "", "")))
 
-    @test
-    def combine5Tuple03(): Bool = combine(("", "", "", "", ""), ("1", "2", "3", "4", "5")) == ("1", "2", "3", "4", "5")
+    @Test
+    def combine5Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4", "5"), combine(("", "", "", "", ""), ("1", "2", "3", "4", "5")))
 
-    @test
-    def combine5Tuple04(): Bool = combine(("a", "b", "c", "d", "e"), ("1", "2", "3", "4", "5")) == ("a1", "b2", "c3", "d4", "e5")
+    @Test
+    def combine5Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4", "e5"), combine(("a", "b", "c", "d", "e"), ("1", "2", "3", "4", "5")))
 
-    @test
-    def combine5Tuple05(): Bool = combine(("a", (), "b", (), "c"), ("1", (), "2", (), "3")) == ("a1", (), "b2", (), "c3")
+    @Test
+    def combine5Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", (), "c3"), combine(("a", (), "b", (), "c"), ("1", (), "2", (), "3")))
 
     /////////////////////////////////////////////////////////////////////////////
     // 6-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine6Tuple01(): Bool = combine(("", "", "", "", "", ""), ("", "", "", "", "", "")) == ("", "", "", "", "", "")
+    @Test
+    def combine6Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", "", "", ""), combine(("", "", "", "", "", ""), ("", "", "", "", "", "")))
 
-    @test
-    def combine6Tuple02(): Bool = combine(("a", "b", "c", "d", "e", "f"), ("", "", "", "", "", "")) == ("a", "b", "c", "d", "e", "f")
+    @Test
+    def combine6Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d", "e", "f"), combine(("a", "b", "c", "d", "e", "f"), ("", "", "", "", "", "")))
 
-    @test
-    def combine6Tuple03(): Bool = combine(("", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6")) == ("1", "2", "3", "4", "5", "6")
+    @Test
+    def combine6Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4", "5", "6"), combine(("", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6")))
 
-    @test
-    def combine6Tuple04(): Bool = combine(("a", "b", "c", "d", "e", "f"), ("1", "2", "3", "4", "5", "6")) == ("a1", "b2", "c3", "d4", "e5", "f6")
+    @Test
+    def combine6Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4", "e5", "f6"), combine(("a", "b", "c", "d", "e", "f"), ("1", "2", "3", "4", "5", "6")))
 
-    @test
-    def combine6Tuple05(): Bool = combine(("a", (), "b", (), "c", ()), ("1", (), "2", (), "3", ())) == ("a1", (), "b2", (), "c3", ())
+    @Test
+    def combine6Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", (), "c3", ()), combine(("a", (), "b", (), "c", ()), ("1", (), "2", (), "3", ())))
 
     /////////////////////////////////////////////////////////////////////////////
     // 7-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine7Tuple01(): Bool = combine(("", "", "", "", "", "", ""), ("", "", "", "", "", "", "")) == ("", "", "", "", "", "", "")
+    @Test
+    def combine7Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", "", "", "", ""), combine(("", "", "", "", "", "", ""), ("", "", "", "", "", "", "")))
 
-    @test
-    def combine7Tuple02(): Bool = combine(("a", "b", "c", "d", "e", "f", "g"), ("", "", "", "", "", "", "")) == ("a", "b", "c", "d", "e", "f", "g")
+    @Test
+    def combine7Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d", "e", "f", "g"), combine(("a", "b", "c", "d", "e", "f", "g"), ("", "", "", "", "", "", "")))
 
-    @test
-    def combine7Tuple03(): Bool = combine(("", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7")) == ("1", "2", "3", "4", "5", "6", "7")
+    @Test
+    def combine7Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4", "5", "6", "7"), combine(("", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7")))
 
-    @test
-    def combine7Tuple04(): Bool = combine(("a", "b", "c", "d", "e", "f", "g"), ("1", "2", "3", "4", "5", "6", "7")) == ("a1", "b2", "c3", "d4", "e5", "f6", "g7")
+    @Test
+    def combine7Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4", "e5", "f6", "g7"), combine(("a", "b", "c", "d", "e", "f", "g"), ("1", "2", "3", "4", "5", "6", "7")))
 
-    @test
-    def combine7Tuple05(): Bool = combine(("a", (), "b", (), "c", (), "d"), ("1", (), "2", (), "3", (), "4")) == ("a1", (), "b2", (), "c3", (), "d4")
+    @Test
+    def combine7Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", (), "c3", (), "d4"), combine(("a", (), "b", (), "c", (), "d"), ("1", (), "2", (), "3", (), "4")))
 
     /////////////////////////////////////////////////////////////////////////////
     // 8-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine8Tuple01(): Bool = combine(("", "", "", "", "", "", "", ""), ("", "", "", "", "", "", "", "")) == ("", "", "", "", "", "", "", "")
+    @Test
+    def combine8Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", "", "", "", "", ""), combine(("", "", "", "", "", "", "", ""), ("", "", "", "", "", "", "", "")))
 
-    @test
-    def combine8Tuple02(): Bool = combine(("a", "b", "c", "d", "e", "f", "g", "h"), ("", "", "", "", "", "", "", "")) == ("a", "b", "c", "d", "e", "f", "g", "h")
+    @Test
+    def combine8Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d", "e", "f", "g", "h"), combine(("a", "b", "c", "d", "e", "f", "g", "h"), ("", "", "", "", "", "", "", "")))
 
-    @test
-    def combine8Tuple03(): Bool = combine(("", "", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7", "8")) == ("1", "2", "3", "4", "5", "6", "7", "8")
+    @Test
+    def combine8Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4", "5", "6", "7", "8"), combine(("", "", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7", "8")))
 
-    @test
-    def combine8Tuple04(): Bool = combine(("a", "b", "c", "d", "e", "f", "g", "h"), ("1", "2", "3", "4", "5", "6", "7", "8")) == ("a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8")
+    @Test
+    def combine8Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8"), combine(("a", "b", "c", "d", "e", "f", "g", "h"), ("1", "2", "3", "4", "5", "6", "7", "8")))
 
-    @test
-    def combine8Tuple05(): Bool = combine(("a", (), "b", (), "c", (), "d", ()), ("1", (), "2", (), "3", (), "4", ())) == ("a1", (), "b2", (), "c3", (), "d4", ())
+    @Test
+    def combine8Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", (), "c3", (), "d4", ()), combine(("a", (), "b", (), "c", (), "d", ()), ("1", (), "2", (), "3", (), "4", ())))
 
     /////////////////////////////////////////////////////////////////////////////
     // 9-Tuple                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine9Tuple01(): Bool = combine(("", "", "", "", "", "", "", "", ""), ("", "", "", "", "", "", "", "", "")) == ("", "", "", "", "", "", "", "", "")
+    @Test
+    def combine9Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", "", "", "", "", "", ""), combine(("", "", "", "", "", "", "", "", ""), ("", "", "", "", "", "", "", "", "")))
 
-    @test
-    def combine9Tuple02(): Bool = combine(("a", "b", "c", "d", "e", "f", "g", "h", "i"), ("", "", "", "", "", "", "", "", "")) == ("a", "b", "c", "d", "e", "f", "g", "h", "i")
+    @Test
+    def combine9Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d", "e", "f", "g", "h", "i"), combine(("a", "b", "c", "d", "e", "f", "g", "h", "i"), ("", "", "", "", "", "", "", "", "")))
 
-    @test
-    def combine9Tuple03(): Bool = combine(("", "", "", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7", "8", "9")) == ("1", "2", "3", "4", "5", "6", "7", "8", "9")
+    @Test
+    def combine9Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4", "5", "6", "7", "8", "9"), combine(("", "", "", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7", "8", "9")))
 
-    @test
-    def combine9Tuple04(): Bool = combine(("a", "b", "c", "d", "e", "f", "g", "h", "i"), ("1", "2", "3", "4", "5", "6", "7", "8", "9")) == ("a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8", "i9")
+    @Test
+    def combine9Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8", "i9"), combine(("a", "b", "c", "d", "e", "f", "g", "h", "i"), ("1", "2", "3", "4", "5", "6", "7", "8", "9")))
 
-    @test
-    def combine9Tuple05(): Bool = combine(("a", (), "b", (), "c", (), "d", (), "e"), ("1", (), "2", (), "3", (), "4", (), "5")) == ("a1", (), "b2", (), "c3", (), "d4", (), "e5")
+    @Test
+    def combine9Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", (), "c3", (), "d4", (), "e5"), combine(("a", (), "b", (), "c", (), "d", (), "e"), ("1", (), "2", (), "3", (), "4", (), "5")))
 
     /////////////////////////////////////////////////////////////////////////////
     // 10-Tuple                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combine10Tuple01(): Bool = combine(("", "", "", "", "", "", "", "", "", ""), ("", "", "", "", "", "", "", "", "", "")) == ("", "", "", "", "", "", "", "", "", "")
+    @Test
+    def combine10Tuple01(): Unit \ Assert =
+        assertEq(expected = ("", "", "", "", "", "", "", "", "", ""), combine(("", "", "", "", "", "", "", "", "", ""), ("", "", "", "", "", "", "", "", "", "")))
 
-    @test
-    def combine10Tuple02(): Bool = combine(("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"), ("", "", "", "", "", "", "", "", "", "")) == ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")
+    @Test
+    def combine10Tuple02(): Unit \ Assert =
+        assertEq(expected = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"), combine(("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"), ("", "", "", "", "", "", "", "", "", "")))
 
-    @test
-    def combine10Tuple03(): Bool = combine(("", "", "", "", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")) == ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+    @Test
+    def combine10Tuple03(): Unit \ Assert =
+        assertEq(expected = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"), combine(("", "", "", "", "", "", "", "", "", ""), ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")))
 
-    @test
-    def combine10Tuple04(): Bool = combine(("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"), ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")) == ("a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8", "i9", "j0")
+    @Test
+    def combine10Tuple04(): Unit \ Assert =
+        assertEq(expected = ("a1", "b2", "c3", "d4", "e5", "f6", "g7", "h8", "i9", "j0"), combine(("a", "b", "c", "d", "e", "f", "g", "h", "i", "j"), ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")))
 
-    @test
-    def combine10Tuple05(): Bool = combine(("a", (), "b", (), "c", (), "d", (), "e", ()), ("1", (), "2", (), "3", (), "4", (), "5", ())) == ("a1", (), "b2", (), "c3", (), "d4", (), "e5", ())
+    @Test
+    def combine10Tuple05(): Unit \ Assert =
+        assertEq(expected = ("a1", (), "b2", (), "c3", (), "d4", (), "e5", ()), combine(("a", (), "b", (), "c", (), "d", (), "e", ()), ("1", (), "2", (), "3", (), "4", (), "5", ())))
 
     /////////////////////////////////////////////////////////////////////////////
     // combineN                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def combineN01(): Bool = combineN((), 0) == ()
+    @Test
+    def combineN01(): Unit \ Assert =
+        assertEq(expected = (), combineN((), 0))
 
-    @test
-    def combineN02(): Bool = combineN((), 3) == ()
+    @Test
+    def combineN02(): Unit \ Assert =
+        assertEq(expected = (), combineN((), 3))
 
-    @test
-    def combineN03(): Bool = combineN("", -1) == ""
+    @Test
+    def combineN03(): Unit \ Assert =
+        assertEq(expected = "", combineN("", -1))
 
-    @test
-    def combineN04(): Bool = combineN("", 5) == ""
+    @Test
+    def combineN04(): Unit \ Assert =
+        assertEq(expected = "", combineN("", 5))
 
-    @test
-    def combineN05(): Bool = combineN("a", 3) == "aaa"
+    @Test
+    def combineN05(): Unit \ Assert =
+        assertEq(expected = "aaa", combineN("a", 3))
 
-    @test
-    def combineN06(): Bool = combineN(Some("ab"), 5) == Some("ababababab")
+    @Test
+    def combineN06(): Unit \ Assert =
+        assertEq(expected = Some("ababababab"), combineN(Some("ab"), 5))
 
-    @test
-    def combineN07(): Bool = combineN(1 :: Nil, 2) == 1 :: 1 :: Nil
+    @Test
+    def combineN07(): Unit \ Assert =
+        assertEq(expected = 1 :: 1 :: Nil, combineN(1 :: Nil, 2))
 
-    @test
-    def combineN08(): Bool = combineN(Map#{1 => "a"}, 4) == Map#{1 => "aaaa"}
+    @Test
+    def combineN08(): Unit \ Assert =
+        assertEq(expected = Map#{1 => "aaaa"}, combineN(Map#{1 => "a"}, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // associative law                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def associativeTest01(): Bool = combine(combine("a", "b"), "c") == combine("a", combine("b", "c"))
+    @Test
+    def associativeTest01(): Unit \ Assert =
+        assertEq(expected = combine("a", combine("b", "c")), combine(combine("a", "b"), "c"))
 
     /////////////////////////////////////////////////////////////////////////////
     // Syntax                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def operator01(): Bool = (1 ++ 1) == 2
+    @Test
+    def operator01(): Unit \ Assert =
+        assertEq(expected = 2, (1 ++ 1))
 
-    @test
-    def operator02(): Bool = ("abc" ++ "def") == "abcdef"
+    @Test
+    def operator02(): Unit \ Assert =
+        assertEq(expected = "abcdef", ("abc" ++ "def"))
 
-    @test
-    def operator03(): Bool = ((1 :: 2 :: Nil) ++ (3 :: 4 :: Nil)) == 1 :: 2 :: 3 :: 4 :: Nil
+    @Test
+    def operator03(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, ((1 :: 2 :: Nil) ++ (3 :: 4 :: Nil)))
 
 }

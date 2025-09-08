@@ -53,9 +53,9 @@ object RedundancyError {
   /**
     * An error raised to indicate that the extensible variant constructor `label` was used multiple times.
     *
-    * @param label    the name of the extensible variant constructor.
-    * @param loc1     the location of the first pattern.
-    * @param loc2     the location of the second pattern.
+    * @param label the name of the extensible variant constructor.
+    * @param loc1  the location of the first pattern.
+    * @param loc2  the location of the second pattern.
     */
   case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
     def summary: String = s"Duplicate extensible variant pattern '${label.name}'."
@@ -625,6 +625,39 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that a case of an `ematch` expression is unreachable due to an earlier default case.
+    *
+    * @param defaultLoc the location of the default case.
+    * @param loc        the location of the unreachable case.
+    */
+  case class UnreachableExtMatchCase(defaultLoc: SourceLocation, loc: SourceLocation) extends RedundancyError {
+
+    override def summary: String = "Unreachable case."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unreachable case. It is covered by a '_' pattern.
+         |
+         |${code(loc, "unreachable case.")}
+         |
+         |Covered by the following pattern:
+         |
+         |${code(defaultLoc, "covering pattern.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """
+        |Possible fixes:
+        |
+        |  (1)  Remove the covered case.
+        |  (2)  Remove the covering '_' case.
+        |
+        |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate that an expression is useless.
     *
     * @param tpe the type of the expression.
@@ -654,4 +687,5 @@ object RedundancyError {
          |""".stripMargin
     })
   }
+
 }
