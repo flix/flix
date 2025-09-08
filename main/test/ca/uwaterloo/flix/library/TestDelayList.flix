@@ -838,27 +838,27 @@ mod TestDelayList {
 
     @Test
     def toArray01(): Unit \ Assert = region rc {
-    	assertTrue(DelayList.toArray(rc, (ENil: DelayList[Unit]))`Array.sameElements` Array#{} @ rc)
+    	assertEq(expected = true, DelayList.toArray(rc, (ENil: DelayList[Unit]))`Array.sameElements` Array#{} @ rc)
     }
 
     @Test
     def toArray02(): Unit \ Assert = region rc {
-    	assertTrue(DelayList.toArray(rc, (LList(lazy ENil): DelayList[Unit]))`Array.sameElements` Array#{} @ rc)
+    	assertEq(expected = true, DelayList.toArray(rc, (LList(lazy ENil): DelayList[Unit]))`Array.sameElements` Array#{} @ rc)
     }
 
     @Test
     def toArray03(): Unit \ Assert = region rc {
-        assertTrue(DelayList.toArray(rc, DelayList.range(-100, 1000))`Array.sameElements` Array.range(rc, -100, 1000))
+        assertEq(expected = true, DelayList.toArray(rc, DelayList.range(-100, 1000))`Array.sameElements` Array.range(rc, -100, 1000))
     }
 
     @Test
     def toArray04(): Unit \ Assert = region rc {
-    	assertTrue(DelayList.toArray(rc, LCons(1, lazy ENil))`Array.sameElements` Array#{1} @ rc)
+    	assertEq(expected = true, DelayList.toArray(rc, LCons(1, lazy ENil))`Array.sameElements` Array#{1} @ rc)
     }
 
     @Test
     def toArray05(): Unit \ Assert = region rc {
-    	assertTrue(DelayList.toArray(rc, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` Array#{1, 2, 3} @ rc)
+    	assertEq(expected = true, DelayList.toArray(rc, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil)))))))`Array.sameElements` Array#{1, 2, 3} @ rc)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -867,15 +867,15 @@ mod TestDelayList {
 
     @Test
     def toVector01(): Unit \ Assert =
-        assertTrue(((DelayList.toVector(ENil)) : Vector[Int32]) `Vector.equals` Vector.empty())
+        assertEq(expected = true, ((DelayList.toVector(ENil)) : Vector[Int32]) `Vector.equals` Vector.empty())
 
     @Test
     def toVector02(): Unit \ Assert =
-        assertTrue(DelayList.toVector(LCons(0, lazy ENil)) `Vector.equals` Vector.singleton(0))
+        assertEq(expected = true, DelayList.toVector(LCons(0, lazy ENil)) `Vector.equals` Vector.singleton(0))
 
     @Test
     def toVector03(): Unit \ Assert =
-        assertTrue(DelayList.toVector(DelayList.range(1, 4)) `Vector.equals` Vector.range(1, 4))
+        assertEq(expected = true, DelayList.toVector(DelayList.range(1, 4)) `Vector.equals` Vector.range(1, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
