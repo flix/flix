@@ -1,1122 +1,1106 @@
-/*
- * Copyright 2017 Liam Palmer
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestInt8 {
 
-    use Mul.mul
+    use Assert.{assertEq, assertTrue, assertSome, fail};
 
     /////////////////////////////////////////////////////////////////////////////
     // mul                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mul01(): Bool = mul(1i8, 0i8) == 0i8
+    @Test
+    def mul01(): Unit \ Assert = assertEq(expected = 0i8, 1i8 * 0i8)
 
-    @test
-    def mul02(): Bool = mul(0i8, 1i8) == 0i8
+    @Test
+    def mul02(): Unit \ Assert = assertEq(expected = 0i8, 0i8 * 1i8)
 
-    @test
-    def mul03(): Bool = mul(0i8, 0i8) == 0i8
+    @Test
+    def mul03(): Unit \ Assert = assertEq(expected = 0i8, 0i8 * 0i8)
 
-    @test
-    def mul04(): Bool = mul(-64i8, 2i8) == -128i8
+    @Test
+    def mul04(): Unit \ Assert = assertEq(expected = -128i8, -64i8 * 2i8)
 
-    @test
-    def mul05(): Bool = mul(127i8, 1i8) == 127i8
+    @Test
+    def mul05(): Unit \ Assert = assertEq(expected = 127i8, 127i8 * 1i8)
 
-    @test
-    def mul06(): Bool = mul(5i8, 11i8) == 55i8
+    @Test
+    def mul06(): Unit \ Assert = assertEq(expected = 55i8, 5i8 * 11i8)
 
     /////////////////////////////////////////////////////////////////////////////
     // maxValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def maxValue01(): Bool = Int8.maxValue() == Int8.bitwiseNot(Int8.leftShift(1i8, 7))
+    @Test
+    def maxValue01(): Unit \ Assert = assertEq(expected = Int8.bitwiseNot(Int8.leftShift(1i8, 7)), Int8.maxValue())
 
     /////////////////////////////////////////////////////////////////////////////
     // minValue                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def minValue01(): Bool = Int8.minValue() == Int8.leftShift(1i8, 7)
+    @Test
+    def minValue01(): Unit \ Assert = assertEq(expected = Int8.leftShift(1i8, 7), Int8.minValue())
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def size01(): Bool = Int8.size() == 8
+    @Test
+    def size01(): Unit \ Assert = assertEq(expected = 8, Int8.size())
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def min01(): Bool = Int8.min(1i8, 2i8) == 1i8
+    @Test
+    def min01(): Unit \ Assert = assertEq(expected = 1i8, Int8.min(1i8, 2i8))
 
-    @test
-    def min02(): Bool = Int8.min(2i8, -1i8) == -1i8
+    @Test
+    def min02(): Unit \ Assert = assertEq(expected = -1i8, Int8.min(2i8, -1i8))
 
-    @test
-    def min03(): Bool = Int8.min(-33i8, -66i8) == -66i8
+    @Test
+    def min03(): Unit \ Assert = assertEq(expected = -66i8, Int8.min(-33i8, -66i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // max                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def max01(): Bool = Int8.max(48i8, 49i8) == 49i8
+    @Test
+    def max01(): Unit \ Assert = assertEq(expected = 49i8, Int8.max(48i8, 49i8))
 
-    @test
-    def max02(): Bool = Int8.max(4i8, -16i8) == 4i8
+    @Test
+    def max02(): Unit \ Assert = assertEq(expected = 4i8, Int8.max(4i8, -16i8))
 
-    @test
-    def max03(): Bool = Int8.max(-34i8, -16i8) == -16i8
+    @Test
+    def max03(): Unit \ Assert = assertEq(expected = -16i8, Int8.max(-34i8, -16i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // abs                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def abs01(): Bool = Int8.abs(31i8) == 31i8
+    @Test
+    def abs01(): Unit \ Assert = assertEq(expected = 31i8, Int8.abs(31i8))
 
-    @test
-    def abs02(): Bool = Int8.abs(-31i8) == 31i8
+    @Test
+    def abs02(): Unit \ Assert = assertEq(expected = 31i8, Int8.abs(-31i8))
 
-    @test
-    def abs03(): Bool = Int8.abs(127i8) == 127i8
+    @Test
+    def abs03(): Unit \ Assert = assertEq(expected = 127i8, Int8.abs(127i8))
 
-    @test
-    def abs04(): Bool = Int8.abs(-127i8) == 127i8
+    @Test
+    def abs04(): Unit \ Assert = assertEq(expected = 127i8, Int8.abs(-127i8))
 
-    @test
-    def abs05(): Bool = Int8.abs(0i8) == 0i8
+    @Test
+    def abs05(): Unit \ Assert = assertEq(expected = 0i8, Int8.abs(0i8))
 
-    @test
-    def abs06(): Bool = Int8.abs(-128i8) == -1i8
+    @Test
+    def abs06(): Unit \ Assert = assertEq(expected = -1i8, Int8.abs(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def modulo01(): Bool = (12i8 `Int8.modulo` 2i8) == 0i8
+    @Test
+    def modulo01(): Unit \ Assert = assertEq(expected = 0i8, 12i8 `Int8.modulo` 2i8)
 
-    @test
-    def modulo02(): Bool = (12i8 `Int8.modulo` 5i8) == 2i8
+    @Test
+    def modulo02(): Unit \ Assert = assertEq(expected = 2i8, 12i8 `Int8.modulo` 5i8)
 
-    @test
-    def modulo03(): Bool = (-12i8 `Int8.modulo` 5i8) == 3i8
+    @Test
+    def modulo03(): Unit \ Assert = assertEq(expected = 3i8, -12i8 `Int8.modulo` 5i8)
 
-    @test
-    def modulo04(): Bool = (12i8 `Int8.modulo` -5i8) == -3i8
+    @Test
+    def modulo04(): Unit \ Assert = assertEq(expected = -3i8, 12i8 `Int8.modulo` -5i8)
 
-    @test
-    def modulo05(): Bool = (-12i8 `Int8.modulo` -5i8) == -2i8
+    @Test
+    def modulo05(): Unit \ Assert = assertEq(expected = -2i8, -12i8 `Int8.modulo` -5i8)
 
-    @test
-    def modulo06(): Bool = (1i8 `Int8.modulo` 0i8) == 0i8
+    @Test
+    def modulo06(): Unit \ Assert = assertEq(expected = 0i8, 1i8 `Int8.modulo` 0i8)
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def remainder01(): Bool = (12i8 `Int8.remainder` 2i8) == 0i8
+    @Test
+    def remainder01(): Unit \ Assert = assertEq(expected = 0i8, 12i8 `Int8.remainder` 2i8)
 
-    @test
-    def remainder02(): Bool = (12i8 `Int8.remainder` 5i8) == 2i8
+    @Test
+    def remainder02(): Unit \ Assert = assertEq(expected = 2i8, 12i8 `Int8.remainder` 5i8)
 
-    @test
-    def remainder03(): Bool = (-12i8 `Int8.remainder` 5i8) == -2i8
+    @Test
+    def remainder03(): Unit \ Assert = assertEq(expected = -2i8, -12i8 `Int8.remainder` 5i8)
 
-    @test
-    def remainder04(): Bool = (12i8 `Int8.remainder` -5i8) == 2i8
+    @Test
+    def remainder04(): Unit \ Assert = assertEq(expected = 2i8, 12i8 `Int8.remainder` -5i8)
 
-    @test
-    def remainder05(): Bool = (-12i8 `Int8.remainder` -5i8) == -2i8
+    @Test
+    def remainder05(): Unit \ Assert = assertEq(expected = -2i8, -12i8 `Int8.remainder` -5i8)
 
-    @test
-    def remainder06(): Bool = (1i8 `Int8.remainder` 0i8) == 0i8
+    @Test
+    def remainder06(): Unit \ Assert = assertEq(expected = 0i8, 1i8 `Int8.remainder` 0i8)
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def dist01(): Bool = Int8.dist(31i8, -7i8) == 38i8
+    @Test
+    def dist01(): Unit \ Assert = assertEq(expected = 38i8, Int8.dist(31i8, -7i8))
 
-    @test
-    def dist02(): Bool = Int8.dist(-44i8, -1i8) == 43i8
+    @Test
+    def dist02(): Unit \ Assert = assertEq(expected = 43i8, Int8.dist(-44i8, -1i8))
 
-    @test
-    def dist03(): Bool = Int8.dist(-2i8, -2i8) == 0i8
+    @Test
+    def dist03(): Unit \ Assert = assertEq(expected = 0i8, Int8.dist(-2i8, -2i8))
 
-    @test
-    def dist04(): Bool = Int8.dist(-128i8, -1i8) == 127i8
+    @Test
+    def dist04(): Unit \ Assert = assertEq(expected = 127i8, Int8.dist(-128i8, -1i8))
 
-    @test
-    def dist05(): Bool = Int8.dist(-128i8, 0i8) == -1i8
+    @Test
+    def dist05(): Unit \ Assert = assertEq(expected = -1i8, Int8.dist(-128i8, 0i8))
 
-    @test
-    def dist06(): Bool = Int8.dist(-123i8, 4i8) == 127i8
+    @Test
+    def dist06(): Unit \ Assert = assertEq(expected = 127i8, Int8.dist(-123i8, 4i8))
 
-    @test
-    def dist07(): Bool = Int8.dist(-123i8, 5i8) == -1i8
+    @Test
+    def dist07(): Unit \ Assert = assertEq(expected = -1i8, Int8.dist(-123i8, 5i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def compare01(): Bool = Int8.compare(-1i8, 44i8) == -1
+    @Test
+    def compare01(): Unit \ Assert = assertEq(expected = -1, Int8.compare(-1i8, 44i8))
 
-    @test
-    def compare02(): Bool = Int8.compare(-1i8, -44i8) == 1
+    @Test
+    def compare02(): Unit \ Assert = assertEq(expected = 1, Int8.compare(-1i8, -44i8))
 
-    @test
-    def compare03(): Bool = Int8.compare(88i8, 88i8) == 0
+    @Test
+    def compare03(): Unit \ Assert = assertEq(expected = 0, Int8.compare(88i8, 88i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // signum                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def signum01(): Bool = Int8.signum(-22i8) == -1
+    @Test
+    def signum01(): Unit \ Assert = assertEq(expected = -1, Int8.signum(-22i8))
 
-    @test
-    def signum02(): Bool = Int8.signum(22i8) == 1
+    @Test
+    def signum02(): Unit \ Assert = assertEq(expected = 1, Int8.signum(22i8))
 
-    @test
-    def signum03(): Bool = Int8.signum(0i8) == 0
+    @Test
+    def signum03(): Unit \ Assert = assertEq(expected = 0, Int8.signum(0i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // pow                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def pow01(): Bool = Int8.pow(base = 0i8, 0i8) == 1i8
+    @Test
+    def pow01(): Unit \ Assert = assertEq(expected = 1i8, Int8.pow(base = 0i8, 0i8))
 
-    @test
-    def pow02(): Bool = Int8.pow(base = 0i8, 1i8) == 0i8
+    @Test
+    def pow02(): Unit \ Assert = assertEq(expected = 0i8, Int8.pow(base = 0i8, 1i8))
 
-    @test
-    def pow03(): Bool = Int8.pow(base = 1i8, 0i8) == 1i8
+    @Test
+    def pow03(): Unit \ Assert = assertEq(expected = 1i8, Int8.pow(base = 1i8, 0i8))
 
-    @test
-    def pow04(): Bool = Int8.pow(base = 1i8, 1i8) == 1i8
+    @Test
+    def pow04(): Unit \ Assert = assertEq(expected = 1i8, Int8.pow(base = 1i8, 1i8))
 
-    @test
-    def pow05(): Bool = Int8.pow(base = 5i8, 2i8) == 25i8
+    @Test
+    def pow05(): Unit \ Assert = assertEq(expected = 25i8, Int8.pow(base = 5i8, 2i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // leftShift                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def testBitwiseLeftShift01(): Bool = Int8.leftShift(8i8, 0) == 8i8
+    @Test
+    def testBitwiseLeftShift01(): Unit \ Assert = assertEq(expected = 8i8, Int8.leftShift(8i8, 0))
 
-    @test
-    def testBitwiseLeftShift02(): Bool = Int8.leftShift(8i8, 2) == 32i8
+    @Test
+    def testBitwiseLeftShift02(): Unit \ Assert = assertEq(expected = 32i8, Int8.leftShift(8i8, 2))
 
-    @test
-    def testBitwiseLeftShift03(): Bool = Int8.leftShift(8i8, 4) == -128i8
+    @Test
+    def testBitwiseLeftShift03(): Unit \ Assert = assertEq(expected = -128i8, Int8.leftShift(8i8, 4))
 
-    @test
-    def testBitwiseLeftShift04(): Bool = Int8.leftShift(8i8, 5) == 0i8
+    @Test
+    def testBitwiseLeftShift04(): Unit \ Assert = assertEq(expected = 0i8, Int8.leftShift(8i8, 5))
 
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def testBitwiseRightShift01(): Bool = Int8.rightShift(120i8, 0) == 120i8
+    @Test
+    def testBitwiseRightShift01(): Unit \ Assert = assertEq(expected = 120i8, Int8.rightShift(120i8, 0))
 
-    @test
-    def testBitwiseRightShift02(): Bool = Int8.rightShift(120i8, 2) == 30i8
+    @Test
+    def testBitwiseRightShift02(): Unit \ Assert = assertEq(expected = 30i8, Int8.rightShift(120i8, 2))
 
-    @test
-    def testBitwiseRightShift03(): Bool = Int8.rightShift(120i8, 7) == 0i8
+    @Test
+    def testBitwiseRightShift03(): Unit \ Assert = assertEq(expected = 0i8, Int8.rightShift(120i8, 7))
 
-    @test
-    def testBitwiseRightShift04(): Bool = Int8.rightShift(-120i8, 2) == -30i8
+    @Test
+    def testBitwiseRightShift04(): Unit \ Assert = assertEq(expected = -30i8, Int8.rightShift(-120i8, 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // logicalRightShift                                                       //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def logicalRightShift01(): Bool = Int8.logicalRightShift(dist = 4, 98i8) == Int8.rightShift(98i8, 4)
+    @Test
+    def logicalRightShift01(): Unit \ Assert = assertEq(expected = Int8.rightShift(98i8, 4), Int8.logicalRightShift(dist = 4, 98i8))
 
-    @test
-    def logicalRightShift02(): Bool = Int8.logicalRightShift(dist = 33, 127i8) == Int8.rightShift(127i8, 33)
+    @Test
+    def logicalRightShift02(): Unit \ Assert = assertEq(expected = Int8.rightShift(127i8, 33), Int8.logicalRightShift(dist = 33, 127i8))
 
-    @test
-    def logicalRightShift03(): Bool = Int8.logicalRightShift(dist = -8, 93i8) == Int8.rightShift(93i8, -8)
+    @Test
+    def logicalRightShift03(): Unit \ Assert = assertEq(expected = Int8.rightShift(93i8, -8), Int8.logicalRightShift(dist = -8, 93i8))
 
-    @test
-    def logicalRightShift04(): Bool = Int8.logicalRightShift(dist = 4, 93i8) == Int8.rightShift(93i8, 4)
+    @Test
+    def logicalRightShift04(): Unit \ Assert = assertEq(expected = Int8.rightShift(93i8, 4), Int8.logicalRightShift(dist = 4, 93i8))
 
-    @test
-    def logicalRightShift05(): Bool = Int8.logicalRightShift(dist = 1, -1i8) == 127i8
+    @Test
+    def logicalRightShift05(): Unit \ Assert = assertEq(expected = 127i8, Int8.logicalRightShift(dist = 1, -1i8))
 
-    @test
-    def logicalRightShift06(): Bool = Int8.logicalRightShift(dist = 4, -35i8) == 13i8
+    @Test
+    def logicalRightShift06(): Unit \ Assert = assertEq(expected = 13i8, Int8.logicalRightShift(dist = 4, -35i8))
 
-    @test
-    def logicalRightShift07(): Bool = Int8.logicalRightShift(dist = -2780, -44i8) == 13i8
+    @Test
+    def logicalRightShift07(): Unit \ Assert = assertEq(expected = 13i8, Int8.logicalRightShift(dist = -2780, -44i8))
 
-    @test
-    def logicalRightShift08(): Bool = Int8.logicalRightShift(dist = 64, -98i8) == -98i8
+    @Test
+    def logicalRightShift08(): Unit \ Assert = assertEq(expected = -98i8, Int8.logicalRightShift(dist = 64, -98i8))
 
-    @test
-    def logicalRightShift09(): Bool = Int8.logicalRightShift(dist = 0, -27i8) == -27i8
+    @Test
+    def logicalRightShift09(): Unit \ Assert = assertEq(expected = -27i8, Int8.logicalRightShift(dist = 0, -27i8))
 
-    @test
-    def logicalRightShift10(): Bool = Int8.logicalRightShift(dist = 1, 127i8) == 63i8
+    @Test
+    def logicalRightShift10(): Unit \ Assert = assertEq(expected = 63i8, Int8.logicalRightShift(dist = 1, 127i8))
 
-    @test
-    def logicalRightShift11(): Bool = Int8.logicalRightShift(dist = 9, 127i8) == 0i8
+    @Test
+    def logicalRightShift11(): Unit \ Assert = assertEq(expected = 0i8, Int8.logicalRightShift(dist = 9, 127i8))
 
-    @test
-    def logicalRightShift12(): Bool = Int8.logicalRightShift(dist = 8, 127i8) == 0i8
+    @Test
+    def logicalRightShift12(): Unit \ Assert = assertEq(expected = 0i8, Int8.logicalRightShift(dist = 8, 127i8))
 
-    @test
-    def logicalRightShift13(): Bool = Int8.logicalRightShift(dist = 9, -128i8) == 0i8
+    @Test
+    def logicalRightShift13(): Unit \ Assert = assertEq(expected = 0i8, Int8.logicalRightShift(dist = 9, -128i8))
 
-    @test
-    def logicalRightShift14(): Bool = Int8.logicalRightShift(dist = 9, -128i8) == 0i8
+    @Test
+    def logicalRightShift14(): Unit \ Assert = assertEq(expected = 0i8, Int8.logicalRightShift(dist = 9, -128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitCount                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def bitCount01(): Bool = Int8.bitCount(70i8) == 3
+    @Test
+    def bitCount01(): Unit \ Assert = assertEq(expected = 3, Int8.bitCount(70i8))
 
-    @test
-    def bitCount02(): Bool = Int8.bitCount(-1i8) == 8
+    @Test
+    def bitCount02(): Unit \ Assert = assertEq(expected = 8, Int8.bitCount(-1i8))
 
-    @test
-    def bitCount03(): Bool = Int8.bitCount(-99i8) == 5
+    @Test
+    def bitCount03(): Unit \ Assert = assertEq(expected = 5, Int8.bitCount(-99i8))
 
-    @test
-    def bitCount04(): Bool = Int8.bitCount(0i8) == 0
+    @Test
+    def bitCount04(): Unit \ Assert = assertEq(expected = 0, Int8.bitCount(0i8))
 
-    @test
-    def bitCount05(): Bool = Int8.bitCount(127i8) == 7
+    @Test
+    def bitCount05(): Unit \ Assert = assertEq(expected = 7, Int8.bitCount(127i8))
 
-    @test
-    def bitCount06(): Bool = Int8.bitCount(-128i8) == 1
+    @Test
+    def bitCount06(): Unit \ Assert = assertEq(expected = 1, Int8.bitCount(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def rotateRight01(): Bool = Int8.rotateRight(dist = 3, 0i8) == 0i8
+    @Test
+    def rotateRight01(): Unit \ Assert = assertEq(expected = 0i8, Int8.rotateRight(dist = 3, 0i8))
 
-    @test
-    def rotateRight02(): Bool = Int8.rotateRight(dist = 19, 0i8) == 0i8
+    @Test
+    def rotateRight02(): Unit \ Assert = assertEq(expected = 0i8, Int8.rotateRight(dist = 19, 0i8))
 
-    @test
-    def rotateRight03(): Bool = Int8.rotateRight(dist = -3, 0i8) == 0i8
+    @Test
+    def rotateRight03(): Unit \ Assert = assertEq(expected = 0i8, Int8.rotateRight(dist = -3, 0i8))
 
-    @test
-    def rotateRight04(): Bool = Int8.rotateRight(dist = 3, -1i8) == -1i8
+    @Test
+    def rotateRight04(): Unit \ Assert = assertEq(expected = -1i8, Int8.rotateRight(dist = 3, -1i8))
 
-    @test
-    def rotateRight05(): Bool = Int8.rotateRight(dist = 19, -1i8) == -1i8
+    @Test
+    def rotateRight05(): Unit \ Assert = assertEq(expected = -1i8, Int8.rotateRight(dist = 19, -1i8))
 
-    @test
-    def rotateRight06(): Bool = Int8.rotateRight(dist = -3, -1i8) == -1i8
+    @Test
+    def rotateRight06(): Unit \ Assert = assertEq(expected = -1i8, Int8.rotateRight(dist = -3, -1i8))
 
-    @test
-    def rotateRight07(): Bool = Int8.rotateRight(dist = 3, 106i8) == 77i8
+    @Test
+    def rotateRight07(): Unit \ Assert = assertEq(expected = 77i8, Int8.rotateRight(dist = 3, 106i8))
 
-    @test
-    def rotateRight08(): Bool = Int8.rotateRight(dist = 11, 106i8) == 77i8
+    @Test
+    def rotateRight08(): Unit \ Assert = assertEq(expected = 77i8, Int8.rotateRight(dist = 11, 106i8))
 
-    @test
-    def rotateRight09(): Bool = Int8.rotateRight(dist = -5, 106i8) == 77i8
+    @Test
+    def rotateRight09(): Unit \ Assert = assertEq(expected = 77i8, Int8.rotateRight(dist = -5, 106i8))
 
-    @test
-    def rotateRight10(): Bool = Int8.rotateRight(dist = 7, -75i8) == 107i8
+    @Test
+    def rotateRight10(): Unit \ Assert = assertEq(expected = 107i8, Int8.rotateRight(dist = 7, -75i8))
 
-    @test
-    def rotateRight11(): Bool = Int8.rotateRight(dist = 23, -75i8) == 107i8
+    @Test
+    def rotateRight11(): Unit \ Assert = assertEq(expected = 107i8, Int8.rotateRight(dist = 23, -75i8))
 
-    @test
-    def rotateRight12(): Bool = Int8.rotateRight(dist = -1, -75i8) == 107i8
+    @Test
+    def rotateRight12(): Unit \ Assert = assertEq(expected = 107i8, Int8.rotateRight(dist = -1, -75i8))
 
-    @test
-    def rotateRight13(): Bool = Int8.rotateRight(dist = 6, -17i8) == -65i8
+    @Test
+    def rotateRight13(): Unit \ Assert = assertEq(expected = -65i8, Int8.rotateRight(dist = 6, -17i8))
 
-    @test
-    def rotateRight14(): Bool = Int8.rotateRight(dist = 22, -17i8) == -65i8
+    @Test
+    def rotateRight14(): Unit \ Assert = assertEq(expected = -65i8, Int8.rotateRight(dist = 22, -17i8))
 
-    @test
-    def rotateRight15(): Bool = Int8.rotateRight(dist = -10, -17i8) == -65i8
+    @Test
+    def rotateRight15(): Unit \ Assert = assertEq(expected = -65i8, Int8.rotateRight(dist = -10, -17i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def rotateLeft01(): Bool = Int8.rotateLeft(dist = 5, 0i8) == 0i8
+    @Test
+    def rotateLeft01(): Unit \ Assert = assertEq(expected = 0i8, Int8.rotateLeft(dist = 5, 0i8))
 
-    @test
-    def rotateLeft02(): Bool = Int8.rotateLeft(dist = 13, 0i8) == 0i8
+    @Test
+    def rotateLeft02(): Unit \ Assert = assertEq(expected = 0i8, Int8.rotateLeft(dist = 13, 0i8))
 
-    @test
-    def rotateLeft03(): Bool = Int8.rotateLeft(dist = -3, 0i8) == 0i8
+    @Test
+    def rotateLeft03(): Unit \ Assert = assertEq(expected = 0i8, Int8.rotateLeft(dist = -3, 0i8))
 
-    @test
-    def rotateLeft04(): Bool = Int8.rotateLeft(dist = 3, -1i8) == -1i8
+    @Test
+    def rotateLeft04(): Unit \ Assert = assertEq(expected = -1i8, Int8.rotateLeft(dist = 3, -1i8))
 
-    @test
-    def rotateLeft05(): Bool = Int8.rotateLeft(dist = 19, -1i8) == -1i8
+    @Test
+    def rotateLeft05(): Unit \ Assert = assertEq(expected = -1i8, Int8.rotateLeft(dist = 19, -1i8))
 
-    @test
-    def rotateLeft06(): Bool = Int8.rotateLeft(dist = -3, -1i8) == -1i8
+    @Test
+    def rotateLeft06(): Unit \ Assert = assertEq(expected = -1i8, Int8.rotateLeft(dist = -3, -1i8))
 
-    @test
-    def rotateLeft07(): Bool = Int8.rotateLeft(dist = 5, 106i8) == 77i8
+    @Test
+    def rotateLeft07(): Unit \ Assert = assertEq(expected = 77i8, Int8.rotateLeft(dist = 5, 106i8))
 
-    @test
-    def rotateLeft08(): Bool = Int8.rotateLeft(dist = 13, 106i8) == 77i8
+    @Test
+    def rotateLeft08(): Unit \ Assert = assertEq(expected = 77i8, Int8.rotateLeft(dist = 13, 106i8))
 
-    @test
-    def rotateLeft09(): Bool = Int8.rotateLeft(dist = -3, 106i8) == 77i8
+    @Test
+    def rotateLeft09(): Unit \ Assert = assertEq(expected = 77i8, Int8.rotateLeft(dist = -3, 106i8))
 
-    @test
-    def rotateLeft10(): Bool = Int8.rotateLeft(dist = 1, -75i8) == 107i8
+    @Test
+    def rotateLeft10(): Unit \ Assert = assertEq(expected = 107i8, Int8.rotateLeft(dist = 1, -75i8))
 
-    @test
-    def rotateLeft11(): Bool = Int8.rotateLeft(dist = 9, -75i8) == 107i8
+    @Test
+    def rotateLeft11(): Unit \ Assert = assertEq(expected = 107i8, Int8.rotateLeft(dist = 9, -75i8))
 
-    @test
-    def rotateLeft12(): Bool = Int8.rotateLeft(dist = -7, -75i8) == 107i8
+    @Test
+    def rotateLeft12(): Unit \ Assert = assertEq(expected = 107i8, Int8.rotateLeft(dist = -7, -75i8))
 
-    @test
-    def rotateLeft13(): Bool = Int8.rotateLeft(dist = 2, -17i8) == -65i8
+    @Test
+    def rotateLeft13(): Unit \ Assert = assertEq(expected = -65i8, Int8.rotateLeft(dist = 2, -17i8))
 
-    @test
-    def rotateLeft14(): Bool = Int8.rotateLeft(dist = 10, -17i8) == -65i8
+    @Test
+    def rotateLeft14(): Unit \ Assert = assertEq(expected = -65i8, Int8.rotateLeft(dist = 10, -17i8))
 
-    @test
-    def rotateLeft15(): Bool = Int8.rotateLeft(dist = -6, -17i8) == -65i8
+    @Test
+    def rotateLeft15(): Unit \ Assert = assertEq(expected = -65i8, Int8.rotateLeft(dist = -6, -17i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def reverse01(): Bool = Int8.reverse(58i8) == 92i8
+    @Test
+    def reverse01(): Unit \ Assert = assertEq(expected = 92i8, Int8.reverse(58i8))
 
-    @test
-    def reverse02(): Bool = Int8.reverse(92i8) == 58i8
+    @Test
+    def reverse02(): Unit \ Assert = assertEq(expected = 58i8, Int8.reverse(92i8))
 
-    @test
-    def reverse03(): Bool = Int8.reverse(-35i8) == -69i8
+    @Test
+    def reverse03(): Unit \ Assert = assertEq(expected = -69i8, Int8.reverse(-35i8))
 
-    @test
-    def reverse04(): Bool = Int8.reverse(-69i8) == -35i8
+    @Test
+    def reverse04(): Unit \ Assert = assertEq(expected = -35i8, Int8.reverse(-69i8))
 
-    @test
-    def reverse05(): Bool = Int8.reverse(-72i8) == 29i8
+    @Test
+    def reverse05(): Unit \ Assert = assertEq(expected = 29i8, Int8.reverse(-72i8))
 
-    @test
-    def reverse06(): Bool = Int8.reverse(29i8) == -72i8
+    @Test
+    def reverse06(): Unit \ Assert = assertEq(expected = -72i8, Int8.reverse(29i8))
 
-    @test
-    def reverse07(): Bool = Int8.reverse(4i8) == 32i8
+    @Test
+    def reverse07(): Unit \ Assert = assertEq(expected = 32i8, Int8.reverse(4i8))
 
-    @test
-    def reverse08(): Bool = Int8.reverse(32i8) == 4i8
+    @Test
+    def reverse08(): Unit \ Assert = assertEq(expected = 4i8, Int8.reverse(32i8))
 
-    @test
-    def reverse09(): Bool = Int8.reverse(-1i8) == -1i8
+    @Test
+    def reverse09(): Unit \ Assert = assertEq(expected = -1i8, Int8.reverse(-1i8))
 
-    @test
-    def reverse10(): Bool = Int8.reverse(0i8) == 0i8
+    @Test
+    def reverse10(): Unit \ Assert = assertEq(expected = 0i8, Int8.reverse(0i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // highestOneBitPosition                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def highestOneBitPosition01(): Bool = Int8.highestOneBitPosition(-1i8) == 7
+    @Test
+    def highestOneBitPosition01(): Unit \ Assert = assertEq(expected = 7, Int8.highestOneBitPosition(-1i8))
 
-    @test
-    def highestOneBitPosition02(): Bool = Int8.highestOneBitPosition(-128i8) == 7
+    @Test
+    def highestOneBitPosition02(): Unit \ Assert = assertEq(expected = 7, Int8.highestOneBitPosition(-128i8))
 
-    @test
-    def highestOneBitPosition03(): Bool = Int8.highestOneBitPosition(1i8) == 0
+    @Test
+    def highestOneBitPosition03(): Unit \ Assert = assertEq(expected = 0, Int8.highestOneBitPosition(1i8))
 
-    @test
-    def highestOneBitPosition04(): Bool = Int8.highestOneBitPosition(2i8) == 1
+    @Test
+    def highestOneBitPosition04(): Unit \ Assert = assertEq(expected = 1, Int8.highestOneBitPosition(2i8))
 
-    @test
-    def highestOneBitPosition05(): Bool = Int8.highestOneBitPosition(3i8) == 1
+    @Test
+    def highestOneBitPosition05(): Unit \ Assert = assertEq(expected = 1, Int8.highestOneBitPosition(3i8))
 
-    @test
-    def highestOneBitPosition06(): Bool = Int8.highestOneBitPosition(20i8) == 4
+    @Test
+    def highestOneBitPosition06(): Unit \ Assert = assertEq(expected = 4, Int8.highestOneBitPosition(20i8))
 
-    @test
-    def highestOneBitPosition07(): Bool = Int8.highestOneBitPosition(Int8.pow(base = 2i8, 6i8)) == 6
+    @Test
+    def highestOneBitPosition07(): Unit \ Assert = assertEq(expected = 6, Int8.highestOneBitPosition(Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def highestOneBitPosition08(): Bool = Int8.highestOneBitPosition(127i8) == 6
+    @Test
+    def highestOneBitPosition08(): Unit \ Assert = assertEq(expected = 6, Int8.highestOneBitPosition(127i8))
 
-    @test
-    def highestOneBitPosition09(): Bool = Int8.highestOneBitPosition(0i8) == -1
+    @Test
+    def highestOneBitPosition09(): Unit \ Assert = assertEq(expected = -1, Int8.highestOneBitPosition(0i8))
 
-    @test
-    def highestOneBitPosition10(): Bool = Int8.highestOneBitPosition(Int8.pow(base = 2i8,3i8) + Int8.pow(base = 2i8, 5i8)) == 5
+    @Test
+    def highestOneBitPosition10(): Unit \ Assert = assertEq(expected = 5, Int8.highestOneBitPosition(Int8.pow(base = 2i8,3i8) + Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def highestOneBitPosition11(): Bool = Int8.highestOneBitPosition(Int8.pow(base = 2i8, 3i8) + Int8.pow(base = 2i8, 4i8)) == 4
+    @Test
+    def highestOneBitPosition11(): Unit \ Assert = assertEq(expected = 4, Int8.highestOneBitPosition(Int8.pow(base = 2i8, 3i8) + Int8.pow(base = 2i8, 4i8)))
 
-    @test
-    def highestOneBitPosition12(): Bool = Int8.highestOneBitPosition(-10i8) == 7
+    @Test
+    def highestOneBitPosition12(): Unit \ Assert = assertEq(expected = 7, Int8.highestOneBitPosition(-10i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // highestOneBit                                                           //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def highestOneBit01(): Bool = Int8.highestOneBit(-1i8) == Int8.leftShift(1i8, 7)
+    @Test
+    def highestOneBit01(): Unit \ Assert = assertEq(expected = Int8.leftShift(1i8, 7), Int8.highestOneBit(-1i8))
 
-    @test
-    def highestOneBit02(): Bool = Int8.highestOneBit(-128i8) == Int8.leftShift(1i8, 7)
+    @Test
+    def highestOneBit02(): Unit \ Assert = assertEq(expected = Int8.leftShift(1i8, 7), Int8.highestOneBit(-128i8))
 
-    @test
-    def highestOneBit03(): Bool = Int8.highestOneBit(-77i8) == Int8.leftShift(1i8, 7)
+    @Test
+    def highestOneBit03(): Unit \ Assert = assertEq(expected = Int8.leftShift(1i8, 7), Int8.highestOneBit(-77i8))
 
-    @test
-    def highestOneBit04(): Bool = Int8.highestOneBit(2i8) == 2i8
+    @Test
+    def highestOneBit04(): Unit \ Assert = assertEq(expected = 2i8, Int8.highestOneBit(2i8))
 
-    @test
-    def highestOneBit05(): Bool = Int8.highestOneBit(3i8) == 2i8
+    @Test
+    def highestOneBit05(): Unit \ Assert = assertEq(expected = 2i8, Int8.highestOneBit(3i8))
 
-    @test
-    def highestOneBit06(): Bool = Int8.highestOneBit(20i8) == 16i8
+    @Test
+    def highestOneBit06(): Unit \ Assert = assertEq(expected = 16i8, Int8.highestOneBit(20i8))
 
-    @test
-    def highestOneBit07(): Bool = Int8.highestOneBit(Int8.pow(base = 2i8, 2i8) + Int8.pow(base = 2i8, 5i8)) == 32i8
+    @Test
+    def highestOneBit07(): Unit \ Assert = assertEq(expected = 32i8, Int8.highestOneBit(Int8.pow(base = 2i8, 2i8) + Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def highestOneBit08(): Bool = Int8.highestOneBit(127i8) == 64i8
+    @Test
+    def highestOneBit08(): Unit \ Assert = assertEq(expected = 64i8, Int8.highestOneBit(127i8))
 
-    @test
-    def highestOneBit09(): Bool = Int8.highestOneBit(0i8) == 0i8
+    @Test
+    def highestOneBit09(): Unit \ Assert = assertEq(expected = 0i8, Int8.highestOneBit(0i8))
 
-    @test
-    def highestOneBit10(): Bool = Int8.highestOneBit(Int8.pow(base = 2i8, 5i8) + Int8.pow(base = 2i8, 6i8)) == 64i8
+    @Test
+    def highestOneBit10(): Unit \ Assert = assertEq(expected = 64i8, Int8.highestOneBit(Int8.pow(base = 2i8, 5i8) + Int8.pow(base = 2i8, 6i8)))
 
     /////////////////////////////////////////////////////////////////////////////
     // numberOfLeadingZeros                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def numberOfLeadingZeros01(): Bool = Int8.numberOfLeadingZeros(0i8) == 8
+    @Test
+    def numberOfLeadingZeros01(): Unit \ Assert = assertEq(expected = 8, Int8.numberOfLeadingZeros(0i8))
 
-    @test
-    def numberOfLeadingZeros02(): Bool = Int8.numberOfLeadingZeros(-128i8) == 0
+    @Test
+    def numberOfLeadingZeros02(): Unit \ Assert = assertEq(expected = 0, Int8.numberOfLeadingZeros(-128i8))
 
-    @test
-    def numberOfLeadingZeros03(): Bool = Int8.numberOfLeadingZeros(-1i8) == 0
+    @Test
+    def numberOfLeadingZeros03(): Unit \ Assert = assertEq(expected = 0, Int8.numberOfLeadingZeros(-1i8))
 
-    @test
-    def numberOfLeadingZeros04(): Bool = Int8.numberOfLeadingZeros(127i8) == 1
+    @Test
+    def numberOfLeadingZeros04(): Unit \ Assert = assertEq(expected = 1, Int8.numberOfLeadingZeros(127i8))
 
-    @test
-    def numberOfLeadingZeros05(): Bool = Int8.numberOfLeadingZeros(Int8.pow(base = 2i8, 6i8)) == 1
+    @Test
+    def numberOfLeadingZeros05(): Unit \ Assert = assertEq(expected = 1, Int8.numberOfLeadingZeros(Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def numberOfLeadingZeros06(): Bool = Int8.numberOfLeadingZeros(Int8.pow(base = 2i8, 3i8) + Int8.pow(base = 2i8, 6i8)) == 1
+    @Test
+    def numberOfLeadingZeros06(): Unit \ Assert = assertEq(expected = 1, Int8.numberOfLeadingZeros(Int8.pow(base = 2i8, 3i8) + Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def numberOfLeadingZeros07(): Bool = Int8.numberOfLeadingZeros(Int8.pow(base = 2i8, 4i8) + Int8.pow(base = 2i8, 5i8)) == 2
+    @Test
+    def numberOfLeadingZeros07(): Unit \ Assert = assertEq(expected = 2, Int8.numberOfLeadingZeros(Int8.pow(base = 2i8, 4i8) + Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def numberOfLeadingZeros08(): Bool = Int8.numberOfLeadingZeros(20i8) == 3
+    @Test
+    def numberOfLeadingZeros08(): Unit \ Assert = assertEq(expected = 3, Int8.numberOfLeadingZeros(20i8))
 
-    @test
-    def numberOfLeadingZeros09(): Bool = Int8.numberOfLeadingZeros(1i8) == 7
+    @Test
+    def numberOfLeadingZeros09(): Unit \ Assert = assertEq(expected = 7, Int8.numberOfLeadingZeros(1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // lowestOneBitPosition                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def lowestOneBitPosition01(): Bool = Int8.lowestOneBitPosition(-1i8) == 0
+    @Test
+    def lowestOneBitPosition01(): Unit \ Assert = assertEq(expected = 0, Int8.lowestOneBitPosition(-1i8))
 
-    @test
-    def lowestOneBitPosition02(): Bool = Int8.lowestOneBitPosition(-128i8) == 7
+    @Test
+    def lowestOneBitPosition02(): Unit \ Assert = assertEq(expected = 7, Int8.lowestOneBitPosition(-128i8))
 
-    @test
-    def lowestOneBitPosition03(): Bool = Int8.lowestOneBitPosition(1i8) == 0
+    @Test
+    def lowestOneBitPosition03(): Unit \ Assert = assertEq(expected = 0, Int8.lowestOneBitPosition(1i8))
 
-    @test
-    def lowestOneBitPosition04(): Bool = Int8.lowestOneBitPosition(2i8) == 1
+    @Test
+    def lowestOneBitPosition04(): Unit \ Assert = assertEq(expected = 1, Int8.lowestOneBitPosition(2i8))
 
-    @test
-    def lowestOneBitPosition05(): Bool = Int8.lowestOneBitPosition(3i8) == 0
+    @Test
+    def lowestOneBitPosition05(): Unit \ Assert = assertEq(expected = 0, Int8.lowestOneBitPosition(3i8))
 
-    @test
-    def lowestOneBitPosition06(): Bool = Int8.lowestOneBitPosition(4i8) == 2
+    @Test
+    def lowestOneBitPosition06(): Unit \ Assert = assertEq(expected = 2, Int8.lowestOneBitPosition(4i8))
 
-    @test
-    def lowestOneBitPosition07(): Bool = Int8.lowestOneBitPosition(12i8) == 2
+    @Test
+    def lowestOneBitPosition07(): Unit \ Assert = assertEq(expected = 2, Int8.lowestOneBitPosition(12i8))
 
-    @test
-    def lowestOneBitPosition08(): Bool = Int8.lowestOneBitPosition(Int8.pow(base = 2i8, 4i8)) == 4
+    @Test
+    def lowestOneBitPosition08(): Unit \ Assert = assertEq(expected = 4, Int8.lowestOneBitPosition(Int8.pow(base = 2i8, 4i8)))
 
-    @test
-    def lowestOneBitPosition09(): Bool = Int8.lowestOneBitPosition(Int8.pow(base = 2i8, 4i8) + Int8.pow(base = 2i8, 6i8)) == 4
+    @Test
+    def lowestOneBitPosition09(): Unit \ Assert = assertEq(expected = 4, Int8.lowestOneBitPosition(Int8.pow(base = 2i8, 4i8) + Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def lowestOneBitPosition10(): Bool = Int8.lowestOneBitPosition(127i8) == 0
+    @Test
+    def lowestOneBitPosition10(): Unit \ Assert = assertEq(expected = 0, Int8.lowestOneBitPosition(127i8))
 
-    @test
-    def lowestOneBitPosition11(): Bool = Int8.lowestOneBitPosition(0i8) == -1
+    @Test
+    def lowestOneBitPosition11(): Unit \ Assert = assertEq(expected = -1, Int8.lowestOneBitPosition(0i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // lowestOneBit                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def lowestOneBit01(): Bool = Int8.lowestOneBit(-1i8) == 1i8
+    @Test
+    def lowestOneBit01(): Unit \ Assert = assertEq(expected = 1i8, Int8.lowestOneBit(-1i8))
 
-    @test
-    def lowestOneBit02(): Bool = Int8.lowestOneBit(-128i8) == Int8.leftShift(1i8, 7)
+    @Test
+    def lowestOneBit02(): Unit \ Assert = assertEq(expected = Int8.leftShift(1i8, 7), Int8.lowestOneBit(-128i8))
 
-    @test
-    def lowestOneBit03(): Bool = Int8.lowestOneBit(1i8) == 1i8
+    @Test
+    def lowestOneBit03(): Unit \ Assert = assertEq(expected = 1i8, Int8.lowestOneBit(1i8))
 
-    @test
-    def lowestOneBit04(): Bool = Int8.lowestOneBit(2i8) == 2i8
+    @Test
+    def lowestOneBit04(): Unit \ Assert = assertEq(expected = 2i8, Int8.lowestOneBit(2i8))
 
-    @test
-    def lowestOneBit05(): Bool = Int8.lowestOneBit(6i8) == 2i8
+    @Test
+    def lowestOneBit05(): Unit \ Assert = assertEq(expected = 2i8, Int8.lowestOneBit(6i8))
 
-    @test
-    def lowestOneBit06(): Bool = Int8.lowestOneBit(12i8) == 4i8
+    @Test
+    def lowestOneBit06(): Unit \ Assert = assertEq(expected = 4i8, Int8.lowestOneBit(12i8))
 
-    @test
-    def lowestOneBit07(): Bool = Int8.lowestOneBit(Int8.pow(base = 2i8, 6i8)) == 64i8
+    @Test
+    def lowestOneBit07(): Unit \ Assert = assertEq(expected = 64i8, Int8.lowestOneBit(Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def lowestOneBit08(): Bool = Int8.lowestOneBit(Int8.pow(base = 2i8, 5i8)) == 32i8
+    @Test
+    def lowestOneBit08(): Unit \ Assert = assertEq(expected = 32i8, Int8.lowestOneBit(Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def lowestOneBit09(): Bool = Int8.lowestOneBit(Int8.pow(base = 2i8, 3i8) + Int8.pow(base = 2i8, 5i8)) == 8i8
+    @Test
+    def lowestOneBit09(): Unit \ Assert = assertEq(expected = 8i8, Int8.lowestOneBit(Int8.pow(base = 2i8, 3i8) + Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def lowestOneBit10(): Bool = Int8.lowestOneBit(127i8) == 1i8
+    @Test
+    def lowestOneBit10(): Unit \ Assert = assertEq(expected = 1i8, Int8.lowestOneBit(127i8))
 
-    @test
-    def lowestOneBit11(): Bool = Int8.lowestOneBit(0i8) == 0i8
+    @Test
+    def lowestOneBit11(): Unit \ Assert = assertEq(expected = 0i8, Int8.lowestOneBit(0i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // numberOfTrailingZeros                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def numberOfTrailingZeros01(): Bool = Int8.numberOfTrailingZeros(0i8) == 8
+    @Test
+    def numberOfTrailingZeros01(): Unit \ Assert = assertEq(expected = 8, Int8.numberOfTrailingZeros(0i8))
 
-    @test
-    def numberOfTrailingZeros02(): Bool = Int8.numberOfTrailingZeros(3i8) == 0
+    @Test
+    def numberOfTrailingZeros02(): Unit \ Assert = assertEq(expected = 0, Int8.numberOfTrailingZeros(3i8))
 
-    @test
-    def numberOfTrailingZeros03(): Bool = Int8.numberOfTrailingZeros(42i8) == 1
+    @Test
+    def numberOfTrailingZeros03(): Unit \ Assert = assertEq(expected = 1, Int8.numberOfTrailingZeros(42i8))
 
-    @test
-    def numberOfTrailingZeros04(): Bool = Int8.numberOfTrailingZeros(Int8.pow(base = 2i8, 4i8) + Int8.pow(base = 2i8, 6i8)) == 4
+    @Test
+    def numberOfTrailingZeros04(): Unit \ Assert = assertEq(expected = 4, Int8.numberOfTrailingZeros(Int8.pow(base = 2i8, 4i8) + Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def numberOfTrailingZeros05(): Bool = Int8.numberOfTrailingZeros(Int8.pow(base = 2i8, 6i8)) == 6
+    @Test
+    def numberOfTrailingZeros05(): Unit \ Assert = assertEq(expected = 6, Int8.numberOfTrailingZeros(Int8.pow(base = 2i8, 6i8)))
 
-    @test
-    def numberOfTrailingZeros06(): Bool = Int8.numberOfTrailingZeros(-1i8) == 0
+    @Test
+    def numberOfTrailingZeros06(): Unit \ Assert = assertEq(expected = 0, Int8.numberOfTrailingZeros(-1i8))
 
-    @test
-    def numberOfTrailingZeros07(): Bool = Int8.numberOfTrailingZeros(-128i8) == 7
+    @Test
+    def numberOfTrailingZeros07(): Unit \ Assert = assertEq(expected = 7, Int8.numberOfTrailingZeros(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // getBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def getBit01(): Bool = Int8.getBit(pos = 5, -1i8) == 1
+    @Test
+    def getBit01(): Unit \ Assert = assertEq(expected = 1, Int8.getBit(pos = 5, -1i8))
 
-    @test
-    def getBit02(): Bool = Int8.getBit(pos = 7, -100i8) == 1
+    @Test
+    def getBit02(): Unit \ Assert = assertEq(expected = 1, Int8.getBit(pos = 7, -100i8))
 
-    @test
-    def getBit03(): Bool = Int8.getBit(pos = 5, Int8.pow(base = 2i8, 5i8)) == 1
+    @Test
+    def getBit03(): Unit \ Assert = assertEq(expected = 1, Int8.getBit(pos = 5, Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def getBit04(): Bool = Int8.getBit(pos = 6, Int8.pow(base = 2i8, 5i8)) == 0
+    @Test
+    def getBit04(): Unit \ Assert = assertEq(expected = 0, Int8.getBit(pos = 6, Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def getBit05(): Bool = Int8.getBit(pos = 4, Int8.pow(base = 2i8, 5i8)) == 0
+    @Test
+    def getBit05(): Unit \ Assert = assertEq(expected = 0, Int8.getBit(pos = 4, Int8.pow(base = 2i8, 5i8)))
 
-    @test
-    def getBit06(): Bool = Int8.getBit(pos = 4, -1i8 - Int8.pow(base = 2i8, 4i8)) == 0
+    @Test
+    def getBit06(): Unit \ Assert = assertEq(expected = 0, Int8.getBit(pos = 4, -1i8 - Int8.pow(base = 2i8, 4i8)))
 
-    @test
-    def getBit07(): Bool = Int8.getBit(pos = 5, -1i8 - Int8.pow(base = 2i8, 4i8)) == 1
+    @Test
+    def getBit07(): Unit \ Assert = assertEq(expected = 1, Int8.getBit(pos = 5, -1i8 - Int8.pow(base = 2i8, 4i8)))
 
-    @test
-    def getBit08(): Bool = Int8.getBit(pos = 7, 0i8) == 0
+    @Test
+    def getBit08(): Unit \ Assert = assertEq(expected = 0, Int8.getBit(pos = 7, 0i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // setBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def setBit01(): Bool = Int8.setBit(pos = 0, 0i8) == 1i8
+    @Test
+    def setBit01(): Unit \ Assert = assertEq(expected = 1i8, Int8.setBit(pos = 0, 0i8))
 
-    @test
-    def setBit02(): Bool = Int8.setBit(pos = 1, 0i8) == 2i8
+    @Test
+    def setBit02(): Unit \ Assert = assertEq(expected = 2i8, Int8.setBit(pos = 1, 0i8))
 
-    @test
-    def setBit03(): Bool = Int8.setBit(pos = 7, 0i8) == -128i8
+    @Test
+    def setBit03(): Unit \ Assert = assertEq(expected = -128i8, Int8.setBit(pos = 7, 0i8))
 
-    @test
-    def setBit04(): Bool = Int8.setBit(pos = 8, 0i8) == 0i8
+    @Test
+    def setBit04(): Unit \ Assert = assertEq(expected = 0i8, Int8.setBit(pos = 8, 0i8))
 
-    @test
-    def setBit05(): Bool = Int8.setBit(pos = 31, -101i8) == -101i8
+    @Test
+    def setBit05(): Unit \ Assert = assertEq(expected = -101i8, Int8.setBit(pos = 31, -101i8))
 
-    @test
-    def setBit07(): Bool = Int8.setBit(pos = 4, -17i8) == -1i8
+    @Test
+    def setBit07(): Unit \ Assert = assertEq(expected = -1i8, Int8.setBit(pos = 4, -17i8))
 
-    @test
-    def setBit08(): Bool = Int8.setBit(pos = 6, -65i8) == -1i8
+    @Test
+    def setBit08(): Unit \ Assert = assertEq(expected = -1i8, Int8.setBit(pos = 6, -65i8))
 
-    @test
-    def setBit09(): Bool = Int8.setBit(pos = 15, -17i8) == -17i8
+    @Test
+    def setBit09(): Unit \ Assert = assertEq(expected = -17i8, Int8.setBit(pos = 15, -17i8))
 
-    @test
-    def setBit10(): Bool = Int8.setBit(pos = 30, -17i8) == -17i8
+    @Test
+    def setBit10(): Unit \ Assert = assertEq(expected = -17i8, Int8.setBit(pos = 30, -17i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // clearBit                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clearBit01(): Bool = Int8.clearBit(pos = 0, 1i8) == 0i8
+    @Test
+    def clearBit01(): Unit \ Assert = assertEq(expected = 0i8, Int8.clearBit(pos = 0, 1i8))
 
-    @test
-    def clearBit02(): Bool = Int8.clearBit(pos = 1, 1i8) == 1i8
+    @Test
+    def clearBit02(): Unit \ Assert = assertEq(expected = 1i8, Int8.clearBit(pos = 1, 1i8))
 
-    @test
-    def clearBit03(): Bool = Int8.clearBit(pos = 1, 2i8) == 0i8
+    @Test
+    def clearBit03(): Unit \ Assert = assertEq(expected = 0i8, Int8.clearBit(pos = 1, 2i8))
 
-    @test
-    def clearBit04(): Bool = Int8.clearBit(pos = 2, 2i8) == 2i8
+    @Test
+    def clearBit04(): Unit \ Assert = assertEq(expected = 2i8, Int8.clearBit(pos = 2, 2i8))
 
-    @test
-    def clearBit05(): Bool = Int8.clearBit(pos = 31, 0i8) == 0i8
+    @Test
+    def clearBit05(): Unit \ Assert = assertEq(expected = 0i8, Int8.clearBit(pos = 31, 0i8))
 
-    @test
-    def clearBit06(): Bool = Int8.clearBit(pos = 30, 0i8) == 0i8
+    @Test
+    def clearBit06(): Unit \ Assert = assertEq(expected = 0i8, Int8.clearBit(pos = 30, 0i8))
 
-    @test
-    def clearBit07(): Bool = Int8.clearBit(pos = 7, Int8.leftShift(1i8, 7)) == 0i8
+    @Test
+    def clearBit07(): Unit \ Assert = assertEq(expected = 0i8, Int8.clearBit(pos = 7, Int8.leftShift(1i8, 7)))
 
-    @test
-    def clearBit08(): Bool = Int8.clearBit(pos = 3, 109i8) == 101i8
+    @Test
+    def clearBit08(): Unit \ Assert = assertEq(expected = 101i8, Int8.clearBit(pos = 3, 109i8))
 
-    @test
-    def clearBit09(): Bool = Int8.clearBit(pos = 0, -1i8) == -2i8
+    @Test
+    def clearBit09(): Unit \ Assert = assertEq(expected = -2i8, Int8.clearBit(pos = 0, -1i8))
 
-    @test
-    def clearBit10(): Bool = Int8.clearBit(pos = 1, -1i8) == -3i8
+    @Test
+    def clearBit10(): Unit \ Assert = assertEq(expected = -3i8, Int8.clearBit(pos = 1, -1i8))
 
-    @test
-    def clearBit11(): Bool = Int8.clearBit(pos = 5, -1i8) == -33i8
+    @Test
+    def clearBit11(): Unit \ Assert = assertEq(expected = -33i8, Int8.clearBit(pos = 5, -1i8))
 
-    @test
-    def clearBit12(): Bool = Int8.clearBit(pos = 7, -1i8) == Int8.bitwiseNot(Int8.leftShift(1i8, 7))
+    @Test
+    def clearBit12(): Unit \ Assert = assertEq(expected = Int8.bitwiseNot(Int8.leftShift(1i8, 7)), Int8.clearBit(pos = 7, -1i8))
 
-    @test
-    def clearBit13(): Bool = Int8.clearBit(pos = 32, -1i8) == -2i8
+    @Test
+    def clearBit13(): Unit \ Assert = assertEq(expected = -2i8, Int8.clearBit(pos = 32, -1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // flipBit                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def flipBit01(): Bool = Int8.flipBit(pos = 0, 1i8) == 0i8
+    @Test
+    def flipBit01(): Unit \ Assert = assertEq(expected = 0i8, Int8.flipBit(pos = 0, 1i8))
 
-    @test
-    def flipBit02(): Bool = Int8.flipBit(pos = 1, 1i8) == 3i8
+    @Test
+    def flipBit02(): Unit \ Assert = assertEq(expected = 3i8, Int8.flipBit(pos = 1, 1i8))
 
-    @test
-    def flipBit03(): Bool = Int8.flipBit(pos = 1, 2i8) == 0i8
+    @Test
+    def flipBit03(): Unit \ Assert = assertEq(expected = 0i8, Int8.flipBit(pos = 1, 2i8))
 
-    @test
-    def flipBit04(): Bool = Int8.flipBit(pos = 2, 2i8) == 6i8
+    @Test
+    def flipBit04(): Unit \ Assert = assertEq(expected = 6i8, Int8.flipBit(pos = 2, 2i8))
 
-    @test
-    def flipBit05(): Bool = Int8.flipBit(pos = 7, 0i8) == -128i8
+    @Test
+    def flipBit05(): Unit \ Assert = assertEq(expected = -128i8, Int8.flipBit(pos = 7, 0i8))
 
-    @test
-    def flipBit06(): Bool = Int8.flipBit(pos = 8, 0i8) == 0i8
+    @Test
+    def flipBit06(): Unit \ Assert = assertEq(expected = 0i8, Int8.flipBit(pos = 8, 0i8))
 
-    @test
-    def flipBit07(): Bool = Int8.flipBit(pos = 7, Int8.leftShift(1i8, 7)) == 0i8
+    @Test
+    def flipBit07(): Unit \ Assert = assertEq(expected = 0i8, Int8.flipBit(pos = 7, Int8.leftShift(1i8, 7)))
 
-    @test
-    def flipBit08(): Bool = Int8.flipBit(pos = 0, -1i8) == -2i8
+    @Test
+    def flipBit08(): Unit \ Assert = assertEq(expected = -2i8, Int8.flipBit(pos = 0, -1i8))
 
-    @test
-    def flipBit9(): Bool = Int8.flipBit(pos = 1, -1i8) == -3i8
+    @Test
+    def flipBit9(): Unit \ Assert = assertEq(expected = -3i8, Int8.flipBit(pos = 1, -1i8))
 
-    @test
-    def flipBit10(): Bool = Int8.flipBit(pos = 5, -1i8) == -33i8
+    @Test
+    def flipBit10(): Unit \ Assert = assertEq(expected = -33i8, Int8.flipBit(pos = 5, -1i8))
 
-    @test
-    def flipBit11(): Bool = Int8.flipBit(pos = 5, -1i8) == (-1i8-Int8.leftShift(1i8, 5))
+    @Test
+    def flipBit11(): Unit \ Assert = assertEq(expected = (-1i8-Int8.leftShift(1i8, 5)), Int8.flipBit(pos = 5, -1i8))
 
-    @test
-    def flipBit12(): Bool = Int8.flipBit(pos = 32, -1i8) == -2i8
+    @Test
+    def flipBit12(): Unit \ Assert = assertEq(expected = -2i8, Int8.flipBit(pos = 32, -1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // log2                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def log201(): Bool = Int8.log2(10i8) == 3i8
+    @Test
+    def log201(): Unit \ Assert = assertEq(expected = 3i8, Int8.log2(10i8))
 
-    @test
-    def log202(): Bool = Int8.log2(8i8) == 3i8
+    @Test
+    def log202(): Unit \ Assert = assertEq(expected = 3i8, Int8.log2(8i8))
 
-    @test
-    def log203(): Bool = Int8.log2(127i8) == 6i8
+    @Test
+    def log203(): Unit \ Assert = assertEq(expected = 6i8, Int8.log2(127i8))
 
-    @test
-    def log204(): Bool = Int8.log2(1i8) == 0i8
+    @Test
+    def log204(): Unit \ Assert = assertEq(expected = 0i8, Int8.log2(1i8))
 
-    @test
-    def log205(): Bool = Int8.log2(20i8) == 4i8
+    @Test
+    def log205(): Unit \ Assert = assertEq(expected = 4i8, Int8.log2(20i8))
 
-    @test
-    def log206(): Bool = Int8.log2(0i8) == 0i8
+    @Test
+    def log206(): Unit \ Assert = assertEq(expected = 0i8, Int8.log2(0i8))
 
-    @test
-    def log207(): Bool = Int8.log2(-1i8) == 0i8
+    @Test
+    def log207(): Unit \ Assert = assertEq(expected = 0i8, Int8.log2(-1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseAnd                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseAnd01(): Bool = Int8.bitwiseAnd(0i8, 0i8) == 0i8
+    @Test
+    def bitwiseAnd01(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseAnd(0i8, 0i8))
 
-    @test
-    def bitwiseAnd02(): Bool = Int8.bitwiseAnd(127i8, 0i8) == 0i8
+    @Test
+    def bitwiseAnd02(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseAnd(127i8, 0i8))
 
-    @test
-    def bitwiseAnd03(): Bool = Int8.bitwiseAnd(-128i8, 0i8) == 0i8
+    @Test
+    def bitwiseAnd03(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseAnd(-128i8, 0i8))
 
-    @test
-    def bitwiseAnd04(): Bool = Int8.bitwiseAnd(0i8, 1i8) == 0i8
+    @Test
+    def bitwiseAnd04(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseAnd(0i8, 1i8))
 
-    @test
-    def bitwiseAnd05(): Bool = Int8.bitwiseAnd(127i8, 1i8) == 1i8
+    @Test
+    def bitwiseAnd05(): Unit \ Assert = assertEq(expected = 1i8, Int8.bitwiseAnd(127i8, 1i8))
 
-    @test
-    def bitwiseAnd06(): Bool = Int8.bitwiseAnd(-128i8, 1i8) == 0i8
+    @Test
+    def bitwiseAnd06(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseAnd(-128i8, 1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseNot                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseNot01(): Bool = Int8.bitwiseNot(0i8) == -1i8
+    @Test
+    def bitwiseNot01(): Unit \ Assert = assertEq(expected = -1i8, Int8.bitwiseNot(0i8))
 
-    @test
-    def bitwiseNot02(): Bool = Int8.bitwiseNot(1i8) == -2i8
+    @Test
+    def bitwiseNot02(): Unit \ Assert = assertEq(expected = -2i8, Int8.bitwiseNot(1i8))
 
-    @test
-    def bitwiseNot03(): Bool = Int8.bitwiseNot(-1i8) == -0i8
+    @Test
+    def bitwiseNot03(): Unit \ Assert = assertEq(expected = -0i8, Int8.bitwiseNot(-1i8))
 
-    @test
-    def bitwiseNot04(): Bool = Int8.bitwiseNot(127i8) == -128i8
+    @Test
+    def bitwiseNot04(): Unit \ Assert = assertEq(expected = -128i8, Int8.bitwiseNot(127i8))
 
-    @test
-    def bitwiseNot05(): Bool = Int8.bitwiseNot(-128i8) == 127i8
+    @Test
+    def bitwiseNot05(): Unit \ Assert = assertEq(expected = 127i8, Int8.bitwiseNot(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseOr                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseOr01(): Bool = Int8.bitwiseOr(0i8, 0i8) == 0i8
+    @Test
+    def bitwiseOr01(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseOr(0i8, 0i8))
 
-    @test
-    def bitwiseOr02(): Bool = Int8.bitwiseOr(127i8, 0i8) == 127i8
+    @Test
+    def bitwiseOr02(): Unit \ Assert = assertEq(expected = 127i8, Int8.bitwiseOr(127i8, 0i8))
 
-    @test
-    def bitwiseOr03(): Bool = Int8.bitwiseOr(-128i8, 0i8) == -128i8
+    @Test
+    def bitwiseOr03(): Unit \ Assert = assertEq(expected = -128i8, Int8.bitwiseOr(-128i8, 0i8))
 
-    @test
-    def bitwiseOr04(): Bool = Int8.bitwiseOr(0i8, 1i8) == 1i8
+    @Test
+    def bitwiseOr04(): Unit \ Assert = assertEq(expected = 1i8, Int8.bitwiseOr(0i8, 1i8))
 
-    @test
-    def bitwiseOr05(): Bool = Int8.bitwiseOr(127i8, 1i8) == 127i8
+    @Test
+    def bitwiseOr05(): Unit \ Assert = assertEq(expected = 127i8, Int8.bitwiseOr(127i8, 1i8))
 
-    @test
-    def bitwiseOr06(): Bool = Int8.bitwiseOr(-128i8, 1i8) == -127i8
+    @Test
+    def bitwiseOr06(): Unit \ Assert = assertEq(expected = -127i8, Int8.bitwiseOr(-128i8, 1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseXor                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseXor01(): Bool = Int8.bitwiseXor(0i8, 0i8) == 0i8
+    @Test
+    def bitwiseXor01(): Unit \ Assert = assertEq(expected = 0i8, Int8.bitwiseXor(0i8, 0i8))
 
-    @test
-    def bitwiseXor02(): Bool = Int8.bitwiseXor(127i8, 0i8) == 127i8
+    @Test
+    def bitwiseXor02(): Unit \ Assert = assertEq(expected = 127i8, Int8.bitwiseXor(127i8, 0i8))
 
-    @test
-    def bitwiseXor03(): Bool = Int8.bitwiseXor(-128i8, 0i8) == -128i8
+    @Test
+    def bitwiseXor03(): Unit \ Assert = assertEq(expected = -128i8, Int8.bitwiseXor(-128i8, 0i8))
 
-    @test
-    def bitwiseXor04(): Bool = Int8.bitwiseXor(0i8, 1i8) == 1i8
+    @Test
+    def bitwiseXor04(): Unit \ Assert = assertEq(expected = 1i8, Int8.bitwiseXor(0i8, 1i8))
 
-    @test
-    def bitwiseXor05(): Bool = Int8.bitwiseXor(127i8, 1i8) == 126i8
+    @Test
+    def bitwiseXor05(): Unit \ Assert = assertEq(expected = 126i8, Int8.bitwiseXor(127i8, 1i8))
 
-    @test
-    def bitwiseXor06(): Bool = Int8.bitwiseXor(-128i8, 1i8) == -127i8
+    @Test
+    def bitwiseXor06(): Unit \ Assert = assertEq(expected = -127i8, Int8.bitwiseXor(-128i8, 1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // factorial                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def factorial01(): Bool = Int8.factorial(0i8) == 1
+    @Test
+    def factorial01(): Unit \ Assert = assertEq(expected = 1, Int8.factorial(0i8))
 
-    @test
-    def factorial02(): Bool = Int8.factorial(1i8) == 1
+    @Test
+    def factorial02(): Unit \ Assert = assertEq(expected = 1, Int8.factorial(1i8))
 
-    @test
-    def factorial03(): Bool = Int8.factorial(2i8) == 2
+    @Test
+    def factorial03(): Unit \ Assert = assertEq(expected = 2, Int8.factorial(2i8))
 
-    @test
-    def factorial04(): Bool = Int8.factorial(3i8) == 6
+    @Test
+    def factorial04(): Unit \ Assert = assertEq(expected = 6, Int8.factorial(3i8))
 
-    @test
-    def factorial05(): Bool = Int8.factorial(4i8) == 24
+    @Test
+    def factorial05(): Unit \ Assert = assertEq(expected = 24, Int8.factorial(4i8))
 
-    @test
-    def factorial06(): Bool = Int8.factorial(5i8) == 120
+    @Test
+    def factorial06(): Unit \ Assert = assertEq(expected = 120, Int8.factorial(5i8))
 
-    @test
-    def factorial07(): Bool = Int8.factorial(10i8) == 3628800
+    @Test
+    def factorial07(): Unit \ Assert = assertEq(expected = 3628800, Int8.factorial(10i8))
 
-    @test
-    def factorial08(): Bool = Int8.factorial(-1i8) == 0
+    @Test
+    def factorial08(): Unit \ Assert = assertEq(expected = 0, Int8.factorial(-1i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toString01(): Bool = Int8.toString(0i8) == "0"
+    @Test
+    def toString01(): Unit \ Assert = assertEq(expected = "0", Int8.toString(0i8))
 
-    @test
-    def toString02(): Bool = Int8.toString(1i8) == "1"
+    @Test
+    def toString02(): Unit \ Assert = assertEq(expected = "1", Int8.toString(1i8))
 
-    @test
-    def toString03(): Bool = Int8.toString(-1i8) == "-1"
+    @Test
+    def toString03(): Unit \ Assert = assertEq(expected = "-1", Int8.toString(-1i8))
 
-    @test
-    def toString04(): Bool = Int8.toString(127i8) == "127"
+    @Test
+    def toString04(): Unit \ Assert = assertEq(expected = "127", Int8.toString(127i8))
 
-    @test
-    def toString05(): Bool = Int8.toString(-128i8) == "-128"
+    @Test
+    def toString05(): Unit \ Assert = assertEq(expected = "-128", Int8.toString(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def fromString01(): Bool = Int8.fromString("Bad") |> Option.isEmpty
+    @Test
+    def fromString01(): Unit \ Assert = assertTrue(Int8.fromString("Bad") |> Option.isEmpty)
 
-    @test
-    def fromString02(): Bool = Int8.fromString(" 1") == Some(1i8)
+    @Test
+    def fromString02(): Unit \ Assert = assertEq(expected = Some(1i8), Int8.fromString(" 1"))
 
-    @test
-    def fromString03(): Bool = Int8.fromString("1 ") == Some(1i8)
+    @Test
+    def fromString03(): Unit \ Assert = assertEq(expected = Some(1i8), Int8.fromString("1 "))
 
-    @test
-    def fromString04(): Bool = Int8.fromString("0") == Some(0i8)
+    @Test
+    def fromString04(): Unit \ Assert = assertEq(expected = Some(0i8), Int8.fromString("0"))
 
-    @test
-    def fromString05(): Bool = Int8.fromString("1") == Some(1i8)
+    @Test
+    def fromString05(): Unit \ Assert = assertEq(expected = Some(1i8), Int8.fromString("1"))
 
-    @test
-    def fromString06(): Bool = Int8.fromString("-1") == Some(-1i8)
+    @Test
+    def fromString06(): Unit \ Assert = assertEq(expected = Some(-1i8), Int8.fromString("-1"))
 
-    @test
-    def fromString07(): Bool = Int8.fromString("127") == Some(127i8)
+    @Test
+    def fromString07(): Unit \ Assert = assertEq(expected = Some(127i8), Int8.fromString("127"))
 
-    @test
-    def fromString08(): Bool = Int8.fromString("-128") == Some(-128i8)
+    @Test
+    def fromString08(): Unit \ Assert = assertEq(expected = Some(-128i8), Int8.fromString("-128"))
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt16                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toInt1601(): Bool = Int8.toInt16(0i8) == 0i16
+    @Test
+    def toInt1601(): Unit \ Assert = assertEq(expected = 0i16, Int8.toInt16(0i8))
 
-    @test
-    def toInt1602(): Bool = Int8.toInt16(1i8) == 1i16
+    @Test
+    def toInt1602(): Unit \ Assert = assertEq(expected = 1i16, Int8.toInt16(1i8))
 
-    @test
-    def toInt1603(): Bool = Int8.toInt16(-1i8) == -1i16
+    @Test
+    def toInt1603(): Unit \ Assert = assertEq(expected = -1i16, Int8.toInt16(-1i8))
 
-    @test
-    def toInt1604(): Bool = Int8.toInt16(127i8) == 127i16
+    @Test
+    def toInt1604(): Unit \ Assert = assertEq(expected = 127i16, Int8.toInt16(127i8))
 
-    @test
-    def toInt1605(): Bool = Int8.toInt16(-128i8) == -128i16
+    @Test
+    def toInt1605(): Unit \ Assert = assertEq(expected = -128i16, Int8.toInt16(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toInt3201(): Bool = Int8.toInt32(0i8) == 0
+    @Test
+    def toInt3201(): Unit \ Assert = assertEq(expected = 0, Int8.toInt32(0i8))
 
-    @test
-    def toInt3202(): Bool = Int8.toInt32(1i8) == 1
+    @Test
+    def toInt3202(): Unit \ Assert = assertEq(expected = 1, Int8.toInt32(1i8))
 
-    @test
-    def toInt3203(): Bool = Int8.toInt32(-1i8) == -1
+    @Test
+    def toInt3203(): Unit \ Assert = assertEq(expected = -1, Int8.toInt32(-1i8))
 
-    @test
-    def toInt3204(): Bool = Int8.toInt32(127i8) == 127
+    @Test
+    def toInt3204(): Unit \ Assert = assertEq(expected = 127, Int8.toInt32(127i8))
 
-    @test
-    def toInt3205(): Bool = Int8.toInt32(-128i8) == -128
+    @Test
+    def toInt3205(): Unit \ Assert = assertEq(expected = -128, Int8.toInt32(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toInt64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toInt6401(): Bool = Int8.toInt64(0i8) == 0i64
+    @Test
+    def toInt6401(): Unit \ Assert = assertEq(expected = 0i64, Int8.toInt64(0i8))
 
-    @test
-    def toInt6402(): Bool = Int8.toInt64(1i8) == 1i64
+    @Test
+    def toInt6402(): Unit \ Assert = assertEq(expected = 1i64, Int8.toInt64(1i8))
 
-    @test
-    def toInt6403(): Bool = Int8.toInt64(-1i8) == -1i64
+    @Test
+    def toInt6403(): Unit \ Assert = assertEq(expected = -1i64, Int8.toInt64(-1i8))
 
-    @test
-    def toInt6404(): Bool = Int8.toInt64(127i8) == 127i64
+    @Test
+    def toInt6404(): Unit \ Assert = assertEq(expected = 127i64, Int8.toInt64(127i8))
 
-    @test
-    def toInt6405(): Bool = Int8.toInt64(-128i8) == -128i64
+    @Test
+    def toInt6405(): Unit \ Assert = assertEq(expected = -128i64, Int8.toInt64(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toBigInt                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toBigInt01(): Bool = Int8.toBigInt(0i8) == 0ii
+    @Test
+    def toBigInt01(): Unit \ Assert = assertEq(expected = 0ii, Int8.toBigInt(0i8))
 
-    @test
-    def toBigInt02(): Bool = Int8.toBigInt(1i8) == 1ii
+    @Test
+    def toBigInt02(): Unit \ Assert = assertEq(expected = 1ii, Int8.toBigInt(1i8))
 
-    @test
-    def toBigInt03(): Bool = Int8.toBigInt(-1i8) == -1ii
+    @Test
+    def toBigInt03(): Unit \ Assert = assertEq(expected = -1ii, Int8.toBigInt(-1i8))
 
-    @test
-    def toBigInt04(): Bool = Int8.toBigInt(127i8) == 127ii
+    @Test
+    def toBigInt04(): Unit \ Assert = assertEq(expected = 127ii, Int8.toBigInt(127i8))
 
-    @test
-    def toBigInt05(): Bool = Int8.toBigInt(-128i8) == -128ii
+    @Test
+    def toBigInt05(): Unit \ Assert = assertEq(expected = -128ii, Int8.toBigInt(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toFloat32                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toFloat3201(): Bool = Int8.toFloat32(0i8) == 0.0f32
+    @Test
+    def toFloat3201(): Unit \ Assert = assertEq(expected = 0.0f32, Int8.toFloat32(0i8))
 
-    @test
-    def toFloat3202(): Bool = Int8.toFloat32(1i8) == 1.0f32
+    @Test
+    def toFloat3202(): Unit \ Assert = assertEq(expected = 1.0f32, Int8.toFloat32(1i8))
 
-    @test
-    def toFloat3203(): Bool = Int8.toFloat32(-1i8) == -1.0f32
+    @Test
+    def toFloat3203(): Unit \ Assert = assertEq(expected = -1.0f32, Int8.toFloat32(-1i8))
 
-    @test
-    def toFloat3204(): Bool = Int8.toFloat32(127i8) == 127.0f32
+    @Test
+    def toFloat3204(): Unit \ Assert = assertEq(expected = 127.0f32, Int8.toFloat32(127i8))
 
-    @test
-    def toFloat3205(): Bool = Int8.toFloat32(-128i8) == -128.0f32
+    @Test
+    def toFloat3205(): Unit \ Assert = assertEq(expected = -128.0f32, Int8.toFloat32(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toFloat64                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toFloat6401(): Bool = Int8.toFloat64(0i8) == 0.0f64
+    @Test
+    def toFloat6401(): Unit \ Assert = assertEq(expected = 0.0f64, Int8.toFloat64(0i8))
 
-    @test
-    def toFloat6402(): Bool = Int8.toFloat64(1i8) == 1.0f64
+    @Test
+    def toFloat6402(): Unit \ Assert = assertEq(expected = 1.0f64, Int8.toFloat64(1i8))
 
-    @test
-    def toFloat6403(): Bool = Int8.toFloat64(-1i8) == -1.0f64
+    @Test
+    def toFloat6403(): Unit \ Assert = assertEq(expected = -1.0f64, Int8.toFloat64(-1i8))
 
-    @test
-    def toFloat6404(): Bool = Int8.toFloat64(127i8) == 127.0f64
+    @Test
+    def toFloat6404(): Unit \ Assert = assertEq(expected = 127.0f64, Int8.toFloat64(127i8))
 
-    @test
-    def toFloat6405(): Bool = Int8.toFloat64(-128i8) == -128.0f64
+    @Test
+    def toFloat6405(): Unit \ Assert = assertEq(expected = -128.0f64, Int8.toFloat64(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // toBigDecimal                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toBigDecimal01(): Bool = Int8.toBigDecimal(0i8) == 0.0ff
+    @Test
+    def toBigDecimal01(): Unit \ Assert = assertEq(expected = 0.0ff, Int8.toBigDecimal(0i8))
 
-    @test
-    def toBigDecimal02(): Bool = Int8.toBigDecimal(1i8) == 1.0ff
+    @Test
+    def toBigDecimal02(): Unit \ Assert = assertEq(expected = 1.0ff, Int8.toBigDecimal(1i8))
 
-    @test
-    def toBigDecimal03(): Bool = Int8.toBigDecimal(-1i8) == -1.0ff
+    @Test
+    def toBigDecimal03(): Unit \ Assert = assertEq(expected = -1.0ff, Int8.toBigDecimal(-1i8))
 
-    @test
-    def toBigDecimal04(): Bool = Int8.toBigDecimal(127i8) == 127.0ff
+    @Test
+    def toBigDecimal04(): Unit \ Assert = assertEq(expected = 127.0ff, Int8.toBigDecimal(127i8))
 
-    @test
-    def toBigDecimal05(): Bool = Int8.toBigDecimal(-128i8) == -128.0ff
+    @Test
+    def toBigDecimal05(): Unit \ Assert = assertEq(expected = -128.0ff, Int8.toBigDecimal(-128i8))
 
     /////////////////////////////////////////////////////////////////////////////
     // byteValue                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def byteValue01(): Bool =
+    @Test
+    def byteValue01(): Unit \ Assert =
         let i = Int8.valueOf(0i8);
-        Int8.byteValue(i) == 0i8
+        assertEq(expected = 0i8, Int8.byteValue(i))
 
-    @test
-    def byteValue02(): Bool =
+    @Test
+    def byteValue02(): Unit \ Assert =
         let i = Int8.valueOf(1i8);
-        Int8.byteValue(i) == 1i8
+        assertEq(expected = 1i8, Int8.byteValue(i))
 
-    @test
-    def byteValue03(): Bool =
+    @Test
+    def byteValue03(): Unit \ Assert =
         let i = Int8.valueOf(-1i8);
-        Int8.byteValue(i) == -1i8
+        assertEq(expected = -1i8, Int8.byteValue(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // valueOf                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def valueOf01(): Bool =
+    @Test
+    def valueOf01(): Unit \ Assert =
         let i = Int8.valueOf(0i8);
-        i.equals(Int8.valueOf(0i8))
+        assertTrue(i.equals(Int8.valueOf(0i8)))
 
-    @test
-    def valueOf02(): Bool =
+    @Test
+    def valueOf02(): Unit \ Assert =
         let i = Int8.valueOf(1i8);
-        i.equals(Int8.valueOf(1i8))
+        assertTrue(i.equals(Int8.valueOf(1i8)))
 
-    @test
-    def valueOf03(): Bool =
+    @Test
+    def valueOf03(): Unit \ Assert =
         let i = Int8.valueOf(-1i8);
-        i.equals(Int8.valueOf(-1i8))
+        assertTrue(i.equals(Int8.valueOf(-1i8)))
 
 }

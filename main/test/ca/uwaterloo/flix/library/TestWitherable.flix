@@ -1,89 +1,90 @@
 mod TestWitherable {
 
+    use Assert.{assertEq};
     use Witherable.{wither, sequenceWither};
 
     /////////////////////////////////////////////////////////////////////////////
     // wither                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def wither01(): Bool  =
+    @Test
+    def wither01(): Unit \ Assert =
         let xs = Nil;
-        wither(x -> Some(x + 1) |> Some, xs) == Some(Nil)
+        assertEq(expected = Some(Nil), wither(x -> Some(x + 1) |> Some, xs))
 
-    @test
-    def wither02(): Bool  =
+    @Test
+    def wither02(): Unit \ Assert =
         let xs = Nil;
-        wither(_ -> Some((None: Option[Int32])), xs) == Some(Nil)
+        assertEq(expected = Some(Nil), wither(_ -> Some((None: Option[Int32])), xs))
 
-    @test
-    def wither03(): Bool  =
+    @Test
+    def wither03(): Unit \ Assert =
         let xs = Nil;
-        wither(_ -> (None: Option[Option[Int32]]), xs) == Some(Nil)
+        assertEq(expected = Some(Nil), wither(_ -> (None: Option[Option[Int32]]), xs))
 
-    @test
-    def wither04(): Bool  =
+    @Test
+    def wither04(): Unit \ Assert =
         let xs = 1 :: Nil;
-        wither(x -> Some(x + 1) |> Some, xs) == Some(2 :: Nil)
+        assertEq(expected = Some(2 :: Nil), wither(x -> Some(x + 1) |> Some, xs))
 
-    @test
-    def wither05(): Bool  =
+    @Test
+    def wither05(): Unit \ Assert =
         let xs = 1 :: Nil;
-        wither(_ -> Some((None: Option[Int32])), xs) == Some(Nil)
+        assertEq(expected = Some(Nil), wither(_ -> Some((None: Option[Int32])), xs))
 
-    @test
-    def wither06(): Bool  =
+    @Test
+    def wither06(): Unit \ Assert =
         let xs = 1 :: 2 :: Nil;
-        wither(x -> Some(if (x > 1) None else Some(x - 1)), xs) == Some(0 :: Nil)
+        assertEq(expected = Some(0 :: Nil), wither(x -> Some(if (x > 1) None else Some(x - 1)), xs))
 
-    @test
-    def wither07(): Bool  =
+    @Test
+    def wither07(): Unit \ Assert =
         let xs = 1 :: 2 :: Nil;
-        wither(_ ->( None: Option[Option[Int32]]), xs) == None
+        assertEq(expected = None, wither(_ ->( None: Option[Option[Int32]]), xs))
 
-    @test
-    def wither08(): Bool  =
+    @Test
+    def wither08(): Unit \ Assert =
         let xs = 1 :: 2 :: 3 :: Nil;
-        wither(_ -> Some((None: Option[Int32])), xs) == Some(Nil)
+        assertEq(expected = Some(Nil), wither(_ -> Some((None: Option[Int32])), xs))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sequenceWither                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequenceWither01(): Bool =
+    @Test
+    def sequenceWither01(): Unit \ Assert =
         let xs: List[Option[Option[Int32]]] = Nil;
-        sequenceWither(xs) == Some(Nil)
+        assertEq(expected = Some(Nil), sequenceWither(xs))
 
-    @test
-    def sequenceWither02(): Bool =
+    @Test
+    def sequenceWither02(): Unit \ Assert =
         let xs: List[Option[Option[Int32]]] = None :: Nil;
-        sequenceWither(xs) == None
+        assertEq(expected = None, sequenceWither(xs))
 
-    @test
-    def sequenceWither03(): Bool =
+    @Test
+    def sequenceWither03(): Unit \ Assert =
         let xs: List[Option[Option[Int32]]] = Some(None) :: Nil;
-        sequenceWither(xs) == Some(Nil)
+        assertEq(expected = Some(Nil), sequenceWither(xs))
 
-    @test
-    def sequenceWither04(): Bool =
+    @Test
+    def sequenceWither04(): Unit \ Assert =
         let xs = Some(Some(1)) :: Nil;
-        sequenceWither(xs) == Some(1 :: Nil)
+        assertEq(expected = Some(1 :: Nil), sequenceWither(xs))
 
-    @test
-    def sequenceWither05(): Bool =
+    @Test
+    def sequenceWither05(): Unit \ Assert =
         let xs = Some(Some(1)) :: Some(Some(2)) :: Nil;
-        sequenceWither(xs) == Some(1 :: 2 :: Nil)
+        assertEq(expected = Some(1 :: 2 :: Nil), sequenceWither(xs))
 
-    @test
-    def sequenceWither06(): Bool =
+    @Test
+    def sequenceWither06(): Unit \ Assert =
         let xs = Some(Some(1)) :: Some(None) :: Nil;
-        sequenceWither(xs) == Some(1 :: Nil)
+        assertEq(expected = Some(1 :: Nil), sequenceWither(xs))
 
-    @test
-    def sequenceWither07(): Bool =
+    @Test
+    def sequenceWither07(): Unit \ Assert =
         let xs = Some(Some(1)) :: Some(None) :: None :: Nil;
-        sequenceWither(xs) == None
+        assertEq(expected = None, sequenceWither(xs))
 
 }

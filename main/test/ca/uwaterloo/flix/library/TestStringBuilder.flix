@@ -1,701 +1,673 @@
-/*
- * Copyright 2019 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestStringBuilder {
 
-    /////////////////////////////////////////////////////////////////////////////
-    // new                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def empty01(): StringBuilder[Static] \ IO =
-        StringBuilder.empty(Static) // Must be Impure, otherwise the StringBuilder would escape its region
-
+    use Assert.assertEq;
 
     /////////////////////////////////////////////////////////////////////////////
     // appendString                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def appendString01(): Bool = region rc {
+    @Test
+    def appendString01(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendString("hello", sb);
-        StringBuilder.toString(sb) == "hello"
+        assertEq(expected = "hello", StringBuilder.toString(sb))
     }
 
-    @test
-    def appendString02(): Bool = region rc {
+    @Test
+    def appendString02(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendString("hello", sb);
         StringBuilder.appendString("!", sb);
-        StringBuilder.toString(sb) == "hello!"
+        assertEq(expected = "hello!", StringBuilder.toString(sb))
     }
 
-    @test
-    def appendString03(): Bool = region rc {
+    @Test
+    def appendString03(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendString("hello", sb);
         StringBuilder.appendString(" ", sb);
         StringBuilder.appendString("world!", sb);
-        StringBuilder.toString(sb) == "hello world!"
+        assertEq(expected = "hello world!", StringBuilder.toString(sb))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // appendCodePoint                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def appendCodePoint01(): Bool = region rc {
+    @Test
+    def appendCodePoint01(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendCodePoint(0x1f3dd, sb);
-        StringBuilder.toString(sb) == CodePoint.toString(0x1f3dd)
+        assertEq(expected = CodePoint.toString(0x1f3dd), StringBuilder.toString(sb))
     }
 
-    @test
-    def appendCodePoint02(): Bool = region rc {
+    @Test
+    def appendCodePoint02(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendCodePoint(0x1f3dd, sb);
         StringBuilder.appendCodePoint(0x0020, sb);
-        StringBuilder.toString(sb) == "\uD83C\uDFDD "
+        assertEq(expected = "\uD83C\uDFDD ", StringBuilder.toString(sb))
     }
 
-    @test
-    def appendCodePoint03(): Bool = region rc {
+    @Test
+    def appendCodePoint03(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendCodePoint(0x0020, sb);
         StringBuilder.appendCodePoint(0x1f3dd, sb);
         StringBuilder.appendCodePoint(0x0020, sb);
-        StringBuilder.toString(sb) == " \uD83C\uDFDD "
+        assertEq(expected = " \uD83C\uDFDD ", StringBuilder.toString(sb))
     }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // append (Char)                                                           //
     /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def appendChar01(): Bool = region rc {
+    @Test
+    def appendChar01(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.append('A', sb);
-        StringBuilder.toString(sb) == "A"
+        assertEq(expected = "A", StringBuilder.toString(sb))
     }
 
-    @test
-    def appendChar02(): Bool = region rc {
+    @Test
+    def appendChar02(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.append('A', sb);
         StringBuilder.append('B', sb);
-        StringBuilder.toString(sb) == "AB"
+        assertEq(expected = "AB", StringBuilder.toString(sb))
     }
 
-    @test
-    def appendChar03(): Bool = region rc {
+    @Test
+    def appendChar03(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.append('A', sb);
         StringBuilder.append('B', sb);
         StringBuilder.append('C', sb);
-        StringBuilder.toString(sb) == "ABC"
+        assertEq(expected = "ABC", StringBuilder.toString(sb))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // append (Int8)                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendInt801(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0i8, sb);
+        assertEq(expected = "0", StringBuilder.toString(sb))
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// append (Int8)                                                           //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def appendInt801(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0i8, sb);
-    StringBuilder.toString(sb) == "0"
-}
+    @Test
+    def appendInt802(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(1i8, sb);
+        assertEq(expected = "1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt802(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(1i8, sb);
-    StringBuilder.toString(sb) == "1"
-}
+    @Test
+    def appendInt803(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(-1i8, sb);
+        assertEq(expected = "-1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt803(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(-1i8, sb);
-    StringBuilder.toString(sb) == "-1"
-}
+    @Test
+    def appendInt804(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(127i8, sb);
+        assertEq(expected = "127", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt804(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(127i8, sb);
-    StringBuilder.toString(sb) == "127"
-}
+    @Test
+    def appendInt805(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(-127i8, sb);
+        assertEq(expected = "-127", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt805(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(-127i8, sb);
-    StringBuilder.toString(sb) == "-127"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // append (Int16)                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// append (Int16)                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendInt1601(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0i16, sb);
+        assertEq(expected = "0", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt1601(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0i16, sb);
-    StringBuilder.toString(sb) == "0"
-}
+    @Test
+    def appendInt1602(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(1i16, sb);
+        assertEq(expected = "1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt1602(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(1i16, sb);
-    StringBuilder.toString(sb) == "1"
-}
+    @Test
+    def appendInt1603(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(-1i16, sb);
+        assertEq(expected = "-1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt1603(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(-1i16, sb);
-    StringBuilder.toString(sb) == "-1"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // append (Int32)                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// append (Int32)                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendInt3201(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0, sb);
+        assertEq(expected = "0", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt3201(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0, sb);
-    StringBuilder.toString(sb) == "0"
-}
+    @Test
+    def appendInt3202(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(1, sb);
+        assertEq(expected = "1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt3202(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(1, sb);
-    StringBuilder.toString(sb) == "1"
-}
+    @Test
+    def appendInt3203(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(-1, sb);
+        assertEq(expected = "-1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt3203(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(-1, sb);
-    StringBuilder.toString(sb) == "-1"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // append (Int64)                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// append (Int64)                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendInt6401(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0i64, sb);
+        assertEq(expected = "0", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt6401(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0i64, sb);
-    StringBuilder.toString(sb) == "0"
-}
+    @Test
+    def appendInt6402(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(1i64, sb);
+        assertEq(expected = "1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt6402(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(1i64, sb);
-    StringBuilder.toString(sb) == "1"
-}
+    @Test
+    def appendInt6403(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(-1i64, sb);
+        assertEq(expected = "-1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendInt6403(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(-1i64, sb);
-    StringBuilder.toString(sb) == "-1"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // append (BigInt)                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// append (BigInt)                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendBigInt01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0ii, sb);
+        assertEq(expected = "0", StringBuilder.toString(sb))
+    }
 
-@test
-def appendBigInt01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0ii, sb);
-    StringBuilder.toString(sb) == "0"
-}
+    @Test
+    def appendBigInt02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(1ii, sb);
+        assertEq(expected = "1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendBigInt02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(1ii, sb);
-    StringBuilder.toString(sb) == "1"
-}
+    @Test
+    def appendBigInt03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(-1ii, sb);
+        assertEq(expected = "-1", StringBuilder.toString(sb))
+    }
 
-@test
-def appendBigInt03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(-1ii, sb);
-    StringBuilder.toString(sb) == "-1"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendFloat32                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendFloat32                                                           //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendFloat3201(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0.0f32, sb);
+        assertEq(expected = "0.0", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat3201(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0.0f32, sb);
-    StringBuilder.toString(sb) == "0.0"
-}
+    @Test
+    def appendFloat3202(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(Float32.nan(), sb);
+        assertEq(expected = "NaN", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat3202(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(Float32.nan(), sb);
-    StringBuilder.toString(sb) == "NaN"
-}
+    @Test
+    def appendFloat3203(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(Float32.positiveInfinity(), sb);
+        assertEq(expected = "Infinity", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat3203(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(Float32.positiveInfinity(), sb);
-    StringBuilder.toString(sb) == "Infinity"
-}
+    @Test
+    def appendFloat3204(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(Float32.negativeInfinity(), sb);
+        assertEq(expected = "-Infinity", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat3204(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(Float32.negativeInfinity(), sb);
-    StringBuilder.toString(sb) == "-Infinity"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendFloat64                                                           //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendFloat64                                                           //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendFloat6401(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(0.0f64, sb);
+        assertEq(expected = "0.0", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat6401(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(0.0f64, sb);
-    StringBuilder.toString(sb) == "0.0"
-}
+    @Test
+    def appendFloat6402(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(Float64.nan(), sb);
+        assertEq(expected = "NaN", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat6402(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(Float64.nan(), sb);
-    StringBuilder.toString(sb) == "NaN"
-}
+    @Test
+    def appendFloat6403(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(Float64.positiveInfinity(), sb);
+        assertEq(expected = "Infinity", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat6403(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(Float64.positiveInfinity(), sb);
-    StringBuilder.toString(sb) == "Infinity"
-}
+    @Test
+    def appendFloat6404(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append(Float64.negativeInfinity(), sb);
+        assertEq(expected = "-Infinity", StringBuilder.toString(sb))
+    }
 
-@test
-def appendFloat6404(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append(Float64.negativeInfinity(), sb);
-    StringBuilder.toString(sb) == "-Infinity"
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendLineSeparator                                                     //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendLineSeparator                                                     //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendLineSeparator01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLineSeparator(sb);
+        assertEq(expected = String.lineSeparator(), StringBuilder.toString(sb))
+    }
 
-@test
-def appendLineSeparator01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLineSeparator(sb);
-    StringBuilder.toString(sb) == String.lineSeparator()
-}
+    @Test
+    def appendLineSeparator02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append('A', sb);
+        StringBuilder.appendLineSeparator(sb);
+        StringBuilder.append('B', sb);
+        let s1 = "A" + String.lineSeparator() + "B";
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLineSeparator02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append('A', sb);
-    StringBuilder.appendLineSeparator(sb);
-    StringBuilder.append('B', sb);
-    let s1 = "A" + String.lineSeparator() + "B";
-    StringBuilder.toString(sb) == s1
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendLine                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendLine                                                              //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendLine01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLine("", sb);
+        assertEq(expected = String.lineSeparator(), StringBuilder.toString(sb))
+    }
 
-@test
-def appendLine01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLine("", sb);
-    StringBuilder.toString(sb) == String.lineSeparator()
-}
+    @Test
+    def appendLine02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLine("A", sb);
+        let s1 = "A" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLine02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLine("A", sb);
-    let s1 = "A" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLine03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLine("A", sb);
+        StringBuilder.appendLine("B", sb);
+        let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLine03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLine("A", sb);
-    StringBuilder.appendLine("B", sb);
-    let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLine04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLine("A", sb);
+        StringBuilder.appendLine("B", sb);
+        StringBuilder.appendLine("C", sb);
+        let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLine04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLine("A", sb);
-    StringBuilder.appendLine("B", sb);
-    StringBuilder.appendLine("C", sb);
-    let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendLineWith                                                          //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendLineWith                                                          //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendLineWith01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLineWith(Int32.toString, 1, sb);
+        let s1 = "1" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLineWith01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLineWith(Int32.toString, 1, sb);
-    let s1 = "1" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLineWith02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLineWith(Int32.toString, 1, sb);
+        StringBuilder.appendLineWith(Int32.toString, 2, sb);
+        let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLineWith02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLineWith(Int32.toString, 1, sb);
-    StringBuilder.appendLineWith(Int32.toString, 2, sb);
-    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLineWith03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLineWith(Int32.toString, 1, sb);
+        StringBuilder.appendLineWith(Int32.toString, 2, sb);
+        StringBuilder.appendLineWith(Int32.toString, 3, sb);
+        let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLineWith03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLineWith(Int32.toString, 1, sb);
-    StringBuilder.appendLineWith(Int32.toString, 2, sb);
-    StringBuilder.appendLineWith(Int32.toString, 3, sb);
-    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLineWith04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLineWith(Int32.toString, 1, sb);
+        StringBuilder.appendLineWith(Int32.toString, 2, sb);
+        StringBuilder.appendLineWith(Int32.toString, 3, sb);
+        StringBuilder.appendLineWith(Int32.toString, 4, sb);
+        let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator() + "4" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLineWith04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLineWith(Int32.toString, 1, sb);
-    StringBuilder.appendLineWith(Int32.toString, 2, sb);
-    StringBuilder.appendLineWith(Int32.toString, 3, sb);
-    StringBuilder.appendLineWith(Int32.toString, 4, sb);
-    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator() + "4" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendLines                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendLines                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendLines01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLines(Array#{} @ rc, sb);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-@test
-def appendLines01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLines(Array#{} @ rc, sb);
-    StringBuilder.toString(sb) == ""
-}
+    @Test
+    def appendLines02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLines(Array#{"A"} @ rc, sb);
+        let s1 = "A" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLines02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLines(Array#{"A"} @ rc, sb);
-    let s1 = "A" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLines03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLines(Array#{"A", "B"} @ rc, sb);
+        let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLines03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLines(Array#{"A", "B"} @ rc, sb);
-    let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLines04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLines(Array#{"A", "B", "C"} @ rc, sb);
+        let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLines04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLines(Array#{"A", "B", "C"} @ rc, sb);
-    let s1 = "A" + String.lineSeparator() + "B" + String.lineSeparator() + "C" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // appendLinesWith                                                         //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// appendLinesWith                                                         //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def appendLinesWith01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLinesWith(Int32.toString, Nil, sb);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-@test
-def appendLinesWith01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLinesWith(Int32.toString, Nil, sb);
-    StringBuilder.toString(sb) == ""
-}
+    @Test
+    def appendLinesWith02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLinesWith(Int32.toString, Set#{1}, sb);
+        let s1 = "1" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLinesWith02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLinesWith(Int32.toString, Set#{1}, sb);
-    let s1 = "1" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLinesWith03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLinesWith(Int32.toString, List.toChain(1 :: 2 :: Nil), sb);
+        let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLinesWith03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLinesWith(Int32.toString, List.toChain(1 :: 2 :: Nil), sb);
-    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    @Test
+    def appendLinesWith04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendLinesWith(Int32.toString, 1 :: 2 :: 3 :: Nil, sb);
+        let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
+        assertEq(expected = s1, StringBuilder.toString(sb))
+    }
 
-@test
-def appendLinesWith04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendLinesWith(Int32.toString, 1 :: 2 :: 3 :: Nil, sb);
-    let s1 = "1" + String.lineSeparator() + "2" + String.lineSeparator() + "3" + String.lineSeparator();
-    StringBuilder.toString(sb) == s1
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // intercalate                                                             //
+    /////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////
-// intercalate                                                             //
-/////////////////////////////////////////////////////////////////////////////
+    @Test
+    def intercalate01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.intercalate("", Array#{} @ rc, sb);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-@test
-def intercalate01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.intercalate("", Array#{} @ rc, sb);
-    StringBuilder.toString(sb) == ""
-}
+    @Test
+    def intercalate02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.intercalate("::", Array#{} @ rc, sb);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-@test
-def intercalate02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.intercalate("::", Array#{} @ rc, sb);
-    StringBuilder.toString(sb) == ""
-}
+    @Test
+    def intercalate03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.intercalate("", Array#{"abc", "def"} @ rc, sb);
+        assertEq(expected = "abcdef", StringBuilder.toString(sb))
+    }
 
-@test
-def intercalate03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.intercalate("", Array#{"abc", "def"} @ rc, sb);
-    StringBuilder.toString(sb) == "abcdef"
-}
+    @Test
+    def intercalate04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.intercalate("::", Array#{"abc"} @ rc, sb);
+        assertEq(expected = "abc", StringBuilder.toString(sb))
+    }
 
-@test
-def intercalate04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.intercalate("::", Array#{"abc"} @ rc, sb);
-    StringBuilder.toString(sb) == "abc"
-}
+    @Test
+    def intercalate05(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.intercalate("::", Array#{"abc", "def"} @ rc, sb);
+        assertEq(expected = "abc::def", StringBuilder.toString(sb))
+    }
 
-@test
-def intercalate05(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.intercalate("::", Array#{"abc", "def"} @ rc, sb);
-    StringBuilder.toString(sb) == "abc::def"
-}
-
-@test
-def intercalate06(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.intercalate("::", Array#{"abc", "def", "ghi"} @ rc, sb);
-    StringBuilder.toString(sb) == "abc::def::ghi"
-}
+    @Test
+    def intercalate06(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.intercalate("::", Array#{"abc", "def", "ghi"} @ rc, sb);
+        assertEq(expected = "abc::def::ghi", StringBuilder.toString(sb))
+    }
 
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterator01(): Bool = region rc {
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
-        StringBuilder.iterator(rc, sb) |> Iterator.toList == Nil
+        assertEq(expected = Nil, StringBuilder.iterator(rc, sb) |> Iterator.toList)
     }
 
-    @test
-    def iterator02(): Bool = region rc {
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendString("abc", sb);
-        StringBuilder.iterator(rc, sb) |> Iterator.toList == 'a' :: 'b' :: 'c' :: Nil
+        assertEq(expected = 'a' :: 'b' :: 'c' :: Nil, StringBuilder.iterator(rc, sb) |> Iterator.toList)
     }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // enumerator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def enumerator01(): Bool = region rc {
+    @Test
+    def enumerator01(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
-        StringBuilder.enumerator(rc, sb) |> Iterator.toList == Nil
+        assertEq(expected = Nil, StringBuilder.enumerator(rc, sb) |> Iterator.toList)
     }
 
-    @test
-    def enumerator02(): Bool = region rc {
+    @Test
+    def enumerator02(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendString("abc", sb);
-        StringBuilder.enumerator(rc, sb) |> Iterator.toList == (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil
+        assertEq(expected = (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil, StringBuilder.enumerator(rc, sb) |> Iterator.toList)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // length                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def length01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        assertEq(expected = 0, StringBuilder.length(sb))
+    }
+
+    @Test
+    def length02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append('A', sb);
+        assertEq(expected = 1, StringBuilder.length(sb))
+    }
+
+    @Test
+    def length03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append('A', sb);
+        StringBuilder.append('B', sb);
+        assertEq(expected = 2, StringBuilder.length(sb))
+    }
+
+    @Test
+    def length04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendString("A", sb);
+        StringBuilder.appendString("B", sb);
+        assertEq(expected = 2, StringBuilder.length(sb))
+    }
+
+    @Test
+    def length05(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendString("Hello", sb);
+        StringBuilder.append(' ', sb);
+        StringBuilder.appendString("World", sb);
+        StringBuilder.append('!', sb);
+        assertEq(expected = 12, StringBuilder.length(sb))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def size01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        assertEq(expected = 0, StringBuilder.size(sb))
+    }
+
+    @Test
+    def size02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append('A', sb);
+        assertEq(expected = 1, StringBuilder.size(sb))
+    }
+
+    @Test
+    def size03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append('A', sb);
+        StringBuilder.append('B', sb);
+        assertEq(expected = 2, StringBuilder.size(sb))
+    }
+
+    @Test
+    def size04(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendString("A", sb);
+        StringBuilder.appendString("B", sb);
+        assertEq(expected = 2, StringBuilder.size(sb))
+    }
+
+    @Test
+    def size05(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendString("Hello", sb);
+        StringBuilder.append(' ', sb);
+        StringBuilder.appendString("World", sb);
+        StringBuilder.append('!', sb);
+        assertEq(expected = 12, StringBuilder.size(sb))
     }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// length                                                                  //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // setLength                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def length01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.length(sb) == 0
-}
+    @Test
+    def setLength01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append("1234567890", sb);
+        StringBuilder.setLength(4, sb);
+        assertEq(expected = "1234", StringBuilder.toString(sb))
+    }
 
-@test
-def length02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append('A', sb);
-    StringBuilder.length(sb) == 1
-}
+    @Test
+    def setLength02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.append("ABC", sb);
+        StringBuilder.setLength(0, sb);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-@test
-def length03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append('A', sb);
-    StringBuilder.append('B', sb);
-    StringBuilder.length(sb) == 2
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
 
-@test
-def length04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendString("A", sb);
-    StringBuilder.appendString("B", sb);
-    StringBuilder.length(sb) == 2
-}
+    @Test
+    def toString01(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-@test
-def length05(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendString("Hello", sb);
-    StringBuilder.append(' ', sb);
-    StringBuilder.appendString("World", sb);
-    StringBuilder.append('!', sb);
-    StringBuilder.length(sb) == 12
-}
+    @Test
+    def toString02(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendString("", sb);
+        assertEq(expected = "", StringBuilder.toString(sb))
+    }
 
-/////////////////////////////////////////////////////////////////////////////
-// size                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def size01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.size(sb) == 0
-}
-
-@test
-def size02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append('A', sb);
-    StringBuilder.size(sb) == 1
-}
-
-@test
-def size03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append('A', sb);
-    StringBuilder.append('B', sb);
-    StringBuilder.size(sb) == 2
-}
-
-@test
-def size04(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendString("A", sb);
-    StringBuilder.appendString("B", sb);
-    StringBuilder.size(sb) == 2
-}
-
-@test
-def size05(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendString("Hello", sb);
-    StringBuilder.append(' ', sb);
-    StringBuilder.appendString("World", sb);
-    StringBuilder.append('!', sb);
-    StringBuilder.size(sb) == 12
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// setLength                                                                  //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def setLength01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append("1234567890", sb);
-    StringBuilder.setLength(4, sb);
-    "1234" == StringBuilder.toString(sb)
-}
-
-@test
-def setLength02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.append("ABC", sb);
-    StringBuilder.setLength(0, sb);
-    "" == StringBuilder.toString(sb)
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// toString                                                                //
-/////////////////////////////////////////////////////////////////////////////
-
-@test
-def toString01(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.toString(sb) == ""
-}
-
-@test
-def toString02(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendString("", sb);
-    StringBuilder.toString(sb) == ""
-}
-
-@test
-def toString03(): Bool = region rc {
-    let sb = StringBuilder.empty(rc);
-    StringBuilder.appendString("abcdefghijklmnopqrstuvwxyz", sb);
-    StringBuilder.toString(sb) == "abcdefghijklmnopqrstuvwxyz"
-}
+    @Test
+    def toString03(): Unit \ Assert = region rc {
+        let sb = StringBuilder.empty(rc);
+        StringBuilder.appendString("abcdefghijklmnopqrstuvwxyz", sb);
+        assertEq(expected = "abcdefghijklmnopqrstuvwxyz", StringBuilder.toString(sb))
+    }
 
 }
