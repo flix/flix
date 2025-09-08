@@ -1493,14 +1493,17 @@ object Resolver {
           Validation.Success(ResolvedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, ts, loc1))
         case _ => throw InternalCompilerException("Unexpected predicate body when expecting body atom", loc)
       }
+      // We have to bind variables appearing in the atoms before resolving the select and where exps
       flatMapN(esVal, qeVal, fVal) {
         case (es, qe, f) =>
+          // Collect all variables appearing in atoms and bind them
           val ts = f.flatMap(_.terms)
           val scp1 = ts.foldLeft(scp0)(
             (acc, t) => t match {
               case ResolvedAst.Pattern.Var(sym, _) => acc ++ mkVarScp(sym)
               case _ => acc
             })
+          // Resolve select and where exps
           val sVal = traverse(selects)(resolveExp(_, scp1))
           val wVal = traverse(where)(resolveExp(_, scp1))
           mapN(sVal, wVal) {

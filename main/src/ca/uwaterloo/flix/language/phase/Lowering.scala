@@ -837,7 +837,7 @@ object Lowering {
       val loweredQueryExp = visitExp(queryExp)
 
       // Compute the arity of the predicate symbol.
-      // The type is either of the form `Array[(a, b, c)]` or `Array[a]`.
+      // The type is either of the form `Vector[(a, b, c)]` or `Vector[a]`.
       val (_, targs) = Type.eraseAliases(tpe) match {
         case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
           case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
@@ -847,21 +847,17 @@ object Lowering {
         case t => throw InternalCompilerException(s"Unexpected non-foldable type: '${t}'.", loc)
       }
 
-      val arity = selects.length
+      val predArity = selects.length
 
-      // Compute the symbol of the function.
-      val sym = Defs.Facts(arity)
-
-      // The type of the function.
+      // Define the name and type of the appropriate factsX function in Solver.flix
+      val sym = Defs.Facts(predArity)
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
 
-      // Merge exps.
+      // Merge and solve exps
       val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
-
-      // Solve the merged exp.
       val solvedExp = LoweredAst.Expr.ApplyDef(Defs.Solve, mergedExp :: Nil, List.empty, Types.SolveType, Types.Datalog, eff, loc)
 
-      // Put everything together.
+      // Put everything together
       val argExps = mkPredSym(pred) :: solvedExp :: Nil
       LoweredAst.Expr.ApplyDef(sym, argExps, targs, defTpe, tpe, eff, loc)
 

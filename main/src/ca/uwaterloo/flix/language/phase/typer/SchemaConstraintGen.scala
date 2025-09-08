@@ -101,19 +101,19 @@ object SchemaConstraintGen {
     e match {
       case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
         //
-        //  exp = exps[0] <+> exps[1] <+> ...
+        //  exp = exps[0] <+> exps[1] <+> ... (exp is conceptual; it does not actually exist)
         //
         //  exp: freshRestSchemaVar
         //  queryExp: #{$freshRelOrLat(α₁, α₂, ...) | freshRestSchemaVar }
         //  --------------------------------------------------------------------
-        //  FixpointQueryWithSelect(exps, queryExp, ...) : Array[(α₁, α₂, ...)]
+        //  FixpointQueryWithSelect(exps, queryExp, ...) : Vector[(α₁, α₂, ...)]
         //
-        val arity = selects.length
-        val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(arity, Kind.Predicate), loc)
-        val freshElemVars = List.range(0, arity).map(_ => Type.freshVar(Kind.Star, loc))
-        val tuple = Type.mkTuplish(freshElemVars, loc)
+        val predArity = selects.length
+        val freshRelOrLat = Type.freshVar(Kind.mkArrowTo(predArity, Kind.Predicate), loc)
+        val freshTermVars = List.range(0, predArity).map(_ => Type.freshVar(Kind.Star, loc))
+        val tuple = Type.mkTuplish(freshTermVars, loc)
         val freshRestSchemaVar = Type.freshVar(Kind.SchemaRow, loc)
-        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkApply(freshRelOrLat, freshElemVars, loc), freshRestSchemaVar, loc), loc)
+        val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkApply(freshRelOrLat, freshTermVars, loc), freshRestSchemaVar, loc), loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(queryExp)
         c.unifyAllTypes(Type.mkSchema(freshRestSchemaVar, loc) :: tpes, loc)
