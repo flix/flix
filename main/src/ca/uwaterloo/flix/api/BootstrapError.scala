@@ -19,6 +19,8 @@ import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 
+import java.nio.file.Path
+
 sealed trait BootstrapError {
   /**
     * Returns a human-readable and formatted string representation of this error.
@@ -55,5 +57,9 @@ object BootstrapError {
     override def message(f: Formatter): String = e.reduce[String] {
       case (acc, s) => acc + System.lineSeparator() + s
     }
+  }
+
+  case class UnexpectedFiles(unexpectedFiles: List[Path], expectedFileTypes: List[String], directory: Path) extends BootstrapError {
+    override def message(f: Formatter): String = ???
   }
 }

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getBuildDirectory, getClassDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -34,6 +34,7 @@ import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
 import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.{Failure, Success, Using}
 
 
@@ -529,10 +530,38 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    * Removes generated files:
     *
+    *   1. `.class` files from `build/class`.
+    *   1. `.html` and `style.css` files from `build/doc`
+    *   1. `.jar`, `.fkpg`, `.toml` files from `artifact/`
     */
-  def clean(): Validation[Unit, BootstrapError] = {
-    ???
+  def clean(formatter: Formatter)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    val summary1 =
+      s"""${formatter.underline(formatter.bold("1. Check 'build/class' directory for non-class files."))}
+         |2. Remove .class files from 'build/class'.
+         |""".stripMargin
+    out.println(summary1)
+
+    val classDir = getClassDirectory(projectPath)
+    val files = Files.walk(classDir).iterator().asScala.toList
+    val unexpectedFiles = files.filterNot(p => p.endsWith(".class"))
+    if (unexpectedFiles.nonEmpty) {
+      Validation.Failure(BootstrapError.UnexpectedFiles(unexpectedFiles, List(".class"), classDir))
+    } else {
+      val summary2 =
+        s""""1. Check 'build/class' directory for non-class files.
+           |${formatter.underline(formatter.bold("2. Remove .class files from 'build/class'."))}
+           |""".stripMargin
+      out.println(summary2)
+
+      for (file <- files) {
+        Files.delete(file)
+      }
+
+      out.println("Success.")
+      Validation.Success(())
+    }
   }
 
   /**
