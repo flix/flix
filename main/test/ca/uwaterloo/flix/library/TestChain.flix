@@ -1,6 +1,6 @@
 mod TestChain {
 
-    use Assert.{assertEq, assertTrue, assertFalse};
+    use Assert.{assertEq, assertTrue, assertFalse, fail};
 
     /////////////////////////////////////////////////////////////////////////////
     // Collectable.collect                                                     //
@@ -237,7 +237,7 @@ mod TestChain {
     def viewLeft01(): Unit \ Assert = {
         match Chain.viewLeft((Chain.empty(): Chain[Int32])) {
             case Chain.ViewLeft.NoneLeft => assertTrue(true)
-            case _ => assertTrue(false)
+            case _ => fail("Expected NoneLeft")
         }
     }
 
@@ -245,7 +245,7 @@ mod TestChain {
     def viewLeft02(): Unit \ Assert = {
         match Chain.viewLeft(Chain.singleton(1)) {
             case Chain.ViewLeft.SomeLeft(x, xs) => assertEq(expected = (1, Chain.empty()), (x, xs))
-            case _ => assertTrue(false)
+            case _ => fail("Expected SomeLeft")
         }
     }
 
@@ -253,7 +253,7 @@ mod TestChain {
     def viewLeft03(): Unit \ Assert = {
         match Chain.viewLeft(List.toChain(1 :: 2 :: Nil)) {
             case Chain.ViewLeft.SomeLeft(x, xs) => assertEq(expected = (1, Chain.singleton(2)), (x, xs))
-            case _ => assertTrue(false)
+            case _ => fail("Expected SomeLeft")
         }
     }
 
@@ -261,7 +261,7 @@ mod TestChain {
     def viewLeft04(): Unit \ Assert = {
         match Chain.viewLeft(List.toChain(1 :: 2 :: 3 :: Nil)) {
             case Chain.ViewLeft.SomeLeft(x, xs) => assertEq(expected = (1, List.toChain(2 :: 3 :: Nil)), (x, xs))
-            case _ => assertTrue(false)
+            case _ => fail("Expected SomeLeft")
         }
     }
 
@@ -273,7 +273,7 @@ mod TestChain {
     def viewRight01(): Unit \ Assert = {
         match Chain.viewRight((Chain.empty(): Chain[Int32])) {
             case Chain.ViewRight.NoneRight => assertTrue(true)
-            case _ => assertTrue(false)
+            case _ => fail("Expected NoneRight")
         }
     }
 
@@ -281,7 +281,7 @@ mod TestChain {
     def viewRight02(): Unit \ Assert = {
         match Chain.viewRight(Chain.singleton(1)) {
             case Chain.ViewRight.SomeRight(xs, x) => assertEq(expected = (Chain.empty(), 1), (xs, x))
-            case _ => assertTrue(false)
+            case _ => fail("Expected SomeRight")
         }
     }
 
@@ -289,7 +289,7 @@ mod TestChain {
     def viewRight03(): Unit \ Assert = {
         match Chain.viewRight(List.toChain(1 :: 2 :: Nil)) {
             case Chain.ViewRight.SomeRight(xs, x) => assertEq(expected = (Chain.singleton(1), 2), (xs, x))
-            case _ => assertTrue(false)
+            case _ => fail("Expected SomeRight")
         }
     }
 
@@ -297,7 +297,7 @@ mod TestChain {
     def viewRight04(): Unit \ Assert = {
         match Chain.viewRight(List.toChain(1 :: 2 :: 3 :: Nil)) {
             case Chain.ViewRight.SomeRight(xs, x) => assertEq(expected = (List.toChain(1 :: 2 :: Nil), 3), (xs, x))
-            case _ => assertTrue(false)
+            case _ => fail("Expected SomeRight")
         }
     }
 
@@ -1688,138 +1688,139 @@ mod TestChain {
         assertTrue((Chain.empty() |> Chain.cons(1)) `Chain.equals` Chain.singleton(1))
 
     @Test
-    def equals04(): Bool =
-        (Chain.empty() `Chain.snoc` 1) `Chain.equals` Chain.singleton(1)
+    def equals04(): Unit \ Assert =
+        assertTrue((Chain.empty() `Chain.snoc` 1) `Chain.equals` Chain.singleton(1))
 
     @Test
-    def equals05(): Bool =
-        (Chain.empty() `Chain.snoc` 1) `Chain.equals` (Chain.empty() |> Chain.cons(1))
+    def equals05(): Unit \ Assert =
+        assertTrue((Chain.empty() `Chain.snoc` 1) `Chain.equals` (Chain.empty() |> Chain.cons(1)))
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def compare01(): Bool =
-        (Chain.empty(): Chain[Int32]) `Chain.compare` (Chain.empty(): Chain[Int32]) == Comparison.EqualTo
+    def compare01(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, (Chain.empty(): Chain[Int32]) `Chain.compare` (Chain.empty(): Chain[Int32]))
 
     @Test
-    def compare02(): Bool =
-        Chain.singleton(1) `Chain.compare` Chain.empty() == Comparison.GreaterThan
+    def compare02(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, Chain.singleton(1) `Chain.compare` Chain.empty())
 
     @Test
-    def compare03(): Bool =
-        Chain.empty() `Chain.compare` Chain.singleton(1) == Comparison.LessThan
+    def compare03(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, Chain.empty() `Chain.compare` Chain.singleton(1))
 
     @Test
-    def compare04(): Bool =
-        Chain.singleton(1) `Chain.compare` Chain.singleton(1) == Comparison.EqualTo
+    def compare04(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, Chain.singleton(1) `Chain.compare` Chain.singleton(1))
 
     @Test
-    def compare05(): Bool =
-        Chain.singleton(1) `Chain.compare` Chain.singleton(2) == Comparison.LessThan
+    def compare05(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, Chain.singleton(1) `Chain.compare` Chain.singleton(2))
 
     @Test
-    def compare06(): Bool =
-        Chain.singleton(2) `Chain.compare` Chain.singleton(1) == Comparison.GreaterThan
+    def compare06(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, Chain.singleton(2) `Chain.compare` Chain.singleton(1))
 
     @Test
-    def compare07(): Bool =
-        Chain.singleton(1) `Chain.compare` List.toChain(1 :: 2 :: Nil) == Comparison.LessThan
+    def compare07(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, Chain.singleton(1) `Chain.compare` List.toChain(1 :: 2 :: Nil))
 
     @Test
-    def compare08(): Bool =
-        List.toChain(1 :: 2 :: Nil) `Chain.compare` Chain.singleton(1) == Comparison.GreaterThan
+    def compare08(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, List.toChain(1 :: 2 :: Nil) `Chain.compare` Chain.singleton(1))
 
     @Test
-    def compare09(): Bool =
-        Chain.singleton(1) `Chain.compare` List.toChain(0 :: 0 :: Nil) == Comparison.GreaterThan
+    def compare09(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, Chain.singleton(1) `Chain.compare` List.toChain(0 :: 0 :: Nil))
 
     @Test
-    def compare10(): Bool =
-        List.toChain(0 :: 0 :: Nil)  `Chain.compare` Chain.singleton(1) == Comparison.LessThan
+    def compare10(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, List.toChain(0 :: 0 :: Nil) `Chain.compare` Chain.singleton(1))
 
     @Test
-    def compare11(): Bool =
-        List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 1 :: Nil) == Comparison.GreaterThan
+    def compare11(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 1 :: Nil))
 
     @Test
-    def compare12(): Bool =
-        List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 3 :: Nil) == Comparison.LessThan
+    def compare12(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, List.toChain(1 :: 2 :: Nil) `Chain.compare` List.toChain(1 :: 3 :: Nil))
 
     @Test
-    def compare13(): Bool =
-        List.toChain(1 :: 2 :: 3 :: 4 :: Nil) `Chain.compare` List.toChain(1 :: 2 :: 3 :: 4 :: Nil) == Comparison.EqualTo
+    def compare13(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, List.toChain(1 :: 2 :: 3 :: 4 :: Nil) `Chain.compare` List.toChain(1 :: 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortVsSortWith(c: Chain[Int32]) : Bool =
-        Chain.sort(c) == Chain.sortWith(cmp, c)
+    def testSortVsSortWith(c: Chain[Int32]) : Unit \ Assert =
+        assertEq(expected = Chain.sortWith(cmp, c), Chain.sort(c))
 
     @Test
-    def sort01(): Bool = testSortVsSortWith((Chain.empty(): Chain[Int32]))
+    def sort01(): Unit \ Assert = testSortVsSortWith((Chain.empty(): Chain[Int32]))
 
     @Test
-    def sort02(): Bool = testSortVsSortWith(Chain.singleton(0))
+    def sort02(): Unit \ Assert = testSortVsSortWith(Chain.singleton(0))
 
     @Test
-    def sort03(): Bool = testSortVsSortWith(List.toChain(0 :: 1 :: Nil))
+    def sort03(): Unit \ Assert = testSortVsSortWith(List.toChain(0 :: 1 :: Nil))
 
     @Test
-    def sort04(): Bool = testSortVsSortWith(List.toChain(1 :: 0 :: Nil))
+    def sort04(): Unit \ Assert = testSortVsSortWith(List.toChain(1 :: 0 :: Nil))
 
     @Test
-    def sort05(): Bool = testSortVsSortWith(List.toChain(1 :: 1 :: Nil))
+    def sort05(): Unit \ Assert = testSortVsSortWith(List.toChain(1 :: 1 :: Nil))
 
     @Test
-    def sort06(): Bool = testSortVsSortWith(List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+    def sort06(): Unit \ Assert = testSortVsSortWith(List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
     @Test
-    def sort07(): Bool = testSortVsSortWith(List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    def sort07(): Unit \ Assert = testSortVsSortWith(List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @Test
-    def sort08(): Bool = testSortVsSortWith(List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sort08(): Unit \ Assert = testSortVsSortWith(List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     @Test
-    def sort09(): Bool = testSortVsSortWith(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sort09(): Unit \ Assert = testSortVsSortWith(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortBy                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    def testSortByVsSort(a: Chain[Int32]) : Bool =
-        (Chain.sortBy(identity, a) == Chain.sort(a)) and
-        (Chain.sortBy(x -> 4*x+7, a) == Chain.sort(a)) and
-        (Chain.sortBy(x -> -x, a) == Chain.sortWith(flip(cmp),a))
+    def testSortByVsSort(a: Chain[Int32]) : Unit \ Assert = {
+        assertEq(expected = Chain.sort(a), Chain.sortBy(identity, a));
+        assertEq(expected = Chain.sort(a), Chain.sortBy(x -> 4*x+7, a));
+        assertEq(expected = Chain.sortWith(flip(cmp), a), Chain.sortBy(x -> -x, a))
+    }
 
     @Test
-    def sortBy01(): Bool = testSortByVsSort((Chain.empty(): Chain[Int32]))
+    def sortBy01(): Unit \ Assert = testSortByVsSort((Chain.empty(): Chain[Int32]))
 
     @Test
-    def sortBy02(): Bool = testSortByVsSort(Chain.singleton(0))
+    def sortBy02(): Unit \ Assert = testSortByVsSort(Chain.singleton(0))
 
     @Test
-    def sortBy03(): Bool = testSortByVsSort(List.toChain(0 :: 1 :: Nil))
+    def sortBy03(): Unit \ Assert = testSortByVsSort(List.toChain(0 :: 1 :: Nil))
 
     @Test
-    def sortBy04(): Bool = testSortByVsSort(List.toChain(1 :: 0 :: Nil))
+    def sortBy04(): Unit \ Assert = testSortByVsSort(List.toChain(1 :: 0 :: Nil))
 
     @Test
-    def sortBy05(): Bool = testSortByVsSort(List.toChain(1 :: 1 :: Nil))
+    def sortBy05(): Unit \ Assert = testSortByVsSort(List.toChain(1 :: 1 :: Nil))
 
     @Test
-    def sortBy06(): Bool = testSortByVsSort(List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
+    def sortBy06(): Unit \ Assert = testSortByVsSort(List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil))
 
     @Test
-    def sortBy07(): Bool = testSortByVsSort(List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    def sortBy07(): Unit \ Assert = testSortByVsSort(List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
 
     @Test
-    def sortBy08(): Bool = testSortByVsSort(List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sortBy08(): Unit \ Assert = testSortByVsSort(List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     @Test
-    def sortBy09(): Bool = testSortByVsSort(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
+    def sortBy09(): Unit \ Assert = testSortByVsSort(List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
@@ -1831,115 +1832,119 @@ mod TestChain {
         else Comparison.GreaterThan
 
     @Test
-    def sortWith01(): Bool =
-        Chain.sortWith(cmp, (Chain.empty(): Chain[Int32])) == Chain.empty()
+    def sortWith01(): Unit \ Assert =
+        assertEq(expected = Chain.empty(), Chain.sortWith(cmp, (Chain.empty(): Chain[Int32])))
 
     @Test
-    def sortWith02(): Bool =
-        Chain.sortWith(cmp, Chain.singleton(0)) == Chain.singleton(0)
+    def sortWith02(): Unit \ Assert =
+        assertEq(expected = Chain.singleton(0), Chain.sortWith(cmp, Chain.singleton(0)))
 
     @Test
-    def sortWith03(): Bool =
-        Chain.sortWith(cmp, List.toChain(0 :: 1 :: Nil)) == List.toChain(0 :: 1 :: Nil)
+    def sortWith03(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: Nil), Chain.sortWith(cmp, List.toChain(0 :: 1 :: Nil)))
 
     @Test
-    def sortWith04(): Bool =
-        Chain.sortWith(cmp, List.toChain(1 :: 0 :: Nil)) == List.toChain(0 :: 1 :: Nil)
+    def sortWith04(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: Nil), Chain.sortWith(cmp, List.toChain(1 :: 0 :: Nil)))
 
     @Test
-    def sortWith05(): Bool =
-        Chain.sortWith(cmp, List.toChain(1 :: 1 :: Nil)) == List.toChain(1 :: 1 :: Nil)
+    def sortWith05(): Unit \ Assert =
+        assertEq(expected = List.toChain(1 :: 1 :: Nil), Chain.sortWith(cmp, List.toChain(1 :: 1 :: Nil)))
 
     @Test
-    def sortWith06(): Bool =
-        Chain.sortWith(cmp, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    def sortWith06(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil), Chain.sortWith(cmp, List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)))
 
     @Test
-    def sortWith07(): Bool =
-        Chain.sortWith(cmp, List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    def sortWith07(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil), Chain.sortWith(cmp, List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)))
 
     @Test
-    def sortWith08(): Bool =
-        Chain.sortWith(cmp, List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)
+    def sortWith08(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil), Chain.sortWith(cmp, List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)))
 
     @Test
-    def sortWith09(): Bool =
-        Chain.sortWith(cmp, List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil)
+    def sortWith09(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: 2 :: 2 :: 3 :: 4 :: Nil), Chain.sortWith(cmp, List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)))
 
     @Test
-    def sortWith10(): Bool =
-        Chain.sortWith(flip(cmp), List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) == List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    def sortWith10(): Unit \ Assert =
+        assertEq(expected = List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil), Chain.sortWith(flip(cmp), List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)))
 
     @Test
-    def sortWith11(): Bool =
-        Chain.sortWith(flip(cmp), List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)) == List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    def sortWith11(): Unit \ Assert =
+        assertEq(expected = List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil), Chain.sortWith(flip(cmp), List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)))
 
     @Test
-    def sortWith12(): Bool =
-        Chain.sortWith(flip(cmp), List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)
+    def sortWith12(): Unit \ Assert =
+        assertEq(expected = List.toChain(5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil), Chain.sortWith(flip(cmp), List.toChain(5 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)))
 
     @Test
-    def sortWith13(): Bool =
-        Chain.sortWith(flip(cmp), List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)) == List.toChain(4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil)
+    def sortWith13(): Unit \ Assert =
+        assertEq(expected = List.toChain(4 :: 3 :: 2 :: 2 :: 1 :: 0 :: Nil), Chain.sortWith(flip(cmp), List.toChain(2 :: 3 :: 0 :: 4 :: 1 :: 2 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def sequence01(): Bool =
+    def sequence01(): Unit \ Assert =
         let c: Chain[Identity[Int32]] = Chain.empty();
-        Chain.sequence(c) == Identity.Identity(Chain.empty())
+        assertEq(expected = Identity.Identity(Chain.empty()), Chain.sequence(c))
 
     @Test
-    def sequence02(): Bool =
+    def sequence02(): Unit \ Assert =
         let c = Chain.singleton(Identity.Identity(1));
-        Chain.sequence(c) == Identity.Identity(Chain.singleton(1))
+        assertEq(expected = Identity.Identity(Chain.singleton(1)), Chain.sequence(c))
 
     @Test
-    def sequence03(): Bool =
+    def sequence03(): Unit \ Assert =
         let c = List.toChain(Identity.Identity(1) :: Identity.Identity(2) :: Nil);
-        Chain.sequence(c) == Identity.Identity(List.toChain(1 :: 2 :: Nil))
+        assertEq(expected = Identity.Identity(List.toChain(1 :: 2 :: Nil)), Chain.sequence(c))
 
     @Test
-    def sequence04(): Bool =
+    def sequence04(): Unit \ Assert =
         let c = List.toChain(Identity.Identity(1) :: Identity.Identity(2) :: Identity.Identity(3) :: Nil);
-        Chain.sequence(c) == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil))
+        assertEq(expected = Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)), Chain.sequence(c))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def traverse01(): Bool = region rc {
+    def traverse01(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let c = Chain.empty();
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(Chain.empty()) and Ref.get(st) == 0
+        assertEq(expected = Identity.Identity(Chain.empty()), ans);
+        assertEq(expected = 0, Ref.get(st))
     }
 
     @Test
-    def traverse02(): Bool = region rc {
+    def traverse02(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let c = Chain.singleton(1);
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(Chain.singleton(1)) and Ref.get(st) == 1
+        assertEq(expected = Identity.Identity(Chain.singleton(1)), ans);
+        assertEq(expected = 1, Ref.get(st))
     }
 
     @Test
-    def traverse03(): Bool = region rc {
+    def traverse03(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let c = List.toChain(1 :: 2 :: Nil);
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and Ref.get(st) == 2
+        assertEq(expected = Identity.Identity(List.toChain(1 :: 2 :: Nil)), ans);
+        assertEq(expected = 2, Ref.get(st))
     }
 
     @Test
-    def traverse04(): Bool = region rc {
+    def traverse04(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let c = List.toChain(1 :: 2 :: 3 :: Nil);
         let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
-        ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and Ref.get(st) == 3
+        assertEq(expected = Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)), ans);
+        assertEq(expected = 3, Ref.get(st))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1947,20 +1952,20 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def join01(): Bool =
-        (Nil: List[Int32]) |> List.toChain |> Chain.join(",") == ""
+    def join01(): Unit \ Assert =
+        assertEq(expected = "", (Nil: List[Int32]) |> List.toChain |> Chain.join(","))
 
     @Test
-    def join02(): Bool =
-        (1 :: Nil) |> List.toChain |> Chain.join(",") == "1"
+    def join02(): Unit \ Assert =
+        assertEq(expected = "1", (1 :: Nil) |> List.toChain |> Chain.join(","))
 
     @Test
-    def join03(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toChain |> Chain.join(",") == "1,2,3"
+    def join03(): Unit \ Assert =
+        assertEq(expected = "1,2,3", (1 :: 2 :: 3 :: Nil) |> List.toChain |> Chain.join(","))
 
     @Test
-    def join04(): Bool =
-        ("1" :: "2" :: "3" :: Nil) |> List.toChain |> Chain.join(",") == "1,2,3"
+    def join04(): Unit \ Assert =
+        assertEq(expected = "1,2,3", ("1" :: "2" :: "3" :: Nil) |> List.toChain |> Chain.join(","))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1968,75 +1973,71 @@ mod TestChain {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def joinWith01(): Bool =
-        (Nil: List[Int32]) |> List.toChain |>
-            Chain.joinWith(x -> "${x + 1}", ",") == ""
+    def joinWith01(): Unit \ Assert =
+        assertEq(expected = "", (Nil: List[Int32]) |> List.toChain |> Chain.joinWith(x -> "${x + 1}", ","))
 
     @Test
-    def joinWith02(): Bool =
-        (1 :: Nil) |> List.toChain |>
-            Chain.joinWith(x -> "${x + 1}", ",") == "2"
+    def joinWith02(): Unit \ Assert =
+        assertEq(expected = "2", (1 :: Nil) |> List.toChain |> Chain.joinWith(x -> "${x + 1}", ","))
 
     @Test
-    def joinWith03(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toChain |>
-            Chain.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+    def joinWith03(): Unit \ Assert =
+        assertEq(expected = "2,3,4", (1 :: 2 :: 3 :: Nil) |> List.toChain |> Chain.joinWith(x -> "${x + 1}", ","))
 
     @Test
-    def joinWith04(): Bool =
-        ("1" :: "2" :: "3" :: Nil) |> List.toChain |>
-            Chain.joinWith(x -> x + x, ",") == "11,22,33"
+    def joinWith04(): Unit \ Assert =
+        assertEq(expected = "11,22,33", ("1" :: "2" :: "3" :: Nil) |> List.toChain |> Chain.joinWith(x -> x + x, ","))
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def zipWithIndex01(): Bool = Chain.zipWithIndex((Chain.empty(): Chain[Int32])) == Chain.empty()
+    def zipWithIndex01(): Unit \ Assert = assertEq(expected = Chain.empty(), Chain.zipWithIndex((Chain.empty(): Chain[Int32])))
 
     @Test
-    def zipWithIndex02(): Bool = Chain.zipWithIndex(Chain.singleton(2)) == List.toChain((0, 2) :: Nil)
+    def zipWithIndex02(): Unit \ Assert = assertEq(expected = List.toChain((0, 2) :: Nil), Chain.zipWithIndex(Chain.singleton(2)))
 
     @Test
-    def zipWithIndex03(): Bool = Chain.zipWithIndex(List.toChain(1 :: 8 :: Nil)) == List.toChain((0, 1) :: (1, 8) :: Nil)
+    def zipWithIndex03(): Unit \ Assert = assertEq(expected = List.toChain((0, 1) :: (1, 8) :: Nil), Chain.zipWithIndex(List.toChain(1 :: 8 :: Nil)))
 
     @Test
-    def zipWithIndex04(): Bool = Chain.zipWithIndex(List.toChain(8 :: 1 :: Nil)) == List.toChain((0, 8) :: (1, 1) :: Nil)
+    def zipWithIndex04(): Unit \ Assert = assertEq(expected = List.toChain((0, 8) :: (1, 1) :: Nil), Chain.zipWithIndex(List.toChain(8 :: 1 :: Nil)))
 
     @Test
-    def zipWithIndex05(): Bool = Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)) == List.toChain((0, 1) :: (1, 4) :: (2, 11) :: (3, 2) :: (4, -22) :: (5, 17) :: Nil)
+    def zipWithIndex05(): Unit \ Assert = assertEq(expected = List.toChain((0, 1) :: (1, 4) :: (2, 11) :: (3, 2) :: (4, -22) :: (5, 17) :: Nil), Chain.zipWithIndex(List.toChain(1 :: 4 :: 11 :: 2 :: -22 :: 17 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def shuffle01(): Bool \ NonDet =
+    def shuffle01(): Unit \ Assert + NonDet =
         let l: List[Int32] = Nil;
         let c = List.toChain(l) |> Chain.shuffle;
-
-        Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
+        assertEq(expected = 0, Chain.length(c));
+        assertEq(expected = Set#{}, Chain.toSet(c))
 
     @Test
-    def shuffle02(): Bool \ NonDet =
+    def shuffle02(): Unit \ Assert + NonDet =
         let l = 1 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle;
-
-        Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
+        assertEq(expected = 1, Chain.length(c));
+        assertEq(expected = Set#{1}, Chain.toSet(c))
 
     @Test
-    def shuffle03(): Bool \ NonDet =
+    def shuffle03(): Unit \ Assert + NonDet =
         let l = 1 :: 2 :: 3 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle;
-
-        Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
+        assertEq(expected = 3, Chain.length(c));
+        assertEq(expected = Set#{1, 2, 3}, Chain.toSet(c))
 
     @Test
-    def shuffle04(): Bool \ NonDet =
+    def shuffle04(): Unit \ Assert + NonDet =
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let c = List.toChain(l) |> Chain.shuffle;
-
-        Chain.length(c) == 10 and Chain.toSet(c) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        assertEq(expected = 10, Chain.length(c));
+        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, Chain.toSet(c))
 
 }
 
