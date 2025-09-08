@@ -535,6 +535,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     *   1. `.class` files from `build/class`.
     *   1. `.html` and `style.css` files from `build/doc`
     *   1. `.jar`, `.fkpg`, `.toml` files from `artifact/`
+    *
+    * Aborts if any of the directories do not contain the expected file types.
     */
   def clean(formatter: Formatter)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     val summary1 =
