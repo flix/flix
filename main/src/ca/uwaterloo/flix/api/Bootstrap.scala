@@ -529,6 +529,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    *
+    */
+  def clean(): Validation[Unit, BootstrapError] = {
+    ???
+  }
+
+  /**
     * Builds the jar or the fatjar
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
