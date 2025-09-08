@@ -92,13 +92,52 @@ mod RichString {
         pub def format(x: a): RichString
     }
 
-    instance Formattable[String] {
-        pub def format(x: String): RichString =
-            RichString(Chain.singleton(Span.Span({text = x, fgColor = Color.Default, bgColor = Color.Default, style = Style.Normal})))
-    }
-
     instance Formattable[RichString] {
         pub def format(x: RichString): RichString = x
+    }
+
+    instance Formattable[Bool] {
+        pub def format(x: Bool): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Char] {
+        pub def format(x: Char): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Int8] {
+        pub def format(x: Int8): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Int16] {
+        pub def format(x: Int16): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Int32] {
+        pub def format(x: Int32): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Int64] {
+        pub def format(x: Int64): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Float32] {
+        pub def format(x: Float32): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Float64] {
+        pub def format(x: Float64): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[String] {
+        pub def format(x: String): RichString = fromString(x)
+    }
+
+    instance Formattable[BigInt] {
+        pub def format(x: BigInt): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[BigDecimal] {
+        pub def format(x: BigDecimal): RichString = fromString(ToString.toString(x))
     }
 
     ///
@@ -149,6 +188,12 @@ mod RichString {
     ///
     pub def fromSpan(s: Span): RichString =
         RichString(Chain.singleton(s))
+
+    ///
+    /// Returns a `RichString` from the given string `s` using default colors and normal style.
+    ///
+    pub def fromString(s: String): RichString =
+        RichString(Chain.singleton(Span.Span({text = s, fgColor = Color.Default, bgColor = Color.Default, style = Style.Normal})))
 
     ///
     /// Returns a `RichString` with the given text `x` in black color.
