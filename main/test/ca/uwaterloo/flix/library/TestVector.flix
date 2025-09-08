@@ -485,12 +485,12 @@ mod TestVector {
         let v = Vector.append((Vector#{}: Vector[Int32]), Vector#{1, 2});
         assertEq(expected = Vector#{1, 2}, v)
 
-    @test
+    @Test
     def append04(): Unit \ Assert =
         let v = Vector.append(Vector#{1}, (Vector#{}: Vector[Int32]));
         assertEq(expected = Vector#{1}, v)
 
-    @test
+    @Test
     def append05(): Unit \ Assert =
         let v = Vector.append(Vector#{1, 2}, (Vector#{}: Vector[Int32]));
         assertEq(expected = Vector#{1, 2}, v)
@@ -2496,7 +2496,7 @@ mod TestVector {
         let v = Vector.drop(0, Vector#{1, 2});
         assertEq(expected = Vector#{1, 2}, v)
 
-    @test
+    @Test
     @Test
     def drop09(): Unit \ Assert =
         let v = Vector.drop(1, Vector#{1, 2});
@@ -3892,92 +3892,92 @@ mod TestVector {
         let v = Vector.updateSequence(-1, Vector#{2, 4}, Vector#{1});
         assertEq(expected = Vector#{4}, v)
 
-    @test
+    @Test
     def updateSequence11(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{3, 4}, Vector#{1, 2});
         assertEq(expected = Vector#{4, 2}, v)
 
-    @test
+    @Test
     def updateSequence12(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{3, 4}, Vector#{1, 2});
         assertEq(expected = Vector#{1, 3}, v)
 
-    @test
+    @Test
     def updateSequence13(): Unit \ Assert =
         let v = Vector.updateSequence(-2, Vector#{3, 4}, Vector#{1, 2});
         assertEq(expected = Vector#{1, 2}, v)
 
-    @test
+    @Test
     def updateSequence14(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{3, 4}, Vector#{1, 2});
         assertEq(expected = Vector#{1, 2}, v)
 
-    @test
+    @Test
     def updateSequence15(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{3}, Vector#{1, 2});
         assertEq(expected = Vector#{1, 3}, v)
 
-    @test
+    @Test
     def updateSequence16(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{3, 4}, Vector#{1, 2});
         assertEq(expected = Vector#{3, 4}, v)
 
-    @test
+    @Test
     def updateSequence17(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{4}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{4, 2, 3}, v)
 
-    @test
+    @Test
     def updateSequence18(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{4}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{1, 4, 3}, v)
 
-    @test
+    @Test
     def updateSequence19(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{4}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{1, 2, 4}, v)
 
-    @test
+    @Test
     def updateSequence20(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{4, 5}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{4, 5, 3}, v)
 
-    @test
+    @Test
     def updateSequence21(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{4, 5}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{1, 4, 5}, v)
 
-    @test
+    @Test
     def updateSequence22(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{4, 5, 6}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{5, 6, 3}, v)
 
-    @test
+    @Test
     def updateSequence23(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{4, 5, 6}, Vector#{1, 2, 3});
         assertEq(expected = Vector#{4, 5, 6}, v)
 
-    @test
+    @Test
     def updateSequence24(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
         assertEq(expected = Vector#{1, 2, 14, 15, 16, 17, 7}, v)
 
-    @test
+    @Test
     def updateSequence25(): Unit \ Assert =
         let v = Vector.updateSequence(-2, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
         assertEq(expected = Vector#{16, 17, 3, 4, 5, 6, 7}, v)
 
-    @test
+    @Test
     def updateSequence26(): Unit \ Assert =
         let v = Vector.updateSequence(4, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
         assertEq(expected = Vector#{1, 2, 3, 4, 14, 15, 16}, v)
 
-    @test
+    @Test
     def updateSequence27(): Unit \ Assert =
         let v = Vector.updateSequence(4, Vector#{14, 15}, Vector#{1, 2, 3, 4, 5, 6, 7});
         assertEq(expected = Vector#{1, 2, 3, 4, 14, 15, 7}, v)
 
-    @test
+    @Test
     def updateSequence28(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{-1, -2, -3, -4, -5, -6, -7, -8}, Vector#{1, 2, 3, 4, 5, 6, 7});
         assertEq(expected = Vector#{-2, -3, -4, -5, -6, -7, -8}, v)
