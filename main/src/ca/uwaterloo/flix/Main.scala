@@ -208,7 +208,7 @@ object Main {
           }
 
         case Command.Clean =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken))(_.clean).toResult match {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken))(_.clean(formatter)).toResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
