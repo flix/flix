@@ -114,37 +114,35 @@ mod RichString {
         Formattable.format(x)
 
     ///
+    /// Returns a `RichString` with the function `f` applied to every span.
+    ///
+    pub def map(f: Span -> Span, rs: RichString): RichString = match rs {
+        case RichString(spans) => RichString(Chain.map(f, spans))
+    }
+
+    ///
     /// Returns a `RichString` from the formattable value `x` with all spans updated to use the given foreground color `c`.
     ///
     pub def withColor(c: Color, x: a): RichString with Formattable[a] = 
         let rs = Formattable.format(x);
-        match rs {
-            case RichString(spans) =>
-                RichString(Chain.map(match Span.Span(r) -> 
-                    Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, style = r#style}), spans))
-        }
+        map(match Span.Span(r) -> 
+            Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, style = r#style}), rs)
 
     ///
     /// Returns a `RichString` from the formattable value `x` with all spans updated to use the given background color `c`.
     ///
     pub def withBgColor(c: Color, x: a): RichString with Formattable[a] = 
         let rs = Formattable.format(x);
-        match rs {
-            case RichString(spans) =>
-                RichString(Chain.map(match Span.Span(r) -> 
-                    Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, style = r#style}), spans))
-        }
+        map(match Span.Span(r) -> 
+            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, style = r#style}), rs)
 
     ///
     /// Returns a `RichString` from the formattable value `x` with all spans updated to use the given `style`.
     ///
     pub def withStyle(style: Style, x: a): RichString with Formattable[a] = 
         let rs = Formattable.format(x);
-        match rs {
-            case RichString(spans) =>
-                RichString(Chain.map(match Span.Span(r) -> 
-                    Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, style = style}), spans))
-        }
+        map(match Span.Span(r) -> 
+            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, style = style}), rs)
 
     ///
     /// Returns a `RichString` containing the given span `s`.
