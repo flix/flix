@@ -48,40 +48,39 @@ mod RichString {
     /// Defines the visual appearance of text spans beyond color.
     ///
     pub enum Style with Eq, Order {
-        case Normal,
         case Bold,
         case Underline
     }
 
     ///
-    /// A text span with content, foreground color, background color, and style.
+    /// A text span with content, foreground color, background color, and styles.
     ///
     /// A span represents a contiguous piece of text with uniform styling.
     ///
     pub enum Span {
-        case Span({text = String, fgColor = Color, bgColor = Color, style = Style})
+        case Span({text = String, fgColor = Color, bgColor = Color, styles = Set[Style]})
     }
 
     mod Span {
         use RichString.{Color, Style, Span};
 
         ///
-        /// Returns a span with the given text `s` and foreground color `c` using normal style and default background color.
+        /// Returns a span with the given text `s` and foreground color `c` using no styles and default background color.
         ///
         pub def withColor(s: String, c: Color): Span =
-            Span({text = s, fgColor = c, bgColor = Color.Default, style = Style.Normal})
+            Span({text = s, fgColor = c, bgColor = Color.Default, styles = Set.empty()})
 
         ///
-        /// Returns a span with the given text `s` and background color `c` using normal style and default foreground color.
+        /// Returns a span with the given text `s` and background color `c` using no styles and default foreground color.
         ///
         pub def withBgColor(s: String, c: Color): Span =
-            Span({text = s, fgColor = Color.Default, bgColor = c, style = Style.Normal})
+            Span({text = s, fgColor = Color.Default, bgColor = c, styles = Set.empty()})
 
         ///
-        /// Returns a span with the given text `s`, foreground color, and background color using normal style.
+        /// Returns a span with the given text `s`, foreground color, and background color using no styles.
         ///
         pub def withColors(s: String, fgColor: Color, bgColor: Color): Span =
-            Span({text = s, fgColor = fgColor, bgColor = bgColor, style = Style.Normal})
+            Span({text = s, fgColor = fgColor, bgColor = bgColor, styles = Set.empty()})
 
     }
 
@@ -165,7 +164,7 @@ mod RichString {
     pub def withColor(c: Color, x: a): RichString with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
-            Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, style = r#style}), rs)
+            Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}), rs)
 
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given background color `c`.
@@ -173,15 +172,15 @@ mod RichString {
     pub def withBgColor(c: Color, x: a): RichString with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
-            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, style = r#style}), rs)
+            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}), rs)
 
     ///
-    /// Returns a `RichString` from given text `x` with all spans updated to use the given `style`.
+    /// Returns a `RichString` from given text `x` with the given `style` in addition to any other styles it already has.
     ///
     pub def withStyle(style: Style, x: a): RichString with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
-            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, style = style}), rs)
+            Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}), rs)
 
     ///
     /// Returns a `RichString` containing the given span `s`.
@@ -190,10 +189,10 @@ mod RichString {
         RichString(Chain.singleton(s))
 
     ///
-    /// Returns a `RichString` from the given string `s` using default colors and normal style.
+    /// Returns a `RichString` from the given string `s` using default colors and no styles.
     ///
     pub def fromString(s: String): RichString =
-        RichString(Chain.singleton(Span.Span({text = s, fgColor = Color.Default, bgColor = Color.Default, style = Style.Normal})))
+        RichString(Chain.singleton(Span.Span({text = s, fgColor = Color.Default, bgColor = Color.Default, styles = Set.empty()})))
 
     ///
     /// Returns a `RichString` with the given text `x` in black color.
@@ -332,11 +331,10 @@ mod RichString {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> {
                 // Collect all codes in a list
-                let styleCodes = match r#style {
-                    case Style.Normal => Nil
-                    case Style.Bold => "1" :: Nil
-                    case Style.Underline => "4" :: Nil
-                };
+                let styleCodes = r#styles |> Set.toList |> List.map(s -> match s {
+                    case Style.Bold => "1"
+                    case Style.Underline => "4"
+                });
 
                 let fgCodes = match r#fgColor {
                     case Color.Rgb(red, green, blue) => "38;2;${red};${green};${blue}" :: Nil
