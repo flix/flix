@@ -151,100 +151,100 @@ mod RichString {
         RichString(Chain.singleton(s))
 
     ///
-    /// Returns a `RichString` with the given text `s` in black color.
+    /// Returns a `RichString` with the given formattable value `x` in black color.
     ///
-    pub def black(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(0, 0, 0)))
+    pub def black(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(0, 0, 0), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in red color.
+    /// Returns a `RichString` with the given formattable value `x` in red color.
     ///
-    pub def red(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(205, 49, 49)))
+    pub def red(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(205, 49, 49), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in green color.
+    /// Returns a `RichString` with the given formattable value `x` in green color.
     ///
-    pub def green(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(13, 188, 121)))
+    pub def green(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(13, 188, 121), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in yellow color.
+    /// Returns a `RichString` with the given formattable value `x` in yellow color.
     ///
-    pub def yellow(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(229, 192, 123)))
+    pub def yellow(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(229, 192, 123), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in blue color.
+    /// Returns a `RichString` with the given formattable value `x` in blue color.
     ///
-    pub def blue(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(36, 114, 200)))
+    pub def blue(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(36, 114, 200), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in magenta color.
+    /// Returns a `RichString` with the given formattable value `x` in magenta color.
     ///
-    pub def magenta(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(188, 63, 188)))
+    pub def magenta(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(188, 63, 188), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in cyan color.
+    /// Returns a `RichString` with the given formattable value `x` in cyan color.
     ///
-    pub def cyan(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(17, 168, 205)))
+    pub def cyan(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(17, 168, 205), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` in white color.
+    /// Returns a `RichString` with the given formattable value `x` in white color.
     ///
-    pub def white(s: String): RichString =
-        fromSpan(Span.withColor(s, Color.Rgb(255, 255, 255)))
+    pub def white(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(255, 255, 255), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on black background.
+    /// Returns a `RichString` with the given formattable value `x` on black background.
     ///
-    pub def bgBlack(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(0, 0, 0)))
+    pub def bgBlack(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(0, 0, 0), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on red background.
+    /// Returns a `RichString` with the given formattable value `x` on red background.
     ///
-    pub def bgRed(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(205, 49, 49)))
+    pub def bgRed(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(205, 49, 49), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on green background.
+    /// Returns a `RichString` with the given formattable value `x` on green background.
     ///
-    pub def bgGreen(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(13, 188, 121)))
+    pub def bgGreen(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(13, 188, 121), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on yellow background.
+    /// Returns a `RichString` with the given formattable value `x` on yellow background.
     ///
-    pub def bgYellow(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(229, 192, 123)))
+    pub def bgYellow(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(229, 192, 123), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on blue background.
+    /// Returns a `RichString` with the given formattable value `x` on blue background.
     ///
-    pub def bgBlue(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(36, 114, 200)))
+    pub def bgBlue(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(36, 114, 200), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on magenta background.
+    /// Returns a `RichString` with the given formattable value `x` on magenta background.
     ///
-    pub def bgMagenta(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(188, 63, 188)))
+    pub def bgMagenta(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(188, 63, 188), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on cyan background.
+    /// Returns a `RichString` with the given formattable value `x` on cyan background.
     ///
-    pub def bgCyan(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(17, 168, 205)))
+    pub def bgCyan(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(17, 168, 205), x)
 
     ///
-    /// Returns a `RichString` with the given text `s` on white background.
+    /// Returns a `RichString` with the given formattable value `x` on white background.
     ///
-    pub def bgWhite(s: String): RichString =
-        fromSpan(Span.withBgColor(s, Color.Rgb(255, 255, 255)))
+    pub def bgWhite(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(255, 255, 255), x)
 
     ///
     /// Returns the concatenation of `rs1` and `rs2`.
