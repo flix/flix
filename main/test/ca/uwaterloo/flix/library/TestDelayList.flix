@@ -8,123 +8,123 @@ mod TestDelayList {
 
     @Test
     def eq01(): Unit \ Assert =
-        assertTrue(((ENil: DelayList[Unit])) == ((ENil: DelayList[Unit])))
+        assertEq(expected = (ENil: DelayList[Unit]), (ENil: DelayList[Unit]))
 
     @Test
     def eq02(): Unit \ Assert =
-        assertTrue(ECons(1, ENil) == ECons(1, ENil))
+        assertEq(expected = ECons(1, ENil), ECons(1, ENil))
 
     @Test
     def eq03(): Unit \ Assert =
-        assertTrue(LCons(1, lazy ENil) == LCons(1, lazy ENil))
+        assertEq(expected = LCons(1, lazy ENil), LCons(1, lazy ENil))
 
     @Test
     def eq04(): Unit \ Assert =
-        assertTrue(LList(lazy ECons(1, ENil)) == LList(lazy ECons(1, ENil)))
+        assertEq(expected = LList(lazy ECons(1, ENil)), LList(lazy ECons(1, ENil)))
 
     @Test
     def eq05(): Unit \ Assert =
-        assertTrue(ECons(1, ENil) == LCons(1, lazy ENil))
+        assertEq(expected = ECons(1, ENil), LCons(1, lazy ENil))
 
     @Test
     def eq06(): Unit \ Assert =
-        assertTrue(LCons(1, lazy ENil) == ECons(1, ENil))
+        assertEq(expected = LCons(1, lazy ENil), ECons(1, ENil))
 
     @Test
     def eq07(): Unit \ Assert =
-        assertTrue(ECons(1, ENil) == LList(lazy ECons(1, ENil)))
+        assertEq(expected = ECons(1, ENil), LList(lazy ECons(1, ENil)))
 
     @Test
     def eq08(): Unit \ Assert =
-        assertTrue(LList(lazy ECons(1, ENil)) == ECons(1, ENil))
+        assertEq(expected = LList(lazy ECons(1, ENil)), ECons(1, ENil))
 
     @Test
     def eq09(): Unit \ Assert =
-        assertTrue(ECons(1, ENil) == LList(lazy LCons(1, lazy ENil)))
+        assertEq(expected = ECons(1, ENil), LList(lazy LCons(1, lazy ENil)))
 
     @Test
     def eq10(): Unit \ Assert =
-        assertTrue(LList(lazy LCons(1, lazy ENil)) == ECons(1, ENil))
+        assertEq(expected = LList(lazy LCons(1, lazy ENil)), ECons(1, ENil))
 
     @Test
     def eq11(): Unit \ Assert =
-        assertTrue(ECons(1, ECons(2, ECons(3, ENil))) == ECons(1, ECons(2, ECons(3, ENil))))
+        assertEq(expected = ECons(1, ECons(2, ECons(3, ENil))), ECons(1, ECons(2, ECons(3, ENil))))
 
     @Test
     def eq12(): Unit \ Assert =
-        assertTrue(ECons(1, ECons(2, ECons(3, ENil))) == LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
+        assertEq(expected = ECons(1, ECons(2, ECons(3, ENil))), LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
 
     @Test
     def eq13(): Unit \ Assert =
-        assertTrue(LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))) == ECons(1, ECons(2, ECons(3, ENil))))
+        assertEq(expected = LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))), ECons(1, ECons(2, ECons(3, ENil))))
 
     @Test
     def eq14(): Unit \ Assert =
-        assertTrue(ECons(1, LCons(2, lazy ECons(3, ENil))) == LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
+        assertEq(expected = ECons(1, LCons(2, lazy ECons(3, ENil))), LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
 
     @Test
     def eq15(): Unit \ Assert =
-        assertTrue(LCons(1, lazy ECons(2, LCons(3, lazy ENil))) == ECons(1, ECons(2, ECons(3, ENil))))
+        assertEq(expected = LCons(1, lazy ECons(2, LCons(3, lazy ENil))), ECons(1, ECons(2, ECons(3, ENil))))
 
     @Test
     def eq16(): Unit \ Assert =
-        assertTrue(ECons(1, ECons(2, ECons(3, ENil))) == LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
+        assertEq(expected = ECons(1, ECons(2, ECons(3, ENil))), LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil))))
 
     @Test
     def eq17(): Unit \ Assert =
-        assertTrue(LList(lazy ECons(1, ECons(2, ECons(3, ENil)))) == LList(lazy LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))))
+        assertEq(expected = LList(lazy ECons(1, ECons(2, ECons(3, ENil)))), LList(lazy LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))))
 
     @Test
     def eq18(): Unit \ Assert =
-        assertTrue(LList(lazy ECons(1, ECons(2, ECons(3, ENil)))) == LList(lazy LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))))
+        assertEq(expected = LList(lazy ECons(1, ECons(2, ECons(3, ENil)))), LList(lazy LCons(1, lazy LCons(2, lazy LCons(3, lazy ENil)))))
 
     @Test
     def eq19(): Unit \ Assert =
-        assertTrue(ECons(0, ENil) != ECons(1, ENil))
+        assertNeq(unexpected = ECons(0, ENil), ECons(1, ENil))
 
     @Test
     def eq20(): Unit \ Assert =
-        assertTrue(ECons(0, ENil) != LCons(1, lazy ENil))
+        assertNeq(unexpected = ECons(0, ENil), LCons(1, lazy ENil))
 
     @Test
     def eq21(): Unit \ Assert =
-        assertTrue(LCons(0, lazy ENil) != ECons(1, ENil))
+        assertNeq(unexpected = LCons(0, lazy ENil), ECons(1, ENil))
 
     @Test
     def eq22(): Unit \ Assert =
-        assertTrue(LCons(0, lazy ENil) != LCons(1, lazy ENil))
+        assertNeq(unexpected = LCons(0, lazy ENil), LCons(1, lazy ENil))
 
     @Test
     def eq23(): Unit \ Assert =
-        assertTrue(LList(lazy ECons(0, ENil)) != LCons(1, lazy ENil))
+        assertNeq(unexpected = LList(lazy ECons(0, ENil)), LCons(1, lazy ENil))
 
     @Test
     def eq24(): Unit \ Assert =
-        assertTrue(LCons(0, lazy ENil) != LList(lazy ECons(1, ENil)))
+        assertNeq(unexpected = LCons(0, lazy ENil), LList(lazy ECons(1, ENil)))
 
     @Test
     def eq25(): Unit \ Assert =
-        assertTrue(ECons(0, ENil) != ECons(0, ECons(0, ENil)))
+        assertNeq(unexpected = ECons(0, ENil), ECons(0, ECons(0, ENil)))
 
     @Test
     def eq26(): Unit \ Assert =
-        assertTrue(ECons(0, ENil) != ECons(0, ECons(1, ENil)))
+        assertNeq(unexpected = ECons(0, ENil), ECons(0, ECons(1, ENil)))
 
     @Test
     def eq27(): Unit \ Assert =
-        assertTrue(ECons(0, ENil) != ENil)
+        assertNeq(unexpected = ECons(0, ENil), ENil)
 
     @Test
     def eq28(): Unit \ Assert =
-        assertTrue(ENil != ECons(0, ENil))
+        assertNeq(unexpected = ENil, ECons(0, ENil))
 
     @Test
     def eq29(): Unit \ Assert =
-        assertTrue(LCons(0, lazy ENil) != ENil)
+        assertNeq(unexpected = LCons(0, lazy ENil), ENil)
 
     @Test
     def eq30(): Unit \ Assert =
-        assertTrue(ENil != LCons(0, lazy ENil))
+        assertNeq(unexpected = ENil, LCons(0, lazy ENil))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -142,11 +142,11 @@ mod TestDelayList {
 
     @Test
     def isEmpty01(): Unit \ Assert =
-        assertTrue((DelayList.empty(): DelayList[Int32]) |> DelayList.isEmpty)
+        assertEq(expected = true, (DelayList.empty(): DelayList[Int32]) |> DelayList.isEmpty)
 
     @Test
     def isEmpty02(): Unit \ Assert =
-        assertFalse(DelayList.range(0, 1000) |> DelayList.isEmpty)
+        assertEq(expected = false, DelayList.range(0, 1000) |> DelayList.isEmpty)
 
     /////////////////////////////////////////////////////////////////////////////
     // nonEmpty                                                                //
@@ -154,11 +154,11 @@ mod TestDelayList {
 
     @Test
     def nonEmpty01(): Unit \ Assert =
-        assertFalse((DelayList.empty(): DelayList[Int32]) |> DelayList.nonEmpty)
+        assertEq(expected = false, (DelayList.empty(): DelayList[Int32]) |> DelayList.nonEmpty)
 
     @Test
     def nonEmpty02(): Unit \ Assert =
-        assertTrue(DelayList.range(0, 1000) |> DelayList.nonEmpty)
+        assertEq(expected = true, DelayList.range(0, 1000) |> DelayList.nonEmpty)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -167,19 +167,19 @@ mod TestDelayList {
 
     @Test
     def range01(): Unit \ Assert =
-        assertTrue(DelayList.range(0, 0) |> DelayList.isEmpty)
+        assertEq(expected = true, DelayList.range(0, 0) |> DelayList.isEmpty)
 
     @Test
     def range02(): Unit \ Assert =
-        assertTrue(DelayList.range(100, 100) |> DelayList.isEmpty)
+        assertEq(expected = true, DelayList.range(100, 100) |> DelayList.isEmpty)
 
     @Test
     def range03(): Unit \ Assert =
-        assertTrue(DelayList.range(1, 0) |> DelayList.isEmpty)
+        assertEq(expected = true, DelayList.range(1, 0) |> DelayList.isEmpty)
 
     @Test
     def range04(): Unit \ Assert =
-        assertFalse(DelayList.range(0, 100) |> DelayList.isEmpty)
+        assertEq(expected = false, DelayList.range(0, 100) |> DelayList.isEmpty)
 
     @Test
     def range05(): Unit \ Assert =
@@ -187,7 +187,7 @@ mod TestDelayList {
 
     @Test
     def range06(): Unit \ Assert =
-        assertFalse(DelayList.range(-100, 100) |> DelayList.isEmpty)
+        assertEq(expected = false, DelayList.range(-100, 100) |> DelayList.isEmpty)
 
     @Test
     def range07(): Unit \ Assert =
@@ -272,15 +272,15 @@ mod TestDelayList {
 
     @Test
     def take01(): Unit \ Assert =
-        assertTrue((DelayList.empty(): DelayList[Int32]) |> DelayList.take(1000) |> DelayList.isEmpty)
+        assertEq(expected = true, (DelayList.empty(): DelayList[Int32]) |> DelayList.take(1000) |> DelayList.isEmpty)
 
     @Test
     def take02(): Unit \ Assert =
-        assertTrue((DelayList.empty(): DelayList[Int32]) |> DelayList.take(0) |> DelayList.isEmpty)
+        assertEq(expected = true, (DelayList.empty(): DelayList[Int32]) |> DelayList.take(0) |> DelayList.isEmpty)
 
     @Test
     def take03(): Unit \ Assert =
-        assertTrue((DelayList.range(0, 1000): DelayList[Int32]) |> DelayList.take(0) |> DelayList.isEmpty)
+        assertEq(expected = true, (DelayList.range(0, 1000): DelayList[Int32]) |> DelayList.take(0) |> DelayList.isEmpty)
 
     @Test
     def take04(): Unit \ Assert =
@@ -379,21 +379,21 @@ mod TestDelayList {
     // map (impure)                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapImpure01(): Bool \ IO =
-        Nil |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == Nil
+    @Test
+    def mapImpure01(): Unit \ Assert + IO =
+        assertEq(expected = Nil, Nil |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
 
-    @test
-    def mapImpure02(): Bool \ IO =
-        (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == 2 :: Nil
+    @Test
+    def mapImpure02(): Unit \ Assert + IO =
+        assertEq(expected = 2 :: Nil, (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
 
-    @test
-    def mapImpure03(): Bool \ IO =
-        (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == 2 :: 3 :: Nil
+    @Test
+    def mapImpure03(): Unit \ Assert + IO =
+        assertEq(expected = 2 :: 3 :: Nil, (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
 
-    @test
-    def mapImpure04(): Bool \ IO =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList == 2 :: 3 :: 4 :: Nil
+    @Test
+    def mapImpure04(): Unit \ Assert + IO =
+        assertEq(expected = 2 :: 3 :: 4 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
 
 
     /////////////////////////////////////////////////////////////////////////////
