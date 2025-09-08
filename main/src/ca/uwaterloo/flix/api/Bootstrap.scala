@@ -546,6 +546,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.println(summary1)
 
     val classDir = getClassDirectory(projectPath)
+    if (!Files.exists(classDir)) {
+      val summary2 =
+        s"""1. SKIPPED! Check 'build/class' directory for non-class files.
+           |2. SKIPPED! Remove .class files from 'build/class'.
+           |
+           |No 'build/class' directory found. Exiting.
+           |""".stripMargin
+      out.println(summary2)
+      return Validation.Success(())
+    }
     val files = Files.walk(classDir).iterator().asScala.toList
     val unexpectedFiles = files.filterNot(p => p.endsWith(".class"))
 
@@ -560,7 +570,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       out.println(summary2)
 
       for (file <- files) {
-        Files.delete(file)
+        out.println("removing " + file.getFileName.toString)
+        // Files.delete(file)
       }
 
       out.println("Success.")
