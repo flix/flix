@@ -899,11 +899,11 @@ mod TestDelayList {
 
     @Test
     def toList05(): Unit \ Assert =
-        assertEq(expected = (1 :: 2 :: 3 :: Nil), (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.toList)
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.toList)
 
     @Test
     def toList06(): Unit \ Assert =
-    	assertEq(expected = 1 :: 2 :: 3 :: Nil, DelayList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))))
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, DelayList.toList(LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -912,34 +912,28 @@ mod TestDelayList {
 
     @Test
     def toMutDeque01(): Unit \ Assert = region rc {
-    	let l = (ENil: DelayList[Int32]);
+        let l = (ENil: DelayList[Int32]);
         let d1 = DelayList.toMutDeque(rc, l);
-
         let d2 = MutDeque.empty(rc);
-
         assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
     @Test
     def toMutDeque02(): Unit \ Assert = region rc {
-    	let l = (LList(lazy ENil): DelayList[Int32]);
+        let l = (LList(lazy ENil): DelayList[Int32]);
         let d1 = DelayList.toMutDeque(rc, l);
-
         let d2 = MutDeque.empty(rc);
-
         assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
     @Test
     def toMutDeque03(): Unit \ Assert = region rc {
-    	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
+        let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
         let d1 = DelayList.toMutDeque(rc, l);
-
         let d2 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);
-
         assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
@@ -970,11 +964,11 @@ mod TestDelayList {
 
     @Test
     def toSet01(): Unit \ Assert =
-    	assertEq(expected = Set.empty(), (DelayList.toSet(ENil): Set[Unit]))
+        assertEq(expected = Set.empty(), (DelayList.toSet(ENil): Set[Unit]))
 
     @Test
     def toSet02(): Unit \ Assert =
-    	assertEq(expected = Set.empty(), (DelayList.toSet(LList(lazy ENil)): Set[Unit]))
+        assertEq(expected = Set.empty(), (DelayList.toSet(LList(lazy ENil)): Set[Unit]))
 
     @Test
     def toSet03(): Unit \ Assert =
@@ -986,7 +980,7 @@ mod TestDelayList {
 
     @Test
     def toSet05(): Unit \ Assert =
-    	assertEq(expected = Set#{1, 2, 3}, DelayList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))))
+        assertEq(expected = Set#{1, 2, 3}, DelayList.toSet(LList(lazy LCons(1, lazy LList(lazy ECons(2, LList(lazy ECons(3, ENil))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -995,27 +989,27 @@ mod TestDelayList {
 
     @Test
     def append01(): Unit \ Assert =
-    	assertEq(expected = ENil, DelayList.append((ENil: DelayList[Unit]), (ENil: DelayList[Unit])))
+        assertEq(expected = ENil, DelayList.append((ENil: DelayList[Unit]), (ENil: DelayList[Unit])))
 
     @Test
     def append02(): Unit \ Assert =
-    	assertEq(expected = ENil, DelayList.append((LList(lazy ENil): DelayList[Unit]), (ENil: DelayList[Unit])))
+        assertEq(expected = ENil, DelayList.append((LList(lazy ENil): DelayList[Unit]), (ENil: DelayList[Unit])))
 
     @Test
     def append03(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ENil), DelayList.append(ECons(1, ENil), ENil))
+        assertEq(expected = ECons(1, ENil), DelayList.append(ECons(1, ENil), ENil))
 
     @Test
     def append04(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ENil), DelayList.append(ENil, LCons(1, lazy ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.append(ENil, LCons(1, lazy ENil)))
 
     @Test
     def append05(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ECons(2, ECons(3, ECons(4, ENil)))), DelayList.append(ECons(1, ECons(2, ECons(3, ENil))), ECons(4, LList(lazy ENil))))
+        assertEq(expected = ECons(1, ECons(2, ECons(3, ECons(4, ENil)))), DelayList.append(ECons(1, ECons(2, ECons(3, ENil))), ECons(4, LList(lazy ENil))))
 
     @Test
     def append06(): Unit \ Assert =
-    	assertEq(expected = ECons(4, ECons(1, ECons(2, ECons(3, ENil)))), DelayList.append(ECons(4, ENil), ECons(1, LCons(2, lazy LList(lazy LCons(3, lazy ENil))))))
+        assertEq(expected = ECons(4, ECons(1, ECons(2, ECons(3, ENil)))), DelayList.append(ECons(4, ENil), ECons(1, LCons(2, lazy LList(lazy LCons(3, lazy ENil))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1028,11 +1022,11 @@ mod TestDelayList {
 
     @Test
     def count02(): Unit \ Assert =
-    	assertEq(expected = 0, DelayList.count(x -> x > 3, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy ENil))))))))
+        assertEq(expected = 0, DelayList.count(x -> x > 3, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy ENil))))))))
 
     @Test
     def count03(): Unit \ Assert =
-    	assertEq(expected = 1, DelayList.count(x -> x > 3, ECons(4, ENil)))
+        assertEq(expected = 1, DelayList.count(x -> x > 3, ECons(4, ENil)))
 
     @Test
     def count04(): Unit \ Assert =
@@ -1085,7 +1079,7 @@ mod TestDelayList {
 
     @Test
     def drop07(): Unit \ Assert =
-    	assertEq(expected = ENil, DelayList.drop(1, LList(lazy ECons(1, LList(lazy ENil)))))
+        assertEq(expected = ENil, DelayList.drop(1, LList(lazy ECons(1, LList(lazy ENil)))))
 
     @Test
     def drop08(): Unit \ Assert =
@@ -1093,7 +1087,7 @@ mod TestDelayList {
 
     @Test
     def drop09(): Unit \ Assert =
-    	assertEq(expected = DelayList.range(500, 1000), DelayList.range(0, 1000) |> DelayList.drop(500))
+        assertEq(expected = DelayList.range(500, 1000), DelayList.range(0, 1000) |> DelayList.drop(500))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1114,11 +1108,11 @@ mod TestDelayList {
 
     @Test
     def flatten04(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ENil), DelayList.flatten(ECons(LCons(1, lazy ENil), ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.flatten(ECons(LCons(1, lazy ENil), ENil)))
 
     @Test
     def flatten05(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ENil), DelayList.flatten(ECons(LList(lazy ECons(1, LList(lazy ENil))), ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.flatten(ECons(LList(lazy ECons(1, LList(lazy ENil))), ENil)))
 
     @Test
     def flatten06(): Unit \ Assert =
@@ -1126,15 +1120,15 @@ mod TestDelayList {
 
     @Test
     def flatten07(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ECons(2, ENil)), DelayList.flatten(ECons(ENil, ECons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), ENil))))
+        assertEq(expected = ECons(1, ECons(2, ENil)), DelayList.flatten(ECons(ENil, ECons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy ENil)))), ENil))))
 
     @Test
     def flatten08(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ECons(2, ECons(1, ECons(2, ENil)))), DelayList.flatten(ECons(ECons(1, LCons(2, lazy ENil)), ECons((ECons(1, ECons(2, ENil))), ENil))))
+        assertEq(expected = ECons(1, ECons(2, ECons(1, ECons(2, ENil)))), DelayList.flatten(ECons(ECons(1, LCons(2, lazy ENil)), ECons((ECons(1, ECons(2, ENil))), ENil))))
 
     @Test
     def flatten09(): Unit \ Assert =
-    	assertEq(expected = ECons(1, ECons(2, ECons(3, ECons(4, ENil)))), DelayList.flatten(ECons((ECons(1, ECons(2, ENil))), ECons(ENil, ECons(ENil, ECons(LList(lazy LCons(3, lazy LCons(4, lazy ENil))), ENil))))))
+        assertEq(expected = ECons(1, ECons(2, ECons(3, ECons(4, ENil)))), DelayList.flatten(ECons((ECons(1, ECons(2, ENil))), ECons(ENil, ECons(ENil, ECons(LList(lazy LCons(3, lazy LCons(4, lazy ENil))), ENil))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
