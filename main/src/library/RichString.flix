@@ -37,9 +37,9 @@ mod RichString {
     /// For RGB, each component is a value from 0 to 255 representing red, green, and blue intensity.
     /// Default represents no color override, using the terminal's current color settings.
     ///
-    pub enum Color {
+    pub enum Color with Eq {
         case Rgb(Int32, Int32, Int32),  // Red, Green, Blue components
-        case Default                     // Use terminal's default color
+        case Default                    // Use terminal's default color
     }
 
     ///
@@ -47,7 +47,7 @@ mod RichString {
     ///
     /// Defines the visual appearance of text spans beyond color.
     ///
-    pub enum Style {
+    pub enum Style with Eq, Order {
         case Normal,
         case Bold,
         case Underline
