@@ -59,12 +59,12 @@ object BootstrapError {
     }
   }
 
-  case class UnexpectedFiles(unexpectedFiles: List[Path], expectedFileTypes: List[String], directory: Path) extends BootstrapError {
+  case class UnexpectedFiles(unexpectedFiles: List[String], expectedFileTypes: List[String], directory: String) extends BootstrapError {
     override def message(f: Formatter): String = {
-      val errors = unexpectedFiles.map(_.toAbsolutePath.normalize().toString).mkString("- ", System.lineSeparator() + "- ", "")
+      val errors = unexpectedFiles.mkString("- ", System.lineSeparator() + "- ", "")
       val expected = expectedFileTypes.mkString("- ", System.lineSeparator() + "- ", "")
       s"""
-         |Unexpected files in '${directory.toAbsolutePath.normalize()}':
+         |Unexpected files in '$directory':
          |
          |$errors
          |

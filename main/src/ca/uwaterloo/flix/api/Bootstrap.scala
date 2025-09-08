@@ -548,8 +548,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val classDir = getClassDirectory(projectPath)
     val files = Files.walk(classDir).iterator().asScala.toList
     val unexpectedFiles = files.filterNot(p => p.endsWith(".class"))
+
     if (unexpectedFiles.nonEmpty) {
-      Validation.Failure(BootstrapError.UnexpectedFiles(unexpectedFiles, List(".class"), classDir))
+      val fileErrors = unexpectedFiles.map(_.getFileName.toString)
+      Validation.Failure(BootstrapError.UnexpectedFiles(fileErrors, List(".class"), "build/class"))
     } else {
       val summary2 =
         s""""1. Check 'build/class' directory for non-class files.
