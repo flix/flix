@@ -71,6 +71,8 @@ object BootstrapError {
          |Expected the following file types:
          |
          |$expected
+         |
+         |You must manually remove the unexpected files.
          |""".stripMargin
     }
   }
