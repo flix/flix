@@ -101,7 +101,7 @@ object Kinder {
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val t = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
       val cases = cases0.map(visitCase(_, tparams, t, kenv, root)).map(caze => caze.sym -> caze).toMap
-      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, t, loc)
+      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
