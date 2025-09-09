@@ -26,27 +26,6 @@ sealed trait LexerError extends CompilationMessage {
 object LexerError {
 
   /**
-    * An error raised when more than one decimal dot is found in a number.
-    * For instance `123.456.78f32`.
-    *
-    * @param loc The location of the double dotted number literal.
-    */
-  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has two decimal dots."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Number has two decimal dots.
-         |
-         |${code(loc, "Second decimal dot is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised when a period has whitespace before it.
     * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
     *
@@ -65,6 +44,24 @@ object LexerError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a hexadecimal number suffix is unrecognized.
+    */
+  case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Incorrect hexadecimal number suffix."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Incorrect hexadecimal number suffix.
+         |
+         |${code(loc, "Here")}
+         |
+         |Hexadecimal number suffixes are i8, i16, i32, i64, and ii.
+         |
+         |""".stripMargin
+    }
   }
 
   /**
@@ -104,18 +101,16 @@ object LexerError {
   }
 
   /**
-    * An error raised when a hexadecimal number suffix is unrecognized.
+    * An error raised when a hexadecimal number is malformed.
     */
-  case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Incorrect hexadecimal number suffix."
+  case class MalformedHexNumber(found: String, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Malformed hexadecimal number, found '$found'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Incorrect hexadecimal number suffix.
+      s""">> Malformed hexadecimal number, found '$found'.
          |
-         |${code(loc, "Here")}
-         |
-         |Hexadecimal number suffixes are i8, i16, i32, i64, and ii.
+         |${code(loc, "Number was correct up to here")}
          |
          |""".stripMargin
     }
@@ -130,22 +125,6 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Malformed number, found '$found'.
-         |
-         |${code(loc, "Number was correct up to here")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised when a hexadecimal number is malformed.
-    */
-  case class MalformedHexNumber(found: String, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Malformed hexadecimal number, found '$found'."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Malformed hexadecimal number, found '$found'.
          |
          |${code(loc, "Number was correct up to here")}
          |
@@ -254,7 +233,10 @@ object LexerError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
-  case class MissingDigit(loc: SourceLocation) extends LexerError {
+  /**
+    * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
+    */
+  case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A digit (0-9) is expected here."
 
     override def message(formatter: Formatter): String = {

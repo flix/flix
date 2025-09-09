@@ -845,7 +845,7 @@ object Lexer {
     * * It is optional to have a trailing type indicator on number literals.
     * * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
     *
-    * A number is accepted by `\D([.]\D)?(e\D([.]\D)?)?(i8|i16|i32|i64|ii|f32|f64|ff)?` where `\D = [0-9]+(_[0-9]+)*`.
+    * A number is accepted by `\D([.]\D)?(e([+]|[-])?\D([.]\D)?)?(i8|i16|i32|i64|ii|f32|f64|ff)?` where `\D = [0-9]+(_[0-9]+)*`.
     *
     * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as an error
     * * part of the same number, e.g., `32q` should be parsed as a single wrong number, and not a
@@ -858,7 +858,7 @@ object Lexer {
     // N.B.: an initial \d has already been consumed before this function, so its actually '[0-9]*(_[0-9]+)*'.
     s.sc.advanceWhile(_.isDigit)
     while(s.sc.advanceIfMatch('_')) {
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
     }
 
     // Consume a '([.]\D)?' string.
@@ -866,20 +866,24 @@ object Lexer {
       mustBeFloat = true
 
       // Consume a '\D' string.
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
       while(s.sc.advanceIfMatch('_')) {
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
       }
     }
 
     // Consume a '(e\D([.]\D)?)?' string.
     if (s.sc.advanceIfMatch('e')) {
       mustBeFloat = true
+      // Consume a '([+]|[-])?' string.
+      if (!s.sc.advanceIfMatch('+')) {
+        s.sc.advanceIfMatch('-')
+      }
 
       // Consume a '\D' string.
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
       while(s.sc.advanceIfMatch('_')) {
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
       }
 
       // Consume a '(.\D)?' string.
@@ -887,9 +891,9 @@ object Lexer {
         mustBeFloat = true
 
         // Consume a '\D' string.
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
         while(s.sc.advanceIfMatch('_')) {
-          if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.MissingDigit(sourceLocationAtCurrent()))
+          if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
         }
       }
     }
