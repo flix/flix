@@ -843,6 +843,9 @@ object Lexer {
     TokenKind.Err(error)
   }
 
+  /** This should be understood as a control effect - fully handled inside [[acceptNumber]]. */
+  private sealed case class NumberError(kind: TokenKind) extends RuntimeException
+
   /**
     * Moves current position past a number literal. (e.g. "123i32", "3_456.78f32", or "2.1e4").
     * It is optional to have a trailing type indicator on number literals.
@@ -858,55 +861,51 @@ object Lexer {
   private def acceptNumber()(implicit s: State): TokenKind = {
     var mustBeFloat = false
 
-    /** Consumes digits and returns `true` if any were found.  */
-    def acceptDigits(): Boolean = s.sc.advanceWhileWithCount(_.isDigit) > 0
-
-    /** Returns an error token indicating a missing digit. */
-    def expectDigitError(): TokenKind = wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
-
-    // Consume a '\D' string.
-    // N.B.: an initial \d has already been consumed before this function, so its actually '[0-9]*(_[0-9]+)*'.
-    s.sc.advanceWhile(_.isDigit)
-    while(s.sc.advanceIfMatch('_')) {
-      if (!acceptDigits()) return expectDigitError()
-    }
-
-    // Consume a '([.]\D)?' string.
-    if (s.sc.advanceIfMatch('.')) {
-      mustBeFloat = true
-
-      // Consume a '\D' string.
-      if (!acceptDigits()) return expectDigitError()
+    /**
+      * Consume a '\D' ('[0-9]+(_[0-9]+)*') string, or '[0-9]*(_[0-9]+)*' if 'soft'.
+      * Throws [[NumberError]] if not matched.
+      */
+    def acceptDigits(soft: Boolean): Unit = {
+      if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
+        throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+      }
       while(s.sc.advanceIfMatch('_')) {
-        if (!acceptDigits()) return expectDigitError()
-      }
-    }
-
-    // Consume a '(e\D([.]\D)?)?' string.
-    if (s.sc.advanceIfMatch('e')) {
-      mustBeFloat = true
-      // Consume a '([+]|[-])?' string.
-      if (!s.sc.advanceIfMatch('+')) {
-        s.sc.advanceIfMatch('-')
-      }
-
-      // Consume a '\D' string.
-      if (!acceptDigits()) return expectDigitError()
-      while(s.sc.advanceIfMatch('_')) {
-        if (!acceptDigits()) return expectDigitError()
-      }
-
-      // Consume a '(.\D)?' string.
-      if (s.sc.advanceIfMatch('.')) {
-        mustBeFloat = true
-
-        // Consume a '\D' string.
-        if (!acceptDigits()) return expectDigitError()
-        while(s.sc.advanceIfMatch('_')) {
-          if (!acceptDigits()) return expectDigitError()
+        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
+          throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
         }
       }
     }
+
+    /** Consume a '([.]\D)?' string or throws [[NumberError]]. */
+    def acceptCommaTail(): Unit = {
+      if (s.sc.advanceIfMatch('.')) {
+        mustBeFloat = true
+        acceptDigits(soft = false)
+      }
+    }
+
+    try {
+      // Consume a '\D' string (An initial digit has already been consumed externally, so `soft = true`).
+      acceptDigits(soft = true)
+      // Consume a '([.]\D)?' string.
+      acceptCommaTail()
+      // Consume a '(e([+]|[-])?\D([.]\D)?)?' string.
+      if (s.sc.advanceIfMatch('e')) {
+        mustBeFloat = true
+        // Consume a '([+]|[-])?' string.
+        if (!s.sc.advanceIfMatch('+')) {
+          s.sc.advanceIfMatch('-')
+        }
+        // Consume a '\D' string.
+        acceptDigits(soft = false)
+        // Consume a '([.]\D)?' string.
+        acceptCommaTail()
+      }
+    } catch {
+      case NumberError(kind) => return kind
+    }
+
+    // Now the main number is parsed. Next is the suffix.
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
       if (isNumberLikeChar(s.sc.peek)) {
