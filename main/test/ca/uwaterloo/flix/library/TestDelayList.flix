@@ -1991,25 +1991,25 @@ mod TestDelayList {
     // mapWithIndex (impure)                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapWithIndexImpure01(): Bool \ IO =
-    	ENil |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ENil
+    @Test
+    def mapWithIndexImpure01(): Unit \ Assert + IO =
+    	assertEq(expected = ENil, ENil |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
 
-    @test
-    def mapWithIndexImpure02(): Bool \ IO =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ENil)
+    @Test
+    def mapWithIndexImpure02(): Unit \ Assert + IO =
+    	assertEq(expected = ECons(1, ENil), ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
 
-    @test
-    def mapWithIndexImpure03(): Bool \ IO =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ENil))
+    @Test
+    def mapWithIndexImpure03(): Unit \ Assert + IO =
+    	assertEq(expected = ECons(1, ECons(3, ENil)), ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
 
-    @test
-    def mapWithIndexImpure04(): Bool \ IO =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ECons(5, ENil)))
+    @Test
+    def mapWithIndexImpure04(): Unit \ Assert + IO =
+    	assertEq(expected = ECons(1, ECons(3, ECons(5, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
 
-    @test
-    def mapWithIndexImpure05(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    @Test
+    def mapWithIndexImpure05(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
 
     @test
     def mapWithIndexImpure06(): Bool \ IO =
@@ -2020,29 +2020,29 @@ mod TestDelayList {
     // mapWithIndex mapWithIndex                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapWithIndexMapWithIndex01(): Bool =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
+    @Test
+    def mapWithIndexMapWithIndex01(): Unit \ Assert =
+        assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((i, x) -> x + i) |>
-            DelayList.mapWithIndex((i, x) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> x * i))
 
-    @test
-    def mapWithIndexMapWithIndex02(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
+    @Test
+    def mapWithIndexMapWithIndex02(): Unit \ Assert + IO =
+        assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) |>
-            DelayList.mapWithIndex((i, x) -> x * i) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> x * i))
 
-    @test
-    def mapWithIndexMapWithIndex03(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
+    @Test
+    def mapWithIndexMapWithIndex03(): Unit \ Assert + IO =
+        assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((i, x) -> x + i) |>
-            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)))
 
-    @test
-    def mapWithIndexMapWithIndex04(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
+    @Test
+    def mapWithIndexMapWithIndex04(): Unit \ Assert + IO =
+        assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) |>
-            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)) == ECons(0, ECons(3, ECons(10, ENil)))
+            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2073,13 +2073,13 @@ mod TestDelayList {
     // intercalate                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intercalate01(): Bool =
-        DelayList.intercalate(ECons(1, ECons(2, ENil)), ENil) == ENil
+    @Test
+    def intercalate01(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.intercalate(ECons(1, ECons(2, ENil)), ENil))
 
-    @test
-    def intercalate02(): Bool =
-        DelayList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, ENil), ENil)) == ECons(1, ENil)
+    @Test
+    def intercalate02(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), DelayList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, ENil), ENil)))
 
     @test
     def intercalate03(): Bool =
@@ -2146,21 +2146,21 @@ mod TestDelayList {
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intersperse01(): Bool =
-        DelayList.intersperse(-11, ENil) == ENil
+    @Test
+    def intersperse01(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.intersperse(-11, ENil))
 
-    @test
-    def intersperse03(): Bool =
-        DelayList.intersperse(-11, ECons(1, ENil)) == ECons(1, ENil)
+    @Test
+    def intersperse03(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), DelayList.intersperse(-11, ECons(1, ENil)))
 
-    @test
-    def intersperse04(): Bool =
-        DelayList.intersperse(-11, ECons(1, ECons(2, ECons(3, ENil)))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil)))))
+    @Test
+    def intersperse04(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ENil))))), DelayList.intersperse(-11, ECons(1, ECons(2, ECons(3, ENil)))))
 
-    @test
-    def intersperse05(): Bool =
-        DelayList.intersperse(-11, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+    @Test
+    def intersperse05(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil))))))), DelayList.intersperse(-11, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))))
 
     @test
     def intersperse06(): Bool =
@@ -2171,37 +2171,37 @@ mod TestDelayList {
     // takeWhile (pure)                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhilePure01(): Bool =
-        DelayList.takeWhile(i -> i > 3, ENil) == ENil
+    @Test
+    def takeWhilePure01(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> i > 3, ENil))
 
-    @test
-    def takeWhilePure02(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(1, ENil)) == ENil
+    @Test
+    def takeWhilePure02(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> i > 3, ECons(1, ENil)))
 
-    @test
-    def takeWhilePure03(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(4, ENil)) == ECons(4, ENil)
+    @Test
+    def takeWhilePure03(): Unit \ Assert =
+        assertEq(expected = ECons(4, ENil), DelayList.takeWhile(i -> i > 3, ECons(4, ENil)))
 
-    @test
-    def takeWhilePure04(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(1, ECons(2, ENil))) == ENil
+    @Test
+    def takeWhilePure04(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> i > 3, ECons(1, ECons(2, ENil))))
 
-    @test
-    def takeWhilePure05(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(1, ECons(5, ENil))) == ENil
+    @Test
+    def takeWhilePure05(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> i > 3, ECons(1, ECons(5, ENil))))
 
-    @test
-    def takeWhilePure06(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(5, ECons(1, ENil))) == ECons(5, ENil)
+    @Test
+    def takeWhilePure06(): Unit \ Assert =
+        assertEq(expected = ECons(5, ENil), DelayList.takeWhile(i -> i > 3, ECons(5, ECons(1, ENil))))
 
-    @test
-    def takeWhilePure07(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
+    @Test
+    def takeWhilePure07(): Unit \ Assert =
+        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> i > 3, ECons(5, ECons(8, ENil))))
 
-    @test
-    def takeWhilePure08(): Bool =
-        DelayList.takeWhile(i -> i > 3, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
+    @Test
+    def takeWhilePure08(): Unit \ Assert =
+        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> i > 3, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))))
 
     @test
     def takeWhilePure09(): Bool =
@@ -2212,37 +2212,37 @@ mod TestDelayList {
     // takeWhile (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhileImpure01(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil) == ENil
+    @Test
+    def takeWhileImpure01(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil))
 
-    @test
-    def takeWhileImpure02(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)) == ENil
+    @Test
+    def takeWhileImpure02(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)))
 
-    @test
-    def takeWhileImpure03(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)) == ECons(4, ENil)
+    @Test
+    def takeWhileImpure03(): Unit \ Assert + IO =
+        assertEq(expected = ECons(4, ENil), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)))
 
-    @test
-    def takeWhileImpure04(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))) == ENil
+    @Test
+    def takeWhileImpure04(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))))
 
-    @test
-    def takeWhileImpure05(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))) == ENil
+    @Test
+    def takeWhileImpure05(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))))
 
-    @test
-    def takeWhileImpure06(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))) == ECons(5, ENil)
+    @Test
+    def takeWhileImpure06(): Unit \ Assert + IO =
+        assertEq(expected = ECons(5, ENil), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))))
 
-    @test
-    def takeWhileImpure07(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))) == ECons(5, ECons(8, ENil))
+    @Test
+    def takeWhileImpure07(): Unit \ Assert + IO =
+        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))))
 
-    @test
-    def takeWhileImpure08(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))) == ECons(5, ECons(8, ENil))
+    @Test
+    def takeWhileImpure08(): Unit \ Assert + IO =
+        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))))
 
     @test
     def takeWhileImpure09(): Bool \ IO =
@@ -2253,29 +2253,29 @@ mod TestDelayList {
     // takeWhile takeWhile                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhileTakeWhile01(): Bool =
-        ECons(4, ECons(5, ECons(1, ENil))) |>
+    @Test
+    def takeWhileTakeWhile01(): Unit \ Assert =
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> i > 3) |>
-            DelayList.takeWhile(i -> i < 5) == ECons(4, ENil)
+            DelayList.takeWhile(i -> i < 5))
 
-    @test
-    def takeWhileTakeWhile02(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil)))                      |>
+    @Test
+    def takeWhileTakeWhile02(): Unit \ Assert + IO =
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil)))                      |>
             DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO)) |>
-            DelayList.takeWhile(i -> i < 5) == ECons(4, ENil)
+            DelayList.takeWhile(i -> i < 5))
 
-    @test
-    def takeWhileTakeWhile03(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil))) |>
+    @Test
+    def takeWhileTakeWhile03(): Unit \ Assert + IO =
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> i > 3) |>
-            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)) == ECons(4, ENil)
+            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)))
 
-    @test
-    def takeWhileTakeWhile04(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil)))             |>
+    @Test
+    def takeWhileTakeWhile04(): Unit \ Assert + IO =
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
             DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO)) |>
-            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)) == ECons(4, ENil)
+            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2325,33 +2325,33 @@ mod TestDelayList {
     // dropWhile (pure)                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhilePure01(): Bool =
-        DelayList.dropWhile(i -> i > 3, ENil) == ENil
+    @Test
+    def dropWhilePure01(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.dropWhile(i -> i > 3, ENil))
 
-    @test
-    def dropWhilePure02(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(1, ENil)) == ECons(1, ENil)
+    @Test
+    def dropWhilePure02(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> i > 3, ECons(1, ENil)))
 
-    @test
-    def dropWhilePure03(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(4, ENil)) == ENil
+    @Test
+    def dropWhilePure03(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.dropWhile(i -> i > 3, ECons(4, ENil)))
 
-    @test
-    def dropWhilePure04(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
+    @Test
+    def dropWhilePure04(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(2, ENil)), DelayList.dropWhile(i -> i > 3, ECons(1, ECons(2, ENil))))
 
-    @test
-    def dropWhilePure05(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
+    @Test
+    def dropWhilePure05(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(5, ENil)), DelayList.dropWhile(i -> i > 3, ECons(1, ECons(5, ENil))))
 
-    @test
-    def dropWhilePure06(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(5, ECons(1, ENil))) == ECons(1, ENil)
+    @Test
+    def dropWhilePure06(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> i > 3, ECons(5, ECons(1, ENil))))
 
-    @test
-    def dropWhilePure07(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(5, ECons(8, ENil))) == ENil
+    @Test
+    def dropWhilePure07(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.dropWhile(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
     def dropWhilePure08(): Bool =
@@ -2366,29 +2366,29 @@ mod TestDelayList {
     // dropWhile (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhileImpure01(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil) == ENil
+    @Test
+    def dropWhileImpure01(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil))
 
-    @test
-    def dropWhileImpure02(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)) == ECons(1, ENil)
+    @Test
+    def dropWhileImpure02(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)))
 
-    @test
-    def dropWhileImpure03(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)) == ENil
+    @Test
+    def dropWhileImpure03(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)))
 
-    @test
-    def dropWhileImpure04(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))) == ECons(1, ECons(2, ENil))
+    @Test
+    def dropWhileImpure04(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ECons(2, ENil)), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))))
 
-    @test
-    def dropWhileImpure05(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))) == ECons(1, ECons(5, ENil))
+    @Test
+    def dropWhileImpure05(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ECons(5, ENil)), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))))
 
-    @test
-    def dropWhileImpure06(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))) == ECons(1, ENil)
+    @Test
+    def dropWhileImpure06(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))))
 
     @test
     def dropWhileImpure07(): Bool \ IO =
