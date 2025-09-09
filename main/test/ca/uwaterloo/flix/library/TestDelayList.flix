@@ -2779,17 +2779,6 @@ mod TestDelayList {
         List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
     }
 
-    //@test
-    //def spanSpanFusion02(): Bool = region rc {
-    //    let l = Ref.fresh(rc, Nil);
-    //    let _ =
-    //    (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-    //    DelayList.span(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x < 3 } as _ \ {})) |> fst |>
-    //    DelayList.span(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x < 3 } as _ \ {})) |> fst |>
-    //    DelayList.toList;
-    //    List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
-    //}
-
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
