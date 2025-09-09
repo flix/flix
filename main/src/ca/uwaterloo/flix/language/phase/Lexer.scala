@@ -832,24 +832,28 @@ object Lexer {
     TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
   }
 
-  private def isNumberLike(c: Char): Boolean = c.isDigit || c.isLetter || c == '.' || c == '_'
+  /** Returns `true` if `c` is recognized by `[0-9a-z._]`. */
+  private def isNumberLikeChar(c: Char): Boolean = {
+    c.isDigit || c.isLetter || c == '.' || c == '_'
+  }
 
-  /** Consumes the remaining number-like characters and returns the error. */
+  /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error`. */
   private def wrapAndConsume(error: LexerError)(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isNumberLike)
+    s.sc.advanceWhile(isNumberLikeChar)
     TokenKind.Err(error)
   }
 
   /**
     * Moves current position past a number literal. (e.g. "123i32", "3_456.78f32", or "2.1e4").
-    * * It is optional to have a trailing type indicator on number literals.
-    * * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
+    * It is optional to have a trailing type indicator on number literals.
+    * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
     *
-    * A number is accepted by `\D([.]\D)?(e([+]|[-])?\D([.]\D)?)?(i8|i16|i32|i64|ii|f32|f64|ff)?` where `\D = [0-9]+(_[0-9]+)*`.
+    * A number is accepted by `\D([.]\D)?(e([+]|[-])?\D([.]\D)?)?(i8|i16|i32|i64|ii|f32|f64|ff)?`
+    * where `\D = [0-9]+(_[0-9]+)*`.
     *
     * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as an error
-    * * part of the same number, e.g., `32q` should be parsed as a single wrong number, and not a
-    * * number (`32`) and a name (`q`).
+    * part of the same number, e.g., `32q` should be parsed as a single wrong number, and not a
+    * number (`32`) and a name (`q`).
     */
   private def acceptNumber()(implicit s: State): TokenKind = {
     var mustBeFloat = false
@@ -899,7 +903,7 @@ object Lexer {
     }
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
-      if (isNumberLike(s.sc.peek)) {
+      if (isNumberLikeChar(s.sc.peek)) {
         wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
       } else if (mustBeFloat && intSuffix) {
         wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
@@ -928,7 +932,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("f64")) acceptOrSuffixError(TokenKind.LiteralFloat64, intSuffix = false, loc)
       else if (s.sc.advanceIfMatch("ff")) acceptOrSuffixError(TokenKind.LiteralBigDecimal, intSuffix = false, loc)
       else wrapAndConsume(LexerError.IncorrectNumberSuffix(loc))
-    } else if (isNumberLike(c)) {
+    } else if (isNumberLikeChar(c)) {
       wrapAndConsume(LexerError.MalformedNumber(c.toString, sourceLocationAtCurrent()))
     } else {
       if (mustBeFloat) TokenKind.LiteralFloat
@@ -972,7 +976,7 @@ object Lexer {
     if (unterminated) {
       val error = c match {
         case EOF => LexerError.MalformedHexNumber("<end-of-file>", sourceLocationAtCurrent())
-        case _ if isNumberLike(c) => LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent())
+        case _ if isNumberLikeChar(c) => LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent())
         case _ => LexerError.UnterminatedHexNumber(sourceLocationAtCurrent())
       }
       wrapAndConsume(error)
@@ -981,7 +985,7 @@ object Lexer {
       val loc = sourceLocationAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (isNumberLike(s.sc.peek)) {
+        if (isNumberLikeChar(s.sc.peek)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
@@ -992,7 +996,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64)
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
-    } else if (isNumberLike(c)) {
+    } else if (isNumberLikeChar(c)) {
       wrapAndConsume(LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent()))
     } else TokenKind.LiteralInt
   }
