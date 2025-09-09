@@ -19,25 +19,61 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.MalformedNumber](result)
   }
 
-  test("LexerError.MissingDigit.01") {
+  test("LexerError.MalformedNumber.03") {
+    val input = "1i32A"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedNumber](result)
+  }
+
+  test("LexerError.MalformedNumber.04") {
+    val input = "1x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedNumber](result)
+  }
+
+  test("LexerError.IncorrectNumberSuffix.01") {
+    val input = "1_2i3"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectNumberSuffix](result)
+  }
+
+  test("LexerError.IncorrectNumberSuffix.02") {
+    val input = "3.1_2e-23f223"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectNumberSuffix](result)
+  }
+
+  test("LexerError.IntegerSuffixOnFloat.01") {
+    val input = "1_000.00_01i32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IntegerSuffixOnFloat](result)
+  }
+
+  test("LexerError.IntegerSuffixOnFloat.02") {
+    val input = "1e32i32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IntegerSuffixOnFloat](result)
+  }
+
+  test("LexerError.ExpectedDigit.01") {
     val input = "12..3"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.ExpectedDigit](result)
   }
 
-  test("LexerError.MissingDigit.02") {
+  test("LexerError.ExpectedDigit.02") {
     val input = "123.."
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.ExpectedDigit](result)
   }
 
-  test("LexerError.MissingDigit.03") {
+  test("LexerError.ExpectedDigit.03") {
     val input = "123..32f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.ExpectedDigit](result)
   }
 
-  test("LexerError.MissingDigit.04") {
+  test("LexerError.ExpectedDigit.04") {
     val input = "12332..f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.ExpectedDigit](result)
