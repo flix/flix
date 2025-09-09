@@ -2783,298 +2783,306 @@ mod TestDelayList {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool =
-        List.toDelayList(Nil) |> DelayList.sum == 0
+    @Test
+    def sum01(): Unit \ Assert =
+        assertEq(expected = 0, List.toDelayList(Nil) |> DelayList.sum)
 
-    @test
-    def sum02(): Bool =
-        List.toDelayList(1 :: Nil) |> DelayList.sum == 1
+    @Test
+    def sum02(): Unit \ Assert =
+        assertEq(expected = 1, List.toDelayList(1 :: Nil) |> DelayList.sum)
 
-    @test
-    def sum03(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.sum == 6
+    @Test
+    def sum03(): Unit \ Assert =
+        assertEq(expected = 6, List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.sum)
 
-    @test
-    def sum04(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.sum == 3
+    @Test
+    def sum04(): Unit \ Assert =
+        assertEq(expected = 3, List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.sum)
 
-    @test
-    def sum05(): Bool =
-        List.toDelayList(-1 :: -2 :: -3 :: -4 :: Nil) |> DelayList.sum == -10
+    @Test
+    def sum05(): Unit \ Assert =
+        assertEq(expected = -10, List.toDelayList(-1 :: -2 :: -3 :: -4 :: Nil) |> DelayList.sum)
 
-    @test
-    def sum06(): Bool =
-        List.toDelayList(10 :: -10 :: Nil) |> DelayList.sum == 0
+    @Test
+    def sum06(): Unit \ Assert =
+        assertEq(expected = 0, List.toDelayList(10 :: -10 :: Nil) |> DelayList.sum)
 
-    @test
-    def sum07(): Bool =
-        List.range(1, 101) |> List.toDelayList |> DelayList.sum == 5050
+    @Test
+    def sum07(): Unit \ Assert =
+        assertEq(expected = 5050, List.range(1, 101) |> List.toDelayList |> DelayList.sum)
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool =
-        List.toDelayList(Nil) |> DelayList.sumWith(x -> x + 1) == 0
+    @Test
+    def sumWith01(): Unit \ Assert =
+        assertEq(expected = 0, List.toDelayList(Nil) |> DelayList.sumWith(x -> x + 1))
 
-    @test
-    def sumWith02(): Bool =
-        List.toDelayList(1 :: Nil) |> DelayList.sumWith(x -> x + 1) == 2
+    @Test
+    def sumWith02(): Unit \ Assert =
+        assertEq(expected = 2, List.toDelayList(1 :: Nil) |> DelayList.sumWith(x -> x + 1))
 
-    @test
-    def sumWith03(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.sumWith(x -> x + 1) == 9
+    @Test
+    def sumWith03(): Unit \ Assert =
+        assertEq(expected = 9, List.toDelayList(1 :: 2 :: 3 :: Nil) |> DelayList.sumWith(x -> x + 1))
 
-    @test
-    def sumWith04(): Bool =
-        List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.sumWith(x -> x + 1) == 7
+    @Test
+    def sumWith04(): Unit \ Assert =
+        assertEq(expected = 7, List.toDelayList(1 :: 2 :: 3 :: -3 :: Nil) |> DelayList.sumWith(x -> x + 1))
 
-    @test
-    def sumWith05(): Bool =
-        List.toDelayList(-1 :: -2 :: -3 :: -4 :: Nil) |> DelayList.sumWith(x -> x + 1) == -6
+    @Test
+    def sumWith05(): Unit \ Assert =
+        assertEq(expected = -6, List.toDelayList(-1 :: -2 :: -3 :: -4 :: Nil) |> DelayList.sumWith(x -> x + 1))
 
-    @test
-    def sumWith06(): Bool =
-        List.toDelayList(10 :: -10 :: Nil) |> DelayList.sumWith(x -> x + 1) == 2
+    @Test
+    def sumWith06(): Unit \ Assert =
+        assertEq(expected = 2, List.toDelayList(10 :: -10 :: Nil) |> DelayList.sumWith(x -> x + 1))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // order                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def order01(): Bool =
-        ((ENil: DelayList[Unit]) <=> (ENil: DelayList[Unit])) == Comparison.EqualTo
+    @Test
+    def order01(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, (ENil: DelayList[Unit]) <=> (ENil: DelayList[Unit]))
 
-    @test
-    def order02(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> (ENil: DelayList[Int32])) == Comparison.GreaterThan
+    @Test
+    def order02(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, ((1 :: Nil) |> List.toDelayList) <=> (ENil: DelayList[Int32]))
 
-    @test
-    def order03(): Bool =
-        ((ENil: DelayList[Int32]) <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
+    @Test
+    def order03(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, (ENil: DelayList[Int32]) <=> ((1 :: Nil) |> List.toDelayList))
 
-    @test
-    def order04(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList)) == Comparison.EqualTo
+    @Test
+    def order04(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, ((1 :: Nil) |> List.toDelayList) <=> ((1 :: Nil) |> List.toDelayList))
 
-    @test
-    def order05(): Bool =
-        (((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == Comparison.GreaterThan
+    @Test
+    def order05(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, ((2 :: 1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList))
 
-    @test
-    def order06(): Bool =
-        (((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
+    @Test
+    def order06(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, ((1 :: 1 :: Nil) |> List.toDelayList) <=> ((2 :: 1 :: Nil) |> List.toDelayList))
 
-    @test
-    def order07(): Bool =
-        (((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList)) == Comparison.LessThan
+    @Test
+    def order07(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, ((1 :: Nil) |> List.toDelayList) <=> ((1 :: 1 :: Nil) |> List.toDelayList))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def join01(): Bool =
-        (Nil: List[Int32]) |> List.toDelayList |>
-            DelayList.join(",") == ""
+    @Test
+    def join01(): Unit \ Assert =
+        assertEq(expected = "", (Nil: List[Int32]) |> List.toDelayList |>
+            DelayList.join(","))
 
-    @test
-    def join02(): Bool =
-        (1 :: Nil) |> List.toDelayList |>
-            DelayList.join(",") == "1"
+    @Test
+    def join02(): Unit \ Assert =
+        assertEq(expected = "1", (1 :: Nil) |> List.toDelayList |>
+            DelayList.join(","))
 
-    @test
-    def join03(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-            DelayList.join(",") == "1,2,3"
+    @Test
+    def join03(): Unit \ Assert =
+        assertEq(expected = "1,2,3", (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+            DelayList.join(","))
 
-    @test
-    def join04(): Bool =
-        ("1" :: "2" :: "3" :: Nil) |> List.toDelayList |>
-            DelayList.join(",") == "1,2,3"
+    @Test
+    def join04(): Unit \ Assert =
+        assertEq(expected = "1,2,3", ("1" :: "2" :: "3" :: Nil) |> List.toDelayList |>
+            DelayList.join(","))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool =
-        (Nil: List[Int32]) |> List.toDelayList |>
-            DelayList.joinWith(x -> "${x + 1}", ",") == ""
+    @Test
+    def joinWith01(): Unit \ Assert =
+        assertEq(expected = "", (Nil: List[Int32]) |> List.toDelayList |>
+            DelayList.joinWith(x -> "${x + 1}", ","))
 
-    @test
-    def joinWith02(): Bool =
-        (1 :: Nil) |> List.toDelayList |>
-            DelayList.joinWith(x -> "${x + 1}", ",") == "2"
+    @Test
+    def joinWith02(): Unit \ Assert =
+        assertEq(expected = "2", (1 :: Nil) |> List.toDelayList |>
+            DelayList.joinWith(x -> "${x + 1}", ","))
 
-    @test
-    def joinWith03(): Bool =
-        (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
-            DelayList.joinWith(x -> "${x + 1}", ",") == "2,3,4"
+    @Test
+    def joinWith03(): Unit \ Assert =
+        assertEq(expected = "2,3,4", (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+            DelayList.joinWith(x -> "${x + 1}", ","))
 
-    @test
-    def joinWith04(): Bool =
-        ("1" :: "2" :: "3" :: Nil) |> List.toDelayList |>
-            DelayList.joinWith(x -> x + x, ",") == "11,22,33"
+    @Test
+    def joinWith04(): Unit \ Assert =
+        assertEq(expected = "11,22,33", ("1" :: "2" :: "3" :: Nil) |> List.toDelayList |>
+            DelayList.joinWith(x -> x + x, ","))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def ap01(): Bool =
-        DelayList.ap(ENil, ENil) == (ENil: DelayList[Int32])
+    @Test
+    def ap01(): Unit \ Assert =
+        assertEq(expected = (ENil: DelayList[Int32]), DelayList.ap(ENil, ENil))
 
-    @test
-    def ap02(): Bool =
-        DelayList.ap(ECons((x -> x + 1), ENil), ENil) == ENil
+    @Test
+    def ap02(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.ap(ECons((x -> x + 1), ENil), ENil))
 
-    @test
-    def ap03(): Bool =
-        DelayList.ap(ENil, ECons(5, ENil)) == (ENil: DelayList[Int32])
+    @Test
+    def ap03(): Unit \ Assert =
+        assertEq(expected = (ENil: DelayList[Int32]), DelayList.ap(ENil, ECons(5, ENil)))
 
-    @test
-    def ap04(): Bool =
-        DelayList.ap(ECons((x -> x + 1), ENil), ECons(5, ENil)) |> DelayList.toList == 6 :: Nil
+    @Test
+    def ap04(): Unit \ Assert =
+        assertEq(expected = 6 :: Nil, DelayList.ap(ECons((x -> x + 1), ENil), ECons(5, ENil)) |> DelayList.toList)
 
-    @test
-    def ap05(): Bool =
+    @Test
+    def ap05(): Unit \ Assert =
         let f = List.toDelayList((x -> x + 1) :: Nil);
         let l = List.toDelayList(0 :: 5 :: Nil);
-        DelayList.ap(f, l) |> DelayList.toList == 1 :: 6 :: Nil
+        assertEq(expected = 1 :: 6 :: Nil, DelayList.ap(f, l) |> DelayList.toList)
 
-    @test
-    def ap06(): Bool =
+    @Test
+    def ap06(): Unit \ Assert =
         let f = List.toDelayList((x -> x + 1) :: (x -> x * 2) :: Nil);
         let l = List.toDelayList(0 :: 4 :: Nil);
-        DelayList.ap(f, l) |> DelayList.toList == 1 :: 5 :: 0 :: 8 :: Nil
+        assertEq(expected = 1 :: 5 :: 0 :: 8 :: Nil, DelayList.ap(f, l) |> DelayList.toList)
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequence01(): Bool =
+    @Test
+    def sequence01(): Unit \ Assert =
         let l: DelayList[Identity[Int32]] = ENil;
-        DelayList.sequence(l) == Identity.Identity(ENil)
+        assertEq(expected = Identity.Identity(ENil), DelayList.sequence(l))
 
-    @test
-    def sequence02(): Bool =
+    @Test
+    def sequence02(): Unit \ Assert =
         let l = List.toDelayList(Identity.Identity(1) :: Nil);
-        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: Nil))
+        assertEq(expected = Identity.Identity(List.toDelayList(1 :: Nil)), DelayList.sequence(l))
 
-    @test
-    def sequence03(): Bool =
+    @Test
+    def sequence03(): Unit \ Assert =
         let l = List.toDelayList(Identity.Identity(1) :: Identity.Identity(2) :: Nil);
-        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: 2 :: Nil))
+        assertEq(expected = Identity.Identity(List.toDelayList(1 :: 2 :: Nil)), DelayList.sequence(l))
 
-    @test
-    def sequence04(): Bool =
+    @Test
+    def sequence04(): Unit \ Assert =
         let l = List.toDelayList(Identity.Identity(1) :: Identity.Identity(2) :: Identity.Identity(3) :: Nil);
-        DelayList.sequence(l) == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil))
+        assertEq(expected = Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)), DelayList.sequence(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverse01(): Bool = region rc {
+    @Test
+    def traverse01(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let l = ENil;
         let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(ENil) and Ref.get(st) == 0
+        assertEq(expected = Identity.Identity(ENil), ans);
+        assertEq(expected = 0, Ref.get(st))
     }
 
-    @test
-    def traverse02(): Bool = region rc {
+    @Test
+    def traverse02(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let l = List.toDelayList(1 :: Nil);
         let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(List.toDelayList(1 :: Nil)) and Ref.get(st) == 1
+        assertEq(expected = Identity.Identity(List.toDelayList(1 :: Nil)), ans);
+        assertEq(expected = 1, Ref.get(st))
     }
 
-    @test
-    def traverse03(): Bool = region rc {
+    @Test
+    def traverse03(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let l = List.toDelayList(1 :: 2 :: Nil);
         let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and Ref.get(st) == 2
+        assertEq(expected = Identity.Identity(List.toDelayList(1 :: 2 :: Nil)), ans);
+        assertEq(expected = 2, Ref.get(st))
     }
 
-    @test
-    def traverse04(): Bool = region rc {
+    @Test
+    def traverse04(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, 0);
         let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
         let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
-        ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and Ref.get(st) == 3
+        assertEq(expected = Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)), ans);
+        assertEq(expected = 3, Ref.get(st))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def shuffle01(): Bool \ NonDet =
+    @Test
+    def shuffle01(): Unit \ Assert + NonDet =
         let l1: List[Int32] = Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
+        assertEq(expected = 0, DelayList.length(l2));
+        assertEq(expected = Set#{}, DelayList.toSet(l2))
 
-    @test
-    def shuffle02(): Bool \ NonDet =
+    @Test
+    def shuffle02(): Unit \ Assert + NonDet =
         let l1 = 1 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
+        assertEq(expected = 1, DelayList.length(l2));
+        assertEq(expected = Set#{1}, DelayList.toSet(l2))
 
-    @test
-    def shuffle03(): Bool \ NonDet =
+    @Test
+    def shuffle03(): Unit \ Assert + NonDet =
         let l1 = 1 :: 2 :: 3 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
+        assertEq(expected = 3, DelayList.length(l2));
+        assertEq(expected = Set#{1, 2, 3}, DelayList.toSet(l2))
 
-    @test
-    def shuffle04(): Bool \ NonDet =
+    @Test
+    def shuffle04(): Unit \ Assert + NonDet =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        DelayList.length(l2) == 10 and DelayList.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        assertEq(expected = 10, DelayList.length(l2));
+        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, DelayList.toSet(l2))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toString01(): Bool =
-        ToString.toString(List.toDelayList(1 :: Nil)) == "DelayList(1)"
+    @Test
+    def toString01(): Unit \ Assert =
+        assertEq(expected = "DelayList(1)", ToString.toString(List.toDelayList(1 :: Nil)))
 
-    @test
-    def toString02(): Bool =
-        ToString.toString(List.toDelayList(1 :: 2 :: Nil)) == "DelayList(1, 2)"
+    @Test
+    def toString02(): Unit \ Assert =
+        assertEq(expected = "DelayList(1, 2)", ToString.toString(List.toDelayList(1 :: 2 :: Nil)))
 
-    @test
-    def toString03(): Bool =
-        ToString.toString(List.toDelayList(93 :: 3 :: 4 :: Nil)) == "DelayList(93, 3, 4)"
+    @Test
+    def toString03(): Unit \ Assert =
+        assertEq(expected = "DelayList(93, 3, 4)", ToString.toString(List.toDelayList(93 :: 3 :: 4 :: Nil)))
 
-    @test
-    def toString04(): Bool =
-        ToString.toString(List.toDelayList('a' :: 'b' :: 'c' :: Nil)) == "DelayList(a, b, c)"
+    @Test
+    def toString04(): Unit \ Assert =
+        assertEq(expected = "DelayList(a, b, c)", ToString.toString(List.toDelayList('a' :: 'b' :: 'c' :: Nil)))
 
-    @test
-    def toString05(): Bool =
-        ToString.toString(List.toDelayList(true :: false :: true :: true :: Nil)) == "DelayList(true, false, true, true)"
+    @Test
+    def toString05(): Unit \ Assert =
+        assertEq(expected = "DelayList(true, false, true, true)", ToString.toString(List.toDelayList(true :: false :: true :: true :: Nil)))
 
-    @test
-    def toString06(): Bool =
-        ToString.toString(List.toDelayList(List.toDelayList(1 :: 2 :: Nil) :: List.toDelayList(2 :: 3 :: Nil) :: List.toDelayList(4 :: 7 :: Nil) :: Nil)) == "DelayList(DelayList(1, 2), DelayList(2, 3), DelayList(4, 7))"
+    @Test
+    def toString06(): Unit \ Assert =
+        assertEq(expected = "DelayList(DelayList(1, 2), DelayList(2, 3), DelayList(4, 7))", ToString.toString(List.toDelayList(List.toDelayList(1 :: 2 :: Nil) :: List.toDelayList(2 :: 3 :: Nil) :: List.toDelayList(4 :: 7 :: Nil) :: Nil)))
 
 }
