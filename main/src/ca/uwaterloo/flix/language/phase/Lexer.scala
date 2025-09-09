@@ -858,11 +858,17 @@ object Lexer {
   private def acceptNumber()(implicit s: State): TokenKind = {
     var mustBeFloat = false
 
+    /** Consumes digits and returns `true` if any were found.  */
+    def acceptDigits(): Boolean = s.sc.advanceWhileWithCount(_.isDigit) > 0
+
+    /** Returns an error token indicating a missing digit. */
+    def expectDigitError(): TokenKind = wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+
     // Consume a '\D' string.
     // N.B.: an initial \d has already been consumed before this function, so its actually '[0-9]*(_[0-9]+)*'.
     s.sc.advanceWhile(_.isDigit)
     while(s.sc.advanceIfMatch('_')) {
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+      if (!acceptDigits()) return expectDigitError()
     }
 
     // Consume a '([.]\D)?' string.
@@ -870,9 +876,9 @@ object Lexer {
       mustBeFloat = true
 
       // Consume a '\D' string.
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+      if (!acceptDigits()) return expectDigitError()
       while(s.sc.advanceIfMatch('_')) {
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+        if (!acceptDigits()) return expectDigitError()
       }
     }
 
@@ -885,9 +891,9 @@ object Lexer {
       }
 
       // Consume a '\D' string.
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+      if (!acceptDigits()) return expectDigitError()
       while(s.sc.advanceIfMatch('_')) {
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+        if (!acceptDigits()) return expectDigitError()
       }
 
       // Consume a '(.\D)?' string.
@@ -895,9 +901,9 @@ object Lexer {
         mustBeFloat = true
 
         // Consume a '\D' string.
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+        if (!acceptDigits()) return expectDigitError()
         while(s.sc.advanceIfMatch('_')) {
-          if (s.sc.advanceWhileWithCount(_.isDigit) == 0) return wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+          if (!acceptDigits()) return expectDigitError()
         }
       }
     }
