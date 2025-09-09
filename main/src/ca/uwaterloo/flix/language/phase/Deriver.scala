@@ -59,21 +59,6 @@ object Deriver {
   }
 
   /**
-    * Reconstructs the type of the enum.
-    * @param sym The [[Symbol]] of the enum.
-    * @param tparams The list of [[TypeParam]] of the enum.
-    */
-  private def deriveEnumType(sym: Symbol.EnumSym, tparams: List[TypeParam]): Type = {
-    val tvars = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
-    val kinds = tvars.map(symm => symm.kind)
-//    See `Phase.Kinder.visitEnum`.
-    val kind = kinds.foldRight(Kind.Star: Kind) {
-      case (tparam, acc) => tparam ->: acc
-    }
-    Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, kind), sym.loc.asSynthetic), tvars, sym.loc.asSynthetic)
-  }
-
-  /**
     * Builds the instances derived from this enum.
     */
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): List[KindedAst.Instance] = enum0 match {
@@ -135,7 +120,7 @@ object Deriver {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
 
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
 
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(flix.genSym.freshId()))
@@ -190,7 +175,7 @@ object Deriver {
     */
   private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
       val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       KindedAst.Spec(
         doc = Doc(Nil, loc),
@@ -296,7 +281,7 @@ object Deriver {
   private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
 
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
       val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(flix.genSym.freshId()))
@@ -396,7 +381,7 @@ object Deriver {
     */
   private def mkCompareSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
       val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
       val comparisonEnumSym = PredefinedTraits.lookupEnumSym("Comparison", root)
 
@@ -531,7 +516,7 @@ object Deriver {
   private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
 
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId()))
@@ -581,7 +566,7 @@ object Deriver {
     */
   private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
       val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       KindedAst.Spec(
         doc = Doc(Nil, loc),
@@ -675,7 +660,7 @@ object Deriver {
   private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Instance = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
       assert(loc.isSynthetic)
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
 
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(flix.genSym.freshId()))
@@ -726,7 +711,7 @@ object Deriver {
     */
   private def mkHashSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, _, _) =>
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
       val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       KindedAst.Spec(
         doc = Doc(Nil, loc),
@@ -815,7 +800,7 @@ object Deriver {
   private def mkCoerceInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit sctx: SharedContext, flix: Flix): Option[KindedAst.Instance] = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, cases, _) =>
       assert(loc.isSynthetic)
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
 
       if (cases.size == 1) {
         val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
@@ -881,7 +866,7 @@ object Deriver {
     */
   private def mkCoerceSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, sym, tparams, _, cases, _) =>
-      val tpe = deriveEnumType(sym, tparams)
+      val tpe = getEnumType(sym, tparams)
       val coerceTraitSym = PredefinedTraits.lookupTraitSym("Coerce", root)
       val (_, caze) = cases.head
       val retTpe = Type.mkTuplish(caze.tpes, loc)
@@ -988,6 +973,20 @@ object Deriver {
     case Nil => Nil
     case last :: Nil => last :: Nil
     case head :: neck :: tail => head :: sep :: intersperse(neck :: tail, sep)
+  }
+
+  /**
+    * Reconstructs the type of the enum.
+    * @param sym The [[Symbol]] of the enum.
+    * @param tparams The list of [[TypeParam]] of the enum.
+    */
+  private def getEnumType(sym: Symbol.EnumSym, tparams: List[TypeParam]): Type = {
+    val tvars = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
+    val kinds = tvars.map(symm => symm.kind)
+    val kind = kinds.foldRight(Kind.Star: Kind) {
+      case (kindParam, acc) => kindParam ->: acc
+    }
+    Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, kind), sym.loc.asSynthetic), tvars, sym.loc.asSynthetic)
   }
 
   /**
