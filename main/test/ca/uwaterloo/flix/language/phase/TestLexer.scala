@@ -20,7 +20,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.MalformedNumber.03") {
-    val input = "1i32A"
+    val input = "1e32A"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.MalformedNumber](result)
   }
