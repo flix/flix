@@ -2524,33 +2524,33 @@ mod TestDelayList {
     // filterMap (pure)                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filterMapPure01(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil) == ENil
+    @Test
+    def filterMapPure01(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil))
 
-    @test
-    def filterMapPure02(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == ENil
+    @Test
+    def filterMapPure02(): Unit \ Assert =
+        assertEq(expected = ENil, DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)))
 
-    @test
-    def filterMapPure03(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == ECons(1, ENil)
+    @Test
+    def filterMapPure03(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)))
 
-	@test
-	def filterMapPure04(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == ENil
+	@Test
+	def filterMapPure04(): Unit \ Assert =
+		assertEq(expected = ENil, DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))))
 
-	@test
-	def filterMapPure05(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+	@Test
+	def filterMapPure05(): Unit \ Assert =
+		assertEq(expected = ECons(2, ENil), DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))))
 
-	@test
-	def filterMapPure06(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+	@Test
+	def filterMapPure06(): Unit \ Assert =
+		assertEq(expected = ECons(3, ENil), DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))))
 
-	@test
-	def filterMapPure07(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+	@Test
+	def filterMapPure07(): Unit \ Assert =
+		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))))
 
     @test
 	def filterMapPure08(): Bool =
@@ -2570,33 +2570,33 @@ mod TestDelayList {
     // filterMap (impure)                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filterMapImpure01(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ENil) == ENil
+    @Test
+    def filterMapImpure01(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ENil))
 
-    @test
-    def filterMapImpure02(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)) == ENil
+    @Test
+    def filterMapImpure02(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)))
 
-    @test
-    def filterMapImpure03(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)) == ECons(1, ENil)
+    @Test
+    def filterMapImpure03(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ENil), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)))
 
-	@test
-	def filterMapImpure04(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))) == ENil
+	@Test
+	def filterMapImpure04(): Unit \ Assert + IO =
+		assertEq(expected = ENil, DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))))
 
-	@test
-	def filterMapImpure05(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+	@Test
+	def filterMapImpure05(): Unit \ Assert + IO =
+		assertEq(expected = ECons(2, ENil), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))))
 
-	@test
-	def filterMapImpure06(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+	@Test
+	def filterMapImpure06(): Unit \ Assert + IO =
+		assertEq(expected = ECons(3, ENil), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))))
 
-	@test
-	def filterMapImpure07(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+	@Test
+	def filterMapImpure07(): Unit \ Assert + IO =
+		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))))
 
     @test
 	def filterMapImpure08(): Bool \ IO =
@@ -2668,33 +2668,33 @@ mod TestDelayList {
     // partition                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def partition01(): Bool =
-        DelayList.partition(i -> i > 3, ENil) == (ENil, ENil)
+    @Test
+    def partition01(): Unit \ Assert =
+        assertEq(expected = (ENil, ENil), DelayList.partition(i -> i > 3, ENil))
 
-    @test
-    def partition02(): Bool =
-        DelayList.partition(i -> i > 3, ECons(1, ENil)) == (ENil, ECons(1, ENil))
+    @Test
+    def partition02(): Unit \ Assert =
+        assertEq(expected = (ENil, ECons(1, ENil)), DelayList.partition(i -> i > 3, ECons(1, ENil)))
 
-    @test
-    def partition03(): Bool =
-        DelayList.partition(i -> i > 3, ECons(4, ENil)) == (ECons(4, ENil), ENil)
+    @Test
+    def partition03(): Unit \ Assert =
+        assertEq(expected = (ECons(4, ENil), ENil), DelayList.partition(i -> i > 3, ECons(4, ENil)))
 
-    @test
-    def partition04(): Bool =
-        DelayList.partition(i -> i > 3, ECons(1, ECons(2, ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+    @Test
+    def partition04(): Unit \ Assert =
+        assertEq(expected = (ENil, ECons(1, ECons(2, ENil))), DelayList.partition(i -> i > 3, ECons(1, ECons(2, ENil))))
 
-    @test
-    def partition05(): Bool =
-        DelayList.partition(i -> i > 3, ECons(1, ECons(5, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+    @Test
+    def partition05(): Unit \ Assert =
+        assertEq(expected = (ECons(5, ENil), ECons(1, ENil)), DelayList.partition(i -> i > 3, ECons(1, ECons(5, ENil))))
 
-    @test
-    def partition06(): Bool =
-        DelayList.partition(i -> i > 3, ECons(5, ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+    @Test
+    def partition06(): Unit \ Assert =
+        assertEq(expected = (ECons(5, ENil), ECons(1, ENil)), DelayList.partition(i -> i > 3, ECons(5, ECons(1, ENil))))
 
-    @test
-    def partition07(): Bool =
-        DelayList.partition(i -> i > 3, ECons(5, ECons(8, ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+    @Test
+    def partition07(): Unit \ Assert =
+        assertEq(expected = (ECons(5, ECons(8, ENil)), ENil), DelayList.partition(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
     def partition08(): Bool =
@@ -2719,33 +2719,33 @@ mod TestDelayList {
     // span                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def span01(): Bool =
-        DelayList.span(i -> i > 3, ENil) == (ENil, ENil)
+    @Test
+    def span01(): Unit \ Assert =
+        assertEq(expected = (ENil, ENil), DelayList.span(i -> i > 3, ENil))
 
-    @test
-    def span02(): Bool =
-        DelayList.span(i -> i > 3, ECons(1, ENil)) == (ENil, ECons(1, ENil))
+    @Test
+    def span02(): Unit \ Assert =
+        assertEq(expected = (ENil, ECons(1, ENil)), DelayList.span(i -> i > 3, ECons(1, ENil)))
 
-    @test
-    def span03(): Bool =
-        DelayList.span(i -> i > 3, ECons(4, ENil)) == (ECons(4, ENil), ENil)
+    @Test
+    def span03(): Unit \ Assert =
+        assertEq(expected = (ECons(4, ENil), ENil), DelayList.span(i -> i > 3, ECons(4, ENil)))
 
-    @test
-    def span04(): Bool =
-        DelayList.span(i -> i > 3, ECons(1, ECons(2, ENil))) == (ENil, ECons(1, ECons(2, ENil)))
+    @Test
+    def span04(): Unit \ Assert =
+        assertEq(expected = (ENil, ECons(1, ECons(2, ENil))), DelayList.span(i -> i > 3, ECons(1, ECons(2, ENil))))
 
-    @test
-    def span05(): Bool =
-        DelayList.span(i -> i > 3, ECons(1, ECons(5, ENil))) == (ENil, ECons(1, ECons(5, ENil)))
+    @Test
+    def span05(): Unit \ Assert =
+        assertEq(expected = (ENil, ECons(1, ECons(5, ENil))), DelayList.span(i -> i > 3, ECons(1, ECons(5, ENil))))
 
-    @test
-    def span06(): Bool =
-        DelayList.span(i -> i > 3, ECons(5, ECons(1, ENil))) == (ECons(5, ENil), ECons(1, ENil))
+    @Test
+    def span06(): Unit \ Assert =
+        assertEq(expected = (ECons(5, ENil), ECons(1, ENil)), DelayList.span(i -> i > 3, ECons(5, ECons(1, ENil))))
 
-    @test
-    def span07(): Bool =
-        DelayList.span(i -> i > 3, ECons(5, ECons(8, ENil))) == (ECons(5, ECons(8, ENil)), ENil)
+    @Test
+    def span07(): Unit \ Assert =
+        assertEq(expected = (ECons(5, ECons(8, ENil)), ENil), DelayList.span(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
     def span08(): Bool =
