@@ -2390,9 +2390,9 @@ mod TestDelayList {
     def dropWhileImpure06(): Unit \ Assert + IO =
         assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))))
 
-    @test
-    def dropWhileImpure07(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))) == ENil
+    @Test
+    def dropWhileImpure07(): Unit \ Assert + IO =
+        assertEq(expected = ENil, DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))))
 
     @test
     def dropWhileImpure08(): Bool \ IO =
@@ -2407,29 +2407,29 @@ mod TestDelayList {
     // dropWhile dropWhile                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhileDropWhile01(): Bool =
-        ECons(4, ECons(5, ECons(1, ENil))) |>
+    @Test
+    def dropWhileDropWhile01(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.dropWhile(i -> i < 5) |>
-            DelayList.dropWhile(i -> i > 1) == ECons(1, ENil)
+            DelayList.dropWhile(i -> i > 1))
 
-    @test
-    def dropWhileDropWhile02(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil)))             |>
+    @Test
+    def dropWhileDropWhile02(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
             DelayList.dropWhile(i -> unchecked_cast(i < 5 as _ \ IO)) |>
-            DelayList.dropWhile(i -> i > 1) == ECons(1, ENil)
+            DelayList.dropWhile(i -> i > 1))
 
-    @test
-    def dropWhileDropWhile03(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil)))     |>
+    @Test
+    def dropWhileDropWhile03(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))     |>
             DelayList.dropWhile(i -> i < 5)     |>
-            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)) == ECons(1, ENil)
+            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)))
 
-    @test
-    def dropWhileDropWhile04(): Bool \ IO =
-        ECons(4, ECons(5, ECons(1, ENil)))             |>
+    @Test
+    def dropWhileDropWhile04(): Unit \ Assert + IO =
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
             DelayList.dropWhile(i -> unchecked_cast(i < 5 as _ \ IO)) |>
-            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)) == ECons(1, ENil)
+            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2479,33 +2479,33 @@ mod TestDelayList {
     // findMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findMap01(): Bool =
-        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil) == None
+    @Test
+    def findMap01(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil))
 
-    @test
-    def findMap02(): Bool =
-        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
+    @Test
+    def findMap02(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)))
 
-    @test
-    def findMap03(): Bool =
-        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
+    @Test
+    def findMap03(): Unit \ Assert =
+        assertEq(expected = Some(1), DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)))
 
-	@test
-	def findMap04(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
+	@Test
+	def findMap04(): Unit \ Assert =
+		assertEq(expected = None, DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))))
 
-	@test
-	def findMap05(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
+	@Test
+	def findMap05(): Unit \ Assert =
+		assertEq(expected = Some(2), DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))))
 
-	@test
-	def findMap06(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
+	@Test
+	def findMap06(): Unit \ Assert =
+		assertEq(expected = Some(3), DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))))
 
-	@test
-	def findMap07(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
+	@Test
+	def findMap07(): Unit \ Assert =
+		assertEq(expected = Some(4), DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))))
 
     @test
 	def findMap08(): Bool =
@@ -2770,13 +2770,13 @@ mod TestDelayList {
     // span span fusion                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def spanSpanFusion01(): Bool = region rc {
+    @Test
+    def spanSpanFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.span(x -> { Ref.put("a" :: Ref.get(l), l); x < 3 }) |> fst |>
         DelayList.span(x -> { Ref.put("b" :: Ref.get(l), l); x < 3 }); // The working list is `1 :: 2 :: Nil`
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
