@@ -983,9 +983,7 @@ object Deriver {
   private def getEnumType(sym: Symbol.EnumSym, tparams: List[TypeParam]): Type = {
     val tvars = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
     val kinds = tvars.map(symm => symm.kind)
-    val kind = kinds.foldRight(Kind.Star: Kind) {
-      case (kindParam, acc) => kindParam ->: acc
-    }
+    val kind = Kind.mkArrow(kinds)
     Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, kind), sym.loc.asSynthetic), tvars, sym.loc.asSynthetic)
   }
 
