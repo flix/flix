@@ -528,7 +528,7 @@ mod TestDelayList {
 
     @Test
     def filterFilter02(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) >
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
             List.toDelayList |>
             DelayList.filter(x -> checked_ecast(x > 1)) |>
             DelayList.filter(x -> x < 3) |>
@@ -1771,7 +1771,7 @@ mod TestDelayList {
 
     @test
     def flatMapFlatMap03(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) >
+        ECons(1, ECons(2, ECons(3, ENil))) |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
         DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) ==
             ECons(1,
@@ -2422,7 +2422,7 @@ mod TestDelayList {
 
     @Test
     def dropWhileDropWhile03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) >
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.dropWhile(i -> i < 5) |>
             DelayList.dropWhile(i -> checked_ecast(i > 1)))
 
