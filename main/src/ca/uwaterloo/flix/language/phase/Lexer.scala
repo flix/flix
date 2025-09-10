@@ -832,74 +832,116 @@ object Lexer {
     TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
   }
 
+  /** Returns `true` if `c` is recognized by `[0-9a-z._]`. */
+  private def isNumberLikeChar(c: Char): Boolean = {
+    c.isDigit || c.isLetter || c == '.' || c == '_'
+  }
+
+  /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error`. */
+  private def wrapAndConsume(error: LexerError)(implicit s: State): TokenKind = {
+    s.sc.advanceWhile(isNumberLikeChar)
+    TokenKind.Err(error)
+  }
+
+  /** This should be understood as a control effect - fully handled inside [[acceptNumber]]. */
+  private sealed case class NumberError(kind: TokenKind) extends RuntimeException
+
   /**
-    * Moves current position past a number literal. (e.g. "123i32" or "456.78f32").
+    * Moves current position past a number literal. (e.g. "123i32", "3_456.78f32", or "2.1e4").
     * It is optional to have a trailing type indicator on number literals.
     * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
-    * N.B. The char 'e' might appear as part of scientific notation.
+    *
+    * A number is accepted by `\D([.]\D)?(e([+]|[-])?\D([.]\D)?)?(i8|i16|i32|i64|ii|f32|f64|ff)?`
+    * where `\D = [0-9]+(_[0-9]+)*`.
+    *
+    * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as an error
+    * part of the same number, e.g., `32q` should be parsed as a single wrong number, and not a
+    * number (`32`) and a name (`q`).
     */
   private def acceptNumber()(implicit s: State): TokenKind = {
-    var isDecimal = false
-    var isScientificNotation = false
-    var error: Option[TokenKind] = None
-    while (!eof()) {
-      peek() match {
-        case c if c.isDigit => advance()
-        // 'e' mark scientific notation if not handling a hex number.
-        case 'e' =>
-          if (isScientificNotation) {
-            error = Some(TokenKind.Err(LexerError.DoubleEInNumber(sourceLocationAtCurrent())))
-          }
-          isScientificNotation = true
-          advance()
-        // Dots mark a decimal.
-        case '.' if isDecimal =>
-          val loc = sourceLocationAtCurrent()
-          advance()
-          error = Some(TokenKind.Err(LexerError.DoubleDottedNumber(loc)))
-        case '.' if peekPeek().exists(c => c.isDigit || c == '.') =>
-          isDecimal = true
-          advance()
-        // '_' that is not in tail-position.
-        case '_' if peekPeek().exists(_.isDigit) => advance()
-        // sequence of underscores
-        case '_' if peekPeek().contains('_') =>
-          // Consume the whole sequence of '_'.
-          advance()
-          advance()
-          while (!eof() && peek() == '_') {
-            advance()
-          }
-          error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
-        // Underscore in tail position.
-        case '_' =>
-          advance()
-          return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-        // If this is reached an explicit number type might occur next.
-        case c =>
-          return c match {
-            case _ if isMatchCurrent("f32") => error.getOrElse(TokenKind.LiteralFloat32)
-            case _ if isMatchCurrent("f64") => error.getOrElse(TokenKind.LiteralFloat64)
-            case _ if isMatchCurrent("i8") => error.getOrElse(TokenKind.LiteralInt8)
-            case _ if isMatchCurrent("i16") => error.getOrElse(TokenKind.LiteralInt16)
-            case _ if isMatchCurrent("i32") => error.getOrElse(TokenKind.LiteralInt32)
-            case _ if isMatchCurrent("i64") => error.getOrElse(TokenKind.LiteralInt64)
-            case _ if isMatchCurrent("ii") => error.getOrElse(TokenKind.LiteralBigInt)
-            case _ if isMatchCurrent("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
-            case _ =>
-              if (isDecimal) {
-                error.getOrElse(TokenKind.LiteralFloat)
-              } else {
-                error.getOrElse(TokenKind.LiteralInt)
-              }
-          }
+    var mustBeFloat = false
+
+    /**
+      * Consume a '\D' ('[0-9]+(_[0-9]+)*') string, or '[0-9]*(_[0-9]+)*' if 'soft'.
+      * Throws [[NumberError]] if not matched.
+      */
+    def acceptDigits(soft: Boolean): Unit = {
+      if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
+        throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+      }
+      while(s.sc.advanceIfMatch('_')) {
+        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
+          throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+        }
       }
     }
-    // The very last char of the file was a digit so return the appropriate token.
-    if (isDecimal) {
-      error.getOrElse(TokenKind.LiteralFloat)
+
+    /** Consume a '([.]\D)?' string or throws [[NumberError]]. */
+    def acceptCommaTail(): Unit = {
+      if (s.sc.advanceIfMatch('.')) {
+        mustBeFloat = true
+        acceptDigits(soft = false)
+      }
+    }
+
+    try {
+      // Consume a '\D' string (An initial digit has already been consumed externally, so `soft = true`).
+      acceptDigits(soft = true)
+      // Consume a '([.]\D)?' string.
+      acceptCommaTail()
+      // Consume a '(e([+]|[-])?\D([.]\D)?)?' string.
+      if (s.sc.advanceIfMatch('e')) {
+        mustBeFloat = true
+        // Consume a '([+]|[-])?' string.
+        if (!s.sc.advanceIfMatch('+')) {
+          s.sc.advanceIfMatch('-')
+        }
+        // Consume a '\D' string.
+        acceptDigits(soft = false)
+        // Consume a '([.]\D)?' string.
+        acceptCommaTail()
+      }
+    } catch {
+      case NumberError(kind) => return kind
+    }
+
+    // Now the main number is parsed. Next is the suffix.
+
+    def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
+      if (isNumberLikeChar(s.sc.peek)) {
+        wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
+      } else if (mustBeFloat && intSuffix) {
+        wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
+      } else token
+    }
+
+    // Consume a '(i8|i16|i32|i64|ii|f32|f64|ff)?' string.
+    // For better errors, anything starting with 'i' or 'f' will be considered a suffix (but maybe invalid).
+    // This means that '32i33' will report 'i33' is an invalid suffix instead of saying that 'i' is unexpected.
+    val c = s.sc.peek
+    if (c == 'i') {
+      // Construct the location now, for cases like `42i322`.
+      val loc = sourceLocationAtCurrent()
+
+      if (s.sc.advanceIfMatch("i8")) acceptOrSuffixError(TokenKind.LiteralInt8, intSuffix = true, loc)
+      else if (s.sc.advanceIfMatch("i16")) acceptOrSuffixError(TokenKind.LiteralInt16, intSuffix = true, loc)
+      else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32, intSuffix = true, loc)
+      else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64, intSuffix = true, loc)
+      else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt, intSuffix = true, loc)
+      else wrapAndConsume(LexerError.IncorrectNumberSuffix(loc))
+    } else if (c == 'f') {
+      // Construct the location now, for cases like `42f322`.
+      val loc = sourceLocationAtCurrent()
+
+      if (s.sc.advanceIfMatch("f32")) acceptOrSuffixError(TokenKind.LiteralFloat32, intSuffix = false, loc)
+      else if (s.sc.advanceIfMatch("f64")) acceptOrSuffixError(TokenKind.LiteralFloat64, intSuffix = false, loc)
+      else if (s.sc.advanceIfMatch("ff")) acceptOrSuffixError(TokenKind.LiteralBigDecimal, intSuffix = false, loc)
+      else wrapAndConsume(LexerError.IncorrectNumberSuffix(loc))
+    } else if (isNumberLikeChar(c)) {
+      wrapAndConsume(LexerError.MalformedNumber(c.toString, sourceLocationAtCurrent()))
     } else {
-      error.getOrElse(TokenKind.LiteralInt)
+      if (mustBeFloat) TokenKind.LiteralFloat
+      else TokenKind.LiteralInt
     }
   }
 
@@ -916,14 +958,6 @@ object Lexer {
     */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
-
-    def isNumberLike(c: Char): Boolean = c.isDigit || c.isLetter || c == '.' || c == '_'
-
-    /** Consumes the remaining number-like characters and returns the error. */
-    def wrapAndConsume(error: LexerError): TokenKind = {
-      s.sc.advanceWhile(isNumberLike)
-      TokenKind.Err(error)
-    }
 
     advance() // Consume 'x'.
 
@@ -947,7 +981,7 @@ object Lexer {
     if (unterminated) {
       val error = c match {
         case EOF => LexerError.MalformedHexNumber("<end-of-file>", sourceLocationAtCurrent())
-        case _ if isNumberLike(c) => LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent())
+        case _ if isNumberLikeChar(c) => LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent())
         case _ => LexerError.UnterminatedHexNumber(sourceLocationAtCurrent())
       }
       wrapAndConsume(error)
@@ -956,7 +990,7 @@ object Lexer {
       val loc = sourceLocationAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (isNumberLike(s.sc.peek)) {
+        if (isNumberLikeChar(s.sc.peek)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
@@ -967,7 +1001,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64)
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
-    } else if (isNumberLike(c)) {
+    } else if (isNumberLikeChar(c)) {
       wrapAndConsume(LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent()))
     } else TokenKind.LiteralInt
   }

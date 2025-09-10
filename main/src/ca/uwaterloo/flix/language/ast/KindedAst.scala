@@ -51,7 +51,7 @@ object KindedAst {
 
   case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], sc: Scheme, tpe: Type, eff: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint])
 
-  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
+  case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Derivations, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 
   case class Struct(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], sc: Scheme, fields: List[StructField], loc: SourceLocation)
 
@@ -219,13 +219,11 @@ object KindedAst {
 
     case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tvar: Type, loc: SourceLocation) extends Expr
 
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, tvar: Type, loc: SourceLocation) extends Expr
+
     case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
-
     case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
-
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage, tvar: Type.Var, evar: Type.Var) extends Expr {
       override def loc: SourceLocation = m.loc
