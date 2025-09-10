@@ -1,0 +1,6 @@
+[package]
+name        = "echo-server"
+description = "Accepts a connection from an echo-client, and echos all data back to the client."
+version     = "0.1.0"
+flix        = "0.60.0"
+authors     = ["Ry Wiese <ry.wiese@gmail.com>"]
