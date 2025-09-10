@@ -402,32 +402,32 @@ mod TestDelayList {
 
     @Test
     def mapMap01(): Unit \ Assert =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)         |>
-            List.toDelayList          |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.map(x -> x + 1) |>
             DelayList.map(x -> x * 2) |>
             DelayList.toList)
 
     @Test
     def mapMap02(): Unit \ Assert + IO =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)                     |>
-            List.toDelayList                      |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.map(x -> checked_ecast(x + 1)) |>
-            DelayList.map(x -> x * 2)             |>
+            DelayList.map(x -> x * 2) |>
             DelayList.toList)
 
     @Test
     def mapMap03(): Unit \ Assert + IO =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)                     |>
-            List.toDelayList                      |>
-            DelayList.map(x -> x + 1)             |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.map(x -> x + 1) |>
             DelayList.map(x -> checked_ecast(x * 2)) |>
             DelayList.toList)
 
     @Test
     def mapMap04(): Unit \ Assert + IO =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)                     |>
-            List.toDelayList                      |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.map(x -> checked_ecast(x + 1)) |>
             DelayList.map(x -> checked_ecast(x * 2)) |>
             DelayList.toList)
@@ -520,32 +520,32 @@ mod TestDelayList {
 
     @Test
     def filterFilter01(): Unit \ Assert =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)            |>
-            List.toDelayList             |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.filter(x -> x > 1) |>
             DelayList.filter(x -> x < 3) |>
             DelayList.toList)
 
     @Test
     def filterFilter02(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)                                 |>
-            List.toDelayList                                 |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) >
+            List.toDelayList |>
             DelayList.filter(x -> checked_ecast(x > 1)) |>
-            DelayList.filter(x -> x < 3)                     |>
+            DelayList.filter(x -> x < 3) |>
             DelayList.toList)
 
     @Test
     def filterFilter03(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)                                 |>
-            List.toDelayList                                 |>
-            DelayList.filter(x -> x > 1)                     |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.filter(x -> x > 1) |>
             DelayList.filter(x -> checked_ecast(x < 3)) |>
             DelayList.toList)
 
     @Test
     def filterFilter04(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)                                 |>
-            List.toDelayList                                 |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.filter(x -> checked_ecast(x > 1)) |>
             DelayList.filter(x -> checked_ecast(x < 3)) |>
             DelayList.toList)
@@ -558,7 +558,7 @@ mod TestDelayList {
     @Test
     def filterFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList     |>
+        discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> { Ref.put("a" :: Ref.get(l), l); true }) |>
         DelayList.filter(_ -> { Ref.put("b" :: Ref.get(l), l); true });
         assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
@@ -567,7 +567,7 @@ mod TestDelayList {
     @Test
     def filterFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.filter(_x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.toList);
@@ -1762,7 +1762,7 @@ mod TestDelayList {
 
     @test
     def flatMapFlatMap02(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
+        ECons(1, ECons(2, ECons(3, ENil))) |>
         DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
         DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             ==
             ECons(1,
@@ -1771,8 +1771,8 @@ mod TestDelayList {
 
     @test
     def flatMapFlatMap03(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                           |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             |>
+        ECons(1, ECons(2, ECons(3, ENil))) >
+        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
         DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) ==
             ECons(1,
                 ECons(2, ECons(2, ECons(2, ECons(2,
@@ -1780,7 +1780,7 @@ mod TestDelayList {
 
     @test
     def flatMapFlatMap04(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
+        ECons(1, ECons(2, ECons(3, ENil))) |>
         DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
         DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) ==
             ECons(1,
@@ -2262,7 +2262,7 @@ mod TestDelayList {
 
     @Test
     def takeWhileTakeWhile02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil)))                      |>
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> checked_ecast(i > 3)) |>
             DelayList.takeWhile(i -> i < 5))
 
@@ -2274,7 +2274,7 @@ mod TestDelayList {
 
     @Test
     def takeWhileTakeWhile04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> checked_ecast(i > 3)) |>
             DelayList.takeWhile(i -> checked_ecast(i < 5)))
 
@@ -2416,19 +2416,19 @@ mod TestDelayList {
 
     @Test
     def dropWhileDropWhile02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.dropWhile(i -> checked_ecast(i < 5)) |>
             DelayList.dropWhile(i -> i > 1))
 
     @Test
     def dropWhileDropWhile03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))     |>
-            DelayList.dropWhile(i -> i < 5)     |>
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) >
+            DelayList.dropWhile(i -> i < 5) |>
             DelayList.dropWhile(i -> checked_ecast(i > 1)))
 
     @Test
     def dropWhileDropWhile04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.dropWhile(i -> checked_ecast(i < 5)) |>
             DelayList.dropWhile(i -> checked_ecast(i > 1)))
 
