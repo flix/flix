@@ -19,17 +19,21 @@ package ca.uwaterloo.flix.library
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.{FileOps, Result}
+import ca.uwaterloo.flix.util.{FileOps, Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestStandardLibrary extends AnyFunSuite {
 
   /** The path to the library tests. */
-  val Path = "main/test/ca/uwaterloo/flix/library/"
+  private val Path = "main/test/ca/uwaterloo/flix/library/"
+
+  /** The default options. */
+  private val Opts = Options.DefaultTest.copy(incremental = false, output = None)
 
   private def init(): Unit = {
     // Create a new Flix compiler.
     val flix = new Flix
+    flix.setOptions(Opts)
 
     // Find and add all test suites.
     val paths = FileOps.getFlixFilesIn(Path, 1).sorted.take(50)
