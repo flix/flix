@@ -53,17 +53,18 @@ object TraitCompleter {
     * If the trait is derivable, we will only provide completions for derivation.
     */
   private def getTraitCompletions(trt: TypedAst.Trait, traitUsageKind: TraitUsageKind, range: Range, ap: AnchorPosition, qualified: Boolean, inScope: Boolean): List[Completion] = {
+    val priority = if (inScope) Priority.High(0) else Priority.Lower(0)
     traitUsageKind match {
       case TraitUsageKind.Expr =>
-        TraitCompletion(trt, range, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
+        TraitCompletion(trt, range, priority, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
       case TraitUsageKind.Constraint =>
-        TraitCompletion(trt, range, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil
+        TraitCompletion(trt, range, priority, ap, qualified = qualified, inScope = inScope, withTypeParameter = true) :: Nil
       case TraitUsageKind.Derivation if derivable_traits.contains(trt.sym.name) =>
-        TraitCompletion(trt, range, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
+        TraitCompletion(trt, range, priority, ap, qualified = qualified, inScope = inScope, withTypeParameter = false) :: Nil
       case TraitUsageKind.Derivation =>
         Nil
       case TraitUsageKind.Implementation =>
-        InstanceCompletion(trt, range, ap, qualified = qualified, inScope = inScope) :: Nil
+        InstanceCompletion(trt, range, priority, ap, qualified = qualified, inScope = inScope) :: Nil
     }
   }
 

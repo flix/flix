@@ -32,12 +32,15 @@ object StructCompleter {
     if (qn.namespace.nonEmpty)
       root.structs.values.collect {
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = true) =>
-          StructCompletion(struct, range, ap, qualified = true, inScope = true)
+          val priority = Priority.Lower(0)
+          StructCompletion(struct, range, priority, ap, qualified = true, inScope = true)
       }
     else
       root.structs.values.collect({
         case struct if CompletionUtils.isAvailable(struct) && CompletionUtils.matchesName(struct.sym, qn, qualified = false) =>
-          StructCompletion(struct, range, ap, qualified = false, inScope = inScope(struct, scp))
+          val s = inScope(struct, scp)
+          val priority = if (s) Priority.High(0) else Priority.Lower(0)
+          StructCompletion(struct, range, priority, ap, qualified = false, inScope = s)
       })
   }
 
@@ -48,7 +51,7 @@ object StructCompleter {
   private def inScope(struct: TypedAst.Struct, scope: LocalScope): Boolean = {
     val thisName = struct.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Struct(_, _, _, thatName, _, _, _)) => thisName == thatName.toString
       case _ => false
     })
     val isRoot = struct.sym.namespace.isEmpty

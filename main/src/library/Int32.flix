@@ -91,8 +91,8 @@ mod Int32 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int32, y: Int32): Int32 = {
-        if      (x >= 0 and y >= 0)                      abs(x - y)
-        else if (x < 0 and y < 0)                        abs(x - y)
+        if      (x >= 0 and y >= 0)                     abs(x - y)
+        else if (x < 0 and y < 0)                       abs(x - y)
         else if (x == minValue() or y == minValue())    -1
         else if (minValue() + abs(x) + abs(y) >= 0)     -1
         else                                            abs(x - y)
@@ -115,9 +115,9 @@ mod Int32 {
     pub def signum(x: Int32): Int32 = compare(x, 0)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+    pub def pow(base: {base = Int32}, n: Int32): Int32 = $INT32_EXP$(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `dist`.

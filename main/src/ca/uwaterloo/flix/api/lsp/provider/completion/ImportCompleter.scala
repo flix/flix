@@ -42,7 +42,7 @@ object ImportCompleter {
         case Nil => clazz
         case v => v.mkString("", ".", s".$clazz")
       }
-      Completion.ImportCompletion(label, range, isPackage = clazz.head.isLower)
+      Completion.ImportCompletion(label, range, Priority.Highest(0), isPackage = clazz.head.isLower)
     })
   }
 }

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
+import ca.uwaterloo.flix.language.fmt.{FormatType, DisplayType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
 import com.github.rjeschke.txtmark
@@ -37,41 +37,41 @@ object HtmlDocumentor {
   /**
     * The "Pseudo-name" of the root namespace displayed on the pages.
     */
-  val RootNS: String = "Prelude"
+  private val RootNS: String = "Prelude"
   /**
     * The "Pseudo-name" of the root namespace used for its file name.
     */
-  val RootFileName: String = "index"
+  private val RootFileName: String = "index"
 
   /**
     * The directory where to write the ouput.
     */
-  val OutputDirectory: Path = Paths.get("./build/doc")
+  private val OutputDirectory: Path = Paths.get("./build/doc")
 
   /**
-    * The path to the the stylesheet, relative to the resources folder.
+    * The path to the stylesheet, relative to the resources folder.
     */
-  val Stylesheet: String = "/doc/styles.css"
+  private val Stylesheet: String = "/doc/styles.css"
 
   /**
-    * The path to the the favicon, relative to the resources folder.
+    * The path to the favicon, relative to the resources folder.
     */
-  val FavIcon: String = "/doc/favicon.png"
+  private val FavIcon: String = "/doc/favicon.png"
 
   /**
-    * The path to the the `index.js` script, relative to the resources folder.
+    * The path to the `index.js` script, relative to the resources folder.
     */
-  val Script: String = "/doc/index.js"
+  private val Script: String = "/doc/index.js"
 
   /**
-    * The path to the the icon directory, relative to the resources folder.
+    * The path to the icon directory, relative to the resources folder.
     */
-  val Icons: String = "/doc/icons"
+  private val Icons: String = "/doc/icons"
 
   /**
     * The root of the link to each file of the standard library.
     */
-  val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
+  private val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
@@ -194,17 +194,17 @@ object HtmlDocumentor {
   /**
     * Get the shortest name of the effect symbol, e.g. 'StdOut'.
     */
-  private def effectName(sym: Symbol.EffectSym): String = sym.name
+  private def effectName(sym: Symbol.EffSym): String = sym.name
 
   /**
     * Get the fully qualified name of the effect symbol, e.g. 'System.StdOut'.
     */
-  private def effectQualifiedName(sym: Symbol.EffectSym): String = sym.toString
+  private def effectQualifiedName(sym: Symbol.EffSym): String = sym.toString
 
   /**
     * Get the file name of the effect symbol, e.g. 'System.StdOut.html'.
     */
-  private def effectFileName(sym: Symbol.EffectSym): String = s"${sym.toString}.html"
+  private def effectFileName(sym: Symbol.EffSym): String = s"${sym.toString}.html"
 
   /**
     * Get the shortest name of the enum symbol, e.g. 'StdOut'.
@@ -246,7 +246,7 @@ object HtmlDocumentor {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.TraitSym =>
           traits = mkTrait(sym, moduleSym, root) :: traits
-        case sym: Symbol.EffectSym =>
+        case sym: Symbol.EffSym =>
           effects = mkEffect(sym, moduleSym, root) :: effects
         case sym: Symbol.EnumSym =>
           enums = mkEnum(sym, moduleSym, root) :: enums
@@ -285,10 +285,10 @@ object HtmlDocumentor {
   }
 
   /**
-    * Extracts all relevant information about the given `EffectSym` from the root, into a `HtmlDocumentor.Effect`,
+    * Extracts all relevant information about the given `EffSym` from the root, into a `HtmlDocumentor.Effect`,
     * * leaving the companion module unpopulated.
     */
-  private def mkEffect(sym: Symbol.EffectSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
+  private def mkEffect(sym: Symbol.EffSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
     Effect(root.effects(sym), parent, None)
   }
 
@@ -847,14 +847,14 @@ object HtmlDocumentor {
        |<meta name='viewport' content='width=device-width,initial-scale=1'>
        |<meta name='description' content='API documentation for ${esc(name)}| The Flix Programming Language'>
        |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
-       |<base href='${fileName}'></base>
+       |<base href='${fileName}'>
        |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
        |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
        |<link href='styles.css' rel='stylesheet'>
        |<link href='favicon.png' rel='icon'>
-       |<script defer type='module' src='./index.js'></script>
+       |<script type='module' src='./index.js'></script>
        |<title>Flix | ${esc(name)}</title>
        |</head>
     """.stripMargin
@@ -865,7 +865,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docHeader()(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docHeader()(implicit sb: StringBuilder): Unit = {
     sb.append("<header>")
 
     sb.append("<div class='flix'>")
@@ -902,7 +902,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSideBar(parent: Option[Symbol.ModuleSym])(docContents: () => Unit)(implicit sb: StringBuilder): Unit = {
     sb.append("<nav>")
     parent.map { p =>
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(p))}'>")
@@ -926,7 +926,7 @@ object HtmlDocumentor {
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     *               Note that they will each be wrapped in an `<li>` tag.
     */
-  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSideBarSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -941,7 +941,7 @@ object HtmlDocumentor {
     sb.append("</ul>")
   }
 
-  private def docSubModules(parentMod: Module)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubModules(parentMod: Module)(implicit sb: StringBuilder): Unit = {
     val subItems: List[Item] =
       parentMod.submodules ++
         parentMod.traits ++
@@ -976,7 +976,7 @@ object HtmlDocumentor {
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
-  private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -1000,7 +1000,7 @@ object HtmlDocumentor {
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
-  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -1024,7 +1024,7 @@ object HtmlDocumentor {
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
     */
-  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
@@ -1184,7 +1184,7 @@ object HtmlDocumentor {
   /**
     * Document the name of the given trait symbol, creating a link to the trait's documentation.
     */
-  private def docTraitName(sym: Symbol.TraitSym)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitName(sym: Symbol.TraitSym)(implicit sb: StringBuilder): Unit = {
     sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(sym))}' title='trait ${esc(traitName(sym))}'>")
     sb.append(esc(sym.name))
     sb.append("</a>")
@@ -1248,12 +1248,12 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      c.tpes.map(SimpleType.fromWellKindedType) match {
+      c.tpes.map(DisplayType.fromWellKindedType) match {
         case Nil => // Nothing
         case elms =>
           sb.append("(")
           docList(elms) { t =>
-            sb.append(s"<span class='type'>${esc(FormatType.formatSimpleType(t))}</span>")
+            sb.append(s"<span class='type'>${esc(FormatType.formatDisplayType(t))}</span>")
           }
           sb.append(")")
       }
@@ -1310,7 +1310,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docAnnotations(anns: Annotations)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docAnnotations(anns: Annotations)(implicit sb: StringBuilder): Unit = {
     if (anns.annotations.isEmpty) {
       return
     }
@@ -1326,7 +1326,7 @@ object HtmlDocumentor {
     * Appends a 'copy link' button the the given `StringBuilder`.
     * This creates a link to the given ID on the current URL.
     */
-  private def docLink(id: String)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docLink(id: String)(implicit sb: StringBuilder): Unit = {
     sb.append(s"<a href='#${escUrl(id)}' class='copy-link' title='Link To Element'>")
     inlineIcon("link")
     sb.append("</a> ")
@@ -1337,7 +1337,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docSourceLocation(loc: SourceLocation)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSourceLocation(loc: SourceLocation)(implicit sb: StringBuilder): Unit = {
     sb.append(s"<a class='source' target='_blank' rel='nofollow' href='${createLink(loc)}'>Source</a>")
   }
 
@@ -1362,7 +1362,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docDoc(doc: Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docDoc(doc: Doc)(implicit sb: StringBuilder): Unit = {
     val text = doc.text
     if (text.isBlank) {
       return
@@ -1399,7 +1399,7 @@ object HtmlDocumentor {
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
-  private def docKind(kind: Kind)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docKind(kind: Kind)(implicit sb: StringBuilder): Unit = {
     sb.append("<span class='kind'>")
     sb.append(esc(kind.toString))
     sb.append("</span>")
@@ -1415,13 +1415,13 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val simpleEff = SimpleType.fromWellKindedType(eff)
-    simpleEff match {
-      case SimpleType.Pure => // No op
+    val displayEff = DisplayType.fromWellKindedType(eff)
+    displayEff match {
+      case DisplayType.Pure => // No op
       case _ =>
         sb.append(" \\ ")
         sb.append("<span class='effect'>")
-        sb.append(esc(FormatType.formatSimpleType(simpleEff)))
+        sb.append(esc(FormatType.formatDisplayType(displayEff)))
         sb.append("</span>")
     }
   }
@@ -1429,7 +1429,7 @@ object HtmlDocumentor {
   /**
     * Runs the given `docElt` on each element of `list`, separated by the string: ", " (comma + space)
     */
-  private def docList[T](list: List[T])(docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docList[T](list: List[T])(docElt: T => Unit)(implicit sb: StringBuilder): Unit = {
     for ((e, i) <- list.zipWithIndex) {
       docElt(e)
       if (i < list.length - 1) {

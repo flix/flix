@@ -17,18 +17,22 @@ object EffectCompleter {
       root.effects.values.collect {
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = true) =>
           if (inHandler)
-            HandlerCompletion(effect, range, ap, qualified = true, inScope = true)
+            HandlerCompletion(effect, range, Priority.High(0), ap, qualified = true, inScope = true)
           else
-            EffectCompletion(effect, range, ap, qualified = true, inScope = true)
+            EffectCompletion(effect, range, Priority.High(0), ap, qualified = true, inScope = true)
       }
-    else
+    else {
       root.effects.values.collect({
         case effect if CompletionUtils.isAvailable(effect) && CompletionUtils.matchesName(effect.sym, qn, qualified = false) =>
+          val s = inScope(effect, scp)
+          val priority = if (s) Priority.High(0) else Priority.Lower(0)
+
           if (inHandler)
-            HandlerCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
+            HandlerCompletion(effect, range, priority, ap, qualified = false, inScope = s)
           else
-            EffectCompletion(effect, range, ap, qualified = false, inScope = inScope(effect, scp))
+            EffectCompletion(effect, range, priority, ap, qualified = false, inScope = s)
       })
+    }
   }
 
   /**
@@ -38,7 +42,7 @@ object EffectCompleter {
   private def inScope(effect: TypedAst.Effect, scope: LocalScope): Boolean = {
     val thisName = effect.sym.toString
     val isResolved = scope.m.values.exists(_.exists {
-      case Resolution.Declaration(Effect(_, _, _, thatName, _, _)) => thisName == thatName.toString
+      case Resolution.Declaration(Effect(_, _, _, thatName, _, _, _)) => thisName == thatName.toString
       case _ => false
     })
     val isRoot = effect.sym.namespace.isEmpty

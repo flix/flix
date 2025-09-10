@@ -15,11 +15,11 @@ jobs:
 
     steps:
       - name: Check out compiler
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: ./compiler
       - name: Check out flix/vscode-flix
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "flix/vscode-flix"
           path: ./vscode-flix

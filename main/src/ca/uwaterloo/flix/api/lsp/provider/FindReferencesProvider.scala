@@ -21,10 +21,8 @@ import ca.uwaterloo.flix.api.lsp.acceptors.{AllAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
+import ca.uwaterloo.flix.language.ast.shared.SymUse.TypeAliasSymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 object FindReferencesProvider {
 
@@ -126,12 +124,12 @@ object FindReferencesProvider {
   private def search(uri: String, pos: Position)(implicit root: Root): Option[AnyRef] = {
     val consumer = StackConsumer()
     Visitor.visitRoot(root, consumer, InsideAcceptor(uri, pos))
-    consumer.getStack.filter(isReal).headOption
+    consumer.getStack.find(isReal)
   }
 
   private def isReal(x: AnyRef): Boolean = x match {
     case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
     case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
@@ -140,7 +138,7 @@ object FindReferencesProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -168,7 +166,7 @@ object FindReferencesProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
+    case SymUse.EffSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -204,9 +202,9 @@ object FindReferencesProvider {
     case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
     case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
     // Effects
-    case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
-    case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
-    case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
+    case TypedAst.Effect(_, _, _, sym, _, _, _) => Some(getEffSymOccurs(sym))
+    case SymUse.EffSymUse(sym, _) => Some(getEffSymOccurs(sym))
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffSymOccurs(sym))
     // Enums
     case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
     case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
@@ -266,7 +264,7 @@ object FindReferencesProvider {
     }
 
     object CaseSymConsumer extends Consumer {
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, AllAcceptor)
@@ -284,7 +282,7 @@ object FindReferencesProvider {
     }
 
     object DefnSymConsumer extends Consumer {
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, DefnSymConsumer, AllAcceptor)
@@ -292,25 +290,25 @@ object FindReferencesProvider {
     occurs + sym.loc
   }
 
-  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root): Set[SourceLocation] = {
+  private def getEffSymOccurs(sym: Symbol.EffSym)(implicit root: Root): Set[SourceLocation] = {
     var occurs: Set[SourceLocation] = Set.empty
 
-    def consider(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+    def consider(s: Symbol.EffSym, loc: SourceLocation): Unit = {
       if (s == sym) {
         occurs += loc
       }
     }
 
-    object EffectSymConsumer extends Consumer {
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = consider(effUse.sym, effUse.qname.loc)
+    object EffSymConsumer extends Consumer {
+      override def consumeEffSymUse(effUse: SymUse.EffSymUse): Unit = consider(effUse.sym, effUse.qname.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(effSym, _), loc) => consider(effSym, loc)
         case _ => ()
       }
     }
 
-    Visitor.visitRoot(root, EffectSymConsumer, AllAcceptor)
+    Visitor.visitRoot(root, EffSymConsumer, AllAcceptor)
 
     occurs + sym.loc
   }
@@ -326,7 +324,7 @@ object FindReferencesProvider {
 
     object EnumSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Enum(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Enum(enumSym, _), loc) => consider(enumSym, loc)
         case _ => ()
       }
     }
@@ -346,7 +344,7 @@ object FindReferencesProvider {
     }
 
     object OpSymConsumer extends Consumer {
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = consider(sym.sym, sym.loc)
+      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = consider(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, AllAcceptor)
@@ -391,7 +389,7 @@ object FindReferencesProvider {
 
     object StructSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Struct(sym, _), loc) => consider(sym, loc)
+        case Type.Cst(TypeConstructor.Struct(structSym, _), loc) => consider(structSym, loc)
         case _ => ()
       }
     }
@@ -448,7 +446,7 @@ object FindReferencesProvider {
 
     object TypeAliasSymConsumer extends Consumer {
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Alias(TypeAliasSymUse(sym, loc), _, _, _) => consider(sym, loc)
+        case Type.Alias(TypeAliasSymUse(aliasSym, loc), _, _, _) => consider(aliasSym, loc)
         case _ => ()
       }
     }
@@ -471,7 +469,7 @@ object FindReferencesProvider {
       override def consumeTypeParam(tparam: TypedAst.TypeParam): Unit = consider(tparam.sym, tparam.sym.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Var(sym, loc) => consider(sym, loc)
+        case Type.Var(varSym, loc) => consider(varSym, loc)
         case _ => ()
       }
     }
@@ -494,7 +492,7 @@ object FindReferencesProvider {
       override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
 
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(sym, _, loc) => consider(sym, loc)
+        case TypedAst.Expr.Var(varSym, _, loc) => consider(varSym, loc)
         case _ => ()
       }
     }

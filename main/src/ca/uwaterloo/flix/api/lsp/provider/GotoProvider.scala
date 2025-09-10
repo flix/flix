@@ -109,8 +109,8 @@ object GotoProvider {
     // Defs
     case SymUse.DefSymUse(sym, loc) => Some(LocationLink.fromDefSym(sym, loc))
     // Effects
-    case SymUse.EffectSymUse(sym, qname) => Some(LocationLink.fromEffectSym(sym, qname.loc))
-    case Type.Cst(TypeConstructor.Effect(sym), loc) => Some(LocationLink.fromEffectSym(sym, loc))
+    case SymUse.EffSymUse(sym, qname) => Some(LocationLink.fromEffSym(sym, qname.loc))
+    case Type.Cst(TypeConstructor.Effect(sym, _), loc) => Some(LocationLink.fromEffSym(sym, loc))
     case SymUse.OpSymUse(sym, loc) => Some(LocationLink.fromOpSym(sym, loc))
     // Enums
     case Type.Cst(TypeConstructor.Enum(sym, _), loc) => Some(LocationLink.fromEnumSym(sym, loc))
@@ -130,7 +130,7 @@ object GotoProvider {
 
   private def isReal(x: AnyRef): Boolean = x match {
     case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
     case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
@@ -139,7 +139,7 @@ object GotoProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -167,7 +167,7 @@ object GotoProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
+    case SymUse.EffSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal

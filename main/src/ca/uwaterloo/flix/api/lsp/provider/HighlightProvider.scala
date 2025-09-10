@@ -168,7 +168,7 @@ object HighlightProvider {
 
   private def isReal(x: AnyRef): Boolean = x match {
     case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
     case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
@@ -177,7 +177,7 @@ object HighlightProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -205,7 +205,7 @@ object HighlightProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
+    case SymUse.EffSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal
@@ -270,9 +270,9 @@ object HighlightProvider {
       case TypedAst.Def(sym, _, _, _) => Some(getDefnSymOccurs(sym))
       case SymUse.DefSymUse(sym, _) => Some(getDefnSymOccurs(sym))
       // Effects
-      case TypedAst.Effect(_, _, _, sym, _, _) => Some(getEffectSymOccurs(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Some(getEffectSymOccurs(sym))
-      case SymUse.EffectSymUse(sym, _) => Some(getEffectSymOccurs(sym))
+      case TypedAst.Effect(_, _, _, sym, _, _, _) => Some(getEffSymOccurs(sym))
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => Some(getEffSymOccurs(sym))
+      case SymUse.EffSymUse(sym, _) => Some(getEffSymOccurs(sym))
       // Enums & Cases
       case TypedAst.Enum(_, _, _, sym, _, _, _, _) => Some(getEnumSymOccurs(sym))
       case Type.Cst(TypeConstructor.Enum(sym, _), _) => Some(getEnumSymOccurs(sym))
@@ -358,7 +358,7 @@ object HighlightProvider {
     object DefnSymConsumer extends Consumer {
       override def consumeDef(defn: TypedAst.Def): Unit = considerWrite(defn.sym, defn.sym.loc)
 
-      override def consumeDefSymUse(sym: SymUse.DefSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeDefSymUse(symUse: SymUse.DefSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, DefnSymConsumer, acceptor)
@@ -366,39 +366,39 @@ object HighlightProvider {
     Occurs(writes, reads)
   }
 
-  private def getEffectSymOccurs(sym: Symbol.EffectSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
+  private def getEffSymOccurs(sym: Symbol.EffSym)(implicit root: Root, acceptor: Acceptor): Occurs = {
     var writes: Set[SourceLocation] = Set.empty
     var reads: Set[SourceLocation] = Set.empty
 
-    def considerWrite(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+    def considerWrite(s: Symbol.EffSym, loc: SourceLocation): Unit = {
       if (s == sym) {
         writes += loc
       }
     }
 
-    def considerRead(s: Symbol.EffectSym, loc: SourceLocation): Unit = {
+    def considerRead(s: Symbol.EffSym, loc: SourceLocation): Unit = {
       if (s == sym) {
         reads += loc
       }
     }
 
-    object EffectSymConsumer extends Consumer {
+    object EffSymConsumer extends Consumer {
       override def consumeEff(eff: TypedAst.Effect): Unit = considerWrite(eff.sym, eff.sym.loc)
 
-      override def consumeEffectSymUse(effUse: SymUse.EffectSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
+      override def consumeEffSymUse(effUse: SymUse.EffSymUse): Unit = considerRead(effUse.sym, effUse.qname.loc)
 
       override def consumeType(tpe: Type): Unit = tpe match {
-        case Type.Cst(TypeConstructor.Effect(sym), loc) => considerRead(sym, loc)
+        case Type.Cst(TypeConstructor.Effect(sym, _), loc) => considerRead(sym, loc)
         case _ => ()
       }
 
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Do(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
+        case Expr.ApplyOp(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }
 
-    Visitor.visitRoot(root, EffectSymConsumer, acceptor)
+    Visitor.visitRoot(root, EffSymConsumer, acceptor)
 
     Occurs(writes, reads)
   }
@@ -452,7 +452,7 @@ object HighlightProvider {
     object CaseSymConsumer extends Consumer {
       override def consumeCase(cse: TypedAst.Case): Unit = considerWrite(cse.sym, cse.sym.loc)
 
-      override def consumeCaseSymUse(sym: CaseSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeCaseSymUse(symUse: CaseSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, CaseSymConsumer, acceptor)
@@ -479,7 +479,7 @@ object HighlightProvider {
     object OpSymConsumer extends Consumer {
       override def consumeOp(op: TypedAst.Op): Unit = considerWrite(op.sym, op.sym.loc)
 
-      override def consumeOpSymUse(sym: SymUse.OpSymUse): Unit = considerRead(sym.sym, sym.loc)
+      override def consumeOpSymUse(symUse: SymUse.OpSymUse): Unit = considerRead(symUse.sym, symUse.loc)
     }
 
     Visitor.visitRoot(root, OpSymConsumer, acceptor)

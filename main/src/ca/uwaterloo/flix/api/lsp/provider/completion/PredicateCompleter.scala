@@ -45,7 +45,10 @@ object PredicateCompleter {
     //
     Visitor.visitRoot(root, PredConsumer, FileAcceptor(uri))
 
-    predsWithTypeAndLoc.map { case (predName, tpe) => Completion.PredicateCompletion(predName.name, arityOf(tpe), FormatType.formatType(tpe), range) }
+    predsWithTypeAndLoc.map {
+      case (predName, tpe) =>
+      Completion.PredicateCompletion(predName.name, range, Priority.Lower(0), arityOf(tpe), FormatType.formatType(tpe))
+    }
   }
 
   /**

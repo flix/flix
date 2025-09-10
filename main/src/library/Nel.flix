@@ -118,6 +118,11 @@ instance Iterable[Nel[a]] {
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
+instance ForEach[Nel[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
+}
+
 instance ToJava[Nel[a]] {
     type Out = JList
     type Aef = IO
@@ -165,7 +170,7 @@ mod Nel {
     ///
     pub def init(l: Nel[a]): List[a] = match l {
         case Nel(_, Nil) => Nil
-        case Nel(x, xs)   => match List.reverse(xs) {
+        case Nel(x, xs)  => match List.reverse(xs) {
             case Nil     => x :: Nil
             case _ :: ys => x :: List.reverse(ys)
         }

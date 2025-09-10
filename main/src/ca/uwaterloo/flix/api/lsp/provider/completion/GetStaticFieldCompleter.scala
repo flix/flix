@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.JvmUtils
 object GetStaticFieldCompleter {
 
   def getCompletions(clazz: Class[?], field: Name.Ident): List[Completion] = {
-    JvmUtils.getStaticFields(clazz).sortBy(_.getName).map(FieldCompletion(field, _))
+    JvmUtils.getStaticFields(clazz).sortBy(_.getName).map(FieldCompletion(field, Priority.Lowest(0), _))
   }
 
 }

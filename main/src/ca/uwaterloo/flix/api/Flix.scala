@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
-import ca.uwaterloo.flix.language.phase.optimizer.{Optimizer, LambdaDrop}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmLoader, JvmWriter, JvmBackend}
+import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
@@ -162,12 +162,14 @@ class Flix {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
     "BPlusTree.flix" -> LocalResource.get("/src/library/BPlusTree.flix"),
+    "BufReader.flix" -> LocalResource.get("/src/library/BufReader.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
+    "Discrete.flix" -> LocalResource.get("/src/library/Discrete.flix"),
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
@@ -186,6 +188,7 @@ class Flix {
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "OutOfBounds.flix" -> LocalResource.get("/src/library/OutOfBounds.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
+    "Range.flix" -> LocalResource.get("/src/library/Range.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
@@ -198,8 +201,13 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
+    "CharacterSet.flix" -> LocalResource.get("/src/library/CharacterSet.flix"),
+    "EncodingWriter.flix" -> LocalResource.get("/src/library/EncodingWriter.flix"),
+    "DecodingReader.flix" -> LocalResource.get("/src/library/DecodingReader.flix"),
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
-    "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
+    "Peekable.flix" -> LocalResource.get("/src/library/Peekable.flix"),
+    "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
+    "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
@@ -208,6 +216,7 @@ class Flix {
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
+    "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
@@ -264,24 +273,42 @@ class Flix {
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
 
-    "Fixpoint/Toggle.flix" -> LocalResource.get("/src/library/Fixpoint/Toggle.flix"),
-    "Fixpoint/SolverApi.flix" -> LocalResource.get("/src/library/Fixpoint/SolverApi.flix"),
-
-
-    "Fixpoint3/AtomicCounter.flix" -> LocalResource.get("/src/library/Fixpoint3/AtomicCounter.flix"),
+    "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
+    "Fixpoint3/Boxing.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxing.flix"),
     "Fixpoint3/BoxingType.flix" -> LocalResource.get("/src/library/Fixpoint3/BoxingType.flix"),
     "Fixpoint3/Counter.flix" -> LocalResource.get("/src/library/Fixpoint3/Counter.flix"),
-    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
+    "Fixpoint3/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint3/Debugging.flix"),
+    "Fixpoint3/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint3/Interpreter.flix"),
+    "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
+    "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
+    "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
+    "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
+    "Fixpoint3/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Provenance.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
+    "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
     "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
+    "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
 
+    "Fixpoint3/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Datalog.flix"),
+    "Fixpoint3/Ast/ExecutableRam.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/ExecutableRam.flix"),
     "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
+    "Fixpoint3/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Shared.flix"),
 
+    "Fixpoint3/Phase/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Compiler.flix"),
+    "Fixpoint3/Phase/Hoisting.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Hoisting.flix"),
+    "Fixpoint3/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/IndexSelection.flix"),
+    "Fixpoint3/Phase/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Lowering.flix"),
+    "Fixpoint3/Phase/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Provenance.flix"),
+    "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
+    "Fixpoint3/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Simplifier.flix"),
+    "Fixpoint3/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Stratifier.flix"),
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
     "Clock.flix" -> LocalResource.get("/src/library/Clock.flix"),
+    "Dns.flix" -> LocalResource.get("/src/library/Dns.flix"),
+    "DnsWithResult.flix" -> LocalResource.get("/src/library/DnsWithResult.flix"),
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
@@ -292,15 +319,32 @@ class Flix {
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
+    "IpAddr.flix" -> LocalResource.get("/src/library/IpAddr.flix"),
+    "Ipv4Addr.flix" -> LocalResource.get("/src/library/Ipv4Addr.flix"),
+    "Ipv6Addr.flix" -> LocalResource.get("/src/library/Ipv6Addr.flix"),
+    "Ping.flix" -> LocalResource.get("/src/library/Ping.flix"),
+    "PingWithResult.flix" -> LocalResource.get("/src/library/PingWithResult.flix"),
     "ProcessHandle.flix" -> LocalResource.get("/src/library/ProcessHandle.flix"),
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "SocketAddr.flix" -> LocalResource.get("/src/library/SocketAddr.flix"),
+    "SocketAddrV4.flix" -> LocalResource.get("/src/library/SocketAddrV4.flix"),
+    "SocketAddrV6.flix" -> LocalResource.get("/src/library/SocketAddrV6.flix"),
+    "TcpAccept.flix" -> LocalResource.get("/src/library/TcpAccept.flix"),
+    "TcpAcceptWithResult.flix" -> LocalResource.get("/src/library/TcpAcceptWithResult.flix"),
+    "TcpBind.flix" -> LocalResource.get("/src/library/TcpBind.flix"),
+    "TcpBindWithResult.flix" -> LocalResource.get("/src/library/TcpBindWithResult.flix"),
+    "TcpConnect.flix" -> LocalResource.get("/src/library/TcpConnect.flix"),
+    "TcpConnectWithResult.flix" -> LocalResource.get("/src/library/TcpConnectWithResult.flix"),
+    "TcpServer.flix" -> LocalResource.get("/src/library/TcpServer.flix"),
+    "TcpSocket.flix" -> LocalResource.get("/src/library/TcpSocket.flix"),
     "TimeUnit.flix" -> LocalResource.get("/src/library/TimeUnit.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
+    "RichString.flix" -> LocalResource.get("/src/library/RichString.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
     "ToFlix.flix" -> LocalResource.get("/src/library/ToFlix.flix"),
@@ -680,7 +724,11 @@ class Flix {
     val eraserAst = Eraser.run(tailPosAst)
     val reducerAst = Reducer.run(eraserAst)
     val varOffsetsAst = VarOffsets.run(reducerAst)
-    val result = JvmBackend.run(varOffsetsAst)
+    val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
+    val totalTime = flix.getTotalTime
+    JvmWriter.run(classes)
+    val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
+    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
@@ -719,7 +767,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -749,7 +797,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -776,15 +824,6 @@ class Flix {
     */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
-  }
-
-  /**
-    * A callback to indicate that work has started on the given subtask.
-    */
-  def subtask(subtask: String, sample: Boolean = false): Unit = {
-    if (options.progress) {
-      progressBar.observe(currentPhase.phase, subtask, sample)
-    }
   }
 
   /**

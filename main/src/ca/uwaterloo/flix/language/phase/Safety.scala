@@ -64,7 +64,6 @@ object Safety {
     *   - [[Expr.UncheckedCast]] are not impossible.
     *   - [[Expr.Throw]] only throws exceptions.
     *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
-    *   - [[Expr.Spawn]] only performs primitive effects.
     *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
   private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
@@ -93,13 +92,16 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _) =>
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -158,10 +160,9 @@ object Safety {
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
@@ -169,7 +170,7 @@ object Safety {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -264,19 +265,16 @@ object Safety {
       visitExp(exp)
       checkThrow(exp)
 
-    case Expr.Handler(sym, rules, _, _, _, _, _) =>
+    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
       // Check for [[PrimitiveEffectInRunWith]]
-      if (Symbol.isPrimitiveEff(sym.sym)) {
-        sctx.errors.add(PrimitiveEffectInRunWith(sym.sym, sym.qname.loc))
+      if (Symbol.isPrimitiveEff(symUse.sym)) {
+        sctx.errors.add(PrimitiveEffectInRunWith(symUse.sym, symUse.qname.loc))
       }
       rules.foreach(rule => visitExp(rule.exp))
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
 
     case Expr.InvokeConstructor(_, args, _, _, loc) =>
       checkAllPermissions(loc.security, loc)
@@ -331,7 +329,6 @@ object Safety {
       default.map(visitExp).getOrElse(Nil)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
-      if (hasControlEffects(exp1.eff)) sctx.errors.add(IllegalSpawnEffect(exp1.eff, exp1.loc))
       visitExp(exp1)
       visitExp(exp2)
 
@@ -355,17 +352,21 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithProvenance(exps, Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      exps.foreach(visitExp)
+      terms.foreach(visitExp)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      exps.foreach(visitExp)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
 
-    case Expr.FixpointProject(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      exps.foreach(visitExp)
 
     case Expr.Error(_, _, _) =>
       ()

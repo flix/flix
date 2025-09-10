@@ -103,6 +103,7 @@ object Main {
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
+      xchaosMonkey = cmdOpts.xchaosMonkey,
       xiterations = cmdOpts.xiterations,
     )
 
@@ -169,7 +170,10 @@ object Main {
 
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap => bootstrap.buildJar()
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildJar(flix)
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
@@ -180,7 +184,10 @@ object Main {
 
         case Command.BuildFatJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap => bootstrap.buildFatJar()
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildFatJar(flix)
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
@@ -355,6 +362,7 @@ object Main {
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
+                     xchaosMonkey: Boolean = false,
                      xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
@@ -570,6 +578,10 @@ object Main {
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
+
+      // Xchaos-monkey
+      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
+        text("[experimental] introduces randomness.")
 
       // Xiterations
       opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).

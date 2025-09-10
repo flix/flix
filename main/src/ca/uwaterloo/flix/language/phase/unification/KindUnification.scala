@@ -55,13 +55,4 @@ object KindUnification {
     // else fail
     case _ => None
   }
-
-  /**
-    * Returns true iff the two kinds can be unified.
-    */
-  def unifiesWith(k1: Kind, k2: Kind): Boolean = unify(k1, k2) match {
-    case None => false
-    case Some(_) => true
-  }
-
 }

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.{EntryPointError, SafetyError}
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalSpawnEffect, IllegalThrowType}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -729,7 +729,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@test
         |def f(x: Int32): Int32 = x
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
@@ -739,7 +739,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@test
         |def g(x: Int32, _y: Int32, _a: Float64): Int32 = x
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
@@ -749,7 +749,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@test
         |def f(_x: Int32, _y: Int32, a: Float64): Float64 = a
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
@@ -759,7 +759,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |@test
         |def f(_x: Int32, _y: Int32, _a: Float64): Float64 = 1.0f64
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[EntryPointError.IllegalRunnableEntryPointArgs](result)
   }
 
@@ -774,7 +774,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |def foo(): Unit \ Print = Print.println()
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[EntryPointError.IllegalEntryPointEffect](result)
   }
 
@@ -892,22 +892,4 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.DefaultTest)
     expectError[IllegalMethodEffect](result)
   }
-
-  test("IllegalSpawnEffect.01") {
-    val input =
-      """
-        |eff Ask {
-        |    pub def ask(): String
-        |}
-        |
-        |def main(): Unit \ IO =
-        |    region rc {
-        |        spawn Ask.ask() @ rc
-        |    }
-        |
-      """.stripMargin
-    val result = compile(input, Options.DefaultTest)
-    expectError[IllegalSpawnEffect](result)
-  }
-
 }
