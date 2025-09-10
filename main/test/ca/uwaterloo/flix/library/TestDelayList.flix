@@ -1905,24 +1905,24 @@ mod TestDelayList {
         assertEq(expected = None, DelayList.findLeft(i -> i > 2, ECons(1, ENil)))
 
     @test
-    def findLeft03(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(3, ENil)) == Some(3)
+    def findLeft03(): Unit \ Assert =
+        assertEq(expected = Some(3), DelayList.findLeft(i -> i > 2, ECons(3, ENil)))
 
     @test
-    def findLeft04(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(1, ECons(2, ENil))) == None
+    def findLeft04(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findLeft(i -> i > 2, ECons(1, ECons(2, ENil))))
 
     @test
-    def findLeft05(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(6, ECons(-6, ENil))) == Some(6)
+    def findLeft05(): Unit \ Assert =
+        assertEq(expected = Some(6), DelayList.findLeft(i -> i > 2, ECons(6, ECons(-6, ENil))))
 
     @test
-    def findLeft06(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(7, ECons(6, ENil))) == Some(7)
+    def findLeft06(): Unit \ Assert =
+        assertEq(expected = Some(7), DelayList.findLeft(i -> i > 2, ECons(7, ECons(6, ENil))))
 
     @test
-    def findLeft07(): Bool =
-        DelayList.findLeft(i -> i > 2, LList(lazy ECons(1, LList(lazy LCons(1, lazy LList(lazy LCons(4, lazy LList(lazy ENil)))))))) == Some(4)
+    def findLeft07(): Unit \ Assert =
+        assertEq(expected = Some(4), DelayList.findLeft(i -> i > 2, LList(lazy ECons(1, LList(lazy LCons(1, lazy LList(lazy LCons(4, lazy LList(lazy ENil)))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
