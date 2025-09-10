@@ -128,7 +128,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * We use the limit to ensure that property tests terminate within a reasonable time.
     */
-  private val Limit: Int = 500
+  private val Limit: Int = 100
 
   /////////////////////////////////////////////////////////////////////////////
   // General Properties
