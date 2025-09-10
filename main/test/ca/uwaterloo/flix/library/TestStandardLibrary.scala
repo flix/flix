@@ -38,7 +38,7 @@ class TestStandardLibrary extends AnyFunSuite {
       flix.addFlix(p)
     }
 
-    // Compile the program with all the test suites.
+    // Compile the program with all test suites.
     flix.compile().toResult match {
       case Result.Ok(compilationResult) =>
         runTests(compilationResult)
@@ -51,14 +51,14 @@ class TestStandardLibrary extends AnyFunSuite {
   private def runTests(r: CompilationResult): Unit = {
     // Group the tests by namespace.
     val testsByNamespace = r.getTests.groupBy(_._1.namespace)
+
     // Iterate through each namespace.
     for ((_, tests) <- testsByNamespace) {
       // Sort the tests by name.
       val testsByName = tests.toList.sortBy(_._1.name)
 
-      // Evaluate each test.
+      // Dynamically create a ScalaTest unit test for each @Test function.
       for ((sym, TestFn(_, skip, run)) <- testsByName; if !skip) {
-        // Dynamically create a test using the function name.
         test(sym.toString) {
           run()
         }
