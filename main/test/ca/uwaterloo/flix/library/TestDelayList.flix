@@ -1530,17 +1530,17 @@ mod TestDelayList {
         assertEq(expected = LList(lazy LList(lazy LCons((0, 5), lazy ECons((1, 7), ENil)))), l)
 
     @test
-    def zipWithIndex0(): Bool =
+    def zipWithIndex06(): Unit \ Assert =
         let l = DelayList.zipWithIndex(LList(lazy LCons(0, lazy LList(lazy
             LCons(1, lazy LList(lazy LCons(2, lazy
             LList(lazy LCons(3, lazy LList(lazy
             LCons(4, lazy LList(lazy LCons(5, lazy
             LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
-        l == LList(lazy LCons((0, 0), lazy LList(lazy
-            LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
-            LList(lazy LCons((3, 3), lazy LList(lazy
-            LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
-            LList(lazy LCons((6, 10), lazy LList(lazy ENil)))))))))))))))
+        assertEq(expected = LList(lazy LCons((0, 0), lazy LList(lazy
+                                        LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
+                                        LList(lazy LCons((3, 3), lazy LList(lazy
+                                        LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
+                                        LList(lazy LCons((6, 10), lazy LList(lazy ENil))))))))))))))), l)
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
