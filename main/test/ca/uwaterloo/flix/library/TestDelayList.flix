@@ -2402,12 +2402,14 @@ mod TestDelayList {
         assertEq(expected = ENil, DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(5, ECons(8, ENil))))
 
     @test
-    def dropWhileImpure08(): Bool \ IO =
-        DelayList.dropWhile(i -> checked_ecast(i > 3), LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+    def dropWhileImpure08(): Unit \ Assert + IO =
+        let l = DelayList.dropWhile(i -> checked_ecast(i > 3), LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))))))))));
+        assertEq(expected = ECons(1, ECons(2, ENil)), l)
 
     @test
-    def dropWhileImpure09(): Bool \ IO =
-        DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
+    def dropWhileImpure09(): Unit \ Assert + IO =
+        let l = DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
