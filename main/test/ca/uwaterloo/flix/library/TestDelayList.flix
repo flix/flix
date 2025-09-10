@@ -2716,22 +2716,22 @@ mod TestDelayList {
         assertEq(expected = (ECons(5, ECons(8, ENil)), ENil), DelayList.partition(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
-    def partition08(): Bool =
-        DelayList.partition(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))))
-            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))), ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+    def partition08(): Unit \ Assert =
+        let l = DelayList.partition(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))), ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil)))))), l)
 
     @test
-    def partition09(): Bool =
-        DelayList.partition(i -> i > 3,
+    def partition09(): Unit \ Assert =
+        let l = DelayList.partition(i -> i > 3,
             LList(lazy LCons(4, lazy LList(lazy
-                ECons(6, LCons(-3, lazy LList(lazy
-                LCons(11, lazy LList(lazy LCons(-5, lazy
-                LList(lazy LCons(1, lazy LList(lazy
-                LCons(2, lazy LList(lazy LCons(16, lazy
-                LList(lazy LCons(7, lazy LList(lazy
-                LCons(1, lazy LList(lazy LCons(7, lazy LList(lazy ENil)))))))))))))))))))))))
-            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))),
-                    ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+            ECons(6, LCons(-3, lazy LList(lazy
+            LCons(11, lazy LList(lazy LCons(-5, lazy
+            LList(lazy LCons(1, lazy LList(lazy
+            LCons(2, lazy LList(lazy LCons(16, lazy
+            LList(lazy LCons(7, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(7, lazy LList(lazy ENil)))))))))))))))))))))));
+        assertEq(expected = (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))),
+            ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil)))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
