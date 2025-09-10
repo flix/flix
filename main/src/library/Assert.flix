@@ -199,9 +199,8 @@ mod Assert {
                 if (cond)
                     resume(())
                 else {
-                    use Chalk.{red, bold};
                     run {
-                        println("${bold(msg)}")
+                        println(RichString.toAnsiString(msg))
                     } with Environment.runWithIO;
                     resume(())
                 }
@@ -221,10 +220,9 @@ mod Assert {
                 if (cond)
                     resume(())
                 else {
-                    use Chalk.{red, bold};
                     use Console.eprintln;
                     run {
-                        eprintln("${bold(msg)}")
+                        eprintln(RichString.toAnsiString(msg))
                     } with Environment.runWithIO
                       with Console.runWithIO;
                     resume(())
@@ -245,7 +243,7 @@ mod Assert {
                 if (cond)
                     resume(())
                 else
-                    Abort.abort(msg)
+                    Abort.abort(RichString.toAnsiString(msg))
             }
         }
 
@@ -263,13 +261,12 @@ mod Assert {
                 if (cond)
                     resume(())
                 else {
-                    use Chalk.{red, bold, yellow};
                     use Console.{print, readln};
                     run {
                         println("");
-                        println("${bold(msg)}");
+                        println(RichString.toAnsiString(msg));
                         println("");
-                        print("${yellow("Continue execution? (y/n): ")}");
+                        print(RichString.toAnsiString(yellow("Continue execution? (y/n): ")));
                         let input = readln();
                         if (not String.isEmpty(input))
                                 let trimmed = String.trim(input);
