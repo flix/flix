@@ -2249,8 +2249,9 @@ mod TestDelayList {
         assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> checked_ecast(i > 3), LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))))
 
     @test
-    def takeWhileImpure09(): Bool \ IO =
-        DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
+    def takeWhileImpure09(): Unit \ Assert + IO =
+        let l = DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(4, ECons(6, ENil)), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
