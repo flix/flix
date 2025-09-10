@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.{FileOps, Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestStandardLibrary extends AnyFunSuite {
+class StdLibSuite extends AnyFunSuite {
 
   /** The path to the library tests. */
   private val Path = "main/test/ca/uwaterloo/flix/library/"
