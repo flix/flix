@@ -2164,8 +2164,9 @@ mod TestDelayList {
         assertEq(expected = ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil))))))), DelayList.intersperse(-11, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))))
 
     @test
-    def intersperse06(): Bool =
-        DelayList.intersperse(-11, LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+    def intersperse06(): Unit \ Assert =
+        let l = DelayList.intersperse(-11, LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy ENil)))))))));
+        assertEq(expected = ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
