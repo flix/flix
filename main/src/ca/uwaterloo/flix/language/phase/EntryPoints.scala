@@ -127,6 +127,12 @@ object EntryPoints {
   private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
     root.mainEntryPoint.contains(defn.sym)
 
+  /** Returns `true` if `defn.eff` might contain Assert. */
+  private def hasAssert(defn: TypedAst.Def): Boolean = eval(defn.spec.eff) match {
+    case Result.Ok(s) => s.contains(Symbol.Assert)
+    case Result.Err(_) => true
+  }
+
   /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
   @tailrec
   private def isUnitType(tpe: Type): Result[Boolean, ErrorOrMalformed.type] = tpe match {
@@ -581,11 +587,6 @@ object EntryPoints {
       *
       */
     def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
-      /** Returns `true` if `defn.eff` might contain Assert. */
-      def hasAssert(defn: TypedAst.Def) = eval(defn.spec.eff) match {
-        case Result.Ok(s) => s.contains(Symbol.Assert)
-        case Result.Err(_) => true
-      }
 
       val defsWithDefaultAssertHandler = ParOps.parMapValues(root.defs)(
         defn => if (isTest(defn) && hasAssert(defn)) wrapDefWithAssertHandler(defn, root) else defn
