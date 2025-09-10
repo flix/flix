@@ -889,9 +889,9 @@ object Weeder2 {
         case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
-        case TreeKind.Expr.LiteralRecord => visitLiteralRecordExpr(tree)
+        case TreeKind.Expr.LiteralRecord => ??? //visitLiteralRecordExpr(tree)
         case TreeKind.Expr.RecordSelect => visitRecordSelectExpr(tree)
-        case TreeKind.Expr.RecordOperation => visitRecordOperationExpr(tree)
+        case TreeKind.Expr.RecordOperation => visitRecordOperationOrLiteralExpr(tree)
         case TreeKind.Expr.LiteralArray => visitLiteralArrayExpr(tree)
         case TreeKind.Expr.LiteralVector => visitLiteralVectorExpr(tree)
         case TreeKind.Expr.LiteralList => visitLiteralListExpr(tree)
@@ -1613,8 +1613,18 @@ object Weeder2 {
     }
 
     private def visitLiteralRecordExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.LiteralRecord)
-      val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
+      expect(tree, TreeKind.Expr.RecordOperation)
+      pickAll(TreeKind.Expr.RecordOpExtend, tree).foreach{t =>
+        //        TODO: New error
+        val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, t.loc)
+        sctx.errors.add(error)
+      }
+      pickAll(TreeKind.Expr.RecordOpRestrict, tree).foreach { t =>
+        //        TODO: New error
+        val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, t.loc)
+        sctx.errors.add(error)
+      }
+      val fields = pickAll(TreeKind.Expr.RecordOpUpdate, tree)
       mapN(traverse(fields)(visitLiteralRecordField)) {
         fields =>
           fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
@@ -1643,6 +1653,14 @@ object Weeder2 {
               Expr.RecordSelect(acc, Name.mkLabel(ident), loc)
           }
       }
+    }
+    private def visitRecordOperationOrLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+//      TODO: Check for Bar instead?
+      tryPick(TreeKind.Expr.Expr, tree) match {
+        case Some(_) => visitRecordOperationExpr(tree)
+        case None => visitLiteralRecordExpr(tree)
+      }
+
     }
 
     private def visitRecordOperationExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {

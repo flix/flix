@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -2302,40 +2302,41 @@ object Parser2 {
              | (TokenKind.Minus, TokenKind.NameLowerCase) =>
           // Now check for record operation or record literal,
           // by looking for a '|' before the closing '}'.
-          val isRecordOp = {
-            val tokensLeft = s.tokens.length - s.position
-            var lookahead = 1
-            var nestingLevel = 0
-            var isRecordOp = false
-            var continue = true
-            while (continue && lookahead < tokensLeft) {
-              nth(lookahead) match {
-                // Found closing '}' so stop seeking.
-                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
-                // Found '|' before closing '}' which means that it is a record operation.
-                case TokenKind.Bar if nestingLevel == 0 =>
-                  isRecordOp = true
-                  continue = false
-                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
-                  nestingLevel += 1
-                  lookahead += 1
-                case TokenKind.CurlyR =>
-                  nestingLevel -= 1
-                  lookahead += 1
-                case _ => lookahead += 1
-              }
-            }
-            isRecordOp
-          }
-          if (isRecordOp) {
+//          val isRecordOp = {
+//            val tokensLeft = s.tokens.length - s.position
+//            var lookahead = 1
+//            var nestingLevel = 0
+//            var isRecordOp = false
+//            var continue = true
+//            while (continue && lookahead < tokensLeft) {
+//              nth(lookahead) match {
+//                // Found closing '}' so stop seeking.
+//                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
+//                // Found '|' before closing '}' which means that it is a record operation.
+//                case TokenKind.Bar if nestingLevel == 0 =>
+//                  isRecordOp = true
+//                  continue = false
+//                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
+//                  nestingLevel += 1
+//                  lookahead += 1
+//                case TokenKind.CurlyR =>
+//                  nestingLevel -= 1
+//                  lookahead += 1
+//                case _ => lookahead += 1
+//              }
+//            }
+//            isRecordOp
+//          }
+//          if (isRecordOp) {
             recordOperation()
-          } else {
-            recordLiteral()
-          }
+//          } else {
+//            recordLiteral()
+//          }
         case _ => block()
       }
     }
 
+    @unused
     private def recordLiteral()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.CurlyL))
@@ -2365,7 +2366,7 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)),
         getItem = recordOp,
         checkForItem = _.isFirstRecordOp,
@@ -2373,10 +2374,8 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => expression()))
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.Expr.RecordOperation)
-      }
+      )
+      close(mark, TreeKind.Expr.RecordOperation)
     }
 
     private def recordOp()(implicit s: State): Mark.Closed = {
