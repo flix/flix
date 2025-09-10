@@ -1731,19 +1731,19 @@ mod TestDelayList {
 
     @Test
     def flatMapImpure01(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), (ENil: DelayList[Int32])))
+        assertEq(expected = ENil, DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), (ENil: DelayList[Int32])))
 
     @Test
     def flatMapImpure02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), ECons(1, ENil)))
 
     @Test
     def flatMapImpure03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))))
+        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), ECons(1, ECons(2, ECons(3, ENil)))))
 
     @Test
     def flatMapImpure04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))))
+        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
