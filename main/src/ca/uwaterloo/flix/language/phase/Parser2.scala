@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
-import scala.annotation.{tailrec, unused}
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
