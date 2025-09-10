@@ -1483,29 +1483,45 @@ object Resolver {
           ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
       }
 
+    case NamedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      val qeVal = resolveExp(queryExp, scp0)
+      // We cannot call resolvePredicateBody as it does not allow new variables to be introduced
+      val fVal = traverse(from) {
+        case NamedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, loc1) =>
+          val ts = terms.map(resolvePattern(_, scp0, ns0, root))
+          Validation.Success(ResolvedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, ts, loc1))
+        case _ => throw InternalCompilerException("Unexpected predicate body when expecting body atom", loc)
+      }
+      // We have to bind variables appearing in the atoms before resolving the select and where exps
+      flatMapN(esVal, qeVal, fVal) {
+        case (es, qe, f) =>
+          // Collect all variables appearing in atoms and bind them
+          val ts = f.flatMap(_.terms)
+          val scp1 = ts.foldLeft(scp0)(
+            (acc, t) => t match {
+              case ResolvedAst.Pattern.Var(sym, _) => acc ++ mkVarScp(sym)
+              case _ => acc
+            })
+          // Resolve select and where exps
+          val sVal = traverse(selects)(resolveExp(_, scp1))
+          val wVal = traverse(where)(resolveExp(_, scp1))
+          mapN(sVal, wVal) {
+            case (s, w) =>
+              ResolvedAst.Expr.FixpointQueryWithSelect(es, qe, s, f, w, pred, loc)
+          }
+      }
+
     case NamedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
       val esVal = traverse(exps)(resolveExp(_, scp0))
       mapN(esVal) {
         es => ResolvedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
       }
 
-    case NamedAst.Expr.FixpointFilter(pred, exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointFilter(pred, e, loc)
-      }
-
     case NamedAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val esVal = traverse(exps)(resolveExp(_, scp0))
       mapN(esVal) {
         es => ResolvedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
-      }
-
-    case NamedAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
       }
 
     case NamedAst.Expr.Error(m) =>

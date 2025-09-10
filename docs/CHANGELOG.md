@@ -1,5 +1,9 @@
 # Changelog
 
+Version 0.62.0:
+- Library: Added `Assert` module (thanks Neo and Magnus!)
+- Library: Added `RichString` module (thanks Magnus!)
+
 Version 0.61.1:
 - Compiler: Improve type error messages (thanks Magnus!)
 
