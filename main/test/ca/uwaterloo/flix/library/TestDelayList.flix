@@ -1751,13 +1751,14 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFlatMap01(): Bool =
-        ECons(1, ECons(2, ECons(3, ENil)))                            |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap01(): Unit \ Assert =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
+
 
     @test
     def flatMapFlatMap02(): Bool \ IO =
