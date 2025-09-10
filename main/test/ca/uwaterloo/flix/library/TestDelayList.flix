@@ -2564,17 +2564,19 @@ mod TestDelayList {
 		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))))
 
     @test
-	def filterMapPure08(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapPure08(): Unit \ Assert =
+	    let l = DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
     @test
-	def filterMapPure09(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
-		    LList(lazy LCons(0, lazy LList(lazy
-		    LCons(1, lazy LList(lazy LCons(2, lazy
-		    LList(lazy LCons(3, lazy LList(lazy
-		    LCons(4, lazy LList(lazy LCons(5, lazy
-		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapPure09(): Unit \ Assert =
+	    let l = DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
+            LList(lazy LCons(0, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(2, lazy
+            LList(lazy LCons(3, lazy LList(lazy
+            LCons(4, lazy LList(lazy LCons(5, lazy
+            LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2610,17 +2612,19 @@ mod TestDelayList {
 		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(8, ECons(6, ENil))))
 
     @test
-	def filterMapImpure08(): Bool \ IO =
-		DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapImpure08(): Unit \ Assert + IO =
+	    let l = DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
     @test
-	def filterMapImpure09(): Bool \ IO =
-		DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None),
-		    LList(lazy LCons(0, lazy LList(lazy
-		    LCons(1, lazy LList(lazy LCons(2, lazy
-		    LList(lazy LCons(3, lazy LList(lazy
-		    LCons(4, lazy LList(lazy LCons(5, lazy
-		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapImpure09(): Unit \ Assert + IO =
+	    let l = DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None),
+            LList(lazy LCons(0, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(2, lazy
+            LList(lazy LCons(3, lazy LList(lazy
+            LCons(4, lazy LList(lazy LCons(5, lazy
+            LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
