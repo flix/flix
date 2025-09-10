@@ -1,4 +1,4 @@
-name: Check PR Data
+name: Сheck PR Data
 on:
   pull_request:
     types: [opened, edited, synchronize]
