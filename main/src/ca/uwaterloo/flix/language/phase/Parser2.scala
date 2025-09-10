@@ -1992,7 +1992,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.CurlyL)
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
-        return close(mark, TreeKind.Expr.LiteralRecord)
+        return close(mark, TreeKind.Expr.RecordOperation)
       }
       statement()
       expect(TokenKind.CurlyR)
@@ -2300,67 +2300,10 @@ object Parser2 {
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
              | (TokenKind.Minus, TokenKind.NameLowerCase) =>
-          // Now check for record operation or record literal,
-          // by looking for a '|' before the closing '}'.
-//          val isRecordOp = {
-//            val tokensLeft = s.tokens.length - s.position
-//            var lookahead = 1
-//            var nestingLevel = 0
-//            var isRecordOp = false
-//            var continue = true
-//            while (continue && lookahead < tokensLeft) {
-//              nth(lookahead) match {
-//                // Found closing '}' so stop seeking.
-//                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
-//                // Found '|' before closing '}' which means that it is a record operation.
-//                case TokenKind.Bar if nestingLevel == 0 =>
-//                  isRecordOp = true
-//                  continue = false
-//                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
-//                  nestingLevel += 1
-//                  lookahead += 1
-//                case TokenKind.CurlyR =>
-//                  nestingLevel -= 1
-//                  lookahead += 1
-//                case _ => lookahead += 1
-//              }
-//            }
-//            isRecordOp
-//          }
-//          if (isRecordOp) {
             recordOperation()
-//          } else {
-//            recordLiteral()
-//          }
         case _ => block()
       }
     }
-
-    @unused
-    private def recordLiteral()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.CurlyL))
-      val mark = open()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-        getItem = recordLiteralField,
-        checkForItem = NAME_FIELD.contains,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.LiteralRecord)
-    }
-
-    private def recordLiteralField()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      val mark = open()
-      nameUnqualified(NAME_FIELD)
-      expect(TokenKind.Equal)
-      expression()
-      close(mark, TreeKind.Expr.LiteralRecordFieldFragment)
-    }
-
 
     private def recordOperation()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr

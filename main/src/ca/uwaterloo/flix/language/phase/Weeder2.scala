@@ -889,7 +889,6 @@ object Weeder2 {
         case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
-        case TreeKind.Expr.LiteralRecord => ??? //visitLiteralRecordExpr(tree)
         case TreeKind.Expr.RecordSelect => visitRecordSelectExpr(tree)
         case TreeKind.Expr.RecordOperation => visitRecordOperationOrLiteralExpr(tree)
         case TreeKind.Expr.LiteralArray => visitLiteralArrayExpr(tree)
@@ -1615,13 +1614,11 @@ object Weeder2 {
     private def visitLiteralRecordExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RecordOperation)
       pickAll(TreeKind.Expr.RecordOpExtend, tree).foreach{t =>
-        //        TODO: New error
-        val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, t.loc)
+        val error = IllegalRecordOperation(t.loc)
         sctx.errors.add(error)
       }
-      pickAll(TreeKind.Expr.RecordOpRestrict, tree).foreach { t =>
-        //        TODO: New error
-        val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, t.loc)
+      pickAll(TreeKind.Expr.RecordOpRestrict, tree).foreach{t =>
+        val error = IllegalRecordOperation(t.loc)
         sctx.errors.add(error)
       }
       val fields = pickAll(TreeKind.Expr.RecordOpUpdate, tree)
@@ -1655,10 +1652,9 @@ object Weeder2 {
       }
     }
     private def visitRecordOperationOrLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-//      TODO: Check for Bar instead?
-      tryPick(TreeKind.Expr.Expr, tree) match {
-        case Some(_) => visitRecordOperationExpr(tree)
-        case None => visitLiteralRecordExpr(tree)
+      hasToken(TokenKind.Bar, tree) match {
+        case true => visitRecordOperationExpr(tree)
+        case false => visitLiteralRecordExpr(tree)
       }
 
     }
@@ -1669,6 +1665,10 @@ object Weeder2 {
       val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree)
       val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
       val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
+      if (ops.isEmpty) {
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
+        sctx.errors.add(error)
+      }
       Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
         op.kind match {
           case TreeKind.Expr.RecordOpExtend => mapN(pickExpr(op), pickNameIdent(op))(
