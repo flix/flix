@@ -347,14 +347,14 @@ object PredDeps {
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       exps.foreach(visitExp)
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.Error(_, _, _) => ()
   }

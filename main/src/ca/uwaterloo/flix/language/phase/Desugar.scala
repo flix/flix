@@ -819,8 +819,8 @@ object Desugar {
       val s = visitHead(select)
       DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
-      desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
+    case WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
+      desugarFixpointQueryWithSelect(exps, selects, from, where ,loc)
 
     case WeededAst.Expr.Debug(exp, kind, loc) =>
       desugarDebug(exp, kind, loc)
@@ -1357,7 +1357,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.FixpointQueryWithSelect]] into a series of solves and merges.
+    * Rewrites a [[WeededAst.Expr.FixpointQueryWithSelect]] to include a #Result relation to store the query result.
     *
     * E.g.,
     * {{{
@@ -1365,10 +1365,8 @@ object Desugar {
     * }}}
     * becomes
     * {{{
-    *   project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
-    *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
+    *   query e1, e2, e3, #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } select (x, y, z) from A(x, y), B(z) where x > 0
     * }}}
-    * OBS: The last merge and solve is done in the typer because of trouble when `(merge e1, e2, e3)` is a closed row.
     */
   private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val exps = visitExps(exps0)
@@ -1378,9 +1376,6 @@ object Desugar {
 
     // The fresh predicate name where to store the result of the query.
     val pred = Name.Pred(Flix.Delimiter + "Result", loc0)
-
-    // The arity of the result is the number of selects
-    val arity = selects.length
 
     // The head of the pseudo-rule.
     val den = Denotation.Relational
@@ -1402,13 +1397,7 @@ object Desugar {
     // Construct a constraint set that contains the single pseudo constraint.
     val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc0)
 
-    // Construct the merge of all the expressions.
-    val dbExp = exps.reduceRight[Expr] {
-      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
-    }
-
-    // Extract the tuples of the result predicate.
-    DesugaredAst.Expr.FixpointProject(pred, arity, queryExp, dbExp, loc0)
+    DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc0)
   }
 
   /**
