@@ -2632,28 +2632,32 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFilterMap01(): Bool =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+    def filterMapFilterMap01(): Unit \ Assert =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
             DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
-            DelayList.filterMap(i -> if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> if (i > 1) Some(i * 3) else None);
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
     @test
-    def filterMapFilterMap02(): Bool \ IO =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+    def filterMapFilterMap02(): Unit \ Assert + IO =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
             DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None)) |>
-            DelayList.filterMap(i ->             if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> if (i > 1) Some(i * 3) else None);
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
     @test
-    def filterMapFilterMap03(): Bool \ IO =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i ->             if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
-            DelayList.filterMap(i -> checked_ecast(if (i > 1)                Some(i * 3) else None)) == ECons(6, ECons(9, ENil))
+    def filterMapFilterMap03(): Unit \ Assert + IO =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
+            DelayList.filterMap(i -> checked_ecast(if (i > 1) Some(i * 3) else None));
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
     @test
-    def filterMapFilterMap04(): Bool \ IO =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+    def filterMapFilterMap04(): Unit \ Assert + IO =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
             DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None)) |>
-            DelayList.filterMap(i -> checked_ecast(if (i > 1)                Some(i * 3) else None)) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> checked_ecast(if (i > 1) Some(i * 3) else None));
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2661,22 +2665,22 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool = region rc {
+    def filterMapFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> { Ref.put("a" :: Ref.get(l), l); Some(x) }) |>
         DelayList.filterMap(x -> { Ref.put("b" :: Ref.get(l), l); Some(x) });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def filterMapFusion02(): Bool \ IO = region rc {
+    def filterMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
         discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
         DelayList.filterMap(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
         DelayList.toList);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
