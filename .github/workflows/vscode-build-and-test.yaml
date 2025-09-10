@@ -1,4 +1,4 @@
-name: IDE Tests
+name: VSCode
 
 on: [pull_request, merge_group]
 
@@ -8,7 +8,7 @@ concurrency:
   group: ide-tests-${{ github.ref }}
 
 jobs:
-  vscode:
+  build-and-test:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
