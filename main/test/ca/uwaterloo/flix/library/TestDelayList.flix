@@ -1930,32 +1930,32 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findRight01(): Bool =
-        DelayList.findRight(i -> i > 2, (ENil: DelayList[Int32])) == None
+    def findRight01(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findRight(i -> i > 2, (ENil: DelayList[Int32])))
 
     @test
-    def findRight02(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(1, ENil)) == None
+    def findRight02(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findRight(i -> i > 2, ECons(1, ENil)))
 
     @test
-    def findRight03(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(3, ENil)) == Some(3)
+    def findRight03(): Unit \ Assert =
+        assertEq(expected = Some(3), DelayList.findRight(i -> i > 2, ECons(3, ENil)))
 
     @test
-    def findRight04(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(1, ECons(2, ENil))) == None
+    def findRight04(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findRight(i -> i > 2, ECons(1, ECons(2, ENil))))
 
     @test
-    def findRight05(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(6, ECons(-6, ENil))) == Some(6)
+    def findRight05(): Unit \ Assert =
+        assertEq(expected = Some(6), DelayList.findRight(i -> i > 2, ECons(6, ECons(-6, ENil))))
 
     @test
-    def findRight06(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(7, ECons(6, ENil))) == Some(6)
+    def findRight06(): Unit \ Assert =
+        assertEq(expected = Some(6), DelayList.findRight(i -> i > 2, ECons(7, ECons(6, ENil))))
 
     @test
-    def findRight07(): Bool =
-        DelayList.findRight(i -> i > 2, LList(lazy ECons(4, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy ENil)))))))) == Some(4)
+    def findRight07(): Unit \ Assert =
+        assertEq(expected = Some(4), DelayList.findRight(i -> i > 2, LList(lazy ECons(4, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy ENil)))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
