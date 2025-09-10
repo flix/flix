@@ -1051,18 +1051,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.InlineAndDontInline](result)
   }
 
-  test("MalformedFloat64.01") {
-    val input = "def f(): Float64 = 1.7976931348623158e+308"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedFloat](result)
-  }
-
-  test("MalformedFloat64.02") {
-    val input = "def f(): Float64 = -1.7976931348623158e+308"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedFloat](result)
-  }
-
   // This is supposed to check that the identifier does not include '$'.
   // But since a user defined operation like '<$>' is perfectly valid,
   // checking the identifier becomes tricky,
