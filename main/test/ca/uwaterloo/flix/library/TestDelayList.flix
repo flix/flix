@@ -2517,16 +2517,18 @@ mod TestDelayList {
 		assertEq(expected = Some(4), DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))))
 
     @test
-	def findMap08(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
+	def findMap08(): Unit \ Assert =
+	    let l = DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil))))))));
+	    assertEq(expected = Some(0), l)
 
     @test
-	def findMap09(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
+	def findMap09(): Unit \ Assert =
+	    let l = DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
 		    LList(lazy LCons(-1, lazy LList(lazy LCons(1, lazy
 		    LList(lazy LCons(9, lazy LList(lazy LCons(3, lazy
 		    LList(lazy LCons(5, lazy LList(lazy LCons(5, lazy
-		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == Some(5)
+		    LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+        assertEq(expected = Some(5), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
