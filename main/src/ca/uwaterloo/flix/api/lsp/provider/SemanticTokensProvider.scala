@@ -702,17 +702,14 @@ object SemanticTokensProvider {
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
       visitExps(exps) ++ visitHeadPredicate(select)
 
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      visitExps(exps) ++ visitExp(queryExp) ++ visitExps(selects) ++ from.iterator.flatMap(visitBodyPredicate) ++ visitExps(where)
+
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       visitExps(exps)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
-
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       visitExps(exps)
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.Error(_, _, _) =>
       Iterator.empty

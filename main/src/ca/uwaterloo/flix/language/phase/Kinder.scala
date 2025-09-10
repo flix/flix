@@ -101,7 +101,7 @@ object Kinder {
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val t = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
       val cases = cases0.map(visitCase(_, tparams, t, kenv, root)).map(caze => caze.sym -> caze).toMap
-      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, t, loc)
+      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
@@ -816,27 +816,24 @@ object Kinder {
         val s = visitHeadPredicate(select, kenv0, root)
         KindedAst.Expr.FixpointQueryWithProvenance(es, s, withh, Type.freshVar(Kind.Star, loc), loc)
 
+      case ResolvedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+        val es = exps.map(visitExp(_, kenv0, root))
+        val qe = visitExp(queryExp, kenv0, root)
+        val ss = selects.map(visitExp(_, kenv0, root))
+        val f = from.map(visitBodyPredicate(_, kenv0, root))
+        val w = where.map(visitExp(_, kenv0, root))
+        KindedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, Type.freshVar(Kind.Star, loc), loc)
+
       case ResolvedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
         val es = exps.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, tvar, loc)
-
-      case ResolvedAst.Expr.FixpointFilter(pred, exp0, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc)
 
       case ResolvedAst.Expr.FixpointInjectInto(exps0, predsAndArities, loc) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc)
-
-      case ResolvedAst.Expr.FixpointProject(pred, arity, exp10, exp20, loc) =>
-        val exp1 = visitExp(exp10, kenv0, root)
-        val exp2 = visitExp(exp20, kenv0, root)
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        KindedAst.Expr.FixpointProject(pred, arity, exp1, exp2, tvar, loc)
 
       case ResolvedAst.Expr.Error(m) =>
         val tvar = Type.freshVar(Kind.Star, m.loc)

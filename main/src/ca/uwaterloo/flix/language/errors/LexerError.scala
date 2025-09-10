@@ -26,67 +26,6 @@ sealed trait LexerError extends CompilationMessage {
 object LexerError {
 
   /**
-    * An error raised when more than one decimal dot is found in a number.
-    * For instance `123.456.78f32`.
-    *
-    * @param loc The location of the double dotted number literal.
-    */
-  case class DoubleDottedNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has two decimal dots."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Number has two decimal dots.
-         |
-         |${code(loc, "Second decimal dot is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised when more than one `e` (used for scientific notation) is found in a number.
-    *
-    * @param loc The location of the double e number literal.
-    */
-  case class DoubleEInNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has two scientific notation indicators."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Number has two scientific notation indicators.
-         |
-         |${code(loc, "Second 'e' is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised when a number contains a sequence of underscores.
-    *
-    * @param loc The location of the number literal.
-    */
-  case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has sequence of '_'"
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Number has sequence of '_'.
-         |
-         |${code(loc, "Ending here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised when a period has whitespace before it.
     * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
     *
@@ -126,6 +65,42 @@ object LexerError {
   }
 
   /**
+    * An error raised when a number suffix is unrecognized.
+    */
+  case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Incorrect number suffix."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Incorrect number suffix.
+         |
+         |${code(loc, "Here")}
+         |
+         |Number suffixes are i8, i16, i32, i64, ii, f32, f64, and ff.
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised when an integer suffix is put on a decimal number.
+    */
+  case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"A decimal number cannot have integer suffix."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A decimal number cannot have integer suffix.
+         |
+         |${code(loc, "Here")}
+         |
+         |Float suffixes are f32, f64, and ff.
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised when a hexadecimal number is malformed.
     */
   case class MalformedHexNumber(found: String, loc: SourceLocation) extends LexerError {
@@ -142,23 +117,19 @@ object LexerError {
   }
 
   /**
-    * An error raised when a number ends on an underscore.
-    *
-    * @param loc The location of the number literal.
+    * An error raised when a number is malformed.
     */
-  case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number ends on a '_'."
+  case class MalformedNumber(found: String, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Malformed number, found '$found'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Number ends on a '_'.
+      s""">> Malformed number, found '$found'.
          |
-         |${code(loc, "Here")}
+         |${code(loc, "Number was correct up to here")}
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -260,6 +231,21 @@ object LexerError {
     }
 
     override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
+    */
+  case class ExpectedDigit(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"A digit (0-9) is expected here."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A digit (0-9) is expected here.
+         |
+         |${code(loc, "Here")}
+         |""".stripMargin
+    }
   }
 
   /**

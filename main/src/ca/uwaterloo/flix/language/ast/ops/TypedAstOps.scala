@@ -111,10 +111,9 @@ object TypedAstOps {
     case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(queryExp) ++ selects.flatMap(sigSymsOf).toSet ++ where.flatMap(sigSymsOf).toSet
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.FixpointProject(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Error(_, _, _) => Set.empty
   }
 
@@ -396,25 +395,20 @@ object TypedAstOps {
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
-      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        (acc, exp) => acc ++ freeVars(exp)
-      } ++ freeVars(select)
+      freeVars(exps) ++ freeVars(select)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      freeVars(exps) ++ freeVars(queryExp) ++ freeVars(selects) ++ from.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        (acc, b) => acc ++ freeVars(b)
+      } ++ freeVars(where)
 
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      freeVars(exp)
-
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
-      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      freeVars(exp)
+      freeVars(exps)
 
     case Expr.Error(_, _, _) =>
       Map.empty
@@ -511,5 +505,13 @@ object TypedAstOps {
     case Body.Guard(exp, _) => freeVars(exp)
     case Body.Functional(_, exp, _) => freeVars(exp)
   }
+
+  /**
+    * Returns the free variables in the given list of expressions `exp0`.
+    */
+  private def freeVars(exps0: List[Expr]): Map[Symbol.VarSym, Type] =
+    exps0.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      case (acc, exp) => acc ++ freeVars(exp)
+    }
 
 }
