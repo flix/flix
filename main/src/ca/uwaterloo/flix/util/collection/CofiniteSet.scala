@@ -50,6 +50,12 @@ sealed trait CofiniteSet[T] {
     case Compl(s) => s.isEmpty
   }
 
+  /** Returns `true` if `this` contains `x`. */
+  def contains(x: T): Boolean = this match {
+    case Set(s) => s.contains(x)
+    case Compl(s) => !s.contains(x)
+  }
+
 }
 
 object CofiniteSet {
