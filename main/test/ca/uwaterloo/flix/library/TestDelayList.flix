@@ -2083,64 +2083,64 @@ mod TestDelayList {
         assertEq(expected = ECons(1, ENil), DelayList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, ENil), ENil)))
 
     @test
-    def intercalate03(): Bool =
-        DelayList.intercalate(
+    def intercalate03(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(10, ECons(11, ECons(12, ENil))),
                 ECons(ECons(1, ECons(2, ECons(3, ENil))),
-                ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil)))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(10, ECons(11, ECons(12,
-                ECons(100, ECons(101, ECons(102, ENil)))))))))
+                ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil)));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(10, ECons(11, ECons(12,
+            ECons(100, ECons(101, ECons(102, ENil))))))))), l)
 
     @test
-    def intercalate04(): Bool =
-        DelayList.intercalate(
+    def intercalate04(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(10, ECons(11, ECons(12, ENil))),
             ECons(ECons(1, ECons(2, ECons(3, ENil))),
                 ECons(ECons(100, ECons(101, ECons(102, ENil))),
-                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(10, ECons(11, ECons(12,
-                ECons(100, ECons(101, ECons(102,
-                ECons(10, ECons(11, ECons(12,
-                ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(10, ECons(11, ECons(12,
+            ECons(100, ECons(101, ECons(102,
+            ECons(10, ECons(11, ECons(12,
+            ECons(200, ECons(201, ECons(202, ENil))))))))))))))), l)
 
     @test
-    def intercalate05(): Bool =
-        DelayList.intercalate(
+    def intercalate05(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(12, ECons(11, ECons(10, ENil))),
             ECons(ECons(1, ECons(2, ECons(3, ENil))),
                 ECons(ECons(100, ECons(101, ECons(102, ENil))),
-                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(12, ECons(11, ECons(10,
-                ECons(100, ECons(101, ECons(102,
-                ECons(12, ECons(11, ECons(10,
-                ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(12, ECons(11, ECons(10,
+            ECons(100, ECons(101, ECons(102,
+            ECons(12, ECons(11, ECons(10,
+            ECons(200, ECons(201, ECons(202, ENil))))))))))))))), l)
 
     @test
-    def intercalate06(): Bool =
-        DelayList.intercalate(
+    def intercalate06(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(-1, ECons(-2, ECons(0, ENil))),
             ECons(ECons(1, ECons(2, ECons(3, ENil))),
                 ECons(ECons(100, ECons(101, ECons(102, ENil))),
-                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(-1, ECons(-2, ECons(0,
-                ECons(100, ECons(101, ECons(102,
-                ECons(-1, ECons(-2, ECons(0,
-                ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(-1, ECons(-2, ECons(0,
+            ECons(100, ECons(101, ECons(102,
+            ECons(-1, ECons(-2, ECons(0,
+            ECons(200, ECons(201, ECons(202, ENil))))))))))))))), l)
 
     @test
-    def intercalate07(): Bool =
-        DelayList.intercalate(
+    def intercalate07(): Unit \ Assert =
+        let l = DelayList.intercalate(
             LList(lazy LCons(10, lazy LList(lazy LCons(11, lazy LCons(12, lazy LList(lazy ENil)))))),
                 LList(lazy LCons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))))),
                 lazy LList(lazy LCons(LList(lazy ECons(100, LList(lazy LCons(101, lazy LList(lazy LCons(102, lazy ENil)))))),
-                lazy LList(lazy ENil))))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(10, ECons(11, ECons(12,
-                ECons(100, ECons(101, ECons(102, ENil)))))))))
+                lazy LList(lazy ENil))))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(10, ECons(11, ECons(12,
+            ECons(100, ECons(101, ECons(102, ENil))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
