@@ -36,7 +36,7 @@ class TestStandardLibrary extends AnyFunSuite {
     flix.setOptions(Opts)
 
     // Find and add all test suites.
-    val paths = FileOps.getFlixFilesIn(Path, 1).sorted.take(50)
+    val paths = FileOps.getFlixFilesIn(Path, 1)
     for (p <- paths) {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       flix.addFlix(p)
@@ -56,8 +56,11 @@ class TestStandardLibrary extends AnyFunSuite {
     // Group the tests by namespace.
     val testsByNamespace = r.getTests.groupBy(_._1.namespace)
 
+    // Sort the namespaces.
+    val testsByNamespaceSorted = testsByNamespace.toList.sortBy(p => p._1.mkString("."))
+
     // Iterate through each namespace.
-    for ((_, tests) <- testsByNamespace) {
+    for ((_, tests) <- testsByNamespaceSorted) {
       // Sort the tests by name.
       val testsByName = tests.toList.sortBy(_._1.name)
 
