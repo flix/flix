@@ -2359,12 +2359,14 @@ mod TestDelayList {
         assertEq(expected = ENil, DelayList.dropWhile(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
-    def dropWhilePure08(): Bool =
-        DelayList.dropWhile(i -> i > 3, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+    def dropWhilePure08(): Unit \ Assert =
+        let l = DelayList.dropWhile(i -> i > 3, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))))))))));
+        assertEq(expected = ECons(1, ECons(2, ENil)), l)
 
     @test
-    def dropWhilePure09(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
+    def dropWhilePure09(): Unit \ Assert =
+        let l = DelayList.dropWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
