@@ -34,7 +34,7 @@ class TestVerifiers extends AnyFunSuite with TestUtils {
     compileWithVerifiers("examples/concurrency-and-parallelism/using-par-yield-recursively.flix")
   }
 
-  /** Compiles `program` with all verifiers enabled. */
+  /** Compiles the flix program at `path` with all verifiers enabled. */
   private def compileWithVerifiers(path: String): Unit = {
     implicit val flix: Flix = new Flix()
 
