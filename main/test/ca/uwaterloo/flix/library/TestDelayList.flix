@@ -381,19 +381,19 @@ mod TestDelayList {
 
     @Test
     def mapImpure01(): Unit \ Assert + IO =
-        assertEq(expected = Nil, Nil |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = Nil, Nil |> List.toDelayList |> DelayList.map(x -> checked_ecast(x + 1)) |> DelayList.toList)
 
     @Test
     def mapImpure02(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = 2 :: Nil, (1 :: Nil) |> List.toDelayList |> DelayList.map(x -> checked_ecast(x + 1)) |> DelayList.toList)
 
     @Test
     def mapImpure03(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: 3 :: Nil, (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = 2 :: 3 :: Nil, (1 :: 2 :: Nil) |> List.toDelayList |> DelayList.map(x -> checked_ecast(x + 1)) |> DelayList.toList)
 
     @Test
     def mapImpure04(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: 3 :: 4 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = 2 :: 3 :: 4 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.map(x -> checked_ecast(x + 1)) |> DelayList.toList)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -402,34 +402,34 @@ mod TestDelayList {
 
     @Test
     def mapMap01(): Unit \ Assert =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)         |>
-            List.toDelayList          |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.map(x -> x + 1) |>
             DelayList.map(x -> x * 2) |>
             DelayList.toList)
 
     @Test
     def mapMap02(): Unit \ Assert + IO =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)                     |>
-            List.toDelayList                      |>
-            DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |>
-            DelayList.map(x -> x * 2)             |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.map(x -> checked_ecast(x + 1)) |>
+            DelayList.map(x -> x * 2) |>
             DelayList.toList)
 
     @Test
     def mapMap03(): Unit \ Assert + IO =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)                     |>
-            List.toDelayList                      |>
-            DelayList.map(x -> x + 1)             |>
-            DelayList.map(x -> unchecked_cast(x * 2 as _ \ IO)) |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.map(x -> x + 1) |>
+            DelayList.map(x -> checked_ecast(x * 2)) |>
             DelayList.toList)
 
     @Test
     def mapMap04(): Unit \ Assert + IO =
-        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil)                     |>
-            List.toDelayList                      |>
-            DelayList.map(x -> unchecked_cast(x + 1 as _ \ IO)) |>
-            DelayList.map(x -> unchecked_cast(x * 2 as _ \ IO)) |>
+        assertEq(expected = 4 :: 6 :: 8 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.map(x -> checked_ecast(x + 1)) |>
+            DelayList.map(x -> checked_ecast(x * 2)) |>
             DelayList.toList)
 
 
@@ -449,10 +449,10 @@ mod TestDelayList {
     @Test
     def mapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x } as _ \ {})) |>
         DelayList.map(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
+        DelayList.toList);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -491,27 +491,27 @@ mod TestDelayList {
 
     @Test
     def filterImpure01(): Unit \ Assert + IO =
-        assertEq(expected = Nil, Nil |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 100 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = Nil, Nil |> List.toDelayList |> DelayList.filter(x -> checked_ecast(x > 100)) |> DelayList.toList)
 
     @Test
     def filterImpure02(): Unit \ Assert + IO =
-        assertEq(expected = 1 :: 2 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 0 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> checked_ecast(x > 0)) |> DelayList.toList)
 
     @Test
     def filterImpure03(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 1 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = 2 :: 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> checked_ecast(x > 1)) |> DelayList.toList)
 
     @Test
     def filterImpure04(): Unit \ Assert + IO =
-        assertEq(expected = 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 2 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = 3 :: Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> checked_ecast(x > 2)) |> DelayList.toList)
 
     @Test
     def filterImpure05(): Unit \ Assert + IO =
-        assertEq(expected = Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 3 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> checked_ecast(x > 3)) |> DelayList.toList)
 
     @Test
     def filterImpure06(): Unit \ Assert + IO =
-        assertEq(expected = Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> unchecked_cast(x > 100 as _ \ IO)) |> DelayList.toList)
+        assertEq(expected = Nil, (1 :: 2 :: 3 :: Nil) |> List.toDelayList |> DelayList.filter(x -> checked_ecast(x > 100)) |> DelayList.toList)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -520,34 +520,34 @@ mod TestDelayList {
 
     @Test
     def filterFilter01(): Unit \ Assert =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)            |>
-            List.toDelayList             |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
             DelayList.filter(x -> x > 1) |>
             DelayList.filter(x -> x < 3) |>
             DelayList.toList)
 
     @Test
     def filterFilter02(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)                                 |>
-            List.toDelayList                                 |>
-            DelayList.filter(x -> unchecked_cast(x > 1 as _ \ IO)) |>
-            DelayList.filter(x -> x < 3)                     |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.filter(x -> checked_ecast(x > 1)) |>
+            DelayList.filter(x -> x < 3) |>
             DelayList.toList)
 
     @Test
     def filterFilter03(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)                                 |>
-            List.toDelayList                                 |>
-            DelayList.filter(x -> x > 1)                     |>
-            DelayList.filter(x -> unchecked_cast(x < 3 as _ \ IO)) |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.filter(x -> x > 1) |>
+            DelayList.filter(x -> checked_ecast(x < 3)) |>
             DelayList.toList)
 
     @Test
     def filterFilter04(): Unit \ Assert + IO =
-        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil)                                 |>
-            List.toDelayList                                 |>
-            DelayList.filter(x -> unchecked_cast(x > 1 as _ \ IO)) |>
-            DelayList.filter(x -> unchecked_cast(x < 3 as _ \ IO)) |>
+        assertEq(expected = 2 :: Nil, (1 :: 2 :: 3 :: Nil) |>
+            List.toDelayList |>
+            DelayList.filter(x -> checked_ecast(x > 1)) |>
+            DelayList.filter(x -> checked_ecast(x < 3)) |>
             DelayList.toList)
 
 
@@ -558,7 +558,7 @@ mod TestDelayList {
     @Test
     def filterFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList     |>
+        discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> { Ref.put("a" :: Ref.get(l), l); true }) |>
         DelayList.filter(_ -> { Ref.put("b" :: Ref.get(l), l); true });
         assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
@@ -567,10 +567,10 @@ mod TestDelayList {
     @Test
     def filterFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList  |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.filter(_x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
+        DelayList.toList);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -590,10 +590,10 @@ mod TestDelayList {
     @Test
     def mapFilterFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.map(   x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x }    as _ \ {})) |>
         DelayList.filter(_ -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); true } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
+        DelayList.toList);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -613,10 +613,10 @@ mod TestDelayList {
     @Test
     def filterThenMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filter(_ -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); true } as _ \ {})) |>
         DelayList.map(   x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x    } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
+        DelayList.toList);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -1497,10 +1497,10 @@ mod TestDelayList {
     @Test
     def zipWithFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.zipWith((x, y) -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
         DelayList.zipWith((x, y) -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); (x, y) } as _ \ {}), ECons(1, ECons(2, ECons(3, ENil)))) |>
-        DelayList.toList as _ \ IO);
+        DelayList.toList);
         assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
@@ -1530,17 +1530,17 @@ mod TestDelayList {
         assertEq(expected = LList(lazy LList(lazy LCons((0, 5), lazy ECons((1, 7), ENil)))), l)
 
     @test
-    def zipWithIndex0(): Bool =
+    def zipWithIndex06(): Unit \ Assert =
         let l = DelayList.zipWithIndex(LList(lazy LCons(0, lazy LList(lazy
             LCons(1, lazy LList(lazy LCons(2, lazy
             LList(lazy LCons(3, lazy LList(lazy
             LCons(4, lazy LList(lazy LCons(5, lazy
             LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
-        l == LList(lazy LCons((0, 0), lazy LList(lazy
-            LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
-            LList(lazy LCons((3, 3), lazy LList(lazy
-            LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
-            LList(lazy LCons((6, 10), lazy LList(lazy ENil)))))))))))))))
+        assertEq(expected = LList(lazy LCons((0, 0), lazy LList(lazy
+                                        LCons((1, 1), lazy LList(lazy LCons((2, 2), lazy
+                                        LList(lazy LCons((3, 3), lazy LList(lazy
+                                        LCons((4, 4), lazy LList(lazy LCons((5, 5), lazy
+                                        LList(lazy LCons((6, 10), lazy LList(lazy ENil))))))))))))))), l)
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
@@ -1731,19 +1731,19 @@ mod TestDelayList {
 
     @Test
     def flatMapImpure01(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), (ENil: DelayList[Int32])))
+        assertEq(expected = ENil, DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), (ENil: DelayList[Int32])))
 
     @Test
     def flatMapImpure02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), ECons(1, ENil)))
 
     @Test
     def flatMapImpure03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, ECons(2, ECons(3, ENil)))))
+        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), ECons(1, ECons(2, ECons(3, ENil)))))
 
     @Test
     def flatMapImpure04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO), ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))))
+        assertEq(expected = ECons(1, ECons(2, ECons(2, ECons(3, ECons(3, ECons(3, ENil)))))), DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)), ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy ENil))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1751,40 +1751,40 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFlatMap01(): Bool =
-        ECons(1, ECons(2, ECons(3, ENil)))                            |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap01(): Unit \ Assert =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
     @test
-    def flatMapFlatMap02(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
-        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap02(): Unit \ Assert + IO =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
     @test
-    def flatMapFlatMap03(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                           |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             |>
-        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap03(): Unit \ Assert + IO =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
     @test
-    def flatMapFlatMap04(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil)))                                                   |>
-        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) |>
-        DelayList.flatMap(i -> unchecked_cast(DelayList.repeat(i) |> DelayList.take(i) as _ \ IO)) ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap04(): Unit \ Assert + IO =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1792,22 +1792,22 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFusion01(): Bool = region rc {
+    def flatMapFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> { Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) }) |>
         DelayList.flatMap(i -> { Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def flatMapFusion02(): Bool \ IO = region rc {
+    def flatMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1905,24 +1905,24 @@ mod TestDelayList {
         assertEq(expected = None, DelayList.findLeft(i -> i > 2, ECons(1, ENil)))
 
     @test
-    def findLeft03(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(3, ENil)) == Some(3)
+    def findLeft03(): Unit \ Assert =
+        assertEq(expected = Some(3), DelayList.findLeft(i -> i > 2, ECons(3, ENil)))
 
     @test
-    def findLeft04(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(1, ECons(2, ENil))) == None
+    def findLeft04(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findLeft(i -> i > 2, ECons(1, ECons(2, ENil))))
 
     @test
-    def findLeft05(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(6, ECons(-6, ENil))) == Some(6)
+    def findLeft05(): Unit \ Assert =
+        assertEq(expected = Some(6), DelayList.findLeft(i -> i > 2, ECons(6, ECons(-6, ENil))))
 
     @test
-    def findLeft06(): Bool =
-        DelayList.findLeft(i -> i > 2, ECons(7, ECons(6, ENil))) == Some(7)
+    def findLeft06(): Unit \ Assert =
+        assertEq(expected = Some(7), DelayList.findLeft(i -> i > 2, ECons(7, ECons(6, ENil))))
 
     @test
-    def findLeft07(): Bool =
-        DelayList.findLeft(i -> i > 2, LList(lazy ECons(1, LList(lazy LCons(1, lazy LList(lazy LCons(4, lazy LList(lazy ENil)))))))) == Some(4)
+    def findLeft07(): Unit \ Assert =
+        assertEq(expected = Some(4), DelayList.findLeft(i -> i > 2, LList(lazy ECons(1, LList(lazy LCons(1, lazy LList(lazy LCons(4, lazy LList(lazy ENil)))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1930,32 +1930,32 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findRight01(): Bool =
-        DelayList.findRight(i -> i > 2, (ENil: DelayList[Int32])) == None
+    def findRight01(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findRight(i -> i > 2, (ENil: DelayList[Int32])))
 
     @test
-    def findRight02(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(1, ENil)) == None
+    def findRight02(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findRight(i -> i > 2, ECons(1, ENil)))
 
     @test
-    def findRight03(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(3, ENil)) == Some(3)
+    def findRight03(): Unit \ Assert =
+        assertEq(expected = Some(3), DelayList.findRight(i -> i > 2, ECons(3, ENil)))
 
     @test
-    def findRight04(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(1, ECons(2, ENil))) == None
+    def findRight04(): Unit \ Assert =
+        assertEq(expected = None, DelayList.findRight(i -> i > 2, ECons(1, ECons(2, ENil))))
 
     @test
-    def findRight05(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(6, ECons(-6, ENil))) == Some(6)
+    def findRight05(): Unit \ Assert =
+        assertEq(expected = Some(6), DelayList.findRight(i -> i > 2, ECons(6, ECons(-6, ENil))))
 
     @test
-    def findRight06(): Bool =
-        DelayList.findRight(i -> i > 2, ECons(7, ECons(6, ENil))) == Some(6)
+    def findRight06(): Unit \ Assert =
+        assertEq(expected = Some(6), DelayList.findRight(i -> i > 2, ECons(7, ECons(6, ENil))))
 
     @test
-    def findRight07(): Bool =
-        DelayList.findRight(i -> i > 2, LList(lazy ECons(4, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy ENil)))))))) == Some(4)
+    def findRight07(): Unit \ Assert =
+        assertEq(expected = Some(4), DelayList.findRight(i -> i > 2, LList(lazy ECons(4, LList(lazy LCons(1, lazy LList(lazy LCons(1, lazy LList(lazy ENil)))))))))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1963,28 +1963,29 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndexPure01(): Bool =
-    	ENil |> DelayList.mapWithIndex((i, x) -> x + i) == ENil
+    def mapWithIndexPure01(): Unit \ Assert =
+        assertEq(expected = ENil, ENil |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
-    def mapWithIndexPure02(): Bool =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ENil)
+    def mapWithIndexPure02(): Unit \ Assert =
+        assertEq(expected = ECons(1, ENil), ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
-    def mapWithIndexPure03(): Bool =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ENil))
+    def mapWithIndexPure03(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(3, ENil)), ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
-    def mapWithIndexPure04(): Bool =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+    def mapWithIndexPure04(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
-    def mapWithIndexPure05(): Bool =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    def mapWithIndexPure05(): Unit \ Assert =
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
-    def mapWithIndexPure06(): Bool =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    def mapWithIndexPure06(): Unit \ Assert =
+        let l = LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> x + i);
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1993,27 +1994,28 @@ mod TestDelayList {
 
     @Test
     def mapWithIndexImpure01(): Unit \ Assert + IO =
-    	assertEq(expected = ENil, ENil |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
+    	assertEq(expected = ENil, ENil |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)))
 
     @Test
     def mapWithIndexImpure02(): Unit \ Assert + IO =
-    	assertEq(expected = ECons(1, ENil), ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
+    	assertEq(expected = ECons(1, ENil), ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)))
 
     @Test
     def mapWithIndexImpure03(): Unit \ Assert + IO =
-    	assertEq(expected = ECons(1, ECons(3, ENil)), ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
+    	assertEq(expected = ECons(1, ECons(3, ENil)), ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)))
 
     @Test
     def mapWithIndexImpure04(): Unit \ Assert + IO =
-    	assertEq(expected = ECons(1, ECons(3, ECons(5, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
+    	assertEq(expected = ECons(1, ECons(3, ECons(5, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)))
 
     @Test
     def mapWithIndexImpure05(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)))
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)))
 
     @test
-    def mapWithIndexImpure06(): Bool \ IO =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    def mapWithIndexImpure06(): Unit \ Assert + IO =
+        let l = LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i));
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2029,20 +2031,20 @@ mod TestDelayList {
     @Test
     def mapWithIndexMapWithIndex02(): Unit \ Assert + IO =
         assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) |>
+            DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)) |>
             DelayList.mapWithIndex((i, x) -> x * i))
 
     @Test
     def mapWithIndexMapWithIndex03(): Unit \ Assert + IO =
         assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
             DelayList.mapWithIndex((i, x) -> x + i) |>
-            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)))
+            DelayList.mapWithIndex((i, x) -> checked_ecast(x * i)))
 
     @Test
     def mapWithIndexMapWithIndex04(): Unit \ Assert + IO =
         assertEq(expected = ECons(0, ECons(3, ECons(10, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |>
-            DelayList.mapWithIndex((i, x) -> unchecked_cast(x + i as _ \ IO)) |>
-            DelayList.mapWithIndex((i, x) -> unchecked_cast(x * i as _ \ IO)))
+            DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)) |>
+            DelayList.mapWithIndex((i, x) -> checked_ecast(x * i)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2050,23 +2052,23 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapWithIndexFusion01(): Bool = region rc {
+    def mapWithIndexFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> { Ref.put("a" :: Ref.get(l), l); x }) |>
         DelayList.mapWithIndex((_, x) -> { Ref.put("b" :: Ref.get(l), l); x }) |>
         DelayList.toList;
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def mapWithIndexFusion02(): Bool \ IO = region rc {
+    def mapWithIndexFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.mapWithIndex((_, x) -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); x } as _ \ {})) |>
         DelayList.mapWithIndex((_, x) -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); x } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2082,64 +2084,64 @@ mod TestDelayList {
         assertEq(expected = ECons(1, ENil), DelayList.intercalate(ECons(10, ECons(11, ECons(12, ENil))), ECons(ECons(1, ENil), ENil)))
 
     @test
-    def intercalate03(): Bool =
-        DelayList.intercalate(
+    def intercalate03(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(10, ECons(11, ECons(12, ENil))),
                 ECons(ECons(1, ECons(2, ECons(3, ENil))),
-                ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil)))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(10, ECons(11, ECons(12,
-                ECons(100, ECons(101, ECons(102, ENil)))))))))
+                ECons(ECons(100, ECons(101, ECons(102, ENil))), ENil)));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(10, ECons(11, ECons(12,
+            ECons(100, ECons(101, ECons(102, ENil))))))))), l)
 
     @test
-    def intercalate04(): Bool =
-        DelayList.intercalate(
+    def intercalate04(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(10, ECons(11, ECons(12, ENil))),
             ECons(ECons(1, ECons(2, ECons(3, ENil))),
                 ECons(ECons(100, ECons(101, ECons(102, ENil))),
-                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(10, ECons(11, ECons(12,
-                ECons(100, ECons(101, ECons(102,
-                ECons(10, ECons(11, ECons(12,
-                ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(10, ECons(11, ECons(12,
+            ECons(100, ECons(101, ECons(102,
+            ECons(10, ECons(11, ECons(12,
+            ECons(200, ECons(201, ECons(202, ENil))))))))))))))), l)
 
     @test
-    def intercalate05(): Bool =
-        DelayList.intercalate(
+    def intercalate05(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(12, ECons(11, ECons(10, ENil))),
             ECons(ECons(1, ECons(2, ECons(3, ENil))),
                 ECons(ECons(100, ECons(101, ECons(102, ENil))),
-                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(12, ECons(11, ECons(10,
-                ECons(100, ECons(101, ECons(102,
-                ECons(12, ECons(11, ECons(10,
-                ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(12, ECons(11, ECons(10,
+            ECons(100, ECons(101, ECons(102,
+            ECons(12, ECons(11, ECons(10,
+            ECons(200, ECons(201, ECons(202, ENil))))))))))))))), l)
 
     @test
-    def intercalate06(): Bool =
-        DelayList.intercalate(
+    def intercalate06(): Unit \ Assert =
+        let l = DelayList.intercalate(
             ECons(-1, ECons(-2, ECons(0, ENil))),
             ECons(ECons(1, ECons(2, ECons(3, ENil))),
                 ECons(ECons(100, ECons(101, ECons(102, ENil))),
-                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(-1, ECons(-2, ECons(0,
-                ECons(100, ECons(101, ECons(102,
-                ECons(-1, ECons(-2, ECons(0,
-                ECons(200, ECons(201, ECons(202, ENil)))))))))))))))
+                ECons(ECons(200, ECons(201, ECons(202, ENil))), ENil))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(-1, ECons(-2, ECons(0,
+            ECons(100, ECons(101, ECons(102,
+            ECons(-1, ECons(-2, ECons(0,
+            ECons(200, ECons(201, ECons(202, ENil))))))))))))))), l)
 
     @test
-    def intercalate07(): Bool =
-        DelayList.intercalate(
+    def intercalate07(): Unit \ Assert =
+        let l = DelayList.intercalate(
             LList(lazy LCons(10, lazy LList(lazy LCons(11, lazy LCons(12, lazy LList(lazy ENil)))))),
                 LList(lazy LCons(LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil)))))),
                 lazy LList(lazy LCons(LList(lazy ECons(100, LList(lazy LCons(101, lazy LList(lazy LCons(102, lazy ENil)))))),
-                lazy LList(lazy ENil))))))
-            == ECons(1, ECons(2, ECons(3,
-                ECons(10, ECons(11, ECons(12,
-                ECons(100, ECons(101, ECons(102, ENil)))))))))
+                lazy LList(lazy ENil))))));
+        assertEq(expected = ECons(1, ECons(2, ECons(3,
+            ECons(10, ECons(11, ECons(12,
+            ECons(100, ECons(101, ECons(102, ENil))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2163,8 +2165,9 @@ mod TestDelayList {
         assertEq(expected = ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil))))))), DelayList.intersperse(-11, ECons(1, ECons(2, ECons(3, ECons(4, ENil))))))
 
     @test
-    def intersperse06(): Bool =
-        DelayList.intersperse(-11, LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy ENil))))))))) == ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil)))))))
+    def intersperse06(): Unit \ Assert =
+        let l = DelayList.intersperse(-11, LList(lazy ECons(1, LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy ENil)))))))));
+        assertEq(expected = ECons(1, ECons(-11, ECons(2, ECons(-11, ECons(3, ECons(-11, ECons(4, ENil))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2204,8 +2207,9 @@ mod TestDelayList {
         assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> i > 3, LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))))
 
     @test
-    def takeWhilePure09(): Bool =
-        DelayList.takeWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
+    def takeWhilePure09(): Unit \ Assert =
+        let l = DelayList.takeWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(4, ECons(6, ENil)), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2214,39 +2218,40 @@ mod TestDelayList {
 
     @Test
     def takeWhileImpure01(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil))
+        assertEq(expected = ENil, DelayList.takeWhile(i -> checked_ecast(i > 3), ENil))
 
     @Test
     def takeWhileImpure02(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)))
+        assertEq(expected = ENil, DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(1, ENil)))
 
     @Test
     def takeWhileImpure03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(4, ENil), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)))
+        assertEq(expected = ECons(4, ENil), DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(4, ENil)))
 
     @Test
     def takeWhileImpure04(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))))
+        assertEq(expected = ENil, DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(1, ECons(2, ENil))))
 
     @Test
     def takeWhileImpure05(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))))
+        assertEq(expected = ENil, DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(1, ECons(5, ENil))))
 
     @Test
     def takeWhileImpure06(): Unit \ Assert + IO =
-        assertEq(expected = ECons(5, ENil), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))))
+        assertEq(expected = ECons(5, ENil), DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(5, ECons(1, ENil))))
 
     @Test
     def takeWhileImpure07(): Unit \ Assert + IO =
-        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))))
+        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(5, ECons(8, ENil))))
 
     @Test
     def takeWhileImpure08(): Unit \ Assert + IO =
-        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))))
+        assertEq(expected = ECons(5, ECons(8, ENil)), DelayList.takeWhile(i -> checked_ecast(i > 3), LList(lazy ECons(5, LList(lazy LCons(8, lazy ENil))))))
 
     @test
-    def takeWhileImpure09(): Bool \ IO =
-        DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(4, ECons(6, ENil))
+    def takeWhileImpure09(): Unit \ Assert + IO =
+        let l = DelayList.takeWhile(i -> checked_ecast(i > 3), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(4, ECons(6, ENil)), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2261,21 +2266,21 @@ mod TestDelayList {
 
     @Test
     def takeWhileTakeWhile02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil)))                      |>
-            DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO)) |>
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
+            DelayList.takeWhile(i -> checked_ecast(i > 3)) |>
             DelayList.takeWhile(i -> i < 5))
 
     @Test
     def takeWhileTakeWhile03(): Unit \ Assert + IO =
         assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
             DelayList.takeWhile(i -> i > 3) |>
-            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)))
+            DelayList.takeWhile(i -> checked_ecast(i < 5)))
 
     @Test
     def takeWhileTakeWhile04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.takeWhile(i -> unchecked_cast(i > 3 as _ \ IO)) |>
-            DelayList.takeWhile(i -> unchecked_cast(i < 5 as _ \ IO)))
+        assertEq(expected = ECons(4, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
+            DelayList.takeWhile(i -> checked_ecast(i > 3)) |>
+            DelayList.takeWhile(i -> checked_ecast(i < 5)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2283,42 +2288,42 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def takeWhileFusion01(): Bool = region rc {
+    def takeWhileFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> { Ref.put("a" :: Ref.get(l), l); i < 4 }) |>
         DelayList.takeWhile(i -> { Ref.put("b" :: Ref.get(l), l); i < 4 });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def takeWhileFusion02(): Bool \ IO = region rc {
+    def takeWhileFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def takeWhileFusion03(): Bool \ IO = region rc {
+    def takeWhileFusion03(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def takeWhileFusion04(): Bool \ IO = region rc {
+    def takeWhileFusion04(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.takeWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2354,12 +2359,14 @@ mod TestDelayList {
         assertEq(expected = ENil, DelayList.dropWhile(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
-    def dropWhilePure08(): Bool =
-        DelayList.dropWhile(i -> i > 3, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+    def dropWhilePure08(): Unit \ Assert =
+        let l = DelayList.dropWhile(i -> i > 3, LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))))))))));
+        assertEq(expected = ECons(1, ECons(2, ENil)), l)
 
     @test
-    def dropWhilePure09(): Bool =
-        DelayList.dropWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
+    def dropWhilePure09(): Unit \ Assert =
+        let l = DelayList.dropWhile(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2368,39 +2375,41 @@ mod TestDelayList {
 
     @Test
     def dropWhileImpure01(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ENil))
+        assertEq(expected = ENil, DelayList.dropWhile(i -> checked_ecast(i > 3), ENil))
 
     @Test
     def dropWhileImpure02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(1, ENil)))
 
     @Test
     def dropWhileImpure03(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ENil)))
+        assertEq(expected = ENil, DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(4, ENil)))
 
     @Test
     def dropWhileImpure04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(2, ENil)), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(2, ENil))))
+        assertEq(expected = ECons(1, ECons(2, ENil)), DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(1, ECons(2, ENil))))
 
     @Test
     def dropWhileImpure05(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ECons(5, ENil)), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(1, ECons(5, ENil))))
+        assertEq(expected = ECons(1, ECons(5, ENil)), DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(1, ECons(5, ENil))))
 
     @Test
     def dropWhileImpure06(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(1, ENil))))
+        assertEq(expected = ECons(1, ENil), DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(5, ECons(1, ENil))))
 
     @Test
     def dropWhileImpure07(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(5, ECons(8, ENil))))
+        assertEq(expected = ENil, DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(5, ECons(8, ENil))))
 
     @test
-    def dropWhileImpure08(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil)))))))))))) == ECons(1, ECons(2, ENil))
+    def dropWhileImpure08(): Unit \ Assert + IO =
+        let l = DelayList.dropWhile(i -> checked_ecast(i > 3), LList(lazy ECons(5, LCons(8, lazy LList(lazy LCons(9, lazy LList(lazy ECons(10, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))))))))));
+        assertEq(expected = ECons(1, ECons(2, ENil)), l)
 
     @test
-    def dropWhileImpure09(): Bool \ IO =
-        DelayList.dropWhile(i -> unchecked_cast(i > 3 as _ \ IO), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))
+    def dropWhileImpure09(): Unit \ Assert + IO =
+        let l = DelayList.dropWhile(i -> checked_ecast(i > 3), ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2415,21 +2424,21 @@ mod TestDelayList {
 
     @Test
     def dropWhileDropWhile02(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.dropWhile(i -> unchecked_cast(i < 5 as _ \ IO)) |>
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
+            DelayList.dropWhile(i -> checked_ecast(i < 5)) |>
             DelayList.dropWhile(i -> i > 1))
 
     @Test
     def dropWhileDropWhile03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))     |>
-            DelayList.dropWhile(i -> i < 5)     |>
-            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)))
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
+            DelayList.dropWhile(i -> i < 5) |>
+            DelayList.dropWhile(i -> checked_ecast(i > 1)))
 
     @Test
     def dropWhileDropWhile04(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil)))             |>
-            DelayList.dropWhile(i -> unchecked_cast(i < 5 as _ \ IO)) |>
-            DelayList.dropWhile(i -> unchecked_cast(i > 1 as _ \ IO)))
+        assertEq(expected = ECons(1, ENil), ECons(4, ECons(5, ECons(1, ENil))) |>
+            DelayList.dropWhile(i -> checked_ecast(i < 5)) |>
+            DelayList.dropWhile(i -> checked_ecast(i > 1)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2437,42 +2446,42 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileFusion01(): Bool = region rc {
+    def dropWhileFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> { Ref.put("a" :: Ref.get(l), l); i < 3 }) |>
         DelayList.dropWhile(i -> { Ref.put("b" :: Ref.get(l), l); i < 4 });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def dropWhileFusion02(): Bool \ IO = region rc {
+    def dropWhileFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def dropWhileFusion03(): Bool \ IO = region rc {
+    def dropWhileFusion03(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 1 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "b" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def dropWhileFusion04(): Bool \ IO = region rc {
+    def dropWhileFusion04(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "b" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "a" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2508,16 +2517,18 @@ mod TestDelayList {
 		assertEq(expected = Some(4), DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))))
 
     @test
-	def findMap08(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
+	def findMap08(): Unit \ Assert =
+	    let l = DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil))))))));
+	    assertEq(expected = Some(0), l)
 
     @test
-	def findMap09(): Bool =
-		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
+	def findMap09(): Unit \ Assert =
+	    let l = DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
 		    LList(lazy LCons(-1, lazy LList(lazy LCons(1, lazy
 		    LList(lazy LCons(9, lazy LList(lazy LCons(3, lazy
 		    LList(lazy LCons(5, lazy LList(lazy LCons(5, lazy
-		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == Some(5)
+		    LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+        assertEq(expected = Some(5), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2553,17 +2564,19 @@ mod TestDelayList {
 		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))))
 
     @test
-	def filterMapPure08(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapPure08(): Unit \ Assert =
+	    let l = DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
     @test
-	def filterMapPure09(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
-		    LList(lazy LCons(0, lazy LList(lazy
-		    LCons(1, lazy LList(lazy LCons(2, lazy
-		    LList(lazy LCons(3, lazy LList(lazy
-		    LCons(4, lazy LList(lazy LCons(5, lazy
-		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapPure09(): Unit \ Assert =
+	    let l = DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
+            LList(lazy LCons(0, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(2, lazy
+            LList(lazy LCons(3, lazy LList(lazy
+            LCons(4, lazy LList(lazy LCons(5, lazy
+            LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2572,44 +2585,46 @@ mod TestDelayList {
 
     @Test
     def filterMapImpure01(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ENil))
+        assertEq(expected = ENil, DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ENil))
 
     @Test
     def filterMapImpure02(): Unit \ Assert + IO =
-        assertEq(expected = ENil, DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)))
+        assertEq(expected = ENil, DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(1, ENil)))
 
     @Test
     def filterMapImpure03(): Unit \ Assert + IO =
-        assertEq(expected = ECons(1, ENil), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)))
+        assertEq(expected = ECons(1, ENil), DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(2, ENil)))
 
 	@Test
 	def filterMapImpure04(): Unit \ Assert + IO =
-		assertEq(expected = ENil, DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))))
+		assertEq(expected = ENil, DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(1, ECons(3, ENil))))
 
 	@Test
 	def filterMapImpure05(): Unit \ Assert + IO =
-		assertEq(expected = ECons(2, ENil), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))))
+		assertEq(expected = ECons(2, ENil), DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(1, ECons(4, ENil))))
 
 	@Test
 	def filterMapImpure06(): Unit \ Assert + IO =
-		assertEq(expected = ECons(3, ENil), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))))
+		assertEq(expected = ECons(3, ENil), DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(6, ECons(-1, ENil))))
 
 	@Test
 	def filterMapImpure07(): Unit \ Assert + IO =
-		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))))
+		assertEq(expected = ECons(4, ECons(3, ENil)), DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(8, ECons(6, ENil))))
 
     @test
-	def filterMapImpure08(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapImpure08(): Unit \ Assert + IO =
+	    let l = DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
     @test
-	def filterMapImpure09(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO),
-		    LList(lazy LCons(0, lazy LList(lazy
-		    LCons(1, lazy LList(lazy LCons(2, lazy
-		    LList(lazy LCons(3, lazy LList(lazy
-		    LCons(4, lazy LList(lazy LCons(5, lazy
-		    LList(lazy LCons(10, lazy LList(lazy ENil)))))))))))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+	def filterMapImpure09(): Unit \ Assert + IO =
+	    let l = DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None),
+            LList(lazy LCons(0, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(2, lazy
+            LList(lazy LCons(3, lazy LList(lazy
+            LCons(4, lazy LList(lazy LCons(5, lazy
+            LList(lazy LCons(10, lazy LList(lazy ENil))))))))))))))));
+	    assertEq(expected = ECons(0, ECons(1, ECons(2, ECons(5, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2617,28 +2632,32 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFilterMap01(): Bool =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+    def filterMapFilterMap01(): Unit \ Assert =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
             DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
-            DelayList.filterMap(i -> if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
+            DelayList.filterMap(i -> if (i > 1) Some(i * 3) else None);
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
     @test
-    def filterMapFilterMap02(): Bool \ IO =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
-            DelayList.filterMap(i ->             if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
+    def filterMapFilterMap02(): Unit \ Assert + IO =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None)) |>
+            DelayList.filterMap(i -> if (i > 1) Some(i * 3) else None);
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
     @test
-    def filterMapFilterMap03(): Bool \ IO =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i ->             if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
+    def filterMapFilterMap03(): Unit \ Assert + IO =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
+            DelayList.filterMap(i -> checked_ecast(if (i > 1) Some(i * 3) else None));
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
     @test
-    def filterMapFilterMap04(): Bool \ IO =
-        ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
+    def filterMapFilterMap04(): Unit \ Assert + IO =
+        let l = ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
+            DelayList.filterMap(i -> checked_ecast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None)) |>
+            DelayList.filterMap(i -> checked_ecast(if (i > 1) Some(i * 3) else None));
+        assertEq(expected = ECons(6, ECons(9, ENil)), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2646,22 +2665,22 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMapFusion01(): Bool = region rc {
+    def filterMapFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> { Ref.put("a" :: Ref.get(l), l); Some(x) }) |>
         DelayList.filterMap(x -> { Ref.put("b" :: Ref.get(l), l); Some(x) });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def filterMapFusion02(): Bool \ IO = region rc {
+    def filterMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
-        discard unchecked_cast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
+        discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.filterMap(x -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
         DelayList.filterMap(x -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); Some(x) } as _ \ {})) |>
-        DelayList.toList as _ \ IO);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        DelayList.toList);
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2697,22 +2716,22 @@ mod TestDelayList {
         assertEq(expected = (ECons(5, ECons(8, ENil)), ENil), DelayList.partition(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
-    def partition08(): Bool =
-        DelayList.partition(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))))
-            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))), ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+    def partition08(): Unit \ Assert =
+        let l = DelayList.partition(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))), ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil)))))), l)
 
     @test
-    def partition09(): Bool =
-        DelayList.partition(i -> i > 3,
+    def partition09(): Unit \ Assert =
+        let l = DelayList.partition(i -> i > 3,
             LList(lazy LCons(4, lazy LList(lazy
-                ECons(6, LCons(-3, lazy LList(lazy
-                LCons(11, lazy LList(lazy LCons(-5, lazy
-                LList(lazy LCons(1, lazy LList(lazy
-                LCons(2, lazy LList(lazy LCons(16, lazy
-                LList(lazy LCons(7, lazy LList(lazy
-                LCons(1, lazy LList(lazy LCons(7, lazy LList(lazy ENil)))))))))))))))))))))))
-            == (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))),
-                    ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil))))))
+            ECons(6, LCons(-3, lazy LList(lazy
+            LCons(11, lazy LList(lazy LCons(-5, lazy
+            LList(lazy LCons(1, lazy LList(lazy
+            LCons(2, lazy LList(lazy LCons(16, lazy
+            LList(lazy LCons(7, lazy LList(lazy
+            LCons(1, lazy LList(lazy LCons(7, lazy LList(lazy ENil)))))))))))))))))))))));
+        assertEq(expected = (ECons(4, ECons(6, ECons(11, ECons(16, ECons(7, ECons(7, ENil)))))),
+            ECons(-3, ECons(-5, ECons(1, ECons(2, ECons(1, ENil)))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2748,22 +2767,23 @@ mod TestDelayList {
         assertEq(expected = (ECons(5, ECons(8, ENil)), ENil), DelayList.span(i -> i > 3, ECons(5, ECons(8, ENil))))
 
     @test
-    def span08(): Bool =
-        DelayList.span(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))))) == (ECons(4, ECons(6, ENil)), ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
+    def span08(): Unit \ Assert =
+        let l = DelayList.span(i -> i > 3, ECons(4, ECons(6, ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))));
+        assertEq(expected = (ECons(4, ECons(6, ENil)), ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))), l)
 
     @test
-    def span09(): Bool =
-        DelayList.span(i -> i > 3,
+    def span09(): Unit \ Assert =
+        let l = DelayList.span(i -> i > 3,
             LList(lazy LCons(4, lazy LList(lazy
-                LCons(6, lazy LList(lazy LCons(-3, lazy
-                LList(lazy LCons(11, lazy LList(lazy
-                LCons(-5, lazy LList(lazy LCons(1, lazy
-                LList(lazy LCons(2, lazy LList(lazy
-                LCons(16, lazy LList(lazy LCons(7, lazy
-                LList(lazy LCons(1, lazy LList(lazy
-                LCons(7, lazy LList(lazy ENil))))))))))))))))))))))))
-            == (ECons(4, ECons(6, ENil)),
-                    ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil))))))))))
+            LCons(6, lazy LList(lazy LCons(-3, lazy
+            LList(lazy LCons(11, lazy LList(lazy
+            LCons(-5, lazy LList(lazy LCons(1, lazy
+            LList(lazy LCons(2, lazy LList(lazy
+            LCons(16, lazy LList(lazy LCons(7, lazy
+            LList(lazy LCons(1, lazy LList(lazy
+            LCons(7, lazy LList(lazy ENil))))))))))))))))))))))));
+        assertEq(expected = (ECons(4, ECons(6, ENil)),
+            ECons(-3, ECons(11, ECons(-5, ECons(1, ECons(2, ECons(16, ECons(7, ECons(1, ECons(7, ENil)))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
