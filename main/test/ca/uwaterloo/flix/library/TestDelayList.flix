@@ -1792,22 +1792,22 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def flatMapFusion01(): Bool = region rc {
+    def flatMapFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> { Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) }) |>
         DelayList.flatMap(i -> { Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), Ref.get(l))
     }
 
     @test
-    def flatMapFusion02(): Bool \ IO = region rc {
+    def flatMapFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
         discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.toList);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
