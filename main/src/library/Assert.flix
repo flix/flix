@@ -160,7 +160,7 @@ mod Assert {
     ///
     /// Handles the `Assert` effect by ignoring all assertions (no-op).
     ///
-    pub def handleNoOp(f: a -> b \ ef): (a -> b \ (ef - Assert)) = x ->
+    pub def handleWithNoOp(f: a -> b \ ef): (a -> b \ (ef - Assert)) = x ->
         run {
             f(x)
         } with handler Assert {
@@ -170,7 +170,7 @@ mod Assert {
     ///
     /// Handles the `Assert` effect by logging assertion failures using the `Logger` effect.
     ///
-    /// Assertions continue execution after logging the failure.
+    /// Assertions continue execution after logging the assertion failure.
     ///
     pub def handleWithLogger(f: a -> b \ ef): (a -> b \ (ef - Assert) + Logger) = x ->
         run {
@@ -180,7 +180,7 @@ mod Assert {
                 if (cond)
                     resume(())
                 else {
-                    Logger.fatal(msg);
+                    Logger.warn(msg);
                     resume(())
                 }
             }
@@ -189,9 +189,9 @@ mod Assert {
     ///
     /// Handles the `Assert` effect by printing assertion failures to stdout.
     ///
-    /// Assertions continue execution after printing the failure.
+    /// Assertions continue execution after printing the assertion failure.
     ///
-    pub def handleWithStdoutPrint(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
         run {
             f(x)
         } with handler Assert {
@@ -199,9 +199,7 @@ mod Assert {
                 if (cond)
                     resume(())
                 else {
-                    run {
-                        println(RichString.toAnsiString(msg))
-                    } with Environment.runWithIO;
+                    println(RichString.toAnsiString(msg));
                     resume(())
                 }
             }
@@ -210,9 +208,9 @@ mod Assert {
     ///
     /// Handles the `Assert` effect by printing assertion failures to stderr.
     ///
-    /// Assertions continue execution after printing the failure.
+    /// Assertions continue execution after printing the assertion failure.
     ///
-    pub def handleWithStderrPrint(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
         run {
             f(x)
         } with handler Assert {
@@ -223,37 +221,19 @@ mod Assert {
                     use Console.eprintln;
                     run {
                         eprintln(RichString.toAnsiString(msg))
-                    } with Environment.runWithIO
-                      with Console.runWithIO;
+                    } with Console.runWithIO;
                     resume(())
                 }
             }
         }
 
     ///
-    /// Handles the `Assert` effect by converting assertion failures into abort operations.
-    ///
-    /// When an assertion fails, the program will abort with the assertion message.
-    ///
-    pub def handleWithAbort(f: a -> b \ ef): (a -> b \ (ef - Assert) + Abort) = x ->
-        run {
-            f(x)
-        } with handler Assert {
-            def assert(cond, msg, resume) = {
-                if (cond)
-                    resume(())
-                else
-                    Abort.abort(RichString.toAnsiString(msg))
-            }
-        }
-
-    ///
     /// Handles the `Assert` effect by prompting the user whether to continue execution.
     ///
-    /// When an assertion fails, prints the failure and asks the user if they want to continue.
-    /// If the user chooses not to continue, the program aborts.
+    /// When an assertion fails, prints the assertion failure and asks the user if they want to continue.
+    /// If the user chooses not to continue, the program throws an exception.
     ///
-    pub def handleWithPrompt(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys + Abort) = x ->
+    pub def handleWithPrompt(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
         run {
             f(x)
         } with handler Assert {
@@ -266,20 +246,14 @@ mod Assert {
                         println("");
                         println(RichString.toAnsiString(msg));
                         println("");
-                        print(RichString.toAnsiString(yellow("Continue execution? (y/n): ")));
+                        print(RichString.toAnsiString(yellow("Continue execution? (Y/n): ")));
                         let input = readln();
-                        if (not String.isEmpty(input))
-                                let trimmed = String.trim(input);
-                                if (String.toLowerCase(trimmed) == "y" or String.toLowerCase(trimmed) == "yes")
-                                    resume(())
-                                else if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
-                                    Abort.abort("Execution aborted by user after assertion failure")
-                                else
-                                    Abort.abort("Execution aborted after obtaining malformed input following assertion failure.")
+                        let trimmed = String.trim(input);
+                        if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
+                            throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
                         else
-                            Abort.abort("Could not read user input after assertion failure")
-                    } with Environment.runWithIO
-                      with Console.runWithIO
+                            resume(())
+                    } with Console.runWithIO
                 }
             }
         }
