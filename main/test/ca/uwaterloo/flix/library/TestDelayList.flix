@@ -2446,42 +2446,42 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def dropWhileFusion01(): Bool = region rc {
+    def dropWhileFusion01(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> { Ref.put("a" :: Ref.get(l), l); i < 3 }) |>
         DelayList.dropWhile(i -> { Ref.put("b" :: Ref.get(l), l); i < 4 });
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def dropWhileFusion02(): Bool \ IO = region rc {
+    def dropWhileFusion02(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
         discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 4 } as _ \ {})) |>
         DelayList.toList);
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "a" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def dropWhileFusion03(): Bool \ IO = region rc {
+    def dropWhileFusion03(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
         discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 1 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.toList);
-        List.reverse(Ref.get(l)) == ("a" :: "b" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
-    def dropWhileFusion04(): Bool \ IO = region rc {
+    def dropWhileFusion04(): Unit \ Assert + IO = region rc {
         let l = Ref.fresh(rc, Nil);
         discard checked_ecast((1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); i < 2 } as _ \ {})) |>
         DelayList.dropWhile(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); i < 3 } as _ \ {})) |>
         DelayList.toList);
-        List.reverse(Ref.get(l)) == ("a" :: "a" :: "b" :: "b" :: Nil)
+        assertEq(expected = ("a" :: "a" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
