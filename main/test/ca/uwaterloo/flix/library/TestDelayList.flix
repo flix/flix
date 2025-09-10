@@ -1964,27 +1964,28 @@ mod TestDelayList {
 
     @test
     def mapWithIndexPure01(): Bool =
-    	ENil |> DelayList.mapWithIndex((i, x) -> x + i) == ENil
+    	assertEq(expected = ENil, ENil |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
     def mapWithIndexPure02(): Bool =
-    	ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ENil)
+        assertEq(expected = ECons(1, ENil), ECons(1, ENil) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
     def mapWithIndexPure03(): Bool =
-    	ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ENil))
+        assertEq(expected = ECons(1, ECons(3, ENil)), ECons(1, ECons(2, ENil)) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
     def mapWithIndexPure04(): Bool =
-    	ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ENil)))
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ENil))), ECons(1, ECons(2, ECons(3, ENil))) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
     def mapWithIndexPure05(): Bool =
-        ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> x + i))
 
     @test
     def mapWithIndexPure06(): Bool =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> x + i) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+        let l = LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> x + i);
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
