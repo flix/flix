@@ -1759,33 +1759,32 @@ mod TestDelayList {
             ECons(2, ECons(2, ECons(2, ECons(2,
                 ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
+    @test
+    def flatMapFlatMap02(): Unit \ Assert + IO =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
     @test
-    def flatMapFlatMap02(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
-        DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i))             ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap03(): Unit \ Assert + IO =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
     @test
-    def flatMapFlatMap03(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
-        DelayList.flatMap(i -> DelayList.repeat(i) |> DelayList.take(i)) |>
-        DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
-
-    @test
-    def flatMapFlatMap04(): Bool \ IO =
-        ECons(1, ECons(2, ECons(3, ENil))) |>
-        DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
-        DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) ==
-            ECons(1,
-                ECons(2, ECons(2, ECons(2, ECons(2,
-                    ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil))))))))))))))
+    def flatMapFlatMap04(): Unit \ Assert + IO =
+        let l = ECons(1, ECons(2, ECons(3, ENil))) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i))) |>
+            DelayList.flatMap(i -> checked_ecast(DelayList.repeat(i) |> DelayList.take(i)));
+        assertEq(expected = ECons(1,
+            ECons(2, ECons(2, ECons(2, ECons(2,
+                ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ECons(3, ENil)))))))))))))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
