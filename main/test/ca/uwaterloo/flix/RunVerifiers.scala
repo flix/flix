@@ -8,11 +8,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.Paths
 
-/**
-  * All verifiers should be added here.
-  * This ensures that they are run even if disabled everywhere else.
-  */
-class TestVerifiers extends AnyFunSuite with TestUtils {
+/** Runs all verifiers on a select few programs. */
+class RunVerifiers extends AnyFunSuite with TestUtils {
 
   test("RunAllVerifiers.01") {
     compileWithVerifiers("examples/fixpoints/railroad-network.flix")

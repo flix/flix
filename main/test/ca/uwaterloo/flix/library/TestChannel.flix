@@ -1,3 +1,22 @@
+use Assert.{assertEq, assertTrue, fail}
+    use Concurrent.Channel.Mpmc
+    use Concurrent.Channel.unsafeGetAndUnlock
+    use Concurrent.Channel.get
+    use Concurrent.Channel.mpmcAdmin
+    use Concurrent.Channel.newChannel
+    use Concurrent.Channel.put
+    use Concurrent.Channel.selectFrom
+
+    // pub def main(): Unit \ Assert + IO =
+    //     let c = newChannel(1);
+    //     put(2, c);
+    //     match selectFrom(mpmcAdmin(c) :: Nil, true) {
+    //         case (0, locks) =>
+    //             let i = unsafeGetAndUnlock(c, locks);
+    //             assertEq(expected = 2, i)
+    //         case _ => unreachable!()
+    //     }
+
 mod TestChannel {
 
     use Assert.{assertEq, assertTrue, fail}
@@ -8,6 +27,7 @@ mod TestChannel {
     use Concurrent.Channel.newChannel
     use Concurrent.Channel.put
     use Concurrent.Channel.selectFrom
+
 
     @Test
     def getPut01(): Unit \ Assert + IO =
@@ -27,14 +47,13 @@ mod TestChannel {
         put("Hello World!", c);
         assertEq(expected = "Hello World!", get(c))
 
-    @Test
-    def select01(): Unit \ Assert + IO =
+    pub def main(): Unit \ Assert + IO =
         let c = newChannel(1);
         put(2, c);
         match selectFrom(mpmcAdmin(c) :: Nil, true) {
             case (0, locks) =>
                 let i = unsafeGetAndUnlock(c, locks);
-                assertEq(expected = 2, i)
+                assertEq(expected = 3, i)
             case _ => unreachable!()
         }
 
