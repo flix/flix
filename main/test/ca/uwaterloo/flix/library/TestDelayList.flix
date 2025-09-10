@@ -2013,8 +2013,9 @@ mod TestDelayList {
         assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), ECons(1, ECons(2, ECons(3, ECons(4, ENil)))) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)))
 
     @test
-    def mapWithIndexImpure06(): Bool \ IO =
-    	LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i)) == ECons(1, ECons(3, ECons(5, ECons(7, ENil))))
+    def mapWithIndexImpure06(): Unit \ Assert + IO =
+        let l = LList(lazy LCons(1, lazy LList(lazy LCons(2, lazy LList(lazy ECons(3, LList(lazy LCons(4, lazy LList(lazy ENil))))))))) |> DelayList.mapWithIndex((i, x) -> checked_ecast(x + i));
+        assertEq(expected = ECons(1, ECons(3, ECons(5, ECons(7, ENil)))), l)
 
 
     /////////////////////////////////////////////////////////////////////////////
