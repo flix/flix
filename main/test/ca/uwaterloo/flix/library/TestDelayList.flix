@@ -1797,8 +1797,7 @@ mod TestDelayList {
         discard (1 :: 2 :: 3 :: Nil) |> List.toDelayList |>
         DelayList.flatMap(i -> { Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) }) |>
         DelayList.flatMap(i -> { Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) });
-        let actual = List.reverse(Ref.get(l));
-        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), actual)
+        assertEq(expected = ("a" :: "a" :: "a" :: "b" :: "b" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     @test
@@ -1808,8 +1807,7 @@ mod TestDelayList {
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("a" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.flatMap(i -> unchecked_cast({ Ref.put("b" :: Ref.get(l), l); ECons(i, ENil) } as _ \ {})) |>
         DelayList.toList);
-        let actual = List.reverse(Ref.get(l));
-        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), actual)
+        assertEq(expected = ("a" :: "b" :: "a" :: "b" :: "a" :: "b" :: Nil), List.reverse(Ref.get(l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
