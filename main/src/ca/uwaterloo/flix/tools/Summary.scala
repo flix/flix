@@ -279,7 +279,7 @@ object Summary {
         (head match {
           case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.map(countCheckedEcasts).sum
         }) + body.map {
-          case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => 0
+          case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _, _) => 0
           case TypedAst.Predicate.Body.Functional(_, exp, _) => countCheckedEcasts(exp)
           case TypedAst.Predicate.Body.Guard(exp, _) => countCheckedEcasts(exp)
         }.sum

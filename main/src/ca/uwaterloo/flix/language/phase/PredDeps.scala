@@ -368,7 +368,7 @@ object PredDeps {
 
       // We add all body predicates and the head to the labels of each edge
       val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, bodyDen, _, _, _, bodyTpe, _) =>
+        case Body.Atom(bodyPred, bodyDen, _, _, _, _, bodyTpe, _) =>
           val (terms, _) = termTypesAndDenotation(bodyTpe)
           Label(bodyPred, bodyDen, terms.length, terms)
       }.toVector
@@ -377,7 +377,7 @@ object PredDeps {
 
       body0.foreach {
         case body => body match {
-          case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
+          case Body.Atom(bodyPred, _, p, f, _, _, _, bodyLoc) =>
             sctx.edges.add(LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc))
           case Body.Functional(_, _, _) => ()
           case Body.Guard(_, _) => ()

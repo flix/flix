@@ -739,7 +739,7 @@ object Dependencies {
   }
 
   private def visitConstraintBody(cb: Body)(implicit sctx: SharedContext): Unit = cb match {
-    case Body.Atom(_, _, _, _, terms, tpe, _) =>
+    case Body.Atom(_, _, _, _, _, terms, tpe, _) =>
       terms.foreach(visitPattern)
       visitType(tpe)
     case Body.Functional(outBnds, exp, _) =>

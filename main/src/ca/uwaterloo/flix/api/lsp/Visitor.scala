@@ -857,7 +857,7 @@ object Visitor {
 
     p match {
       case Predicate.Head.Atom(_, _, terms, _, _) => terms.foreach(visitExpr)
-      case Predicate.Body.Atom(_, _, _, _, terms, _, _) => terms.foreach(visitPattern)
+      case Predicate.Body.Atom(_, _, _, _, _, terms, _, _) => terms.foreach(visitPattern)
       case Predicate.Body.Functional(_, exp, _) => visitExpr(exp)
       case Predicate.Body.Guard(exp, _) => visitExpr(exp)
     }
