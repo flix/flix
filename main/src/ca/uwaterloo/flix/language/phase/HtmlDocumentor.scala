@@ -46,7 +46,7 @@ object HtmlDocumentor {
   /**
     * The directory where to write the ouput.
     */
-  private val OutputDirectory: Path = Paths.get("./build/doc")
+  def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
 
   /**
     * The path to the stylesheet, relative to the resources folder.
@@ -1441,7 +1441,7 @@ object HtmlDocumentor {
   /**
     * Make a copy of the static assets into the output directory.
     */
-  private def writeAssets(): Unit = {
+  private def writeAssets()(implicit flix: Flix): Unit = {
     val stylesheet = readResource(Stylesheet)
     writeFile("styles.css", stylesheet)
 
@@ -1464,14 +1464,14 @@ object HtmlDocumentor {
   /**
     * Write the documentation output string into the output directory with the given `name`.
     */
-  private def writeDocFile(name: String, output: String): Unit = {
+  private def writeDocFile(name: String, output: String)(implicit flix: Flix): Unit = {
     writeFile(s"$name", output.getBytes)
   }
 
   /**
     * Write the file to the output directory with the given file name.
     */
-  private def writeFile(name: String, output: Array[Byte]): Unit = {
+  private def writeFile(name: String, output: Array[Byte])(implicit flix: Flix): Unit = {
     val path = OutputDirectory.resolve(name)
     try {
       Files.createDirectories(OutputDirectory)
