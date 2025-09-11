@@ -139,7 +139,7 @@ object Simplifier {
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
-          val lambdaTyp = SimpleType.Arrow(List(SimpleType.Unit), e1.tpe)
+          val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e1.tpe)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
@@ -148,7 +148,7 @@ object Simplifier {
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
           val e = es.head
-          val lambdaTyp = SimpleType.Arrow(List(SimpleType.Unit), e.tpe)
+          val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e.tpe)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
@@ -373,7 +373,7 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) =>
             val targs = tpe.typeArguments
-            SimpleType.Enum(sym, targs.map(visitType))
+            SimpleType.mkEnum(sym, targs.map(visitType))
 
           case TypeConstructor.Struct(sym, _) =>
             val targs = tpe.typeArguments
@@ -382,7 +382,7 @@ object Simplifier {
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val targs = tpe.typeArguments
             val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
-            SimpleType.Enum(enumSym, targs.map(visitType))
+            SimpleType.mkEnum(enumSym, targs.map(visitType))
 
           case TypeConstructor.Native(clazz) => SimpleType.Native(clazz)
 
@@ -408,7 +408,7 @@ object Simplifier {
             // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
-            SimpleType.Arrow(args.map(visitType), visitType(res))
+            SimpleType.mkArrow(args.map(visitType), visitType(res))
 
           case TypeConstructor.RecordRowExtend(label) =>
             val List(labelType, restType) = tpe.typeArguments
