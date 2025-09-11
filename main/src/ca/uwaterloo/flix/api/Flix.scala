@@ -39,6 +39,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 import scala.util.Using
+import scala.util.chaining.scalaUtilChainingOps
 
 object Flix {
   /**
@@ -713,52 +714,24 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
-    var loweringAst = Lowering.run(typedAst)
-    // Note: Do not null typedAst. It is used later.
+    val (backendAst, classes) = typedAst
+      .pipe(Lowering.run)
+      .pipe(TreeShaker1.run)
+      .pipe(Monomorpher.run)
+      .pipe(LambdaDrop.run)
+      .pipe(Optimizer.run)
+      .pipe(Simplifier.run)
+      .pipe(ClosureConv.run)
+      .pipe(LambdaLift.run)
+      .pipe(TreeShaker2.run)
+      .pipe(EffectBinder.run)
+      .pipe(TailPos.run)
+      .tap(ast => flix.emitEvent(FlixEvent.AfterTailPos(ast)))
+      .pipe(Eraser.run)
+      .pipe(Reducer.run)
+      .pipe(VarOffsets.run)
+      .pipe(JvmBackend.run)
 
-    var treeShaker1Ast = TreeShaker1.run(loweringAst)
-    loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var lambdaDropAst = LambdaDrop.run(monomorpherAst)
-    monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var optimizerAst = Optimizer.run(lambdaDropAst)
-    lambdaDropAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var simplifierAst = Simplifier.run(optimizerAst)
-    optimizerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var closureConvAst = ClosureConv.run(simplifierAst)
-    simplifierAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var lambdaLiftAst = LambdaLift.run(closureConvAst)
-    closureConvAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
-    lambdaLiftAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var effectBinderAst = EffectBinder.run(treeShaker2Ast)
-    treeShaker2Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var tailPosAst = TailPos.run(effectBinderAst)
-    effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
-
-    var eraserAst = Eraser.run(tailPosAst)
-    tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var reducerAst = Reducer.run(eraserAst)
-    eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    var varOffsetsAst = VarOffsets.run(reducerAst)
-    reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    // Generate JVM classes.
-    val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
     val totalTime = flix.getTotalTime
     JvmWriter.run(classes)
 
