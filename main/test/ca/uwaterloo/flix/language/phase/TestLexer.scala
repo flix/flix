@@ -565,7 +565,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input =
       """def foo(): Char = '"""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnexpectedChar](result)
+    expectError[LexerError.UnterminatedChar](result)
   }
 
   test("LexerError.UnterminatedHexNumber.01") {
