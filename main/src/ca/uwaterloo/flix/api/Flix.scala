@@ -759,11 +759,12 @@ class Flix {
 
     // Generate JVM classes.
     val bytecodeAst = JvmBackend.run(varOffsetsAst)
+    val totalTime = flix.getTotalTime
 
     JvmWriter.run(bytecodeAst)
+    // (Optionally) load generated JVM classes.
     val loaderResult = JvmLoader.run(bytecodeAst)
 
-    val totalTime = flix.getTotalTime
     val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
     val result = new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
 
