@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, SolveMode, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, PredicateAndArity, SolveMode, Source}
 import ca.uwaterloo.flix.util.collection.Nel
 
 object WeededAst {
@@ -103,6 +103,8 @@ object WeededAst {
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
+    case class LambdaExtMatch(pat: ExtPattern, exp: Expr, loc: SourceLocation) extends Expr
+
     case class LambdaMatch(pat: Pattern, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr
@@ -132,8 +134,6 @@ object WeededAst {
     case class ForEach(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
     case class MonadicFor(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
-
-    case class ForEachYield(frags: List[ForFragment], exp: Expr, loc: SourceLocation) extends Expr
 
     case class LetMatch(pat: Pattern, tpe: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
@@ -235,7 +235,7 @@ object WeededAst {
 
     case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
 
-    case class FixpointSolveWithProject(exps: List[Expr], mode: SolveMode, optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
 
     case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
@@ -299,11 +299,25 @@ object WeededAst {
 
   object ExtPattern {
 
-    case class Wild(loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
     case class Error(loc: SourceLocation) extends ExtPattern
+  }
+
+  sealed trait ExtTagPattern
+
+  object ExtTagPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(ident: Name.Ident, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate
@@ -359,6 +373,8 @@ object WeededAst {
     case class SchemaRowExtendByTypes(name: Name.Ident, den: Denotation, tpes: List[Type], rest: Type, loc: SourceLocation) extends Type
 
     case class Schema(row: Type, loc: SourceLocation) extends Type
+
+    case class Extensible(row: Type, loc: SourceLocation) extends Type
 
     case class Arrow(tparams: List[Type], eff: Option[Type], tresult: Type, loc: SourceLocation) extends Type
 
@@ -440,7 +456,7 @@ object WeededAst {
 
   case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
@@ -485,7 +501,5 @@ object WeededAst {
     case object DebugWithLocAndSrc extends DebugKind
 
   }
-
-  case class PredicateAndArity(ident: Name.Ident, arity: Int)
 
 }

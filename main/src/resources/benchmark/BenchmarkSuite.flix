@@ -20,7 +20,7 @@ import java.lang.System
 /// Main entry point.
 ///
 def main(): Unit \ IO =
-    let results = runAllBenchmarks(benchmarks(), 100, 1000);
+    let results = runAllBenchmarks(benchmarks(), 100, 10_000);
     println(toJSON(results))
 
 ///

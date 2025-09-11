@@ -19,6 +19,11 @@
 ///
 enum Range[t](t, t)
 
+instance ForEach[Range[t]] with Discrete[t] {
+    type Elm = t
+    pub def forEach(f: t -> Unit \ ef, t: Range[t]): Unit \ ef = Range.forEach(f, t)
+}
+
 mod Range {
 
     ///

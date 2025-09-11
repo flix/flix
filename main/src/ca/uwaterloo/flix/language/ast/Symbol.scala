@@ -29,17 +29,22 @@ sealed trait Symbol
 object Symbol {
 
   /**
+    * The Assert effect.
+    */
+  val Assert: EffSym = mkEffSym(Name.RootNS, Ident("Assert", SourceLocation.Unknown))
+
+  /**
     * The primitive effects defined in the Prelude.
     */
-  val Chan: EffSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
-  val Env: EffSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
-  val Exec: EffSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val FsRead: EffSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
-  val FsWrite: EffSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
-  val IO: EffSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
-  val Net: EffSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
-  val NonDet: EffSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
-  val Sys: EffSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Chan: EffSym = mkEffSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
+  val Env: EffSym = mkEffSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
+  val Exec: EffSym = mkEffSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
+  val FsRead: EffSym = mkEffSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
+  val FsWrite: EffSym = mkEffSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
+  val IO: EffSym = mkEffSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
+  val Net: EffSym = mkEffSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
+  val NonDet: EffSym = mkEffSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
+  val Sys: EffSym = mkEffSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
     * The set of all primitive effects defined in the Prelude.
@@ -47,6 +52,12 @@ object Symbol {
   val PrimitiveEffs: SortedSet[EffSym] = SortedSet.from(List(
     Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
   ))
+
+  /**
+    * The set of effects allowed in tests.
+    */
+  val TestEffs: SortedSet[EffSym] =  PrimitiveEffs + Assert
+
 
   /**
     * Returns `true` if the given effect symbol is a primitive effect.
@@ -192,8 +203,8 @@ object Symbol {
   }
 
   /**
-   * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
-   */
+    * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
+    */
   def mkStructSym(ns: NName, ident: Ident): StructSym = {
     new StructSym(ns.parts, ident.name, ident.loc)
   }
@@ -301,17 +312,17 @@ object Symbol {
   /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkEffectSym(ns: NName, ident: Ident): EffSym = {
+  def mkEffSym(ns: NName, ident: Ident): EffSym = {
     new EffSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
-   * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
-   */
-  def mkEffectSym(fqn: String): EffSym = split(fqn) match {
-      case None => new EffSym(Nil, fqn, SourceLocation.Unknown)
-      case Some((ns, name)) => new EffSym(ns, name, SourceLocation.Unknown)
-    }
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEffSym(fqn: String): EffSym = split(fqn) match {
+    case None => new EffSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EffSym(ns, name, SourceLocation.Unknown)
+  }
 
   /**
     * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
@@ -531,8 +542,8 @@ object Symbol {
   }
 
   /**
-   * Struct Symbol.
-   */
+    * Struct Symbol.
+    */
   final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns the name of `this` symbol.
@@ -623,31 +634,31 @@ object Symbol {
   }
 
   /**
-   * Struct Field Symbol.
-   */
+    * Struct Field Symbol.
+    */
   final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     /**
-     * Returns `true` if this symbol is equal to `that` symbol.
-     */
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
     override def equals(obj: scala.Any): Boolean = obj match {
       case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
       case _ => false
     }
 
     /**
-     * Returns the hash code of this symbol.
-     */
+      * Returns the hash code of this symbol.
+      */
     override val hashCode: Int = Objects.hash(structSym, name)
 
     /**
-     * Human readable representation.
-     */
+      * Human readable representation.
+      */
     override def toString: String = structSym.toString + "." + name
 
     /**
-     * The symbol's namespace
-     */
+      * The symbol's namespace
+      */
     def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 

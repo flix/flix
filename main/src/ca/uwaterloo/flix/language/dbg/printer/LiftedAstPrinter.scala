@@ -62,8 +62,8 @@ object LiftedAstPrinter {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
     case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
-      case LiftedAst.HandlerRule(op, fparams, body) =>
-        (op.sym, fparams.map(printFormalParam), print(body))
+      case LiftedAst.HandlerRule(symUse, fparams, body) =>
+        (symUse.sym, fparams.map(printFormalParam), print(body))
     })
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>

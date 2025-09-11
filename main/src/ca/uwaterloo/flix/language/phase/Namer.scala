@@ -59,7 +59,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      var errors = sctx.errors.asScala.toList
+      val errors = sctx.errors.asScala.toList
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
@@ -177,7 +177,7 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-         table
+        table
     }
   }
 
@@ -202,6 +202,7 @@ object Namer {
     case "Regex" => true
     case _ => false
   }
+
   /**
     * Adds the given declaration to the table.
     */
@@ -532,7 +533,6 @@ object Namer {
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
-      flix.subtask(ident.name, sample = true)
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -568,7 +568,7 @@ object Namer {
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
-      val sym = Symbol.mkEffectSym(ns0, ident)
+      val sym = Symbol.mkEffSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))
@@ -715,7 +715,7 @@ object Namer {
       val rs = rules.map(visitExtMatchRule)
       NamedAst.Expr.ExtMatch(e, rs, loc)
 
-    case DesugaredAst.Expr.ExtensibleTag(label, exps, loc) =>
+    case DesugaredAst.Expr.ExtTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.ExtTag(label, es, loc)
 
@@ -910,22 +910,21 @@ object Namer {
       val s = visitHeadPredicate(select)
       NamedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointSolve(e, mode, loc)
+    case DesugaredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
+      val es = exps.map(visitExp)
+      NamedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
-    case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointFilter(ident, e, loc)
+    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+      val es = exps.map(visitExp)
+      val qe = visitExp(queryExp)
+      val ss = selects.map(visitExp)
+      val f = from.map(visitBodyPredicate)
+      val w = where.map(visitExp)
+      NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
 
-    case DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointInject(e, pred, arity, loc)
-
-    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
+    case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
+      val es = exps.map(visitExp)
+      NamedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
@@ -947,10 +946,10 @@ object Namer {
     * Performs naming on the given ext match rule `rule0`.
     */
   private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
-    case DesugaredAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPattern)
+    case DesugaredAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPattern(pat)
       val e = visitExp(exp)
-      NamedAst.ExtMatchRule(label, ps, e, loc)
+      NamedAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -1064,17 +1063,35 @@ object Namer {
   /**
     * Names the given ext pattern `pat0`.
     */
-  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
-    case DesugaredAst.ExtPattern.Wild(loc) =>
-      NamedAst.ExtPattern.Wild(loc)
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
+    case DesugaredAst.ExtPattern.Default(loc) =>
+      NamedAst.ExtPattern.Default(loc)
 
-    case DesugaredAst.ExtPattern.Var(ident, loc) =>
-      // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      NamedAst.ExtPattern.Var(sym, loc)
+    case DesugaredAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(visitExtTagPattern)
+      NamedAst.ExtPattern.Tag(label, ps, loc)
 
     case DesugaredAst.ExtPattern.Error(loc) =>
       NamedAst.ExtPattern.Error(loc)
+  }
+
+  /**
+    * Names the given ext tag pattern `pat0`.
+    */
+  private def visitExtTagPattern(pat0: DesugaredAst.ExtTagPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtTagPattern = pat0 match {
+    case DesugaredAst.ExtTagPattern.Wild(loc) =>
+      NamedAst.ExtTagPattern.Wild(loc)
+
+    case DesugaredAst.ExtTagPattern.Var(ident, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      NamedAst.ExtTagPattern.Var(sym, loc)
+
+    case DesugaredAst.ExtTagPattern.Unit(loc) =>
+      NamedAst.ExtTagPattern.Unit(loc)
+
+    case DesugaredAst.ExtTagPattern.Error(loc) =>
+      NamedAst.ExtTagPattern.Error(loc)
   }
 
   /**
@@ -1176,6 +1193,10 @@ object Namer {
     case DesugaredAst.Type.Schema(tpe, loc) =>
       val t = visitType(tpe)
       NamedAst.Type.Schema(t, loc)
+
+    case DesugaredAst.Type.Extensible(tpe, loc) =>
+      val t = visitType(tpe)
+      NamedAst.Type.Extensible(t, loc)
 
     case DesugaredAst.Type.Arrow(tparams, eff, tpe, loc) =>
       val ts = tparams.map(visitType)
@@ -1315,8 +1336,11 @@ object Namer {
 
   /**
     * Returns the free variables in the given type `tpe0`.
+    *
+    * Does not include wildcard variables.
     */
   private def freeTypeVars(tpe0: DesugaredAst.Type): List[Name.Ident] = tpe0 match {
+    case DesugaredAst.Type.Var(ident, _) if ident.isWild => Nil
     case DesugaredAst.Type.Var(ident, _) => ident :: Nil
     case DesugaredAst.Type.Ambiguous(_, _) => Nil
     case DesugaredAst.Type.Unit(_) => Nil
@@ -1328,6 +1352,7 @@ object Namer {
     case DesugaredAst.Type.SchemaRowExtendByTypes(_, _, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case DesugaredAst.Type.SchemaRowExtendByAlias(_, ts, r, _) => ts.flatMap(freeTypeVars) ::: freeTypeVars(r)
     case DesugaredAst.Type.Schema(row, _) => freeTypeVars(row)
+    case DesugaredAst.Type.Extensible(row, _) => freeTypeVars(row)
     case DesugaredAst.Type.Arrow(tparams, eff, tresult, _) => tparams.flatMap(freeTypeVars) ::: eff.toList.flatMap(freeTypeVars) ::: freeTypeVars(tresult)
     case DesugaredAst.Type.Apply(tpe1, tpe2, _) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.True(_) => Nil
@@ -1445,7 +1470,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     *
-    * Implicit type parameters may include duplicates. These are handled by the Resolver.
+    * Does not include wildcard parameters. These are handled by the Resolver.
     */
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.

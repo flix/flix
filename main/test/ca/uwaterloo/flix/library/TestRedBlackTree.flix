@@ -2,151 +2,152 @@ mod TestRedBlackTree {
 
     import java.util.Random
 
+    use Assert.{assertEq, assertTrue, assertFalse}
     use RedBlackTree.{Node}
     use RedBlackTree.Color.{Red, Black}
 
-    @test
-    def testSize01(): Bool =
-        RedBlackTree.size(RedBlackTree.empty()) == 0
+    @Test
+    def testSize01(): Unit \ Assert =
+        assertEq(expected = 0, RedBlackTree.size(RedBlackTree.empty()))
 
-    @test
-    def testSize02(): Bool =
-        RedBlackTree.size(RedBlackTree.insert(1, (), RedBlackTree.empty())) == 1
+    @Test
+    def testSize02(): Unit \ Assert =
+        assertEq(expected = 1, RedBlackTree.size(RedBlackTree.insert(1, (), RedBlackTree.empty())))
 
-    @test
-    def testSize03(): Bool =
-        RedBlackTree.size(toTree(List.range(0, 3))) == 3
+    @Test
+    def testSize03(): Unit \ Assert =
+        assertEq(expected = 3, RedBlackTree.size(toTree(List.range(0, 3))))
 
-    @test
-    def testSize04(): Bool =
-        RedBlackTree.size(toTree(List.range(0, 7))) == 7
+    @Test
+    def testSize04(): Unit \ Assert =
+        assertEq(expected = 7, RedBlackTree.size(toTree(List.range(0, 7))))
 
-    @test
-    def testSize05(): Bool =
-        RedBlackTree.size(toTree(List.range(0, 100))) == 100
+    @Test
+    def testSize05(): Unit \ Assert =
+        assertEq(expected = 100, RedBlackTree.size(toTree(List.range(0, 100))))
 
-    @test
-    def testRemove01(): Bool =
-        not RedBlackTree.memberOf(1, RedBlackTree.remove(1, toTree(List.range(0, 100))))
+    @Test
+    def testRemove01(): Unit \ Assert =
+        assertFalse(RedBlackTree.memberOf(1, RedBlackTree.remove(1, toTree(List.range(0, 100)))))
 
-    @test
-    def testRemove02(): Bool =
-        not RedBlackTree.memberOf(50, RedBlackTree.remove(50, toTree(List.range(0, 100))))
+    @Test
+    def testRemove02(): Unit \ Assert =
+        assertFalse(RedBlackTree.memberOf(50, RedBlackTree.remove(50, toTree(List.range(0, 100)))))
 
-    @test
-    def testRemove03(): Bool =
-        not RedBlackTree.memberOf(99, RedBlackTree.remove(99, toTree(List.range(0, 100))))
+    @Test
+    def testRemove03(): Unit \ Assert =
+        assertFalse(RedBlackTree.memberOf(99, RedBlackTree.remove(99, toTree(List.range(0, 100)))))
 
-    @test
-    def testEmptyAfterRemove01(): Bool =
-        Map.Map(RedBlackTree.empty()) == Map.Map(RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty())))
+    @Test
+    def testEmptyAfterRemove01(): Unit \ Assert =
+        assertEq(expected = Map.Map(RedBlackTree.empty()), Map.Map(RedBlackTree.remove(42, RedBlackTree.insert(42, (), RedBlackTree.empty()))))
 
-    @test
-    def testEmptyAfterRemove02(): Bool =
-        Map.Map(RedBlackTree.empty()) == Map.Map(RedBlackTree.remove(2, RedBlackTree.remove(1,
-            RedBlackTree.remove(0, toTree(List.range(0, 3))))))
+    @Test
+    def testEmptyAfterRemove02(): Unit \ Assert =
+        assertEq(expected = Map.Map(RedBlackTree.empty()), Map.Map(RedBlackTree.remove(2, RedBlackTree.remove(1,
+            RedBlackTree.remove(0, toTree(List.range(0, 3)))))))
 
-    @test
-    def testEmptyAfterRemove03(): Bool =
+    @Test
+    def testEmptyAfterRemove03(): Unit \ Assert =
         let tree =
         List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)), List.range(0, 20));
-        Map.Map(tree) == Map.Map(RedBlackTree.empty())
+        assertEq(expected = Map.Map(RedBlackTree.empty()), Map.Map(tree))
 
-    @test
-    def testBinarySearchTreeInvariant01(): Bool =
-        checkBinarySearchTreeInvariant(toTree(List.range(0, 10)))
+    @Test
+    def testBinarySearchTreeInvariant01(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(toTree(List.range(0, 10))))
 
-    @test
-    def testBinarySearchTreeInvariant02(): Bool =
-        checkBinarySearchTreeInvariant(toTree(9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    @Test
+    def testBinarySearchTreeInvariant02(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(toTree(9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)))
 
-    @test
-    def testBinarySearchTreeInvariant03(): Bool =
-        checkBinarySearchTreeInvariant(toTree(2 :: 7 :: 1 :: 8 :: 0 :: 3 :: 5 :: 4 :: 9 :: 6 :: Nil))
+    @Test
+    def testBinarySearchTreeInvariant03(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(toTree(2 :: 7 :: 1 :: 8 :: 0 :: 3 :: 5 :: 4 :: 9 :: 6 :: Nil)))
 
-    @test
-    def testBinarySearchTreeInvariant04(): Bool =
-        checkBinarySearchTreeInvariant(toTree(List.range(0, 100)))
+    @Test
+    def testBinarySearchTreeInvariant04(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(toTree(List.range(0, 100))))
 
-    @test
-    def testBinarySearchTreeInvariant05(): Bool =
-        checkBinarySearchTreeInvariant(toTree(List.range(0, 1000)))
+    @Test
+    def testBinarySearchTreeInvariant05(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(toTree(List.range(0, 1000))))
 
-    @test
-    def testBinarySearchTreeInvariant06(): Bool =
-        checkBinarySearchTreeInvariant(RedBlackTree.remove(0, toTree(List.range(0, 100))))
+    @Test
+    def testBinarySearchTreeInvariant06(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(RedBlackTree.remove(0, toTree(List.range(0, 100)))))
 
-    @test
-    def testBinarySearchTreeInvariant07(): Bool =
-        checkBinarySearchTreeInvariant(RedBlackTree.remove(49, toTree(List.range(0, 100))))
+    @Test
+    def testBinarySearchTreeInvariant07(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(RedBlackTree.remove(49, toTree(List.range(0, 100)))))
 
-    @test
-    def testBinarySearchTreeInvariant08(): Bool =
-        checkBinarySearchTreeInvariant(RedBlackTree.remove(99, toTree(List.range(0, 100))))
+    @Test
+    def testBinarySearchTreeInvariant08(): Unit \ Assert =
+        assertTrue(checkBinarySearchTreeInvariant(RedBlackTree.remove(99, toTree(List.range(0, 100)))))
 
-    @test
-    def testBinarySearchTreeInvariant09(): Bool =
+    @Test
+    def testBinarySearchTreeInvariant09(): Unit \ Assert =
         let tree =
         List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)),
             12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
-        checkBinarySearchTreeInvariant(tree)
+        assertTrue(checkBinarySearchTreeInvariant(tree))
 
-    @test
-    def testBinarySearchTreeInvariant10(): Bool \ {NonDet, IO} = checkBinarySearchTreeInvariant(random(10))
+    @Test
+    def testBinarySearchTreeInvariant10(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(10)))
 
-    @test
-    def testBinarySearchTreeInvariant11(): Bool \ {NonDet, IO} = checkBinarySearchTreeInvariant(random(100))
+    @Test
+    def testBinarySearchTreeInvariant11(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(100)))
 
-    @test
-    def testBinarySearchTreeInvariant12(): Bool \ {NonDet, IO} = checkBinarySearchTreeInvariant(random(1000))
+    @Test
+    def testBinarySearchTreeInvariant12(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(1000)))
 
-    @test
-    def testRedParentInvariant01(): Bool =
-        checkRedParentInvariant(toTree(List.range(0, 10)))
+    @Test
+    def testRedParentInvariant01(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(toTree(List.range(0, 10))))
 
-    @test
-    def testRedParentInvariant02(): Bool =
-        checkRedParentInvariant(toTree(9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil))
+    @Test
+    def testRedParentInvariant02(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(toTree(9 :: 8 :: 7 :: 6 :: 5 :: 4 :: 3 :: 2 :: 1 :: 0 :: Nil)))
 
-    @test
-    def testRedParentInvariant03(): Bool =
-        checkRedParentInvariant(toTree(2 :: 7 :: 1 :: 8 :: 0 :: 3 :: 5 :: 4 :: 9 :: 6 :: Nil))
+    @Test
+    def testRedParentInvariant03(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(toTree(2 :: 7 :: 1 :: 8 :: 0 :: 3 :: 5 :: 4 :: 9 :: 6 :: Nil)))
 
-    @test
-    def testRedParentInvariant04(): Bool =
-        checkRedParentInvariant(toTree(List.range(0, 100)))
+    @Test
+    def testRedParentInvariant04(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(toTree(List.range(0, 100))))
 
-    @test
-    def testRedParentInvariant05(): Bool =
-        checkRedParentInvariant(toTree(List.range(0, 1000)))
+    @Test
+    def testRedParentInvariant05(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(toTree(List.range(0, 1000))))
 
-    @test
-    def testRedParentInvariant06(): Bool =
-        checkRedParentInvariant(RedBlackTree.remove(0, toTree(List.range(0, 100))))
+    @Test
+    def testRedParentInvariant06(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(RedBlackTree.remove(0, toTree(List.range(0, 100)))))
 
-    @test
-    def testRedParentInvariant07(): Bool =
-        checkRedParentInvariant(RedBlackTree.remove(49, toTree(List.range(0, 100))))
+    @Test
+    def testRedParentInvariant07(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(RedBlackTree.remove(49, toTree(List.range(0, 100)))))
 
-    @test
-    def testRedParentInvariant08(): Bool =
-        checkRedParentInvariant(RedBlackTree.remove(99, toTree(List.range(0, 100))))
+    @Test
+    def testRedParentInvariant08(): Unit \ Assert =
+        assertTrue(checkRedParentInvariant(RedBlackTree.remove(99, toTree(List.range(0, 100)))))
 
-    @test
-    def testRedParentInvariant09(): Bool =
+    @Test
+    def testRedParentInvariant09(): Unit \ Assert =
         let tree =
         List.foldLeft((acc, x) -> RedBlackTree.remove(x, acc), toTree(List.range(0, 20)),
             12 :: 11 :: 80 :: 93 :: 21 :: 71 :: 39 :: 32 :: 29 :: 95 :: Nil);
-        checkRedParentInvariant(tree)
+        assertTrue(checkRedParentInvariant(tree))
 
-    @test
-    def testRedParentInvariant10(): Bool \ {NonDet, IO} = checkRedParentInvariant(random(10))
+    @Test
+    def testRedParentInvariant10(): Unit \ {Assert, NonDet, IO} = assertTrue(checkRedParentInvariant(random(10)))
 
-    @test
-    def testRedParentInvariant11(): Bool \ {NonDet, IO} = checkRedParentInvariant(random(100))
+    @Test
+    def testRedParentInvariant11(): Unit \ {Assert, NonDet, IO} = assertTrue(checkRedParentInvariant(random(100)))
 
-    @test
-    def testRedParentInvariant12(): Bool \ {NonDet, IO} = checkRedParentInvariant(random(1000))
+    @Test
+    def testRedParentInvariant12(): Unit \ {Assert, NonDet, IO} = assertTrue(checkRedParentInvariant(random(1000)))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -202,196 +203,196 @@ mod TestRedBlackTree {
     // insert                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def insert01(): Bool =
+    @Test
+    def insert01(): Unit \ Assert =
         let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
             RedBlackTree.insert(0, 1);
-        RedBlackTree.get(0, tree) == Some(1) and
-            RedBlackTree.get(1, tree) == None
+        assertEq(expected = Some(1), RedBlackTree.get(0, tree));
+        assertEq(expected = None, RedBlackTree.get(1, tree))
 
-    @test
-    def insert02(): Bool =
+    @Test
+    def insert02(): Unit \ Assert =
         let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
             RedBlackTree.insert(0, 1) |>
             RedBlackTree.insert(1, 2);
-        RedBlackTree.get(0, tree) == Some(1) and
-            RedBlackTree.get(1, tree) == Some(2) and
-            RedBlackTree.get(2, tree) == None
+        assertEq(expected = Some(1), RedBlackTree.get(0, tree));
+        assertEq(expected = Some(2), RedBlackTree.get(1, tree));
+        assertEq(expected = None, RedBlackTree.get(2, tree))
 
-    @test
-    def insert03(): Bool =
+    @Test
+    def insert03(): Unit \ Assert =
         let inserts = Vector#{(0, 1), (3, 4), (4, 5), (1, 2), (8, 9), (6, 7), (2, 3), (10, 11), (9, 10)};
         let tree = inserts |> Vector.foldRight(match (k, v) -> RedBlackTree.insert(k, v), RedBlackTree.empty());
-        inserts |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, tree) == Some(v))
+        assertTrue(inserts |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, tree) == Some(v)))
 
     /////////////////////////////////////////////////////////////////////////////
     // insertWith                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def insertWith01(): Bool =
+    @Test
+    def insertWith01(): Unit \ Assert =
         let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
             RedBlackTree.insertWith(_k -> _v -> _v1 -> -1, 0, 1);
-        RedBlackTree.get(0, tree) == Some(1) and
-            RedBlackTree.get(1, tree) == None
+        assertEq(expected = Some(1), RedBlackTree.get(0, tree));
+        assertEq(expected = None, RedBlackTree.get(1, tree))
 
-    @test
-    def insertWith02(): Bool =
+    @Test
+    def insertWith02(): Unit \ Assert =
         let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
             RedBlackTree.insert(1, 10) |>
             RedBlackTree.insertWith(k -> v -> v1 -> k + v + v1, 1, 100);
-        RedBlackTree.get(1, tree) == Some(1 + 10 + 100) and
-            RedBlackTree.get(0, tree) == None
+        assertEq(expected = Some(1 + 10 + 100), RedBlackTree.get(1, tree));
+        assertEq(expected = None, RedBlackTree.get(0, tree))
 
-    @test
-    def insertWith03(): Bool =
+    @Test
+    def insertWith03(): Unit \ Assert =
         let inserts = Vector#{(0, 1), (3, 4), (4, 5), (1, 2), (8, 9), (6, 7), (2, 3), (10, 11), (9, 10)};
         let (kept, overWrite) = Vector.splitAt(Vector.length(inserts), inserts);
         let treeWithInserts = inserts |> Vector.foldRight(match (k, v) -> RedBlackTree.insert(k, v), RedBlackTree.empty());
         let treeWithUpdates = overWrite |> Vector.foldRight(match (k, _) -> RedBlackTree.insertWith(k_ -> v -> v1 -> k_ + v + v1, -1, k), treeWithInserts);
-        kept |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(v)) and
-            overWrite |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(k + v - 1))
+        assertTrue(kept |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(v)));
+        assertTrue(overWrite |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(k + v - 1)))
 
     /////////////////////////////////////////////////////////////////////////////
     // updateWith                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def updateWith01(): Bool =
+    @Test
+    def updateWith01(): Unit \ Assert =
         let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
             RedBlackTree.updateWith(_k -> _v -> Some(1), 0);
-        RedBlackTree.get(0, tree) == None and
-            RedBlackTree.get(1, tree) == None
+        assertEq(expected = None, RedBlackTree.get(0, tree));
+        assertEq(expected = None, RedBlackTree.get(1, tree))
 
-    @test
-    def updateWith02(): Bool =
+    @Test
+    def updateWith02(): Unit \ Assert =
         let tree = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |>
             RedBlackTree.insert(1, 10) |>
             RedBlackTree.insert(2, 11) |>
             RedBlackTree.updateWith(k -> v -> Some(k + v), 1) |>
             RedBlackTree.updateWith(k -> v -> Some(k + v), 3) |>
             RedBlackTree.updateWith(_ -> _ -> None, 1);
-        RedBlackTree.get(1, tree) == Some(1 + 10) and
-            RedBlackTree.get(2, tree) == Some(11) and
-            RedBlackTree.get(3, tree) == None and
-            RedBlackTree.get(10, tree) == None and
-            RedBlackTree.get(11, tree) == None
+        assertEq(expected = Some(1 + 10), RedBlackTree.get(1, tree));
+        assertEq(expected = Some(11), RedBlackTree.get(2, tree));
+        assertEq(expected = None, RedBlackTree.get(3, tree));
+        assertEq(expected = None, RedBlackTree.get(10, tree));
+        assertEq(expected = None, RedBlackTree.get(11, tree))
 
-    @test
-    def updateWith03(): Bool =
+    @Test
+    def updateWith03(): Unit \ Assert =
         let inserts = Vector#{(0, 1), (3, 4), (4, 5), (1, 2), (8, 9), (6, 7), (2, 3), (10, 11), (9, 10)};
         let nonReplacingUpdates = Vector#{(11, 12), (12, 13), (13, 14), (-1, -2), (-2, -3)};
         let (kept, overWrite) = Vector.splitAt(Vector.length(inserts), inserts);
         let updates = Vector.append(nonReplacingUpdates, overWrite);
         let treeWithInserts = inserts |> Vector.foldRight(match (k, v) -> RedBlackTree.insert(k, v), RedBlackTree.empty());
         let treeWithUpdates = updates |> Vector.foldRight(match (k, _) -> RedBlackTree.updateWith(k_ -> v -> Some(k_ + v), k), treeWithInserts);
-        kept |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(v)) and
-            overWrite |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(k + v)) and
-            nonReplacingUpdates |> Vector.forAll(match (k, _) -> RedBlackTree.get(k, treeWithUpdates) == None)
+        assertTrue(kept |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(v)));
+        assertTrue(overWrite |> Vector.forAll(match (k, v) -> RedBlackTree.get(k, treeWithUpdates) == Some(k + v)));
+        assertTrue(nonReplacingUpdates |> Vector.forAll(match (k, _) -> RedBlackTree.get(k, treeWithUpdates) == None))
 
     /////////////////////////////////////////////////////////////////////////////
     // parMapWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapWithKey01(): Bool =
+    @Test
+    def mapWithKey01(): Unit \ Assert =
         let Map.Map(t) = (Map#{}: Map[Unit, Unit]);
         let m = Map.Map(RedBlackTree.mapWithKey((_, v) -> v, t));
-        m == Map#{}
+        assertEq(expected = Map#{}, m)
 
-    @test
-    def mapWithKey02(): Bool =
+    @Test
+    def mapWithKey02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 4};
         let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
-        m == Map#{1 => 5}
+        assertEq(expected = Map#{1 => 5}, m)
 
-    @test
-    def mapWithKey03(): Bool =
+    @Test
+    def mapWithKey03(): Unit \ Assert =
         let Map.Map(t) = Map#{2 => -1, 0 => 0};
         let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
-        m == Map#{2 => 1, 0 => 0}
+        assertEq(expected = Map#{2 => 1, 0 => 0}, m)
 
-    @test
-    def mapWithKey04(): Bool =
+    @Test
+    def mapWithKey04(): Unit \ Assert =
         let Map.Map(t) = Map#{2 => -1, 5 => 15, 11 => -9};
         let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
-        m == Map#{2 => 1, 5 => 20, 11 => 2}
+        assertEq(expected = Map#{2 => 1, 5 => 20, 11 => 2}, m)
 
-    @test
-    def mapWithKey05(): Bool =
+    @Test
+    def mapWithKey05(): Unit \ Assert =
         let Map.Map(t) = Map#{2 => -1, 5 => 15, 11 => -9, 8 => 8};
         let m = Map.Map(RedBlackTree.mapWithKey((k, v) -> k + v, t));
-        m == Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}
+        assertEq(expected = Map#{2 => 1, 5 => 20, 11 => 2, 8 => 16}, m)
 
-    @test
-    def mapWithKey06(): Bool = region rc {
+    @Test
+    def mapWithKey06(): Unit \ Assert = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap;
         let a = MutList.empty(rc);
         discard Map.mapWithKey((k, v) -> { let b = MutList.empty(rc); MutList.push(k, b); MutList.append(MutList.toList(b), a); v }, m);
-        MutList.toList(a) == range
+        assertEq(expected = range, MutList.toList(a))
     }
 
-    @test
-    def mapWithKey07(): Bool =
+    @Test
+    def mapWithKey07(): Unit \ Assert =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(1, 2001)) |> List.toMap;
-        Map.Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+        assertEq(expected = expected, Map.Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)))
 
-    @test
-    def mapWithKey08(): Bool =
+    @Test
+    def mapWithKey08(): Unit \ Assert =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
         let expected = List.zip(List.range(0, 2000), List.range(-999, 1001)) |> List.toMap;
-        Map.Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)) == expected
+        assertEq(expected = expected, Map.Map(RedBlackTree.mapWithKey((_, v) -> v + 1, t)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // parCount                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def parCount01(): Bool =
+    @Test
+    def parCount01(): Unit \ Assert =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
-        RedBlackTree.parCount((k, v) -> k == v, t) == 2000
+        assertEq(expected = 2000, RedBlackTree.parCount((k, v) -> k == v, t))
 
-    @test
-    def parCount02(): Bool =
+    @Test
+    def parCount02(): Unit \ Assert =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
-        RedBlackTree.parCount((k, v) -> k - 1000 == v, t) == 2000
+        assertEq(expected = 2000, RedBlackTree.parCount((k, v) -> k - 1000 == v, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // parMinimumBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def parMinimumBy01(): Bool =
+    @Test
+    def parMinimumBy01(): Unit \ Assert =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, range) |> List.toMap;
-        RedBlackTree.parMinimumBy((_, x, _, y) -> x <=> y, t) == Some((0, 0))
+        assertEq(expected = Some((0, 0)), RedBlackTree.parMinimumBy((_, x, _, y) -> x <=> y, t))
 
-    @test
-    def parMinimumBy02(): Bool =
+    @Test
+    def parMinimumBy02(): Unit \ Assert =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.parMinimumBy((_, x, _, y) -> x <=> y, t) == Some((1999, 0))
+        assertEq(expected = Some((1999, 0)), RedBlackTree.parMinimumBy((_, x, _, y) -> x <=> y, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // parMaximumBy                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def parMaximumBy01(): Bool =
+    @Test
+    def parMaximumBy01(): Unit \ Assert =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, range) |> List.toMap;
-        RedBlackTree.parMaximumBy((_, x, _, y) -> x <=> y, t) == Some((1999, 1999))
+        assertEq(expected = Some((1999, 1999)), RedBlackTree.parMaximumBy((_, x, _, y) -> x <=> y, t))
 
-    @test
-    def parMaximumBy02(): Bool =
+    @Test
+    def parMaximumBy02(): Unit \ Assert =
         let range = List.range(0, 2000);
         let Map.Map(t) = List.zip(range, List.reverse(range)) |> List.toMap;
-        RedBlackTree.parMaximumBy((_, x, _, y) -> x <=> y, t) == Some((0, 1999))
+        assertEq(expected = Some((0, 1999)), RedBlackTree.parMaximumBy((_, x, _, y) -> x <=> y, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -401,396 +402,408 @@ mod TestRedBlackTree {
     def toRedBlackTree(xs: List[(k, v)]): RedBlackTree[k, v] with Order[k] =
         List.foldLeft((acc, kv) -> {let (k,v) = kv; RedBlackTree.insert(k, v, acc)}, RedBlackTree.empty(), xs)
 
-    @test
-    def eq01(): Bool =
-        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == (RedBlackTree.empty(): RedBlackTree[Int32, Int32])
+    @Test
+    def eq01(): Unit \ Assert =
+        assertTrue((RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == (RedBlackTree.empty(): RedBlackTree[Int32, Int32]))
 
-    @test
-    def eq02(): Bool =
-        (toRedBlackTree(Nil): RedBlackTree[Int32, Int32]) == (toRedBlackTree(Nil): RedBlackTree[Int32, Int32])
+    @Test
+    def eq02(): Unit \ Assert =
+        assertTrue((toRedBlackTree(Nil): RedBlackTree[Int32, Int32]) == (toRedBlackTree(Nil): RedBlackTree[Int32, Int32]))
 
-    @test
-    def eq03(): Bool =
-        toRedBlackTree((1, 1) :: Nil) == toRedBlackTree((1, 1) :: Nil)
+    @Test
+    def eq03(): Unit \ Assert =
+        assertTrue(toRedBlackTree((1, 1) :: Nil) == toRedBlackTree((1, 1) :: Nil))
 
-    @test
-    def neq01(): Bool =
-        toRedBlackTree((1, 1) :: Nil) != RedBlackTree.empty()
+    @Test
+    def neq01(): Unit \ Assert =
+        assertTrue(toRedBlackTree((1, 1) :: Nil) != RedBlackTree.empty())
 
 
     /////////////////////////////////////////////////////////////////////////////
     // parExists                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def parExists01(): Bool =
+    @Test
+    def parExists01(): Unit \ Assert =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
-        RedBlackTree.parExists((k, v) -> k == 1002 and v == 1002, t)
+        assertTrue(RedBlackTree.parExists((k, v) -> k == 1002 and v == 1002, t))
 
-    @test
-    def parExists02(): Bool =
+    @Test
+    def parExists02(): Unit \ Assert =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
-        RedBlackTree.parExists((k, v) -> k == 1002 and v == -999, t)
+        assertTrue(RedBlackTree.parExists((k, v) -> k == 1002 and v == -999, t))
 
-    @test
-    def parExists03(): Bool =
+    @Test
+    def parExists03(): Unit \ Assert =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
-        not RedBlackTree.parExists((k, v) -> k < 0 or v > 3000, t)
+        assertFalse(RedBlackTree.parExists((k, v) -> k < 0 or v > 3000, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // parForAll                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def parForAll01(): Bool =
+    @Test
+    def parForAll01(): Unit \ Assert =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
-        RedBlackTree.parForAll((k, v) -> k == v, t)
+        assertTrue(RedBlackTree.parForAll((k, v) -> k == v, t))
 
-    @test
-    def parForAll02(): Bool =
+    @Test
+    def parForAll02(): Unit \ Assert =
         let l = List.range(1, 2001);
         let Map.Map(t) = List.zip(l, l) |> List.toMap;
-        not RedBlackTree.parForAll((k, _) -> k == 1, t)
+        assertFalse(RedBlackTree.parForAll((k, _) -> k == 1, t))
 
-    @test
-    def parForAll03(): Bool =
+    @Test
+    def parForAll03(): Unit \ Assert =
         let l1 = List.range(1, 2001);
         let l2 = List.range(-2000, 0);
         let Map.Map(t) = List.zip(l1, l2) |> List.toMap;
-        RedBlackTree.parForAll((k, v) -> k > v, t)
+        assertTrue(RedBlackTree.parForAll((k, v) -> k > v, t))
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
         RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
-        21 == Ref.get(x)
+        assertEq(expected = 21, Ref.get(x))
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEach((k, _) -> Ref.put(k, x), t);
-        1 == Ref.get(x)
+        assertEq(expected = 1, Ref.get(x))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachWithIndex01(): Bool = region rc {
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{};
         RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
-        21 == Ref.get(x)
+        assertEq(expected = 21, Ref.get(x))
     }
 
-    @test
-    def forEachWithIndex02(): Bool = region rc {
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
         let x = Ref.fresh(rc, 21);
         let Map.Map(t) = Map#{1 => "Hello World!"};
         RedBlackTree.forEachWithIndex((i, _, _) -> Ref.put(i, x), t);
-        0 == Ref.get(x)
+        assertEq(expected = 0, Ref.get(x))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMapWithKey                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldMap01(): Bool =
+    @Test
+    def foldMap01(): Unit \ Assert =
         let Map.Map(t) = Map#{};
-        RedBlackTree.foldMap((k, v) -> k + v, t) == 0
+        assertEq(expected = 0, RedBlackTree.foldMap((k, v) -> k + v, t))
 
-    @test
-    def foldMap02(): Bool =
+    @Test
+    def foldMap02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 2, 3 => 5};
-        RedBlackTree.foldMap((k, v) -> k + v, t) == (1 + 2 + 3 + 5)
+        assertEq(expected = (1 + 2 + 3 + 5), RedBlackTree.foldMap((k, v) -> k + v, t))
 
-    @test
-    def foldMap03(): Bool =
+    @Test
+    def foldMap03(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 2, 3 => 5};
-        RedBlackTree.foldMap((k, v) -> 2 * (k + v), t) == (2 * (1 + 2) + 2 * (3 + 5))
+        assertEq(expected = (2 * (1 + 2) + 2 * (3 + 5)), RedBlackTree.foldMap((k, v) -> 2 * (k + v), t))
 
-    @test
-    def foldMap04(): Bool =
+    @Test
+    def foldMap04(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => "a", 2 => "b"};
-        RedBlackTree.foldMap((k, v) -> "${k}" + v, t) == "1a2b"
+        assertEq(expected = "1a2b", RedBlackTree.foldMap((k, v) -> "${k}" + v, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sumValues                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumValues01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.sumValues == 0
+    @Test
+    def sumValues01(): Unit \ Assert =
+        assertEq(expected = 0, RedBlackTree.empty() |> RedBlackTree.sumValues)
 
-    @test
-    def sumValues02(): Bool =
+    @Test
+    def sumValues02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.sumValues(t) == 1
+        assertEq(expected = 1, RedBlackTree.sumValues(t))
 
-    @test
-    def sumValues03(): Bool =
+    @Test
+    def sumValues03(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
-        RedBlackTree.sumValues(t) == 6
+        assertEq(expected = 6, RedBlackTree.sumValues(t))
 
-    @test
-    def sumValues04(): Bool =
+    @Test
+    def sumValues04(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
-        RedBlackTree.sumValues(t) == 3
+        assertEq(expected = 3, RedBlackTree.sumValues(t))
 
-    @test
-    def sumValues05(): Bool =
+    @Test
+    def sumValues05(): Unit \ Assert =
         let Map.Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
-        RedBlackTree.sumValues(t) == -10
+        assertEq(expected = -10, RedBlackTree.sumValues(t))
 
-    @test
-    def sumValues06(): Bool =
+    @Test
+    def sumValues06(): Unit \ Assert =
         let Map.Map(t) = Map#{10 => 10, -10 => -10};
-        RedBlackTree.sumValues(t) == 0
+        assertEq(expected = 0, RedBlackTree.sumValues(t))
 
-    @test
-    def sumValues07(): Bool =
+    @Test
+    def sumValues07(): Unit \ Assert =
         let Map.Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
-        RedBlackTree.sumValues(t) == 5050
+        assertEq(expected = 5050, RedBlackTree.sumValues(t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sumKeys                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumKeys01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.sumKeys == 0
+    @Test
+    def sumKeys01(): Unit \ Assert =
+        assertEq(expected = 0, RedBlackTree.empty() |> RedBlackTree.sumKeys)
 
-    @test
-    def sumKeys02(): Bool =
+    @Test
+    def sumKeys02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.sumKeys(t) == 1
+        assertEq(expected = 1, RedBlackTree.sumKeys(t))
 
-    @test
-    def sumKeys03(): Bool =
+    @Test
+    def sumKeys03(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
-        RedBlackTree.sumKeys(t) == 6
+        assertEq(expected = 6, RedBlackTree.sumKeys(t))
 
-    @test
-    def sumKeys04(): Bool =
+    @Test
+    def sumKeys04(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
-        RedBlackTree.sumKeys(t) == 3
+        assertEq(expected = 3, RedBlackTree.sumKeys(t))
 
-    @test
-    def sumKeys05(): Bool =
+    @Test
+    def sumKeys05(): Unit \ Assert =
         let Map.Map(t) = Map#{-1 => -1, -2 => -2, -5 => -3, -4 => -4};
-        RedBlackTree.sumKeys(t) == -12
+        assertEq(expected = -12, RedBlackTree.sumKeys(t))
 
-    @test
-    def sumKeys06(): Bool =
+    @Test
+    def sumKeys06(): Unit \ Assert =
         let Map.Map(t) = Map#{10 => 10, -10 => -10};
-        RedBlackTree.sumKeys(t) == 0
+        assertEq(expected = 0, RedBlackTree.sumKeys(t))
 
-    @test
-    def sumKeys07(): Bool =
+    @Test
+    def sumKeys07(): Unit \ Assert =
         let Map.Map(t) = List.range(1, 101) |> List.zip(List.range(1, 101)) |> List.toMap;
-        RedBlackTree.sumKeys(t) == 5050
+        assertEq(expected = 5050, RedBlackTree.sumKeys(t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool =
-        RedBlackTree.empty() |> RedBlackTree.sumWith((k, v) -> k + v) == 0
+    @Test
+    def sumWith01(): Unit \ Assert =
+        assertEq(expected = 0, RedBlackTree.empty() |> RedBlackTree.sumWith((k, v) -> k + v))
 
-    @test
-    def sumWith02(): Bool =
+    @Test
+    def sumWith02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.sumWith((k, v) -> k + v, t) == 2
+        assertEq(expected = 2, RedBlackTree.sumWith((k, v) -> k + v, t))
 
-    @test
-    def sumWith03(): Bool =
+    @Test
+    def sumWith03(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3};
-        RedBlackTree.sumWith((k, v) -> k + v, t) == 12
+        assertEq(expected = 12, RedBlackTree.sumWith((k, v) -> k + v, t))
 
-    @test
-    def sumWith04(): Bool =
+    @Test
+    def sumWith04(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1, 2 => 2, 3 => 3, -3 => -3};
-        RedBlackTree.sumWith((k, v) -> k + v, t) == 6
+        assertEq(expected = 6, RedBlackTree.sumWith((k, v) -> k + v, t))
 
-    @test
-    def sumWith05(): Bool =
+    @Test
+    def sumWith05(): Unit \ Assert =
         let Map.Map(t) = Map#{-1 => -1, -2 => -2, -3 => -3, -4 => -4};
-        RedBlackTree.sumWith((k, v) -> k + v, t) == -20
+        assertEq(expected = -20, RedBlackTree.sumWith((k, v) -> k + v, t))
 
-    @test
-    def sumWith06(): Bool =
+    @Test
+    def sumWith06(): Unit \ Assert =
         let Map.Map(t) = Map#{10 => 10, -10 => -10};
-        RedBlackTree.sumWith((k, v) -> k + v, t) == 0
+        assertEq(expected = 0, RedBlackTree.sumWith((k, v) -> k + v, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // parSumWith                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def parSumWith01(): Bool =
+    @Test
+    def parSumWith01(): Unit \ Assert =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(0, 2000)) |> List.toMap;
-        RedBlackTree.parSumWith((k, v) -> k + v, t) == 3998000
+        assertEq(expected = 3998000, RedBlackTree.parSumWith((k, v) -> k + v, t))
 
-    @test
-    def parSumWith02(): Bool =
+    @Test
+    def parSumWith02(): Unit \ Assert =
         let Map.Map(t) = List.zip(List.range(0, 2000), List.range(-1000, 1000)) |> List.toMap;
-        RedBlackTree.parSumWith((k, v) -> k + v, t) == 1998000
+        assertEq(expected = 1998000, RedBlackTree.parSumWith((k, v) -> k + v, t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinKeys01(): Bool =
-        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinKeys(",") == ""
+    @Test
+    def joinKeys01(): Unit \ Assert =
+        assertEq(expected = "", (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinKeys(","))
 
-    @test
-    def joinKeys02(): Bool =
+    @Test
+    def joinKeys02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.joinKeys(",", t) == "1"
+        assertEq(expected = "1", RedBlackTree.joinKeys(",", t))
 
-    @test
-    def joinKeys03(): Bool =
+    @Test
+    def joinKeys03(): Unit \ Assert =
         let Map.Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
-        RedBlackTree.joinKeys(",", t) == "0,1,2"
+        assertEq(expected = "0,1,2", RedBlackTree.joinKeys(",", t))
 
-    @test
-    def joinKeys04(): Bool =
+    @Test
+    def joinKeys04(): Unit \ Assert =
         let Map.Map(t) = Map#{"0" => 1, "1" => 2, "2" => 2};
-        RedBlackTree.joinKeys(",", t) == "0,1,2"
+        assertEq(expected = "0,1,2", RedBlackTree.joinKeys(",", t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // joinValues                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinValues01(): Bool =
-        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinValues(",") == ""
+    @Test
+    def joinValues01(): Unit \ Assert =
+        assertEq(expected = "", (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinValues(","))
 
-    @test
-    def joinValues02(): Bool =
+    @Test
+    def joinValues02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.joinValues(",", t) == "1"
+        assertEq(expected = "1", RedBlackTree.joinValues(",", t))
 
-    @test
-    def joinValues03(): Bool =
+    @Test
+    def joinValues03(): Unit \ Assert =
         let Map.Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
-        RedBlackTree.joinValues(",", t) == "1,2,2"
+        assertEq(expected = "1,2,2", RedBlackTree.joinValues(",", t))
 
-    @test
-    def joinValues04(): Bool =
+    @Test
+    def joinValues04(): Unit \ Assert =
         let Map.Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
-        RedBlackTree.joinValues(",", t) == "1,2,2"
+        assertEq(expected = "1,2,2", RedBlackTree.joinValues(",", t))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool =
-        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+    @Test
+    def joinWith01(): Unit \ Assert =
+        assertEq(expected = "", (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ","))
 
-    @test
-    def joinWith02(): Bool =
+    @Test
+    def joinWith02(): Unit \ Assert =
         let Map.Map(t) = Map#{1 => 1};
-        RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "1 => 1"
+        assertEq(expected = "1 => 1", RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t))
 
-    @test
-    def joinWith03(): Bool =
+    @Test
+    def joinWith03(): Unit \ Assert =
         let Map.Map(t) = Map#{0 => 1, 1 => 2, 2 => 2};
-        RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
+        assertEq(expected = "0 => 1, 1 => 2, 2 => 2", RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t))
 
-    @test
-    def joinWith04(): Bool =
+    @Test
+    def joinWith04(): Unit \ Assert =
         let Map.Map(t) = Map#{0 => "1", 1 => "2", 2 => "2"};
-        RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t) == "0 => 1, 1 => 2, 2 => 2"
+        assertEq(expected = "0 => 1, 1 => 2, 2 => 2", RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ", ", t))
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filter01(): Bool =
-        RedBlackTree.filter(x -> x > 1, (RedBlackTree.empty(): RedBlackTree[Int32, Int32])) == RedBlackTree.empty()
+    @Test
+    def filter01(): Unit \ Assert =
+        assertTrue(RedBlackTree.filter(x -> x > 1, (RedBlackTree.empty(): RedBlackTree[Int32, Int32])) == RedBlackTree.empty())
 
-    @test
-    def filter02(): Bool =
-        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1)) == RedBlackTree.empty()
+    @Test
+    def filter02(): Unit \ Assert =
+        assertTrue(RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1)) == RedBlackTree.empty())
 
-    @test
-    def filter03(): Bool =
-        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
-            |> RedBlackTree.toList |> List.sort == (2, 2) :: (3, 3) :: (4, 4) :: Nil
+    @Test
+    def filter03(): Unit \ Assert =
+        assertEq(expected = (2, 2) :: (3, 3) :: (4, 4) :: Nil, RedBlackTree.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort)
+
+    @Test
+    def filter04(): Unit \ Assert =
+        assertEq(expected = (2, 2) :: (3, 3) :: (4, 4) :: Nil, Filterable.filter(x -> x > 1, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+                    |> RedBlackTree.toList |> List.sort)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filterMap01(): Bool =
-        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, (RedBlackTree.empty(): RedBlackTree[Int32, Int32]))
-            == RedBlackTree.empty()
+    @Test
+    def filterMap01(): Unit \ Assert =
+        assertTrue(RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, (RedBlackTree.empty(): RedBlackTree[Int32, Int32]))
+            == RedBlackTree.empty())
 
-    @test
-    def filterMap02(): Bool =
-        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1))
-            == RedBlackTree.empty()
+    @Test
+    def filterMap02(): Unit \ Assert =
+        assertTrue(RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1))
+            == RedBlackTree.empty())
 
-    @test
-    def filterMap03(): Bool =
-        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
-            |> RedBlackTree.toList |> List.sort == (2, "2") :: (3, "3") :: (4, "4") :: Nil
+    @Test
+    def filterMap03(): Unit \ Assert =
+        assertEq(expected = (2, "2") :: (3, "3") :: (4, "4") :: Nil, RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort)
+
+    @Test
+    def filterMap04(): Unit \ Assert =
+        assertEq(expected = (2, "2") :: (3, "3") :: (4, "4") :: Nil, Filterable.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2) |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4))
+            |> RedBlackTree.toList |> List.sort)
+
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMutDeque01(): Bool = region rc {
+    @Test
+    def toMutDeque01(): Unit \ Assert = region rc {
         let t = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]);
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
         let d2 = MutDeque.empty(rc);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
-    @test
-    def toMutDeque02(): Bool = region rc {
+    @Test
+    def toMutDeque02(): Unit \ Assert = region rc {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
         let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, 1), d2);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
-    @test
-    def toMutDeque03(): Bool = region rc {
+    @Test
+    def toMutDeque03(): Unit \ Assert = region rc {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2)
                                      |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
         let d1 = RedBlackTree.toMutDeque(rc, t);
@@ -801,11 +814,11 @@ mod TestRedBlackTree {
         MutDeque.pushBack((4, 4), d2);
         MutDeque.pushFront((1, 1), d2);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
-    @test
-    def toMutDeque04(): Bool = region rc {
+    @Test
+    def toMutDeque04(): Unit \ Assert = region rc {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
                                      |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
         let d1 = RedBlackTree.toMutDeque(rc, t);
@@ -816,7 +829,7 @@ mod TestRedBlackTree {
         MutDeque.pushFront((2, 'b'), d2);
         MutDeque.pushFront((1, 'a'), d2);
 
-        d1 `MutDeque.sameElements` d2
+        assertTrue(d1 `MutDeque.sameElements` d2)
     }
 
 
@@ -824,68 +837,72 @@ mod TestRedBlackTree {
     // mapAWithKey (aka traverseWithKey)                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapAWithKey01(): Bool = region rc {
+    @Test
+    def mapAWithKey01(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty()) and Ref.get(st) == '#'
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty()));
+        assertEq(expected = '#', Ref.get(st))
     }
 
-    @test
-    def mapAWithKey02(): Bool = region rc {
+    @Test
+    def mapAWithKey02(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and Ref.get(st) == 'a'
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')));
+        assertEq(expected = 'a', Ref.get(st))
     }
 
-    @test
-    def mapAWithKey03(): Bool = region rc {
+    @Test
+    def mapAWithKey03(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and Ref.get(st) == 'b'
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')));
+        assertEq(expected = 'b', Ref.get(st))
     }
 
-    @test
-    def mapAWithKey04(): Bool = region rc {
+    @Test
+    def mapAWithKey04(): Unit \ Assert = region rc {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        ans == Identity.Identity(RedBlackTree.empty()
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
-                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and Ref.get(st) == 'c'
+                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')));
+        assertEq(expected = 'c', Ref.get(st))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterator01(): Bool = region rc {
-        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.iterator(rc) |> Iterator.toList == Nil
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.iterator(rc) |> Iterator.toList)
     }
 
-    @test
-    def iterator02(): Bool = region rc {
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
                                      |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
-        RedBlackTree.iterator(rc, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+        assertEq(expected = (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil, RedBlackTree.iterator(rc, t) |> Iterator.toList)
     }
 
-    @test
-    def iterator03(): Bool = region rc {
+    @Test
+    def iterator03(): Unit \ Assert = region rc {
         let t = RedBlackTree.empty() |> RedBlackTree.insert(4, 'd') |> RedBlackTree.insert(3, 'c')
                                      |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(1, 'a');
-        RedBlackTree.iterator(rc, t) |> Iterator.toList == (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil
+        assertEq(expected = (1, 'a') :: (2, 'b') :: (3, 'c') :: (4, 'd') :: Nil, RedBlackTree.iterator(rc, t) |> Iterator.toList)
     }
 
-    @test
-    def iterator04(): Bool = region rc {
+    @Test
+    def iterator04(): Unit \ Assert = region rc {
         let l = List.range(1, 100);
         let t = List.foldLeft((ac, i) -> RedBlackTree.insert(i, i+100, ac), RedBlackTree.empty(), l);
-        RedBlackTree.iterator(rc, t) |> Iterator.toList == List.map(i -> (i, i+100), List.range(1, 100))
+        assertEq(expected = List.map(i -> (i, i+100), List.range(1, 100)), RedBlackTree.iterator(rc, t) |> Iterator.toList)
     }
 
 }

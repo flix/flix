@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.TypedAst.ExtPattern
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.shared.TraitConstraint
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor}
@@ -47,6 +48,29 @@ object RedundancyError {
          |${code(loc, "pure expression.")}
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate that the extensible variant constructor `label` was used multiple times.
+    *
+    * @param label the name of the extensible variant constructor.
+    * @param loc1  the location of the first pattern.
+    * @param loc2  the location of the second pattern.
+    */
+  case class DuplicateExtPattern(label: Name.Label, loc1: SourceLocation, loc2: SourceLocation) extends RedundancyError {
+    def summary: String = s"Duplicate extensible variant pattern '${label.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Duplicate extensible pattern '${red(label.name)}'.
+         |
+         |${code(loc1, "the first occurrence was here.")}
+         |
+         |${code(loc2, "the second occurrence was here.")}
+         |""".stripMargin
+    }
+
+    def loc: SourceLocation = loc1
   }
 
   /**
@@ -143,7 +167,7 @@ object RedundancyError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Type constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
+      s""">> Type constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTraitConstraint.formatTraitConstraint(entailingTconstr))}'.
          |
          |${code(loc, "redundant type constraint.")}
          |""".stripMargin
@@ -363,7 +387,7 @@ object RedundancyError {
     *
     * @param sym the unused effect symbol.
     */
-  case class UnusedEffectSym(sym: Symbol.EffSym) extends RedundancyError {
+  case class UnusedEffSym(sym: Symbol.EffSym) extends RedundancyError {
     def summary: String = s"Unused effect '${sym.name}'.'"
 
     def message(formatter: Formatter): String = {
@@ -601,6 +625,39 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that a case of an `ematch` expression is unreachable due to an earlier default case.
+    *
+    * @param defaultLoc the location of the default case.
+    * @param loc        the location of the unreachable case.
+    */
+  case class UnreachableExtMatchCase(defaultLoc: SourceLocation, loc: SourceLocation) extends RedundancyError {
+
+    override def summary: String = "Unreachable case."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unreachable case. It is covered by a '_' pattern.
+         |
+         |${code(loc, "unreachable case.")}
+         |
+         |Covered by the following pattern:
+         |
+         |${code(defaultLoc, "covering pattern.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """
+        |Possible fixes:
+        |
+        |  (1)  Remove the covered case.
+        |  (2)  Remove the covering '_' case.
+        |
+        |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate that an expression is useless.
     *
     * @param tpe the type of the expression.
@@ -630,4 +687,5 @@ object RedundancyError {
          |""".stripMargin
     })
   }
+
 }

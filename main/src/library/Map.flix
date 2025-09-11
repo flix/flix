@@ -118,6 +118,11 @@ instance Iterable[Map[k, v]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
+instance ForEach[Map[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
+}
+
 instance ToJava[Map[k, v]] with Order[k] {
     type Out = JMap
     type Aef = IO
@@ -145,7 +150,7 @@ mod Map {
     ///
     def useParallelEvaluation(m: Map[k, v]): Bool =
         let Map(t) = m;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -546,7 +551,7 @@ mod Map {
         foldMapWithKey(_ -> f, m)
 
     ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -556,7 +561,7 @@ mod Map {
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -567,7 +572,7 @@ mod Map {
         RedBlackTree.reduceLeft(f, t)
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -577,7 +582,7 @@ mod Map {
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
@@ -872,7 +877,7 @@ mod Map {
     ///
     pub def unfoldWithIter(next: Unit -> Option[(k, v)] \ ef): Map[k, v] \ ef with Order[k] =
         def loop(m) = match next() {
-            case None       => m
+            case None         => m
             case Some((k, v)) => loop(insert(k, v, m))
         };
         loop(empty())

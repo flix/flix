@@ -42,13 +42,11 @@ object GenFunAndClosureClasses {
         macc + (closureName -> JvmClass(closureName, code))
 
       case (macc, defn) if isFunction(defn) && isControlPure(defn) =>
-        flix.subtask(defn.sym.toString, sample = true)
         val functionName = BackendObjType.Defn(defn.sym).jvmName
         val code = genControlPureFunction(functionName, defn)
         macc + (functionName -> JvmClass(functionName, code))
 
       case (macc, defn) if isFunction(defn) =>
-        flix.subtask(defn.sym.toString, sample = true)
         val functionName = BackendObjType.Defn(defn.sym).jvmName
         val code = genControlImpureFunction(functionName, defn)
         macc + (functionName -> JvmClass(functionName, code))

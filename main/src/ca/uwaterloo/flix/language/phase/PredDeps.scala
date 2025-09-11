@@ -113,7 +113,7 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _) =>
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
@@ -122,7 +122,7 @@ object PredDeps {
     case Expr.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _) =>
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Unary(_, exp, _, _, _) =>
@@ -172,10 +172,9 @@ object PredDeps {
       visitExp(exp)
       rules.foreach { case RestrictableChooseRule(_, body) => visitExp(body) }
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
 
     case Expr.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
@@ -183,7 +182,7 @@ object PredDeps {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -345,17 +344,17 @@ object PredDeps {
       exps.foreach(visitExp)
       terms.foreach(visitExp)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      exps.foreach(visitExp)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.FixpointProject(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      exps.foreach(visitExp)
 
     case Expr.Error(_, _, _) => ()
   }

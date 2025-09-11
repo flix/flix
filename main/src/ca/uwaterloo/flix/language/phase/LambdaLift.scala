@@ -220,10 +220,10 @@ object LambdaLift {
     case SimplifiedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case SimplifiedAst.HandlerRule(sym, fparams, body) =>
+        case SimplifiedAst.HandlerRule(symUse, fparams, body) =>
           val fps = fparams.map(visitFormalParam)
           val b = visitExp(body)
-          LiftedAst.HandlerRule(sym, fps, b)
+          LiftedAst.HandlerRule(symUse, fps, b)
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
 

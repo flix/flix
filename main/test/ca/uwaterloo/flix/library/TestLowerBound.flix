@@ -1,75 +1,79 @@
-/*
- *  Copyright 2020 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestLowerBound {
-    use LowerBound.minValue
+
+    use Assert.{assertEq};
+    use LowerBound.minValue;
 
     @Test
-    def testUnit(): Bool = minValue() == ()
+    def minValue_Unit01(): Unit \ Assert = 
+        assertEq(expected = (), minValue())
 
     @Test
-    def testBool(): Bool = minValue() == false
+    def minValue_Bool01(): Unit \ Assert = 
+        assertEq(expected = false, minValue())
 
     @Test
-    def testInt8(): Bool = minValue() == -128i8
+    def minValue_Int801(): Unit \ Assert = 
+        assertEq(expected = -128i8, minValue())
 
     @Test
-    def testInt16(): Bool = minValue() == -32_768i16
+    def minValue_Int1601(): Unit \ Assert = 
+        assertEq(expected = -32_768i16, minValue())
 
     @Test
-    def testInt32(): Bool = minValue() == -2_147_483_648
+    def minValue_Int3201(): Unit \ Assert = 
+        assertEq(expected = -2_147_483_648, minValue())
 
     @Test
-    def testInt64(): Bool = minValue() == -9_223_372_036_854_775_808i64
+    def minValue_Int6401(): Unit \ Assert = 
+        assertEq(expected = -9_223_372_036_854_775_808i64, minValue())
 
     @Test
-    def testFloat32(): Bool = minValue() == Float32.minValue()
+    def minValue_Float3201(): Unit \ Assert = 
+        assertEq(expected = Float32.minValue(), minValue())
 
     @Test
-    def testFloat64(): Bool = minValue() == Float64.minValue()
+    def minValue_Float6401(): Unit \ Assert = 
+        assertEq(expected = Float64.minValue(), minValue())
 
     @Test
-    def testChar(): Bool = minValue() == Char.minValue()
+    def minValue_Char01(): Unit \ Assert = 
+        assertEq(expected = Char.minValue(), minValue())
 
     @Test
-    def testTuple2(): Bool = minValue() == ('\u0000', '\u0000')
+    def minValue_Tuple201(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple3(): Bool = minValue() == ('\u0000', '\u0000', '\u0000')
+    def minValue_Tuple301(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple4(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple401(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple5(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple501(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple6(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple601(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple7(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple701(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple8(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple801(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple9(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple901(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
     @Test
-    def testTuple10(): Bool = minValue() == ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000')
+    def minValue_Tuple1001(): Unit \ Assert = 
+        assertEq(expected = ('\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000', '\u0000'), minValue())
 
 }
 

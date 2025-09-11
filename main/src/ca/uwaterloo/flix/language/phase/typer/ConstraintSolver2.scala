@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.EffectProvenance
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
@@ -401,7 +402,7 @@ object ConstraintSolver2 {
   private def caseSetUnification(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv, flix: Flix): (List[TypeConstraint], SubstitutionTree) = constr match {
     case c@TypeConstraint.Equality(tpe1, tpe2, _) => (tpe1.kind, tpe2.kind) match {
       case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
-        CaseSetUnification.unify(tpe1, tpe2, renv, sym1.universe, sym1) match {
+        CaseSetZhegalkinUnification.unify(tpe1, tpe2, renv, sym1.universe, sym1) match {
           case Some(subst) => (Nil, SubstitutionTree.shallow(subst))
           case None => (List(c), SubstitutionTree.empty)
         }
@@ -460,6 +461,7 @@ object ConstraintSolver2 {
         }
         (Nil, subst)
       case Result.Err(unsolved) =>
+        EffectProvenance.debug(eqConstrs)
         // Otherwise we failed. Return the evidence of failure.
         (unsolved, Substitution.empty)
     }

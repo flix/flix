@@ -271,6 +271,7 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): TypedAst.Instance = inst match {
     case KindedAst.Instance(doc, ann, mod, symUse, tparams0, tpe, tconstrs0, econstrs0, assocs0, defs0, ns, loc) =>
       val renv = tparams0.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+      val tparams = tparams0.map(visitTypeParam)
       val tconstrs = tconstrs0 // no subst to be done
       val econstrs = econstrs0 // no subst to be done
       checkInstAssocTypes(inst, traitEnv)
@@ -285,7 +286,7 @@ object Typer {
           val open = shouldSubeffect(defn.spec.eff, Subeffecting.InsDefs)
           visitDef(defn, tconstrs, econstrs, renv, root, traitEnv, eqEnv, open)
       }
-      TypedAst.Instance(doc, ann, mod, symUse, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
+      TypedAst.Instance(doc, ann, mod, symUse, tparams, tpe, tconstrs, econstrs, assocs, defs, ns, loc)
   }
 
   /**
@@ -299,7 +300,7 @@ object Typer {
     * Reconstructs types in the given enum.
     */
   private def visitEnum(enum0: KindedAst.Enum): TypedAst.Enum = enum0 match {
-    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, _, loc) =>
+    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val cases = MapOps.mapValues(cases0) {
         case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>

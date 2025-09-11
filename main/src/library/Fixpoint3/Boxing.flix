@@ -49,11 +49,11 @@ mod Fixpoint3.Boxing {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{arityOf, BoolExp, RamId, RamProgram, RamStmt, RelSym, RamTerm, RelOp, toDenotation}
     use Fixpoint3.Ast.Shared.{PredSym, isRelational, Denotation}
-    use Fixpoint3.AtomicCounter
     use Fixpoint3.Boxable
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.{BoxedBool, BoxedChar, BoxedFloat32, BoxedFloat64, BoxedInt8, BoxedInt16, BoxedInt32, BoxedInt64, BoxedObject}
     use Fixpoint3.BoxingType.{Boxing, getType, RamIdToPos, setType, Types, TypeInfo, UnifiedTypePos}
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.Predicate.relSymsOfProgram
     use Fixpoint3.ReadWriteLock
     use Fixpoint3.Util.getOrCrash
@@ -65,183 +65,64 @@ mod Fixpoint3.Boxing {
     /// aka the `UnifiedTypePos`.
     ///
     @Internal
-    pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts, RamIdToPos) \ r =
+    pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r], RamIdToPos) \ r =
         let mapping = Equality.computeMapping(program, withProv);
         let boxingInfo = initializeInternal(rc, program, mapping, withProv);
-        let (facts, newBoxingInfo) = initializeFacts(rc, program, boxingInfo, mapping, withProv);
-        (newBoxingInfo, facts, mapping)
+        let facts = unsafely IO run initializeFacts(rc, program, boxingInfo, mapping, withProv);
+        (boxingInfo, facts, mapping)
 
     ///
     /// Returns `(facts, boxing)` where `facts` consists of the `Int64` representatives of
     /// the facts in `program`, with respect to `boxing`. Note that the old `boxingInfo` is
     /// invalid for the returned `facts`.
     ///
-    /// This procedure will be heavily simplified by https://github.com/flix/flix/issues/11034
-    /// where most of the code is removed.
-    ///
-    def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos, withProv: Bool): (EFacts, Boxing[r]) \ r = region rc2 {
-        let RamProgram.Program(_, facts, _, _) = program;
-        let factsAsVec = Map.toVector(facts);
-        let counters = initializeCounters(rc1, boxingInfo);
-        let newFacts = Array.empty(rc2, Vector.length(factsAsVec));
-        let funcsToBeRun = factsAsVec |> Vector.mapWithIndex(i -> match (relSym, factVec) -> () -> {
-            let mappedResult = mapAllFacts(rc1, relSym, factVec, boxingInfo, counters, mapping, withProv);
-            Array.put((relSym, mappedResult), i, newFacts)
-        });
-        spawnFuncs(funcsToBeRun);
-        let newBoxing = fixBoxingAfterInit(rc1, counters, boxingInfo);
-        (Array.toMap(newFacts), newBoxing)
-    }
+    def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos, withProv: Bool): EFacts[r] \ r + IO =
+        let RamProgram.Program(_, facts, _, (indexes, _)) = program;
+        let (f1, f2) = facts;
+        let newFacts = MutMap.empty(rc1);
+        foreach ((relSym, relFacts) <- f1) {
+            // Get some search. This means that we have to create one less index in the interpreter.
+            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let newTree = BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search);
+            mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree);
+            MutMap.put(relSym, newTree, newFacts)
+        };
+        foreach ((relSym, relFacts) <- f2) {
+            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
+            mapAllFacts(relSym, relFacts, boxingInfo, mapping, withProv, newTree)
+        };
+        newFacts |> MutMap.toMap
 
-    ///
-    /// Returns a correct `Boxing` constructed from `counters` and `boxingInfo`.
-    ///
-    /// After the simple initialization `boxingInfo` is missing the map back from `Int64`
-    /// to `Boxed`. This function simply creates it from the old `boxingInfo`.
-    ///
-    def fixBoxingAfterInit(rc: Region[r], counters: Vector[AtomicCounter[r]], boxingInfo: Boxing[r]): Boxing[r] \ r = {
-        let (_, boxToRepVec, typeInfo, locks) = boxingInfo;
-        let newBoxedArr = counters |> Vector.map(c -> Array.empty(rc, getOrCrash(Int64.tryToInt32(AtomicCounter.get(c)))));
-        let funcsToBeRun = newBoxedArr |>
-            Vector.mapWithIndex(i -> writeTo -> () -> {
-                match getType(i, typeInfo) {
-                    case Types.TyObject =>
-                        let boxToRep = Vector.get(i, boxToRepVec);
-                        boxToRep |> BPlusTree.forEach(val -> pos -> Array.put(val, getOrCrash(Int64.tryToInt32(pos)), writeTo))
-                    case _ => ()
-                }
-            });
-        spawnFuncs(funcsToBeRun);
-        let newMutLists = newBoxedArr |> Vector.map(Array.toMutList(rc));
-        (newMutLists, boxToRepVec, typeInfo, locks)
-    }
-
-    ///
-    /// Spawns all functions in `funcs` and await their termination.
-    ///
-    def spawnFuncs(funcs: Vector[Unit -> Unit \ ef]): Unit \ ef = region rc {
-        unchecked_cast((
-            funcs |> Vector.forEach(f -> {
-            let _: Unit = spawn {
-                unchecked_cast((f(): _ \ ef) as _ \ IO)
-            } @ rc;
-            ()
-        }): _ \ IO) as _ \ ef)
-    }
-
-    ///
-    /// Returns the number of threads to use for parallel evaluation.
-    ///
-    /// # SAFETY:
-    /// This accesses the runtime environment, which is an effect.
-    /// It is assumed that this function is only used in contexts
-    /// where this effect is not observable outside of the RedBlackTree module.
-    ///
-    /// Copy pasted from RedBlackTree.flix.
-    ///
-    def threads(): Int32 = unsafe {
-        // Note: We use a multiple of the number of physical cores for better performance.
-        let multiplier = 4;
-        multiplier * Runtime.getRuntime().availableProcessors()
-    }
-
-    ///
-    /// Map all facts in `facts` using `boxingInfo` and `mapping`.
-    ///
-    /// Returns a vector of the `Int64` values representing the `Boxed` values
-    /// in `facts`.
-    ///
     def mapAllFacts(
-        rc1: Region[r],
         relSym: RelSym,
-        facts: Vector[Vector[Boxed]],
+        facts: BPlusTree[Vector[Boxed], Boxed, Static],
         boxingInfo: Boxing[r],
-        counters: Vector[AtomicCounter[r]],
         mapping: RamIdToPos,
-        withProv: Bool
-    ): Vector[(Vector[Int64], Boxed)] \ r = {
+        withProv: Bool,
+        newTree: BPlusTree[Vector[Int64], Boxed, r]
+    ): Unit \ r + IO = unchecked_cast({
         let relSymId = Ram.toId(relSym);
-        let numOfFacts = Vector.length(facts);
-        // We need to test whether there are provenance facts. If `numOfFacts > 0` and
-        // `arity != Vector.length(facts[0])` then there are provenance facts and positions
-        // that need to be extended by RamId(-1).
         let nonExtendedPositions = Vector.range(0, arityOf(relSym)) |>
             Vector.map(i -> getOrCrash(Map.get(RamId.RelPos(relSymId, i), mapping)));
-        let positions =
-            if (not withProv) nonExtendedPositions
-            else Vector.append(nonExtendedPositions, 
-                Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))});
-        let threadNum = threads();
-        let resultArr = Array.empty(rc1, numOfFacts);
-        // Map the facts in parallel, unless there are relatively few.
-        if(numOfFacts <= threadNum) {
-            mapPartOfVector(facts, 0, numOfFacts, isRelational(toDenotation(relSym)), resultArr, boxingInfo, counters, positions)
+        let positions = if (not withProv) {
+            nonExtendedPositions
         } else {
-            // Split `facts` into `threadNum` parts and assign each part to a thread.
-            let inc = numOfFacts / threadNum;
-            let limits = Array.init(rc1, i -> (i * inc, (i + 1) * inc), threadNum);
-            Array.put((fst(Array.get(threadNum - 1, limits)), numOfFacts), threadNum - 1, limits);
-            let funcsToBeRun = limits |>
-            Array.toVector |>
-            Vector.map(match (lower, upper) ->
-                () -> mapPartOfVector(facts, lower, upper, isRelational(toDenotation(relSym)), resultArr, boxingInfo, counters, positions)
-            );
-            spawnFuncs(funcsToBeRun)
+            nonExtendedPositions ++ Vector#{getOrCrash(Map.get(RamId.Id(-1), mapping)), getOrCrash(Map.get(RamId.Id(-1), mapping))}
         };
-        Array.toVector(resultArr)
-    }
-
-    ///
-    /// Map `factVec` from `lb` (inclusive) to `ub` (exclusive) and place the result in `collectionArr`.
-    ///
-    def mapPartOfVector(
-        factVec: Vector[Vector[Boxed]],
-        lb: Int32,
-        ub: Int32,
-        isRelational: Bool,
-        collectionArr: Array[(Vector[Int64], Boxed), r],
-        boxingInfo: Boxing[r],
-        counters: Vector[AtomicCounter[r]],
-        unifiedPositions: Vector[UnifiedTypePos]
-    ): Unit \ r = {
-        def loop(i) =
-            if(i >= ub) ()
-            else {
-                let fullTuple = Vector.get(i, factVec);
-                let (tuple, boxed) =
-                    if(isRelational) {
-                        (fullTuple, Boxed.NoValue)
-                    } else {
-                        (Vector.dropRight(1, fullTuple), Vector.get(Vector.length(fullTuple) - 1, fullTuple))
-                    };
-                let savedVec = tuple |>
-                    Vector.mapWithIndex(index -> boxedVal ->
-                        let unifiedPos = Vector.get(index, unifiedPositions);
-                        match boxedVal {
-                            case BoxedObject(_, _) =>
-                                let (_, boxToRepVec, symInfo, _) = boxingInfo;
-                                setType(Types.TyObject, unifiedPos, symInfo);
-                                let boxToRep = Vector.get(unifiedPos, boxToRepVec);
-                                let counter = Vector.get(unifiedPos, counters);
-                                BPlusTree.computeIfAbsent(() -> AtomicCounter.getAndIncrement(counter), boxedVal, boxToRep)
-                            case _ => unboxWith(boxedVal, unifiedPos, boxingInfo)
-                        }
-                    );
-                Array.put((savedVec, boxed), i, collectionArr);
-                loop(i + 1)
-            };
-        loop(lb)
-    }
-
-    ///
-    /// Initialize counter to ensure the new values do not overlap with already-unboxed
-    /// values stored in `boxingInfo`.
-    ///
-    def initializeCounters(rc: Region[r], boxingInfo: Boxing[r]): Vector[AtomicCounter[r]] \ r = {
-        let (boxedVecList, _, _, _) = boxingInfo;
-        boxedVecList |>
-            Vector.map(listOfBoxed ->  AtomicCounter.mkCounter(rc, Int32.toInt64(MutList.length(listOfBoxed))))
-    }
+        facts |>
+            BPlusTree.parForEach(tuple -> lat -> {
+                // `facts` and `newTree` must have same the same region. Cast to achieve this.
+                unchecked_cast(({
+                    let savedVec = tuple |>
+                        Vector.mapWithIndex(index -> boxedVal ->
+                            let unifiedPos = Vector.get(index, positions);
+                            unboxWith(boxedVal, unifiedPos, boxingInfo)
+                        );
+                    BPlusTree.put(savedVec, lat, newTree)
+                }: _ \ r) as _ \ IO)}
+            )
+    // This is to signal that we indeed modify the region `r`.
+    } as _ \ IO + r)
 
     ///
     /// Construct a `Boxing` from `program` given a map from `RamId` to `UnifiedTypePos`.
@@ -254,18 +135,19 @@ mod Fixpoint3.Boxing {
         let posToIndex = Array.init(rc, _ -> Types.TyUnknown, max);
         let info = (intToBox, boxToInt, posToIndex, locks);
         let relSyms = relSymsOfProgram(program);
-        if(withProv) {
+        if (withProv) {
             setType(Types.TyInt64, getOrCrash(Map.get(RamId.Id(-1), map)), posToIndex)
         } else {
             ()
         };
         // Add bot first to make sure it corresponds to 0.
-        List.filter(match RelSym.Symbol(_, _, den) -> not isRelational(den), relSyms) |>
-            List.forEach(x -> match x {
+        foreach (x <- relSyms) {
+            match x {
                 case RelSym.Symbol(PredSym.PredSym(_, index), arity, Denotation.Latticenal(bot, _, _, _)) =>
                     unboxWith(bot, getOrCrash(Map.get(RamId.RelPos(index, arity - 1), map)), info); ()
-                case _ => bug!("Should have been filtered out")
-        });
+                case _ => ()
+            }
+        };
         info
 
     ///
@@ -381,7 +263,7 @@ mod Fixpoint3.Boxing {
         use Fixpoint3.BoxingType.RamIdToPos
         use Fixpoint3.Counter
         use Fixpoint3.Util.getOrCrash
-        use Fixpoint3.Predicate.{PredType, idToFullPredId, fullRelSymToType, relSymFromPredType, relSymsOfProgram}
+        use Fixpoint3.Predicate.{PredType, fullRelSymToType, relSymFromPredType, relSymsOfProgram}
 
         ///
         /// Returns a map from `RamId` to `UnifiedTypePos` constructed from `program`.
@@ -397,15 +279,15 @@ mod Fixpoint3.Boxing {
             let relSyms = relSymsOfProgram(program);
             let mutMap = MutMap.empty(rc);
             let counter = Counter.fresh(rc);
-            List.forEach(match RelSym.Symbol(PredSym.PredSym(_, id), arity, _) -> {
-                Vector.forEach(i -> {
+            foreach (RelSym.Symbol(PredSym.PredSym(_, id), arity, _) <- relSyms) {
+                foreach (i <- Vector.range(0, getProvSafeIdArity(arity, withProv))) {
                     registerRamId(disjointSet, mutMap, counter, RamId.RelPos(id, i))
-                }, Vector.range(0, getProvSafeIdArity(arity, withProv)))
-            }, relSyms);
+                }
+            };
             // Given the equivalence relation just computed assign unique positions for each
             // equivalence relation.
             computeMappingStmt(disjointSet, mutMap, counter, withProv, stmt);
-            if(withProv) {
+            if (withProv) {
                 registerRamId(disjointSet, mutMap, counter, RamId.Id(-1))
             } else ();
             MutMap.toMap(mutMap)
@@ -425,17 +307,16 @@ mod Fixpoint3.Boxing {
         /// Unify all `RamId`s in `stmt` which can be proven to be equivalent, type-wise.
         ///
         def unifyRamIdsStmt(predicates: Predicates, set: MutDisjointSets[RamId, r], withProv: Bool, stmt: RamStmt): Unit \ r = match stmt {
-            case RamStmt.Insert(body) => unifyRamIdsOp(predicates, set, withProv, body)
+            case RamStmt.Insert(body)          => unifyRamIdsOp(predicates, set, withProv, body)
             case RamStmt.MergeInto(rel1, rel2) => unifyRelSyms(rel1, rel2, set, withProv)
-            case RamStmt.Swap(rel1, rel2) => unifyRelSyms(rel1, rel2, set, withProv)
-            case RamStmt.Purge(_) => ()
-            case RamStmt.Seq(stmts) => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
-            case RamStmt.Par(stmts) => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
+            case RamStmt.Swap(rel1, rel2)      => unifyRelSyms(rel1, rel2, set, withProv)
+            case RamStmt.Purge(_)              => ()
+            case RamStmt.Seq(stmts)            => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
+            case RamStmt.Par(stmts)            => Vector.forEach(unifyRamIdsStmt(predicates, set, withProv), stmts)
             case RamStmt.Until(bools, body) =>
                 unifyRamIdsStmt(predicates, set, withProv, body);
                 Vector.forEach(unifyRamIdsBool(set), bools)
             case RamStmt.Comment(_) => ()
-            case RamStmt.EstimateJoinSize(_, _, _, _) => ()
         }
 
         ///
@@ -444,27 +325,34 @@ mod Fixpoint3.Boxing {
         def unifyRamIdsOp(predicates: Predicates, set: MutDisjointSets[RamId, r], withProv: Bool, op: RelOp): Unit \ r = match op {
             case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
                 let usedArity = getProvSafeIdArity(arity, withProv);
-                Vector.forEach(i -> MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set), Vector.range(0, usedArity));
+                foreach (i <- Vector.range(0, usedArity)) {
+                    MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set)
+                };
                 unifyRamIdsOp(predicates, set, withProv, body)
             case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
                 let usedArity = getProvSafeIdArity(arity, withProv);
-                Vector.forEach(i -> MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set), Vector.range(0, usedArity));
+                foreach (i <- Vector.range(0, usedArity)) {
+                    MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set)
+                };
                 Vector.forEach(unifyRamIdsBool(set), bools);
                 unifyRamIdsOp(predicates, set, withProv, body)
-            case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, _) =>
-                Vector.forEachWithIndex(i -> curTerm -> {
+            case RelOp.Functional(rv, _, inputTerms, body, arity) =>
+                let RowVar.Named(id) = rv;
+                foreach ((i, curTerm) <- ForEach.withIndex(inputTerms)) {
                     let termID = Ram.getTermRamId(curTerm);
                     MutDisjointSets.union(RamId.InId(id, i), termID, set);
                     unifyRamIdsTerm(set, curTerm)
-                }, inputTerms);
+                };
+                foreach (i <- Vector.range(0, arity)) {
+                    MutDisjointSets.makeSet(RamId.TuplePos(rv, i), set)
+                };
                 unifyRamIdsOp(predicates, set, withProv, body)
-            case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _)) =>
-                terms |>
-                Vector.forEachWithIndex(i -> term -> {
+            case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
+                foreach ((i, term) <- ForEach.withIndex(terms)) {
                     unifyRamIdsTerm(set, term);
                     let termID = Ram.getTermRamId(term);
                     MutDisjointSets.union(RamId.RelPos(predSym, i), termID, set)
-                })
+                }
             case RelOp.If(bools, body) =>
                 Vector.forEach(unifyRamIdsBool(set), bools);
                 unifyRamIdsOp(predicates, set, withProv, body)
@@ -477,10 +365,10 @@ mod Fixpoint3.Boxing {
             case BoolExp.Not(bexp) => unifyRamIdsBool(set, bexp)
             case BoolExp.IsEmpty(_) => ()
             case BoolExp.NotMemberOf(terms, RelSym.Symbol(PredSym.PredSym(_, id), _, _)) =>
-                Vector.forEach(term -> unifyRamIdsTerm(set, term), terms);
-                Vector.forEachWithIndex(i -> term -> {
+                Vector.forEach(unifyRamIdsTerm(set), terms);
+                foreach ((i, term) <- ForEach.withIndex(terms)) {
                     MutDisjointSets.union(Ram.getTermRamId(term), RamId.RelPos(id, i), set)
-                }, terms)
+                }
             case BoolExp.NotBot(term, _, _) => unifyRamIdsTerm(set, term)
             case BoolExp.Leq(_, _, _) => ()
             case BoolExp.Eq(term1, term2) =>
@@ -515,6 +403,11 @@ mod Fixpoint3.Boxing {
         def unifyRamIdsTerm(set: MutDisjointSets[RamId, r], term: RamTerm): Unit \ r = match term {
             case RamTerm.Lit(_, _) => ()
             case RamTerm.RowLoad(_, _, _) => ()
+            case RamTerm.ProvMax(vec) =>
+                let id = Ram.getTermRamId(term);
+                foreach ((rv, index) <- vec) {
+                    MutDisjointSets.union(RamId.TuplePos(rv, index), id, set)
+                }
             case RamTerm.Meet(_, t1, (rv, relSym), id) =>
                 unifyRamIdsTerm(set, t1);
                 let id1 = Ram.getTermRamId(t1);
@@ -545,9 +438,9 @@ mod Fixpoint3.Boxing {
             let usedArity = getProvSafeIdArity(arity, withProv);
             let id1 = Ram.toId(relSym1);
             let id2 = Ram.toId(relSym2);
-            Vector.forEach(i -> {
+            foreach (i <- Vector.range(0, usedArity)) {
                 MutDisjointSets.union(RamId.RelPos(id1, i), RamId.RelPos(id2, i), set)
-            }, Vector.range(0, usedArity))
+            }
 
         ///
         /// For `predSym = 'P'` unify all indexes for `(P, ΔP, ΔP')`.
@@ -560,7 +453,7 @@ mod Fixpoint3.Boxing {
             unifyRelSyms(fullSymbol, newSymbol, set, withProv);
             let arity = Ram.arityOf(fullSymbol);
             let id1 = Ram.toId(fullSymbol);
-            if(withProv) {
+            if (withProv) {
                 MutDisjointSets.union(RamId.RelPos(id1, arity), RamId.Id(-1), set);
                 MutDisjointSets.union(RamId.RelPos(id1, arity + 1), RamId.Id(-1), set)
             } else ()
@@ -572,11 +465,11 @@ mod Fixpoint3.Boxing {
         /// the function at position `i`'.
         ///
         def unifyAppTerms(terms: Vector[RamTerm], id: Int32, set: MutDisjointSets[RamId, r]): Unit \ r =
-            Vector.forEachWithIndex(i -> t -> {
+            foreach ((i, t) <- ForEach.withIndex(terms)) {
                 unifyRamIdsTerm(set, t);
                 let id1 = Ram.getTermRamId(t);
                 MutDisjointSets.union(id1, RamId.InId(id, i), set)
-            }, terms)
+            }
 
         ///
         /// Based on the equivalence `disjoint` assign all unique `RamId`'s a `Boxing` position.
@@ -596,7 +489,6 @@ mod Fixpoint3.Boxing {
                 computeMappingStmt(disjoint, map, counter, withProv, body);
                 Vector.forEach(computeMappingBool(disjoint, map, counter), bools)
             case RamStmt.Comment(_) => ()
-            case RamStmt.EstimateJoinSize(_, _, _, _) => ()
         }
 
         ///
@@ -608,17 +500,17 @@ mod Fixpoint3.Boxing {
             match op {
                 case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
-                    Vector.range(0, usedArity) |> Vector.forEach(i -> {
+                    foreach (i <- Vector.range(0, usedArity)) {
                         insert(RamId.TuplePos(rv, i));
                         insert(RamId.RelPos(predSym, i))
-                    });
+                    };
                     recurse(body)
                 case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
-                    Vector.range(0, usedArity) |> Vector.forEach(i -> {
+                    foreach (i <- Vector.range(0, usedArity)) {
                         insert(RamId.TuplePos(rv, i));
                         insert(RamId.RelPos(predSym, i))
-                    });
+                    };
                     Vector.forEach(computeMappingBool(set, map, counter), bools);
                     recurse(body)
                 case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, arity) => // equality on the input should be handled elsewhere.
@@ -626,10 +518,9 @@ mod Fixpoint3.Boxing {
                     Vector.forEach(i -> insert(RamId.InId(id, i)), Vector.range(0, Vector.length(inputTerms)));
                     Vector.forEach(computeMappingTerm(set, map, counter), inputTerms);
                     recurse(body)
-                case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _)) =>
+                case RelOp.Project(terms, RelSym.Symbol(PredSym.PredSym(_, predSym), _, _), _) =>
                     terms |> Vector.forEachWithIndex(i -> _ -> insert(RamId.RelPos(predSym, i)));
-                    terms |>
-                    Vector.forEach(computeMappingTerm(set, map, counter))
+                    terms |> Vector.forEach(computeMappingTerm(set, map, counter))
                 case RelOp.If(bools, body) =>
                     recurse(body);
                     Vector.forEach(computeMappingBool(set, map, counter), bools)
@@ -710,6 +601,8 @@ mod Fixpoint3.Boxing {
                     Vector#{t1, t2, t3, t4} |> computeMappingTermAppRec
                 case RamTerm.App5(_, t1, t2, t3, t4, t5, _) =>
                     Vector#{t1, t2, t3, t4, t5} |> computeMappingTermAppRec
+                case RamTerm.ProvMax(loads) =>
+                    loads |> Vector.forEach(match (rv, index) -> registerRamIdRec(RamId.TuplePos(rv, index)))
                 case RamTerm.Meet(_, _, _, _) => unreachable!()
             }
 
@@ -727,10 +620,10 @@ mod Fixpoint3.Boxing {
                 case RamId.Id(i) => i
                 case _ => unreachable!()
             };
-            terms |> Vector.forEachWithIndex(i -> t -> {
+            foreach ((i, t) <- ForEach.withIndex(terms)) {
                 computeMappingTermRec(t);
                 registerRamIdRec(RamId.InId(id1, i))
-            })
+            }
 
         ///
         /// If `withProv` is true return `arity + 2`. Otherwise return `arity`.
@@ -754,9 +647,9 @@ mod Fixpoint3.Boxing {
             let arity = Ram.arityOf(relSym);
             let id = Ram.toId(relSym);
             let usedArity = getProvSafeIdArity(arity, withProv);
-            Vector.forEach(i -> {
+            foreach (i <- Vector.range(0, usedArity)) {
                 registerRamId(disjoint, map, counter, RamId.RelPos(id, i))
-            }, Vector.range(0, usedArity))
+            }
 
         ///
         /// Add `id` to `map` pointing to the `Int32` representing its boxing-information.

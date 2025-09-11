@@ -49,12 +49,12 @@ object DerivationError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+      s"${underline("Tip:")} Only the following traits may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     })
   }
 
   /**
-    * Illegal type class derivation for an empty enum.
+    * Illegal trait derivation for an empty enum.
     *
     * @param sym      the enum symbol.
     * @param classSym the class symbol of what is being derived.

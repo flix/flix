@@ -197,6 +197,9 @@ object FormatType {
       case DisplayType.SchemaExtend(_, _) => true
       case DisplayType.SchemaRow(_) => true
       case DisplayType.SchemaRowExtend(_, _) => true
+      case DisplayType.ExtensibleUnknown(_) => true
+      case DisplayType.Extensible(_) => true
+      case DisplayType.ExtensibleExtend(_, _) => true
       case DisplayType.RelationConstructor => true
       case DisplayType.Relation(_) => true
       case DisplayType.LatticeConstructor => true
@@ -297,6 +300,14 @@ object FormatType {
         val restString = visit(rest, Mode.Type)
         s"#( $fieldString | $restString )"
       case DisplayType.SchemaConstructor(arg) => s"#{ ${visit(arg, Mode.Type)} }"
+      case DisplayType.Extensible(fields) =>
+        val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
+        s"#| $fieldString |#"
+      case DisplayType.ExtensibleExtend(fields, rest) =>
+        val fieldString = fields.map(visitSchemaFieldType).mkString(", ")
+        val restString = visit(rest, Mode.Type)
+        s"#| $fieldString | $restString |#"
+      case DisplayType.ExtensibleUnknown(arg) => s"#| ${visit(arg, Mode.Type)} |#"
       case DisplayType.Not(tpe) => s"not ${delimit(tpe, mode)}"
       case DisplayType.And(tpes) =>
         val strings = tpes.map(delimit(_, mode))

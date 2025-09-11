@@ -15,7 +15,6 @@
  */
 
 mod Fixpoint3 {
-
     use Fixpoint3.Ast.Shared.PredSym
 
     ///

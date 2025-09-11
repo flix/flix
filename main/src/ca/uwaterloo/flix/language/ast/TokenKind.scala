@@ -40,6 +40,7 @@ sealed trait TokenKind {
       case TokenKind.Bang => "'!'"
       case TokenKind.BangEqual => "'!='"
       case TokenKind.Bar => "'|'"
+      case TokenKind.BarHash => "'|#'"
       case TokenKind.BracketL => "'['"
       case TokenKind.BracketR => "']'"
       case TokenKind.Caret => "'^'"
@@ -58,6 +59,7 @@ sealed trait TokenKind {
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
       case TokenKind.Hash => "'#'"
+      case TokenKind.HashBar => "'#|'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
       case TokenKind.HoleAnonymous => "'???'"
@@ -91,7 +93,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordIf => "'if'"
       case TokenKind.KeywordImport => "'import'"
       case TokenKind.KeywordInject => "'inject'"
-      case TokenKind.KeywordInline => "'inline'"
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
@@ -251,7 +252,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordIf => true
     case TokenKind.KeywordImport => true
     case TokenKind.KeywordInject => true
-    case TokenKind.KeywordInline => true
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
@@ -321,6 +321,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarHash
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.BuiltIn
@@ -345,6 +346,7 @@ sealed trait TokenKind {
          | TokenKind.EqualEqual
          | TokenKind.Err(_)
          | TokenKind.Hash
+         | TokenKind.HashBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -408,7 +410,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordLawful
          | TokenKind.KeywordPub
          | TokenKind.KeywordMut
-         | TokenKind.KeywordInline
          | TokenKind.KeywordOverride => true
     case _ => false
   }
@@ -487,6 +488,7 @@ sealed trait TokenKind {
          | TokenKind.BuiltIn
          | TokenKind.CurlyL
          | TokenKind.DotDotDot
+         | TokenKind.HashBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -580,6 +582,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarHash
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.Caret
@@ -613,7 +616,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordFix
          | TokenKind.KeywordForall
          | TokenKind.KeywordFrom
-         | TokenKind.KeywordInline
          | TokenKind.KeywordInstance
          | TokenKind.KeywordInstanceOf
          | TokenKind.KeywordInto
@@ -859,6 +861,8 @@ object TokenKind {
 
   case object Bar extends TokenKind
 
+  case object BarHash extends TokenKind
+
   case object BracketL extends TokenKind
 
   case object BracketR extends TokenKind
@@ -902,6 +906,8 @@ object TokenKind {
   case object EqualEqual extends TokenKind
 
   case object Hash extends TokenKind
+
+  case object HashBar extends TokenKind
 
   case object HashCurlyL extends TokenKind
 
@@ -974,8 +980,6 @@ object TokenKind {
   case object KeywordImport extends TokenKind
 
   case object KeywordInject extends TokenKind
-
-  case object KeywordInline extends TokenKind
 
   case object KeywordInstance extends TokenKind
 

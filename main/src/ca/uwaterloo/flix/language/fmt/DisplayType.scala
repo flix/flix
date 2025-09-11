@@ -159,6 +159,27 @@ object DisplayType {
     */
   case class SchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
+  //////////////////////////////
+  // Extensible Variants
+  //////////////////////////////
+
+  /**
+    * An extensible constructor.
+    *
+    * `arg` should be a variable or a Hole.
+    */
+  case class ExtensibleUnknown(arg: DisplayType) extends DisplayType
+
+  /** An unextended extensible type. */
+  case class Extensible(fields: List[PredicateFieldType]) extends DisplayType
+
+  /**
+    * An extended extensible type.
+    *
+    * `arg` should be a variable or a Hole.
+    */
+  case class ExtensibleExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
+
   ////////////////////
   // Boolean Operators
   ////////////////////
@@ -443,12 +464,12 @@ object DisplayType {
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. { ? }
-            case Nil => SchemaConstructor(Hole)
+            case Nil => ExtensibleUnknown(Hole)
             // Case 2: One row argument. Extract its values.
             case tpe :: Nil => tpe match {
-              case SchemaRow(fields) => Schema(fields)
-              case SchemaRowExtend(fields, rest) => SchemaExtend(fields, rest)
-              case nonSchema => SchemaConstructor(nonSchema)
+              case SchemaRow(fields) => Extensible(fields)
+              case SchemaRowExtend(fields, rest) => ExtensibleExtend(fields, rest)
+              case nonSchema => ExtensibleUnknown(nonSchema)
             }
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
@@ -595,8 +616,16 @@ object DisplayType {
           }
 
         case TypeConstructor.SymmetricDiff =>
-          val args = t.typeArguments.map(visit)
-          SymmetricDiff(args)
+          t.typeArguments.map(visit).map(splitSymmetricDiff) match {
+            // Case 1: No args. ? ⊕ ?
+            case Nil => SymmetricDiff(Hole :: Hole :: Nil)
+            // Case 2: One arg. Take the left and put a hole at the end: tpe1 ⊕ ?
+            case arg :: Nil => SymmetricDiff(arg :+ Hole)
+            // Case 3: Multiple args. Concatenate them: tpe1 ⊕ tpe2
+            case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 ++ arg2)
+            // Case 4: Too many args. Error.
+            case _ :: _ :: _ :: _ => throw new OverAppliedType(t.loc)
+          }
 
         case TypeConstructor.CaseSet(syms, _) =>
           val names = syms.toList.map(sym => DisplayType.Name(sym.name))
@@ -626,6 +655,14 @@ object DisplayType {
             case _ => throw new OverAppliedType(t.loc)
           }
 
+        case TypeConstructor.CaseSymmetricDiff(_) =>
+          t.typeArguments.map(visit) match {
+            case Nil => SymmetricDiff(Hole :: Hole :: Nil)
+            case arg :: Nil => SymmetricDiff(arg :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 :: arg2 :: Nil)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+
         case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
@@ -644,15 +681,6 @@ object DisplayType {
   private def mkApply(base: DisplayType, args: List[DisplayType]): DisplayType = args match {
     case Nil => base
     case _ :: _ => Apply(base, args)
-  }
-
-  /**
-    * Extracts the types from a tuple, treating non-tuples as singletons.
-    */
-  private def destructTuple(tpe: DisplayType): List[DisplayType] = tpe match {
-    case Tuple(fields) => fields
-    case Unit => Nil
-    case t => t :: Nil
   }
 
   /**
