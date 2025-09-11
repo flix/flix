@@ -1,8 +1,10 @@
-name: Сheck PR Data
+name: Style
 on:
   pull_request:
     types: [opened, edited, synchronize]
 
+# Checks in this workflow should be cheap,
+# since they run whenever a PR is edited
 jobs:
   check-pr-data:
     runs-on: ubuntu-latest
@@ -27,6 +29,6 @@ jobs:
               throw new Error("Invalid commit message '" + title + "'.")
             }
 
-      # Specifically, it looks for the string "(https://github.com/<github_id>)"
       - name: Check for author name in AUTHORS.md
+        # Looks for the string "(https://github.com/<github_id>)"
         run: grep -q "(https://github.com/${{ github.event.pull_request.user.login }})" AUTHORS.md
