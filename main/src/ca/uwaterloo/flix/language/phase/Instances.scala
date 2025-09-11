@@ -19,11 +19,12 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
+import ca.uwaterloo.flix.language.errors.InstanceError.MissingEqConstraint
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, ConstraintSolverInterface, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
@@ -80,12 +81,14 @@ object Instances {
     * * The same namespace as its type.
     */
   private def checkOrphan(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
-    case TypedAst.Instance(_, _, _, trt, tpe, _, _, _, ns, _) => tpe.typeConstructor match {
+    case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, ns, _) => tpe.typeConstructor match {
       // Case 1: Enum type in the same namespace as the instance: not an orphan
       case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ()
-      // Case 2: Any type in the trait namespace: not an orphan
+      // Case 2: Struct type in the same namespace as the instance: not an orphan
+      case Some(TypeConstructor.Struct(structSym, _)) if structSym.namespace == ns.idents.map(_.name) => ()
+      // Case 3: Any type in the trait namespace: not an orphan
       case _ if trt.sym.namespace == ns.idents.map(_.name) => ()
-      // Case 3: Any type outside the trait companion namespace and enum declaration namespace: orphan
+      // Case 4: Any type outside the trait companion namespace and enum declaration namespace: orphan
       case _ => sctx.errors.add(InstanceError.OrphanInstance(trt.sym, tpe, trt.loc))
     }
   }
@@ -98,7 +101,7 @@ object Instances {
     * * all type arguments are variables
     */
   private def checkSimple(inst: TypedAst.Instance)(implicit sctx: SharedContext, flix: Flix): Boolean = inst match {
-    case TypedAst.Instance(_, _, _, trt, tpe, _, _, _, _, _) => tpe match {
+    case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, _, _) => tpe match {
       case _: Type.Cst => true
       case _: Type.Var =>
         sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
@@ -169,7 +172,7 @@ object Instances {
   /**
     * Checks that every signature in `trt` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
     */
-  private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit = {
+  private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Unit = {
     val trt = root.traits(inst.trt.sym)
 
     // Step 1: check that each signature has an implementation.
@@ -187,7 +190,7 @@ object Instances {
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, trt.tparam.sym, inst.tpe, defn.sym.loc)(Scope.Top, flix)
-            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, root.eqEnv)) {
+            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, eqEnv, inst.econstrs)) {
               // Case 5.1: the schemes match. Success!
               ()
             } else {
@@ -214,7 +217,9 @@ object Instances {
     // lazily find the instance whose type unifies and save the substitution
     instOpt.flatMap {
       superInst =>
-        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).map {
+        // Rigidify sub-instance constraint vars in the substitution to ensure that they appear as-written in compiler errors
+        val rigidityEnv = RigidityEnv.ofRigidVars(tpe.typeVars.map(_.sym))
+        ConstraintSolver2.fullyUnify(tpe, superInst.tpe, Scope.Top, rigidityEnv)(root.eqEnv, flix).map {
           case subst => (superInst, subst)
         }
     }
@@ -224,8 +229,8 @@ object Instances {
     * Checks that there is an instance for each super trait of the trait of `inst`,
     * and that the constraints on `inst` entail the constraints on the super instance.
     */
-  private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
-    case TypedAst.Instance(_, _, _, trt, tpe, tconstrs, _, _, _, _) =>
+  private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root, eqEnv: EqualityEnv)(implicit sctx: SharedContext, flix: Flix): Unit = inst match {
+    case TypedAst.Instance(_, _, _, trt, _, tpe, tconstrs, econstrs, _, _, _, _) =>
       val superTraits = root.traitEnv.getSuperTraits(trt.sym)
       superTraits.foreach {
         superTrait =>
@@ -233,13 +238,28 @@ object Instances {
           findInstanceForType(tpe, superTrait, root) match {
             case Some((superInst, subst)) =>
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
+              val substTconstrs = tconstrs.map(subst.apply)
               superInst.tconstrs.foreach {
                 tconstr =>
-                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv, root.eqEnv) match {
+                  TraitEnvironment.entail(substTconstrs, subst(tconstr), root.traitEnv, eqEnv) match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.foreach {
                       case TypeConstraint.Trait(sym, traitTpe, loc) =>
                         sctx.errors.add(InstanceError.MissingTraitConstraint(TraitConstraint(TraitSymUse(sym, loc), traitTpe, loc), superTrait, trt.loc))
+                      case _ =>
+                        throw InternalCompilerException("Unexpected type constraint", inst.loc)
+                    }
+                  }
+              }
+              val substEconstrs = econstrs.map(subst.apply)
+              superInst.econstrs.foreach {
+                econstr =>
+                  val substEconstr = subst(econstr)
+                  EqualityEnvironment.entail(substEconstrs, substEconstr, root.traitEnv, eqEnv) match {
+                    case Result.Ok(_) => Nil
+                    case Result.Err(errors) => errors.foreach {
+                      case TypeConstraint.Equality(_, _, _) =>
+                        sctx.errors.add(MissingEqConstraint(substEconstr, superTrait, trt.loc))
                       case _ =>
                         throw InternalCompilerException("Unexpected type constraint", inst.loc)
                     }
@@ -256,9 +276,10 @@ object Instances {
     * Reassembles an instance
     */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root)(implicit sctx: SharedContext, flix: Flix): Unit = {
-    checkSigMatch(inst, root)
+    val eqEnv = ConstraintSolverInterface.expandEqualityEnv(root.eqEnv, inst.econstrs)
+    checkSigMatch(inst, root, eqEnv)
     checkOrphan(inst)
-    checkSuperInstances(inst, root)
+    checkSuperInstances(inst, root, eqEnv)
   }
 
   /**

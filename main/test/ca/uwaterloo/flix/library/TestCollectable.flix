@@ -1,131 +1,117 @@
-/*
- * Copyright 2024 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestCollectable {
+
+    use Assert.assertEq;
 
     /////////////////////////////////////////////////////////////////////////////
     // Chain instance                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def collectChain01(): Bool = region rc {
+    @Test
+    def collectChain01(): Unit \ Assert = region rc {
         let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
-        (Collectable.collect(iter) : Chain[Int32]) == Chain.empty()
+        assertEq(expected = Chain.empty(), (Collectable.collect(iter) : Chain[Int32]))
     }
 
-    @test
-    def collectChain02(): Bool = region rc {
+    @Test
+    def collectChain02(): Unit \ Assert = region rc {
         let iter = Iterator.singleton(rc, 1);
-        Collectable.collect(iter) == Chain.singleton(1)
+        assertEq(expected = Chain.singleton(1), Collectable.collect(iter))
     }
 
-    @test
-    def collectChain03(): Bool = region rc {
+    @Test
+    def collectChain03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{1, 2, 3});
-        Collectable.collect(iter) == List.toChain(List#{1, 2, 3})
+        assertEq(expected = List.toChain(List#{1, 2, 3}), Collectable.collect(iter))
     }
 
-    @test
-    def collectChain04(): Bool = region rc {
+    @Test
+    def collectChain04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{'C', 'B', 'A'});
-        Collectable.collect(iter) == List.toChain(List#{'C', 'B', 'A'})
+        assertEq(expected = List.toChain(List#{'C', 'B', 'A'}), Collectable.collect(iter))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // List instance                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def collectList01(): Bool = region rc {
+    @Test
+    def collectList01(): Unit \ Assert = region rc {
         let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
-        (Collectable.collect(iter) : List[Int32]) == Nil
+        assertEq(expected = Nil, (Collectable.collect(iter) : List[Int32]))
     }
 
-    @test
-    def collectList02(): Bool = region rc {
+    @Test
+    def collectList02(): Unit \ Assert = region rc {
         let iter = Iterator.singleton(rc, 1);
-        Collectable.collect(iter) == List#{1}
+        assertEq(expected = List#{1}, Collectable.collect(iter))
     }
 
-    @test
-    def collectList03(): Bool = region rc {
+    @Test
+    def collectList03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{1, 2, 3});
-        Collectable.collect(iter) == List#{1, 2, 3}
+        assertEq(expected = List#{1, 2, 3}, Collectable.collect(iter))
     }
 
-    @test
-    def collectList04(): Bool = region rc {
+    @Test
+    def collectList04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{'C', 'B', 'A'});
-        Collectable.collect(iter) == List#{'C', 'B', 'A'}
+        assertEq(expected = List#{'C', 'B', 'A'}, Collectable.collect(iter))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // Set instance                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def collectSet01(): Bool = region rc {
+    @Test
+    def collectSet01(): Unit \ Assert = region rc {
         let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
-        (Collectable.collect(iter) : Set[Int32]) == Set.empty()
+        assertEq(expected = Set.empty(), (Collectable.collect(iter) : Set[Int32]))
     }
 
-    @test
-    def collectSet02(): Bool = region rc {
+    @Test
+    def collectSet02(): Unit \ Assert = region rc {
         let iter = Iterator.singleton(rc, 1);
-        Collectable.collect(iter) == Set#{1}
+        assertEq(expected = Set#{1}, Collectable.collect(iter))
     }
 
-    @test
-    def collectSet03(): Bool = region rc {
+    @Test
+    def collectSet03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{1, 2, 3});
-        Collectable.collect(iter) == Set#{1, 2, 3}
+        assertEq(expected = Set#{1, 2, 3}, Collectable.collect(iter))
     }
 
-    @test
-    def collectSet04(): Bool = region rc {
+    @Test
+    def collectSet04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{'C', 'B', 'A'});
-        Collectable.collect(iter) == Set#{'A', 'B', 'C'}
+        assertEq(expected = Set#{'A', 'B', 'C'}, Collectable.collect(iter))
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // Set instance                                                            //
+    // Vector instance                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def collectVector01(): Bool = region rc {
+    @Test
+    def collectVector01(): Unit \ Assert = region rc {
         let iter: Iterator[Int32, rc, rc] = Iterator.empty(rc);
-        (Collectable.collect(iter) : Vector[Int32]) == Vector#{}
+        assertEq(expected = Vector#{}, (Collectable.collect(iter) : Vector[Int32]))
     }
 
-    @test
-    def collectVector02(): Bool = region rc {
+    @Test
+    def collectVector02(): Unit \ Assert = region rc {
         let iter = Iterator.singleton(rc, 1);
-        Collectable.collect(iter) == Vector#{1}
+        assertEq(expected = Vector#{1}, Collectable.collect(iter))
     }
 
-    @test
-    def collectVector03(): Bool = region rc {
+    @Test
+    def collectVector03(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{1, 2, 3});
-        Collectable.collect(iter) == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, Collectable.collect(iter))
     }
 
-    @test
-    def collectVector04(): Bool = region rc {
+    @Test
+    def collectVector04(): Unit \ Assert = region rc {
         let iter = List.iterator(rc, List#{'C', 'B', 'A'});
-        Collectable.collect(iter) == Vector#{'C', 'B', 'A'}
+        assertEq(expected = Vector#{'C', 'B', 'A'}, Collectable.collect(iter))
     }
 
 }

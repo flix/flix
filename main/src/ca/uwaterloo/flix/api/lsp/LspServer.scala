@@ -82,7 +82,7 @@ object LspServer {
       * The proxy to the language client.
       * Used to send messages to the client.
       */
-    var flixLanguageClient: LanguageClient = _
+    private var flixLanguageClient: LanguageClient = _
 
     /**
       * The client capabilities.
@@ -410,7 +410,7 @@ object LspServer {
     override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
       val uri = params.getTextDocument.getUri
       val range = Range.fromLsp4j(params.getRange)
-      val hints = InlayHintProvider.getInlayHints(uri, range)
+      val hints = InlayHintProvider.getInlayHints(uri, range)(flixLanguageServer.root)
       CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
     }
 

@@ -31,7 +31,6 @@ object JvmWriter {
     // Write each class (and interface) to disk if enabled.
     if (flix.options.outputJvm) {
       for (jvmClass <- classes) {
-        flix.subtask(jvmClass.name.toBinaryName, sample = true)
         writeClass(flix.options.outputPath.resolve("class/"), jvmClass)
       }
     }

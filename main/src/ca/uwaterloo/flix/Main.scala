@@ -171,7 +171,10 @@ object Main {
 
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap => bootstrap.buildJar()
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildJar(flix)
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)
@@ -182,7 +185,10 @@ object Main {
 
         case Command.BuildFatJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap => bootstrap.buildFatJar()
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildFatJar(flix)
           }.toResult match {
             case Result.Ok(_) =>
               System.exit(0)

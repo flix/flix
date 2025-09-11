@@ -21,13 +21,13 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{JvmLoader, JvmWriter, JvmBackend}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
-import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
@@ -169,6 +169,7 @@ class Flix {
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
     "DelayMap.flix" -> LocalResource.get("/src/library/DelayMap.flix"),
+    "Discrete.flix" -> LocalResource.get("/src/library/Discrete.flix"),
     "Down.flix" -> LocalResource.get("/src/library/Down.flix"),
     "Float32.flix" -> LocalResource.get("/src/library/Float32.flix"),
     "Float64.flix" -> LocalResource.get("/src/library/Float64.flix"),
@@ -187,6 +188,7 @@ class Flix {
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "OutOfBounds.flix" -> LocalResource.get("/src/library/OutOfBounds.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
+    "Range.flix" -> LocalResource.get("/src/library/Range.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
@@ -199,9 +201,13 @@ class Flix {
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
 
+    "CharacterSet.flix" -> LocalResource.get("/src/library/CharacterSet.flix"),
+    "EncodingWriter.flix" -> LocalResource.get("/src/library/EncodingWriter.flix"),
+    "DecodingReader.flix" -> LocalResource.get("/src/library/DecodingReader.flix"),
     "IoError.flix" -> LocalResource.get("/src/library/IoError.flix"),
-    "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
-    "Writer.flix" -> LocalResource.get("/src/library/Writer.flix"),
+    "Peekable.flix" -> LocalResource.get("/src/library/Peekable.flix"),
+    "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
+    "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
@@ -210,6 +216,7 @@ class Flix {
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
+    "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
@@ -266,15 +273,18 @@ class Flix {
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
 
-    "Fixpoint3/AtomicCounter.flix" -> LocalResource.get("/src/library/Fixpoint3/AtomicCounter.flix"),
     "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
+    "Fixpoint3/Boxing.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxing.flix"),
     "Fixpoint3/BoxingType.flix" -> LocalResource.get("/src/library/Fixpoint3/BoxingType.flix"),
     "Fixpoint3/Counter.flix" -> LocalResource.get("/src/library/Fixpoint3/Counter.flix"),
+    "Fixpoint3/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint3/Debugging.flix"),
+    "Fixpoint3/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint3/Interpreter.flix"),
     "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
     "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
-    "Fixpoint3/Predicates.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicates.flix"),
+    "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
     "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
+    "Fixpoint3/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Provenance.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
     "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
@@ -286,8 +296,13 @@ class Flix {
     "Fixpoint3/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Ram.flix"),
     "Fixpoint3/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Shared.flix"),
 
+    "Fixpoint3/Phase/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Compiler.flix"),
+    "Fixpoint3/Phase/Hoisting.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Hoisting.flix"),
     "Fixpoint3/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/IndexSelection.flix"),
+    "Fixpoint3/Phase/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Lowering.flix"),
+    "Fixpoint3/Phase/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Provenance.flix"),
     "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
+    "Fixpoint3/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Simplifier.flix"),
     "Fixpoint3/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Stratifier.flix"),
 
     "Abort.flix" -> LocalResource.get("/src/library/Abort.flix"),
@@ -313,6 +328,9 @@ class Flix {
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "SocketAddr.flix" -> LocalResource.get("/src/library/SocketAddr.flix"),
+    "SocketAddrV4.flix" -> LocalResource.get("/src/library/SocketAddrV4.flix"),
+    "SocketAddrV6.flix" -> LocalResource.get("/src/library/SocketAddrV6.flix"),
     "TcpAccept.flix" -> LocalResource.get("/src/library/TcpAccept.flix"),
     "TcpAcceptWithResult.flix" -> LocalResource.get("/src/library/TcpAcceptWithResult.flix"),
     "TcpBind.flix" -> LocalResource.get("/src/library/TcpBind.flix"),
@@ -326,6 +344,7 @@ class Flix {
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
+    "RichString.flix" -> LocalResource.get("/src/library/RichString.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
     "ToFlix.flix" -> LocalResource.get("/src/library/ToFlix.flix"),
@@ -680,6 +699,12 @@ class Flix {
 
   /**
     * Compiles the given typed ast to an executable ast.
+    *
+    * Note: The `codeGen` method has a long execution time, and its local variables
+    * are not eligible for garbage collection until the method completes. As a result,
+    * large ASTs may be retained in memory longer than necessary. To mitigate this,
+    * we explicitly set certain local variables to `null` once they are no longer needed.
+    * This manual cleanup has been verified as effective in the profiler.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
@@ -688,27 +713,59 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
-    val loweringAst = Lowering.run(typedAst)
-    val treeShaker1Ast = TreeShaker1.run(loweringAst)
-    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val lambdaDropAst = LambdaDrop.run(monomorpherAst)
-    val optimizerAst = Optimizer.run(lambdaDropAst)
-    val simplifierAst = Simplifier.run(optimizerAst)
-    val closureConvAst = ClosureConv.run(simplifierAst)
-    val lambdaLiftAst = LambdaLift.run(closureConvAst)
-    val treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
-    val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    var loweringAst = Lowering.run(typedAst)
+    // Note: Do not null typedAst. It is used later.
 
-    val tailPosAst = TailPos.run(effectBinderAst)
+    var treeShaker1Ast = TreeShaker1.run(loweringAst)
+    loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var optimizerAst = Optimizer.run(lambdaDropAst)
+    lambdaDropAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var simplifierAst = Simplifier.run(optimizerAst)
+    optimizerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var closureConvAst = ClosureConv.run(simplifierAst)
+    simplifierAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var lambdaLiftAst = LambdaLift.run(closureConvAst)
+    closureConvAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
+    lambdaLiftAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    treeShaker2Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var tailPosAst = TailPos.run(effectBinderAst)
+    effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
     flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
 
-    val eraserAst = Eraser.run(tailPosAst)
-    val reducerAst = Reducer.run(eraserAst)
-    val varOffsetsAst = VarOffsets.run(reducerAst)
+    var eraserAst = Eraser.run(tailPosAst)
+    tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var reducerAst = Reducer.run(eraserAst)
+    eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var varOffsetsAst = VarOffsets.run(reducerAst)
+    reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    // Generate JVM classes.
     val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
     val totalTime = flix.getTotalTime
     JvmWriter.run(classes)
+
+    // (Optionally) load generated JVM classes.
     val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
+
+    // Construct the compilation result.
     val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
 
     // Shutdown fork-join thread pool.
@@ -748,7 +805,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -778,7 +835,7 @@ class Flix {
     currentPhase = PhaseTime(phase, 0)
 
     if (options.progress) {
-      progressBar.observe(currentPhase.phase, "", sample = false)
+      progressBar.observe(currentPhase.phase, "")
     }
 
     // Measure the execution time.
@@ -805,15 +862,6 @@ class Flix {
     */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
-  }
-
-  /**
-    * A callback to indicate that work has started on the given subtask.
-    */
-  def subtask(subtask: String, sample: Boolean = false): Unit = {
-    if (options.progress) {
-      progressBar.observe(currentPhase.phase, subtask, sample)
-    }
   }
 
   /**

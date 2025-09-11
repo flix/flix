@@ -60,6 +60,59 @@ mod Test.Exp.Fixpoint.Query {
         };
         (query p1, p2 select (src, dst) from Path(src, dst) where dst >= 10) |> Vector.memberOf((1, 10))
 
+    @test
+    def testQuery13(): Bool =
+        let p = #{
+            P((1, 2)).
+        };
+        Vector#{(1, 2)} == query p select x from P(x)
+
+    @test
+    def testQuery14(): Bool =
+        let p = #{
+            Q((1, 2)).
+            P(x) :- Q(x).
+        };
+        Vector#{(1, 2)} == query p select x from P(x)
+
+    @test
+    def testQuery15(): Bool =
+        let p = #{
+            P((1, 2)).
+            P((3, 4)).
+        };
+        Vector#{(3, 4)} == query p select x from P(x) where fst(x) > 2
+
+    @test
+    def testQuery16(): Bool =
+        let p = #{
+            P((3, 4), 1, 2).
+        };
+        Vector#{((3, 4), 1, 2)} == query p select (x, y, z) from P(x, y, z)
+
+    @test
+    def testQuery17(): Bool =
+        let p = #{
+            P((3, 4)).
+        };
+        Vector#{((3, 4), 1, 2)} == query p select (x, 1, 2) from P(x)
+
+    @test
+    def testQuery18(): Bool =
+        let p = #{
+            P(("s", 1i64, 1f64, (2, 3))).
+        };
+        Vector#{("s", 1i64, 1f64, (2, 3))} == query p select x from P(x)
+
+    @test
+    def testQuery19(): Bool =
+        let p = #{
+            P((1, 2)).
+            P((3, 4)).
+            P((3, 5)).
+        };
+        Vector#{(1, 2), (3, 4), (3, 5)} == query p select x from P(x)
+
     def foodDb(): #{Food(String), Fastfood(String), Healthy(String), Snack(String), Vegetable(String) | r} = #{
         Fastfood("Banana").
         Fastfood("Burger").

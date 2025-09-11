@@ -380,6 +380,11 @@ object Type {
   val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), SourceLocation.Unknown)
 
   /**
+    * Represents the Assert effect.
+    */
+  val Assert: Type = Type.Cst(TypeConstructor.Effect(Symbol.Assert, Kind.Eff), SourceLocation.Unknown)
+
+  /**
     * Represents the Chan effect.
     */
   val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan, Kind.Eff), SourceLocation.Unknown)
@@ -1168,6 +1173,20 @@ object Type {
     case (_, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc)
     // TODO RESTR-VARS ALL case: universe
     case _ => mkApply(Type.Cst(TypeConstructor.CaseIntersection(sym), loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
+    * Returns the type `tpe1 ⊕ tpe2`
+    */
+  def mkCaseXor(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+      // a ⊕ b = (a ∪ b) - (a ∩ b)
+      val syms = syms1.union(syms2).diff(syms1.intersect(syms2))
+      Type.Cst(TypeConstructor.CaseSet(syms, sym), loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
+    case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
+    // TODO RESTR-VARS ALL case: universe
+    case _ => mkApply(Type.Cst(TypeConstructor.CaseSymmetricDiff(sym), loc), List(tpe1, tpe2), loc)
   }
 
   /**

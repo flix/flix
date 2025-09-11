@@ -460,6 +460,13 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the symmetric difference of two case sets.
+    */
+  case class CaseSymmetricDiff(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
     * A type constructor that represents a case constant.
     */
   case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends TypeConstructor {

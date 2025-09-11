@@ -91,7 +91,7 @@ object EffectVerifier {
       val expected = Type.mkUnion(Type.eraseTopAliases(exp1.tpe).arrowEffectType :: exp1.eff :: exp2.eff :: Nil, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyDef(_, exps, itpe, _, eff, loc) =>
+    case Expr.ApplyDef(_, exps, _, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
@@ -105,7 +105,7 @@ object EffectVerifier {
       exps.foreach(visitExp)
       // TODO effect stuff
       ()
-    case Expr.ApplySig(_, exps, itpe, _, eff, loc) =>
+    case Expr.ApplySig(_, exps, _, _, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
@@ -175,19 +175,23 @@ object EffectVerifier {
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
-      () // TODO: Ext-Variants
-    case Expr.Tag(sym, exps, tpe, eff, loc) =>
+    case Expr.ExtMatch(exp, rules, _, eff, loc) =>
+      visitExp(exp)
+      rules.foreach(r => visitExp(r.exp))
+      val expected = Type.mkUnion(exp.eff :: rules.map(r => r.exp.eff), loc)
+      val actual = eff
+      expectType(expected, actual, loc)
+    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ExtensibleTag(_, exps, _, eff, loc) =>
+    case Expr.ExtTag(_, exps, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
@@ -278,7 +282,7 @@ object EffectVerifier {
       val expected = Type.mkDifference(exp.eff, runEff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Without(exp, sym, tpe, eff, loc) =>
+    case Expr.Without(exp, symUse, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
@@ -292,7 +296,7 @@ object EffectVerifier {
     case Expr.Throw(exp, _, eff, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
-    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       rules.foreach { r => visitExp(r.exp) }
       // TODO effect stuff
       ()
@@ -378,20 +382,25 @@ object EffectVerifier {
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithProvenance(exps, select, withh, tpe1, eff1, loc1) =>
+      exps.foreach(visitExp)
+      select match {
+        case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe2, loc2) =>
+          terms.foreach(visitExp)
+      }
       // TODO ?
       ()
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      where.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+      exps.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+      exps.foreach(visitExp)
       // TODO ?
       ()
     case Expr.Error(m, tpe, eff) => ()

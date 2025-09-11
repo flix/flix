@@ -41,6 +41,11 @@ trait CompilationMessage {
   def loc: SourceLocation
 
   /**
+    * Returns additional locations associated with the error.
+    */
+  def locs: List[SourceLocation] = Nil
+
+  /**
     * Returns a short description of the error message.
     */
   def summary: String

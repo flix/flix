@@ -22,6 +22,7 @@ mod Fixpoint3.Boxable {
     ///
     /// Boxes the given `x`.
     ///
+    @Internal
     pub def box(x: a): Boxed with Order[a] = typematch x {
         case v: Bool    => Boxed.BoxedBool(v)
         case v: Char    => Boxed.BoxedChar(v)
@@ -39,6 +40,7 @@ mod Fixpoint3.Boxable {
     ///
     /// Unboxes the given `x`.
     ///
+    @Internal
     pub def unbox(x: Boxed): a = typematch (Proxy.Proxy: Proxy[a]) {
         case _: Proxy[Bool] => match x {
             case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
@@ -165,6 +167,41 @@ mod Fixpoint3.Boxable {
     @Internal
     pub def lift5b(f: t1 -> t2 -> t3 -> t4 -> t5 -> Bool): Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Bool with Order[t1], Order[t2], Order[t3], Order[t4], Order[t5] =
         (b1: Boxed) -> (b2: Boxed) -> (b3: Boxed) -> (b4: Boxed) -> (b5: Boxed) -> f(unbox(b1), unbox(b2), unbox(b3), unbox(b4), unbox(b5))
+
+    @Internal
+    pub def lift0X1(f: Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]
+        with Order[o1] =
+        (_: Vector[Boxed]) ->
+            let g = match (o1) -> Vector#{box(o1)};
+            Vector.map(g, f)
+
+    @Internal
+    pub def lift0X2(f: Vector[(o1, o2)]): Vector[Boxed] -> Vector[Vector[Boxed]]
+        with Order[o1], Order[o2] =
+        (_: Vector[Boxed]) ->
+            let g = match (o1, o2) -> Vector#{box(o1), box(o2)};
+            Vector.map(g, f)
+
+    @Internal
+    pub def lift0X3(f: Vector[(o1, o2, o3)]): Vector[Boxed] -> Vector[Vector[Boxed]]
+        with Order[o1], Order[o2], Order[o3] =
+        (_: Vector[Boxed]) ->
+            let g = match (o1, o2, o3) -> Vector#{box(o1), box(o2), box(o3)};
+            Vector.map(g, f)
+
+    @Internal
+    pub def lift0X4(f: Vector[(o1, o2, o3, o4)]): Vector[Boxed] -> Vector[Vector[Boxed]]
+        with Order[o1], Order[o2], Order[o3], Order[o4] =
+        (_: Vector[Boxed]) ->
+            let g = match (o1, o2, o3, o4) -> Vector#{box(o1), box(o2), box(o3), box(o4)};
+            Vector.map(g, f)
+
+    @Internal
+    pub def lift0X5(f: Vector[(o1, o2, o3, o4, o5)]): Vector[Boxed] -> Vector[Vector[Boxed]]
+        with Order[o1], Order[o2], Order[o3], Order[o4], Order[o5] =
+        (_: Vector[Boxed]) ->
+            let g = match (o1, o2, o3, o4, o5) -> Vector#{box(o1), box(o2), box(o3), box(o4), box(o5)};
+            Vector.map(g, f)
 
     @Internal
     pub def lift1X1(f: i1 -> Vector[(o1)]): Vector[Boxed] -> Vector[Vector[Boxed]]

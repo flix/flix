@@ -78,7 +78,7 @@ object TreeShaker1 {
     case Expr.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case Expr.ApplyDef(sym, exps, _, _, _, _, _) =>
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
@@ -87,7 +87,7 @@ object TreeShaker1 {
     case Expr.ApplyOp(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(sym, exps, _, _, _, _) =>
+    case Expr.ApplySig(sym, exps, _, _, _, _, _, _) =>
       Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
     case Expr.ApplyAtomic(_, exps, _, _, _) =>
@@ -114,8 +114,8 @@ object TreeShaker1 {
     case Expr.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp) ++ visitExps(rules.map(_.exp))
 
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))

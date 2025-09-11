@@ -27,6 +27,12 @@ instance Iterable[MutSet[a, r]] {
     pub def iterator(rc: Region[r1], s: MutSet[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutSet.iterator(rc, s)
 }
 
+instance ForEach[MutSet[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ ef + r = MutSet.forEach(f, s)
+}
+
 mod MutSet {
 
     ///
@@ -270,7 +276,7 @@ mod MutSet {
         Set.reduceLeft(f, Ref.get(ms))
 
     ///
-    /// Applies `f` to all elements in the mutable set `s` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in the mutable set `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///

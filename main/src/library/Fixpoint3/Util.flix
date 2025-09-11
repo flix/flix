@@ -16,8 +16,6 @@
  */
 
 mod Fixpoint3.Util {
-    use Fixpoint3.Boxed
-
     ///
     /// Unwraps an option.
     ///
@@ -26,7 +24,7 @@ mod Fixpoint3.Util {
     @Internal
     pub def getOrCrash(x: Option[a]): a = match x {
         case Some(v) => v
-        case None => bug!("Attempted unwrapping none in getOrCrash")
+        case None    => bug!("Attempted unwrapping none in getOrCrash")
     }
 
 }

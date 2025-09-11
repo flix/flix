@@ -40,6 +40,12 @@ instance Iterable[MutDeque[a, r]] {
     pub def iterator(rc: Region[r1], md: MutDeque[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutDeque.iterator(rc, md)
 }
 
+instance ForEach[MutDeque[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
+}
+
 mod MutDeque {
 
     ///
@@ -356,7 +362,7 @@ mod MutDeque {
         let j = d->back;
         if (i == j)
             Array#{} @ rc1
-        else if (i  < j)
+        else if (i < j)
             Array.copyOfRange(rc1, i, j, d->values)
         else
             Array.append(rc1, Array.copyOfRange(rc1, i, len, d->values), Array.copyOfRange(rc1, 0, j, d->values))

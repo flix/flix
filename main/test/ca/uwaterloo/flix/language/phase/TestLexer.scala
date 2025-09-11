@@ -7,37 +7,77 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestLexer extends AnyFunSuite with TestUtils {
 
-  test("LexerError.DoubleDottedNumber.01") {
+  test("LexerError.MalformedNumber.01") {
     val input = "1.2.3"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.DoubleDottedNumber](result)
+    expectError[LexerError.MalformedNumber](result)
   }
 
-  test("LexerError.DoubleDottedNumber.02") {
+  test("LexerError.MalformedNumber.02") {
+    val input = "1.2e1e2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedNumber](result)
+  }
+
+  test("LexerError.MalformedNumber.03") {
+    val input = "1e32A"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedNumber](result)
+  }
+
+  test("LexerError.MalformedNumber.04") {
+    val input = "1x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.MalformedNumber](result)
+  }
+
+  test("LexerError.IncorrectNumberSuffix.01") {
+    val input = "1_2i3"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectNumberSuffix](result)
+  }
+
+  test("LexerError.IncorrectNumberSuffix.02") {
+    val input = "3.1_2e-23f223"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IncorrectNumberSuffix](result)
+  }
+
+  test("LexerError.IntegerSuffixOnFloat.01") {
+    val input = "1_000.00_01i32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IntegerSuffixOnFloat](result)
+  }
+
+  test("LexerError.IntegerSuffixOnFloat.02") {
+    val input = "1e32i32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.IntegerSuffixOnFloat](result)
+  }
+
+  test("LexerError.ExpectedDigit.01") {
     val input = "12..3"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.DoubleDottedNumber](result)
+    expectError[LexerError.ExpectedDigit](result)
   }
 
-  test("LexerError.DoubleDottedNumber.03") {
+  test("LexerError.ExpectedDigit.02") {
     val input = "123.."
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.DoubleDottedNumber](result)
+    expectError[LexerError.ExpectedDigit](result)
   }
 
-  test("LexerError.DoubleDottedNumber.04") {
+  test("LexerError.ExpectedDigit.03") {
     val input = "123..32f32"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.DoubleDottedNumber](result)
+    expectError[LexerError.ExpectedDigit](result)
   }
 
-  test("LexerError.DoubleDottedNumber.05") {
+  test("LexerError.ExpectedDigit.04") {
     val input = "12332..f32"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.DoubleDottedNumber](result)
+    expectError[LexerError.ExpectedDigit](result)
   }
-
-  // DoubleEInNumber
 
   test("LexerError.StringInterpolationTooDeep.01") {
     val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """

@@ -43,11 +43,8 @@ mod PingWithResult {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
-                    region rc {
-                        let ipBytes = IpAddr.toByteArray(rc, host);
-                        let addr = InetAddress.getByAddress(ipBytes);
-                        k(Ok(addr.isReachable(timeoutMs)))
-                    }
+                    let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
+                    k(Ok(addr.isReachable(timeoutMs)))
                 } catch {
                     case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
@@ -61,7 +58,7 @@ mod PingWithResult {
     ///
     /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - PingWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - PingWithResult + {Net, IO} = handle(f)()
 
 }
 

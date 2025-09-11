@@ -55,7 +55,7 @@ instance Order[DelayList[a]] with Order[a] {
             if (cmp == Comparison.EqualTo) xs <=> (force ys) else cmp
         case (DelayList.LCons(x, xs), DelayList.ECons(y, ys)) =>
             let cmp = x <=> y;
-            if (cmp == Comparison.EqualTo) (force xs) <=> ys  else cmp
+            if (cmp == Comparison.EqualTo) (force xs) <=> ys else cmp
         case (DelayList.LCons(x, xs), DelayList.LCons(y, ys)) =>
             let cmp = x <=> y;
             if (cmp == Comparison.EqualTo) (force xs) <=> (force ys) else cmp
@@ -122,6 +122,11 @@ instance Monoid[DelayList[a]] {
 instance Iterable[DelayList[a]] {
     type Elm = a
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
+}
+
+instance ForEach[DelayList[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = DelayList.forEach(f, l)
 }
 
 mod DelayList {
@@ -670,7 +675,7 @@ mod DelayList {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     ///
@@ -687,7 +692,7 @@ mod DelayList {
     }
 
     ///
-    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `l` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     ///

@@ -34,7 +34,7 @@ object SimplifiedAstPrinter {
           mod,
           sym,
           formals.map(printFormalParam),
-          MonoTypePrinter.print(tpe),
+          SimpleTypePrinter.print(tpe),
           PurityPrinter.print(exp.purity),
           print(exp)
         )
@@ -50,7 +50,7 @@ object SimplifiedAstPrinter {
     case Var(sym, _, _) => printVarSym(sym)
     case Lambda(fparams, exp, _, _) => DocAst.Expr.Lambda(fparams.map(printFormalParam), print(exp))
     case LambdaClosure(cparams, fparams, _, exp, _, _) => DocAst.Expr.Lambda((cparams ++ fparams).map(printFormalParam), print(exp))
-    case ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe), PurityPrinter.print(purity))
+    case ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), SimpleTypePrinter.print(tpe), PurityPrinter.print(purity))
     case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
     case ApplyDef(sym, exps, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
@@ -59,8 +59,8 @@ object SimplifiedAstPrinter {
     case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVarSym(sym), fparams.map(printFormalParam), Some(MonoTypePrinter.print(tpe)), Some(PurityPrinter.print(eff)), print(exp1), print(exp2))
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVarSym(sym), fparams.map(printFormalParam), Some(SimpleTypePrinter.print(tpe)), Some(PurityPrinter.print(eff)), print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case SimplifiedAst.CatchRule(sym, clazz, body) =>
@@ -70,9 +70,9 @@ object SimplifiedAstPrinter {
       case SimplifiedAst.HandlerRule(op, fparams, body) =>
         (op.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
+    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
-        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), MonoTypePrinter.print(retTpe))
+        DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), SimpleTypePrinter.print(retTpe))
     })
   }
 
@@ -81,7 +81,7 @@ object SimplifiedAstPrinter {
     */
   private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
     val SimplifiedAst.FormalParam(sym, _, tpe, _) = fp
-    DocAst.Expr.AscriptionTpe(printVarSym(sym), MonoTypePrinter.print(tpe))
+    DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 
   /**

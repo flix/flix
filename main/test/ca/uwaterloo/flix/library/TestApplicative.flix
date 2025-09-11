@@ -1,20 +1,6 @@
-/*
- *  Copyright 2021 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestApplicative {
+
+    use Assert.{assertEq};
 
     use Applicative.{product, productLeft, productRight, product3, product4, product5}
     use Applicative.{<*>, <**>, *>, <*}
@@ -23,208 +9,208 @@ mod TestApplicative {
     // product                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def product01(): Bool =
-        product((None: Option[Int32]), Some(2)) == None
+    @Test
+    def product01(): Unit \ Assert =
+        assertEq(expected = None, product((None: Option[Int32]), Some(2)))
 
-    @test
-    def product02(): Bool =
-        product(Some(1), (None: Option[Int32])) == None
+    @Test
+    def product02(): Unit \ Assert =
+        assertEq(expected = None, product(Some(1), (None: Option[Int32])))
 
-    @test
-    def product03(): Bool =
-        product(Some(1), Some(2)) == Some((1, 2))
+    @Test
+    def product03(): Unit \ Assert =
+        assertEq(expected = Some((1, 2)), product(Some(1), Some(2)))
 
-    @test
-    def product04(): Bool =
-        product((Nil: List[Int32]), 2 :: Nil) == Nil
+    @Test
+    def product04(): Unit \ Assert =
+        assertEq(expected = Nil, product((Nil: List[Int32]), 2 :: Nil))
 
-    @test
-    def product05(): Bool =
-        product(1 :: Nil, (Nil: List[Int32])) == Nil
+    @Test
+    def product05(): Unit \ Assert =
+        assertEq(expected = Nil, product(1 :: Nil, (Nil: List[Int32])))
 
-    @test
-    def product06(): Bool =
-        product(1 :: Nil, 2 :: Nil) == (1, 2) :: Nil
+    @Test
+    def product06(): Unit \ Assert =
+        assertEq(expected = (1, 2) :: Nil, product(1 :: Nil, 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // productLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def productLeft01(): Bool =
-        productLeft((None: Option[Int32]), Some(2)) == None
+    @Test
+    def productLeft01(): Unit \ Assert =
+        assertEq(expected = None, productLeft((None: Option[Int32]), Some(2)))
 
-    @test
-    def productLeft02(): Bool =
-        productLeft(Some(1), None) == None
+    @Test
+    def productLeft02(): Unit \ Assert =
+        assertEq(expected = None, productLeft(Some(1), None))
 
-    @test
-    def productLeft03(): Bool =
-        productLeft(Some(1), Some(2)) == Some(1)
+    @Test
+    def productLeft03(): Unit \ Assert =
+        assertEq(expected = Some(1), productLeft(Some(1), Some(2)))
 
-    @test
-    def productLeft04(): Bool =
-        productLeft((Nil: List[Int32]), 2 :: Nil) == Nil
+    @Test
+    def productLeft04(): Unit \ Assert =
+        assertEq(expected = Nil, productLeft((Nil: List[Int32]), 2 :: Nil))
 
-    @test
-    def productLeft05(): Bool =
-        productLeft(1 :: Nil, Nil) == Nil
+    @Test
+    def productLeft05(): Unit \ Assert =
+        assertEq(expected = Nil, productLeft(1 :: Nil, Nil))
 
-    @test
-    def productLeft06(): Bool =
-        productLeft(1 :: Nil, 2 :: Nil) == 1 :: Nil
+    @Test
+    def productLeft06(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, productLeft(1 :: Nil, 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // productRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def productRight01(): Bool =
-        productRight(None, Some(2)) == None
+    @Test
+    def productRight01(): Unit \ Assert =
+        assertEq(expected = None, productRight(None, Some(2)))
 
-    @test
-    def productRight02(): Bool =
-        productRight(Some(1), (None: Option[Int32])) == None
+    @Test
+    def productRight02(): Unit \ Assert =
+        assertEq(expected = None, productRight(Some(1), (None: Option[Int32])))
 
-    @test
-    def productRight03(): Bool =
-        productRight(Some(1), Some(2)) == Some(2)
+    @Test
+    def productRight03(): Unit \ Assert =
+        assertEq(expected = Some(2), productRight(Some(1), Some(2)))
 
-    @test
-    def productRight04(): Bool =
-        productRight((Nil: List[Int32]), 2 :: Nil) == Nil
+    @Test
+    def productRight04(): Unit \ Assert =
+        assertEq(expected = Nil, productRight((Nil: List[Int32]), 2 :: Nil))
 
-    @test
-    def productRight05(): Bool =
-        productRight(1 :: Nil, (Nil: List[Int32])) == Nil
+    @Test
+    def productRight05(): Unit \ Assert =
+        assertEq(expected = Nil, productRight(1 :: Nil, (Nil: List[Int32])))
 
-    @test
-    def productRight06(): Bool =
-        productRight(1 :: Nil, 2 :: Nil) == 2 :: Nil
+    @Test
+    def productRight06(): Unit \ Assert =
+        assertEq(expected = 2 :: Nil, productRight(1 :: Nil, 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // product3                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def product301(): Bool =
-        product3((None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32])) == None
+    @Test
+    def product301(): Unit \ Assert =
+        assertEq(expected = None, product3((None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32])))
 
-    @test
-    def product302(): Bool =
-        product3((None: Option[Int32]), Some(2), Some(3)) == None
+    @Test
+    def product302(): Unit \ Assert =
+        assertEq(expected = None, product3((None: Option[Int32]), Some(2), Some(3)))
 
-    @test
-    def product303(): Bool =
-        product3(Some(1), Some(2), (None: Option[Int32])) == None
+    @Test
+    def product303(): Unit \ Assert =
+        assertEq(expected = None, product3(Some(1), Some(2), (None: Option[Int32])))
 
-    @test
-    def product304(): Bool =
-        product3(Some(1), Some(2), Some(3)) == Some((1, 2, 3))
+    @Test
+    def product304(): Unit \ Assert =
+        assertEq(expected = Some((1, 2, 3)), product3(Some(1), Some(2), Some(3)))
 
     /////////////////////////////////////////////////////////////////////////////
     // product4                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def product401(): Bool =
-        product4((None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32])) == None
+    @Test
+    def product401(): Unit \ Assert =
+        assertEq(expected = None, product4((None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32])))
 
-    @test
-    def product402(): Bool =
-        product4((None: Option[Int32]), Some(2), Some(3), Some(4)) == None
+    @Test
+    def product402(): Unit \ Assert =
+        assertEq(expected = None, product4((None: Option[Int32]), Some(2), Some(3), Some(4)))
 
-    @test
-    def product403(): Bool =
-        product4(Some(1), Some(2), Some(3), (None: Option[Int32])) == None
+    @Test
+    def product403(): Unit \ Assert =
+        assertEq(expected = None, product4(Some(1), Some(2), Some(3), (None: Option[Int32])))
 
-    @test
-    def product404(): Bool =
-        product4(Some(1), Some(2), Some(3), Some(4)) == Some((1, 2, 3, 4))
+    @Test
+    def product404(): Unit \ Assert =
+        assertEq(expected = Some((1, 2, 3, 4)), product4(Some(1), Some(2), Some(3), Some(4)))
 
     /////////////////////////////////////////////////////////////////////////////
     // product5                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def product501(): Bool =
-        product5((None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32])) == None
+    @Test
+    def product501(): Unit \ Assert =
+        assertEq(expected = None, product5((None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32]), (None: Option[Int32])))
 
-    @test
-    def product502(): Bool =
-        product5((None: Option[Int32]), Some(2), Some(3), Some(4), Some(5)) == None
+    @Test
+    def product502(): Unit \ Assert =
+        assertEq(expected = None, product5((None: Option[Int32]), Some(2), Some(3), Some(4), Some(5)))
 
-    @test
-    def product503(): Bool =
-        product5(Some(1), Some(2), Some(3), Some(4), (None: Option[Int32])) == None
+    @Test
+    def product503(): Unit \ Assert =
+        assertEq(expected = None, product5(Some(1), Some(2), Some(3), Some(4), (None: Option[Int32])))
 
-    @test
-    def product504(): Bool =
-        product5(Some(1), Some(2), Some(3), Some(4), Some(5)) == Some((1, 2, 3, 4, 5))
+    @Test
+    def product504(): Unit \ Assert =
+        assertEq(expected = Some((1, 2, 3, 4, 5)), product5(Some(1), Some(2), Some(3), Some(4), Some(5)))
 
     /////////////////////////////////////////////////////////////////////////////
     // symAp (<*>)                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symAp01(): Bool =
-        (None: Option[Int32 -> Int32]) <*> (None: Option[Int32]) == None
+    @Test
+    def symAp01(): Unit \ Assert =
+        assertEq(expected = None, (None: Option[Int32 -> Int32]) <*> (None: Option[Int32]))
 
-    @test
-    def symAp02(): Bool =
-        Some(x -> x+1) <*> None == None
+    @Test
+    def symAp02(): Unit \ Assert =
+        assertEq(expected = None, Some(x -> x+1) <*> None)
 
-    @test
-    def symAp03(): Bool =
-        Some(x -> x+1) <*> Some(1) == Some(2)
+    @Test
+    def symAp03(): Unit \ Assert =
+        assertEq(expected = Some(2), Some(x -> x+1) <*> Some(1))
 
     /////////////////////////////////////////////////////////////////////////////
     // symReversedAp (<**>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symReversedAp01(): Bool =
-        (None: Option[Int32]) <**> (None: Option[Int32 -> Int32]) == None
+    @Test
+    def symReversedAp01(): Unit \ Assert =
+        assertEq(expected = None, (None: Option[Int32]) <**> (None: Option[Int32 -> Int32]))
 
-    @test
-    def symReversedAp02(): Bool =
-        None <**> Some(x -> x+1) == None
+    @Test
+    def symReversedAp02(): Unit \ Assert =
+        assertEq(expected = None, None <**> Some(x -> x+1))
 
-    @test
-    def symReversedAp03(): Bool =
-        Some(1) <**> Some(x -> x+1) == Some(2)
+    @Test
+    def symReversedAp03(): Unit \ Assert =
+        assertEq(expected = Some(2), Some(1) <**> Some(x -> x+1))
 
     /////////////////////////////////////////////////////////////////////////////
     // symProductLeft (<*)                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symProductLeft01(): Bool =
-        (None: Option[Int32]) <* Some(2) == None
+    @Test
+    def symProductLeft01(): Unit \ Assert =
+        assertEq(expected = None, (None: Option[Int32]) <* Some(2))
 
-    @test
-    def symProductLeft02(): Bool =
-        Some(1) <* None == None
+    @Test
+    def symProductLeft02(): Unit \ Assert =
+        assertEq(expected = None, Some(1) <* None)
 
-    @test
-    def symProductLeft03(): Bool =
-        Some(1) <* Some(2) == Some(1)
+    @Test
+    def symProductLeft03(): Unit \ Assert =
+        assertEq(expected = Some(1), Some(1) <* Some(2))
 
     /////////////////////////////////////////////////////////////////////////////
     // symProductRight (*>)                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def symProductRight01(): Bool =
-        None *> Some(2) == None
+    @Test
+    def symProductRight01(): Unit \ Assert =
+        assertEq(expected = None, None *> Some(2))
 
-    @test
-    def symProductRight02(): Bool =
-        Some(1) *> (None: Option[Int32]) == None
+    @Test
+    def symProductRight02(): Unit \ Assert =
+        assertEq(expected = None, Some(1) *> (None: Option[Int32]))
 
-    @test
-    def symProductRight03(): Bool =
-        Some(1) *> Some(2) == Some(2)
+    @Test
+    def symProductRight03(): Unit \ Assert =
+        assertEq(expected = Some(2), Some(1) *> Some(2))
 
 }

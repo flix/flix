@@ -85,6 +85,7 @@ object TypeConstructorPrinter {
     case TypeConstructor.CaseComplement(_) => DocAst.Type.AsIs("CaseComplement")
     case TypeConstructor.CaseUnion(_) => DocAst.Type.AsIs("CaseUnion")
     case TypeConstructor.CaseIntersection(_) => DocAst.Type.AsIs("CaseIntersection")
+    case TypeConstructor.CaseSymmetricDiff(_) => DocAst.Type.AsIs("CaseSymmetricDiff")
     case TypeConstructor.CaseSet(syms, _) => DocAst.Type.CaseSet(syms)
     case TypeConstructor.Region(sym) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.RegionToStar => DocAst.Type.AsIs("Region")

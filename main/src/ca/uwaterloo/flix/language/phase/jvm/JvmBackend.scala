@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.SimpleType
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 
@@ -30,15 +30,15 @@ object JvmBackend {
 
     // Types/classes required for Flix runtime.
     val requiredTypes = Set(
-      MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Bool), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Char), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int8), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int16), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Float32), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Object), SimpleType.Object), // by resumptionWrappers
     )
     val allTypes = root.types ++ requiredTypes
 

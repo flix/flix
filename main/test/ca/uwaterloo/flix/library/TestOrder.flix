@@ -1,70 +1,69 @@
-/*
- *  Copyright 2020 Esben Bjerre
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestOrder {
+
+    use Assert.{assertEq};
 
     /////////////////////////////////////////////////////////////////////////////
     // fromInt                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromInt01(): Bool = Comparison.fromInt32(-1) == Comparison.LessThan
+    @Test
+    def fromInt01(): Unit \ Assert = 
+        assertEq(expected = Comparison.LessThan, Comparison.fromInt32(-1))
 
-    @test
-    def fromInt02(): Bool = Comparison.fromInt32(0) == Comparison.EqualTo
+    @Test
+    def fromInt02(): Unit \ Assert = 
+        assertEq(expected = Comparison.EqualTo, Comparison.fromInt32(0))
 
-    @test
-    def fromInt03(): Bool = Comparison.fromInt32(+1) == Comparison.GreaterThan
+    @Test
+    def fromInt03(): Unit \ Assert = 
+        assertEq(expected = Comparison.GreaterThan, Comparison.fromInt32(+1))
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def min01(): Bool = Order.min(0, 1) == 0
+    @Test
+    def min01(): Unit \ Assert = 
+        assertEq(expected = 0, Order.min(0, 1))
 
-    @test
-    def min02(): Bool = Order.min((), ()) == ()
+    @Test
+    def min02(): Unit \ Assert = 
+        assertEq(expected = (), Order.min((), ()))
 
-    @test
-    def min03(): Bool = Order.min(true, false) == false
+    @Test
+    def min03(): Unit \ Assert = 
+        assertEq(expected = false, Order.min(true, false))
 
-    @test
-    def min04(): Bool = Order.min(342, 42) == 42
+    @Test
+    def min04(): Unit \ Assert = 
+        assertEq(expected = 42, Order.min(342, 42))
 
-    @test
-    def min05(): Bool = Order.min('a', 'z') == 'a'
+    @Test
+    def min05(): Unit \ Assert = 
+        assertEq(expected = 'a', Order.min('a', 'z'))
 
     /////////////////////////////////////////////////////////////////////////////
     // max                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def max01(): Bool = Order.max(0, 1) == 1
+    @Test
+    def max01(): Unit \ Assert = 
+        assertEq(expected = 1, Order.max(0, 1))
 
-    @test
-    def max02(): Bool = Order.max((), ()) == ()
+    @Test
+    def max02(): Unit \ Assert = 
+        assertEq(expected = (), Order.max((), ()))
 
-    @test
-    def max03(): Bool = Order.max(true, false) == true
+    @Test
+    def max03(): Unit \ Assert = 
+        assertEq(expected = true, Order.max(true, false))
 
-    @test
-    def max04(): Bool = Order.max(3, -3) == 3
+    @Test
+    def max04(): Unit \ Assert = 
+        assertEq(expected = 3, Order.max(3, -3))
 
-    @test
-    def max05(): Bool = Order.max('a', 'z') == 'z'
+    @Test
+    def max05(): Unit \ Assert = 
+        assertEq(expected = 'z', Order.max('a', 'z'))
 
 }

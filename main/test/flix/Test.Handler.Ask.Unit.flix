@@ -19,38 +19,38 @@ mod Test.Handler.Ask.Unit {
 
     @Test
     def testSample01(): Bool =
-        Assert.eq(Nil, sample(0))
+        Nil == sample(0)
 
     @Test
     def testSample02(): Bool =
-        Assert.eq(() :: Nil, sample(1))
+        () :: Nil == sample(1)
 
     @Test
     def testSample03(): Bool =
-        Assert.eq(() :: () :: Nil, sample(2))
+        () :: () :: Nil == sample(2)
 
     @Test
     def testSample04(): Bool =
-        Assert.eq(() :: () :: () :: Nil, sample(3))
+        () :: () :: () :: Nil == sample(3)
 
     @Test
     def testSample05(): Bool =
-        Assert.eq(() :: () :: () :: () :: Nil, sample(4))
+        () :: () :: () :: () :: Nil == sample(4)
 
     @Test
     def testSample06(): Bool =
-        Assert.eq(() :: () :: () :: () :: () :: Nil, sample(5))
+        () :: () :: () :: () :: () :: Nil == sample(5)
 
     @Test
     def testSample07(): Bool =
-        Assert.eq(() :: () :: () :: () :: () :: () :: Nil, sample(6))
+        () :: () :: () :: () :: () :: () :: Nil == sample(6)
 
     @Test
     def testSample08(): Bool =
-        Assert.eq(range(0, 10), sample(10))
+        range(0, 10) == sample(10)
 
     @Test
     def testSample09(): Bool =
-        Assert.eq(range(0, 100), sample(100))
+        range(0, 100) == sample(100)
 
 }
