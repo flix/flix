@@ -127,7 +127,7 @@ object VarOffsets {
   }
 
   /** Assigns stack offsets to `exps` and returns the next available stack offset. */
-  private def visitExps(exps: List[Expr], offset0: Int): Int = {
+  private def visitExps(exps: Iterable[Expr], offset0: Int): Int = {
     var offset = offset0
     for (exp <- exps) {
       offset = visitExp(exp, offset)

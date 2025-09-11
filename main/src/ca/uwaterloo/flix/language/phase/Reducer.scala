@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.annotation.tailrec
-import scala.collection.immutable.Queue
+import scala.collection.immutable.{ArraySeq, Queue}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -84,7 +84,7 @@ object Reducer {
         Expr.Var(sym, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExpr)
+        val es = ArraySeq.from(exps.map(visitExpr))
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
@@ -96,7 +96,7 @@ object Reducer {
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         val defn = root.defs(sym)
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.addPcPoint()
-        val es = exps.map(visitExpr)
+        val es = ArraySeq.from(exps.map(visitExpr))
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
       case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
