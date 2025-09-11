@@ -700,12 +700,6 @@ class Flix {
 
   /**
     * Compiles the given typed ast to an executable ast.
-    *
-    * Note: The `codeGen` method has a long execution time, and its local variables
-    * are not eligible for garbage collection until the method completes. As a result,
-    * large ASTs may be retained in memory longer than necessary. To mitigate this,
-    * we explicitly set certain local variables to `null` once they are no longer needed.
-    * This manual cleanup has been verified as effective in the profiler.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
@@ -714,6 +708,7 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
+    // N.B.: It is important not to store intermediate ASTs in long-lived variables to allow GC to remove them.
     val (backendAst, classes) = typedAst
       .pipe(Lowering.run)
       .pipe(TreeShaker1.run)
