@@ -700,11 +700,11 @@ class Flix {
   /**
     * Compiles the given typed ast to an executable ast.
     *
-    * Note: The lifetime of codeGen method is very long. Its local variables do not get
-    * garbage collected until it returns. Unfortunately this means that we risk holding
-    * on to large ASTs for excessive periods of time. To avoid this, we explicitly null
-    * some local variables once they are no longer used. This manual garbage collection
-    * has been shown to work in the profiler.
+    * Note: The `codeGen` method has a long execution time, and its local variables
+    * are not eligible for garbage collection until the method completes. As a result,
+    * large ASTs may be retained in memory longer than necessary. To mitigate this,
+    * we explicitly set certain local variables to `null` once they are no longer needed.
+    * This manual cleanup has been verified as effective in the profiler.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
