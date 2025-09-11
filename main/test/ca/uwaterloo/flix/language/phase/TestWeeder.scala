@@ -993,6 +993,39 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
+  test("IllegalRecordOperation.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let _ = { +x = 2 };
+        |    2
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordOperation](result)
+  }
+
+  test("IllegalRecordOperation.02") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let _ = { -x };
+        |    2
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordOperation](result)
+  }
+
+  test("IllegalRecordOperation.03") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    let _ = { x = 3, +x = 4 };
+        |    2
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordOperation](result)
+  }
+
   test("IllegalSelectChannelRuleFunctionCall.01") {
     val input =
       """
