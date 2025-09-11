@@ -1613,10 +1613,12 @@ object Weeder2 {
 
     private def visitLiteralRecordExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RecordOperation)
+      // `{ +x = expr }` is not allowed.
       pickAll(TreeKind.Expr.RecordOpExtend, tree).foreach{t =>
         val error = IllegalRecordOperation(t.loc)
         sctx.errors.add(error)
       }
+      // `{ -x }` is not allowed.
       pickAll(TreeKind.Expr.RecordOpRestrict, tree).foreach{t =>
         val error = IllegalRecordOperation(t.loc)
         sctx.errors.add(error)
@@ -1653,7 +1655,9 @@ object Weeder2 {
     }
     private def visitRecordOperationOrLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       hasToken(TokenKind.Bar, tree) match {
+//        { +x = expr | expr }
         case true  => visitRecordOperationExpr(tree)
+//        { x = expr }
         case false => visitLiteralRecordExpr(tree)
       }
     }

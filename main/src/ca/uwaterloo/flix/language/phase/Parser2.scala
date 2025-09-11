@@ -2300,6 +2300,8 @@ object Parser2 {
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
              | (TokenKind.Minus, TokenKind.NameLowerCase) =>
+            // Either `{ +y = expr | expr }` or `{ x = expr }`.
+            // Both are parsed the same and the difference is handled in Weeder.
             recordOperation()
         case _ => block()
       }
