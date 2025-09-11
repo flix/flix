@@ -32,7 +32,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(new Flix())
+    b.build(new Flix(), outputJvm = true)
   }
 
   test("build-jar") {
@@ -40,7 +40,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = new Flix
-    b.build(flix)
+    b.build(flix, outputJvm = true)
     b.buildJar(flix)(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
@@ -54,7 +54,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = new Flix
-    b.build(flix)
+    b.build(flix, outputJvm = true)
     b.buildJar(flix)(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
@@ -76,12 +76,12 @@ class TestBootstrap extends AnyFunSuite {
     val flix = new Flix()
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(flix)
+    b.build(flix, outputJvm = true)
     b.buildJar(flix)(Formatter.getDefault)
 
     def hash1 = calcHash(jarPath)
 
-    b.build(flix)
+    b.build(flix, outputJvm = true)
     b.buildJar(flix)(Formatter.getDefault)
 
     def hash2 = calcHash(jarPath)

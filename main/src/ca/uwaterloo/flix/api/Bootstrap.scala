@@ -533,9 +533,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
+  def build(flix: Flix, outputJvm: Boolean): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
-    val newOptions = flix.options.copy(outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
+    val newOptions = flix.options.copy(outputJvm = outputJvm, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
 
     // Add sources and packages.
@@ -554,7 +554,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     // Build the project before building the jar
-    val buildResult = build(flix)
+    val buildResult = build(flix, outputJvm = true)
     buildResult match {
       case Validation.Failure(error) =>
         return Validation.Failure(error) // Return the build error directly
@@ -715,7 +715,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Runs the main function in flix package for the project.
     */
   def run(flix: Flix, args: Array[String]): Validation[Unit, BootstrapError] = {
-    Validation.mapN(build(flix)) {
+    Validation.mapN(build(flix, outputJvm = false)) {
       _.getMain match {
         case None => ()
         case Some(main) => main(args)
@@ -727,7 +727,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Runs all tests in the flix package for the project.
     */
   def test(flix: Flix): Validation[Unit, BootstrapError] = {
-    flatMapN(build(flix)) {
+    flatMapN(build(flix, outputJvm = false)) {
       compilationResult =>
         Tester.run(Nil, compilationResult)(flix) match {
           case Ok(_) => Validation.Success(())
