@@ -235,7 +235,7 @@ object TypeError {
   /**
     * Missing trait instance for a function type.
     *
-    * @param trt  the class of the instance.
+    * @param trt  the trait of the instance.
     * @param tpe  the type of the instance.
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
