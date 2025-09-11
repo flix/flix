@@ -50,7 +50,7 @@ mod Assert {
     ///
     pub def assertFalse(cond: Bool): Unit \ Assert =
         let m = text("Assertion failed: expected false");
-        Assert.assert(not c, m)
+        Assert.assert(not cond, m)
 
     ///
     /// Asserts that the given condition `cond` is `false` with the given message `msg`.
