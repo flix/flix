@@ -29,7 +29,7 @@ sealed trait Symbol
 object Symbol {
 
   /**
-    * The Assert effect
+    * The Assert effect.
     */
   val Assert: EffSym = mkEffSym(Name.RootNS, Ident("Assert", SourceLocation.Unknown))
 
