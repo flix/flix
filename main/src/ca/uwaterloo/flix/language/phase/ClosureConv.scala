@@ -124,7 +124,7 @@ object ClosureConv {
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
-      val fp = FormalParam(freshSym, Modifiers.Empty, SimpleType.Unit, expLoc)
+      val fp = FormalParam(freshSym, SimpleType.Unit, expLoc)
       val e = mkLambdaClosure(List(fp), exp, SimpleType.mkArrow(List(SimpleType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
@@ -176,7 +176,7 @@ object ClosureConv {
       case FreeVar(oldSym, ptpe) =>
         val newSym = Symbol.freshVarSym(oldSym)
         subst += (oldSym -> newSym)
-        FormalParam(newSym, Modifiers.Empty, ptpe, loc)
+        FormalParam(newSym, ptpe, loc)
     }
     (fparams, subst.toMap)
   }
@@ -396,10 +396,10 @@ object ClosureConv {
     }
 
     def visitFormalParam(fparam: FormalParam): FormalParam = fparam match {
-      case FormalParam(sym, mod, tpe, loc) =>
+      case FormalParam(sym, tpe, loc) =>
         subst.get(sym) match {
-          case None => FormalParam(sym, mod, tpe, loc)
-          case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
+          case None => FormalParam(sym, tpe, loc)
+          case Some(newSym) => FormalParam(newSym, tpe, loc)
         }
     }
 

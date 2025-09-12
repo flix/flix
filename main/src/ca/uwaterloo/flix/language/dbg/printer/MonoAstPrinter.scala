@@ -119,7 +119,7 @@ object MonoAstPrinter {
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printFormalParam(fp: MonoAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val MonoAst.FormalParam(sym, _, tpe, _, _) = fp
+    val MonoAst.FormalParam(sym, tpe, _, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 

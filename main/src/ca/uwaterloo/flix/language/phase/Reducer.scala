@@ -63,7 +63,7 @@ object Reducer {
 
       // Compute the types in the captured formal parameters.
       val cParamTypes = cparams.foldLeft(Set.empty[SimpleType]) {
-        case (sacc, FormalParam(_, _, paramTpe, _)) => sacc + paramTpe
+        case (sacc, FormalParam(_, paramTpe)) => sacc + paramTpe
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`

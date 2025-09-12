@@ -401,7 +401,7 @@ object TypedAst {
 
   case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 

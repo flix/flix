@@ -183,8 +183,8 @@ object Deriver {
         mod = Modifiers.Empty,
         tparams = tparams,
         fparams = List(
-          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
+          KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
           tparams.map(_.sym),
@@ -391,8 +391,8 @@ object Deriver {
         mod = Modifiers.Empty,
         tparams = tparams,
         fparams = List(
-          KindedAst.FormalParam(param1, Modifiers.Empty, tpe, TypeSource.Ascribed, loc),
-          KindedAst.FormalParam(param2, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)
+          KindedAst.FormalParam(param1, tpe, TypeSource.Ascribed, loc),
+          KindedAst.FormalParam(param2, tpe, TypeSource.Ascribed, loc)
         ),
         sc = Scheme(
           tparams.map(_.sym),

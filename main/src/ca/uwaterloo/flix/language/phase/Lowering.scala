@@ -654,14 +654,14 @@ object Lowering {
       val bodyVar = LoweredAst.Expr.Var(bodySym, bodyThunkType, loc.asSynthetic)
       val body = LoweredAst.Expr.ApplyClo(bodyVar, LoweredAst.Expr.Cst(Constant.Unit, Type.Unit, loc.asSynthetic), bt, bodyEff, loc.asSynthetic)
       val RunWith = LoweredAst.Expr.RunWith(body, symUse, rs, bt, handledEff, loc)
-      val param = LoweredAst.FormalParam(bodySym, Modifiers.Empty, bodyThunkType, loc.asSynthetic)
+      val param = LoweredAst.FormalParam(bodySym, bodyThunkType, loc.asSynthetic)
       LoweredAst.Expr.Lambda(param, RunWith, t, loc)
 
     case TypedAst.Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       // run exp1 with exp2
       // is lowered to
       // exp2(_runWith -> exp1)
-      val unitParam = LoweredAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic), Modifiers.Empty, Type.Unit, loc.asSynthetic)
+      val unitParam = LoweredAst.FormalParam(Symbol.freshVarSym("_runWith", BoundBy.FormalParam, loc.asSynthetic), Type.Unit, loc.asSynthetic)
       val thunkType = Type.mkArrowWithEffect(Type.Unit, exp1.eff, exp1.tpe, loc.asSynthetic)
       val thunk = LoweredAst.Expr.Lambda(unitParam, visitExp(exp1), thunkType, loc.asSynthetic)
       LoweredAst.Expr.ApplyClo(visitExp(exp2), thunk, tpe, eff, loc)
@@ -1024,9 +1024,9 @@ object Lowering {
     * Lowers the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: TypedAst.FormalParam)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.FormalParam = fparam0 match {
-    case TypedAst.FormalParam(bnd, mod, tpe, _, loc) =>
+    case TypedAst.FormalParam(bnd, tpe, _, loc) =>
       val t = visitType(tpe)
-      LoweredAst.FormalParam(bnd.sym, mod, t, loc)
+      LoweredAst.FormalParam(bnd.sym, t, loc)
   }
 
   /**
@@ -1399,7 +1399,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Modifiers.Empty, Type.Unit, loc)
+      val fparam = LoweredAst.FormalParam(sym, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", List(lambdaExp), Types.BodyPredicate, loc)
@@ -1417,7 +1417,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1461,7 +1461,7 @@ object Lowering {
     val lambdaExp = inVars.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1500,7 +1500,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Modifiers.Empty, tpe, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1856,7 +1856,7 @@ object Lowering {
     */
   private def mkLambdaExp(param: Symbol.VarSym, paramTpe: Type, exp: TypedAst.Expr, expTpe: Type, eff: Type, loc: SourceLocation): TypedAst.Expr =
     TypedAst.Expr.Lambda(
-      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), Modifiers.Empty, paramTpe, TypeSource.Ascribed, loc),
+      TypedAst.FormalParam(TypedAst.Binder(param, paramTpe), paramTpe, TypeSource.Ascribed, loc),
       exp,
       Type.mkArrowWithEffect(paramTpe, eff, expTpe, loc),
       loc
@@ -2272,9 +2272,9 @@ object Lowering {
     * Applies the given substitution `subst` to the given formal param `fparam0`.
     */
   private def substFormalParam(fparam0: LoweredAst.FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.FormalParam = fparam0 match {
-    case LoweredAst.FormalParam(sym, mod, tpe, loc) =>
+    case LoweredAst.FormalParam(sym, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
-      LoweredAst.FormalParam(s, mod, tpe, loc)
+      LoweredAst.FormalParam(s, tpe, loc)
   }
 
   /**
