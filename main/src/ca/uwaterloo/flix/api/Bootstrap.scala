@@ -422,18 +422,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  private def stepParseManifest: Validation[Manifest, BootstrapError] = {
-    val tomlPath = getManifestFile(projectPath)
-    ManifestParser.parse(tomlPath) match {
-      case Ok(manifest) =>
-        optManifest = Some(manifest)
-        Validation.Success(manifest)
-      case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
-    }
-  }
-
   private def stepAddLocalFlixFiles(): List[Path] = {
-    // 3. Add *.flix, src/**.flix and test/**.flix
+    // Add *.flix, src/**.flix and test/**.flix
     val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
     val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
@@ -442,10 +432,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     result
   }
 
-  private def stepResolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
-    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
-      case Ok(l) => Validation.Success(l)
-      case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
+  private def stepCompile(flix: Flix): Validation[CompilationResult, BootstrapError] = {
+    flix.compile() match {
+      case Validation.Success(result: CompilationResult) => Validation.Success(result)
+      case Validation.Failure(errors) => Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
     }
   }
 
@@ -473,6 +463,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  private def stepInstallJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
+    JarPackageManager.installAll(dependencyManifests, projectPath) match {
+      case Result.Ok(paths) =>
+        jarPackagePaths = paths
+        Validation.Success(paths)
+      case Result.Err(e) =>
+        Validation.Failure(BootstrapError.JarPackageError(e))
+    }
+  }
+
   private def stepInstallMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
     MavenPackageManager.installAll(dependencyManifests, projectPath) match {
       case Result.Ok(paths) =>
@@ -483,13 +483,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  private def stepInstallJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
-    JarPackageManager.installAll(dependencyManifests, projectPath) match {
-      case Result.Ok(paths) =>
-        jarPackagePaths = paths
-        Validation.Success(paths)
-      case Result.Err(e) =>
-        Validation.Failure(BootstrapError.JarPackageError(e))
+  private def stepParseManifest: Validation[Manifest, BootstrapError] = {
+    val tomlPath = getManifestFile(projectPath)
+    ManifestParser.parse(tomlPath) match {
+      case Ok(manifest) =>
+        optManifest = Some(manifest)
+        Validation.Success(manifest)
+      case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
+    }
+  }
+
+  private def stepResolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
+    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
+      case Ok(l) => Validation.Success(l)
+      case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
     }
   }
 
@@ -560,7 +567,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns true if the timestamp of the given source file has changed since the last reload.
     */
   private def hasChanged(file: Path) = {
-    !(timestamps contains file) || (timestamps(file) != file.toFile.lastModified())
+    !timestamps.contains(file) || (timestamps(file) != file.toFile.lastModified())
   }
 
   /**
@@ -589,12 +596,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.compile().toResult match {
-      case Result.Ok(r: CompilationResult) =>
-        Validation.Success(r)
-      case Result.Err(errors) =>
-        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
-    }
+    stepCompile(flix)
   }
 
   /**
