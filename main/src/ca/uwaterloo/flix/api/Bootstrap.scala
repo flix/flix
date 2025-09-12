@@ -234,7 +234,7 @@ object Bootstrap {
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+  private def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Creates a new directory at the given path `p`.
