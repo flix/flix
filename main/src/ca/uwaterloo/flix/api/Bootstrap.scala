@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -24,7 +25,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.flatMapN
+import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -174,7 +175,7 @@ object Bootstrap {
   /**
     * Returns the directory of the output .class-files relative to the given path `p`.
     */
-  private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
+  private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/").normalize()
 
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
@@ -229,12 +230,12 @@ object Bootstrap {
   /**
     * Returns `true` if the given path `p` is a jar-file.
     */
-  private def isJarFile(p: Path): Boolean = p.getFileName.toString.endsWith(".jar") && isZipArchive(p)
+  private def isJarFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(".jar") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+  def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Creates a new directory at the given path `p`.
@@ -315,7 +316,7 @@ object Bootstrap {
     root.relativize(path).toString.replace('\\', '/')
 
   /**
-    * Returns all files in the given path `p` ending with .`ext`.
+    * Returns all files in the given path `p` ending with `.ext`.
     */
   private def getAllFilesWithExt(p: Path, ext: String): List[Path] =
     getAllFiles(p).filter(p => p.getFileName.toString.endsWith(s".$ext"))
@@ -339,8 +340,8 @@ object Bootstrap {
     * to make build reproducible.
     */
   private def getAllFilesSorted(p: Path): List[(Path, String)] = {
-    Bootstrap.getAllFiles(p).map { path =>
-      (path, Bootstrap.convertPathToRelativeFileName(p, path))
+    getAllFiles(p).map { path =>
+      (path, convertPathToRelativeFileName(p, path))
     }.sortBy(_._2)
   }
 
@@ -368,7 +369,7 @@ object Bootstrap {
   /**
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
-    * downloads all required files. Otherwise checks the /lib folder
+    * downloads all required files. Otherwise, checks the /lib folder
     * to see what dependencies are already downloaded. Also finds
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
@@ -409,40 +410,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * and .jar files that this project uses.
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
-    // 1. Read, parse, and validate flix.toml.
-    val tomlPath = Bootstrap.getManifestFile(projectPath)
-    val manifest = ManifestParser.parse(tomlPath) match {
-      case Ok(m) => m
-      case Err(e) => return Validation.Failure(BootstrapError.ManifestParseError(e))
+    flatMapN(Steps.parseManifest) {
+      manifest =>
+        flatMapN(Steps.resolveFlixDependencies(manifest)) {
+          dependencyManifests =>
+            mapN(Steps.installDependencies(dependencyManifests)) {
+              _ =>
+                Steps.addLocalFlixFiles()
+                ()
+            }
+        }
     }
-    optManifest = Some(manifest)
-
-    // 2. Check each dependency is available or download it.
-    val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
-      case Ok(l) => l
-      case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
-    }
-    FlixPackageManager.installAll(manifests, projectPath, apiKey) match {
-      case Ok(l) => flixPackagePaths = l
-      case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
-    }
-    MavenPackageManager.installAll(manifests, projectPath) match {
-      case Ok(l) => mavenPackagePaths = l
-      case Err(e) => return Validation.Failure(BootstrapError.MavenPackageError(e))
-    }
-    JarPackageManager.installAll(manifests, projectPath) match {
-      case Ok(l) => jarPackagePaths = l
-      case Err(e) => return Validation.Failure(BootstrapError.JarPackageError(e))
-    }
-    out.println("Dependency resolution completed.")
-
-    // 3. Add *.flix, src/**.flix and test/**.flix
-    val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
-    val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
-    val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
-    sourcePaths = filesHere ++ filesSrc ++ filesTest
-
-    Validation.Success(())
   }
 
   /**
@@ -452,10 +430,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def folderMode(): Validation[Unit, BootstrapError] = {
     // 1. Add *.flix, src/**.flix and test/**.flix
-    val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
-    val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
-    val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
-    sourcePaths = filesHere ++ filesSrc ++ filesTest
+    Steps.addLocalFlixFiles()
 
     // 2. Grab all jars in lib/external
     val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), "jar")
@@ -473,86 +448,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Checks to see if any source files or packages have been changed.
-    * If they have, they are added to flix. Then updates the timestamps
-    * map to reflect the current source files and packages.
-    */
-  def reconfigureFlix(flix: Flix): Unit = {
-    val previousSources = timestamps.keySet
-
-    implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
-
-    for (path <- sourcePaths if hasChanged(path)) {
-      flix.addFlix(path)
-    }
-
-    for (path <- flixPackagePaths if hasChanged(path)) {
-      flix.addPkg(path)
-    }
-
-    for (path <- mavenPackagePaths if hasChanged(path)) {
-      flix.addJar(path)
-    }
-
-    for (path <- jarPackagePaths if hasChanged(path)) {
-      flix.addJar(path)
-    }
-
-    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
-
-    val deletedSources = previousSources -- currentSources
-    for (path <- deletedSources) {
-      flix.remSourceCode(path.toString)
-    }
-
-    timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
-  }
-
-  /**
-    * Returns true if the timestamp of the given source file has changed since the last reload.
-    */
-  private def hasChanged(file: Path) = {
-    !(timestamps contains file) || (timestamps(file) != file.toFile.lastModified())
-  }
-
-  /**
-    * Type checks the source files for the project.
-    */
-  def check(flix: Flix): Validation[Unit, BootstrapError] = {
-    // Add sources and packages.
-    reconfigureFlix(flix)
-
-    val (_, errors) = flix.check()
-    if (errors.isEmpty) {
-      Validation.Success(())
-    } else {
-      Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-    }
-  }
-
-  /**
     * Builds (compiles) the source files for the project.
     */
   def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
     val newOptions = flix.options.copy(outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
-
-    // Add sources and packages.
-    reconfigureFlix(flix)
-
-    flix.compile().toResult match {
-      case Result.Ok(r: CompilationResult) =>
-        Validation.Success(r)
-      case Result.Err(errors) =>
-        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
-    }
+    Steps.updateStaleSources(flix)
+    Steps.compile(flix)
   }
 
   /**
     * Builds the jar or the fatjar
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    // ideal:
+    // 1. build
+    // 2. jar
+
     // Build the project before building the jar
     val buildResult = build(flix)
     buildResult match {
@@ -690,12 +603,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  def check(flix: Flix): Validation[Unit, BootstrapError] = {
+    flatMapN(Steps.updateStaleSources(flix)) {
+      updated => mapN(Steps.check(updated))(_ => ())
+    }
+  }
+
+  def reconfigureFlix(flix: Flix): Unit = {
+    // TODO: Figure out if this function can be removed somehow (maybe by remove shell depending on bootstrap)
+    Steps.updateStaleSources(flix)
+  }
+
   /**
     * Generates API documentation.
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
-    reconfigureFlix(flix)
+    Steps.updateStaleSources(flix)
 
     val packageModules = optManifest match {
       case None => PackageModules.All
@@ -843,5 +767,149 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       out.println("")
       Validation.Success(true)
     }
+  }
+
+  private object Steps {
+
+    def addLocalFlixFiles(): List[Path] = {
+      // Add *.flix, src/**.flix and test/**.flix
+      val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
+      val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
+      val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
+      val result = filesHere ::: filesSrc ::: filesTest
+      sourcePaths = result
+      result
+    }
+
+    /**
+      * Type checks the source files for the project.
+      */
+    def check(flix: Flix): Validation[TypedAst.Root, BootstrapError] = {
+      val (optRoot, errors) = flix.check()
+      if (errors.isEmpty) {
+        Validation.Success(optRoot.get)
+      } else {
+        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      }
+    }
+
+    /**
+      * Runs the compile function on the `flix` object.
+      * It is up to the caller to set the appropriate options on `flix`.
+      * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
+      */
+    def compile(flix: Flix): Validation[CompilationResult, BootstrapError] = {
+      flix.compile() match {
+        case Validation.Success(result: CompilationResult) => Validation.Success(result)
+        case Validation.Failure(errors) => Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+      }
+    }
+
+    /**
+      * Returns true if the timestamp of the given source file has changed since the last reload.
+      */
+    private def hasChanged(file: Path) = {
+      !timestamps.contains(file) || (timestamps(file) != file.toFile.lastModified())
+    }
+
+    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
+      flatMapN(installFlixDependencies(dependencyManifests)) {
+        flixPaths =>
+          flatMapN(installMavenDependencies(dependencyManifests)) {
+            mavenPaths =>
+              mapN(installJarDependencies(dependencyManifests)) {
+                jarPaths =>
+                  out.println("Dependency resolution completed.")
+                  List(flixPaths, mavenPaths, jarPaths)
+              }
+          }
+      }
+    }
+
+    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+      FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
+        case Result.Ok(paths: List[Path]) =>
+          flixPackagePaths = paths
+          Validation.Success(paths)
+        case Result.Err(e) =>
+          Validation.Failure(BootstrapError.FlixPackageError(e))
+      }
+    }
+
+    private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
+      JarPackageManager.installAll(dependencyManifests, projectPath) match {
+        case Result.Ok(paths) =>
+          jarPackagePaths = paths
+          Validation.Success(paths)
+        case Result.Err(e) =>
+          Validation.Failure(BootstrapError.JarPackageError(e))
+      }
+    }
+
+    private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+      MavenPackageManager.installAll(dependencyManifests, projectPath) match {
+        case Result.Ok(paths) =>
+          mavenPackagePaths = paths
+          Validation.Success(paths)
+        case Result.Err(e) =>
+          Validation.Failure(BootstrapError.MavenPackageError(e))
+      }
+    }
+
+    def parseManifest: Validation[Manifest, BootstrapError] = {
+      val tomlPath = getManifestFile(projectPath)
+      ManifestParser.parse(tomlPath) match {
+        case Ok(manifest) =>
+          optManifest = Some(manifest)
+          Validation.Success(manifest)
+        case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
+      }
+    }
+
+    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
+        case Ok(l) => Validation.Success(l)
+        case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
+      }
+    }
+
+    /**
+      * Checks to see if any source files or packages have been changed.
+      * If they have, they are added to flix. Then updates the timestamps
+      * map to reflect the current source files and packages.
+      */
+    def updateStaleSources(flix: Flix): Validation[Flix, BootstrapError] = {
+      val previousSources = timestamps.keySet
+
+      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
+
+      for (path <- sourcePaths if hasChanged(path)) {
+        flix.addFlix(path)
+      }
+
+      for (path <- flixPackagePaths if hasChanged(path)) {
+        flix.addPkg(path)
+      }
+
+      for (path <- mavenPackagePaths if hasChanged(path)) {
+        flix.addJar(path)
+      }
+
+      for (path <- jarPackagePaths if hasChanged(path)) {
+        flix.addJar(path)
+      }
+
+      val currentSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).filter(p => Files.exists(p))
+
+      val deletedSources = previousSources -- currentSources
+      for (path <- deletedSources) {
+        flix.remSourceCode(path.toString)
+      }
+
+      timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
+
+      Validation.Success(flix)
+    }
+
   }
 }
