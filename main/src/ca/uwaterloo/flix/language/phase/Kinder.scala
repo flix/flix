@@ -638,18 +638,25 @@ object Kinder {
         val e = visitExp(exp, kenv0, root)
         KindedAst.Expr.VectorLength(e, loc)
 
-      case ResolvedAst.Expr.Ascribe(exp0, expectedType0, expectedEff0, loc) =>
+      case ResolvedAst.Expr.AscribeType(exp0, expectedType0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
 
         // We must infer for the ascriptions because they may have wildcard types,
         // which won't be found in the kenv of the function
-        val kenvTpe = expectedType0.map(inferType(_, Kind.Star, kenv0, root)).getOrElse(KindEnv.empty)
-        val kenvEff = expectedEff0.map(inferType(_, Kind.Eff, kenv0, root)).getOrElse(KindEnv.empty)
-        val kenv = KindEnv.merge(List(kenv0, kenvTpe, kenvEff))
-        val expectedType = expectedType0.map(visitType(_, Kind.Star, kenv, root))
-        val expectedEff = expectedEff0.map(visitType(_, Kind.Eff, kenv, root))
+        val kenv = inferType(expectedType0, Kind.Star, kenv0, root)
+        val expectedType = visitType(expectedType0, Kind.Star, kenv, root)
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        KindedAst.Expr.Ascribe(exp, expectedType, expectedEff, tvar, loc)
+        KindedAst.Expr.AscribeType(exp, expectedType, tvar, loc)
+
+      case ResolvedAst.Expr.AscribeEff(exp0, expectedEff0, loc) =>
+        val exp = visitExp(exp0, kenv0, root)
+
+        // We must infer for the ascriptions because they may have wildcard types,
+        // which won't be found in the kenv of the function
+        val kenv = inferType(expectedEff0, Kind.Star, kenv0, root)
+        val expectedEff = visitType(expectedEff0, Kind.Star, kenv, root)
+        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
+        KindedAst.Expr.AscribeEff(exp, expectedEff, tvar, loc)
 
       case ResolvedAst.Expr.InstanceOf(exp0, clazz, loc) =>
         val exp = visitExp(exp0, kenv0, root)

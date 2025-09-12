@@ -602,7 +602,12 @@ object Lowering {
       val b = visitExp(base)
       LoweredAst.Expr.VectorLength(b, loc)
 
-    case TypedAst.Expr.Ascribe(exp, _, _, tpe, eff, loc) =>
+    case TypedAst.Expr.AscribeType(exp, _, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.Ascribe(e, t, eff, loc)
+
+    case TypedAst.Expr.AscribeEff(exp, _, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expr.Ascribe(e, t, eff, loc)

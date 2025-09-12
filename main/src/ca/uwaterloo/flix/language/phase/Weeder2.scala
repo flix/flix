@@ -1728,7 +1728,15 @@ object Weeder2 {
     private def visitAscribeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Ascribe)
       mapN(pickExpr(tree), Types.tryPickTypeNoWild(tree), Types.tryPickEffect(tree)) {
-        (expr, tpe, eff) => Expr.Ascribe(expr, tpe, eff, tree.loc)
+        (expr, tpe, eff) =>
+          val typeAscribed = tpe match {
+            case Some(value) => Expr.AscribeType(expr, value, tree.loc)
+            case None => expr
+          }
+          eff match {
+            case Some(value) => Expr.AscribeEff(typeAscribed, value, tree.loc)
+            case None => typeAscribed
+          }
       }
     }
 

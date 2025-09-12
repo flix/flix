@@ -81,7 +81,8 @@ object TypedAstOps {
     case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
     case Expr.VectorLoad(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.VectorLength(exp, _) => sigSymsOf(exp)
-    case Expr.Ascribe(exp, _, _, _, _, _) => sigSymsOf(exp)
+    case Expr.AscribeType(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expr.AscribeEff(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.InstanceOf(exp, _, _) => sigSymsOf(exp)
     case Expr.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
@@ -288,7 +289,10 @@ object TypedAstOps {
     case Expr.VectorLength(exp, _) =>
       freeVars(exp)
 
-    case Expr.Ascribe(exp, _, _, _, _, _) =>
+    case Expr.AscribeType(exp, _, _, _, _) =>
+      freeVars(exp)
+
+    case Expr.AscribeEff(exp, _, _, _, _) =>
       freeVars(exp)
 
     case Expr.Without(exp, _, _, _, _) =>

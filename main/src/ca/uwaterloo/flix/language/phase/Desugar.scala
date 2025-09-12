@@ -554,9 +554,16 @@ object Desugar {
       val ef = deff.map(visitType)
       val e10 = visitExp(exp1)
       // Ascribe has an invariant that at least t or ef must be defined
-      val e1 = if (t.isDefined || ef.isDefined) Expr.Ascribe(e10, t, ef, e10.loc) else e10
+      val e11 = t match {
+        case Some(value) => Expr.AscribeType(e10, value, e10.loc)
+        case None => e10
+      }
+      val e12 = ef match {
+        case Some(value) => Expr.AscribeEff(e11, value, e11.loc)
+        case None => e11
+      }
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ident, fps, e1, e2, loc)
+      Expr.LocalDef(ident, fps, e12, e2, loc)
 
     case WeededAst.Expr.Scope(ident, exp, loc) =>
       val e = visitExp(exp)
@@ -679,11 +686,15 @@ object Desugar {
     case WeededAst.Expr.MapLit(exps, loc) =>
       desugarMapLit(exps, loc)
 
-    case WeededAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
+    case WeededAst.Expr.AscribeType(exp, expectedType, loc) =>
       val e = visitExp(exp)
-      val ts = expectedType.map(visitType)
-      val effs = expectedEff.map(visitType)
-      Expr.Ascribe(e, ts, effs, loc)
+      val t = visitType(expectedType)
+      Expr.AscribeType(e, t, loc)
+
+    case WeededAst.Expr.AscribeEff(exp, expectedEff, loc) =>
+      val e = visitExp(exp)
+      val eff = visitType(expectedEff)
+      Expr.AscribeEff(e, eff, loc)
 
     case WeededAst.Expr.InstanceOf(exp, className, loc) =>
       val e = visitExp(exp)
@@ -1502,7 +1513,7 @@ object Desugar {
     val l = exp0.loc.asSynthetic
     tpe0 match {
       case None => exp0
-      case Some(t) => DesugaredAst.Expr.Ascribe(exp0, Some(t), None, l)
+      case Some(t) => DesugaredAst.Expr.AscribeType(exp0, t, l)
     }
   }
 
