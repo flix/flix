@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 import scala.annotation.tailrec
 
 /**
@@ -27,6 +28,13 @@ import scala.annotation.tailrec
 sealed trait SimpleType
 
 object SimpleType {
+
+  /**
+    * A private concurrent cache.
+    *
+    * Note: We do not cache all simple types because it is not worth it.
+    */
+  private val Cache: ConcurrentMap[SimpleType, SimpleType] = new ConcurrentHashMap()
 
   //
   // Primitive Types.
@@ -73,6 +81,8 @@ object SimpleType {
   // Compound Types.
   //
 
+  val Object: SimpleType = Native(classOf[java.lang.Object])
+
   case class Array(tpe: SimpleType) extends SimpleType
 
   case class Lazy(tpe: SimpleType) extends SimpleType
@@ -95,7 +105,21 @@ object SimpleType {
 
   case class Native(clazz: Class[?]) extends SimpleType
 
-  val Object: SimpleType = Native(classOf[java.lang.Object])
+  /**
+    * Smart constructor for [[SimpleType.Arrow]].
+    */
+  def mkArrow(args: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
+    val tpe = Arrow(args, result)
+    Cache.computeIfAbsent(tpe, (_: SimpleType) => tpe).asInstanceOf[SimpleType.Arrow]
+  }
+
+  /**
+    * Smart constructor for [[SimpleType.Enum]].
+    */
+  def mkEnum(sym: Symbol.EnumSym, targs: List[SimpleType]): SimpleType.Enum = {
+    val tpe = Enum(sym, targs)
+    Cache.computeIfAbsent(tpe, (_: SimpleType) => tpe).asInstanceOf[SimpleType.Enum]
+  }
 
   /** Returns `tpe` if it's a primitive type and returns [[SimpleType.Object]] otherwise. */
   def erase(tpe: SimpleType): SimpleType = {

@@ -234,9 +234,9 @@ object Eraser {
       case Array(tpe) => Array(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
       case Tuple(elms) => Tuple(elms.map(erase))
-      case SimpleType.Enum(sym, targs) => SimpleType.Enum(sym, targs.map(erase))
+      case SimpleType.Enum(sym, targs) => SimpleType.mkEnum(sym, targs.map(erase))
       case SimpleType.Struct(sym, tparams) => SimpleType.Struct(sym, tparams.map(erase))
-      case Arrow(args, result) => Arrow(args.map(visitType), box(result))
+      case Arrow(args, result) => SimpleType.mkArrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
       case ExtensibleExtend(cons, tpes, rest) => ExtensibleExtend(cons, tpes.map(erase), visitType(rest))

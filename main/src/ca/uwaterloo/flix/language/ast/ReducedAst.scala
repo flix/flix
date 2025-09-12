@@ -45,7 +45,7 @@ object ReducedAst {
     * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
     */
   case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
-    val arrowType: SimpleType.Arrow = SimpleType.Arrow(fparams.map(_.tpe), tpe)
+    val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
   /** Remember the unboxed return type for test function generation. */

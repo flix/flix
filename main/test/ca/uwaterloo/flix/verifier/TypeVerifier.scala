@@ -304,7 +304,7 @@ object TypeVerifier {
           val ArraySeq(t1) = ts
           tpe match {
             case SimpleType.Lazy(elmt) =>
-              val fun = SimpleType.Arrow(List(SimpleType.Unit), elmt)
+              val fun = SimpleType.mkArrow(List(SimpleType.Unit), elmt)
               checkEq(t1, fun, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Lazy", loc)
@@ -388,10 +388,10 @@ object TypeVerifier {
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
-          val signature = SimpleType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-
-          val decl = SimpleType.Arrow(defn.cparams.map(_.tpe), signature)
-          val actual = SimpleType.Arrow(ts.toList, tpe)
+          val signature = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
+        
+          val decl = SimpleType.mkArrow(defn.cparams.map(_.tpe), signature)
+          val actual = SimpleType.mkArrow(ts.toList, tpe)
 
           checkEq(decl, actual, loc)
           tpe
@@ -467,14 +467,14 @@ object TypeVerifier {
 
     case Expr.ApplyClo(exp1, exp2, _, tpe, _, loc) =>
       val lamType1 = visitExpr(exp1)
-      val lamType2 = SimpleType.Arrow(List(visitExpr(exp2)), tpe)
+      val lamType2 = SimpleType.mkArrow(List(visitExpr(exp2)), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 
     case Expr.ApplyDef(sym, exps, _, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = SimpleType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = SimpleType.Arrow(exps.map(visitExpr).toList, tpe)
+      val declared = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
+      val actual = SimpleType.mkArrow(exps.map(visitExpr).toList, tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
@@ -490,8 +490,8 @@ object TypeVerifier {
         case t => t
       }
 
-      val sig = SimpleType.Arrow(ts, tpe)
-      val opsig = SimpleType.Arrow(
+      val sig = SimpleType.mkArrow(ts, tpe)
+      val opsig = SimpleType.mkArrow(
         op.fparams.map(_.tpe), oprestype
       )
 
@@ -500,8 +500,8 @@ object TypeVerifier {
 
     case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = SimpleType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = SimpleType.Arrow(actuals.map(visitExpr), tpe)
+      val declared = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
+      val actual = SimpleType.mkArrow(actuals.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
@@ -565,8 +565,8 @@ object TypeVerifier {
           throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.loc))
 
         val params = op.fparams.map(_.tpe)
-        val resumptionType = SimpleType.Arrow(List(op.tpe), exptype)
-        val signature = SimpleType.Arrow(params :+ resumptionType, exptype)
+        val resumptionType = SimpleType.mkArrow(List(op.tpe), exptype)
+        val signature = SimpleType.mkArrow(params :+ resumptionType, exptype)
 
         checkEq(ruletype, signature, rule.exp.loc)
       }
@@ -576,7 +576,7 @@ object TypeVerifier {
     case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
-        val signature = SimpleType.Arrow(m.fparams.map(_.tpe), m.tpe)
+        val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)
         checkEq(signature, exptype, m.loc)
       }
       checkEq(tpe, SimpleType.Native(clazz), loc)

@@ -223,7 +223,7 @@ object Reducer {
     val paramTypes = op.fparams.map(_.tpe)
     val resType = op.tpe
     val continuationType = SimpleType.Object
-    val correctedFunctionType = SimpleType.Arrow(paramTypes :+ continuationType, resType)
+    val correctedFunctionType = SimpleType.mkArrow(paramTypes :+ continuationType, resType)
     correctedFunctionType
   }
 
