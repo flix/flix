@@ -339,8 +339,8 @@ object Bootstrap {
     * to make build reproducible.
     */
   private def getAllFilesSorted(p: Path): List[(Path, String)] = {
-    Bootstrap.getAllFiles(p).map { path =>
-      (path, Bootstrap.convertPathToRelativeFileName(p, path))
+    getAllFiles(p).map { path =>
+      (path, convertPathToRelativeFileName(p, path))
     }.sortBy(_._2)
   }
 
