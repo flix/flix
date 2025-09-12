@@ -69,10 +69,10 @@ object TypeReconstruction {
     * Reconstructs types in the given fparams.
     */
   private def visitFormalParam(fparam: KindedAst.FormalParam, subst: SubstitutionTree): TypedAst.FormalParam = fparam match {
-    case KindedAst.FormalParam(sym, mod, tpe0, src, loc) =>
+    case KindedAst.FormalParam(sym, tpe0, src, loc) =>
       val tpe = subst(tpe0)
       val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.FormalParam(bnd, mod, tpe, src, loc)
+      TypedAst.FormalParam(bnd, tpe, src, loc)
   }
 
   /**

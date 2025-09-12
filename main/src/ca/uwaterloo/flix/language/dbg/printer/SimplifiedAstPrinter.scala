@@ -80,7 +80,7 @@ object SimplifiedAstPrinter {
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val SimplifiedAst.FormalParam(sym, _, tpe, _) = fp
+    val SimplifiedAst.FormalParam(sym, tpe, _) = fp
     DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 

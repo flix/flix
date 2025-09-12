@@ -1395,7 +1395,7 @@ object Namer {
     * Translates the given weeded formal parameter to a named formal parameter.
     */
   private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.FormalParam = fparam match {
-    case DesugaredAst.FormalParam(ident, mod, tpe, loc) =>
+    case DesugaredAst.FormalParam(ident, tpe, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
@@ -1403,7 +1403,7 @@ object Namer {
       val t = tpe.map(visitType)
 
       // Construct the formal parameter.
-      NamedAst.FormalParam(freshSym, mod, t, loc)
+      NamedAst.FormalParam(freshSym, t, loc)
   }
 
   /**
@@ -1480,8 +1480,8 @@ object Namer {
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
-      case DesugaredAst.FormalParam(_, _, Some(tpe1), _) => freeTypeVars(tpe1)
-      case DesugaredAst.FormalParam(_, _, None, _) => Nil
+      case DesugaredAst.FormalParam(_, Some(tpe1), _) => freeTypeVars(tpe1)
+      case DesugaredAst.FormalParam(_, None, _) => Nil
     }
 
     val tpeTvars = freeTypeVars(tpe)

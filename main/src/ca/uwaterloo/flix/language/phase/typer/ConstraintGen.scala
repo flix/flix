@@ -1269,7 +1269,7 @@ object ConstraintGen {
         * Constrains the given formal parameter to its declared type.
         */
       def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
-        case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+        case KindedAst.FormalParam(sym, tpe, _, loc) =>
           c.unifyType(sym.tvar, tpe, loc)
       }
 

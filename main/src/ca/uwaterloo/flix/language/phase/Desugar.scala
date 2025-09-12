@@ -398,9 +398,9 @@ object Desugar {
     * Desugars the given [[WeededAst.FormalParam]] `fparam0`.
     */
   private def visitFormalParam(fparam0: WeededAst.FormalParam): DesugaredAst.FormalParam = fparam0 match {
-    case WeededAst.FormalParam(ident, mod, tpe0, loc) =>
+    case WeededAst.FormalParam(ident, tpe0, loc) =>
       val tpe = tpe0.map(visitType)
-      DesugaredAst.FormalParam(ident, mod, tpe, loc)
+      DesugaredAst.FormalParam(ident, tpe, loc)
   }
 
   /**
@@ -1454,7 +1454,7 @@ object Desugar {
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.ExtMatchRule(pat0, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
@@ -1486,7 +1486,7 @@ object Desugar {
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }

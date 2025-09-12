@@ -81,7 +81,7 @@ object EffectBinder {
 
   private def visitEnum(enm: LiftedAst.Enum): ReducedAst.Enum = enm match {
     case LiftedAst.Enum(ann, mod, sym, tparams0, cases0, loc) =>
-      val tparams = tparams0.map(param => ReducedAst.TypeParam(param.name, param.sym, param.loc))
+      val tparams = tparams0.map(param => ReducedAst.TypeParam(param.name, param.sym))
       val cases = MapOps.mapValues(cases0)(visitEnumCase)
       ReducedAst.Enum(ann, mod, sym, tparams, cases, loc)
   }
@@ -92,7 +92,7 @@ object EffectBinder {
 
   private def visitStruct(struct: LiftedAst.Struct): ReducedAst.Struct = struct match {
     case LiftedAst.Struct(ann, mod, sym, tparams0, fields0, loc) =>
-      val tparams = tparams0.map(param => ReducedAst.TypeParam(param.name, param.sym, param.loc))
+      val tparams = tparams0.map(param => ReducedAst.TypeParam(param.name, param.sym))
       val fields = fields0.map(visitStructField)
       ReducedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
@@ -114,8 +114,8 @@ object EffectBinder {
   }
 
   private def visitParam(p: LiftedAst.FormalParam): ReducedAst.FormalParam = p match {
-    case LiftedAst.FormalParam(sym, mod, tpe, loc) =>
-      ReducedAst.FormalParam(sym, mod, tpe, loc)
+    case LiftedAst.FormalParam(sym, tpe, _) =>
+      ReducedAst.FormalParam(sym, tpe)
   }
 
   private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit flix: Flix): ReducedAst.JvmMethod = method match {

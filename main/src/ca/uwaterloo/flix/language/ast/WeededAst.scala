@@ -430,7 +430,7 @@ object WeededAst {
 
   case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
-  case class FormalParam(ident: Name.Ident, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
+  case class FormalParam(ident: Name.Ident, tpe: Option[Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 

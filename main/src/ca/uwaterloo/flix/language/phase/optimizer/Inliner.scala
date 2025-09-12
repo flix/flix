@@ -456,10 +456,10 @@ object Inliner {
 
   /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
   private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
-    case MonoAst.FormalParam(sym, mod, tpe, occur, loc) =>
+    case MonoAst.FormalParam(sym, tpe, occur, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val varSubst = Map(sym -> freshVarSym)
-      (MonoAst.FormalParam(freshVarSym, mod, tpe, occur, loc), varSubst)
+      (MonoAst.FormalParam(freshVarSym, tpe, occur, loc), varSubst)
   }
 
   private def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
