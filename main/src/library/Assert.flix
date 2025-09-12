@@ -36,7 +36,8 @@ mod Assert {
     /// Asserts that the given condition `cond` is `true`.
     ///
     pub def assertTrue(cond: Bool): Unit \ Assert =
-        Assert.assert(cond, text("Assertion failed: expected true"))
+        let m = text("Assertion failed: expected true");
+        Assert.assert(cond, m)
 
     ///
     /// Asserts that the given condition `cond` is `true` with the given message `msg`.
@@ -48,7 +49,8 @@ mod Assert {
     /// Asserts that the given condition `cond` is `false`.
     ///
     pub def assertFalse(cond: Bool): Unit \ Assert =
-        Assert.assert(not cond, text("Assertion failed: expected false"))
+        let m = text("Assertion failed: expected false");
+        Assert.assert(not cond, m)
 
     ///
     /// Asserts that the given condition `cond` is `false` with the given message `msg`.
@@ -60,67 +62,89 @@ mod Assert {
     /// Asserts that the given values `expected` and `actual` are equal.
     ///
     pub def assertEq(expected: {expected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
-        Assert.assert(actual == expected#expected, red("Assertion failed: ") + text("expected ") + blue("`${expected#expected}`") + text(", but got ") + yellow("`${actual}`"))
+        let c = actual == expected#expected;
+        let m = red("Assertion failed: ") + text("expected ") + blue("`${expected#expected}`") + text(", but got ") + yellow("`${actual}`");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given values `expected` and `actual` are equal with the given message `msg`.
     ///
     pub def assertEqWithMsg(expected: {expected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
-        Assert.assert(actual == expected#expected, text(msg))
+        let c = actual == expected#expected;
+        let m = text(msg);
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal.
     ///
     pub def assertNeq(unexpected: {unexpected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
-        Assert.assert(actual != unexpected#unexpected, text("Assertion failed: expected values to be different, but both were ") + text("`${actual}`"))
+        let c = actual != unexpected#unexpected;
+        let m = text("Assertion failed: expected values to be different, but both were ") + text("`${actual}`");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given values `unexpected` and `actual` are not equal with the given message `msg`.
     ///
     pub def assertNeqWithMsg(unexpected: {unexpected = a}, actual: a, msg: String): Unit \ Assert with Eq[a] =
-        Assert.assert(actual != unexpected#unexpected, text(msg))
+        let c = actual != unexpected#unexpected;
+        let m = text(msg);
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given Option `o` is `Some(v)`.
     ///
     pub def assertSome(o: Option[a]): Unit \ Assert =
-        Assert.assert(Option.nonEmpty(o), text("Assertion failed: expected Some(_), but got None"))
+        let c = Option.nonEmpty(o);
+        let m = text("Assertion failed: expected Some(_), but got None");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given Option `o` is `None`.
     ///
     pub def assertNone(o: Option[a]): Unit \ Assert =
-        Assert.assert(Option.isEmpty(o), text("Assertion failed: expected None, but got Some(_)"))
+        let c = Option.isEmpty(o);
+        let m = text("Assertion failed: expected None, but got Some(_)");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given Result `r` is `Ok(v)`.
     ///
     pub def assertOk(r: Result[e, a]): Unit \ Assert =
-        Assert.assert(Result.isOk(r), text("Assertion failed: expected Ok(_), but got Err(_)"))
+        let c = Result.isOk(r);
+        let m = text("Assertion failed: expected Ok(_), but got Err(_)");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given Result `r` is `Err(e)`.
     ///
     pub def assertErr(r: Result[e, a]): Unit \ Assert =
-        Assert.assert(Result.isErr(r), text("Assertion failed: expected Err(_), but got Ok(_)"))
+        let c = Result.isErr(r);
+        let m = text("Assertion failed: expected Err(_), but got Ok(_)");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given foldable `ma` is empty.
     ///
     pub def assertEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
-        Assert.assert(Foldable.isEmpty(ma), text("Assertion failed: expected empty collection, but got ") + text("`${ma}`"))
+        let c = Foldable.isEmpty(ma);
+        let m = text("Assertion failed: expected empty collection, but got ") + text("`${ma}`");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given foldable `ma` is non-empty.
     ///
     pub def assertNonEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
-        Assert.assert(Foldable.nonEmpty(ma), text("Assertion failed: expected non-empty collection, but got ") + text("`${ma}`"))
+        let c = Foldable.nonEmpty(ma);
+        let m = text("Assertion failed: expected non-empty collection, but got ") + text("`${ma}`");
+        Assert.assert(c, m)
 
     ///
     /// Asserts that the given element `x` is a member of the given foldable `ma`.
     ///
     pub def assertMemberOf(x: a, ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], Eq[a], ToString[a], ToString[m[a]] =
-        Assert.assert(Foldable.memberOf(x, ma), text("Assertion failed: expected ") + text("`${x}`") + text(" to be a member of ") + text("`${ma}`"))
+        let c = Foldable.memberOf(x, ma);
+        let m = text("Assertion failed: expected ") + text("`${x}`") + text(" to be a member of ") + text("`${ma}`");
+        Assert.assert(c, m)
 
     ///
     /// Unconditionally succeeds with the given message `msg`.
