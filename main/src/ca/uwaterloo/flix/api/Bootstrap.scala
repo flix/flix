@@ -893,7 +893,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         flix.addJar(path)
       }
 
-      val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
+      val currentSources = (sourcePaths ::: flixPackagePaths ::: mavenPackagePaths ::: jarPackagePaths).filter(p => Files.exists(p))
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
