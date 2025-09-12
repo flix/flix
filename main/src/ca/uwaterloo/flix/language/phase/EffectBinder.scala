@@ -23,8 +23,6 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Purity, ReducedAst, 
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
 import ca.uwaterloo.flix.util.ParOps
-
-import scala.collection.immutable.ArraySeq
 import ca.uwaterloo.flix.util.collection.MapOps
 
 import scala.annotation.tailrec
@@ -240,10 +238,10 @@ object EffectBinder {
       val List(exp1, exp2) = exps
       val e1 = visitExprWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
-      ReducedAst.Expr.ApplyAtomic(op, ArraySeq(e1, e2), tpe, purity, loc)
+      ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = ArraySeq.from(exps.map(visitExprWithBinders(binders)))
+      val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
@@ -252,7 +250,7 @@ object EffectBinder {
       ReducedAst.Expr.ApplyClo(e1, e2, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
-      val es = ArraySeq.from(exps.map(visitExprWithBinders(binders)))
+      val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyDef(sym, es, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
