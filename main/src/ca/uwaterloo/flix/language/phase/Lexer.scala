@@ -521,13 +521,6 @@ object Lexer {
   }
 
   /**
-    * Checks whether the following substring matches a keyword.
-    * Will advance the current position past the keyword if there is a match.
-    */
-  private def isMatchCurrent(keyword: String)(implicit s: State): Boolean =
-    s.sc.advanceIfMatch(keyword)
-
-  /**
     * Checks whether the following substring matches a operator.
     * Note that __comparison includes current__.
     * Also note that this will advance the current position past the keyword if there is a match.
