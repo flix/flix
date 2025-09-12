@@ -622,12 +622,10 @@ object Lexer {
     s.sc.advanceWhile(c => c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$')
     if (s.sc.advanceIfMatch('?')) {
       TokenKind.HoleVariable
+    } else if (isUpper) {
+      TokenKind.NameUpperCase
     } else {
-      if (isUpper) {
-        TokenKind.NameUpperCase
-      } else {
-        TokenKind.NameLowerCase
-      }
+      TokenKind.NameLowerCase
     }
   }
 
@@ -641,10 +639,8 @@ object Lexer {
   }
 
   /** Checks whether `c` lies in unicode range U+0370 to U+03FF. */
-  private def isGreekNameChar(c: Char): Boolean = {
-    val i = c.toInt
-    0x0370 <= i && i <= 0x03FF
-  }
+  private def isGreekNameChar(c: Char): Boolean =
+    0x0370 <= c && c <= 0x03FF
 
   /**
     * Moves current position past a math name.
@@ -752,7 +748,8 @@ object Lexer {
     }
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
-    addToken(if (isDebug) TokenKind.LiteralDebugStringL else TokenKind.LiteralStringInterpolationL)
+    if (isDebug) addToken(TokenKind.LiteralDebugStringL)
+    else addToken(TokenKind.LiteralStringInterpolationL)
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
     while (!eof()) {
@@ -770,7 +767,8 @@ object Lexer {
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
             s.interpolationNestingLevel -= 1
-            return if (isDebug) TokenKind.LiteralDebugStringR else TokenKind.LiteralStringInterpolationR
+            if (isDebug) return TokenKind.LiteralDebugStringR
+            else return TokenKind.LiteralStringInterpolationR
           }
           blockNestingLevel -= 1
         }
@@ -826,9 +824,8 @@ object Lexer {
   }
 
   /** Returns `true` if `c` is recognized by `[0-9a-z._]`. */
-  private def isNumberLikeChar(c: Char): Boolean = {
+  private def isNumberLikeChar(c: Char): Boolean =
     c.isDigit || c.isLetter || c == '.' || c == '_'
-  }
 
   /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error`. */
   private def wrapAndConsume(error: LexerError)(implicit s: State): TokenKind = {
@@ -862,7 +859,7 @@ object Lexer {
       if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
         throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
       }
-      while(s.sc.advanceIfMatch('_')) {
+      while (s.sc.advanceIfMatch('_')) {
         if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
           throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
         }
