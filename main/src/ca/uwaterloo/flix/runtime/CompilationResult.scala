@@ -26,15 +26,17 @@ import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
   * @param main      the reflected main function, if present.
   * @param tests     the tests in the program.
   * @param sources   the sources of the program.
+  * @param root      the jvm byte code representation of the program (the compiled output).
   * @param totalTime the total compilation time, excluding class writing/loading.
-  * @param codeSize   the number of bytes the compiler generated.
   */
 class CompilationResult(main: Option[Array[String] => Unit],
                         tests: Map[Symbol.DefnSym, TestFn],
                         sources: Map[Source, SourceLocation],
+                        root: BytecodeAst.Root,
                         val totalTime: Long,
-                        val codeSize: Int
                        ) {
+
+  val codeSize: Int = root.classes.values.map(_.bytecode.length).sum
 
   /** Optionally returns the main function. */
   def getMain: Option[Array[String] => Unit] =
