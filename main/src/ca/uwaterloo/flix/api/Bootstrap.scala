@@ -174,7 +174,7 @@ object Bootstrap {
   /**
     * Returns the directory of the output .class-files relative to the given path `p`.
     */
-  private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
+  private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/").normalize()
 
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
@@ -229,12 +229,12 @@ object Bootstrap {
   /**
     * Returns `true` if the given path `p` is a jar-file.
     */
-  private def isJarFile(p: Path): Boolean = p.getFileName.toString.endsWith(".jar") && isZipArchive(p)
+  private def isJarFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(".jar") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  def isPkgFile(p: Path): Boolean = p.getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+  def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
 
   /**
     * Creates a new directory at the given path `p`.
@@ -315,7 +315,7 @@ object Bootstrap {
     root.relativize(path).toString.replace('\\', '/')
 
   /**
-    * Returns all files in the given path `p` ending with .`ext`.
+    * Returns all files in the given path `p` ending with `.ext`.
     */
   private def getAllFilesWithExt(p: Path, ext: String): List[Path] =
     getAllFiles(p).filter(p => p.getFileName.toString.endsWith(s".$ext"))
@@ -368,7 +368,7 @@ object Bootstrap {
   /**
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
-    * downloads all required files. Otherwise checks the /lib folder
+    * downloads all required files. Otherwise, checks the /lib folder
     * to see what dependencies are already downloaded. Also finds
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
