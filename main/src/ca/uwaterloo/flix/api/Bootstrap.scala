@@ -422,6 +422,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  private def stepParseManifest: Validation[Manifest, BootstrapError] = {
+    val tomlPath = getManifestFile(projectPath)
+    ManifestParser.parse(tomlPath) match {
+      case Ok(manifest) =>
+        optManifest = Some(manifest)
+        Validation.Success(manifest)
+      case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
+    }
+  }
+
   private def stepAddLocalFlixFiles(): List[Path] = {
     // 3. Add *.flix, src/**.flix and test/**.flix
     val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
@@ -430,6 +440,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val result = filesHere ::: filesSrc ::: filesTest
     sourcePaths = result
     result
+  }
+
+  private def stepResolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
+    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
+      case Ok(l) => Validation.Success(l)
+      case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
+    }
   }
 
   private def stepInstallDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
@@ -473,23 +490,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Validation.Success(paths)
       case Result.Err(e) =>
         Validation.Failure(BootstrapError.JarPackageError(e))
-    }
-  }
-
-  private def stepResolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
-    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
-      case Ok(l) => Validation.Success(l)
-      case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
-    }
-  }
-
-  private def stepParseManifest: Validation[Manifest, BootstrapError] = {
-    val tomlPath = getManifestFile(projectPath)
-    ManifestParser.parse(tomlPath) match {
-      case Ok(manifest) =>
-        optManifest = Some(manifest)
-        Validation.Success(manifest)
-      case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
     }
   }
 
