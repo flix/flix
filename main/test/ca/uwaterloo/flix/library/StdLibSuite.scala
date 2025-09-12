@@ -28,7 +28,7 @@ class StdLibSuite extends AnyFunSuite {
   private val Path = "main/test/ca/uwaterloo/flix/library/"
 
   /** The default options. */
-  private val Opts = Options.DefaultTest.copy(incremental = false, output = None)
+  private val Opts = Options.DefaultTest.copy(incremental = false, outputJvm = false)
 
   private def init(): Unit = {
     // Create a new Flix compiler.
