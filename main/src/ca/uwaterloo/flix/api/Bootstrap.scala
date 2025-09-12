@@ -439,6 +439,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           mavenPaths =>
             mapN(stepInstallJarDependencies(dependencyManifests)) {
               jarPaths =>
+                out.println("Dependency resolution completed.")
                 List(flixPaths, mavenPaths, jarPaths)
             }
         }
