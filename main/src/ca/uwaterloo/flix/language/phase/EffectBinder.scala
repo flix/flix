@@ -177,18 +177,18 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
-      val e = ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
+      val e = ReducedAst.Expr.Let(sym, e1, e2, tpe, loc)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+    case LiftedAst.Expr.Stm(exp1, exp2, tpe, _, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
-      val e = ReducedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+      val e = ReducedAst.Expr.Stmt(e1, e2, tpe, loc)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
@@ -339,10 +339,10 @@ object EffectBinder {
       case ReducedAst.Expr.ApplySelfTail(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.IfThenElse(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Branch(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
+      case ReducedAst.Expr.Let(sym, exp1, exp2, _, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
-      case ReducedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
+      case ReducedAst.Expr.Stmt(exp1, exp2, _, loc) =>
         binders.addOne(NonBinder(exp1, loc))
         bind(exp2)
       case ReducedAst.Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
@@ -372,9 +372,9 @@ object EffectBinder {
   private def bindBinders(binders: mutable.ArrayBuffer[Binder], exp: ReducedAst.Expr): ReducedAst.Expr = {
     binders.foldRight(exp) {
       case (LetBinder(sym, exp1, loc), acc) =>
-        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, loc)
       case (NonBinder(exp1, loc), acc) =>
-        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, loc)
     }
   }
 
