@@ -282,10 +282,6 @@ object SyntaxTree {
 
       case object LiteralMapKeyValueFragment extends Expr
 
-      case object LiteralRecord extends Expr
-
-      case object LiteralRecordFieldFragment extends Expr
-
       case object LiteralStructFieldFragment extends Expr
 
       case object LiteralSet extends Expr
