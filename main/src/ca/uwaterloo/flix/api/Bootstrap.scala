@@ -462,6 +462,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds the jar or the fatjar
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    // ideal:
+    // 1. build
+    // 2. jar
+
     // Build the project before building the jar
     val buildResult = build(flix)
     buildResult match {
