@@ -466,17 +466,22 @@ class Flix {
     *   1. `p` must be a zip archive.
     */
   def isValidFpkgFile(p: Path): Result[(), IllegalArgumentException] = {
-    if (p == null)
+    if (p == null) {
       return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
     val pNorm = p.normalize()
-    if (!Files.exists(pNorm))
+    if (!Files.exists(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
-    if (!Files.isRegularFile(pNorm))
+    }
+    if (!Files.isRegularFile(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
-    if (!Files.isReadable(pNorm))
+    }
+    if (!Files.isReadable(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
-    if (!pNorm.getFileName.toString.endsWith(".fpkg"))
+    }
+    if (!pNorm.getFileName.toString.endsWith(".fpkg")) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
+    }
 
     // Read the first four bytes of the file.
     val isZipArchive = Using(Files.newInputStream(pNorm)) { is =>
@@ -488,8 +493,9 @@ class Flix {
       b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
     }.getOrElse(false)
 
-    if (!isZipArchive)
+    if (!isZipArchive) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+    }
 
     Result.Ok(())
   }
