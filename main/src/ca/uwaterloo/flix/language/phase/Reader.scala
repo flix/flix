@@ -16,13 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, StreamOps, Validation}
-import ca.uwaterloo.flix.util.collection.MultiMap
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, StreamOps}
 
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
@@ -74,7 +73,7 @@ object Reader {
     */
   private def unpack(p: Path)(implicit sctx: SecurityContext, flix: Flix): List[Source] = {
     // Check that the path is a flix package.
-    if (!Bootstrap.isPkgFile(p))
+    if (flix.isValidFpkgFile(p) != Result.Ok(()))
       throw new RuntimeException(s"The path '$p' is not a flix package.")
 
     // Open the zip file.

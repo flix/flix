@@ -447,19 +447,51 @@ class Flix {
     * Adds the given path `p` as a Flix package file.
     */
   def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-    if (!p.getFileName.toString.endsWith(".fpkg"))
-      throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
+    isValidFpkgFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        addInput(p.toString, Input.PkgFile(p, sctx))
+        this
+    }
+  }
 
-    addInput(p.toString, Input.PkgFile(p, sctx))
-    this
+  /**
+    * Checks that `p` is a valid `.fpkg` filepath.
+    * `p` is valid if the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.fpkg`.
+    *   1. `p` must be a zip archive.
+    */
+  def isValidFpkgFile(p: Path): Result[(), IllegalArgumentException] = {
+    if (p == null)
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm))
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    if (!Files.isRegularFile(pNorm))
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    if (!Files.isReadable(pNorm))
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    if (!pNorm.getFileName.toString.endsWith(".fpkg"))
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
+
+    // Read the first four bytes of the file.
+    val isZipArchive = Using(Files.newInputStream(pNorm)) { is =>
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
+      b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+    }.getOrElse(false)
+
+    if (!isZipArchive)
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+
+    Result.Ok(())
   }
 
   /**
