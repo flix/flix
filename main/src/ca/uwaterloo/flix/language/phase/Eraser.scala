@@ -10,7 +10,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 import scala.annotation.unused
-import scala.collection.immutable.ArraySeq
 
 /**
   * Erase types and introduce corresponding casting
@@ -50,7 +49,7 @@ object Eraser {
   private def visitDef(defn: Def): Def = defn match {
     case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
-      val e = Expr.ApplyAtomic(AtomicOp.Box, ArraySeq(eNew), box(tpe), exp.purity, loc)
+      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
       Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
@@ -194,11 +193,11 @@ object Eraser {
   }
 
   private def castExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
-    Expr.ApplyAtomic(AtomicOp.Cast, ArraySeq(exp), t, purity, loc.asSynthetic)
+    Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
   private def unboxExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
-    Expr.ApplyAtomic(AtomicOp.Unbox, ArraySeq(exp), t, purity, loc.asSynthetic)
+    Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
   private def visitEffect(eff: Effect): Effect = eff match {

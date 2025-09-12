@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, SemanticOp, SourceL
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.ArraySeq
 
 object TypeVerifier {
 
@@ -74,7 +73,7 @@ object TypeVerifier {
 
       op match {
         case AtomicOp.Unary(sop) =>
-          val ArraySeq(t) = ts
+          val List(t) = ts
           val opTpe = sop match {
             case SemanticOp.BoolOp.Not => SimpleType.Bool
             case SemanticOp.Float32Op.Neg => SimpleType.Float32
@@ -92,7 +91,7 @@ object TypeVerifier {
           check(expected = tpe)(actual = opTpe, loc)
 
         case AtomicOp.Binary(sop) =>
-          val ArraySeq(t1, t2) = ts
+          val List(t1, t2) = ts
           val (argTpe1, argTpe2, resTpe) = sop match {
             case SemanticOp.BoolOp.And => (SimpleType.Bool, SimpleType.Bool, SimpleType.Bool)
             case SemanticOp.BoolOp.Neq => (SimpleType.Bool, SimpleType.Bool, SimpleType.Bool)
@@ -209,7 +208,7 @@ object TypeVerifier {
           check(expected = tpe)(actual = resTpe, loc)
 
         case AtomicOp.Is(sym) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           t1 match {
             case SimpleType.Enum(enumSym, _) if enumSym == sym.enumSym => ()
             case _ => failMismatchedShape(t1, sym.enumSym.toString, loc)
@@ -225,7 +224,7 @@ object TypeVerifier {
           tpe
 
         case AtomicOp.Untag(sym, _) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           // Untag(Nil): Unit
           // Checking this requires instantiating the enum case
           t1 match {
@@ -235,7 +234,7 @@ object TypeVerifier {
           tpe
 
         case AtomicOp.ArrayLength =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           t1 match {
             case SimpleType.Array(_) => check(expected = SimpleType.Int32)(actual = tpe, loc)
             case _ => failMismatchedShape(t1, "Array", loc)
@@ -243,7 +242,7 @@ object TypeVerifier {
 
         case AtomicOp.StructNew(sym0, _) =>
           ts match {
-            case ArraySeq(region, _*) =>
+            case region :: _ =>
               checkStructType(tpe, sym0, loc)
               check(SimpleType.Region)(region, exps.head.loc)
               tpe
@@ -252,7 +251,7 @@ object TypeVerifier {
 
         case AtomicOp.StructGet(sym0) =>
           ts match {
-            case ArraySeq(tpe1) =>
+            case tpe1 :: Nil =>
               checkStructType(tpe1, sym0.structSym, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
@@ -260,14 +259,14 @@ object TypeVerifier {
 
         case AtomicOp.StructPut(sym0) =>
           ts match {
-            case ArraySeq(tpe1, _) =>
+            case tpe1 :: _ :: Nil =>
               checkStructType(tpe1, sym0.structSym, loc)
               tpe
             case _ => failMismatchedShape(tpe, "Struct", loc)
           }
 
         case AtomicOp.ArrayNew =>
-          val ArraySeq(t1, t2) = ts
+          val List(t1, t2) = ts
           val arrType = SimpleType.Array(t1)
           checkEq(arrType, tpe, loc)
           check(expected = SimpleType.Int32)(actual = t2, loc)
@@ -282,7 +281,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.ArrayLoad =>
-          val ArraySeq(t1, t2) = ts
+          val List(t1, t2) = ts
           t1 match {
             case SimpleType.Array(elmt) =>
               check(expected = SimpleType.Int32)(actual = t2, loc)
@@ -291,7 +290,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.ArrayStore =>
-          val ArraySeq(t1, t2, t3) = ts
+          val List(t1, t2, t3) = ts
           t1 match {
             case SimpleType.Array(elmt) =>
               check(expected = SimpleType.Int32)(actual = t2, loc)
@@ -301,7 +300,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.Lazy =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           tpe match {
             case SimpleType.Lazy(elmt) =>
               val fun = SimpleType.mkArrow(List(SimpleType.Unit), elmt)
@@ -311,18 +310,18 @@ object TypeVerifier {
           }
 
         case AtomicOp.Force =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           t1 match {
             case SimpleType.Lazy(elm) => checkEq(elm, tpe, loc)
             case _ => failMismatchedShape(t1, "Lazy", loc)
           }
 
         case AtomicOp.Tuple =>
-          val tup = SimpleType.Tuple(ts.toList)
+          val tup = SimpleType.Tuple(ts)
           checkEq(tup, tpe, loc)
 
         case AtomicOp.Index(idx: Int) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           t1 match {
             case SimpleType.Tuple(elms) => checkEq(elms(idx), tpe, loc)
             case _ => failMismatchedShape(t1, "Tuple", loc)
@@ -339,7 +338,7 @@ object TypeVerifier {
           tpe
 
         case AtomicOp.RecordExtend(label) =>
-          val ArraySeq(t1, t2) = ts
+          val List(t1, t2) = ts
           removeFromRecordType(tpe, label.name, loc) match {
             case (rec, Some(valtype)) =>
               checkEq(rec, t2, loc)
@@ -349,7 +348,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.RecordRestrict(label) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           removeFromRecordType(t1, label.name, loc) match {
             case (rec, Some(_)) =>
               checkEq(tpe, rec, loc)
@@ -357,7 +356,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.RecordSelect(label) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           selectFromRecordType(t1, label.name, loc) match {
             case Some(elmt) =>
               checkEq(tpe, elmt, loc)
@@ -365,7 +364,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.ExtIs(label) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           getExtensibleTagType(t1, label.name, loc) match {
             case Some(_) => ()
             case None => failMismatchedShape(t1, label.name, loc)
@@ -382,16 +381,16 @@ object TypeVerifier {
           }
 
         case AtomicOp.ExtUntag(label, idx) =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           val termTypes = SimpleType.findExtensibleTermTypes(label, t1)
           checkEq(termTypes(idx), tpe, loc)
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
           val signature = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
-        
+
           val decl = SimpleType.mkArrow(defn.cparams.map(_.tpe), signature)
-          val actual = SimpleType.mkArrow(ts.toList, tpe)
+          val actual = SimpleType.mkArrow(ts, tpe)
 
           checkEq(decl, actual, loc)
           tpe
@@ -400,7 +399,7 @@ object TypeVerifier {
           check(expected = SimpleType.Object)(actual = tpe, loc)
 
         case AtomicOp.Unbox =>
-          val ArraySeq(t1) = ts
+          val List(t1) = ts
           check(expected = SimpleType.Object)(actual = t1, loc)
           tpe
 
@@ -412,7 +411,7 @@ object TypeVerifier {
           check(expected = SimpleType.Region)(actual = tpe, loc)
 
         case AtomicOp.Spawn =>
-          val ArraySeq(t1, t2) = ts
+          val List(t1, t2) = ts
           t1 match {
             case SimpleType.Arrow(List(SimpleType.Unit), _) => ()
             case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
@@ -422,7 +421,7 @@ object TypeVerifier {
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.GetField(field) =>
-          val ArraySeq(t) = ts
+          val List(t) = ts
           checkJavaSubtype(t, field.getDeclaringClass, loc)
           checkJavaSubtype(tpe, field.getType, loc)
 
@@ -430,38 +429,38 @@ object TypeVerifier {
           checkJavaSubtype(tpe, field.getType, loc)
 
         case AtomicOp.PutField(field) =>
-          val ArraySeq(t1, t2) = ts
+          val List(t1, t2) = ts
           checkJavaSubtype(t1, field.getDeclaringClass, loc)
           checkJavaSubtype(t2, field.getType, loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.PutStaticField(field) =>
-          val ArraySeq(t) = ts
+          val List(t) = ts
           checkJavaSubtype(t, field.getType, loc)
           check(expected = SimpleType.Unit)(actual = tpe, loc)
 
         case AtomicOp.Throw =>
-          val ArraySeq(t) = ts
+          val List(t) = ts
           checkJavaSubtype(t, classOf[Throwable], loc)
           tpe
 
         case AtomicOp.InstanceOf(_) =>
-          val ArraySeq(t) = ts
+          val List(t) = ts
           checkJavaSubtype(t, new Object().getClass, loc) // must not be primitive type
           check(expected = SimpleType.Bool)(actual = tpe, loc)
 
         case AtomicOp.InvokeConstructor(constructor) =>
-          checkJavaParameters(ts.toList, constructor.getParameterTypes.toList, loc)
+          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
         case AtomicOp.InvokeMethod(method) =>
-          val t +: pts = ts
-          checkJavaParameters(pts.toList, method.getParameterTypes.toList, loc)
+          val t :: pts = ts
+          checkJavaParameters(pts, method.getParameterTypes.toList, loc)
           checkJavaSubtype(t, method.getDeclaringClass, loc)
           checkJavaSubtype(tpe, method.getReturnType, loc)
 
         case AtomicOp.InvokeStaticMethod(method) =>
-          checkJavaParameters(ts.toList, method.getParameterTypes.toList, loc)
+          checkJavaParameters(ts, method.getParameterTypes.toList, loc)
           checkJavaSubtype(tpe, method.getReturnType, loc)
       }
 
@@ -474,7 +473,7 @@ object TypeVerifier {
     case Expr.ApplyDef(sym, exps, _, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
-      val actual = SimpleType.mkArrow(exps.map(visitExpr).toList, tpe)
+      val actual = SimpleType.mkArrow(exps.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 

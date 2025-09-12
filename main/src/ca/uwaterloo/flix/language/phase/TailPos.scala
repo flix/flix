@@ -88,7 +88,7 @@ object TailPos {
         Expr.ApplyDef(sym, exps, ExpPosition.Tail, tpe, purity, loc)
       } else {
         // Self recursive tail call.
-        Expr.ApplySelfTail(sym, exps.toList, tpe, purity, loc)
+        Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
       }
 
     case Expr.RunWith(exp, effUse, rules, _, tpe, purity, loc) =>
