@@ -454,10 +454,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Configure a new Flix object.
     val newOptions = flix.options.copy(outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
-
-    // Add sources and packages.
     Steps.updateStaleSources(flix)
-
     Steps.compile(flix)
   }
 
@@ -792,6 +789,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Runs the compile function on the `flix` object.
+      * It is up to the caller to set the appropriate options on `flix`.
+      * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
+      */
     def compile(flix: Flix): Validation[CompilationResult, BootstrapError] = {
       flix.compile() match {
         case Validation.Success(result: CompilationResult) => Validation.Success(result)
