@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.IntroducedBy
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, Modifiers, Source}
 
@@ -101,7 +100,7 @@ object LiftedAst {
 
   case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: SimpleType, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

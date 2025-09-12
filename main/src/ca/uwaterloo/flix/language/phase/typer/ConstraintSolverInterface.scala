@@ -68,7 +68,7 @@ object ConstraintSolverInterface {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Scope.Top, flix))
+        case (acc, KindedAst.FormalParam(sym, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Scope.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.

@@ -1537,7 +1537,7 @@ object Resolver {
     val varSyms = (0 until arity).map(i => freshVarSym("arg" + i, BoundBy.FormalParam, loc)).toList
 
     // Introduce a formal parameter for each variable symbol.
-    varSyms.map(sym => ResolvedAst.FormalParam(sym, Modifiers.Empty, None, loc))
+    varSyms.map(sym => ResolvedAst.FormalParam(sym, None, loc))
   }
 
   /**
@@ -2063,7 +2063,7 @@ object Resolver {
   private def resolveFormalParam(fparam0: NamedAst.FormalParam, wildness: Wildness, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
     val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Some(Kind.Star), wildness, scp0, taenv, ns0, root))
     mapN(tVal) {
-      t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+      t => ResolvedAst.FormalParam(fparam0.sym, t, fparam0.loc)
     }
   }
 

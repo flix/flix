@@ -172,9 +172,9 @@ object ResolvedAstPrinter {
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printFormalParam(fp: ResolvedAst.FormalParam): DocAst.Expr.AscriptionTpe = fp match {
-    case ResolvedAst.FormalParam(sym, _, Some(tpe), _) =>
+    case ResolvedAst.FormalParam(sym, Some(tpe), _) =>
       DocAst.Expr.AscriptionTpe(printVarSym(sym), UnkindedTypePrinter.print(tpe))
-    case ResolvedAst.FormalParam(sym, _, None, _) =>
+    case ResolvedAst.FormalParam(sym, None, _) =>
       DocAst.Expr.AscriptionTpe(printVarSym(sym), DocAst.Type.Wild)
   }
 
