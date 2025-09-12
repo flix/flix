@@ -16,44 +16,36 @@
 
 package ca.uwaterloo.flix.runtime
 
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Source
+import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 
 /**
   * A class representing the result of a compilation.
   *
-  * @param root      the abstract syntax tree of the program.
   * @param main      the reflected main function, if present.
-  * @param defs      the definitions in the program.
+  * @param tests     the tests in the program.
+  * @param sources   the sources of the program.
   * @param totalTime the total compilation time, excluding class writing/loading.
-  * @param codeSize  the number of bytes the compiler generated.
+  * @param codeSize   the number of bytes the compiler generated.
   */
-class CompilationResult(root: Root,
-                        main: Option[Array[String] => Unit],
-                        defs: Map[Symbol.DefnSym, () => AnyRef],
+class CompilationResult(main: Option[Array[String] => Unit],
+                        tests: Map[Symbol.DefnSym, TestFn],
+                        sources: Map[Source, SourceLocation],
                         val totalTime: Long,
-                        val codeSize: Int) {
+                        val codeSize: Int
+                       ) {
 
-  /**
-    * Optionally returns the main function.
-    */
-  def getMain: Option[Array[String] => Unit] = main
+  /** Optionally returns the main function. */
+  def getMain: Option[Array[String] => Unit] =
+    main
 
-  /**
-    * Returns all the test functions in the program.
-    */
-  def getTests: Map[Symbol.DefnSym, TestFn] = {
-    defs.collect {
-      case (sym, run) if root.defs(sym).ann.isTest =>
-        val skip = root.defs(sym).ann.isSkip
-        sym -> TestFn(sym, skip, run)
-    }
-  }
+  /** Returns all the test functions in the program. */
+  def getTests: Map[Symbol.DefnSym, TestFn] =
+    tests
 
-  /**
-    * Returns the total number of lines of compiled code.
-    */
-  def getTotalLines: Int = root.sources.foldLeft(0) {
+  /** Returns the total number of lines of compiled code. */
+  def getTotalLines: Int = sources.foldLeft(0) {
     case (acc, (_, sl)) => acc + sl.endLine
   }
 
