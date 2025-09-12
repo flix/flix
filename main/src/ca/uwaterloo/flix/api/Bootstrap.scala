@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.flatMapN
+import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -409,40 +409,87 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * and .jar files that this project uses.
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
-    // 1. Read, parse, and validate flix.toml.
-    val tomlPath = Bootstrap.getManifestFile(projectPath)
-    val manifest = ManifestParser.parse(tomlPath) match {
-      case Ok(m) => m
-      case Err(e) => return Validation.Failure(BootstrapError.ManifestParseError(e))
+    flatMapN(stepParseManifest) {
+      manifest =>
+        flatMapN(stepResolveFlixDependencies(manifest)) {
+          dependencyManifests =>
+            mapN(stepInstallDependencies(dependencyManifests)) {
+              _ =>
+                stepAddLocalFlixFiles()
+                ()
+            }
+        }
     }
-    optManifest = Some(manifest)
+  }
 
-    // 2. Check each dependency is available or download it.
-    val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
-      case Ok(l) => l
-      case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
-    }
-    FlixPackageManager.installAll(manifests, projectPath, apiKey) match {
-      case Ok(l) => flixPackagePaths = l
-      case Err(e) => return Validation.Failure(BootstrapError.FlixPackageError(e))
-    }
-    MavenPackageManager.installAll(manifests, projectPath) match {
-      case Ok(l) => mavenPackagePaths = l
-      case Err(e) => return Validation.Failure(BootstrapError.MavenPackageError(e))
-    }
-    JarPackageManager.installAll(manifests, projectPath) match {
-      case Ok(l) => jarPackagePaths = l
-      case Err(e) => return Validation.Failure(BootstrapError.JarPackageError(e))
-    }
-    out.println("Dependency resolution completed.")
-
+  private def stepAddLocalFlixFiles(): List[Path] = {
     // 3. Add *.flix, src/**.flix and test/**.flix
     val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
     val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
     val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
-    sourcePaths = filesHere ++ filesSrc ++ filesTest
+    val result = filesHere ::: filesSrc ::: filesTest
+    sourcePaths = result
+    result
+  }
 
-    Validation.Success(())
+  private def stepInstallDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
+    flatMapN(stepInstallFlixDependencies(dependencyManifests)) {
+      flixPaths =>
+        flatMapN(stepInstallMavenDependencies(dependencyManifests)) {
+          mavenPaths =>
+            mapN(stepInstallJarDependencies(dependencyManifests)) {
+              jarPaths =>
+                List(flixPaths, mavenPaths, jarPaths)
+            }
+        }
+    }
+  }
+
+  private def stepInstallFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
+      case Result.Ok(paths: List[Path]) =>
+        flixPackagePaths = paths
+        Validation.Success(paths)
+      case Result.Err(e) =>
+        Validation.Failure(BootstrapError.FlixPackageError(e))
+    }
+  }
+
+  private def stepInstallMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    MavenPackageManager.installAll(dependencyManifests, projectPath) match {
+      case Result.Ok(paths) =>
+        mavenPackagePaths = paths
+        Validation.Success(paths)
+      case Result.Err(e) =>
+        Validation.Failure(BootstrapError.MavenPackageError(e))
+    }
+  }
+
+  private def stepInstallJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
+    JarPackageManager.installAll(dependencyManifests, projectPath) match {
+      case Result.Ok(paths) =>
+        jarPackagePaths = paths
+        Validation.Success(paths)
+      case Result.Err(e) =>
+        Validation.Failure(BootstrapError.JarPackageError(e))
+    }
+  }
+
+  private def stepResolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
+    FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
+      case Ok(l) => Validation.Success(l)
+      case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
+    }
+  }
+
+  private def stepParseManifest: Validation[Manifest, BootstrapError] = {
+    val tomlPath = getManifestFile(projectPath)
+    ManifestParser.parse(tomlPath) match {
+      case Ok(manifest) =>
+        optManifest = Some(manifest)
+        Validation.Success(manifest)
+      case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
+    }
   }
 
   /**
