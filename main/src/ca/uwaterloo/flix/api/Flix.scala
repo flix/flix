@@ -465,7 +465,7 @@ class Flix {
     *   1. `p` must end with `.fpkg`.
     *   1. `p` must be a zip archive.
     */
-  def isValidFpkgFile(p: Path): Result[(), IllegalArgumentException] = {
+  def isValidFpkgFile(p: Path): Result[Unit, IllegalArgumentException] = {
     if (p == null) {
       return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
     }
