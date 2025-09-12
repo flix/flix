@@ -1884,7 +1884,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordXvar))
       val mark = open()
       expect(TokenKind.KeywordXvar)
-      val lhs = nameUnqualified(NAME_TAG)
+      nameUnqualified(NAME_TAG)
       nth(0) match {
         case TokenKind.ParenL => arguments()
         case _ => ()
