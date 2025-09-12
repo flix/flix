@@ -822,7 +822,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
         case Result.Ok(paths: List[Path]) =>
           flixPackagePaths = paths
@@ -832,7 +832,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
       JarPackageManager.installAll(dependencyManifests, projectPath) match {
         case Result.Ok(paths) =>
           jarPackagePaths = paths
@@ -842,7 +842,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
       MavenPackageManager.installAll(dependencyManifests, projectPath) match {
         case Result.Ok(paths) =>
           mavenPackagePaths = paths
