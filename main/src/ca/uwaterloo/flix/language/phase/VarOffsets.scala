@@ -89,13 +89,13 @@ object VarOffsets {
     case Expr.JumpTo(_, _, _, _) =>
       offset0
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _) =>
       var offset = offset0
       offset = setStackOffset(sym, exp1.tpe, offset)
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
+    case Expr.Stmt(exp1, exp2, _, _) =>
       var offset = offset0
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)
