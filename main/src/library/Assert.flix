@@ -36,7 +36,7 @@ mod Assert {
     /// Asserts that the given condition `cond` is `true`.
     ///
     pub def assertTrue(cond: Bool): Unit \ Assert =
-        let m = text("Assertion failed: expected true");
+        let m = red("Assertion failed: ") + text("expected ") + blue("true");
         Assert.assert(cond, m)
 
     ///
@@ -49,7 +49,7 @@ mod Assert {
     /// Asserts that the given condition `cond` is `false`.
     ///
     pub def assertFalse(cond: Bool): Unit \ Assert =
-        let m = text("Assertion failed: expected false");
+        let m = red("Assertion failed: ") + text("expected ") + blue("false");
         Assert.assert(not cond, m)
 
     ///
@@ -79,7 +79,7 @@ mod Assert {
     ///
     pub def assertNeq(unexpected: {unexpected = a}, actual: a): Unit \ Assert with Eq[a], ToString[a] =
         let c = actual != unexpected#unexpected;
-        let m = text("Assertion failed: expected values to be different, but both were ") + text("`${actual}`");
+        let m = red("Assertion failed: ") + text("expected values to be different, but both were ") + yellow("`${actual}`");
         Assert.assert(c, m)
 
     ///
@@ -95,7 +95,7 @@ mod Assert {
     ///
     pub def assertSome(o: Option[a]): Unit \ Assert =
         let c = Option.nonEmpty(o);
-        let m = text("Assertion failed: expected Some(_), but got None");
+        let m = red("Assertion failed: ") + text("expected ") + blue("Some(_)") + text(", but got ") + yellow("None");
         Assert.assert(c, m)
 
     ///
@@ -103,7 +103,7 @@ mod Assert {
     ///
     pub def assertNone(o: Option[a]): Unit \ Assert =
         let c = Option.isEmpty(o);
-        let m = text("Assertion failed: expected None, but got Some(_)");
+        let m = red("Assertion failed: ") + text("expected ") + blue("None") + text(", but got ") + yellow("Some(_)");
         Assert.assert(c, m)
 
     ///
@@ -111,7 +111,7 @@ mod Assert {
     ///
     pub def assertOk(r: Result[e, a]): Unit \ Assert =
         let c = Result.isOk(r);
-        let m = text("Assertion failed: expected Ok(_), but got Err(_)");
+        let m = red("Assertion failed: ") + text("expected ") + blue("Ok(_)") + text(", but got ") + yellow("Err(_)");
         Assert.assert(c, m)
 
     ///
@@ -119,7 +119,7 @@ mod Assert {
     ///
     pub def assertErr(r: Result[e, a]): Unit \ Assert =
         let c = Result.isErr(r);
-        let m = text("Assertion failed: expected Err(_), but got Ok(_)");
+        let m = red("Assertion failed: ") + text("expected ") + blue("Err(_)") + text(", but got ") + yellow("Ok(_)");
         Assert.assert(c, m)
 
     ///
@@ -127,7 +127,7 @@ mod Assert {
     ///
     pub def assertEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
         let c = Foldable.isEmpty(ma);
-        let m = text("Assertion failed: expected empty collection, but got ") + text("`${ma}`");
+        let m = red("Assertion failed: ") + text("expected ") + blue("empty collection") + text(", but got ") + yellow("${ma}");
         Assert.assert(c, m)
 
     ///
@@ -135,7 +135,7 @@ mod Assert {
     ///
     pub def assertNonEmpty(ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], ToString[m[a]] =
         let c = Foldable.nonEmpty(ma);
-        let m = text("Assertion failed: expected non-empty collection, but got ") + text("`${ma}`");
+        let m = red("Assertion failed: ") + text("expected ") + blue("non-empty collection") + text(", but got ") + yellow("${ma}");
         Assert.assert(c, m)
 
     ///
@@ -143,7 +143,7 @@ mod Assert {
     ///
     pub def assertMemberOf(x: a, ma: m[a]): Unit \ (Assert + Foldable.Aef[m]) with Foldable[m], Eq[a], ToString[a], ToString[m[a]] =
         let c = Foldable.memberOf(x, ma);
-        let m = text("Assertion failed: expected ") + text("`${x}`") + text(" to be a member of ") + text("`${ma}`");
+        let m = red("Assertion failed: ") + text("expected ") + blue("`${x}`") + text(" to be a member of ") + yellow("${ma}");
         Assert.assert(c, m)
 
     ///
