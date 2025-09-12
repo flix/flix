@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -447,64 +448,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Checks to see if any source files or packages have been changed.
-    * If they have, they are added to flix. Then updates the timestamps
-    * map to reflect the current source files and packages.
-    */
-  def reconfigureFlix(flix: Flix): Unit = {
-    val previousSources = timestamps.keySet
-
-    implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
-
-    for (path <- sourcePaths if hasChanged(path)) {
-      flix.addFlix(path)
-    }
-
-    for (path <- flixPackagePaths if hasChanged(path)) {
-      flix.addPkg(path)
-    }
-
-    for (path <- mavenPackagePaths if hasChanged(path)) {
-      flix.addJar(path)
-    }
-
-    for (path <- jarPackagePaths if hasChanged(path)) {
-      flix.addJar(path)
-    }
-
-    val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
-
-    val deletedSources = previousSources -- currentSources
-    for (path <- deletedSources) {
-      flix.remSourceCode(path.toString)
-    }
-
-    timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
-  }
-
-  /**
-    * Returns true if the timestamp of the given source file has changed since the last reload.
-    */
-  private def hasChanged(file: Path) = {
-    !timestamps.contains(file) || (timestamps(file) != file.toFile.lastModified())
-  }
-
-  /**
-    * Type checks the source files for the project.
-    */
-  def check(flix: Flix): Validation[Unit, BootstrapError] = {
-    // Add sources and packages.
-    reconfigureFlix(flix)
-
-    val (_, errors) = flix.check()
-    if (errors.isEmpty) {
-      Validation.Success(())
-    } else {
-      Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-    }
-  }
-
-  /**
     * Builds (compiles) the source files for the project.
     */
   def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
@@ -513,7 +456,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.setOptions(newOptions)
 
     // Add sources and packages.
-    reconfigureFlix(flix)
+    Steps.updateStaleSources(flix)
 
     Steps.compile(flix)
   }
@@ -659,12 +602,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  def check(flix: Flix): Validation[Unit, BootstrapError] = {
+    flatMapN(Steps.updateStaleSources(flix)) {
+      updated => mapN(Steps.check(updated))(_ => ())
+    }
+  }
+
+  def reconfigureFlix(flix: Flix): Unit = {
+    // TODO: Figure out if this function can be removed somehow (maybe by remove shell depending on bootstrap)
+    Steps.updateStaleSources(flix)
+  }
+
   /**
     * Generates API documentation.
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
-    reconfigureFlix(flix)
+    Steps.updateStaleSources(flix)
 
     val packageModules = optManifest match {
       case None => PackageModules.All
@@ -826,11 +780,30 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       result
     }
 
+    /**
+      * Type checks the source files for the project.
+      */
+    def check(flix: Flix): Validation[TypedAst.Root, BootstrapError] = {
+      val (optRoot, errors) = flix.check()
+      if (errors.isEmpty) {
+        Validation.Success(optRoot.get)
+      } else {
+        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      }
+    }
+
     def compile(flix: Flix): Validation[CompilationResult, BootstrapError] = {
       flix.compile() match {
         case Validation.Success(result: CompilationResult) => Validation.Success(result)
         case Validation.Failure(errors) => Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
       }
+    }
+
+    /**
+      * Returns true if the timestamp of the given source file has changed since the last reload.
+      */
+    private def hasChanged(file: Path) = {
+      !timestamps.contains(file) || (timestamps(file) != file.toFile.lastModified())
     }
 
     def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
@@ -893,5 +866,44 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
       }
     }
+
+    /**
+      * Checks to see if any source files or packages have been changed.
+      * If they have, they are added to flix. Then updates the timestamps
+      * map to reflect the current source files and packages.
+      */
+    def updateStaleSources(flix: Flix): Validation[Flix, BootstrapError] = {
+      val previousSources = timestamps.keySet
+
+      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
+
+      for (path <- sourcePaths if hasChanged(path)) {
+        flix.addFlix(path)
+      }
+
+      for (path <- flixPackagePaths if hasChanged(path)) {
+        flix.addPkg(path)
+      }
+
+      for (path <- mavenPackagePaths if hasChanged(path)) {
+        flix.addJar(path)
+      }
+
+      for (path <- jarPackagePaths if hasChanged(path)) {
+        flix.addJar(path)
+      }
+
+      val currentSources = (sourcePaths ++ flixPackagePaths ++ mavenPackagePaths ++ jarPackagePaths).filter(p => Files.exists(p))
+
+      val deletedSources = previousSources -- currentSources
+      for (path <- deletedSources) {
+        flix.remSourceCode(path.toString)
+      }
+
+      timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
+
+      Validation.Success(flix)
+    }
+
   }
 }
