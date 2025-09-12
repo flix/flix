@@ -1292,7 +1292,7 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
@@ -1300,7 +1300,7 @@ object GenExpression {
       xStore(bType, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
+    case Expr.Stmt(exp1, exp2, _, _) =>
       import BytecodeInstructions.*
       compileExpr(exp1)
       xPop(BackendType.toBackendType(exp1.tpe))

@@ -56,15 +56,15 @@ object TailPos {
     * position with [[Expr.ApplySelfTail]].
     */
   private def visitExp(exp0: Expr)(implicit defn: Def): Expr = exp0 match {
-    case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case Expr.Let(sym, exp1, exp2, tpe, loc) =>
       // `exp2` is in tail position.
       val e2 = visitExp(exp2)
-      Expr.Let(sym, exp1, e2, tpe, purity, loc)
+      Expr.Let(sym, exp1, e2, tpe, loc)
 
-    case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+    case Expr.Stmt(exp1, exp2, tpe, loc) =>
       // `exp2` is in tail position.
       val e2 = visitExp(exp2)
-      Expr.Stmt(exp1, e2, tpe, purity, loc)
+      Expr.Stmt(exp1, e2, tpe, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       // The branches are in tail position.
