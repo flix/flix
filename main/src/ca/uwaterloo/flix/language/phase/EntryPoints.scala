@@ -613,7 +613,7 @@ object EntryPoints {
       val syntheticExpLocation = currentDef.exp.loc.copy(isReal = false)
       // The new type is the same as the wrapped test with an effect set of
       // `IO + Sys + (eff - Assert)` where `eff` is the effect set of the previous definition.
-      val eff = Type.mkUnion(Type.IO, Type.Sys, Type.mkDifference(currentDef.spec.eff, Type.Assert, syntheticEffLocation)
+      val eff = Type.mkUnion(Type.IO, Type.mkDifference(currentDef.spec.eff, Type.Assert, syntheticEffLocation)
         , syntheticEffLocation)
       val tpe = Type.mkCurriedArrowWithEffect(currentDef.spec.fparams.map(_.tpe), eff, currentDef.spec.retTpe, syntheticBaseTypeLocation)
       val spec = currentDef.spec.copy(
