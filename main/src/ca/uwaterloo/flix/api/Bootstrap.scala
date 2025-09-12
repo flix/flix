@@ -429,10 +429,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def folderMode(): Validation[Unit, BootstrapError] = {
     // 1. Add *.flix, src/**.flix and test/**.flix
-    val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
-    val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
-    val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
-    sourcePaths = filesHere ++ filesSrc ++ filesTest
+    Steps.addLocalFlixFiles()
 
     // 2. Grab all jars in lib/external
     val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), "jar")
