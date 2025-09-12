@@ -324,7 +324,7 @@ object Deriver {
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
       val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
-        KindedAst.FormalParam(lambdaParamSym, Modifiers.Empty, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
+        KindedAst.FormalParam(lambdaParamSym, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
         indexMatchExp,
         allowSubeffecting = false,
         loc
@@ -573,7 +573,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(TraitConstraint(TraitSymUse(toStringTraitSym, loc), tpe, loc)),
@@ -718,7 +718,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(TraitConstraint(TraitSymUse(hashTraitSym, loc), tpe, loc)),
@@ -875,7 +875,7 @@ object Deriver {
         ann = Annotations.Empty,
         mod = Modifiers.Empty,
         tparams = tparams,
-        fparams = List(KindedAst.FormalParam(param, Modifiers.Empty, tpe, TypeSource.Ascribed, loc)),
+        fparams = List(KindedAst.FormalParam(param, tpe, TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
           List(TraitConstraint(TraitSymUse(coerceTraitSym, loc), tpe, loc)),
