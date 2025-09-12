@@ -653,7 +653,7 @@ object Kinder {
 
         // We must infer for the ascriptions because they may have wildcard types,
         // which won't be found in the kenv of the function
-        val kenv = inferType(expectedEff0, Kind.Star, kenv0, root)
+        val kenv = inferType(expectedEff0, Kind.Eff, kenv0, root)
         val expectedEff = visitType(expectedEff0, Kind.Eff, kenv, root)
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.Expr.AscribeEff(exp, expectedEff, tvar, loc)
