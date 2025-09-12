@@ -555,11 +555,11 @@ object Desugar {
       val e10 = visitExp(exp1)
       // Ascribe has an invariant that at least t or ef must be defined
       val e11 = t match {
-        case Some(value) => Expr.AscribeType(e10, value, e10.loc)
+        case Some(ascTpe) => Expr.AscribeType(e10, ascTpe, e10.loc)
         case None => e10
       }
       val e12 = ef match {
-        case Some(value) => Expr.AscribeEff(e11, value, e11.loc)
+        case Some(ascEff) => Expr.AscribeEff(e11, ascEff, e11.loc)
         case None => e11
       }
       val e2 = visitExp(exp2)
