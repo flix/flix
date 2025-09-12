@@ -536,7 +536,6 @@ object EntryPoints {
         tparams = Nil,
         fparams = List(TypedAst.FormalParam(
           TypedAst.Binder(argSym, argType),
-          Modifiers.Empty,
           argType,
           TypeSource.Ascribed,
           SourceLocation.Unknown)
@@ -627,7 +626,6 @@ object EntryPoints {
       // Create _ -> exp.
       val innerLambda = TypedAst.Expr.Lambda(TypedAst.FormalParam(
         TypedAst.Binder(Symbol.freshVarSym("_", FormalParam, syntheticExpLocation), Type.Unit),
-        Modifiers(Nil),
         Type.Unit,
         TypeSource.Inferred,
         syntheticExpLocation

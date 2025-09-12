@@ -114,7 +114,7 @@ object LambdaLift {
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc))
+        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), SimpleType.Unit, loc))
       } else cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
@@ -243,7 +243,7 @@ object LambdaLift {
 
 
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
-    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+    case SimplifiedAst.FormalParam(sym, tpe, loc) => LiftedAst.FormalParam(sym, tpe, loc)
   }
 
   /**

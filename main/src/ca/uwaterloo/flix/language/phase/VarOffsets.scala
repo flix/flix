@@ -44,7 +44,7 @@ object VarOffsets {
   /** Assigns stack offsets to `defn`. */
   private def visitDef(defn: Def): Unit = {
     var offset = 0
-    for (FormalParam(sym, _, tpe, _) <- defn.cparams ++ defn.fparams) {
+    for (FormalParam(sym, tpe) <- defn.cparams ++ defn.fparams) {
       offset = setStackOffset(sym, tpe, offset)
     }
     visitExp(defn.expr, offset)

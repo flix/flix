@@ -54,8 +54,8 @@ object Eraser {
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
-    case FormalParam(sym, mod, tpe, loc) =>
-      FormalParam(sym, mod, visitType(tpe), loc)
+    case FormalParam(sym, tpe) =>
+      FormalParam(sym, visitType(tpe))
   }
 
   private def visitLocalParam(p: LocalParam): LocalParam = p match {

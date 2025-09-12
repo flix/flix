@@ -784,7 +784,6 @@ object Weeder2 {
 
     def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
       Name.Ident("_unit", SourceLocation.Unknown),
-      Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
     )
@@ -817,7 +816,6 @@ object Weeder2 {
 
     private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): Validation[FormalParam, CompilationMessage] = {
       expect(tree, TreeKind.Parameter)
-      val mod = pickModifiers(tree)
       flatMapN(pickNameIdent(tree)) {
         case ident =>
           val maybeType = tryPick(TreeKind.Type.Type, tree)
@@ -826,13 +824,13 @@ object Weeder2 {
             case (None, Presence.Required) =>
               val error = MissingFormalParamAscription(ident.name, tree.loc)
               sctx.errors.add(error)
-              Validation.Success(FormalParam(ident, mod, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
+              Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
             case (Some(_), Presence.Forbidden) =>
               val error = IllegalFormalParamAscription(tree.loc)
               sctx.errors.add(error)
-              Validation.Success(FormalParam(ident, mod, None, tree.loc))
-            case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mod, Some(tpe), tree.loc) }
-            case (None, _) => Validation.Success(FormalParam(ident, mod, None, tree.loc))
+              Validation.Success(FormalParam(ident, None, tree.loc))
+            case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, Some(tpe), tree.loc) }
+            case (None, _) => Validation.Success(FormalParam(ident, None, tree.loc))
           }
       }
     }
