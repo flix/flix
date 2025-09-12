@@ -758,15 +758,16 @@ class Flix {
     reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     // Generate JVM classes.
-    val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
+    val bytecodeAst = JvmBackend.run(varOffsetsAst)
     val totalTime = flix.getTotalTime
-    JvmWriter.run(classes)
 
+    JvmWriter.run(bytecodeAst)
     // (Optionally) load generated JVM classes.
-    val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
+    val loaderResult = JvmLoader.run(bytecodeAst)
 
     // Construct the compilation result.
-    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
+    val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
+    val result = new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
