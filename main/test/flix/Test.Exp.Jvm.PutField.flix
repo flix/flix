@@ -39,8 +39,15 @@ mod Test.Exp.Jvm.PutField {
         { rp = { p = new Point(42, 43) } }#rp#p.y=100
 
     // TODO: Requires: `exp = exp` parsing, constraints and code gen. Current impl uses `expr.field = expr`.
+
     // @Test
     // def testPutField08(): Unit \ IO =
+    //     new Point(42, 43).x = const()
+
+    // @Test
+    // def testPutField09(): Unit \ IO =
     //     (new Point(42, 43).x) = 1
+
+    // def const(): Int32 = 1
 
 }
