@@ -107,8 +107,8 @@ object Eraser {
   }
 
   private def visitExp(exp0: Expr): Expr = exp0 match {
-    case Cst(cst, tpe, loc) =>
-      Cst(cst, visitType(tpe), loc)
+    case Cst(cst, loc) =>
+      Cst(cst, loc)
     case Var(sym, tpe, loc) =>
       Var(sym, visitType(tpe), loc)
     case ApplyAtomic(op, exps, tpe, purity, loc) =>

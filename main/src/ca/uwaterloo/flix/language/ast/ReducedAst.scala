@@ -68,7 +68,8 @@ object ReducedAst {
 
   object Expr {
 
-    case class Cst(cst: Constant, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
+      def tpe: SimpleType = cst.tpe
       def purity: Purity = Pure
     }
 

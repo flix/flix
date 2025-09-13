@@ -100,7 +100,7 @@ object TailPos {
     case Expr.ApplyOp(_, _, _, _, _) => exp0
     case Expr.ApplyAtomic(_, _, _, _, _) => exp0
     case Expr.ApplySelfTail(_, _, _, _, _) => exp0
-    case Expr.Cst(_, _, _) => exp0
+    case Expr.Cst(_, _) => exp0
     case Expr.JumpTo(_, _, _, _) => exp0
     case Expr.NewObject(_, _, _, _, _, _) => exp0
     case Expr.Scope(_, _, _, _, _) => exp0
