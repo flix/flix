@@ -176,7 +176,9 @@ object ResolvedAst {
 
     case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Ascribe(exp: Expr, expectedType: Option[UnkindedType], expectedEff: Option[UnkindedType], loc: SourceLocation) extends Expr
+    case class AscribeType(exp: Expr, expectedType: UnkindedType, loc: SourceLocation) extends Expr
+
+    case class AscribeEff(exp: Expr, expectedEff: UnkindedType, loc: SourceLocation) extends Expr
 
     case class InstanceOf(exp: Expr, clazz: java.lang.Class[?], loc: SourceLocation) extends Expr
 

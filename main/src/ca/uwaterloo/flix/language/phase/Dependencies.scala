@@ -350,7 +350,12 @@ object Dependencies {
     case Expr.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
+    case Expr.AscribeType(exp, _, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Expr.AscribeEff(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

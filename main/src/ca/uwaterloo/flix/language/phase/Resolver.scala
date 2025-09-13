@@ -1231,13 +1231,20 @@ object Resolver {
         case e => ResolvedAst.Expr.VectorLength(e, loc)
       }
 
-    case NamedAst.Expr.Ascribe(exp, expectedType, expectedEff, loc) =>
-      val expectedTypVal = traverseOpt(expectedType)(resolveType(_, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root))
-      val expectedEffVal = traverseOpt(expectedEff)(resolveType(_, Some(Kind.Eff), Wildness.AllowWild, scp0, taenv, ns0, root))
+    case NamedAst.Expr.AscribeType(exp, expectedType, loc) =>
+      val expectedTypeVal = resolveType(expectedType, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root)
 
       val eVal = resolveExp(exp, scp0)
-      mapN(eVal, expectedTypVal, expectedEffVal) {
-        case (e, t, f) => ResolvedAst.Expr.Ascribe(e, t, f, loc)
+      mapN(eVal, expectedTypeVal) {
+        case (e, t) => ResolvedAst.Expr.AscribeType(e, t, loc)
+      }
+
+    case NamedAst.Expr.AscribeEff(exp, expectedEff, loc) =>
+      val expectedEffVal = resolveType(expectedEff, Some(Kind.Star), Wildness.AllowWild, scp0, taenv, ns0, root)
+
+      val eVal = resolveExp(exp, scp0)
+      mapN(eVal, expectedEffVal) {
+        case (e, eff) => ResolvedAst.Expr.AscribeEff(e, eff, loc)
       }
 
     case NamedAst.Expr.InstanceOf(exp, className, loc) =>
@@ -3791,7 +3798,7 @@ object Resolver {
 
   /** Returns a [[ResolvedAst.Expr.Lambda]] where the body is ascribed to have no effect. */
   private def mkPureLambda(param: ResolvedAst.FormalParam, exp: ResolvedAst.Expr, loc: SourceLocation): ResolvedAst.Expr = {
-    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.Ascribe(exp, None, Some(UnkindedType.Cst(TypeConstructor.Pure, loc)), loc), allowSubeffecting = false, loc)
+    ResolvedAst.Expr.Lambda(param, ResolvedAst.Expr.AscribeEff(exp, UnkindedType.Cst(TypeConstructor.Pure, loc), loc), allowSubeffecting = false, loc)
   }
 
   /**

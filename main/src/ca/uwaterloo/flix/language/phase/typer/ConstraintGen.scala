@@ -177,7 +177,7 @@ object ConstraintGen {
         val shouldSubeffect = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val useless = exp match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case Expr.AscribeEff(_, Type.Pure, _, _) => true
             case _ => false
           }
           enabled && allowSubeffecting && !useless
@@ -419,7 +419,7 @@ object ConstraintGen {
         val shouldSubeffect = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val useless = exp1 match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case Expr.AscribeEff(_, Type.Pure, _, _) => true
             case _ => false
           }
           enabled && !useless
@@ -742,12 +742,20 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
+      case Expr.AscribeType(exp, expectedTpe, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         val (actualTpe, actualEff) = visitExp(exp)
-        expectedTpe.foreach { tpe => c.expectType(expected = tpe, actual = actualTpe, loc) }
+        c.expectType(expected = expectedTpe, actual = actualTpe, loc)
         c.unifyType(actualTpe, tvar, loc)
-        expectedEff.foreach { eff => c.expectType(expected = eff, actual = actualEff, loc) }
+        val resTpe = tvar
+        val resEff = actualEff
+        (resTpe, resEff)
+
+      case Expr.AscribeEff(exp, expectedEff, tvar, loc) =>
+        // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
+        val (actualTpe, actualEff) = visitExp(exp)
+        c.expectType(expected = expectedEff, actual = actualEff, loc)
+        c.unifyType(actualTpe, tvar, loc)
         val resTpe = tvar
         val resEff = actualEff
         (resTpe, resEff)
