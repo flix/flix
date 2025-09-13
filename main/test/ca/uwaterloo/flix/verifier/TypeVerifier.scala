@@ -527,16 +527,14 @@ object TypeVerifier {
       case Some(tpe2) => checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.Let(sym, exp1, exp2, tpe, loc) =>
+    case Expr.Let(sym, exp1, exp2, _) =>
       val letBoundType = visitExpr(exp1)
-      val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
-      checkEq(bodyType, tpe, loc)
+      visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
 
-    case Expr.Stmt(exp1, exp2, tpe, loc) =>
+    case Expr.Stmt(exp1, exp2, _) =>
       // Visit `exp1` to check types inside.
       visitExpr(exp1)
-      val secondType = visitExpr(exp2)
-      checkEq(secondType, tpe, loc)
+      visitExpr(exp2)
 
     case Expr.Scope(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Region), lenv), loc)

@@ -124,16 +124,16 @@ object Reducer {
       case Expr.JumpTo(sym, tpe, purity, loc) =>
         Expr.JumpTo(sym, tpe, purity, loc)
 
-      case Expr.Let(sym, exp1, exp2, tpe, loc) =>
+      case Expr.Let(sym, exp1, exp2, loc) =>
         lctx.lparams.addOne(LocalParam(sym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.Let(sym, e1, e2, tpe, loc)
+        Expr.Let(sym, e1, e2, loc)
 
-      case Expr.Stmt(exp1, exp2, tpe, loc) =>
+      case Expr.Stmt(exp1, exp2, loc) =>
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.Stmt(e1, e2, tpe, loc)
+        Expr.Stmt(e1, e2, loc)
 
       case Expr.Scope(sym, exp, tpe, purity, loc) =>
         lctx.lparams.addOne(LocalParam(sym, SimpleType.Region))
