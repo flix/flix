@@ -33,7 +33,7 @@
 /// The current implementation does not output the negative atoms. They can be derived from the positive.
 ///
 mod Fixpoint3.Provenance {
-    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity}
+    use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity, Provenance}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Ram.{makeFakeRelSym, RelSym}
     use Fixpoint3.Ast.Shared.{PredSym, Denotation}
@@ -257,14 +257,23 @@ mod Fixpoint3.Provenance {
                     let Constraint.Constraint(_, bodyPreds) = rule;
                     let relevantPreds = bodyPreds |>
                         Vector.filterMap(bodyAtom -> match bodyAtom {
-                            case BodyPredicate.BodyAtom(pred, _, _, _, _) => Some(pred)
+                            case BodyPredicate.BodyAtom(pred, _, _, _, prov, _) => Some((pred, prov))
                             case _ => None
                         });
+                    // Some atoms might be disabled, meaning that we will not show them nor their proofs.
+                    // We need to collect the enabled atoms and add them as dependencies.
+                    // We also add them to the work-list as we need to construct proofs for the enabled atoms.
                     let ref = Ref.fresh(rc, tail);
-                    let childProofs = Array.empty(rc, Array.length(bodyAtoms));
-                    foreach((i, atom) <- ForEach.withIndex(relevantPreds)) {
-                        let pred = Array.get(i, bodyAtoms);
-                        Ref.put((i, childProofs, atom, pred) :: Ref.get(ref), ref)
+                    let disabledAtomCount = Vector.count(v -> match v {
+                        case BodyPredicate.BodyAtom(_, _, _, _, Provenance.Disabled, _) => true
+                        case _ => false
+                    }, bodyPreds);
+                    let childProofs = Array.empty(rc, Array.length(bodyAtoms) - disabledAtomCount);
+                    foreach((i, (pred, provenance)) <- ForEach.withIndex(relevantPreds)) match provenance {
+                        case Provenance.Enabled =>
+                            let atom = Array.get(i, bodyAtoms);
+                            Ref.put((i, childProofs, pred, atom) :: Ref.get(ref), ref)
+                        case _ => ()
                     };
                     Array.put(ProofTree.IDB(predSym, fact, childProofs), savePos, saveArr);
                     buildProofInternal(Ref.get(ref))
@@ -331,7 +340,7 @@ mod Fixpoint3.Provenance {
                 areHeadApplicationsSatisfied(headApps, varSymToVal) and areGuardsSatisfied(guards, varSymToVal)
             } else {
                 match Vector.get(index, bodyPreds) {
-                    case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, expected) =>
+                    case BodyPredicate.BodyAtom(pred, _, Polarity.Positive, _, _, expected) =>
                         // Collect the bound variables in a list so they can be used
                         // to by `lookup`.
                         // `(2, val)` being in the list means that attribute 3 of the tuple
@@ -363,7 +372,7 @@ mod Fixpoint3.Provenance {
                                     })
                             }
                         }
-                    case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, expected) =>
+                    case BodyPredicate.BodyAtom(pred, _, Polarity.Negative, _, _, expected) =>
                         // `not pred(tuple)` is true if `pred(tuple)` is not in the model.
                         let tuple = evalOrCrash(expected, varSymToVal);
                         let isMatch = match Map.get(makeFakeRelSym(pred), provIdb) {

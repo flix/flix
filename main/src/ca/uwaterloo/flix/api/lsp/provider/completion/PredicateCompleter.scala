@@ -35,7 +35,7 @@ object PredicateCompleter {
     object PredConsumer extends Consumer {
       override def consumePredicate(p: TypedAst.Predicate): Unit = p match {
         case TypedAst.Predicate.Head.Atom(name, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
-        case TypedAst.Predicate.Body.Atom(name, _, _, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
+        case TypedAst.Predicate.Body.Atom(name, _, _, _, _, _, tpe, _) => predsWithTypeAndLoc += ((name, tpe))
         case _ => ()
       }
     }

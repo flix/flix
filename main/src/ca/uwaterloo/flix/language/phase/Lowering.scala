@@ -90,6 +90,7 @@ object Lowering {
     lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.Denotation")
     lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Polarity")
     lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Fixity")
+    lazy val Provenance: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Provenance")
 
     lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
 
@@ -120,6 +121,7 @@ object Lowering {
     lazy val Denotation: Type = Type.mkEnum(Enums.Denotation, Boxed :: Nil, SourceLocation.Unknown)
     lazy val Polarity: Type = Type.mkEnum(Enums.Polarity, Nil, SourceLocation.Unknown)
     lazy val Fixity: Type = Type.mkEnum(Enums.Fixity, Nil, SourceLocation.Unknown)
+    lazy val Provenance: Type = Type.mkEnum(Enums.Provenance, Nil, SourceLocation.Unknown)
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
@@ -1165,13 +1167,14 @@ object Lowering {
     * Lowers the given body predicate `p0`.
     */
   private def visitBodyPred(cparams0: List[TypedAst.ConstraintParam], p0: TypedAst.Predicate.Body)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.Expr = p0 match {
-    case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, _, loc) =>
+    case TypedAst.Predicate.Body.Atom(pred, den, polarity, fixity, provenance, terms, _, loc) =>
       val predSymExp = mkPredSym(pred)
       val denotationExp = mkDenotation(den, terms.lastOption.map(_.tpe), loc)
       val polarityExp = mkPolarity(polarity, loc)
       val fixityExp = mkFixity(fixity, loc)
+      val provenanceExp = mkProvenance(provenance, loc)
       val termsExp = mkVector(terms.map(visitBodyTerm(cparams0, _)), Types.BodyTerm, loc)
-      val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, termsExp)
+      val innerExp = List(predSymExp, denotationExp, polarityExp, fixityExp, provenanceExp, termsExp)
       mkTag(Enums.BodyPredicate, "BodyAtom", innerExp, Types.BodyPredicate, loc)
 
     case TypedAst.Predicate.Body.Functional(outBnds, exp0, loc) =>
@@ -1354,6 +1357,15 @@ object Lowering {
     case Fixity.Fixed =>
       mkTag(Enums.Fixity, "Fixed", Nil, Types.Fixity, loc)
   }
+
+  /**
+    * Constructs a `Fixpoint/Ast/Datalog.Provenance`.
+    */
+  private def mkProvenance(provenance: Provenance, loc: SourceLocation): LoweredAst.Expr = provenance match {
+    case Provenance.Enabled  => mkTag(Enums.Provenance, "Enabled",  Nil, Types.Provenance, loc)
+    case Provenance.Disabled => mkTag(Enums.Provenance, "Disabled", Nil, Types.Provenance, loc)
+  }
+    
 
   /**
     * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.

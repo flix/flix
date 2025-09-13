@@ -498,7 +498,7 @@ object TypedAstOps {
     * Returns the free variables in the given body predicate `body0`.
     */
   private def freeVars(body0: Predicate.Body): Map[Symbol.VarSym, Type] = body0 match {
-    case Body.Atom(_, _, _, _, terms, _, _) =>
+    case Body.Atom(_, _, _, _, _, terms, _, _) =>
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, term) => acc ++ freeVars(term)
       }
