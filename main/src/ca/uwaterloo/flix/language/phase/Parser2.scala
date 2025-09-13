@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.annotation.tailrec
@@ -128,8 +129,13 @@ object Parser2 {
         (src -> tree, errors)
     }.unzip
 
+    // Compute semantic tokens to retain in the AST.
+    val retainedTokens = MapOps.mapValues(tokens0) {
+      case tokens => tokens.filter(_.kind.isSemanticToken)
+    }
+
     // Join refreshed syntax trees with the already fresh ones.
-    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, tokens0)
+    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, retainedTokens)
     (result, errors.flatten.toList)
   }
 
