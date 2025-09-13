@@ -55,7 +55,7 @@ object MagicMatchCompleter {
     } yield {
       val name = s"$baseExp.match"
       val snippet = s"match $baseExp {\n$patternMatchBody}"
-      Completion.MagicMatchCompletion(name, range, snippet, "match expr { ... }")
+      Completion.MagicMatchCompletion(name, range, Priority.High(0), snippet, "match expr { ... }")
     }
   }
 

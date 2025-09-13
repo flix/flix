@@ -18,6 +18,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm
 
 import java.nio.file.{Path, Paths}
@@ -64,18 +66,20 @@ object JvmName {
   val ConstructorMethod: String = "<init>"
 
   /**
-    * Returns the JvmName of the given string `s`.
+    * The name of the static method for invoking the function
+    * if it is control pure.
     */
-  def mk(s: String): JvmName = {
-    val l = s.split("/")
-    JvmName(l.init.toList, l.last)
-  }
+  val DirectApply: String = "directApply"
 
+  /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
   def ofClass(clazz: Class[?]): JvmName = {
-    // TODO: Ugly hack.
-    // Maybe use clazz.getPackage and clazz.getSimpleName
-    val fqn = clazz.getName.replace('.', '/')
-    JvmName.mk(fqn)
+    if (clazz.isPrimitive) throw InternalCompilerException(s"Cannot create a JvmName from the primitive type '${clazz.getName}'", SourceLocation.Unknown)
+    if (clazz.isArray) throw InternalCompilerException(s"Cannot create a JvmName from the array type '${clazz.getName}'", SourceLocation.Unknown)
+    val isUnnamed = clazz.getSimpleName == ""
+    if (isUnnamed) throw InternalCompilerException(s"Cannot create a JvmName from the anonymous class '${clazz.getName}'", SourceLocation.Unknown)
+
+    val parts = asm.Type.getInternalName(clazz).split("/")
+    JvmName(parts.init.toList, parts.last)
   }
 
   val RootPackage: List[String] = Nil
@@ -86,7 +90,6 @@ object JvmName {
     * result in the string `"Tuple2$Obj$Int32$Obj"`.
     */
   def mkClassName(prefix: String, args: List[String]): String = {
-    // TODO: Should delimiter always be included?
     val cPrefix = mangle(prefix)
     if (args.isEmpty) s"$cPrefix${Flix.Delimiter}"
     else s"$cPrefix${Flix.Delimiter}${args.map(mangle).mkString(Flix.Delimiter)}"
@@ -101,7 +104,6 @@ object JvmName {
   /**
     * Performs name mangling on the given string `s` to avoid issues with special characters.
     */
-  // TODO: Magnus: Use this in appropriate places.
   def mangle(s: String): String = s.
     replace("+", Flix.Delimiter + "plus").
     replace("-", Flix.Delimiter + "minus").
@@ -126,19 +128,27 @@ object JvmName {
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
+  val JavaIO: List[String] = List("java", "io")
   val JavaLang: List[String] = List("java", "lang")
   val JavaLangInvoke: List[String] = List("java", "lang", "invoke")
+  val JavaMath: List[String] = List("java", "math")
   val JavaUtil: List[String] = List("java", "util")
-  val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
   val JavaUtilConcurrentLocks: List[String] = JavaUtilConcurrent ::: List("locks")
+  val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilRegex: List[String] = JavaUtil ::: List("regex")
 
+  val Arrays: JvmName = JvmName(JavaUtil, "Arrays")
   val AtomicLong: JvmName = JvmName(JavaUtil ::: List("concurrent", "atomic"), "AtomicLong")
+  val BigDecimal: JvmName = JvmName(JavaMath, "BigDecimal")
+  val BigInteger: JvmName = JvmName(JavaMath, "BigInteger")
   val Boolean: JvmName = JvmName(JavaLang, "Boolean")
   val Byte: JvmName = JvmName(JavaLang, "Byte")
+  val CallSite: JvmName = JvmName(JavaLangInvoke, "CallSite")
+  val CharSequence: JvmName = JvmName(JavaLang, "CharSequence")
   val Character: JvmName = JvmName(JavaLang, "Character")
   val Class: JvmName = JvmName(JavaLang, "Class")
+  val ConcurrentLinkedQueue: JvmName = JvmName(JavaUtilConcurrent, "ConcurrentLinkedQueue")
   val Double: JvmName = JvmName(JavaLang, "Double")
   val DoubleConsumer: JvmName = JvmName(JavaUtilFunction, "DoubleConsumer")
   val DoubleFunction: JvmName = JvmName(JavaUtilFunction, "DoubleFunction")
@@ -147,25 +157,37 @@ object JvmName {
   val Error: JvmName = JvmName(JavaLang, "Error")
   val Exception: JvmName = JvmName(JavaLang, "Exception")
   val Float: JvmName = JvmName(JavaLang, "Float")
-  val Integer: JvmName = JvmName(JavaLang, "Integer")
   val IntConsumer: JvmName = JvmName(JavaUtilFunction, "IntConsumer")
   val IntFunction: JvmName = JvmName(JavaUtilFunction, "IntFunction")
   val IntPredicate: JvmName = JvmName(JavaUtilFunction, "IntPredicate")
   val IntUnaryOperator: JvmName = JvmName(JavaUtilFunction, "IntUnaryOperator")
+  val Integer: JvmName = JvmName(JavaLang, "Integer")
+  val Iterator: JvmName = JvmName(JavaUtil, "Iterator")
+  val LambdaMetafactory: JvmName = JvmName(JavaLangInvoke, "LambdaMetafactory")
+  val LinkedList: JvmName = JvmName(JavaUtil, "LinkedList")
   val Long: JvmName = JvmName(JavaLang, "Long")
   val LongConsumer: JvmName = JvmName(JavaUtilFunction, "LongConsumer")
   val LongFunction: JvmName = JvmName(JavaUtilFunction, "LongFunction")
   val LongPredicate: JvmName = JvmName(JavaUtilFunction, "LongPredicate")
   val LongUnaryOperator: JvmName = JvmName(JavaUtilFunction, "LongUnaryOperator")
   val Math: JvmName = JvmName(JavaLang, "Math")
-  val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
+  val MethodHandle: JvmName = JvmName(JavaLangInvoke, "MethodHandle")
+  val MethodHandles$Lookup: JvmName = JvmName(JavaLangInvoke, "MethodHandles$Lookup")
+  val MethodType: JvmName = JvmName(JavaLangInvoke, "MethodType")
   val ObjConsumer: JvmName = JvmName(JavaUtilFunction, "Consumer")
+  val ObjFunction: JvmName = JvmName(JavaUtilFunction, "Function")
   val ObjPredicate: JvmName = JvmName(JavaUtilFunction, "Predicate")
+  val Object: JvmName = JvmName(JavaLang, "Object")
+  val PrintStream: JvmName = JvmName(JavaIO, "PrintStream")
   val ReentrantLock: JvmName = JvmName(JavaUtilConcurrentLocks, "ReentrantLock")
   val Regex: JvmName = JvmName(JavaUtilRegex, "Pattern")
   val Runnable: JvmName = JvmName(JavaLang, "Runnable")
   val Short: JvmName = JvmName(JavaLang, "Short")
+  val String: JvmName = JvmName(JavaLang, "String")
+  val StringBuilder: JvmName = JvmName(JavaLang, "StringBuilder")
   val System: JvmName = JvmName(JavaLang, "System")
+  val Thread$Builder$OfVirtual: JvmName = JvmName(JavaLang, "Thread$Builder$OfVirtual")
+  val Thread$UncaughtExceptionHandler: JvmName = JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
   val Thread: JvmName = JvmName(JavaLang, "Thread")
   val Throwable: JvmName = JvmName(JavaLang, "Throwable")
   val UnsupportedOperationException: JvmName = JvmName(JavaLang, "UnsupportedOperationException")
@@ -175,7 +197,8 @@ object JvmName {
   //
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
-  val Main: JvmName = JvmName(RootPackage, "Main")
+
+  val FlixError: JvmName = JvmName(DevFlixRuntime, mkClassName("FlixError"))
 
 }
 
@@ -216,12 +239,7 @@ case class JvmName(pkg: List[String], name: String) {
   lazy val toPath: Path = Paths.get(pkg.mkString("/"), name + ".class")
 
   /**
-    * Wraps this name in `backendObjType.Native`.
-    */
-  def toObjTpe: BackendObjType.Native = BackendObjType.Native(this)
-
-  /**
     * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
     */
-  def toTpe: BackendType.Reference = this.toObjTpe.toTpe
+  def toTpe: BackendType.Reference = BackendObjType.Native(this).toTpe
 }

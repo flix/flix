@@ -207,7 +207,7 @@ object SymbolProvider {
     * Returns an Interface SymbolInformation from an Effect node.
     */
   private def mkEffectWorkspaceSymbol(effect: TypedAst.Effect): List[WorkspaceSymbol] = effect match {
-    case TypedAst.Effect(_, _, _, sym, ops, _) =>
+    case TypedAst.Effect(_, _, _, sym, _, ops, _) =>
       ops.map(mkOpWorkspaceSymbol) :+ WorkspaceSymbol(
         sym.name, SymbolKind.Interface, Nil, None, Location(sym.loc.source.name, Range.from(sym.loc)))
   }
@@ -217,14 +217,14 @@ object SymbolProvider {
     * It navigates the AST and adds Sig and TypeParam of c and as children DocumentSymbols.
     */
   private def mkEffectDocumentSymbol(c: TypedAst.Effect): DocumentSymbol = c match {
-    case TypedAst.Effect(doc, _, _, sym, ops, _) => DocumentSymbol(
+    case TypedAst.Effect(doc, _, _, sym, tparams, ops, _) => DocumentSymbol(
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,
       Range.from(sym.loc),
       Range.from(sym.loc),
       Nil,
-      ops.map(mkOpDocumentSymbol).filter(_.name.nonEmpty),
+      (tparams.map(mkTypeParamDocumentSymbol) ++ ops.map(mkOpDocumentSymbol)).filter(_.name.nonEmpty),
     )
   }
 

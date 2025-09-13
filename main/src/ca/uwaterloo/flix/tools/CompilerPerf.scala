@@ -17,8 +17,8 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinCache
-import ca.uwaterloo.flix.util.StatUtils.{average, median}
+import ca.uwaterloo.flix.language.phase.unification.EffUnification3
+import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
@@ -247,9 +247,7 @@ object CompilerPerf {
     val mdn = median(throughputs.map(_.toLong)).toInt
 
     // Best observed throughput.
-    val maxObservedThroughput = throughput(lines,
-      Math.min(baseline.times.min,
-        Math.min(baselineWithPar.times.min, baselineWithParInc.times.min)))
+    val maxObservedThroughput = throughput(lines, minimum(baseline.times ::: baselineWithPar.times ::: baselineWithParInc.times))
 
     // Timestamp (in seconds) when the experiment was run.
     val timestamp = System.currentTimeMillis() / 1000
@@ -276,7 +274,7 @@ object CompilerPerf {
           case ((phase, times1), (_, times2)) =>
             ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
         })
-    writeFile("speedupWithPar.json", speedupPar)
+    writeFile("speedupWithPar.json", speedupPar, o)
 
     //
     // Incrementalism
@@ -290,7 +288,7 @@ object CompilerPerf {
           case ((phase, times1), (_, times2)) =>
             ("phase" -> phase) ~ ("ratio" -> combine(times1.zip(times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
-    writeFile("incrementalism.json", incrementalism)
+    writeFile("incrementalism.json", incrementalism, o)
 
     //
     // Throughput
@@ -304,7 +302,7 @@ object CompilerPerf {
         ("results" -> baseline.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughput.json", throughoutBaseLine)
+    writeFile("throughput.json", throughoutBaseLine, o)
 
     val throughputPar =
       ("timestamp" -> timestamp) ~
@@ -315,7 +313,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputWithPar.json", throughputPar)
+    writeFile("throughputWithPar.json", throughputPar, o)
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
@@ -326,7 +324,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputWithParInc.json", throughputParInc)
+    writeFile("throughputWithParInc.json", throughputParInc, o)
 
     //
     // Time
@@ -339,7 +337,7 @@ object CompilerPerf {
         ("results" -> baseline.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("time.json", timeBaseline)
+    writeFile("time.json", timeBaseline, o)
 
     val timeWithPar =
       ("timestamp" -> timestamp) ~
@@ -349,7 +347,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("timeWithPar.json", timeWithPar)
+    writeFile("timeWithPar.json", timeWithPar, o)
 
     val timeWithParInc =
       ("timestamp" -> timestamp) ~
@@ -359,7 +357,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("timeWithParInc.json", timeWithParInc)
+    writeFile("timeWithParInc.json", timeWithParInc, o)
 
     //
     // Summary
@@ -371,12 +369,12 @@ object CompilerPerf {
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeFile("summary.json", s)
+    writeFile("summary.json", s, o)
 
     //
     // Python Plot
     //
-    FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
+    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python)
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
@@ -441,7 +439,7 @@ object CompilerPerf {
     */
   private def runSingle(flix: Flix): Run = {
     // Clear caches.
-    ZhegalkinCache.clearCaches()
+    EffUnification3.Algebra.Cache.clearCaches()
 
     val frontendOnly = flix.options.XPerfFrontend
     val totalLines =
@@ -470,7 +468,7 @@ object CompilerPerf {
     */
   private def aggregate(l: IndexedSeq[Run]): Runs = {
     if (l.isEmpty) {
-      return Runs(0, List(0), Nil)
+      return Runs(0, Nil, Nil)
     }
 
     val lines = l.head.lines
@@ -487,7 +485,10 @@ object CompilerPerf {
   /**
     * Returns the throughput per second.
     */
-  private def throughput(lines: Long, time: Long): Int = ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+  private def throughput(lines: Long, time: Long): Int = {
+    if (time == 0L) -1
+    else ((1_000_000_000L * lines).toDouble / time.toDouble).toInt
+  }
 
   /**
     * Returns the given time `l` in milliseconds.
@@ -520,8 +521,8 @@ object CompilerPerf {
   /**
     * Writes the given `json` to the given `file`.
     */
-  private def writeFile(file: String, json: JValue): Unit = {
-    val directory = Path.of("./build/").resolve("perf/")
+  private def writeFile(file: String, json: JValue, opts: Options): Unit = {
+    val directory = opts.outputPath.resolve("perf/")
     val filePath = directory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
   }

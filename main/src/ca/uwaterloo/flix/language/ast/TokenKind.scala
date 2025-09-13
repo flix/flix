@@ -40,6 +40,7 @@ sealed trait TokenKind {
       case TokenKind.Bang => "'!'"
       case TokenKind.BangEqual => "'!='"
       case TokenKind.Bar => "'|'"
+      case TokenKind.BarHash => "'|#'"
       case TokenKind.BracketL => "'['"
       case TokenKind.BracketR => "']'"
       case TokenKind.Caret => "'^'"
@@ -58,6 +59,7 @@ sealed trait TokenKind {
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
       case TokenKind.Hash => "'#'"
+      case TokenKind.HashBar => "'#|'"
       case TokenKind.HashCurlyL => "'#{'"
       case TokenKind.HashParenL => "'#('"
       case TokenKind.HoleAnonymous => "'???'"
@@ -77,6 +79,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordEff => "'eff'"
       case TokenKind.KeywordElse => "'else'"
+      case TokenKind.KeywordEMatch => "'ematch'"
       case TokenKind.KeywordEnum => "'enum'"
       case TokenKind.KeywordFalse => "'false'"
       case TokenKind.KeywordFix => "'fix'"
@@ -90,7 +93,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordIf => "'if'"
       case TokenKind.KeywordImport => "'import'"
       case TokenKind.KeywordInject => "'inject'"
-      case TokenKind.KeywordInline => "'inline'"
       case TokenKind.KeywordInstance => "'instance'"
       case TokenKind.KeywordInstanceOf => "'instanceof'"
       case TokenKind.KeywordInto => "'into'"
@@ -109,6 +111,8 @@ sealed trait TokenKind {
       case TokenKind.KeywordOr => "'or'"
       case TokenKind.KeywordOverride => "'override'"
       case TokenKind.KeywordPar => "'par'"
+      case TokenKind.KeywordPQuery => "'pquery'"
+      case TokenKind.KeywordPSolve => "'psolve'"
       case TokenKind.KeywordPub => "'pub'"
       case TokenKind.KeywordProject => "'project'"
       case TokenKind.KeywordQuery => "'query'"
@@ -143,7 +147,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordWithout => "'without'"
       case TokenKind.KeywordYield => "'yield'"
       case TokenKind.KeywordXor => "'xor'"
-      case TokenKind.KeywordXmatch => "'xmatch'"
       case TokenKind.KeywordXvar => "'xvar'"
       case TokenKind.ListHash => "'List#'"
       case TokenKind.MapHash => "'Map#'"
@@ -185,8 +188,10 @@ sealed trait TokenKind {
       case TokenKind.LiteralBigInt => "'<digits>ii'"
       case TokenKind.LiteralDebugStringL => "'%{'"
       case TokenKind.LiteralDebugStringR => "'}'"
+      case TokenKind.LiteralFloat => "'<digits>.<digits>'"
       case TokenKind.LiteralFloat32 => "'<digits>f32'"
       case TokenKind.LiteralFloat64 => "'<digits>f64'"
+      case TokenKind.LiteralInt => "'<digits>'"
       case TokenKind.LiteralInt8 => "'<digits>i8'"
       case TokenKind.LiteralInt16 => "'<digits>i16'"
       case TokenKind.LiteralInt32 => "'<digits>i32'"
@@ -233,6 +238,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordEff => true
     case TokenKind.KeywordElse => true
+    case TokenKind.KeywordEMatch => true
     case TokenKind.KeywordEnum => true
     case TokenKind.KeywordFalse => true
     case TokenKind.KeywordFix => true
@@ -246,7 +252,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordIf => true
     case TokenKind.KeywordImport => true
     case TokenKind.KeywordInject => true
-    case TokenKind.KeywordInline => true
     case TokenKind.KeywordInstance => true
     case TokenKind.KeywordInstanceOf => true
     case TokenKind.KeywordInto => true
@@ -264,6 +269,8 @@ sealed trait TokenKind {
     case TokenKind.KeywordOr => true
     case TokenKind.KeywordOverride => true
     case TokenKind.KeywordPar => true
+    case TokenKind.KeywordPQuery => true
+    case TokenKind.KeywordPSolve => true
     case TokenKind.KeywordPub => true
     case TokenKind.KeywordProject => true
     case TokenKind.KeywordQuery => true
@@ -296,7 +303,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordWithout => true
     case TokenKind.KeywordYield => true
     case TokenKind.KeywordXor => true
-    case TokenKind.KeywordXmatch => true
     case TokenKind.KeywordXvar => true
     case TokenKind.Ampersand
          | TokenKind.AngleL
@@ -315,6 +321,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarHash
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.BuiltIn
@@ -339,6 +346,7 @@ sealed trait TokenKind {
          | TokenKind.EqualEqual
          | TokenKind.Err(_)
          | TokenKind.Hash
+         | TokenKind.HashBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -354,8 +362,10 @@ sealed trait TokenKind {
          | TokenKind.LiteralChar
          | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralDebugStringR
+         | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
          | TokenKind.LiteralInt64
@@ -400,7 +410,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordLawful
          | TokenKind.KeywordPub
          | TokenKind.KeywordMut
-         | TokenKind.KeywordInline
          | TokenKind.KeywordOverride => true
     case _ => false
   }
@@ -479,6 +488,7 @@ sealed trait TokenKind {
          | TokenKind.BuiltIn
          | TokenKind.CurlyL
          | TokenKind.DotDotDot
+         | TokenKind.HashBar
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
          | TokenKind.HoleAnonymous
@@ -493,6 +503,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordDebugBangBang
          | TokenKind.KeywordDef
          | TokenKind.KeywordDiscard
+         | TokenKind.KeywordEMatch
          | TokenKind.KeywordFalse
          | TokenKind.KeywordForA
          | TokenKind.KeywordForM
@@ -511,6 +522,8 @@ sealed trait TokenKind {
          | TokenKind.KeywordOpenVariant
          | TokenKind.KeywordOpenVariantAs
          | TokenKind.KeywordPar
+         | TokenKind.KeywordPQuery
+         | TokenKind.KeywordPSolve
          | TokenKind.KeywordQuery
          | TokenKind.KeywordRegion
          | TokenKind.KeywordRun
@@ -525,15 +538,16 @@ sealed trait TokenKind {
          | TokenKind.KeywordUnsafe
          | TokenKind.KeywordUnsafely
          | TokenKind.KeywordUse
-         | TokenKind.KeywordXmatch
          | TokenKind.KeywordXvar
          | TokenKind.ListHash
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
          | TokenKind.LiteralDebugStringL
+         | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
          | TokenKind.LiteralInt64
@@ -568,6 +582,7 @@ sealed trait TokenKind {
          | TokenKind.Bang
          | TokenKind.BangEqual
          | TokenKind.Bar
+         | TokenKind.BarHash
          | TokenKind.BracketL
          | TokenKind.BracketR
          | TokenKind.Caret
@@ -601,7 +616,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordFix
          | TokenKind.KeywordForall
          | TokenKind.KeywordFrom
-         | TokenKind.KeywordInline
          | TokenKind.KeywordInstance
          | TokenKind.KeywordInstanceOf
          | TokenKind.KeywordInto
@@ -685,9 +699,11 @@ sealed trait TokenKind {
          | TokenKind.KeywordQuery
          | TokenKind.LiteralString
          | TokenKind.LiteralChar
+         | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
          | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt8
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
@@ -720,8 +736,10 @@ sealed trait TokenKind {
          | TokenKind.LiteralChar
          | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralDebugStringR
+         | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
+         | TokenKind.LiteralInt
          | TokenKind.LiteralInt8
          | TokenKind.LiteralInt16
          | TokenKind.LiteralInt32
@@ -843,6 +861,8 @@ object TokenKind {
 
   case object Bar extends TokenKind
 
+  case object BarHash extends TokenKind
+
   case object BracketL extends TokenKind
 
   case object BracketR extends TokenKind
@@ -886,6 +906,8 @@ object TokenKind {
   case object EqualEqual extends TokenKind
 
   case object Hash extends TokenKind
+
+  case object HashBar extends TokenKind
 
   case object HashCurlyL extends TokenKind
 
@@ -931,6 +953,8 @@ object TokenKind {
 
   case object KeywordElse extends TokenKind
 
+  case object KeywordEMatch extends TokenKind
+
   case object KeywordEnum extends TokenKind
 
   case object KeywordFalse extends TokenKind
@@ -956,8 +980,6 @@ object TokenKind {
   case object KeywordImport extends TokenKind
 
   case object KeywordInject extends TokenKind
-
-  case object KeywordInline extends TokenKind
 
   case object KeywordInstance extends TokenKind
 
@@ -994,6 +1016,10 @@ object TokenKind {
   case object KeywordOverride extends TokenKind
 
   case object KeywordPar extends TokenKind
+
+  case object KeywordPQuery extends TokenKind
+
+  case object KeywordPSolve extends TokenKind
 
   case object KeywordPub extends TokenKind
 
@@ -1063,8 +1089,6 @@ object TokenKind {
 
   case object KeywordXor extends TokenKind
 
-  case object KeywordXmatch extends TokenKind
-
   case object KeywordXvar extends TokenKind
 
   case object ListHash extends TokenKind
@@ -1079,9 +1103,13 @@ object TokenKind {
 
   case object LiteralDebugStringR extends TokenKind
 
+  case object LiteralFloat extends TokenKind
+
   case object LiteralFloat32 extends TokenKind
 
   case object LiteralFloat64 extends TokenKind
+
+  case object LiteralInt extends TokenKind
 
   case object LiteralInt8 extends TokenKind
 

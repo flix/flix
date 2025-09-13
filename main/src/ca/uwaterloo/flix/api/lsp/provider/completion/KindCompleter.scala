@@ -22,7 +22,7 @@ object KindCompleter {
   def getCompletions(name: String, range: Range): List[Completion] = {
     val kinds = List("Type", "Eff", "Bool")
     kinds.collect {
-      case kind if kind.startsWith(name) => KindCompletion(kind, range)
+      case kind if kind.startsWith(name) => KindCompletion(kind, range, Priority.Highest(0))
     }
   }
 }

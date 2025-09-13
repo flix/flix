@@ -142,7 +142,7 @@ mod Http {
                     }))
                 } catch {
                     case ex: IllegalArgumentException => Err(IoError(ErrorKind.InvalidInput, ex.getMessage()))
-                    case ex: ConnectException          => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
+                    case ex: ConnectException         => Err(IoError(ErrorKind.ConnectionFailed, ex.getMessage()))
                     case ex: InterruptedException     => Err(IoError(ErrorKind.Interrupted, ex.getMessage()))
                     case ex: UncheckedIOException     => Err(IoError(ErrorKind.Other, ex.getMessage()))
                     case ex: IOException              => Err(IoError(ErrorKind.Other, ex.getMessage()))

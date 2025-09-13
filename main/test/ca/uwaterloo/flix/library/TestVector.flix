@@ -1,291 +1,411 @@
-/*
- * Copyright 2023 Magnus Madsen, Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestVector {
+
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertSome, assertNone};
+
+    /////////////////////////////////////////////////////////////////////////////
+    // binarySearch                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def binarySearch01(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch(0, Vector#{}))
+
+    @Test
+    def binarySearch02(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.binarySearch(0, Vector#{0}))
+
+    @Test
+    def binarySearch03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.binarySearch(0, Vector#{0, 1, 2, 3}))
+
+    @Test
+    def binarySearch04(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3}))
+
+    @Test
+    def binarySearch05(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.binarySearch(2, Vector#{0, 1, 2, 3}))
+
+    @Test
+    def binarySearch06(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.binarySearch(3, Vector#{0, 1, 2, 3}))
+
+    @Test
+    def binarySearch07(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1}))
+
+    @Test
+    def binarySearch08(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2}))
+
+    @Test
+    def binarySearch09(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4}))
+
+    @Test
+    def binarySearch10(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5}))
+
+    @Test
+    def binarySearch11(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6}))
+
+    @Test
+    def binarySearch12(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6, 7}))
+
+    @Test
+    def binarySearch13(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8}))
+
+    @Test
+    def binarySearch14(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(1, Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+
+    @Test
+    def binarySearch15(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.binarySearch(4, Vector#{0, 2, 4, 6, 8, 10}))
+
+    @Test
+    def binarySearch16(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch(3, Vector#{0, 2, 4, 6, 8, 10}))
+
+    @Test
+    def binarySearch17(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch(-1, Vector#{0, 2, 4, 6, 8, 10}))
+
+    @Test
+    def binarySearch18(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch(11, Vector#{0, 2, 4, 6, 8, 10}))
+
+    @Test
+    def binarySearch19(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch(11i64, Vector#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64}))
+
+    @Test
+    def binarySearch20(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch(2i64, Vector#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64}))
+
+    @Test
+    def binarySearch21(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.binarySearch("a", Vector#{"a", "b", "c", "d", "e", "f"}))
+
+    @Test
+    def binarySearch22(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.binarySearch("b", Vector#{"a", "b", "c", "d", "e", "f"}))
+
+    @Test
+    def binarySearch23(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch("g", Vector#{"a", "b", "c", "d", "e", "f"}))
+
+    @Test
+    def binarySearch24(): Unit \ Assert =
+        let pos = Vector.binarySearch(1, Vector#{0, 1, 1, 2, 3, 4, 5, 6});
+        assertTrue(pos == Some(1) or pos == Some(2))
+
+    @Test
+    def binarySearch25(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.binarySearch(0, Vector#{0, 1, 1, 1, 1, 1, 1, 1, 2}))
+
+    @Test
+    def binarySearch26(): Unit \ Assert =
+        assertEq(expected = None, Vector.binarySearch(-1, Vector#{0, 1, 1, 1, 1, 1, 1, 1, 2}))
+
+    @Test
+    def binarySearch27(): Unit \ Assert =
+        let pos = Vector.binarySearch(4, Vector#{4, 3, 2, 1, 0});
+        assertTrue(pos == None or pos == Some(0))
+
+    @Test
+    def binarySearch28(): Unit \ Assert =
+        let pos = Vector.binarySearch(3, Vector#{4, 3, 2, 1, 0});
+        assertTrue(pos == None or pos == Some(1))
+
+    @Test
+    def binarySearch29(): Unit \ Assert =
+        let pos = Vector.binarySearch(2, Vector#{4, 3, 2, 1, 0});
+        assertTrue(pos == None or pos == Some(2))
+
+    @Test
+    def binarySearch30(): Unit \ Assert =
+        let pos = Vector.binarySearch(1, Vector#{4, 3, 2, 1, 0});
+        assertTrue(pos == None or pos == Some(3))
+
+    @Test
+    def binarySearch31(): Unit \ Assert =
+        let pos = Vector.binarySearch(0, Vector#{4, 3, 2, 1, 0});
+        assertTrue(pos == None or pos == Some(4))
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def compare01(): Bool =
-        (Vector#{}: Vector[Int32]) `Vector.compare` (Vector#{}: Vector[Int32]) == Comparison.EqualTo
+    @Test
+    def compare01(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, (Vector#{}: Vector[Int32]) `Vector.compare` (Vector#{}: Vector[Int32]))
 
-    @test
-    def compare02(): Bool =
-        ((Vector#{1}) `Vector.compare` (Vector#{})) == Comparison.GreaterThan
+    @Test
+    def compare02(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, (Vector#{1}) `Vector.compare` (Vector#{}))
 
-    @test
-    def compare03(): Bool =
-        ((Vector#{}) `Vector.compare` (Vector#{1})) == Comparison.LessThan
+    @Test
+    def compare03(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, (Vector#{}) `Vector.compare` (Vector#{1}))
 
-    @test
-    def compare04(): Bool =
-        ((Vector#{1}) `Vector.compare` (Vector#{1})) == Comparison.EqualTo
+    @Test
+    def compare04(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, (Vector#{1}) `Vector.compare` (Vector#{1}))
 
-    @test
-    def compare05(): Bool =
-        ((Vector#{1}) `Vector.compare` (Vector#{2})) == Comparison.LessThan
+    @Test
+    def compare05(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, (Vector#{1}) `Vector.compare` (Vector#{2}))
 
-    @test
-    def compare06(): Bool =
-        ((Vector#{2}) `Vector.compare` (Vector#{1})) == Comparison.GreaterThan
+    @Test
+    def compare06(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, (Vector#{2}) `Vector.compare` (Vector#{1}))
 
-    @test
-    def compare07(): Bool =
-        ((Vector#{1}) `Vector.compare` (Vector#{1, 2})) == Comparison.LessThan
+    @Test
+    def compare07(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, (Vector#{1}) `Vector.compare` (Vector#{1, 2}))
 
-    @test
-    def compare08(): Bool =
-        ((Vector#{1, 2}) `Vector.compare` (Vector#{1})) == Comparison.GreaterThan
+    @Test
+    def compare08(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, (Vector#{1, 2}) `Vector.compare` (Vector#{1}))
 
-    @test
-    def compare09(): Bool =
-        ((Vector#{1}) `Vector.compare` (Vector#{0, 0})) == Comparison.GreaterThan
+    @Test
+    def compare09(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, (Vector#{1}) `Vector.compare` (Vector#{0, 0}))
 
-    @test
-    def compare10(): Bool =
-        ((Vector#{0, 0}) `Vector.compare` (Vector#{1})) == Comparison.LessThan
+    @Test
+    def compare10(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, (Vector#{0, 0}) `Vector.compare` (Vector#{1}))
 
-    @test
-    def compare11(): Bool =
-        ((Vector#{1, 2}) `Vector.compare` (Vector#{1, 1})) == Comparison.GreaterThan
+    @Test
+    def compare11(): Unit \ Assert =
+        assertEq(expected = Comparison.GreaterThan, (Vector#{1, 2}) `Vector.compare` (Vector#{1, 1}))
 
-    @test
-    def compare12(): Bool =
-        ((Vector#{1, 2}) `Vector.compare` (Vector#{1, 3})) == Comparison.LessThan
+    @Test
+    def compare12(): Unit \ Assert =
+        assertEq(expected = Comparison.LessThan, (Vector#{1, 2}) `Vector.compare` (Vector#{1, 3}))
 
-    @test
-    def compare13(): Bool =
-        ((Vector#{1, 2, 3, 4}) `Vector.compare` (Vector#{1, 2, 3, 4})) == Comparison.EqualTo
+    @Test
+    def compare13(): Unit \ Assert =
+        assertEq(expected = Comparison.EqualTo, (Vector#{1, 2, 3, 4}) `Vector.compare` (Vector#{1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toString01(): Bool =
-        Vector.toString((Vector#{}: Vector[Int32])) == "Vector#{}"
+    @Test
+    def toString01(): Unit \ Assert =
+        assertEq(expected = "Vector#{}", Vector.toString((Vector#{}: Vector[Int32])))
 
-    @test
-    def toString02(): Bool =
-        Vector.toString(Vector#{1}) == "Vector#{1}"
+    @Test
+    def toString02(): Unit \ Assert =
+        assertEq(expected = "Vector#{1}", Vector.toString(Vector#{1}))
 
-    @test
-    def toString03(): Bool =
-        Vector.toString(Vector#{1, 2, 3, 4}) == "Vector#{1, 2, 3, 4}"
+    @Test
+    def toString03(): Unit \ Assert =
+        assertEq(expected = "Vector#{1, 2, 3, 4}", Vector.toString(Vector#{1, 2, 3, 4}))
 
-    @test
-    def toString04(): Bool =
-        Vector.toString(Vector#{'a', 'b', 'c', 'd'}) == "Vector#{a, b, c, d}"
+    @Test
+    def toString04(): Unit \ Assert =
+        assertEq(expected = "Vector#{a, b, c, d}", Vector.toString(Vector#{'a', 'b', 'c', 'd'}))
 
     /////////////////////////////////////////////////////////////////////////////
     // empty                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def empty01(): Bool =
+    @Test
+    def empty01(): Unit \ Assert =
         let v = Vector.empty();
-        Vector.length(v) == 0
+        assertEq(expected = 0, Vector.length(v))
 
     /////////////////////////////////////////////////////////////////////////////
     // singleton                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def singleton01(): Bool =
+    @Test
+    def singleton01(): Unit \ Assert =
         let v = Vector.singleton(0);
-        Vector.nth(0, v) == Some(0)
+        assertEq(expected = Some(0), Vector.nth(0, v))
 
-    @test
-    def singleton02(): Bool =
+    @Test
+    def singleton02(): Unit \ Assert =
         let v = Vector.singleton('A');
-        Vector.nth(0, v) == Some('A')
+        assertEq(expected = Some('A'), Vector.nth(0, v))
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def nth01(): Bool =
-        Vector.nth(0, Vector#{1, 2, 3}) == Some(1)
+    @Test
+    def nth01(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.nth(0, Vector#{1, 2, 3}))
 
-    @test
-    def nth02(): Bool =
-        Vector.nth(1, Vector#{1, 2, 3}) == Some(2)
+    @Test
+    def nth02(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.nth(1, Vector#{1, 2, 3}))
 
-    @test
-    def nth03(): Bool =
-        Vector.nth(2, Vector#{1, 2, 3}) == Some(3)
+    @Test
+    def nth03(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.nth(2, Vector#{1, 2, 3}))
 
-    @test
-    def nth04(): Bool =
-        Vector.nth(3, Vector#{1, 2, 3}) == None
+    @Test
+    def nth04(): Unit \ Assert =
+        assertEq(expected = None, Vector.nth(3, Vector#{1, 2, 3}))
 
-    @test
-    def nth05(): Bool =
-        Vector.nth(-2, Vector#{1, 2, 3}) == None
+    @Test
+    def nth05(): Unit \ Assert =
+        assertEq(expected = None, Vector.nth(-2, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isEmpty01(): Bool =
-        Vector.isEmpty(Vector#{})
+    @Test
+    def isEmpty01(): Unit \ Assert =
+        assertTrue(Vector.isEmpty(Vector#{}))
 
-    @test
-    def isEmpty02(): Bool =
-        not Vector.isEmpty(Vector#{1})
+    @Test
+    def isEmpty02(): Unit \ Assert =
+        assertFalse(Vector.isEmpty(Vector#{1}))
 
-    @test
-    def isEmpty03(): Bool =
-        not Vector.isEmpty(Vector#{1, 2, 3})
+    @Test
+    def isEmpty03(): Unit \ Assert =
+        assertFalse(Vector.isEmpty(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // nonEmpty                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def nonEmpty01(): Bool =
-        not Vector.nonEmpty(Vector#{})
+    @Test
+    def nonEmpty01(): Unit \ Assert =
+        assertFalse(Vector.nonEmpty(Vector#{}))
 
-    @test
-    def nonEmpty02(): Bool =
-        Vector.nonEmpty(Vector#{1})
+    @Test
+    def nonEmpty02(): Unit \ Assert =
+        assertTrue(Vector.nonEmpty(Vector#{1}))
 
-    @test
-    def nonEmpty03(): Bool =
-        Vector.nonEmpty(Vector#{1, 2, 3})
+    @Test
+    def nonEmpty03(): Unit \ Assert =
+        assertTrue(Vector.nonEmpty(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def length01(): Bool =
-        Vector.length(Vector#{}) == 0
+    @Test
+    def length01(): Unit \ Assert =
+        assertEq(expected = 0, Vector.length(Vector#{}))
 
-    @test
-    def length02(): Bool =
-        Vector.length(Vector#{1}) == 1
+    @Test
+    def length02(): Unit \ Assert =
+        assertEq(expected = 1, Vector.length(Vector#{1}))
 
-    @test
-    def length03(): Bool =
-        Vector.length(Vector#{1, 2, 3}) == 3
+    @Test
+    def length03(): Unit \ Assert =
+        assertEq(expected = 3, Vector.length(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def size01(): Bool =
-        Vector.size(Vector#{}) == 0
+    @Test
+    def size01(): Unit \ Assert =
+        assertEq(expected = 0, Vector.size(Vector#{}))
 
-    @test
-    def size02(): Bool =
-        Vector.size(Vector#{1}) == 1
+    @Test
+    def size02(): Unit \ Assert =
+        assertEq(expected = 1, Vector.size(Vector#{1}))
 
-    @test
-    def size03(): Bool =
-        Vector.size(Vector#{1, 2, 3}) == 3
+    @Test
+    def size03(): Unit \ Assert =
+        assertEq(expected = 3, Vector.size(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // slice                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def slice01(): Bool =
-        Vector.slice(start = 0, end = 1, Vector#{1, 2, 3}) |> Vector.get(0) == 1
+    @Test
+    def slice01(): Unit \ Assert =
+        assertEq(expected = 1, Vector.slice(start = 0, end = 1, Vector#{1, 2, 3}) |> Vector.get(0))
 
-    @test
-    def slice02(): Bool =
-        Vector.slice(start = 1, end = 2, Vector#{1, 2, 3}) |> Vector.get(0) == 2
+    @Test
+    def slice02(): Unit \ Assert =
+        assertEq(expected = 2, Vector.slice(start = 1, end = 2, Vector#{1, 2, 3}) |> Vector.get(0))
 
-    @test
-    def slice03(): Bool =
-        Vector.slice(start = 2, end = 3, Vector#{1, 2, 3}) |> Vector.get(0) == 3
+    @Test
+    def slice03(): Unit \ Assert =
+        assertEq(expected = 3, Vector.slice(start = 2, end = 3, Vector#{1, 2, 3}) |> Vector.get(0))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool =
-        Vector.toList((Vector#{}: Vector[Int32])) == Nil
+    @Test
+    def toList01(): Unit \ Assert =
+        assertEq(expected = Nil, Vector.toList((Vector#{}: Vector[Int32])))
 
-    @test
-    def toList02(): Bool =
-        Vector.toList(Vector#{1}) == 1 :: Nil
+    @Test
+    def toList02(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Vector.toList(Vector#{1}))
 
-    @test
-    def toList03(): Bool =
-        Vector.toList(Vector#{1, 2}) == 1 :: 2 :: Nil
+    @Test
+    def toList03(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: Nil, Vector.toList(Vector#{1, 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNel01(): Bool =
-        Vector.toNel((Vector#{}: Vector[Unit])) == None
+    @Test
+    def toNel01(): Unit \ Assert =
+        assertEq(expected = None, Vector.toNel((Vector#{}: Vector[Unit])))
 
-    @test
-    def toNel02(): Bool =
-        Vector.toNel(Vector#{1}) == Some(Nel.singleton(1))
+    @Test
+    def toNel02(): Unit \ Assert =
+        assertEq(expected = Some(Nel.singleton(1)), Vector.toNel(Vector#{1}))
 
-    @test
-    def toNel03(): Bool =
-        Vector.toNel(Vector#{1, 2}) == List.toNel(1 :: 2 :: Nil)
+    @Test
+    def toNel03(): Unit \ Assert =
+        assertEq(expected = List.toNel(1 :: 2 :: Nil), Vector.toNel(Vector#{1, 2}))
 
-    @test
-    def toNel04(): Bool =
-        Vector.toNel(Vector#{1, 2, 3}) == List.toNel(1 :: 2 :: 3 :: Nil)
+    @Test
+    def toNel04(): Unit \ Assert =
+        assertEq(expected = List.toNel(1 :: 2 :: 3 :: Nil), Vector.toNel(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMutDeque01(): Bool = region rc {
+    @Test
+    def toMutDeque01(): Unit \ Assert = region rc {
         let v = (Vector#{}: Vector[Int32]);
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
+        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque02(): Bool = region rc {
+    @Test
+    def toMutDeque02(): Unit \ Assert = region rc {
         let v = Vector#{1};
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
+        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque03(): Bool = region rc {
+    @Test
+    def toMutDeque03(): Unit \ Assert = region rc {
         let v = Vector#{1, 2, 3};
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
+        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque04(): Bool = region rc {
+    @Test
+    def toMutDeque04(): Unit \ Assert = region rc {
         let v = Vector#{1, 2, 3, 4, 5};
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(3, d);
@@ -293,3505 +413,3573 @@ mod TestVector {
         MutDeque.pushBack(5, d);
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(1, d);
-        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
+        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
     }
 
-    @test
-    def toMutDeque05(): Bool = region rc {
+    @Test
+    def toMutDeque05(): Unit \ Assert = region rc {
         let v = Vector#{'a', 'b', 'c'};
         let d = MutDeque.empty(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
-        Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
+        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def head01(): Bool =
-        Vector.head((Vector#{}: Vector[Int32])) == None
+    @Test
+    def head01(): Unit \ Assert =
+        assertEq(expected = None, Vector.head((Vector#{}: Vector[Int32])))
 
-    @test
-    def head02(): Bool =
-        Vector.head(Vector#{1}) == Some(1)
+    @Test
+    def head02(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.head(Vector#{1}))
 
-    @test
-    def head03(): Bool =
-        Vector.head(Vector#{2, 1}) == Some(2)
+    @Test
+    def head03(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.head(Vector#{2, 1}))
 
-    @test
-    def head04(): Bool =
-        Vector.head(Vector#{3, 2, 1}) == Some(3)
+    @Test
+    def head04(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.head(Vector#{3, 2, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def last01(): Bool =
-        (Vector.last(Vector#{}): Option[Unit]) == None
+    @Test
+    def last01(): Unit \ Assert =
+        assertEq(expected = None, (Vector.last(Vector#{}): Option[Unit]))
 
-    @test
-    def last02(): Bool =
-        Vector.last(Vector#{1}) == Some(1)
+    @Test
+    def last02(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.last(Vector#{1}))
 
-    @test
-    def last03(): Bool =
-        Vector.last(Vector#{1, 2}) == Some(2)
+    @Test
+    def last03(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.last(Vector#{1, 2}))
 
-    @test
-    def last04(): Bool =
-        Vector.last(Vector#{1, 2, 3}) == Some(3)
+    @Test
+    def last04(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.last(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // append                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def append01(): Bool =
+    @Test
+    def append01(): Unit \ Assert =
         let v = Vector.append((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
-        v == (Vector#{}: Vector[Int32])
+        assertEq(expected = (Vector#{}: Vector[Int32]), v)
 
-    @test
-    def append02(): Bool =
+    @Test
+    def append02(): Unit \ Assert =
         let v = Vector.append((Vector#{}: Vector[Int32]), Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def append03(): Bool =
+    @Test
+    def append03(): Unit \ Assert =
         let v = Vector.append((Vector#{}: Vector[Int32]), Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def append04(): Bool =
+    @Test
+    def append04(): Unit \ Assert =
         let v = Vector.append(Vector#{1}, (Vector#{}: Vector[Int32]));
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def append05(): Bool =
+    @Test
+    def append05(): Unit \ Assert =
         let v = Vector.append(Vector#{1, 2}, (Vector#{}: Vector[Int32]));
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def append06(): Bool =
+    @Test
+    def append06(): Unit \ Assert =
         let v = Vector.append(Vector#{1}, Vector#{2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def append07(): Bool =
+    @Test
+    def append07(): Unit \ Assert =
         let v = Vector.append(Vector#{1, 2}, Vector#{3});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
-    @test
-    def append08(): Bool =
+    @Test
+    def append08(): Unit \ Assert =
         let v = Vector.append(Vector#{1}, Vector#{2, 3});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def memberOf01(): Bool =
-        Vector.memberOf(0, (Vector#{}: Vector[Int32])) == false
+    @Test
+    def memberOf01(): Unit \ Assert =
+        assertFalse(Vector.memberOf(0, (Vector#{}: Vector[Int32])))
 
-    @test
-    def memberOf02(): Bool =
-        Vector.memberOf(0, Vector#{1}) == false
+    @Test
+    def memberOf02(): Unit \ Assert =
+        assertFalse(Vector.memberOf(0, Vector#{1}))
 
-    @test
-    def memberOf03(): Bool =
-        Vector.memberOf(1, Vector#{1}) == true
+    @Test
+    def memberOf03(): Unit \ Assert =
+        assertTrue(Vector.memberOf(1, Vector#{1}))
 
-    @test
-    def memberOf04(): Bool =
-        Vector.memberOf(0, Vector#{1, 2}) == false
+    @Test
+    def memberOf04(): Unit \ Assert =
+        assertFalse(Vector.memberOf(0, Vector#{1, 2}))
 
-    @test
-    def memberOf05(): Bool =
-        Vector.memberOf(1, Vector#{1, 2}) == true
+    @Test
+    def memberOf05(): Unit \ Assert =
+        assertTrue(Vector.memberOf(1, Vector#{1, 2}))
 
-    @test
-    def memberOf06(): Bool =
-        Vector.memberOf(2, Vector#{1, 2}) == true
+    @Test
+    def memberOf06(): Unit \ Assert =
+        assertTrue(Vector.memberOf(2, Vector#{1, 2}))
 
-    @test
-    def memberOf07(): Bool =
-        Vector.memberOf(3, Vector#{1, 2}) == false
+    @Test
+    def memberOf07(): Unit \ Assert =
+        assertFalse(Vector.memberOf(3, Vector#{1, 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOf                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def indexOf01(): Bool =
-        Vector.indexOf(0, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def indexOf01(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOf(0, (Vector#{}: Vector[Int32])))
 
-    @test
-    def indexOf02(): Bool =
-        Vector.indexOf(0, Vector#{1}) == None
+    @Test
+    def indexOf02(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOf(0, Vector#{1}))
 
-    @test
-    def indexOf03(): Bool =
-        Vector.indexOf(1, Vector#{1}) == Some(0)
+    @Test
+    def indexOf03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOf(1, Vector#{1}))
 
-    @test
-    def indexOf04(): Bool =
-        Vector.indexOf(0, Vector#{1, 2}) == None
+    @Test
+    def indexOf04(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOf(0, Vector#{1, 2}))
 
-    @test
-    def indexOf05(): Bool =
-        Vector.indexOf(1, Vector#{1, 2}) == Some(0)
+    @Test
+    def indexOf05(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOf(1, Vector#{1, 2}))
 
-    @test
-    def indexOf06(): Bool =
-        Vector.indexOf(2, Vector#{1, 2}) == Some(1)
+    @Test
+    def indexOf06(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.indexOf(2, Vector#{1, 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOfLeft                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def indexOfLeft01(): Bool =
-        Vector.indexOfLeft(0, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def indexOfLeft01(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOfLeft(0, (Vector#{}: Vector[Int32])))
 
-    @test
-    def indexOfLeft02(): Bool =
-        Vector.indexOfLeft(0, Vector#{1}) == None
+    @Test
+    def indexOfLeft02(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOfLeft(0, Vector#{1}))
 
-    @test
-    def indexOfLeft03(): Bool =
-        Vector.indexOfLeft(1, Vector#{1}) == Some(0)
+    @Test
+    def indexOfLeft03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOfLeft(1, Vector#{1}))
 
-    @test
-    def indexOfLeft04(): Bool =
-        Vector.indexOfLeft(0, Vector#{1, 2}) == None
+    @Test
+    def indexOfLeft04(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOfLeft(0, Vector#{1, 2}))
 
-    @test
-    def indexOfLeft05(): Bool =
-        Vector.indexOfLeft(1, Vector#{1, 2}) == Some(0)
+    @Test
+    def indexOfLeft05(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOfLeft(1, Vector#{1, 2}))
 
-    @test
-    def indexOfLeft06(): Bool =
-        Vector.indexOfLeft(2, Vector#{1, 2}) == Some(1)
+    @Test
+    def indexOfLeft06(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.indexOfLeft(2, Vector#{1, 2}))
 
-    @test
-    def indexOfLeft07(): Bool =
-        Vector.indexOfLeft(1, Vector#{1, 1}) == Some(0)
+    @Test
+    def indexOfLeft07(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOfLeft(1, Vector#{1, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
     // indexOfRight                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def indexOfRight01(): Bool =
-        Vector.indexOfRight(0, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def indexOfRight01(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOfRight(0, (Vector#{}: Vector[Int32])))
 
-    @test
-    def indexOfRight02(): Bool =
-        Vector.indexOfRight(0, Vector#{1}) == None
+    @Test
+    def indexOfRight02(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOfRight(0, Vector#{1}))
 
-    @test
-    def indexOfRight03(): Bool =
-        Vector.indexOfRight(1, Vector#{1}) == Some(0)
+    @Test
+    def indexOfRight03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOfRight(1, Vector#{1}))
 
-    @test
-    def indexOfRight04(): Bool =
-        Vector.indexOfRight(0, Vector#{1, 2}) == None
+    @Test
+    def indexOfRight04(): Unit \ Assert =
+        assertEq(expected = None, Vector.indexOfRight(0, Vector#{1, 2}))
 
-    @test
-    def indexOfRight05(): Bool =
-        Vector.indexOfRight(1, Vector#{1, 2}) == Some(0)
+    @Test
+    def indexOfRight05(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.indexOfRight(1, Vector#{1, 2}))
 
-    @test
-    def indexOfRight06(): Bool =
-        Vector.indexOfRight(2, Vector#{1, 2}) == Some(1)
+    @Test
+    def indexOfRight06(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.indexOfRight(2, Vector#{1, 2}))
 
-    @test
-    def indexOfRight07(): Bool =
-        Vector.indexOfRight(1, Vector#{1, 1}) == Some(1)
+    @Test
+    def indexOfRight07(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.indexOfRight(1, Vector#{1, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
     // indices                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def indices01(): Bool =
+    @Test
+    def indices01(): Unit \ Assert =
         let v = Vector.indices(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def indices02(): Bool =
+    @Test
+    def indices02(): Unit \ Assert =
         let v = Vector.indices(0, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def indices03(): Bool =
+    @Test
+    def indices03(): Unit \ Assert =
         let v = Vector.indices(1, Vector#{1});
-        v == Vector#{0}
+        assertEq(expected = Vector#{0}, v)
 
-    @test
-    def indices04(): Bool =
+    @Test
+    def indices04(): Unit \ Assert =
         let v = Vector.indices(0, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def indices05(): Bool =
+    @Test
+    def indices05(): Unit \ Assert =
         let v = Vector.indices(1, Vector#{1, 2});
-        v == Vector#{0}
+        assertEq(expected = Vector#{0}, v)
 
-    @test
-    def indices06(): Bool =
+    @Test
+    def indices06(): Unit \ Assert =
         let v = Vector.indices(2, Vector#{1, 2});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def indices07(): Bool =
+    @Test
+    def indices07(): Unit \ Assert =
         let v = Vector.indices(1, Vector#{1, 1});
-        v == Vector#{0, 1}
+        assertEq(expected = Vector#{0, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def find01(): Bool =
-        Vector.find(i -> i > 2, Vector#{}) == None
+    @Test
+    def find01(): Unit \ Assert =
+        assertEq(expected = None, Vector.find(i -> i > 2, Vector#{}))
 
-    @test
-    def find02(): Bool =
-        Vector.find(i -> i > 2, Vector#{1}) == None
+    @Test
+    def find02(): Unit \ Assert =
+        assertEq(expected = None, Vector.find(i -> i > 2, Vector#{1}))
 
-    @test
-    def find03(): Bool =
-        Vector.find(i -> i > 2, Vector#{3}) == Some(3)
+    @Test
+    def find03(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.find(i -> i > 2, Vector#{3}))
 
-    @test
-    def find04(): Bool =
-        Vector.find(i -> i > 2, Vector#{1, 2}) == None
+    @Test
+    def find04(): Unit \ Assert =
+        assertEq(expected = None, Vector.find(i -> i > 2, Vector#{1, 2}))
 
-    @test
-    def find05(): Bool =
-        Vector.find(i -> i > 2, Vector#{6, -6}) == Some(6)
+    @Test
+    def find05(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.find(i -> i > 2, Vector#{6, -6}))
 
-    @test
-    def find06(): Bool =
-        Vector.find(i -> i > 2, Vector#{-6, 6}) == Some(6)
+    @Test
+    def find06(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.find(i -> i > 2, Vector#{-6, 6}))
 
-    @test
-    def find07(): Bool =
-        Vector.find(i -> i > 2, Vector#{6, 7}) == Some(6)
+    @Test
+    def find07(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.find(i -> i > 2, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findLeft01(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{}) == None
+    @Test
+    def findLeft01(): Unit \ Assert =
+        assertEq(expected = None, Vector.findLeft(i -> i > 2, Vector#{}))
 
-    @test
-    def findLeft02(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{1}) == None
+    @Test
+    def findLeft02(): Unit \ Assert =
+        assertEq(expected = None, Vector.findLeft(i -> i > 2, Vector#{1}))
 
-    @test
-    def findLeft03(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{3}) == Some(3)
+    @Test
+    def findLeft03(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.findLeft(i -> i > 2, Vector#{3}))
 
-    @test
-    def findLeft04(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{1, 2}) == None
+    @Test
+    def findLeft04(): Unit \ Assert =
+        assertEq(expected = None, Vector.findLeft(i -> i > 2, Vector#{1, 2}))
 
-    @test
-    def findLeft05(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{6, -6}) == Some(6)
+    @Test
+    def findLeft05(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.findLeft(i -> i > 2, Vector#{6, -6}))
 
-    @test
-    def findLeft06(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{-6, 6}) == Some(6)
+    @Test
+    def findLeft06(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.findLeft(i -> i > 2, Vector#{-6, 6}))
 
-    @test
-    def findLeft07(): Bool =
-        Vector.findLeft(i -> i > 2, Vector#{6, 7}) == Some(6)
+    @Test
+    def findLeft07(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.findLeft(i -> i > 2, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findRight01(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{}) == None
+    @Test
+    def findRight01(): Unit \ Assert =
+        assertEq(expected = None, Vector.findRight(i -> i > 2, Vector#{}))
 
-    @test
-    def findRight02(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{1}) == None
+    @Test
+    def findRight02(): Unit \ Assert =
+        assertEq(expected = None, Vector.findRight(i -> i > 2, Vector#{1}))
 
-    @test
-    def findRight03(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{3}) == Some(3)
+    @Test
+    def findRight03(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.findRight(i -> i > 2, Vector#{3}))
 
-    @test
-    def findRight04(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{1, 2}) == None
+    @Test
+    def findRight04(): Unit \ Assert =
+        assertEq(expected = None, Vector.findRight(i -> i > 2, Vector#{1, 2}))
 
-    @test
-    def findRight05(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{6, -6}) == Some(6)
+    @Test
+    def findRight05(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.findRight(i -> i > 2, Vector#{6, -6}))
 
-    @test
-    def findRight06(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{-6, 6}) == Some(6)
+    @Test
+    def findRight06(): Unit \ Assert =
+        assertEq(expected = Some(6), Vector.findRight(i -> i > 2, Vector#{-6, 6}))
 
-    @test
-    def findRight07(): Bool =
-        Vector.findRight(i -> i > 2, Vector#{6, 7}) == Some(7)
+    @Test
+    def findRight07(): Unit \ Assert =
+        assertEq(expected = Some(7), Vector.findRight(i -> i > 2, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def range01(): Bool =
+    @Test
+    def range01(): Unit \ Assert =
         let v = Vector.range(1, 0);
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def range02(): Bool =
+    @Test
+    def range02(): Unit \ Assert =
         let v = Vector.range(1, 1);
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def range03(): Bool =
+    @Test
+    def range03(): Unit \ Assert =
         let v = Vector.range(1, 2);
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def range04(): Bool =
+    @Test
+    def range04(): Unit \ Assert =
         let v = Vector.range(1, 3);
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def range05(): Bool =
+    @Test
+    def range05(): Unit \ Assert =
         let v = Vector.range(1, 4);
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
-    @test
-    def range06(): Bool =
+    @Test
+    def range06(): Unit \ Assert =
         let v = Vector.range(-1, 3);
-        v == Vector#{-1, 0, 1, 2}
+        assertEq(expected = Vector#{-1, 0, 1, 2}, v)
+
+    /////////////////////////////////////////////////////////////////////////////
+    // removeAdjDups                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def removeAdjDups01(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{};
+        assertEq(expected = list, Vector.removeAdjDups(list))
+    }
+
+    @Test
+    def removeAdjDups02(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{1};
+        assertEq(expected = list, Vector.removeAdjDups(list))
+    }
+
+    @Test
+    def removeAdjDups03(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{1, 1};
+        assertEq(expected = Vector#{1}, Vector.removeAdjDups(list))
+    }
+
+    @Test
+    def removeAdjDups04(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{3, 3, 3, 2, 2, 1, 2, 1, 1};
+        assertEq(expected = Vector#{3, 2, 1, 2, 1}, Vector.removeAdjDups(list))
+    }
+
+    @Test
+    def removeAdjDups05(): Unit \ Assert = {
+        let list: Vector[(Int32, String)] = Vector#{(1, "a"), (2, "b"), (2, "b"), (3, "c"), (3, "a"), (3, "a"), (3, "c")};
+        assertEq(expected = Vector#{(1, "a"), (2, "b"), (3, "c"), (3, "a"), (3, "c")}, Vector.removeAdjDups(list))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // removeAdjDups                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def removeAdjDupsWith01(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{};
+        assertEq(expected = list, Vector.removeAdjDupsWith(x -> y -> x == y, list))
+    }
+
+    @Test
+    def removeAdjDupsWith02(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{1};
+        assertEq(expected = list, Vector.removeAdjDupsWith(x -> y -> x == y, list))
+    }
+
+    @Test
+    def removeAdjDupsWith03(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{1, 1};
+        assertEq(expected = Vector#{1}, Vector.removeAdjDupsWith(x -> y -> x == y, list))
+    }
+
+    @Test
+    def removeAdjDupsWith04(): Unit \ Assert = {
+        let list: Vector[Int32] = Vector#{3, 3, 3, 2, 2, 1, 2, 1, 1};
+        assertEq(expected = Vector#{3, 2, 1, 2, 1}, Vector.removeAdjDupsWith(x -> y -> x == y, list))
+    }
+
+    @Test
+    def removeAdjDupsWith05(): Unit \ Assert = {
+        let list: Vector[(Int32, String)] = Vector#{(1, "a"), (2, "b"), (2, "c"), (3, "c"), (3, "a"), (2, "d")};
+        assertEq(expected = Vector#{(1, "a"), (2, "b"), (3, "c"), (2, "d")}, Vector.removeAdjDupsWith(x -> y -> fst(x) == fst(y), list))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // repeat                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def repeat01(): Bool =
+    @Test
+    def repeat01(): Unit \ Assert =
         let v = Vector.repeat(-1, 1);
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def repeat02(): Bool =
+    @Test
+    def repeat02(): Unit \ Assert =
         let v = Vector.repeat(0, 1);
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def repeat03(): Bool =
+    @Test
+    def repeat03(): Unit \ Assert =
         let v = Vector.repeat(1, 1);
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def repeat04(): Bool =
+    @Test
+    def repeat04(): Unit \ Assert =
         let v = Vector.repeat(2, 1);
-        v == Vector#{1, 1}
+        assertEq(expected = Vector#{1, 1}, v)
 
-    @test
-    def repeat05(): Bool =
+    @Test
+    def repeat05(): Unit \ Assert =
         let v = Vector.repeat(3, 1);
-        v == Vector#{1, 1, 1}
+        assertEq(expected = Vector#{1, 1, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // scan                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def scan01(): Bool =
+    @Test
+    def scan01(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def scan02(): Bool =
+    @Test
+    def scan02(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{false});
-        v == Vector#{1, 3}
+        assertEq(expected = Vector#{1, 3}, v)
 
-    @test
-    def scan03(): Bool =
+    @Test
+    def scan03(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{true});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def scan04(): Bool =
+    @Test
+    def scan04(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{false, false});
-        v == Vector#{1, 3, 5}
+        assertEq(expected = Vector#{1, 3, 5}, v)
 
-    @test
-    def scan05(): Bool =
+    @Test
+    def scan05(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{false, true});
-        v == Vector#{1, 3, 4}
+        assertEq(expected = Vector#{1, 3, 4}, v)
 
-    @test
-    def scan06(): Bool =
+    @Test
+    def scan06(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{true, false});
-        v == Vector#{1, 2, 4}
+        assertEq(expected = Vector#{1, 2, 4}, v)
 
-    @test
-    def scan07(): Bool =
+    @Test
+    def scan07(): Unit \ Assert =
         let v = Vector.scan((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{true, true});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // scanLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def scanLeft01(): Bool =
+    @Test
+    def scanLeft01(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, (Vector#{}: Vector[Bool]));
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def scanLeft02(): Bool =
+    @Test
+    def scanLeft02(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{false});
-        v == Vector#{1, 3}
+        assertEq(expected = Vector#{1, 3}, v)
 
-    @test
-    def scanLeft03(): Bool =
+    @Test
+    def scanLeft03(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{true});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def scanLeft04(): Bool =
+    @Test
+    def scanLeft04(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{false, false});
-        v == Vector#{1, 3, 5}
+        assertEq(expected = Vector#{1, 3, 5}, v)
 
-    @test
-    def scanLeft05(): Bool =
+    @Test
+    def scanLeft05(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{false, true});
-        v == Vector#{1, 3, 4}
+        assertEq(expected = Vector#{1, 3, 4}, v)
 
-    @test
-    def scanLeft06(): Bool =
+    @Test
+    def scanLeft06(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{true, false});
-        v == Vector#{1, 2, 4}
+        assertEq(expected = Vector#{1, 2, 4}, v)
 
-    @test
-    def scanLeft07(): Bool =
+    @Test
+    def scanLeft07(): Unit \ Assert =
         let v = Vector.scanLeft((i, b) -> if (b) i + 1 else i + 2, 1, Vector#{true, true});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // scanRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def scanRight01(): Bool =
+    @Test
+    def scanRight01(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def scanRight02(): Bool =
+    @Test
+    def scanRight02(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{false});
-        v == Vector#{3, 1}
+        assertEq(expected = Vector#{3, 1}, v)
 
-    @test
-    def scanRight03(): Bool =
+    @Test
+    def scanRight03(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{true});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def scanRight04(): Bool =
+    @Test
+    def scanRight04(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{false, false});
-        v == Vector#{5, 3, 1}
+        assertEq(expected = Vector#{5, 3, 1}, v)
 
-    @test
-    def scanRight05(): Bool =
+    @Test
+    def scanRight05(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{false, true});
-        v == Vector#{4, 2, 1}
+        assertEq(expected = Vector#{4, 2, 1}, v)
 
-    @test
-    def scanRight06(): Bool =
+    @Test
+    def scanRight06(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{true, false});
-        v == Vector#{4, 3, 1}
+        assertEq(expected = Vector#{4, 3, 1}, v)
 
-    @test
-    def scanRight07(): Bool =
+    @Test
+    def scanRight07(): Unit \ Assert =
         let v = Vector.scanRight((b, i) -> if (b) i + 1 else i + 2, 1, Vector#{true, true});
-        v == Vector#{3, 2, 1}
+        assertEq(expected = Vector#{3, 2, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def map01(): Bool =
+    @Test
+    def map01(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def map02(): Bool =
+    @Test
+    def map02(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{1});
-        v == Vector#{false}
+        assertEq(expected = Vector#{false}, v)
 
-    @test
-    def map03(): Bool =
+    @Test
+    def map03(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{3});
-        v == Vector#{true}
+        assertEq(expected = Vector#{true}, v)
 
-    @test
-    def map04(): Bool =
+    @Test
+    def map04(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{1, 2});
-        v == Vector#{false, false}
+        assertEq(expected = Vector#{false, false}, v)
 
-    @test
-    def map05(): Bool =
+    @Test
+    def map05(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{1, 8});
-        v == Vector#{false, true}
+        assertEq(expected = Vector#{false, true}, v)
 
-    @test
-    def map06(): Bool =
+    @Test
+    def map06(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{8, 1});
-        v == Vector#{true, false}
+        assertEq(expected = Vector#{true, false}, v)
 
-    @test
-    def map07(): Bool =
+    @Test
+    def map07(): Unit \ Assert =
         let v = Vector.map(i -> i > 2, Vector#{7, 8});
-        v == Vector#{true, true}
+        assertEq(expected = Vector#{true, true}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // mapWithIndex                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapWithIndex01(): Bool =
+    @Test
+    def mapWithIndex01(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def mapWithIndex02(): Bool =
+    @Test
+    def mapWithIndex02(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{1});
-        v == Vector#{false}
+        assertEq(expected = Vector#{false}, v)
 
-    @test
-    def mapWithIndex03(): Bool =
+    @Test
+    def mapWithIndex03(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{3});
-        v == Vector#{true}
+        assertEq(expected = Vector#{true}, v)
 
-    @test
-    def mapWithIndex04(): Bool =
+    @Test
+    def mapWithIndex04(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{1, 2});
-        v == Vector#{false, true}
+        assertEq(expected = Vector#{false, true}, v)
 
-    @test
-    def mapWithIndex05(): Bool =
+    @Test
+    def mapWithIndex05(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{1, 8});
-        v == Vector#{false, false}
+        assertEq(expected = Vector#{false, false}, v)
 
-    @test
-    def mapWithIndex06(): Bool =
+    @Test
+    def mapWithIndex06(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{8, 1});
-        v == Vector#{true, true}
+        assertEq(expected = Vector#{true, true}, v)
 
-    @test
-    def mapWithIndex07(): Bool =
+    @Test
+    def mapWithIndex07(): Unit \ Assert =
         let v = Vector.mapWithIndex((i, e) -> if (i < 1) e > 2 else e <= 2, Vector#{7, 8});
-        v == Vector#{true, false}
+        assertEq(expected = Vector#{true, false}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // ap                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def ap01(): Bool =
+    @Test
+    def ap01(): Unit \ Assert =
         let v = Vector.ap((Vector#{} : Vector[Int32 -> Int32]), (Vector#{} : Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def ap02(): Bool =
+    @Test
+    def ap02(): Unit \ Assert =
         let v = Vector.ap(Vector#{(x -> x+1)}, Vector#{});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def ap03(): Bool =
+    @Test
+    def ap03(): Unit \ Assert =
         let v = Vector.ap((Vector#{} : Vector[Int32 -> Int32]), Vector#{5});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def ap04(): Bool =
+    @Test
+    def ap04(): Unit \ Assert =
         let v = Vector.ap(Vector#{(x -> x+1)}, Vector#{5});
-        v == Vector#{6}
+        assertEq(expected = Vector#{6}, v)
 
-    @test
-    def ap05(): Bool =
+    @Test
+    def ap05(): Unit \ Assert =
         let v = Vector.ap(Vector#{(x -> x+1)}, Vector#{0, 5});
-        v == Vector#{1, 6}
+        assertEq(expected = Vector#{1, 6}, v)
 
-    @test
-    def ap06(): Bool =
+    @Test
+    def ap06(): Unit \ Assert =
         let v = Vector.ap(Vector#{(x -> x+1), (x -> x*2)}, Vector#{0, 4});
-        v == Vector#{1, 5, 0, 8}
+        assertEq(expected = Vector#{1, 5, 0, 8}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sequence01(): Bool =
+    @Test
+    def sequence01(): Unit \ Assert =
         let v: Vector[Option[Int32]] = Vector#{};
-        Vector.sequence(v) == Some(Vector#{})
+        assertEq(expected = Some(Vector#{}), Vector.sequence(v))
 
-    @test
-    def sequence02(): Bool =
+    @Test
+    def sequence02(): Unit \ Assert =
         let v: Vector[Option[Int32]] = Vector#{None};
-        Vector.sequence(v) == None
+        assertEq(expected = None, Vector.sequence(v))
 
-    @test
-    def sequence03(): Bool =
+    @Test
+    def sequence03(): Unit \ Assert =
         let v = Vector#{Some(1)};
-        Vector.sequence(v) == Some(Vector#{1})
+        assertEq(expected = Some(Vector#{1}), Vector.sequence(v))
 
-    @test
-    def sequence04(): Bool =
+    @Test
+    def sequence04(): Unit \ Assert =
         let v: Vector[Option[Int32]] = Vector#{None, None};
-        Vector.sequence(v) == None
+        assertEq(expected = None, Vector.sequence(v))
 
-    @test
-    def sequence05(): Bool =
+    @Test
+    def sequence05(): Unit \ Assert =
         let v = Vector#{Some(1), None};
-        Vector.sequence(v) == None
+        assertEq(expected = None, Vector.sequence(v))
 
-    @test
-    def sequence06(): Bool =
+    @Test
+    def sequence06(): Unit \ Assert =
         let v = Vector#{None, Some(2)};
-        Vector.sequence(v) == None
+        assertEq(expected = None, Vector.sequence(v))
 
-    @test
-    def sequence07(): Bool =
+    @Test
+    def sequence07(): Unit \ Assert =
         let v = Vector#{Some(1), Some(2)};
-        Vector.sequence(v) == Some(Vector#{1, 2})
+        assertEq(expected = Some(Vector#{1, 2}), Vector.sequence(v))
 
     /////////////////////////////////////////////////////////////////////////////
     // traverse                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def traverse01(): Bool =
+    @Test
+    def traverse01(): Unit \ Assert =
         let v = Vector#{};
-        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{})
+        assertEq(expected = Some(Vector#{}), Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
-    @test
-    def traverse02(): Bool =
+    @Test
+    def traverse02(): Unit \ Assert =
         let v = Vector#{1};
-        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{1})
+        assertEq(expected = Some(Vector#{1}), Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
-    @test
-    def traverse03(): Bool =
+    @Test
+    def traverse03(): Unit \ Assert =
         let v = Vector#{1, 2};
-        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{1, 2})
+        assertEq(expected = Some(Vector#{1, 2}), Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
-    @test
-    def traverse04(): Bool =
+    @Test
+    def traverse04(): Unit \ Assert =
         let v = Vector#{1, 2, 3};
-        Vector.traverse(x -> if (x > 2) None else Some(x), v) == None
+        assertEq(expected = None, Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
-    @test
-    def traverse05(): Bool =
+    @Test
+    def traverse05(): Unit \ Assert =
         let v = Vector#{3};
-        Vector.traverse(x -> if (x > 2) None else Some(x), v) == None
+        assertEq(expected = None, Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
-    @test
-    def traverse06(): Bool =
+    @Test
+    def traverse06(): Unit \ Assert =
         let v = Vector#{1, 2, 1};
-        Vector.traverse(x -> if (x > 2) None else Some(x), v) == Some(Vector#{1, 2, 1})
+        assertEq(expected = Some(Vector#{1, 2, 1}), Vector.traverse(x -> if (x > 2) None else Some(x), v))
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWithA                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zipWithA01(): Bool =
+    @Test
+    def zipWithA01(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{}, Vector#{});
-        v == Some(Vector#{})
-    @test
-    def zipWithA02(): Bool =
+        assertEq(expected = Some(Vector#{}), v)
+    @Test
+    def zipWithA02(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1}, Vector#{});
-        v == Some(Vector#{})
+        assertEq(expected = Some(Vector#{}), v)
 
-    @test
-    def zipWithA03(): Bool =
+    @Test
+    def zipWithA03(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1}, Vector#{1});
-        v == Some(Vector#{2})
+        assertEq(expected = Some(Vector#{2}), v)
 
-    @test
-    def zipWithA04(): Bool =
+    @Test
+    def zipWithA04(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2}, Vector#{1, 2});
-        v == Some(Vector#{2, 4})
+        assertEq(expected = Some(Vector#{2, 4}), v)
 
-    @test
-    def zipWithA05(): Bool =
+    @Test
+    def zipWithA05(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2, 3}, Vector#{1, 2, 3});
-        v == None
+        assertEq(expected = None, v)
 
-    @test
-    def zipWithA06(): Bool =
+    @Test
+    def zipWithA06(): Unit \ Assert =
         let v = Vector.zipWithA((x, y) -> if (x + y > 5) None else Some(x + y), Vector#{1, 2, 3}, Vector#{1, 1, 1});
-        v == Some(Vector#{2, 3, 4})
+        assertEq(expected = Some(Vector#{2, 3, 4}), v)
 
     /////////////////////////////////////////////////////////////////////////////
     // flatMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def flatMap01(): Bool =
+    @Test
+    def flatMap01(): Unit \ Assert =
         let v = Vector.flatMap(i -> Vector.repeat(i, i), (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def flatMap02(): Bool =
+    @Test
+    def flatMap02(): Unit \ Assert =
         let v = Vector.flatMap(i -> Vector.repeat(i, i), (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def flatMap03(): Bool =
+    @Test
+    def flatMap03(): Unit \ Assert =
         let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def flatMap04(): Bool =
+    @Test
+    def flatMap04(): Unit \ Assert =
         let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector#{2});
-        v == Vector#{2, 2}
+        assertEq(expected = Vector#{2, 2}, v)
 
-    @test
-    def flatMap05(): Bool =
+    @Test
+    def flatMap05(): Unit \ Assert =
         let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector#{1, 2});
-        v == Vector#{1, 2, 2}
+        assertEq(expected = Vector#{1, 2, 2}, v)
 
-    @test
-    def flatMap06(): Bool =
+    @Test
+    def flatMap06(): Unit \ Assert =
         let v = Vector.flatMap(i -> Vector.repeat(i, i), Vector#{2, 3});
-        v == Vector#{2, 2, 3, 3, 3}
+        assertEq(expected = Vector#{2, 2, 3, 3, 3}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reverse01(): Bool =
+    @Test
+    def reverse01(): Unit \ Assert =
         let v = Vector.reverse((Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def reverse02(): Bool =
+    @Test
+    def reverse02(): Unit \ Assert =
         let v = Vector.reverse(Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def reverse03(): Bool =
+    @Test
+    def reverse03(): Unit \ Assert =
         let v = Vector.reverse(Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def reverse04(): Bool =
+    @Test
+    def reverse04(): Unit \ Assert =
         let v = Vector.reverse(Vector#{1, 1});
-        v == Vector#{1, 1}
+        assertEq(expected = Vector#{1, 1}, v)
 
-    @test
-    def reverse05(): Bool =
+    @Test
+    def reverse05(): Unit \ Assert =
         let v = Vector.reverse(Vector#{1, 2, 3});
-        v == Vector#{3, 2, 1}
+        assertEq(expected = Vector#{3, 2, 1}, v)
 
-    @test
-    def reverse06(): Bool =
+    @Test
+    def reverse06(): Unit \ Assert =
         let v = Vector.reverse(Vector#{1, 2, 3, 4});
-        v == Vector#{4, 3, 2, 1}
+        assertEq(expected = Vector#{4, 3, 2, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def rotateLeft01(): Bool =
+    @Test
+    def rotateLeft01(): Unit \ Assert =
         let v = Vector.rotateLeft(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def rotateLeft02(): Bool =
+    @Test
+    def rotateLeft02(): Unit \ Assert =
         let v = Vector.rotateLeft(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def rotateLeft03(): Bool =
+    @Test
+    def rotateLeft03(): Unit \ Assert =
         let v = Vector.rotateLeft(0, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def rotateLeft04(): Bool =
+    @Test
+    def rotateLeft04(): Unit \ Assert =
         let v = Vector.rotateLeft(0, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def rotateLeft05(): Bool =
+    @Test
+    def rotateLeft05(): Unit \ Assert =
         let v = Vector.rotateLeft(1, Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def rotateLeft06(): Bool =
+    @Test
+    def rotateLeft06(): Unit \ Assert =
         let v = Vector.rotateLeft(2, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def rotateLeft07(): Bool =
+    @Test
+    def rotateLeft07(): Unit \ Assert =
         let v = Vector.rotateLeft(3, Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def rotateLeft08(): Bool =
+    @Test
+    def rotateLeft08(): Unit \ Assert =
         let v = Vector.rotateLeft(-1, Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def rotateLeft09(): Bool =
+    @Test
+    def rotateLeft09(): Unit \ Assert =
         let v = Vector.rotateLeft(0, Vector#{1, 2, 3});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
-    @test
-    def rotateLeft10(): Bool =
+    @Test
+    def rotateLeft10(): Unit \ Assert =
         let v = Vector.rotateLeft(1, Vector#{1, 2, 3});
-        v == Vector#{2, 3, 1}
+        assertEq(expected = Vector#{2, 3, 1}, v)
 
-    @test
-    def rotateLeft11(): Bool =
+    @Test
+    def rotateLeft11(): Unit \ Assert =
         let v = Vector.rotateLeft(2, Vector#{1, 2, 3});
-        v == Vector#{3, 1, 2}
+        assertEq(expected = Vector#{3, 1, 2}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // rotateRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def rotateRight01(): Bool =
+    @Test
+    def rotateRight01(): Unit \ Assert =
         let v = Vector.rotateRight(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def rotateRight02(): Bool =
+    @Test
+    def rotateRight02(): Unit \ Assert =
         let v = Vector.rotateRight(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def rotateRight03(): Bool =
+    @Test
+    def rotateRight03(): Unit \ Assert =
         let v = Vector.rotateRight(0, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def rotateRight04(): Bool =
+    @Test
+    def rotateRight04(): Unit \ Assert =
         let v = Vector.rotateRight(0, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def rotateRight05(): Bool =
+    @Test
+    def rotateRight05(): Unit \ Assert =
         let v = Vector.rotateRight(1, Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def rotateRight06(): Bool =
+    @Test
+    def rotateRight06(): Unit \ Assert =
         let v = Vector.rotateRight(2, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def rotateRight07(): Bool =
+    @Test
+    def rotateRight07(): Unit \ Assert =
         let v = Vector.rotateRight(3, Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def rotateRight08(): Bool =
+    @Test
+    def rotateRight08(): Unit \ Assert =
         let v = Vector.rotateRight(-1, Vector#{1, 2});
-        v == Vector#{2, 1}
+        assertEq(expected = Vector#{2, 1}, v)
 
-    @test
-    def rotateRight09(): Bool =
+    @Test
+    def rotateRight09(): Unit \ Assert =
         let v = Vector.rotateRight(0, Vector#{1, 2, 3});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
-    @test
-    def rotateRight10(): Bool =
+    @Test
+    def rotateRight10(): Unit \ Assert =
         let v = Vector.rotateRight(1, Vector#{1, 2, 3});
-        v == Vector#{3, 1, 2}
+        assertEq(expected = Vector#{3, 1, 2}, v)
 
-    @test
-    def rotateRight11(): Bool =
+    @Test
+    def rotateRight11(): Unit \ Assert =
         let v = Vector.rotateRight(2, Vector#{1, 2, 3});
-        v == Vector#{2, 3, 1}
+        assertEq(expected = Vector#{2, 3, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // update                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def update01(): Bool =
+    @Test
+    def update01(): Unit \ Assert =
         let v = Vector.update(0, 2, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def update02(): Bool =
+    @Test
+    def update02(): Unit \ Assert =
         let v = Vector.update(-1, 2, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def update03(): Bool =
+    @Test
+    def update03(): Unit \ Assert =
         let v = Vector.update(0, 2, Vector#{1});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def update04(): Bool =
+    @Test
+    def update04(): Unit \ Assert =
         let v = Vector.update(1, 2, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def update05(): Bool =
+    @Test
+    def update05(): Unit \ Assert =
         let v = Vector.update(0, 5, Vector#{1, 2});
-        v == Vector#{5, 2}
+        assertEq(expected = Vector#{5, 2}, v)
 
-    @test
-    def update06(): Bool =
+    @Test
+    def update06(): Unit \ Assert =
         let v = Vector.update(1, 5, Vector#{1, 2});
-        v == Vector#{1, 5}
+        assertEq(expected = Vector#{1, 5}, v)
 
-    @test
-    def update07(): Bool =
+    @Test
+    def update07(): Unit \ Assert =
         let v = Vector.update(2, 5, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def replace01(): Bool =
+    @Test
+    def replace01(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def replace02(): Bool =
+    @Test
+    def replace02(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def replace03(): Bool =
+    @Test
+    def replace03(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{3});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def replace04(): Bool =
+    @Test
+    def replace04(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{4});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def replace05(): Bool =
+    @Test
+    def replace05(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def replace06(): Bool =
+    @Test
+    def replace06(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{1, 3});
-        v == Vector#{1, 4}
+        assertEq(expected = Vector#{1, 4}, v)
 
-    @test
-    def replace07(): Bool =
+    @Test
+    def replace07(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{3, 4});
-        v == Vector#{4, 4}
+        assertEq(expected = Vector#{4, 4}, v)
 
-    @test
-    def replace08(): Bool =
+    @Test
+    def replace08(): Unit \ Assert =
         let v = Vector.replace(src = 3, dst = 4, Vector#{3, 3});
-        v == Vector#{4, 4}
+        assertEq(expected = Vector#{4, 4}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // patch                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def patch01(): Bool =
+    @Test
+    def patch01(): Unit \ Assert =
         let v = Vector.patch(0, 0, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def patch02(): Bool =
+    @Test
+    def patch02(): Unit \ Assert =
         let v = Vector.patch(0, 2, Vector#{1, 2}, Vector#{});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def patch03(): Bool =
+    @Test
+    def patch03(): Unit \ Assert =
         let v = Vector.patch(0, 2, Vector#{}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def patch04(): Bool =
+    @Test
+    def patch04(): Unit \ Assert =
         let v = Vector.patch(-3, 3, Vector#{1, 2, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def patch05(): Bool =
+    @Test
+    def patch05(): Unit \ Assert =
         let v = Vector.patch(2, 3, Vector#{1, 2, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def patch06(): Bool =
+    @Test
+    def patch06(): Unit \ Assert =
         let v = Vector.patch(0, 0, Vector#{}, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def patch07(): Bool =
+    @Test
+    def patch07(): Unit \ Assert =
         let v = Vector.patch(1, 0, Vector#{2}, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def patch08(): Bool =
+    @Test
+    def patch08(): Unit \ Assert =
         let v = Vector.patch(0, 1, Vector#{2}, Vector#{1});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def patch09(): Bool =
+    @Test
+    def patch09(): Unit \ Assert =
         let v = Vector.patch(0, 2, Vector#{2, 4}, Vector#{1});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def patch10(): Bool =
+    @Test
+    def patch10(): Unit \ Assert =
         let v = Vector.patch(-1, 2, Vector#{2, 4}, Vector#{1});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def patch11(): Bool =
+    @Test
+    def patch11(): Unit \ Assert =
         let v = Vector.patch(-1, 2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{4, 2}
+        assertEq(expected = Vector#{4, 2}, v)
 
-    @test
-    def patch12(): Bool =
+    @Test
+    def patch12(): Unit \ Assert =
         let v = Vector.patch(1, 2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{1, 3}
+        assertEq(expected = Vector#{1, 3}, v)
 
-    @test
-    def patch13(): Bool =
+    @Test
+    def patch13(): Unit \ Assert =
         let v = Vector.patch(-2, 2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def patch14(): Bool =
+    @Test
+    def patch14(): Unit \ Assert =
         let v = Vector.patch(2, 2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def patch15(): Bool =
+    @Test
+    def patch15(): Unit \ Assert =
         let v = Vector.patch(1, 1, Vector#{3}, Vector#{1, 2});
-        v == Vector#{1, 3}
+        assertEq(expected = Vector#{1, 3}, v)
 
-    @test
-    def patch16(): Bool =
+    @Test
+    def patch16(): Unit \ Assert =
         let v = Vector.patch(0, 2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{3, 4}
+        assertEq(expected = Vector#{3, 4}, v)
 
-    @test
-    def patch17(): Bool =
+    @Test
+    def patch17(): Unit \ Assert =
         let v = Vector.patch(0, 1, Vector#{4}, Vector#{1, 2, 3});
-        v == Vector#{4, 2, 3}
+        assertEq(expected = Vector#{4, 2, 3}, v)
 
-    @test
-    def patch18(): Bool =
+    @Test
+    def patch18(): Unit \ Assert =
         let v = Vector.patch(1, 1, Vector#{4}, Vector#{1, 2, 3});
-        v == Vector#{1, 4, 3}
+        assertEq(expected = Vector#{1, 4, 3}, v)
 
-    @test
-    def patch19(): Bool =
+    @Test
+    def patch19(): Unit \ Assert =
         let v = Vector.patch(2, 1, Vector#{4}, Vector#{1, 2, 3});
-        v == Vector#{1, 2, 4}
+        assertEq(expected = Vector#{1, 2, 4}, v)
 
-    @test
-    def patch20(): Bool =
+    @Test
+    def patch20(): Unit \ Assert =
         let v = Vector.patch(0, 2, Vector#{4, 5}, Vector#{1, 2, 3});
-        v == Vector#{4, 5, 3}
+        assertEq(expected = Vector#{4, 5, 3}, v)
 
-    @test
-    def patch21(): Bool =
+    @Test
+    def patch21(): Unit \ Assert =
         let v = Vector.patch(1, 2, Vector#{4, 5}, Vector#{1, 2, 3});
-        v == Vector#{1, 4, 5}
+        assertEq(expected = Vector#{1, 4, 5}, v)
 
-    @test
-    def patch22(): Bool =
+    @Test
+    def patch22(): Unit \ Assert =
         let v = Vector.patch(0, 2, Vector#{4, 5, 6}, Vector#{1, 2, 3});
-        v == Vector#{4, 5, 3}
+        assertEq(expected = Vector#{4, 5, 3}, v)
 
-    @test
-    def patch23(): Bool =
+    @Test
+    def patch23(): Unit \ Assert =
         let v = Vector.patch(0, 3, Vector#{4, 5, 6}, Vector#{1, 2, 3});
-        v == Vector#{4, 5, 6}
+        assertEq(expected = Vector#{4, 5, 6}, v)
 
-    @test
-    def patch24(): Bool =
+    @Test
+    def patch24(): Unit \ Assert =
         let v = Vector.patch(2, 4, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{1, 2, 14, 15, 16, 17, 7}
+        assertEq(expected = Vector#{1, 2, 14, 15, 16, 17, 7}, v)
 
-    @test
-    def patch25(): Bool =
+    @Test
+    def patch25(): Unit \ Assert =
         let v = Vector.patch(-2, 4, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{16, 17, 3, 4, 5, 6, 7}
+        assertEq(expected = Vector#{16, 17, 3, 4, 5, 6, 7}, v)
 
-    @test
-    def patch26(): Bool =
+    @Test
+    def patch26(): Unit \ Assert =
         let v = Vector.patch(4, 5, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{1, 2, 3, 4, 14, 15, 16}
+        assertEq(expected = Vector#{1, 2, 3, 4, 14, 15, 16}, v)
 
-    @test
-    def patch27(): Bool =
+    @Test
+    def patch27(): Unit \ Assert =
         let v = Vector.patch(4, 2, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{1, 2, 3, 4, 14, 15, 7}
+        assertEq(expected = Vector#{1, 2, 3, 4, 14, 15, 7}, v)
 
-    @test
-    def patch28(): Bool =
+    @Test
+    def patch28(): Unit \ Assert =
         let v = Vector.patch(-1, 10, Vector#{-1, -2, -3, -4, -5, -6, -7, -8}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{-2, -3, -4, -5, -6, -7, -8}
+        assertEq(expected = Vector#{-2, -3, -4, -5, -6, -7, -8}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intersperse01(): Bool =
+    @Test
+    def intersperse01(): Unit \ Assert =
         let v = Vector.intersperse(11, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def intersperse02(): Bool =
+    @Test
+    def intersperse02(): Unit \ Assert =
         let v = Vector.intersperse(11, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def intersperse03(): Bool =
+    @Test
+    def intersperse03(): Unit \ Assert =
         let v = Vector.intersperse(11, Vector#{1, 2});
-        v == Vector#{1, 11, 2}
+        assertEq(expected = Vector#{1, 11, 2}, v)
 
-    @test
-    def intersperse04(): Bool =
+    @Test
+    def intersperse04(): Unit \ Assert =
         let v = Vector.intersperse(11, Vector#{1, 2, 3});
-        v == Vector#{1, 11, 2, 11, 3}
+        assertEq(expected = Vector#{1, 11, 2, 11, 3}, v)
 
-    @test
-    def intersperse05(): Bool =
+    @Test
+    def intersperse05(): Unit \ Assert =
         let v = Vector.intersperse(11, Vector#{1, 2, 3, 4});
-        v == Vector#{1, 11, 2, 11, 3, 11, 4}
+        assertEq(expected = Vector#{1, 11, 2, 11, 3, 11, 4}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // intercalate                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intercalate01(): Bool =
+    @Test
+    def intercalate01(): Unit \ Assert =
         let v = Vector.intercalate((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Vector[Int32]]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def intercalate02(): Bool =
+    @Test
+    def intercalate02(): Unit \ Assert =
         let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{Vector#{1}});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def intercalate03(): Bool =
+    @Test
+    def intercalate03(): Unit \ Assert =
         let v = Vector.intercalate(Vector#{11, 12, 13}, (Vector#{}: Vector[Vector[Int32]]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def intercalate04(): Bool =
+    @Test
+    def intercalate04(): Unit \ Assert =
         let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{Vector#{1}, Vector#{2, 3}});
-        v == Vector#{1, 2, 3}
+        assertEq(expected = Vector#{1, 2, 3}, v)
 
-    @test
-    def intercalate05(): Bool =
+    @Test
+    def intercalate05(): Unit \ Assert =
         let v = Vector.intercalate(Vector#{11, 12, 13}, Vector#{Vector#{1}, Vector#{2, 3}});
-        v == Vector#{1, 11, 12, 13, 2, 3}
+        assertEq(expected = Vector#{1, 11, 12, 13, 2, 3}, v)
 
-    @test
-    def intercalate06(): Bool =
+    @Test
+    def intercalate06(): Unit \ Assert =
         let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{Vector#{1}, Vector#{2, 3}, Vector#{4}});
-        v == Vector#{1, 2, 3, 4}
+        assertEq(expected = Vector#{1, 2, 3, 4}, v)
 
-    @test
-    def intercalate07(): Bool =
+    @Test
+    def intercalate07(): Unit \ Assert =
         let v = Vector.intercalate(Vector#{11, 12, 13}, Vector#{Vector#{1}, Vector#{2, 3}, Vector#{4}});
-        v == Vector#{1, 11, 12, 13, 2, 3, 11, 12, 13, 4}
+        assertEq(expected = Vector#{1, 11, 12, 13, 2, 3, 11, 12, 13, 4}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // transpose                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def transpose01(): Bool =
+    @Test
+    def transpose01(): Unit \ Assert =
         let v = Vector.transpose((Vector#{}: Vector[Vector[Int32]]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def transpose02(): Bool =
+    @Test
+    def transpose02(): Unit \ Assert =
         let v: Vector[Vector[Int32]] = Vector.transpose(Vector#{Vector#{}});
-        v == Vector#{Vector#{}}
+        assertEq(expected = Vector#{Vector#{}}, v)
 
-    @test
-    def transpose03(): Bool =
+    @Test
+    def transpose03(): Unit \ Assert =
         let v: Vector[Vector[Int32]] = Vector.transpose(Vector#{Vector#{}, Vector#{}});
-        v == Vector#{Vector#{}, Vector#{}}
+        assertEq(expected = Vector#{Vector#{}, Vector#{}}, v)
 
-    @test
-    def transpose04(): Bool =
+    @Test
+    def transpose04(): Unit \ Assert =
         let v: Vector[Vector[Int32]] = Vector.transpose(Vector#{Vector#{}, Vector#{}, Vector#{}});
-        v == Vector#{Vector#{}, Vector#{}, Vector#{}}
+        assertEq(expected = Vector#{Vector#{}, Vector#{}, Vector#{}}, v)
 
-    @test
-    def transpose05(): Bool =
+    @Test
+    def transpose05(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1}});
-        v == Vector#{Vector#{1}}
+        assertEq(expected = Vector#{Vector#{1}}, v)
 
-    @test
-    def transpose06(): Bool =
+    @Test
+    def transpose06(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2}});
-        v == Vector#{Vector#{1}, Vector#{2}}
+        assertEq(expected = Vector#{Vector#{1}, Vector#{2}}, v)
 
-    @test
-    def transpose07(): Bool =
+    @Test
+    def transpose07(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3}});
-        v == Vector#{Vector#{1}, Vector#{2}, Vector#{3}}
+        assertEq(expected = Vector#{Vector#{1}, Vector#{2}, Vector#{3}}, v)
 
-    @test
-    def transpose08(): Bool =
+    @Test
+    def transpose08(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3, 4}});
-        v == Vector#{Vector#{1}, Vector#{2}, Vector#{3}, Vector#{4}}
+        assertEq(expected = Vector#{Vector#{1}, Vector#{2}, Vector#{3}, Vector#{4}}, v)
 
-    @test
-    def transpose09(): Bool =
+    @Test
+    def transpose09(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1}, Vector#{2}});
-        v == Vector#{Vector#{1, 2}}
+        assertEq(expected = Vector#{Vector#{1, 2}}, v)
 
-    @test
-    def transpose10(): Bool =
+    @Test
+    def transpose10(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1}, Vector#{2}, Vector#{3}});
-        v == Vector#{Vector#{1, 2, 3}}
+        assertEq(expected = Vector#{Vector#{1, 2, 3}}, v)
 
-    @test
-    def transpose11(): Bool =
+    @Test
+    def transpose11(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1}, Vector#{2}, Vector#{3}, Vector#{4}});
-        v == Vector#{Vector#{1, 2, 3, 4}}
+        assertEq(expected = Vector#{Vector#{1, 2, 3, 4}}, v)
 
-    @test
-    def transpose12(): Bool =
+    @Test
+    def transpose12(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2}, Vector#{3, 4}});
-        v == Vector#{Vector#{1, 3}, Vector#{2, 4}}
+        assertEq(expected = Vector#{Vector#{1, 3}, Vector#{2, 4}}, v)
 
-    @test
-    def transpose13(): Bool =
+    @Test
+    def transpose13(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3}, Vector#{4, 5, 6}});
-        v == Vector#{Vector#{1, 4}, Vector#{2, 5}, Vector#{3, 6}}
+        assertEq(expected = Vector#{Vector#{1, 4}, Vector#{2, 5}, Vector#{3, 6}}, v)
 
-    @test
-    def transpose14(): Bool =
+    @Test
+    def transpose14(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3, 4}, Vector#{5, 6, 7, 8}});
-        v == Vector#{Vector#{1, 5}, Vector#{2, 6}, Vector#{3, 7}, Vector#{4, 8}}
+        assertEq(expected = Vector#{Vector#{1, 5}, Vector#{2, 6}, Vector#{3, 7}, Vector#{4, 8}}, v)
 
-    @test
-    def transpose15(): Bool =
+    @Test
+    def transpose15(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3, 4, 5}, Vector#{6, 7, 8, 9, 10}});
-        v == Vector#{Vector#{1, 6}, Vector#{2, 7}, Vector#{3, 8}, Vector#{4, 9}, Vector#{5, 10}}
+        assertEq(expected = Vector#{Vector#{1, 6}, Vector#{2, 7}, Vector#{3, 8}, Vector#{4, 9}, Vector#{5, 10}}, v)
 
-    @test
-    def transpose16(): Bool =
+    @Test
+    def transpose16(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2}, Vector#{3, 4}, Vector#{5, 6}});
-        v == Vector#{Vector#{1, 3, 5}, Vector#{2, 4, 6}}
+        assertEq(expected = Vector#{Vector#{1, 3, 5}, Vector#{2, 4, 6}}, v)
 
-    @test
-    def transpose17(): Bool =
+    @Test
+    def transpose17(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2}, Vector#{3, 4}, Vector#{5, 6}, Vector#{7, 8}});
-        v == Vector#{Vector#{1, 3, 5, 7}, Vector#{2, 4, 6, 8}}
+        assertEq(expected = Vector#{Vector#{1, 3, 5, 7}, Vector#{2, 4, 6, 8}}, v)
 
-    @test
-    def transpose18(): Bool =
+    @Test
+    def transpose18(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2}, Vector#{3, 4}, Vector#{5, 6}, Vector#{7, 8}, Vector#{9, 10}});
-        v == Vector#{Vector#{1, 3, 5, 7, 9}, Vector#{2, 4, 6, 8, 10}}
+        assertEq(expected = Vector#{Vector#{1, 3, 5, 7, 9}, Vector#{2, 4, 6, 8, 10}}, v)
 
-    @test
-    def transpose19(): Bool =
+    @Test
+    def transpose19(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3}, Vector#{4, 5, 6}, Vector#{7, 8, 9}});
-        v == Vector#{Vector#{1, 4, 7}, Vector#{2, 5, 8}, Vector#{3, 6, 9}}
+        assertEq(expected = Vector#{Vector#{1, 4, 7}, Vector#{2, 5, 8}, Vector#{3, 6, 9}}, v)
 
-    @test
-    def transpose20(): Bool =
+    @Test
+    def transpose20(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3}, Vector#{4, 5}, Vector#{7, 8, 9}});
-        v == Vector#{Vector#{1, 2, 3}, Vector#{4, 5}, Vector#{7, 8, 9}}
+        assertEq(expected = Vector#{Vector#{1, 2, 3}, Vector#{4, 5}, Vector#{7, 8, 9}}, v)
 
-    @test
-    def transpose21(): Bool =
+    @Test
+    def transpose21(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3}, Vector#{}, Vector#{7, 8, 9}});
-        v == Vector#{Vector#{1, 2, 3}, Vector#{}, Vector#{7, 8, 9}}
+        assertEq(expected = Vector#{Vector#{1, 2, 3}, Vector#{}, Vector#{7, 8, 9}}, v)
 
-    @test
-    def transpose22(): Bool =
+    @Test
+    def transpose22(): Unit \ Assert =
         let v = Vector.transpose(Vector#{Vector#{1, 2, 3}, Vector#{4, 5, 6}, Vector#{7, 8, 9, 10}});
-        v == Vector#{Vector#{1, 2, 3}, Vector#{4, 5, 6}, Vector#{7, 8, 9, 10}}
+        assertEq(expected = Vector#{Vector#{1, 2, 3}, Vector#{4, 5, 6}, Vector#{7, 8, 9, 10}}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // isPrefixOf                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isPrefixOf01(): Bool =
-        Vector.isPrefixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]))
+    @Test
+    def isPrefixOf01(): Unit \ Assert =
+        assertTrue(Vector.isPrefixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32])))
 
-    @test
-    def isPrefixOf02(): Bool =
-        Vector.isPrefixOf(Vector#{1}, (Vector#{}: Vector[Int32])) == false
+    @Test
+    def isPrefixOf02(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{1}, (Vector#{}: Vector[Int32])))
 
-    @test
-    def isPrefixOf03(): Bool =
-        Vector.isPrefixOf((Vector#{}: Vector[Int32]), Vector#{1})
+    @Test
+    def isPrefixOf03(): Unit \ Assert =
+        assertTrue(Vector.isPrefixOf((Vector#{}: Vector[Int32]), Vector#{1}))
 
-    @test
-    def isPrefixOf04(): Bool =
-        Vector.isPrefixOf(Vector#{1}, Vector#{1})
+    @Test
+    def isPrefixOf04(): Unit \ Assert =
+        assertTrue(Vector.isPrefixOf(Vector#{1}, Vector#{1}))
 
-    @test
-    def isPrefixOf05(): Bool =
-        Vector.isPrefixOf(Vector#{2}, Vector#{1}) == false
+    @Test
+    def isPrefixOf05(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{2}, Vector#{1}))
 
-    @test
-    def isPrefixOf06(): Bool =
-        Vector.isPrefixOf(Vector#{1, 2}, Vector#{1}) == false
+    @Test
+    def isPrefixOf06(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{1, 2}, Vector#{1}))
 
-    @test
-    def isPrefixOf07(): Bool =
-        Vector.isPrefixOf((Vector#{}: Vector[Int32]), Vector#{1, 2})
+    @Test
+    def isPrefixOf07(): Unit \ Assert =
+        assertTrue(Vector.isPrefixOf((Vector#{}: Vector[Int32]), Vector#{1, 2}))
 
-    @test
-    def isPrefixOf08(): Bool =
-        Vector.isPrefixOf(Vector#{1}, Vector#{1, 2})
+    @Test
+    def isPrefixOf08(): Unit \ Assert =
+        assertTrue(Vector.isPrefixOf(Vector#{1}, Vector#{1, 2}))
 
-    @test
-    def isPrefixOf09(): Bool =
-        Vector.isPrefixOf(Vector#{2}, Vector#{1, 2}) == false
+    @Test
+    def isPrefixOf09(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{2}, Vector#{1, 2}))
 
-    @test
-    def isPrefixOf10(): Bool =
-        Vector.isPrefixOf(Vector#{1, 2}, Vector#{1, 2})
+    @Test
+    def isPrefixOf10(): Unit \ Assert =
+        assertTrue(Vector.isPrefixOf(Vector#{1, 2}, Vector#{1, 2}))
 
-    @test
-    def isPrefixOf11(): Bool =
-        Vector.isPrefixOf(Vector#{1, 3}, Vector#{1, 2}) == false
+    @Test
+    def isPrefixOf11(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{1, 3}, Vector#{1, 2}))
 
-    @test
-    def isPrefixOf12(): Bool =
-        Vector.isPrefixOf(Vector#{1, 2, 3}, Vector#{1, 2}) == false
+    @Test
+    def isPrefixOf12(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{1, 2, 3}, Vector#{1, 2}))
 
-    @test
-    def isPrefixOf13(): Bool =
-        Vector.isPrefixOf(Vector#{1, 2, 3}, Vector#{89, 11, 1, 2, 3, 4}) == false
+    @Test
+    def isPrefixOf13(): Unit \ Assert =
+        assertFalse(Vector.isPrefixOf(Vector#{1, 2, 3}, Vector#{89, 11, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // isInfixOf                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isInfixOf01(): Bool =
-        Vector.isInfixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]))
+    @Test
+    def isInfixOf01(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32])))
 
-    @test
-    def isInfixOf02(): Bool =
-        Vector.isInfixOf(Vector#{1}, (Vector#{}: Vector[Int32])) == false
+    @Test
+    def isInfixOf02(): Unit \ Assert =
+        assertFalse(Vector.isInfixOf(Vector#{1}, (Vector#{}: Vector[Int32])))
 
-    @test
-    def isInfixOf03(): Bool =
-        Vector.isInfixOf((Vector#{}: Vector[Int32]), Vector#{1})
+    @Test
+    def isInfixOf03(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf((Vector#{}: Vector[Int32]), Vector#{1}))
 
-    @test
-    def isInfixOf04(): Bool =
-        Vector.isInfixOf(Vector#{1}, Vector#{1})
+    @Test
+    def isInfixOf04(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf(Vector#{1}, Vector#{1}))
 
-    @test
-    def isInfixOf05(): Bool =
-        Vector.isInfixOf(Vector#{2}, Vector#{1}) == false
+    @Test
+    def isInfixOf05(): Unit \ Assert =
+        assertFalse(Vector.isInfixOf(Vector#{2}, Vector#{1}))
 
-    @test
-    def isInfixOf06(): Bool =
-        Vector.isInfixOf(Vector#{1, 2}, Vector#{1}) == false
+    @Test
+    def isInfixOf06(): Unit \ Assert =
+        assertFalse(Vector.isInfixOf(Vector#{1, 2}, Vector#{1}))
 
-    @test
-    def isInfixOf07(): Bool =
-        Vector.isInfixOf((Vector#{}: Vector[Int32]), Vector#{1, 2})
+    @Test
+    def isInfixOf07(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf((Vector#{}: Vector[Int32]), Vector#{1, 2}))
 
-    @test
-    def isInfixOf08(): Bool =
-        Vector.isInfixOf(Vector#{1}, Vector#{1, 2})
+    @Test
+    def isInfixOf08(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf(Vector#{1}, Vector#{1, 2}))
 
-    @test
-    def isInfixOf09(): Bool =
-        Vector.isInfixOf(Vector#{2}, Vector#{1, 2})
+    @Test
+    def isInfixOf09(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf(Vector#{2}, Vector#{1, 2}))
 
-    @test
-    def isInfixOf10(): Bool =
-        Vector.isInfixOf(Vector#{1, 2}, Vector#{1, 2})
+    @Test
+    def isInfixOf10(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf(Vector#{1, 2}, Vector#{1, 2}))
 
-    @test
-    def isInfixOf11(): Bool =
-        Vector.isInfixOf(Vector#{1, 3}, Vector#{1, 2}) == false
+    @Test
+    def isInfixOf11(): Unit \ Assert =
+        assertFalse(Vector.isInfixOf(Vector#{1, 3}, Vector#{1, 2}))
 
-    @test
-    def isInfixOf12(): Bool =
-        Vector.isInfixOf(Vector#{1, 2, 3}, Vector#{1, 2}) == false
+    @Test
+    def isInfixOf12(): Unit \ Assert =
+        assertFalse(Vector.isInfixOf(Vector#{1, 2, 3}, Vector#{1, 2}))
 
-    @test
-    def isInfixOf13(): Bool =
-        Vector.isInfixOf(Vector#{1, 2, 3}, Vector#{89, 11, 1, 2, 3, 4})
+    @Test
+    def isInfixOf13(): Unit \ Assert =
+        assertTrue(Vector.isInfixOf(Vector#{1, 2, 3}, Vector#{89, 11, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // isSuffixOf                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isSuffixOf01(): Bool =
-        Vector.isSuffixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]))
+    @Test
+    def isSuffixOf01(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32])))
 
-    @test
-    def isSuffixOf02(): Bool =
-        Vector.isSuffixOf(Vector#{1}, (Vector#{}: Vector[Int32])) == false
+    @Test
+    def isSuffixOf02(): Unit \ Assert =
+        assertFalse(Vector.isSuffixOf(Vector#{1}, (Vector#{}: Vector[Int32])))
 
-    @test
-    def isSuffixOf03(): Bool =
-        Vector.isSuffixOf((Vector#{}: Vector[Int32]), Vector#{1})
+    @Test
+    def isSuffixOf03(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf((Vector#{}: Vector[Int32]), Vector#{1}))
 
-    @test
-    def isSuffixOf04(): Bool =
-        Vector.isSuffixOf(Vector#{1}, Vector#{1})
+    @Test
+    def isSuffixOf04(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf(Vector#{1}, Vector#{1}))
 
-    @test
-    def isSuffixOf05(): Bool =
-        Vector.isSuffixOf(Vector#{2}, Vector#{1}) == false
+    @Test
+    def isSuffixOf05(): Unit \ Assert =
+        assertFalse(Vector.isSuffixOf(Vector#{2}, Vector#{1}))
 
-    @test
-    def isSuffixOf06(): Bool =
-        Vector.isSuffixOf(Vector#{1, 2}, Vector#{1}) == false
+    @Test
+    def isSuffixOf06(): Unit \ Assert =
+        assertFalse(Vector.isSuffixOf(Vector#{1, 2}, Vector#{1}))
 
-    @test
-    def isSuffixOf07(): Bool =
-        Vector.isSuffixOf((Vector#{}: Vector[Int32]), Vector#{1, 2})
+    @Test
+    def isSuffixOf07(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf((Vector#{}: Vector[Int32]), Vector#{1, 2}))
 
-    @test
-    def isSuffixOf08(): Bool =
-        Vector.isSuffixOf(Vector#{1}, Vector#{1, 2}) == false
+    @Test
+    def isSuffixOf08(): Unit \ Assert =
+        assertFalse(Vector.isSuffixOf(Vector#{1}, Vector#{1, 2}))
 
-    @test
-    def isSuffixOf09(): Bool =
-        Vector.isSuffixOf(Vector#{2}, Vector#{1, 2})
+    @Test
+    def isSuffixOf09(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf(Vector#{2}, Vector#{1, 2}))
 
-    @test
-    def isSuffixOf10(): Bool =
-        Vector.isSuffixOf(Vector#{1, 2}, Vector#{1, 2})
+    @Test
+    def isSuffixOf10(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf(Vector#{1, 2}, Vector#{1, 2}))
 
-    @test
-    def isSuffixOf11(): Bool =
-        Vector.isSuffixOf(Vector#{1, 3}, Vector#{1, 2}) == false
+    @Test
+    def isSuffixOf11(): Unit \ Assert =
+        assertFalse(Vector.isSuffixOf(Vector#{1, 3}, Vector#{1, 2}))
 
-    @test
-    def isSuffixOf12(): Bool =
-        Vector.isSuffixOf(Vector#{1, 2, 3}, Vector#{1, 2}) == false
+    @Test
+    def isSuffixOf12(): Unit \ Assert =
+        assertFalse(Vector.isSuffixOf(Vector#{1, 2, 3}, Vector#{1, 2}))
 
-    @test
-    def isSuffixOf13(): Bool =
-        Vector.isSuffixOf(Vector#{1, 2, 3}, Vector#{89, 11, 1, 2, 3})
+    @Test
+    def isSuffixOf13(): Unit \ Assert =
+        assertTrue(Vector.isSuffixOf(Vector#{1, 2, 3}, Vector#{89, 11, 1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fold01(): Bool =
-        Vector.fold((Vector#{}: Vector[Unit])) == ()
+    @Test
+    def fold01(): Unit \ Assert =
+        assertEq(expected = (), Vector.fold((Vector#{}: Vector[Unit])))
 
-    @test
-    def fold02(): Bool =
-        Vector.fold(Vector#{"a"}) == "a"
+    @Test
+    def fold02(): Unit \ Assert =
+        assertEq(expected = "a", Vector.fold(Vector#{"a"}))
 
-    @test
-    def fold03(): Bool =
-        Vector.fold(Vector#{"a", "b", "c"}) == "abc"
+    @Test
+    def fold03(): Unit \ Assert =
+        assertEq(expected = "abc", Vector.fold(Vector#{"a", "b", "c"}))
 
-    @test
-    def fold04(): Bool =
-        Vector.fold(Vector#{("yes", "no"), ("no", "yes")}) == ("yesno", "noyes")
+    @Test
+    def fold04(): Unit \ Assert =
+        assertEq(expected = ("yesno", "noyes"), Vector.fold(Vector#{("yes", "no"), ("no", "yes")}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldLeft01(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
+    @Test
+    def foldLeft01(): Unit \ Assert =
+        assertEq(expected = 100, Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}))
 
-    @test
-    def foldLeft02(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
+    @Test
+    def foldLeft02(): Unit \ Assert =
+        assertEq(expected = 198, Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}))
 
-    @test
-    def foldLeft03(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 196
+    @Test
+    def foldLeft03(): Unit \ Assert =
+        assertEq(expected = 196, Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}))
 
-    @test
-    def foldLeft04(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 386
+    @Test
+    def foldLeft04(): Unit \ Assert =
+        assertEq(expected = 386, Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRight01(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
+    @Test
+    def foldRight01(): Unit \ Assert =
+        assertEq(expected = 100, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}))
 
-    @test
-    def foldRight02(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
+    @Test
+    def foldRight02(): Unit \ Assert =
+        assertEq(expected = 198, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}))
 
-    @test
-    def foldRight03(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 194
+    @Test
+    def foldRight03(): Unit \ Assert =
+        assertEq(expected = 194, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}))
 
-    @test
-    def foldRight04(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 382
+    @Test
+    def foldRight04(): Unit \ Assert =
+        assertEq(expected = 382, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRightWithCont01(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
+    @Test
+    def foldRightWithCont01(): Unit \ Assert =
+        assertEq(expected = 100, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}))
 
-    @test
-    def foldRightWithCont02(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
+    @Test
+    def foldRightWithCont02(): Unit \ Assert =
+        assertEq(expected = 198, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}))
 
-    @test
-    def foldRightWithCont03(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 194
+    @Test
+    def foldRightWithCont03(): Unit \ Assert =
+        assertEq(expected = 194, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}))
 
-    @test
-    def foldRightWithCont04(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 382
+    @Test
+    def foldRightWithCont04(): Unit \ Assert =
+        assertEq(expected = 382, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldMap01(): Bool =
-        Vector.foldMap(x -> 2 * x, Vector#{}) == 0
+    @Test
+    def foldMap01(): Unit \ Assert =
+        assertEq(expected = 0, Vector.foldMap(x -> 2 * x, Vector#{}))
 
-    @test
-    def foldMap02(): Bool =
-        Vector.foldMap(x -> 2 * x, Vector#{1, 2}) == 6
+    @Test
+    def foldMap02(): Unit \ Assert =
+        assertEq(expected = 6, Vector.foldMap(x -> 2 * x, Vector#{1, 2}))
 
-    @test
-    def foldMap03(): Bool =
-        Vector.foldMap(x -> if (x == "a") "b" else x, Vector#{"a"}) == "b"
+    @Test
+    def foldMap03(): Unit \ Assert =
+        assertEq(expected = "b", Vector.foldMap(x -> if (x == "a") "b" else x, Vector#{"a"}))
 
-    @test
-    def foldMap04(): Bool =
-        Vector.foldMap(x -> if (x == "c") "b" else x, Vector#{"a", "b", "c"}) == "abb"
+    @Test
+    def foldMap04(): Unit \ Assert =
+        assertEq(expected = "abb", Vector.foldMap(x -> if (x == "c") "b" else x, Vector#{"a", "b", "c"}))
 
-    @test
-    def foldMap05(): Bool =
-        Vector.foldMap(Int32.toString, Vector#{1, 2, 3}) == "123"
+    @Test
+    def foldMap05(): Unit \ Assert =
+        assertEq(expected = "123", Vector.foldMap(Int32.toString, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceLeft01(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def reduceLeft01(): Unit \ Assert =
+        assertEq(expected = None, Vector.reduceLeft((a, b) -> a - b, (Vector#{}: Vector[Int32])))
 
-    @test
-    def reduceLeft02(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, Vector#{1}) == Some(1)
+    @Test
+    def reduceLeft02(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.reduceLeft((a, b) -> a - b, Vector#{1}))
 
-    @test
-    def reduceLeft03(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, Vector#{1, 2}) == Some(-1)
+    @Test
+    def reduceLeft03(): Unit \ Assert =
+        assertEq(expected = Some(-1), Vector.reduceLeft((a, b) -> a - b, Vector#{1, 2}))
 
-    @test
-    def reduceLeft04(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, Vector#{1, 2, 3}) == Some(-4)
+    @Test
+    def reduceLeft04(): Unit \ Assert =
+        assertEq(expected = Some(-4), Vector.reduceLeft((a, b) -> a - b, Vector#{1, 2, 3}))
 
-    @test
-    def reduceLeft05(): Bool =
-        Vector.reduceLeft((a, b) -> a - b, Vector#{1, 2, 3, 4}) == Some(-8)
+    @Test
+    def reduceLeft05(): Unit \ Assert =
+        assertEq(expected = Some(-8), Vector.reduceLeft((a, b) -> a - b, Vector#{1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceRight01(): Bool =
-        Vector.reduceRight((a, b) -> a - b, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def reduceRight01(): Unit \ Assert =
+        assertEq(expected = None, Vector.reduceRight((a, b) -> a - b, (Vector#{}: Vector[Int32])))
 
-    @test
-    def reduceRight02(): Bool =
-        Vector.reduceRight((a, b) -> a - b, Vector#{1}) == Some(1)
+    @Test
+    def reduceRight02(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.reduceRight((a, b) -> a - b, Vector#{1}))
 
-    @test
-    def reduceRight03(): Bool =
-        Vector.reduceRight((a, b) -> a - b, Vector#{1, 2}) == Some(-1)
+    @Test
+    def reduceRight03(): Unit \ Assert =
+        assertEq(expected = Some(-1), Vector.reduceRight((a, b) -> a - b, Vector#{1, 2}))
 
-    @test
-    def reduceRight04(): Bool =
-        Vector.reduceRight((a, b) -> a - b, Vector#{1, 2, 3}) == Some(2)
+    @Test
+    def reduceRight04(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.reduceRight((a, b) -> a - b, Vector#{1, 2, 3}))
 
-    @test
-    def reduceRight05(): Bool =
-        Vector.reduceRight((a, b) -> a - b, Vector#{1, 2, 3, 4}) == Some(-2)
+    @Test
+    def reduceRight05(): Unit \ Assert =
+        assertEq(expected = Some(-2), Vector.reduceRight((a, b) -> a - b, Vector#{1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def count01(): Bool =
-        Vector.count(i -> i > 3, Vector#{}) == 0
+    @Test
+    def count01(): Unit \ Assert =
+        assertEq(expected = 0, Vector.count(i -> i > 3, Vector#{}))
 
-    @test
-    def count02(): Bool =
-        Vector.count(i -> i > 3, Vector#{1}) == 0
+    @Test
+    def count02(): Unit \ Assert =
+        assertEq(expected = 0, Vector.count(i -> i > 3, Vector#{1}))
 
-    @test
-    def count03(): Bool =
-        Vector.count(i -> i > 3, Vector#{4}) == 1
+    @Test
+    def count03(): Unit \ Assert =
+        assertEq(expected = 1, Vector.count(i -> i > 3, Vector#{4}))
 
-    @test
-    def count04(): Bool =
-        Vector.count(i -> i > 3, Vector#{1, 2}) == 0
+    @Test
+    def count04(): Unit \ Assert =
+        assertEq(expected = 0, Vector.count(i -> i > 3, Vector#{1, 2}))
 
-    @test
-    def count05(): Bool =
-        Vector.count(i -> i > 3, Vector#{1, 8}) == 1
+    @Test
+    def count05(): Unit \ Assert =
+        assertEq(expected = 1, Vector.count(i -> i > 3, Vector#{1, 8}))
 
-    @test
-    def count06(): Bool =
-        Vector.count(i -> i > 3, Vector#{8, 1}) == 1
+    @Test
+    def count06(): Unit \ Assert =
+        assertEq(expected = 1, Vector.count(i -> i > 3, Vector#{8, 1}))
 
-    @test
-    def count07(): Bool =
-        Vector.count(i -> i > 3, Vector#{6, 7}) == 2
+    @Test
+    def count07(): Unit \ Assert =
+        assertEq(expected = 2, Vector.count(i -> i > 3, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // flatten                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def flatten01(): Bool =
+    @Test
+    def flatten01(): Unit \ Assert =
         let v = Vector.flatten((Vector#{}: Vector[Vector[Int32]]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def flatten02(): Bool =
+    @Test
+    def flatten02(): Unit \ Assert =
         let v = Vector.flatten((Vector#{Vector#{}}: Vector[Vector[Int32]]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def flatten03(): Bool =
+    @Test
+    def flatten03(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{1}});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def flatten04(): Bool =
+    @Test
+    def flatten04(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{1, 2}});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def flatten05(): Bool =
+    @Test
+    def flatten05(): Unit \ Assert =
         let v = Vector.flatten((Vector#{Vector#{}, Vector#{}}: Vector[Vector[Int32]]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def flatten06(): Bool =
+    @Test
+    def flatten06(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{1}, Vector#{}});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def flatten07(): Bool =
+    @Test
+    def flatten07(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{}, Vector#{1}});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def flatten08(): Bool =
+    @Test
+    def flatten08(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{1}, Vector#{2}});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def flatten09(): Bool =
+    @Test
+    def flatten09(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{1, 2}, Vector#{3, 4, 5}});
-        v == Vector#{1, 2, 3, 4, 5}
+        assertEq(expected = Vector#{1, 2, 3, 4, 5}, v)
 
-    @test
-    def flatten10(): Bool =
+    @Test
+    def flatten10(): Unit \ Assert =
         let v = Vector.flatten(Vector#{Vector#{1}, Vector#{2, 3}, Vector#{4}});
-        v == Vector#{1, 2, 3, 4}
+        assertEq(expected = Vector#{1, 2, 3, 4}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def exists01(): Bool =
-        Vector.exists(i -> i > 3, (Vector#{}: Vector[Int32])) == false
+    @Test
+    def exists01(): Unit \ Assert =
+        assertFalse(Vector.exists(i -> i > 3, (Vector#{}: Vector[Int32])))
 
-    @test
-    def exists02(): Bool =
-        Vector.exists(i -> i > 3, Vector#{1}) == false
+    @Test
+    def exists02(): Unit \ Assert =
+        assertFalse(Vector.exists(i -> i > 3, Vector#{1}))
 
-    @test
-    def exists03(): Bool =
-        Vector.exists(i -> i > 3, Vector#{5}) == true
+    @Test
+    def exists03(): Unit \ Assert =
+        assertTrue(Vector.exists(i -> i > 3, Vector#{5}))
 
-    @test
-    def exists04(): Bool =
-        Vector.exists(i -> i > 3, Vector#{1, 2}) == false
+    @Test
+    def exists04(): Unit \ Assert =
+        assertFalse(Vector.exists(i -> i > 3, Vector#{1, 2}))
 
-    @test
-    def exists05(): Bool =
-        Vector.exists(i -> i > 3, Vector#{1, 6}) == true
+    @Test
+    def exists05(): Unit \ Assert =
+        assertTrue(Vector.exists(i -> i > 3, Vector#{1, 6}))
 
-    @test
-    def exists06(): Bool =
-        Vector.exists(i -> i > 3, Vector#{6, 1}) == true
+    @Test
+    def exists06(): Unit \ Assert =
+        assertTrue(Vector.exists(i -> i > 3, Vector#{6, 1}))
 
-    @test
-    def exists07(): Bool =
-        Vector.exists(i -> i > 3, Vector#{16, 6}) == true
+    @Test
+    def exists07(): Unit \ Assert =
+        assertTrue(Vector.exists(i -> i > 3, Vector#{16, 6}))
 
-    @test
-    def exists08(): Bool =
-        Vector.exists(i -> i > 3, Vector#{1, -9, 3}) == false
+    @Test
+    def exists08(): Unit \ Assert =
+        assertFalse(Vector.exists(i -> i > 3, Vector#{1, -9, 3}))
 
-    @test
-    def exists09(): Bool =
-        Vector.exists(i -> i > 3, Vector#{1, 9, 3}) == true
+    @Test
+    def exists09(): Unit \ Assert =
+        assertTrue(Vector.exists(i -> i > 3, Vector#{1, 9, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forAll01(): Bool =
-        Vector.forAll(i -> i > 3, (Vector#{}: Vector[Int32])) == true
+    @Test
+    def forAll01(): Unit \ Assert =
+        assertTrue(Vector.forAll(i -> i > 3, (Vector#{}: Vector[Int32])))
 
-    @test
-    def forAll02(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{1}) == false
+    @Test
+    def forAll02(): Unit \ Assert =
+        assertFalse(Vector.forAll(i -> i > 3, Vector#{1}))
 
-    @test
-    def forAll03(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{5}) == true
+    @Test
+    def forAll03(): Unit \ Assert =
+        assertTrue(Vector.forAll(i -> i > 3, Vector#{5}))
 
-    @test
-    def forAll04(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{1, 2}) == false
+    @Test
+    def forAll04(): Unit \ Assert =
+        assertFalse(Vector.forAll(i -> i > 3, Vector#{1, 2}))
 
-    @test
-    def forAll05(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{1, 6}) == false
+    @Test
+    def forAll05(): Unit \ Assert =
+        assertFalse(Vector.forAll(i -> i > 3, Vector#{1, 6}))
 
-    @test
-    def forAll06(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{6, 1}) == false
+    @Test
+    def forAll06(): Unit \ Assert =
+        assertFalse(Vector.forAll(i -> i > 3, Vector#{6, 1}))
 
-    @test
-    def forAll07(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{16, 6}) == true
+    @Test
+    def forAll07(): Unit \ Assert =
+        assertTrue(Vector.forAll(i -> i > 3, Vector#{16, 6}))
 
-    @test
-    def forAll08(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{1, -9, 3}) == false
+    @Test
+    def forAll08(): Unit \ Assert =
+        assertFalse(Vector.forAll(i -> i > 3, Vector#{1, -9, 3}))
 
-    @test
-    def forAll09(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{1, 9, 3}) == false
+    @Test
+    def forAll09(): Unit \ Assert =
+        assertFalse(Vector.forAll(i -> i > 3, Vector#{1, 9, 3}))
 
-    @test
-    def forAll10(): Bool =
-        Vector.forAll(i -> i > 3, Vector#{11, 9, 31}) == true
+    @Test
+    def forAll10(): Unit \ Assert =
+        assertTrue(Vector.forAll(i -> i > 3, Vector#{11, 9, 31}))
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filter01(): Bool =
+    @Test
+    def filter01(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def filter02(): Bool =
+    @Test
+    def filter02(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def filter03(): Bool =
+    @Test
+    def filter03(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{4});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def filter04(): Bool =
+    @Test
+    def filter04(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{1, 3});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def filter05(): Bool =
+    @Test
+    def filter05(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{1, 8});
-        v == Vector#{8}
+        assertEq(expected = Vector#{8}, v)
 
-    @test
-    def filter06(): Bool =
+    @Test
+    def filter06(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{8, 1});
-        v == Vector#{8}
+        assertEq(expected = Vector#{8}, v)
 
-    @test
-    def filter07(): Bool =
+    @Test
+    def filter07(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{8, 9});
-        v == Vector#{8, 9}
+        assertEq(expected = Vector#{8, 9}, v)
 
-    @test
-    def filter08(): Bool =
+    @Test
+    def filter08(): Unit \ Assert =
         let v = Vector.filter(i -> i > 3, Vector#{1, 4, 11, 2, -22, 17});
-        v == Vector#{4, 11, 17}
+        assertEq(expected = Vector#{4, 11, 17}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // partition                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def partition01(): Bool =
+    @Test
+    def partition01(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, (Vector#{}: Vector[Int32]));
-        (a == Vector#{}) and (b == Vector#{})
+        assertTrue((a == Vector#{}) and (b == Vector#{}))
 
-    @test
-    def partition02(): Bool =
+    @Test
+    def partition02(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1});
-        (a == Vector#{}) and (b == Vector#{1})
+        assertTrue((a == Vector#{}) and (b == Vector#{1}))
 
-    @test
-    def partition03(): Bool =
+    @Test
+    def partition03(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{4});
-        (a == Vector#{4}) and (b == Vector#{})
+        assertTrue((a == Vector#{4}) and (b == Vector#{}))
 
-    @test
-    def partition04(): Bool =
+    @Test
+    def partition04(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 2});
-        (a == Vector#{}) and (b == Vector#{1, 2})
+        assertTrue((a == Vector#{}) and (b == Vector#{1, 2}))
 
-    @test
-    def partition05(): Bool =
+    @Test
+    def partition05(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 5});
-        (a == Vector#{5}) and (b == Vector#{1})
+        assertTrue((a == Vector#{5}) and (b == Vector#{1}))
 
-    @test
-    def partition06(): Bool =
+    @Test
+    def partition06(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 1});
-        (a == Vector#{5}) and (b == Vector#{1})
+        assertTrue((a == Vector#{5}) and (b == Vector#{1}))
 
-    @test
-    def partition07(): Bool =
+    @Test
+    def partition07(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 8});
-        (a == Vector#{5, 8}) and (b == (Vector#{}: Vector[Int32]))
+        assertTrue((a == Vector#{5, 8}) and (b == (Vector#{}: Vector[Int32])))
 
-    @test
-    def partition08(): Bool =
+    @Test
+    def partition08(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{4, -3, -5, 1, 2, 16, 7, 1, 7});
-        (a == Vector#{4, 16, 7, 7}) and (b == Vector#{-3, -5, 1, 2, 1})
+        assertTrue((a == Vector#{4, 16, 7, 7}) and (b == Vector#{-3, -5, 1, 2, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
     // span                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def span01(): Bool =
+    @Test
+    def span01(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, (Vector#{}: Vector[Int32]));
-        (a == Vector#{}) and (b == Vector#{})
+        assertTrue((a == Vector#{}) and (b == Vector#{}))
 
-    @test
-    def span02(): Bool =
+    @Test
+    def span02(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1});
-        (a == Vector#{}) and (b == Vector#{1})
+        assertTrue((a == Vector#{}) and (b == Vector#{1}))
 
-    @test
-    def span03(): Bool =
+    @Test
+    def span03(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{4});
-        (a == Vector#{4}) and (b == Vector#{})
+        assertTrue((a == Vector#{4}) and (b == Vector#{}))
 
-    @test
-    def span04(): Bool =
+    @Test
+    def span04(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1, 2});
-        (a == Vector#{}) and (b == Vector#{1, 2})
+        assertTrue((a == Vector#{}) and (b == Vector#{1, 2}))
 
-    @test
-    def span05(): Bool =
+    @Test
+    def span05(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1, 5});
-        (a == Vector#{}) and (b == Vector#{1, 5})
+        assertTrue((a == Vector#{}) and (b == Vector#{1, 5}))
 
-    @test
-    def span06(): Bool =
+    @Test
+    def span06(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{5, 1});
-        (a == Vector#{5}) and (b == Vector#{1})
+        assertTrue((a == Vector#{5}) and (b == Vector#{1}))
 
-    @test
-    def span07(): Bool =
+    @Test
+    def span07(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{5, 8});
-        (a == Vector#{5, 8}) and (b == Vector#{})
+        assertTrue((a == Vector#{5, 8}) and (b == Vector#{}))
 
-    @test
-    def span08(): Bool =
+    @Test
+    def span08(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        (a == Vector#{4, 6}) and (b == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7})
+        assertTrue((a == Vector#{4, 6}) and (b == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def drop01(): Bool =
+    @Test
+    def drop01(): Unit \ Assert =
         let v = Vector.drop(-1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def drop02(): Bool =
+    @Test
+    def drop02(): Unit \ Assert =
         let v = Vector.drop(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def drop03(): Bool =
+    @Test
+    def drop03(): Unit \ Assert =
         let v = Vector.drop(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def drop04(): Bool =
+    @Test
+    def drop04(): Unit \ Assert =
         let v = Vector.drop(-1, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def drop05(): Bool =
+    @Test
+    def drop05(): Unit \ Assert =
         let v = Vector.drop(0, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def drop06(): Bool =
+    @Test
+    def drop06(): Unit \ Assert =
         let v = Vector.drop(1, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def drop07(): Bool =
+    @Test
+    def drop07(): Unit \ Assert =
         let v = Vector.drop(2, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def drop08(): Bool =
+    @Test
+    def drop08(): Unit \ Assert =
         let v = Vector.drop(0, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def drop09(): Bool =
+    @Test
+    def drop09(): Unit \ Assert =
         let v = Vector.drop(1, Vector#{1, 2});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def drop10(): Bool =
+    @Test
+    def drop10(): Unit \ Assert =
         let v = Vector.drop(2, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def drop11(): Bool =
+    @Test
+    def drop11(): Unit \ Assert =
         let v = Vector.drop(2, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{3, 4, 5, 6}
+        assertEq(expected = Vector#{3, 4, 5, 6}, v)
 
-    @test
-    def drop12(): Bool =
+    @Test
+    def drop12(): Unit \ Assert =
         let v = Vector.drop(4, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{5, 6}
+        assertEq(expected = Vector#{5, 6}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropLeft01(): Bool =
+    @Test
+    def dropLeft01(): Unit \ Assert =
         let v = Vector.dropLeft(-1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropLeft02(): Bool =
+    @Test
+    def dropLeft02(): Unit \ Assert =
         let v = Vector.dropLeft(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropLeft03(): Bool =
+    @Test
+    def dropLeft03(): Unit \ Assert =
         let v = Vector.dropLeft(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropLeft04(): Bool =
+    @Test
+    def dropLeft04(): Unit \ Assert =
         let v = Vector.dropLeft(-1, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropLeft05(): Bool =
+    @Test
+    def dropLeft05(): Unit \ Assert =
         let v = Vector.dropLeft(0, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropLeft06(): Bool =
+    @Test
+    def dropLeft06(): Unit \ Assert =
         let v = Vector.dropLeft(1, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropLeft07(): Bool =
+    @Test
+    def dropLeft07(): Unit \ Assert =
         let v = Vector.dropLeft(2, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropLeft08(): Bool =
+    @Test
+    def dropLeft08(): Unit \ Assert =
         let v = Vector.dropLeft(0, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def dropLeft09(): Bool =
+    @Test
+    def dropLeft09(): Unit \ Assert =
         let v = Vector.dropLeft(1, Vector#{1, 2});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def dropLeft10(): Bool =
+    @Test
+    def dropLeft10(): Unit \ Assert =
         let v = Vector.dropLeft(2, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropLeft11(): Bool =
+    @Test
+    def dropLeft11(): Unit \ Assert =
         let v = Vector.dropLeft(2, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{3, 4, 5, 6}
+        assertEq(expected = Vector#{3, 4, 5, 6}, v)
 
-    @test
-    def dropLeft12(): Bool =
+    @Test
+    def dropLeft12(): Unit \ Assert =
         let v = Vector.dropLeft(4, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{5, 6}
+        assertEq(expected = Vector#{5, 6}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropRight01(): Bool =
+    @Test
+    def dropRight01(): Unit \ Assert =
         let v = Vector.dropRight(-1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropRight02(): Bool =
+    @Test
+    def dropRight02(): Unit \ Assert =
         let v = Vector.dropRight(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropRight03(): Bool =
+    @Test
+    def dropRight03(): Unit \ Assert =
         let v = Vector.dropRight(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropRight04(): Bool =
+    @Test
+    def dropRight04(): Unit \ Assert =
         let v = Vector.dropRight(-1, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropRight05(): Bool =
+    @Test
+    def dropRight05(): Unit \ Assert =
         let v = Vector.dropRight(0, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropRight06(): Bool =
+    @Test
+    def dropRight06(): Unit \ Assert =
         let v = Vector.dropRight(1, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropRight07(): Bool =
+    @Test
+    def dropRight07(): Unit \ Assert =
         let v = Vector.dropRight(2, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropRight08(): Bool =
+    @Test
+    def dropRight08(): Unit \ Assert =
         let v = Vector.dropRight(0, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def dropRight09(): Bool =
+    @Test
+    def dropRight09(): Unit \ Assert =
         let v = Vector.dropRight(1, Vector#{1, 2});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropRight10(): Bool =
+    @Test
+    def dropRight10(): Unit \ Assert =
         let v = Vector.dropRight(2, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropRight11(): Bool =
+    @Test
+    def dropRight11(): Unit \ Assert =
         let v = Vector.dropRight(2, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{1, 2, 3, 4}
+        assertEq(expected = Vector#{1, 2, 3, 4}, v)
 
-    @test
-    def dropRight12(): Bool =
+    @Test
+    def dropRight12(): Unit \ Assert =
         let v = Vector.dropRight(4, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhile01(): Bool =
+    @Test
+    def dropWhile01(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhile02(): Bool =
+    @Test
+    def dropWhile02(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropWhile03(): Bool =
+    @Test
+    def dropWhile03(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{4});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhile04(): Bool =
+    @Test
+    def dropWhile04(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def dropWhile05(): Bool =
+    @Test
+    def dropWhile05(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{1, 5});
-        v == Vector#{1, 5}
+        assertEq(expected = Vector#{1, 5}, v)
 
-    @test
-    def dropWhile06(): Bool =
+    @Test
+    def dropWhile06(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{5, 1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropWhile07(): Bool =
+    @Test
+    def dropWhile07(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{5, 8});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhile08(): Bool =
+    @Test
+    def dropWhile08(): Unit \ Assert =
         let v = Vector.dropWhile(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        v == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}
+        assertEq(expected = Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileLeft                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhileLeft01(): Bool =
+    @Test
+    def dropWhileLeft01(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhileLeft02(): Bool =
+    @Test
+    def dropWhileLeft02(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropWhileLeft03(): Bool =
+    @Test
+    def dropWhileLeft03(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{4});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhileLeft04(): Bool =
+    @Test
+    def dropWhileLeft04(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def dropWhileLeft05(): Bool =
+    @Test
+    def dropWhileLeft05(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{1, 5});
-        v == Vector#{1, 5}
+        assertEq(expected = Vector#{1, 5}, v)
 
-    @test
-    def dropWhileLeft06(): Bool =
+    @Test
+    def dropWhileLeft06(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{5, 1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropWhileLeft07(): Bool =
+    @Test
+    def dropWhileLeft07(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{5, 8});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhileLeft08(): Bool =
+    @Test
+    def dropWhileLeft08(): Unit \ Assert =
         let v = Vector.dropWhileLeft(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        v == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}
+        assertEq(expected = Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhileRight                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhileRight01(): Bool =
+    @Test
+    def dropWhileRight01(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhileRight02(): Bool =
+    @Test
+    def dropWhileRight02(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropWhileRight03(): Bool =
+    @Test
+    def dropWhileRight03(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{4});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhileRight04(): Bool =
+    @Test
+    def dropWhileRight04(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def dropWhileRight05(): Bool =
+    @Test
+    def dropWhileRight05(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{1, 5});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def dropWhileRight06(): Bool =
+    @Test
+    def dropWhileRight06(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{5, 1});
-        v == Vector#{5, 1}
+        assertEq(expected = Vector#{5, 1}, v)
 
-    @test
-    def dropWhileRight07(): Bool =
+    @Test
+    def dropWhileRight07(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{5, 8});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def dropWhileRight08(): Bool =
+    @Test
+    def dropWhileRight08(): Unit \ Assert =
         let v = Vector.dropWhileRight(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        v == Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1}
+        assertEq(expected = Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // take                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def take01(): Bool =
+    @Test
+    def take01(): Unit \ Assert =
         let v = Vector.take(-1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def take02(): Bool =
+    @Test
+    def take02(): Unit \ Assert =
         let v = Vector.take(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def take03(): Bool =
+    @Test
+    def take03(): Unit \ Assert =
         let v = Vector.take(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def take04(): Bool =
+    @Test
+    def take04(): Unit \ Assert =
         let v = Vector.take(-1, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def take05(): Bool =
+    @Test
+    def take05(): Unit \ Assert =
         let v = Vector.take(0, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def take06(): Bool =
+    @Test
+    def take06(): Unit \ Assert =
         let v = Vector.take(1, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def take07(): Bool =
+    @Test
+    def take07(): Unit \ Assert =
         let v = Vector.take(2, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def take08(): Bool =
+    @Test
+    def take08(): Unit \ Assert =
         let v = Vector.take(0, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def take09(): Bool =
+    @Test
+    def take09(): Unit \ Assert =
         let v = Vector.take(1, Vector#{1, 2});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def take10(): Bool =
+    @Test
+    def take10(): Unit \ Assert =
         let v = Vector.take(2, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def take11(): Bool =
+    @Test
+    def take11(): Unit \ Assert =
         let v = Vector.take(2, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def take12(): Bool =
+    @Test
+    def take12(): Unit \ Assert =
         let v = Vector.take(4, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{1, 2, 3, 4}
+        assertEq(expected = Vector#{1, 2, 3, 4}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeLeft01(): Bool =
+    @Test
+    def takeLeft01(): Unit \ Assert =
         let v = Vector.takeLeft(-1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeLeft02(): Bool =
+    @Test
+    def takeLeft02(): Unit \ Assert =
         let v = Vector.takeLeft(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeLeft03(): Bool =
+    @Test
+    def takeLeft03(): Unit \ Assert =
         let v = Vector.takeLeft(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeLeft04(): Bool =
+    @Test
+    def takeLeft04(): Unit \ Assert =
         let v = Vector.takeLeft(-1, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeLeft05(): Bool =
+    @Test
+    def takeLeft05(): Unit \ Assert =
         let v = Vector.takeLeft(0, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeLeft06(): Bool =
+    @Test
+    def takeLeft06(): Unit \ Assert =
         let v = Vector.takeLeft(1, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def takeLeft07(): Bool =
+    @Test
+    def takeLeft07(): Unit \ Assert =
         let v = Vector.takeLeft(2, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def takeLeft08(): Bool =
+    @Test
+    def takeLeft08(): Unit \ Assert =
         let v = Vector.takeLeft(0, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeLeft09(): Bool =
+    @Test
+    def takeLeft09(): Unit \ Assert =
         let v = Vector.takeLeft(1, Vector#{1, 2});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def takeLeft10(): Bool =
+    @Test
+    def takeLeft10(): Unit \ Assert =
         let v = Vector.takeLeft(2, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def takeLeft11(): Bool =
+    @Test
+    def takeLeft11(): Unit \ Assert =
         let v = Vector.takeLeft(2, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def takeLeft12(): Bool =
+    @Test
+    def takeLeft12(): Unit \ Assert =
         let v = Vector.takeLeft(4, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{1, 2, 3, 4}
+        assertEq(expected = Vector#{1, 2, 3, 4}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeRight01(): Bool =
+    @Test
+    def takeRight01(): Unit \ Assert =
         let v = Vector.takeRight(-1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeRight02(): Bool =
+    @Test
+    def takeRight02(): Unit \ Assert =
         let v = Vector.takeRight(0, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeRight03(): Bool =
+    @Test
+    def takeRight03(): Unit \ Assert =
         let v = Vector.takeRight(1, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeRight04(): Bool =
+    @Test
+    def takeRight04(): Unit \ Assert =
         let v = Vector.takeRight(-1, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeRight05(): Bool =
+    @Test
+    def takeRight05(): Unit \ Assert =
         let v = Vector.takeRight(0, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeRight06(): Bool =
+    @Test
+    def takeRight06(): Unit \ Assert =
         let v = Vector.takeRight(1, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def takeRight07(): Bool =
+    @Test
+    def takeRight07(): Unit \ Assert =
         let v = Vector.takeRight(2, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def takeRight08(): Bool =
+    @Test
+    def takeRight08(): Unit \ Assert =
         let v = Vector.takeRight(0, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeRight09(): Bool =
+    @Test
+    def takeRight09(): Unit \ Assert =
         let v = Vector.takeRight(1, Vector#{1, 2});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def takeRight10(): Bool =
+    @Test
+    def takeRight10(): Unit \ Assert =
         let v = Vector.takeRight(2, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def takeRight11(): Bool =
+    @Test
+    def takeRight11(): Unit \ Assert =
         let v = Vector.takeRight(2, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{5, 6}
+        assertEq(expected = Vector#{5, 6}, v)
 
-    @test
-    def takeRight12(): Bool =
+    @Test
+    def takeRight12(): Unit \ Assert =
         let v = Vector.takeRight(4, Vector#{1, 2, 3, 4, 5, 6});
-        v == Vector#{3, 4, 5, 6}
+        assertEq(expected = Vector#{3, 4, 5, 6}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhile01(): Bool =
+    @Test
+    def takeWhile01(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhile02(): Bool =
+    @Test
+    def takeWhile02(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhile03(): Bool =
+    @Test
+    def takeWhile03(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{4});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def takeWhile04(): Bool =
+    @Test
+    def takeWhile04(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhile05(): Bool =
+    @Test
+    def takeWhile05(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{1, 5});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhile06(): Bool =
+    @Test
+    def takeWhile06(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{5, 1});
-        v == Vector#{5}
+        assertEq(expected = Vector#{5}, v)
 
-    @test
-    def takeWhile07(): Bool =
+    @Test
+    def takeWhile07(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{5, 8});
-        v == Vector#{5, 8}
+        assertEq(expected = Vector#{5, 8}, v)
 
-    @test
-    def takeWhile08(): Bool =
+    @Test
+    def takeWhile08(): Unit \ Assert =
         let v = Vector.takeWhile(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        v == Vector#{4, 6}
+        assertEq(expected = Vector#{4, 6}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhileLeft                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhileLeft01(): Bool =
+    @Test
+    def takeWhileLeft01(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileLeft02(): Bool =
+    @Test
+    def takeWhileLeft02(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileLeft03(): Bool =
+    @Test
+    def takeWhileLeft03(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{4});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def takeWhileLeft04(): Bool =
+    @Test
+    def takeWhileLeft04(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileLeft05(): Bool =
+    @Test
+    def takeWhileLeft05(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{1, 5});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileLeft06(): Bool =
+    @Test
+    def takeWhileLeft06(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{5, 1});
-        v == Vector#{5}
+        assertEq(expected = Vector#{5}, v)
 
-    @test
-    def takeWhileLeft07(): Bool =
+    @Test
+    def takeWhileLeft07(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{5, 8});
-        v == Vector#{5, 8}
+        assertEq(expected = Vector#{5, 8}, v)
 
-    @test
-    def takeWhileLeft08(): Bool =
+    @Test
+    def takeWhileLeft08(): Unit \ Assert =
         let v = Vector.takeWhileLeft(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        v == Vector#{4, 6}
+        assertEq(expected = Vector#{4, 6}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhileRight                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhileRight01(): Bool =
+    @Test
+    def takeWhileRight01(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileRight02(): Bool =
+    @Test
+    def takeWhileRight02(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileRight03(): Bool =
+    @Test
+    def takeWhileRight03(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{4});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def takeWhileRight04(): Bool =
+    @Test
+    def takeWhileRight04(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileRight05(): Bool =
+    @Test
+    def takeWhileRight05(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{1, 5});
-        v == Vector#{5}
+        assertEq(expected = Vector#{5}, v)
 
-    @test
-    def takeWhileRight06(): Bool =
+    @Test
+    def takeWhileRight06(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{5, 1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def takeWhileRight07(): Bool =
+    @Test
+    def takeWhileRight07(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{5, 8});
-        v == Vector#{5, 8}
+        assertEq(expected = Vector#{5, 8}, v)
 
-    @test
-    def takeWhileRight08(): Bool =
+    @Test
+    def takeWhileRight08(): Unit \ Assert =
         let v = Vector.takeWhileRight(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        v == Vector#{7}
+        assertEq(expected = Vector#{7}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // splitAt                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def splitAt01(): Bool =
+    @Test
+    def splitAt01(): Unit \ Assert =
         let v = (Vector#{}: Vector[Int32]);
-        Vector.splitAt(0, v) == (Vector#{}, Vector#{})
+        assertEq(expected = (Vector#{}, Vector#{}), Vector.splitAt(0, v))
 
-    @test
-    def splitAt02(): Bool =
+    @Test
+    def splitAt02(): Unit \ Assert =
         let v = Vector#{1, 5, 19, 3};
-        Vector.splitAt(3, v) == (Vector#{1, 5, 19}, Vector#{3})
+        assertEq(expected = (Vector#{1, 5, 19}, Vector#{3}), Vector.splitAt(3, v))
 
-    @test
-    def splitAt03(): Bool =
+    @Test
+    def splitAt03(): Unit \ Assert =
         let v = Vector#{1, 5, 19, 3};
-        Vector.splitAt(-3, v) == (Vector#{}, v)
+        assertEq(expected = (Vector#{}, v), Vector.splitAt(-3, v))
 
-    @test
-    def splitAt04(): Bool =
+    @Test
+    def splitAt04(): Unit \ Assert =
         let v = Vector#{1, 5, 19, 3};
-        Vector.splitAt(5, v) == (v, Vector#{})
+        assertEq(expected = (v, Vector#{}), Vector.splitAt(5, v))
 
     /////////////////////////////////////////////////////////////////////////////
     // groupBy                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def groupBy01(): Bool =
+    @Test
+    def groupBy01(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a > 3 or b > 8, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def groupBy02(): Bool =
+    @Test
+    def groupBy02(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1});
-        v == Vector#{Vector#{1}}
+        assertEq(expected = Vector#{Vector#{1}}, v)
 
-    @test
-    def groupBy03(): Bool =
+    @Test
+    def groupBy03(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1, 4});
-        v == Vector#{Vector#{1}, Vector#{4}}
+        assertEq(expected = Vector#{Vector#{1}, Vector#{4}}, v)
 
-    @test
-    def groupBy04(): Bool =
+    @Test
+    def groupBy04(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1, 9});
-        v == Vector#{Vector#{1, 9}}
+        assertEq(expected = Vector#{Vector#{1, 9}}, v)
 
-    @test
-    def groupBy05(): Bool =
+    @Test
+    def groupBy05(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1, 4, 7, 6, 9, 2, 4, 4, 8, 16});
-        v == Vector#{Vector#{1, 9, 16}, Vector#{4, 7, 6, 4, 4, 8}, Vector#{2}}
+        assertEq(expected = Vector#{Vector#{1, 9, 16}, Vector#{4, 7, 6, 4, 4, 8}, Vector#{2}}, v)
 
-    @test
-    def groupBy06(): Bool =
+    @Test
+    def groupBy06(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a > -6 or a*b >= 0, Vector#{-1, -11, 4, -11, 0, 8, 2, 1, -3, -24});
-        v == Vector#{Vector#{-1, -11, -11, 0, -3, -24}, Vector#{4, 8, 2, 1}}
+        assertEq(expected = Vector#{Vector#{-1, -11, -11, 0, -3, -24}, Vector#{4, 8, 2, 1}}, v)
 
-    @test
-    def groupBy07(): Bool =
+    @Test
+    def groupBy07(): Unit \ Assert =
         let v = Vector.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), Vector#{-5, 6, 11, 8, 8, -11, -1, 0, 4, -1});
-        v == Vector#{Vector#{-5, 11, -11, -1, -1}, Vector#{6}, Vector#{8, 8}, Vector#{0}, Vector#{4}}
+        assertEq(expected = Vector#{Vector#{-5, 11, -11, -1, -1}, Vector#{6}, Vector#{8, 8}, Vector#{0}, Vector#{4}}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zip01(): Bool =
+    @Test
+    def zip01(): Unit \ Assert =
         let v = Vector.zip((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def zip02(): Bool =
+    @Test
+    def zip02(): Unit \ Assert =
         let v = Vector.zip(Vector#{1}, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def zip03(): Bool =
+    @Test
+    def zip03(): Unit \ Assert =
         let v = Vector.zip((Vector#{}: Vector[Int32]), Vector#{2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def zip04(): Bool =
+    @Test
+    def zip04(): Unit \ Assert =
         let v = Vector.zip(Vector#{1}, Vector#{2});
-        v == Vector#{(1, 2)}
+        assertEq(expected = Vector#{(1, 2)}, v)
 
-    @test
-    def zip05(): Bool =
+    @Test
+    def zip05(): Unit \ Assert =
         let v = Vector.zip(Vector#{1, 3}, Vector#{2, 4});
-        v == Vector#{(1, 2), (3, 4)}
+        assertEq(expected = Vector#{(1, 2), (3, 4)}, v)
 
-    @test
-    def zip06(): Bool =
+    @Test
+    def zip06(): Unit \ Assert =
         let v = Vector.zip(Vector#{1, 3, 5}, Vector#{2, 4, 6});
-        v == Vector#{(1, 2), (3, 4), (5, 6)}
+        assertEq(expected = Vector#{(1, 2), (3, 4), (5, 6)}, v)
 
-    @test
-    def zip07(): Bool =
+    @Test
+    def zip07(): Unit \ Assert =
         let v = Vector.zip(Vector#{1, 3, 5, 7}, Vector#{2, 4, 6, 8});
-        v == Vector#{(1, 2), (3, 4), (5, 6), (7, 8)}
+        assertEq(expected = Vector#{(1, 2), (3, 4), (5, 6), (7, 8)}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // zipWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def zipWith01(): Bool =
+    @Test
+    def zipWith01(): Unit \ Assert =
         let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def zipWith02(): Bool =
+    @Test
+    def zipWith02(): Unit \ Assert =
         let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{1}, (Vector#{}: Vector[Bool]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def zipWith03(): Bool =
+    @Test
+    def zipWith03(): Unit \ Assert =
         let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, (Vector#{}: Vector[Int32]), Vector#{true});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def zipWith04(): Bool =
+    @Test
+    def zipWith04(): Unit \ Assert =
         let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{1}, Vector#{true});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def zipWith05(): Bool =
+    @Test
+    def zipWith05(): Unit \ Assert =
         let v = Vector.zipWith((a, b) -> if (b) a + 1 else a, Vector#{1}, Vector#{false});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def zipWith06(): Bool =
+    @Test
+    def zipWith06(): Unit \ Assert =
         let v = Vector.zipWith((a, b) -> if (b) a + 1 else a,
                         Vector#{1, 2, 3, 4, 5, 6, 7, 8},
                         Vector#{false, true, true, false, false, true, true, true});
-        v == Vector#{1, 3, 4, 4, 5, 7, 8, 9}
+        assertEq(expected = Vector#{1, 3, 4, 4, 5, 7, 8, 9}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // unzip                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def unzip01(): Bool =
+    @Test
+    def unzip01(): Unit \ Assert =
         let (a, b) = Vector.unzip((Vector#{}: Vector[(Unit, Unit)]));
-        (a == Vector#{}) and (b == Vector#{})
+        assertTrue((a == Vector#{}) and (b == Vector#{}))
 
-    @test
-    def unzip02(): Bool =
+    @Test
+    def unzip02(): Unit \ Assert =
         let (a, b) = Vector.unzip(Vector#{(1, true)});
-        (a == Vector#{1}) and (b == Vector#{true})
+        assertTrue((a == Vector#{1}) and (b == Vector#{true}))
 
-    @test
-    def unzip03(): Bool =
+    @Test
+    def unzip03(): Unit \ Assert =
         let (a,b) = Vector.unzip(Vector#{(1, true), (2, true)});
-        (a == Vector#{1, 2}) and (b == Vector#{true, true})
+        assertTrue((a == Vector#{1, 2}) and (b == Vector#{true, true}))
 
-    @test
-    def unzip04(): Bool =
+    @Test
+    def unzip04(): Unit \ Assert =
         let (a,b) = Vector.unzip(Vector#{(1, true), (2, true), (3, false)});
-        (a == Vector#{1, 2, 3}) and (b == Vector#{true, true, false})
+        assertTrue((a == Vector#{1, 2, 3}) and (b == Vector#{true, true, false}))
 
-    @test
-    def unzip05(): Bool =
-        fst(Vector.unzip(Vector#{(1, "1"), (2, "2"), (3, "3")})) == Vector#{1, 2, 3}
+    @Test
+    def unzip05(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2, 3}, fst(Vector.unzip(Vector#{(1, "1"), (2, "2"), (3, "3")})))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // fold2                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fold201(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])) == 4
+    @Test
+    def fold201(): Unit \ Assert =
+        assertEq(expected = 4, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])))
 
-    @test
-    def fold202(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{1}, Vector#{}) == 4
+    @Test
+    def fold202(): Unit \ Assert =
+        assertEq(expected = 4, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{1}, Vector#{}))
 
-    @test
-    def fold203(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{}, Vector#{true}) == 4
+    @Test
+    def fold203(): Unit \ Assert =
+        assertEq(expected = 4, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{}, Vector#{true}))
 
-    @test
-    def fold204(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{true}) == 6
+    @Test
+    def fold204(): Unit \ Assert =
+        assertEq(expected = 6, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{true}))
 
-    @test
-    def fold205(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{false}) == 8
+    @Test
+    def fold205(): Unit \ Assert =
+        assertEq(expected = 8, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{false}))
 
-    @test
-    def fold206(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, true}) == 9
+    @Test
+    def fold206(): Unit \ Assert =
+        assertEq(expected = 9, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, true}))
 
-    @test
-    def fold207(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, false}) == 14
+    @Test
+    def fold207(): Unit \ Assert =
+        assertEq(expected = 14, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, false}))
 
-    @test
-    def fold208(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, true}) == 14
+    @Test
+    def fold208(): Unit \ Assert =
+        assertEq(expected = 14, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, true}))
 
-    @test
-    def fold209(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, false}) == 24
+    @Test
+    def fold209(): Unit \ Assert =
+        assertEq(expected = 24, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, false}))
 
-    @test
-    def fold210(): Bool =
-        Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{6, -4, 3, 2},
-            Vector#{true, false, false, true}) == -118
+    @Test
+    def fold210(): Unit \ Assert =
+        assertEq(expected = -118, Vector.fold2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{6, -4, 3, 2},
+            Vector#{true, false, false, true}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft2                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldLeft201(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])) == 4
+    @Test
+    def foldLeft201(): Unit \ Assert =
+        assertEq(expected = 4, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])))
 
-    @test
-    def foldLeft202(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{1}, (Vector#{}: Vector[Bool])) == 4
+    @Test
+    def foldLeft202(): Unit \ Assert =
+        assertEq(expected = 4, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{1}, (Vector#{}: Vector[Bool])))
 
-    @test
-    def foldLeft203(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), Vector#{true}) == 4
+    @Test
+    def foldLeft203(): Unit \ Assert =
+        assertEq(expected = 4, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), Vector#{true}))
 
-    @test
-    def foldLeft204(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{true}) == 6
+    @Test
+    def foldLeft204(): Unit \ Assert =
+        assertEq(expected = 6, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{true}))
 
-    @test
-    def foldLeft205(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{false}) == 8
+    @Test
+    def foldLeft205(): Unit \ Assert =
+        assertEq(expected = 8, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{false}))
 
-    @test
-    def foldLeft206(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, true}) == 9
+    @Test
+    def foldLeft206(): Unit \ Assert =
+        assertEq(expected = 9, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, true}))
 
-    @test
-    def foldLeft207(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, false}) == 14
+    @Test
+    def foldLeft207(): Unit \ Assert =
+        assertEq(expected = 14, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, false}))
 
-    @test
-    def foldLeft208(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, true}) == 14
+    @Test
+    def foldLeft208(): Unit \ Assert =
+        assertEq(expected = 14, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, true}))
 
-    @test
-    def foldLeft209(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, false}) == 24
+    @Test
+    def foldLeft209(): Unit \ Assert =
+        assertEq(expected = 24, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, false}))
 
-    @test
-    def foldLeft210(): Bool =
-        Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{6, -4, 3, 2},
-            Vector#{true, false, false, true}) == -118
+    @Test
+    def foldLeft210(): Unit \ Assert =
+        assertEq(expected = -118, Vector.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Vector#{6, -4, 3, 2},
+            Vector#{true, false, false, true}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight2                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRight201(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])) == 4
+    @Test
+    def foldRight201(): Unit \ Assert =
+        assertEq(expected = 4, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Bool])))
 
-    @test
-    def foldRight202(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{1}, (Vector#{}: Vector[Bool])) == 4
+    @Test
+    def foldRight202(): Unit \ Assert =
+        assertEq(expected = 4, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{1}, (Vector#{}: Vector[Bool])))
 
-    @test
-    def foldRight203(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), Vector#{true}) == 4
+    @Test
+    def foldRight203(): Unit \ Assert =
+        assertEq(expected = 4, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Vector#{}: Vector[Int32]), Vector#{true}))
 
-    @test
-    def foldRight204(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{true}) == 6
+    @Test
+    def foldRight204(): Unit \ Assert =
+        assertEq(expected = 6, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{true}))
 
-    @test
-    def foldRight205(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{false}) == 8
+    @Test
+    def foldRight205(): Unit \ Assert =
+        assertEq(expected = 8, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{2}, Vector#{false}))
 
-    @test
-    def foldRight206(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, true}) == 9
+    @Test
+    def foldRight206(): Unit \ Assert =
+        assertEq(expected = 9, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, true}))
 
-    @test
-    def foldRight207(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, false}) == 11
+    @Test
+    def foldRight207(): Unit \ Assert =
+        assertEq(expected = 11, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{true, false}))
 
-    @test
-    def foldRight208(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, true}) == 18
+    @Test
+    def foldRight208(): Unit \ Assert =
+        assertEq(expected = 18, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, true}))
 
-    @test
-    def foldRight209(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, false}) == 24
+    @Test
+    def foldRight209(): Unit \ Assert =
+        assertEq(expected = 24, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{3, 2}, Vector#{false, false}))
 
-    @test
-    def foldRight210(): Bool =
-        Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{6, -4, 3, 2},
-            Vector#{true, false, false, true}) == -66
+    @Test
+    def foldRight210(): Unit \ Assert =
+        assertEq(expected = -66, Vector.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Vector#{6, -4, 3, 2},
+            Vector#{true, false, false, true}))
 
     /////////////////////////////////////////////////////////////////////////////
     // filterMap                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filterMap01(): Bool =
+    @Test
+    def filterMap01(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def filterMap02(): Bool =
+    @Test
+    def filterMap02(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def filterMap03(): Bool =
+    @Test
+    def filterMap03(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def filterMap04(): Bool =
+    @Test
+    def filterMap04(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def filterMap05(): Bool =
+    @Test
+    def filterMap05(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def filterMap06(): Bool =
+    @Test
+    def filterMap06(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1});
-        v == Vector#{3}
+        assertEq(expected = Vector#{3}, v)
 
-    @test
-    def filterMap07(): Bool =
+    @Test
+    def filterMap07(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6});
-        v == Vector#{4, 3}
+        assertEq(expected = Vector#{4, 3}, v)
 
-    @test
-    def filterMap08(): Bool =
+    @Test
+    def filterMap08(): Unit \ Assert =
         let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10});
-        v == Vector#{0, 1, 2, 5}
+        assertEq(expected = Vector#{0, 1, 2, 5}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // findMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findMap01(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def findMap01(): Unit \ Assert =
+        assertEq(expected = None, Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Vector#{}: Vector[Int32])))
 
-    @test
-    def findMap02(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1}) == None
+    @Test
+    def findMap02(): Unit \ Assert =
+        assertEq(expected = None, Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1}))
 
-    @test
-    def findMap03(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2}) == Some(1)
+    @Test
+    def findMap03(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2}))
 
-    @test
-    def findMap04(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3}) == None
+    @Test
+    def findMap04(): Unit \ Assert =
+        assertEq(expected = None, Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3}))
 
-    @test
-    def findMap05(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4}) == Some(2)
+    @Test
+    def findMap05(): Unit \ Assert =
+        assertEq(expected = Some(2), Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4}))
 
-    @test
-    def findMap06(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1}) == Some(3)
+    @Test
+    def findMap06(): Unit \ Assert =
+        assertEq(expected = Some(3), Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1}))
 
-    @test
-    def findMap07(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6}) == Some(4)
+    @Test
+    def findMap07(): Unit \ Assert =
+        assertEq(expected = Some(4), Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6}))
 
-    @test
-    def findMap08(): Bool =
-        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10}) == Some(0)
+    @Test
+    def findMap08(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toSet01(): Bool =
-        Vector.toSet((Vector#{}: Vector[Int32])) == Set#{}
+    @Test
+    def toSet01(): Unit \ Assert =
+        assertEq(expected = Set#{}, Vector.toSet((Vector#{}: Vector[Int32])))
 
-    @test
-    def toSet02(): Bool =
-        Vector.toSet(Vector#{1}) == Set#{1}
+    @Test
+    def toSet02(): Unit \ Assert =
+        assertEq(expected = Set#{1}, Vector.toSet(Vector#{1}))
 
-    @test
-    def toSet03(): Bool =
-        Vector.toSet(Vector#{1, 2}) == Set#{1, 2}
+    @Test
+    def toSet03(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2}, Vector.toSet(Vector#{1, 2}))
 
-    @test
-    def toSet04(): Bool =
-        Vector.toSet(Vector#{1, 1}) == Set#{1}
+    @Test
+    def toSet04(): Unit \ Assert =
+        assertEq(expected = Set#{1}, Vector.toSet(Vector#{1, 1}))
 
-    @test
-    def toSet05(): Bool =
-        Vector.toSet(Vector#{1, 2, 3}) == Set#{1, 2, 3}
+    @Test
+    def toSet05(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2, 3}, Vector.toSet(Vector#{1, 2, 3}))
 
-    @test
-    def toSet06(): Bool =
-        Vector.toSet(Vector#{1, 2, 1}) == Set#{1, 2}
+    @Test
+    def toSet06(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2}, Vector.toSet(Vector#{1, 2, 1}))
 
-    @test
-    def toSet07(): Bool =
-        Vector.toSet(Vector#{1, 1, 2}) == Set#{1, 2}
+    @Test
+    def toSet07(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2}, Vector.toSet(Vector#{1, 1, 2}))
 
-    @test
-    def toSet08(): Bool =
-        Vector.toSet(Vector#{2, 1, 2, 3, 4, 5, 6, 3, 3}) == Set#{1, 2, 3, 4, 5, 6}
+    @Test
+    def toSet08(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2, 3, 4, 5, 6}, Vector.toSet(Vector#{2, 1, 2, 3, 4, 5, 6, 3, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMap01(): Bool =
-        Vector.toMap((Vector#{}: Vector[(Int32, Bool)])) == Map#{}
+    @Test
+    def toMap01(): Unit \ Assert =
+        assertEq(expected = Map#{}, Vector.toMap((Vector#{}: Vector[(Int32, Bool)])))
 
-    @test
-    def toMap02(): Bool =
-        Vector.toMap(Vector#{(1, true)}) == Map#{1 => true}
+    @Test
+    def toMap02(): Unit \ Assert =
+        assertEq(expected = Map#{1 => true}, Vector.toMap(Vector#{(1, true)}))
 
-    @test
-    def toMap03(): Bool =
-        Vector.toMap(Vector#{(1, true), (2, false)}) == Map#{1 => true, 2 => false}
+    @Test
+    def toMap03(): Unit \ Assert =
+        assertEq(expected = Map#{1 => true, 2 => false}, Vector.toMap(Vector#{(1, true), (2, false)}))
 
-    @test
-    def toMap04(): Bool =
-        Vector.toMap(Vector#{(1, true), (1, false)}) == Map#{1 => true}
+    @Test
+    def toMap04(): Unit \ Assert =
+        assertEq(expected = Map#{1 => true}, Vector.toMap(Vector#{(1, true), (1, false)}))
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndexOf                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findIndexOf01(): Bool =
-        Vector.findIndexOf(i -> i > 2, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def findIndexOf01(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOf(i -> i > 2, (Vector#{}: Vector[Int32])))
 
-    @test
-    def findIndexOf02(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{1}) == None
+    @Test
+    def findIndexOf02(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOf(i -> i > 2, Vector#{1}))
 
-    @test
-    def findIndexOf03(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{3}) == Some(0)
+    @Test
+    def findIndexOf03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOf(i -> i > 2, Vector#{3}))
 
-    @test
-    def findIndexOf04(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{1, 2}) == None
+    @Test
+    def findIndexOf04(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOf(i -> i > 2, Vector#{1, 2}))
 
-    @test
-    def findIndexOf05(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{6, -6}) == Some(0)
+    @Test
+    def findIndexOf05(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOf(i -> i > 2, Vector#{6, -6}))
 
-    @test
-    def findIndexOf06(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{-6, 6}) == Some(1)
+    @Test
+    def findIndexOf06(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.findIndexOf(i -> i > 2, Vector#{-6, 6}))
 
-    @test
-    def findIndexOf07(): Bool =
-        Vector.findIndexOf(i -> i > 2, Vector#{6, 7}) == Some(0)
+    @Test
+    def findIndexOf07(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOf(i -> i > 2, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndexOfLeft                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findIndexOfLeft01(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def findIndexOfLeft01(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOfLeft(i -> i > 2, (Vector#{}: Vector[Int32])))
 
-    @test
-    def findIndexOfLeft02(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{1}) == None
+    @Test
+    def findIndexOfLeft02(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOfLeft(i -> i > 2, Vector#{1}))
 
-    @test
-    def findIndexOfLeft03(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{3}) == Some(0)
+    @Test
+    def findIndexOfLeft03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOfLeft(i -> i > 2, Vector#{3}))
 
-    @test
-    def findIndexOfLeft04(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{1, 2}) == None
+    @Test
+    def findIndexOfLeft04(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOfLeft(i -> i > 2, Vector#{1, 2}))
 
-    @test
-    def findIndexOfLeft05(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{6, -6}) == Some(0)
+    @Test
+    def findIndexOfLeft05(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOfLeft(i -> i > 2, Vector#{6, -6}))
 
-    @test
-    def findIndexOfLeft06(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{-6, 6}) == Some(1)
+    @Test
+    def findIndexOfLeft06(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.findIndexOfLeft(i -> i > 2, Vector#{-6, 6}))
 
-    @test
-    def findIndexOfLeft07(): Bool =
-        Vector.findIndexOfLeft(i -> i > 2, Vector#{6, 7}) == Some(0)
+    @Test
+    def findIndexOfLeft07(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOfLeft(i -> i > 2, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndexOfRight                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findIndexOfRight01(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def findIndexOfRight01(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOfRight(i -> i > 2, (Vector#{}: Vector[Int32])))
 
-    @test
-    def findIndexOfRight02(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{1}) == None
+    @Test
+    def findIndexOfRight02(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOfRight(i -> i > 2, Vector#{1}))
 
-    @test
-    def findIndexOfRight03(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{3}) == Some(0)
+    @Test
+    def findIndexOfRight03(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOfRight(i -> i > 2, Vector#{3}))
 
-    @test
-    def findIndexOfRight04(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{1, 2}) == None
+    @Test
+    def findIndexOfRight04(): Unit \ Assert =
+        assertEq(expected = None, Vector.findIndexOfRight(i -> i > 2, Vector#{1, 2}))
 
-    @test
-    def findIndexOfRight05(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{6, -6}) == Some(0)
+    @Test
+    def findIndexOfRight05(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.findIndexOfRight(i -> i > 2, Vector#{6, -6}))
 
-    @test
-    def findIndexOfRight06(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{-6, 6}) == Some(1)
+    @Test
+    def findIndexOfRight06(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.findIndexOfRight(i -> i > 2, Vector#{-6, 6}))
 
-    @test
-    def findIndexOfRight07(): Bool =
-        Vector.findIndexOfRight(i -> i > 2, Vector#{6, 7}) == Some(1)
+    @Test
+    def findIndexOfRight07(): Unit \ Assert =
+        assertEq(expected = Some(1), Vector.findIndexOfRight(i -> i > 2, Vector#{6, 7}))
 
     /////////////////////////////////////////////////////////////////////////////
     // findIndices                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findIndices01(): Bool =
+    @Test
+    def findIndices01(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def findIndices02(): Bool =
+    @Test
+    def findIndices02(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, Vector#{1});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def findIndices03(): Bool =
+    @Test
+    def findIndices03(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, Vector#{3});
-        v == Vector#{0}
+        assertEq(expected = Vector#{0}, v)
 
-    @test
-    def findIndices04(): Bool =
+    @Test
+    def findIndices04(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, Vector#{1, 2});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def findIndices05(): Bool =
+    @Test
+    def findIndices05(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, Vector#{6, -6});
-        v == Vector#{0}
+        assertEq(expected = Vector#{0}, v)
 
-    @test
-    def findIndices06(): Bool =
+    @Test
+    def findIndices06(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, Vector#{-6, 6});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def findIndices07(): Bool =
+    @Test
+    def findIndices07(): Unit \ Assert =
         let v = Vector.findIndices(i -> i > 2, Vector#{6, 7});
-        v == Vector#{0, 1}
+        assertEq(expected = Vector#{0, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def init01(): Bool =
+    @Test
+    def init01(): Unit \ Assert =
         let v = Vector.init(x -> x, 0);
-        v == (Vector#{}: Vector[Int32])
+        assertEq(expected = (Vector#{}: Vector[Int32]), v)
 
-    @test
-    def init02(): Bool =
+    @Test
+    def init02(): Unit \ Assert =
         let v = Vector.init(x -> x, -1);
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def init03(): Bool =
+    @Test
+    def init03(): Unit \ Assert =
         let v = Vector.init(x -> x, 1);
-        v == Vector#{0}
+        assertEq(expected = Vector#{0}, v)
 
-    @test
-    def init04(): Bool =
+    @Test
+    def init04(): Unit \ Assert =
         let v = Vector.init(x -> x, 2);
-        v == Vector#{0, 1}
+        assertEq(expected = Vector#{0, 1}, v)
 
-    @test
-    def init05(): Bool =
+    @Test
+    def init05(): Unit \ Assert =
         let v = Vector.init(x -> x, 50);
-        Vector.length(v) == 50
+        assertEq(expected = 50, Vector.length(v))
 
     /////////////////////////////////////////////////////////////////////////////
     // equals                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def equals01(): Bool =
+    @Test
+    def equals01(): Unit \ Assert =
         let a = (Vector#{}: Vector[Int32]);
         let b = (Vector#{}: Vector[Int32]);
-        Vector.equals(a, b) == true
+        assertTrue(Vector.equals(a, b))
 
-    @test
-    def equals02(): Bool =
+    @Test
+    def equals02(): Unit \ Assert =
         let a = (Vector#{1});
         let b = (Vector#{}: Vector[Int32]);
-        Vector.equals(a, b) == false
+        assertFalse(Vector.equals(a, b))
 
-    @test
-    def equals03(): Bool =
+    @Test
+    def equals03(): Unit \ Assert =
         let a = (Vector#{}: Vector[Int32]);
         let b = (Vector#{1});
-        Vector.equals(a, b) == false
+        assertFalse(Vector.equals(a, b))
 
-    @test
-    def equals04(): Bool =
+    @Test
+    def equals04(): Unit \ Assert =
         let a = (Vector#{1});
         let b = (Vector#{1});
-        Vector.equals(a, b) == true
+        assertTrue(Vector.equals(a, b))
 
-    @test
-    def equals05(): Bool =
+    @Test
+    def equals05(): Unit \ Assert =
         let a = (Vector#{1});
         let b = (Vector#{}: Vector[Int32]);
-        Vector.equals(a, b) == false
+        assertFalse(Vector.equals(a, b))
 
-    @test
-    def equals06(): Bool =
+    @Test
+    def equals06(): Unit \ Assert =
         let a = (Vector#{1, 2});
         let b = (Vector#{1, 2});
-        Vector.equals(a, b) == true
+        assertTrue(Vector.equals(a, b))
 
-    @test
-    def equals07(): Bool =
+    @Test
+    def equals07(): Unit \ Assert =
         let a = (Vector#{1, 2});
         let b = (Vector#{2, 1});
-        Vector.equals(a, b) == false
+        assertFalse(Vector.equals(a, b))
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let v = (Vector#{}: Vector[Int32]);
         let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
-        StringBuilder.toString(sb) == ""
+        assertEq(expected = "", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let v = Vector#{0};
         let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
-        StringBuilder.toString(sb) == "F"
+        assertEq(expected = "F", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEach03(): Bool = region rc {
+    @Test
+    def forEach03(): Unit \ Assert = region rc {
         let v = Vector#{1};
         let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
-        StringBuilder.toString(sb) == "T"
+        assertEq(expected = "T", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEach04(): Bool = region rc {
+    @Test
+    def forEach04(): Unit \ Assert = region rc {
         let v = Vector#{0, 1};
         let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEach(fn, v);
-        StringBuilder.toString(sb) == "FT"
+        assertEq(expected = "FT", StringBuilder.toString(sb))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachWithIndex01(): Bool = region rc {
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
         let v = (Vector#{}: Vector[Float32]);
         let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
-        StringBuilder.toString(sb) == ""
+        assertEq(expected = "", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEachWithIndex02(): Bool = region rc {
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
         let v = Vector#{0.0f32};
         let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
-        StringBuilder.toString(sb) == "F"
+        assertEq(expected = "F", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEachWithIndex03(): Bool = region rc {
+    @Test
+    def forEachWithIndex03(): Unit \ Assert = region rc {
         let v = Vector#{0.0f32, 0.1f32};
         let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
-        StringBuilder.toString(sb) == "FT"
+        assertEq(expected = "FT", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEachWithIndex04(): Bool = region rc {
+    @Test
+    def forEachWithIndex04(): Unit \ Assert = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32};
         let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
-        StringBuilder.toString(sb) == "FTT"
+        assertEq(expected = "FTT", StringBuilder.toString(sb))
     }
 
-    @test
-    def forEachWithIndex05(): Bool = region rc {
+    @Test
+    def forEachWithIndex05(): Unit \ Assert = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32, 0.3f32};
         let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append('T', sb) else StringBuilder.append('F', sb);
         Vector.forEachWithIndex(fn, v);
-        StringBuilder.toString(sb) == "FTTT"
+        assertEq(expected = "FTTT", StringBuilder.toString(sb))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // updateSequence                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def updateSequence01(): Bool =
+    @Test
+    def updateSequence01(): Unit \ Assert =
          let v = Vector.updateSequence(0, (Vector#{}: Vector[Int32]), (Vector#{}: Vector[Int32]));
-         v == Vector#{}
+         assertEq(expected = Vector#{}, v)
 
-    @test
-    def updateSequence02(): Bool =
+    @Test
+    def updateSequence02(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{1, 2}, Vector#{});
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def updateSequence03(): Bool =
+    @Test
+    def updateSequence03(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def updateSequence04(): Bool =
+    @Test
+    def updateSequence04(): Unit \ Assert =
         let v = Vector.updateSequence(-3, Vector#{1, 2, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def updateSequence05(): Bool =
+    @Test
+    def updateSequence05(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{1, 2, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def updateSequence06(): Bool =
+    @Test
+    def updateSequence06(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{}, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def updateSequence07(): Bool =
+    @Test
+    def updateSequence07(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{2}, Vector#{1});
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
 
-    @test
-    def updateSequence08(): Bool =
+    @Test
+    def updateSequence08(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{2}, Vector#{1});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def updateSequence09(): Bool =
+    @Test
+    def updateSequence09(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{2, 4}, Vector#{1});
-        v == Vector#{2}
+        assertEq(expected = Vector#{2}, v)
 
-    @test
-    def updateSequence10(): Bool =
+    @Test
+    def updateSequence10(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{2, 4}, Vector#{1});
-        v == Vector#{4}
+        assertEq(expected = Vector#{4}, v)
 
-    @test
-    def updateSequence11(): Bool =
+    @Test
+    def updateSequence11(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{4, 2}
+        assertEq(expected = Vector#{4, 2}, v)
 
-    @test
-    def updateSequence12(): Bool =
+    @Test
+    def updateSequence12(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{1, 3}
+        assertEq(expected = Vector#{1, 3}, v)
 
-    @test
-    def updateSequence13(): Bool =
+    @Test
+    def updateSequence13(): Unit \ Assert =
         let v = Vector.updateSequence(-2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def updateSequence14(): Bool =
+    @Test
+    def updateSequence14(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
 
-    @test
-    def updateSequence15(): Bool =
+    @Test
+    def updateSequence15(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{3}, Vector#{1, 2});
-        v == Vector#{1, 3}
+        assertEq(expected = Vector#{1, 3}, v)
 
-    @test
-    def updateSequence16(): Bool =
+    @Test
+    def updateSequence16(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{3, 4}, Vector#{1, 2});
-        v == Vector#{3, 4}
+        assertEq(expected = Vector#{3, 4}, v)
 
-    @test
-    def updateSequence17(): Bool =
+    @Test
+    def updateSequence17(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{4}, Vector#{1, 2, 3});
-        v == Vector#{4, 2, 3}
+        assertEq(expected = Vector#{4, 2, 3}, v)
 
-    @test
-    def updateSequence18(): Bool =
+    @Test
+    def updateSequence18(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{4}, Vector#{1, 2, 3});
-        v == Vector#{1, 4, 3}
+        assertEq(expected = Vector#{1, 4, 3}, v)
 
-    @test
-    def updateSequence19(): Bool =
+    @Test
+    def updateSequence19(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{4}, Vector#{1, 2, 3});
-        v == Vector#{1, 2, 4}
+        assertEq(expected = Vector#{1, 2, 4}, v)
 
-    @test
-    def updateSequence20(): Bool =
+    @Test
+    def updateSequence20(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{4, 5}, Vector#{1, 2, 3});
-        v == Vector#{4, 5, 3}
+        assertEq(expected = Vector#{4, 5, 3}, v)
 
-    @test
-    def updateSequence21(): Bool =
+    @Test
+    def updateSequence21(): Unit \ Assert =
         let v = Vector.updateSequence(1, Vector#{4, 5}, Vector#{1, 2, 3});
-        v == Vector#{1, 4, 5}
+        assertEq(expected = Vector#{1, 4, 5}, v)
 
-    @test
-    def updateSequence22(): Bool =
+    @Test
+    def updateSequence22(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{4, 5, 6}, Vector#{1, 2, 3});
-        v == Vector#{5, 6, 3}
+        assertEq(expected = Vector#{5, 6, 3}, v)
 
-    @test
-    def updateSequence23(): Bool =
+    @Test
+    def updateSequence23(): Unit \ Assert =
         let v = Vector.updateSequence(0, Vector#{4, 5, 6}, Vector#{1, 2, 3});
-        v == Vector#{4, 5, 6}
+        assertEq(expected = Vector#{4, 5, 6}, v)
 
-    @test
-    def updateSequence24(): Bool =
+    @Test
+    def updateSequence24(): Unit \ Assert =
         let v = Vector.updateSequence(2, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{1, 2, 14, 15, 16, 17, 7}
+        assertEq(expected = Vector#{1, 2, 14, 15, 16, 17, 7}, v)
 
-    @test
-    def updateSequence25(): Bool =
+    @Test
+    def updateSequence25(): Unit \ Assert =
         let v = Vector.updateSequence(-2, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{16, 17, 3, 4, 5, 6, 7}
+        assertEq(expected = Vector#{16, 17, 3, 4, 5, 6, 7}, v)
 
-    @test
-    def updateSequence26(): Bool =
+    @Test
+    def updateSequence26(): Unit \ Assert =
         let v = Vector.updateSequence(4, Vector#{14, 15, 16, 17}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{1, 2, 3, 4, 14, 15, 16}
+        assertEq(expected = Vector#{1, 2, 3, 4, 14, 15, 16}, v)
 
-    @test
-    def updateSequence27(): Bool =
+    @Test
+    def updateSequence27(): Unit \ Assert =
         let v = Vector.updateSequence(4, Vector#{14, 15}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{1, 2, 3, 4, 14, 15, 7}
+        assertEq(expected = Vector#{1, 2, 3, 4, 14, 15, 7}, v)
 
-    @test
-    def updateSequence28(): Bool =
+    @Test
+    def updateSequence28(): Unit \ Assert =
         let v = Vector.updateSequence(-1, Vector#{-1, -2, -3, -4, -5, -6, -7, -8}, Vector#{1, 2, 3, 4, 5, 6, 7});
-        v == Vector#{-2, -3, -4, -5, -6, -7, -8}
+        assertEq(expected = Vector#{-2, -3, -4, -5, -6, -7, -8}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
@@ -3802,70 +3990,70 @@ mod TestVector {
         else if (x == y) Comparison.EqualTo
         else Comparison.GreaterThan
 
-    @test
-    def sortWith01(): Bool =
+    @Test
+    def sortWith01(): Unit \ Assert =
         let v = Vector.sortWith(cmp, (Vector#{}: Vector[Int32]));
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
 
-    @test
-    def sortWith02(): Bool =
+    @Test
+    def sortWith02(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{0});
-        v == Vector#{0}
+        assertEq(expected = Vector#{0}, v)
 
-    @test
-    def sortWith03(): Bool =
+    @Test
+    def sortWith03(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{0, 1});
-        v == Vector#{0, 1}
+        assertEq(expected = Vector#{0, 1}, v)
 
-    @test
-    def sortWith04(): Bool =
+    @Test
+    def sortWith04(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{1, 0});
-        v == Vector#{0, 1}
+        assertEq(expected = Vector#{0, 1}, v)
 
-    @test
-    def sortWith05(): Bool =
+    @Test
+    def sortWith05(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{1, 1});
-        v == Vector#{1, 1}
+        assertEq(expected = Vector#{1, 1}, v)
 
-    @test
-    def sortWith06(): Bool =
+    @Test
+    def sortWith06(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{0, 1, 2, 3, 4, 5});
-        v == Vector#{0, 1, 2, 3, 4, 5}
+        assertEq(expected = Vector#{0, 1, 2, 3, 4, 5}, v)
 
-    @test
-    def sortWith07(): Bool =
+    @Test
+    def sortWith07(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{5, 4, 3, 2, 1, 0});
-        v == Vector#{0, 1, 2, 3, 4, 5}
+        assertEq(expected = Vector#{0, 1, 2, 3, 4, 5}, v)
 
-    @test
-    def sortWith08(): Bool =
+    @Test
+    def sortWith08(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{5, 3, 0, 4, 1, 2});
-        v == Vector#{0, 1, 2, 3, 4, 5}
+        assertEq(expected = Vector#{0, 1, 2, 3, 4, 5}, v)
 
-    @test
-    def sortWith09(): Bool =
+    @Test
+    def sortWith09(): Unit \ Assert =
         let v = Vector.sortWith(cmp, Vector#{2, 3, 0, 4, 1, 2});
-        v == Vector#{0, 1, 2, 2, 3, 4}
+        assertEq(expected = Vector#{0, 1, 2, 2, 3, 4}, v)
 
-    @test
-    def sortWith10(): Bool =
+    @Test
+    def sortWith10(): Unit \ Assert =
         let v = Vector.sortWith(flip(cmp), Vector#{0, 1, 2, 3, 4, 5});
-        v == Vector#{5, 4, 3, 2, 1, 0}
+        assertEq(expected = Vector#{5, 4, 3, 2, 1, 0}, v)
 
-    @test
-    def sortWith11(): Bool =
+    @Test
+    def sortWith11(): Unit \ Assert =
         let v = Vector.sortWith(flip(cmp), Vector#{5, 4, 3, 2, 1, 0});
-        v == Vector#{5, 4, 3, 2, 1, 0}
+        assertEq(expected = Vector#{5, 4, 3, 2, 1, 0}, v)
 
-    @test
-    def sortWith12(): Bool =
+    @Test
+    def sortWith12(): Unit \ Assert =
         let v = Vector.sortWith(flip(cmp), Vector#{5, 3, 0, 4, 1, 2});
-        v == Vector#{5, 4, 3, 2, 1, 0}
+        assertEq(expected = Vector#{5, 4, 3, 2, 1, 0}, v)
 
-    @test
-    def sortWith13(): Bool =
+    @Test
+    def sortWith13(): Unit \ Assert =
         let v = Vector.sortWith(flip(cmp), Vector#{2, 3, 0, 4, 1, 2});
-        v == Vector#{4, 3, 2, 2, 1, 0}
+        assertEq(expected = Vector#{4, 3, 2, 2, 1, 0}, v)
 
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
@@ -3875,41 +4063,41 @@ mod TestVector {
         Vector.sort(a) == Vector.sortWith(cmp, a)
 
 
-    @test
-    def sort01(): Bool =
-        testSortVsSortWith((Vector#{}: Vector[Int32]))
+    @Test
+    def sort01(): Unit \ Assert =
+        assertTrue(testSortVsSortWith((Vector#{}: Vector[Int32])))
 
-    @test
-    def sort02(): Bool =
-        testSortVsSortWith(Vector#{0})
+    @Test
+    def sort02(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{0}))
 
-    @test
-    def sort03(): Bool =
-        testSortVsSortWith(Vector#{0, 1})
+    @Test
+    def sort03(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{0, 1}))
 
-    @test
-    def sort04(): Bool =
-        testSortVsSortWith(Vector#{1, 0})
+    @Test
+    def sort04(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{1, 0}))
 
-    @test
-    def sort05(): Bool =
-        testSortVsSortWith(Vector#{1, 1})
+    @Test
+    def sort05(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{1, 1}))
 
-    @test
-    def sort06(): Bool =
-        testSortVsSortWith(Vector#{0, 1, 2, 3, 4, 5})
+    @Test
+    def sort06(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{0, 1, 2, 3, 4, 5}))
 
-    @test
-    def sort07(): Bool =
-        testSortVsSortWith(Vector#{5, 4, 3, 2, 1, 0})
+    @Test
+    def sort07(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{5, 4, 3, 2, 1, 0}))
 
-    @test
-    def sort08(): Bool =
-        testSortVsSortWith(Vector#{5, 3, 0, 4, 1, 2})
+    @Test
+    def sort08(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{5, 3, 0, 4, 1, 2}))
 
-    @test
-    def sort09(): Bool =
-        testSortVsSortWith(Vector#{2, 3, 0, 4, 1, 2})
+    @Test
+    def sort09(): Unit \ Assert =
+        assertTrue(testSortVsSortWith(Vector#{2, 3, 0, 4, 1, 2}))
 
     /////////////////////////////////////////////////////////////////////////////
     // sortBy                                                                  //
@@ -3920,41 +4108,41 @@ mod TestVector {
         (Vector.sortBy(x -> 4 * x + 7, a) == Vector.sort(a)) and
         (Vector.sortBy(x -> -x, a) == Vector.sortWith(flip(cmp), a))
 
-    @test
-    def sortBy01(): Bool =
-        testSortByVsSort((Vector#{}: Vector[Int32]))
+    @Test
+    def sortBy01(): Unit \ Assert =
+        assertTrue(testSortByVsSort((Vector#{}: Vector[Int32])))
 
-    @test
-    def sortBy02(): Bool =
-        testSortByVsSort(Vector#{0})
+    @Test
+    def sortBy02(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{0}))
 
-    @test
-    def sortBy03(): Bool =
-        testSortByVsSort(Vector#{0, 1})
+    @Test
+    def sortBy03(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{0, 1}))
 
-    @test
-    def sortBy04(): Bool =
-        testSortByVsSort(Vector#{1, 0})
+    @Test
+    def sortBy04(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{1, 0}))
 
-    @test
-    def sortBy05(): Bool =
-        testSortByVsSort(Vector#{1, 1})
+    @Test
+    def sortBy05(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{1, 1}))
 
-    @test
-    def sortBy06(): Bool =
-        testSortByVsSort(Vector#{0, 1, 2, 3, 4, 5})
+    @Test
+    def sortBy06(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{0, 1, 2, 3, 4, 5}))
 
-    @test
-    def sortBy07(): Bool =
-        testSortByVsSort(Vector#{5, 4, 3, 2, 1, 0})
+    @Test
+    def sortBy07(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{5, 4, 3, 2, 1, 0}))
 
-    @test
-    def sortBy08(): Bool =
-        testSortByVsSort(Vector#{5, 3, 0, 4, 1, 2})
+    @Test
+    def sortBy08(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{5, 3, 0, 4, 1, 2}))
 
-    @test
-    def sortBy09(): Bool =
-        testSortByVsSort(Vector#{2, 3, 0, 4, 1, 2})
+    @Test
+    def sortBy09(): Unit \ Assert =
+        assertTrue(testSortByVsSort(Vector#{2, 3, 0, 4, 1, 2}))
 
     enum R {
         case R({i = Int32, s = String})
@@ -3967,348 +4155,353 @@ mod TestVector {
             x#i == y#i and x#s == y#s
     }
 
-    @test
-    def sortBy10(): Bool =
+    instance ToString[R] {
+        pub def toString(r: R): String =
+            let R.R(x) = r;
+            "R({i = ${x#i}, s = \"${x#s}\"})"
+    }
+
+    @Test
+    def sortBy10(): Unit \ Assert =
         let geti = r -> {let R.R(x) = r; x#i};
-        Vector.sortBy(geti, Vector#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})})
-            == Vector#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})}
+        assertEq(expected = Vector#{R.R({i = 1, s = "B"}), R.R({i = 2, s = "A"}), R.R({i = 3, s = "C"})}, Vector.sortBy(geti, Vector#{R.R({i = 2, s = "A"}), R.R({i = 1, s = "B"}), R.R({i = 3, s = "C"})}))
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def minimumBy01(): Bool =
-        Vector.minimumBy((x, y) -> x <=> y, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def minimumBy01(): Unit \ Assert =
+        assertEq(expected = None, Vector.minimumBy((x, y) -> x <=> y, (Vector#{}: Vector[Int32])))
 
-    @test
-    def minimumBy02(): Bool =
-        Vector.minimumBy((x, y) -> x <=> y, Vector.range(0, 5)) == Some(0)
+    @Test
+    def minimumBy02(): Unit \ Assert =
+        assertEq(expected = Some(0), Vector.minimumBy((x, y) -> x <=> y, Vector.range(0, 5)))
 
-    @test
-    def minimumBy03(): Bool =
-        Vector.minimumBy((x, y) -> x <=> y, Vector.range(4, 10)) == Some(4)
+    @Test
+    def minimumBy03(): Unit \ Assert =
+        assertEq(expected = Some(4), Vector.minimumBy((x, y) -> x <=> y, Vector.range(4, 10)))
 
-    @test
-    def minimumBy04(): Bool =
-        Vector.minimumBy((x, y) -> x <=> y, Vector.range(10, 20)) == Some(10)
+    @Test
+    def minimumBy04(): Unit \ Assert =
+        assertEq(expected = Some(10), Vector.minimumBy((x, y) -> x <=> y, Vector.range(10, 20)))
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def maximumBy01(): Bool =
-        Vector.maximumBy((x, y) -> x <=> y, (Vector#{}: Vector[Int32])) == None
+    @Test
+    def maximumBy01(): Unit \ Assert =
+        assertEq(expected = None, Vector.maximumBy((x, y) -> x <=> y, (Vector#{}: Vector[Int32])))
 
-    @test
-    def maximumBy02(): Bool =
-        Vector.maximumBy((x, y) -> x <=> y, Vector.range(0, 5)) == Some(4)
+    @Test
+    def maximumBy02(): Unit \ Assert =
+        assertEq(expected = Some(4), Vector.maximumBy((x, y) -> x <=> y, Vector.range(0, 5)))
 
-    @test
-    def maximumBy03(): Bool =
-        Vector.maximumBy((x, y) -> x <=> y, Vector.range(4, 10)) == Some(9)
+    @Test
+    def maximumBy03(): Unit \ Assert =
+        assertEq(expected = Some(9), Vector.maximumBy((x, y) -> x <=> y, Vector.range(4, 10)))
 
-    @test
-    def maximumBy04(): Bool =
-        Vector.maximumBy((x, y) -> x <=> y, Vector.range(10, 20)) == Some(19)
+    @Test
+    def maximumBy04(): Unit \ Assert =
+        assertEq(expected = Some(19), Vector.maximumBy((x, y) -> x <=> y, Vector.range(10, 20)))
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool =
-        Vector.sum(Vector#{}) == 0
+    @Test
+    def sum01(): Unit \ Assert =
+        assertEq(expected = 0, Vector.sum(Vector#{}))
 
-    @test
-    def sum02(): Bool =
-        Vector.sum(Vector#{1}) == 1
+    @Test
+    def sum02(): Unit \ Assert =
+        assertEq(expected = 1, Vector.sum(Vector#{1}))
 
-    @test
-    def sum03(): Bool =
-        Vector.sum(Vector#{1, 2, 3}) == 6
+    @Test
+    def sum03(): Unit \ Assert =
+        assertEq(expected = 6, Vector.sum(Vector#{1, 2, 3}))
 
-    @test
-    def sum04(): Bool =
-        Vector.sum(Vector#{1, 2, 3, -3}) == 3
+    @Test
+    def sum04(): Unit \ Assert =
+        assertEq(expected = 3, Vector.sum(Vector#{1, 2, 3, -3}))
 
-    @test
-    def sum05(): Bool =
-        Vector.sum(Vector#{-1, -2, -3, -4}) == -10
+    @Test
+    def sum05(): Unit \ Assert =
+        assertEq(expected = -10, Vector.sum(Vector#{-1, -2, -3, -4}))
 
-    @test
-    def sum06(): Bool =
-        Vector.sum(Vector#{10, -10}) == 0
+    @Test
+    def sum06(): Unit \ Assert =
+        assertEq(expected = 0, Vector.sum(Vector#{10, -10}))
 
-    @test
-    def sum07(): Bool =
-        Vector.range(1, 101) |> Vector.sum == 5050
+    @Test
+    def sum07(): Unit \ Assert =
+        assertEq(expected = 5050, Vector.range(1, 101) |> Vector.sum)
 
     /////////////////////////////////////////////////////////////////////////////
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool =
-        Vector.sumWith(x -> x + 1, Vector#{}) == 0
+    @Test
+    def sumWith01(): Unit \ Assert =
+        assertEq(expected = 0, Vector.sumWith(x -> x + 1, Vector#{}))
 
-    @test
-    def sumWith02(): Bool =
-        Vector.sumWith(x -> x + 1, Vector#{1}) == 2
+    @Test
+    def sumWith02(): Unit \ Assert =
+        assertEq(expected = 2, Vector.sumWith(x -> x + 1, Vector#{1}))
 
-    @test
-    def sumWith03(): Bool =
-        Vector.sumWith(x -> x + 1, Vector#{1, 2, 3}) == 9
+    @Test
+    def sumWith03(): Unit \ Assert =
+        assertEq(expected = 9, Vector.sumWith(x -> x + 1, Vector#{1, 2, 3}))
 
-    @test
-    def sumWith04(): Bool =
-        Vector.sumWith(x -> x + 1, Vector#{1, 2, 3, -3}) == 7
+    @Test
+    def sumWith04(): Unit \ Assert =
+        assertEq(expected = 7, Vector.sumWith(x -> x + 1, Vector#{1, 2, 3, -3}))
 
-    @test
-    def sumWith05(): Bool =
-        Vector.sumWith(x -> x + 1, Vector#{-1, -2, -3, -4}) == -6
+    @Test
+    def sumWith05(): Unit \ Assert =
+        assertEq(expected = -6, Vector.sumWith(x -> x + 1, Vector#{-1, -2, -3, -4}))
 
-    @test
-    def sumWith06(): Bool =
-        Vector.sumWith(x -> x + 1, Vector#{10, -10}) == 2
+    @Test
+    def sumWith06(): Unit \ Assert =
+        assertEq(expected = 2, Vector.sumWith(x -> x + 1, Vector#{10, -10}))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toDelayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toDelayList01(): Bool =
-        (Vector#{}: Vector[Unit]) |> Vector.toDelayList == DelayList.empty()
+    @Test
+    def toDelayList01(): Unit \ Assert =
+        assertEq(expected = DelayList.empty(), (Vector#{}: Vector[Unit]) |> Vector.toDelayList)
 
-    @test
-    def toDelayList02(): Bool =
-        (Vector.empty(): Vector[String]) |> Vector.toDelayList == DelayList.empty()
+    @Test
+    def toDelayList02(): Unit \ Assert =
+        assertEq(expected = DelayList.empty(), (Vector.empty(): Vector[String]) |> Vector.toDelayList)
 
-    @test
-    def toDelayList03(): Bool =
-        Vector.range(-1000, 1000) |> Vector.toDelayList == DelayList.range(-1000, 1000)
+    @Test
+    def toDelayList03(): Unit \ Assert =
+        assertEq(expected = DelayList.range(-1000, 1000), Vector.range(-1000, 1000) |> Vector.toDelayList)
 
-    @test
-    def toDelayList04(): Bool =
-        Vector.range(-1000, 1000) |> Vector.toDelayList |> DelayList.toVector == Vector.range(-1000, 1000)
+    @Test
+    def toDelayList04(): Unit \ Assert =
+        assertEq(expected = Vector.range(-1000, 1000), Vector.range(-1000, 1000) |> Vector.toDelayList |> DelayList.toVector)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toChain01(): Bool =
-        Vector.toChain((Vector#{}: Vector[Unit])) == (Chain.empty(): Chain[Unit])
+    @Test
+    def toChain01(): Unit \ Assert =
+        assertEq(expected = (Chain.empty(): Chain[Unit]), Vector.toChain((Vector#{}: Vector[Unit])))
 
-    @test
-    def toChain02(): Bool =
-        Vector.toChain(Vector#{1}) == Chain.singleton(1)
+    @Test
+    def toChain02(): Unit \ Assert =
+        assertEq(expected = Chain.singleton(1), Vector.toChain(Vector#{1}))
 
-    @test
-    def toChain03(): Bool =
-        Vector.toChain(Vector#{1, 2}) == List.toChain(1 :: 2 :: Nil)
+    @Test
+    def toChain03(): Unit \ Assert =
+        assertEq(expected = List.toChain(1 :: 2 :: Nil), Vector.toChain(Vector#{1, 2}))
 
-    @test
-    def toChain04(): Bool =
-        Vector.toChain(Vector#{1, 2, 3}) == List.toChain(1 :: 2 :: 3 :: Nil)
+    @Test
+    def toChain04(): Unit \ Assert =
+        assertEq(expected = List.toChain(1 :: 2 :: 3 :: Nil), Vector.toChain(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toNec                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNec01(): Bool =
-        Vector.toNec((Vector#{}: Vector[Unit])) == None
+    @Test
+    def toNec01(): Unit \ Assert =
+        assertEq(expected = None, Vector.toNec((Vector#{}: Vector[Unit])))
 
-    @test
-    def toNec02(): Bool =
-        Vector.toNec(Vector#{1}) == Some(Nec.singleton(1))
+    @Test
+    def toNec02(): Unit \ Assert =
+        assertEq(expected = Some(Nec.singleton(1)), Vector.toNec(Vector#{1}))
 
-    @test
-    def toNec03(): Bool =
-        Vector.toNec(Vector#{1, 2}) == List.toNec(1 :: 2 :: Nil)
+    @Test
+    def toNec03(): Unit \ Assert =
+        assertEq(expected = List.toNec(1 :: 2 :: Nil), Vector.toNec(Vector#{1, 2}))
 
-    @test
-    def toNec04(): Bool =
-        Vector.toNec(Vector#{1, 2, 3}) == List.toNec(1 :: 2 :: 3 :: Nil)
+    @Test
+    def toNec04(): Unit \ Assert =
+        assertEq(expected = List.toNec(1 :: 2 :: 3 :: Nil), Vector.toNec(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterator01(): Bool = region rc {
-        (Vector#{}: Vector[Int32]) |> Vector.iterator(rc) |> Iterator.toList == Nil
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
+        assertEq(expected = Nil, (Vector#{}: Vector[Int32]) |> Vector.iterator(rc) |> Iterator.toList)
     }
 
-    @test
-    def iterator02(): Bool = region rc {
-        (Vector#{1, 2, 3}) |> Vector.iterator(rc) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, (Vector#{1, 2, 3}) |> Vector.iterator(rc) |> Iterator.toList)
     }
 
-    @test
-    def iterator03(): Bool = region rc {
-        (Vector#{1, 2, 3}) |> Vector.iterator(rc) |> Iterator.toVector == Vector#{1, 2, 3}
+    @Test
+    def iterator03(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{1, 2, 3}, (Vector#{1, 2, 3}) |> Vector.iterator(rc) |> Iterator.toVector)
     }
 
-    @test
-    def iterator04(): Bool = region rc {
-        Vector.range(-100, 100) |> Vector.iterator(rc) |> Iterator.toVector == Vector.range(-100, 100)
+    @Test
+    def iterator04(): Unit \ Assert = region rc {
+        assertEq(expected = Vector.range(-100, 100), Vector.range(-100, 100) |> Vector.iterator(rc) |> Iterator.toVector)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def join01(): Bool =
-        Vector.join(",", (Vector#{}: Vector[Int32])) == ""
+    @Test
+    def join01(): Unit \ Assert =
+        assertEq(expected = "", Vector.join(",", (Vector#{}: Vector[Int32])))
 
-    @test
-    def join02(): Bool =
-        Vector.join(",", Vector#{1}) == "1"
+    @Test
+    def join02(): Unit \ Assert =
+        assertEq(expected = "1", Vector.join(",", Vector#{1}))
 
-    @test
-    def join03(): Bool =
-        Vector.join(",", Vector#{1, 2, 3}) == "1,2,3"
+    @Test
+    def join03(): Unit \ Assert =
+        assertEq(expected = "1,2,3", Vector.join(",", Vector#{1, 2, 3}))
 
-    @test
-    def join04(): Bool =
-        Vector.join(",", Vector#{"1", "2", "3"}) == "1,2,3"
+    @Test
+    def join04(): Unit \ Assert =
+        assertEq(expected = "1,2,3", Vector.join(",", Vector#{"1", "2", "3"}))
 
     /////////////////////////////////////////////////////////////////////////////
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool =
-        Vector.joinWith(x -> "${x + 1}", ",", Vector#{}) == ""
+    @Test
+    def joinWith01(): Unit \ Assert =
+        assertEq(expected = "", Vector.joinWith(x -> "${x + 1}", ",", Vector#{}))
 
-    @test
-    def joinWith02(): Bool =
-        Vector.joinWith(x -> "${x + 1}", ",", Vector#{1}) == "2"
+    @Test
+    def joinWith02(): Unit \ Assert =
+        assertEq(expected = "2", Vector.joinWith(x -> "${x + 1}", ",", Vector#{1}))
 
-    @test
-    def joinWith03(): Bool =
-        Vector.joinWith(x -> "${x + 1}", ",", Vector#{1, 2, 3}) == "2,3,4"
+    @Test
+    def joinWith03(): Unit \ Assert =
+        assertEq(expected = "2,3,4", Vector.joinWith(x -> "${x + 1}", ",", Vector#{1, 2, 3}))
 
-    @test
-    def joinWith04(): Bool =
-        Vector.joinWith(x -> x + x, ",", Vector#{"1", "2", "3"}) == "11,22,33"
+    @Test
+    def joinWith04(): Unit \ Assert =
+        assertEq(expected = "11,22,33", Vector.joinWith(x -> x + x, ",", Vector#{"1", "2", "3"}))
 
-    @test
-    def joinWith05(): Bool =
+    @Test
+    def joinWith05(): Unit \ Assert =
         let v: Vector[Int32] = Vector#{};
         let s = Vector.joinWith(Int32.toString, ",", v);
-        s == ""
+        assertEq(expected = "", s)
 
-    @test
-    def joinWith06(): Bool =
+    @Test
+    def joinWith06(): Unit \ Assert =
         let v = Vector#{1};
         let s = Vector.joinWith(Int32.toString, ",", v);
-        s == "1"
+        assertEq(expected = "1", s)
 
-    @test
-    def joinWith07(): Bool =
+    @Test
+    def joinWith07(): Unit \ Assert =
         let v = Vector#{1, 2};
         let s = Vector.joinWith(Int32.toString, ",", v);
-        s == "1,2"
+        assertEq(expected = "1,2", s)
 
-    @test
-    def joinWith08(): Bool =
+    @Test
+    def joinWith08(): Unit \ Assert =
         let v = Vector#{1, 2, 3};
         let s = Vector.joinWith(Int32.toString, ",", v);
-        s == "1,2,3"
+        assertEq(expected = "1,2,3", s)
 
-    @test
-    def joinWith09(): Bool =
+    @Test
+    def joinWith09(): Unit \ Assert =
         let v = Vector#{1, 2, 3};
         let s = Vector.joinWith(Int32.toString, "", v);
-        s == "123"
+        assertEq(expected = "123", s)
 
-    @test
-    def joinWith10(): Bool =
+    @Test
+    def joinWith10(): Unit \ Assert =
         let v = Vector#{1, 2, 3};
         let s = Vector.joinWith(Int32.toString, "..", v);
-        s == "1..2..3"
+        assertEq(expected = "1..2..3", s)
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutList                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMutList01(): Bool = region rc {
-        MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc))
+    @Test
+    def toMutList01(): Unit \ Assert = region rc {
+        assertTrue(MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc)))
     }
 
-    @test
-    def toMutList02(): Bool = region rc {
+    @Test
+    def toMutList02(): Unit \ Assert = region rc {
         let l = MutList.empty(rc);
         MutList.push(1, l);
-        MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l)
+        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l))
     }
 
-    @test
-    def toMutList03(): Bool = region rc {
+    @Test
+    def toMutList03(): Unit \ Assert = region rc {
         let l = MutList.empty(rc);
         MutList.push(1, l);
         MutList.push(2, l);
         MutList.push(3, l);
-        MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l)
+        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l))
     }
 
-    @test
-    def toMutList04(): Bool = region rc {
-        MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100))
+    @Test
+    def toMutList04(): Unit \ Assert = region rc {
+        assertTrue(MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100)))
     }
 
-    @test
-    def toMutList05(): Bool = region rc {
+    @Test
+    def toMutList05(): Unit \ Assert = region rc {
         let l = Vector.toMutList(rc, Vector#{1, 2, 3});
         MutList.push(4, l);
-        Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4})
+        assertTrue(Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4}))
     }
 
-    @test
-    def toMutList06(): Bool = region rc {
+    @Test
+    def toMutList06(): Unit \ Assert = region rc {
         let l = Vector.toMutList(rc, Vector#{1, 2, 3});
         MutList.push(4, l);
         discard MutList.pop(l);
         discard MutList.pop(l);
         discard MutList.pop(l);
         discard MutList.pop(l);
-        Vector.equals(MutList.toVector(l), Vector#{})
+        assertTrue(Vector.equals(MutList.toVector(l), Vector#{}))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def shuffle01(): Bool \ NonDet =
+    @Test
+    def shuffle01(): Unit \ Assert + NonDet =
         let v = (Vector#{}: Vector[Int32]);
         let v1 = Vector.shuffle(v);
-        Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{}
+        assertTrue(Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{})
 
-    @test
-    def shuffle02(): Bool \ NonDet =
+    @Test
+    def shuffle02(): Unit \ Assert + NonDet =
         let v = Vector#{0};
         let v1 = Vector.shuffle(v);
-        Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0}
+        assertTrue(Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0})
 
-    @test
-    def shuffle03(): Bool \ NonDet =
+    @Test
+    def shuffle03(): Unit \ Assert + NonDet =
         let v = Vector#{0, 1, 2, 3};
         let v1 = Vector.shuffle(v);
-        Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3}
+        assertTrue(Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3})
 
-    @test
-    def shuffle04(): Bool \ NonDet =
+    @Test
+    def shuffle04(): Unit \ Assert + NonDet =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         let v1 = Vector.shuffle(v);
-        Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        assertTrue(Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 
 }

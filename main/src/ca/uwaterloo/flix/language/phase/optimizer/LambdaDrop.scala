@@ -81,12 +81,11 @@ object LambdaDrop {
     * The latter condition can be checked by the [[isHigherOrder]] predicate.
     */
   private def isDroppable(defn: MonoAst.Def)(implicit lctx: LocalContext): Boolean = {
-    if (isHigherOrder(defn)) {
-      visitExp(defn.exp)(defn.sym, lctx)
-      lctx.recursiveCalls.nonEmpty && hasConstantParameter(lctx.recursiveCalls.toList, defn.spec.fparams)
-    } else {
-      false
+    if (!isHigherOrder(defn)) {
+      return false
     }
+    visitExp(defn.exp)(defn.sym, lctx)
+    lctx.recursiveCalls.nonEmpty && hasConstantParameter(lctx.recursiveCalls.toList, defn.spec.fparams)
   }
 
   /** Returns `true` if at least one formal parameter of `defn` has an arrow type. */
@@ -146,6 +145,9 @@ object LambdaDrop {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
     case Expr.Let(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -177,10 +179,12 @@ object LambdaDrop {
           visitExp(exp2)
       }
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach {
+        case MonoAst.ExtMatchRule(_, exp1, _) =>
+          visitExp(exp1)
+      }
 
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
@@ -202,9 +206,6 @@ object LambdaDrop {
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
-
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foreach(m => visitExp(m.exp))
@@ -265,6 +266,10 @@ object LambdaDrop {
       val es = exps.map(rewriteExp)
       Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(rewriteExp)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
+
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
@@ -304,11 +309,14 @@ object LambdaDrop {
       }
       Expr.Match(e1, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      val e1 = rewriteExp(exp1)
-      val e2 = rewriteExp(exp2)
-      val e3 = rewriteExp(exp3)
-      Expr.ExtensibleMatch(label, e1, sym1, e2, sym2, e3, tpe, eff, loc)
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = rewriteExp(exp)
+      val rs = rules.map {
+        case MonoAst.ExtMatchRule(pat, exp1, loc1) =>
+          val e1 = rewriteExp(exp1)
+          MonoAst.ExtMatchRule(pat, e1, loc1)
+      }
+      Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
@@ -344,10 +352,6 @@ object LambdaDrop {
           MonoAst.HandlerRule(op, fparams, e2)
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
-
-    case Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(rewriteExp)
-      Expr.Do(op, es, tpe, eff, loc)
 
     case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
       val ms = methods.map {

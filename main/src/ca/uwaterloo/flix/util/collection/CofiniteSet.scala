@@ -50,6 +50,12 @@ sealed trait CofiniteSet[T] {
     case Compl(s) => s.isEmpty
   }
 
+  /** Returns `true` if `this` contains `x`. */
+  def contains(x: T): Boolean = this match {
+    case Set(s) => s.contains(x)
+    case Compl(s) => !s.contains(x)
+  }
+
 }
 
 object CofiniteSet {
@@ -85,9 +91,9 @@ object CofiniteSet {
     /**
       * An instance of [[CofiniteSet.SingletonValues]] for effect symbols.
       */
-    implicit object EffectSymSingletonValues extends CofiniteSet.SingletonValues[Symbol.EffectSym] {
-      override val empty: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Set(SortedSet.empty)
-      override val universe: CofiniteSet[Symbol.EffectSym] = CofiniteSet.Compl(SortedSet.empty)
+    implicit object EffSymSingletonValues extends CofiniteSet.SingletonValues[Symbol.EffSym] {
+      override val empty: CofiniteSet[Symbol.EffSym] = CofiniteSet.Set(SortedSet.empty)
+      override val universe: CofiniteSet[Symbol.EffSym] = CofiniteSet.Compl(SortedSet.empty)
     }
   }
 

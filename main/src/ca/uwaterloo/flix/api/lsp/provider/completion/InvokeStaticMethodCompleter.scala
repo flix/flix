@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.util.JvmUtils
 object InvokeStaticMethodCompleter {
 
   def getCompletions(clazz: Class[?], field: Name.Ident): List[Completion] = {
-    JvmUtils.getStaticMethods(clazz).sortBy(_.getName).map(MethodCompletion(field, _))
+    JvmUtils.getStaticMethods(clazz).sortBy(_.getName).map(MethodCompletion(field, Priority.Lowest(0), _))
   }
 
 }

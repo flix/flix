@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -28,6 +29,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -44,6 +46,7 @@ import scala.jdk.CollectionConverters.*
   *   - Check that all entry points have valid signatures, where rules differ from main, tests, and
   *     exports. If an entrypoint does not have a valid signature, its related annotation is
   *     removed to allow further compilation to continue with valid assumptions.
+  *   - Replace test functions by new functions that add default test handlers.
   *   - Replace the existing main function by a new main function that prints the returned value if
   *     its return type is not Unit.
   *   - Compute the set of all entry points and store it in Root.
@@ -55,14 +58,20 @@ object EntryPoints {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
+  /** Symbol of the Assert.runWithIO function */
+  private val RunWithIOSym = new Symbol.DefnSym(None, List("Assert"), "runWithIO", SourceLocation.Unknown)
+
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
+
     val (root2, errs2) = CheckEntryPoints.run(root1)
-    // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
-    val (root3, errs3) = WrapMain.run(root2)
-    // WrapMain might change main, so FindEntryPoints must be after.
-    val root4 = findEntryPoints(root3)
-    (root4, errs1 ++ errs2 ++ errs3)
+    // WrapTest and WrapMain assumes sensible tests, so CheckEntryPoints must run first.
+    // Notice that a main function with test annotation will be wrapped twice.
+    val root3 = WrapTest.run(root2)
+    val root4 = WrapMain.run(root3)
+    // WrapMain might change main, so findEntryPoints must be after.
+    val root5 = findEntryPoints(root4)
+    (root5, errs1 ++ errs2)
   }
 
   /**
@@ -117,6 +126,12 @@ object EntryPoints {
   /** Returns `true` if `defn` is the main function. */
   private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
     root.mainEntryPoint.contains(defn.sym)
+
+  /** Returns `true` if `defn.eff` might contain Assert. */
+  private def hasAssert(defn: TypedAst.Def): Boolean = eval(defn.spec.eff) match {
+    case Result.Ok(s) => s.contains(Symbol.Assert)
+    case Result.Err(_) => true
+  }
 
   /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
   @tailrec
@@ -182,7 +197,7 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
-          checkUnitArg(defn) ++ checkToStringOrUnitResult(defn) ++ checkPrimitiveEffect(defn)
+          checkUnitArg(defn) ++ checkToStringOrUnitResult(defn) ++ checkEffects(defn, Symbol.PrimitiveEffs)
       }
       if (errs.nonEmpty) {
         // Invalidate main and add errors.
@@ -202,7 +217,7 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
-          checkUnitArg(defn) ++ checkPrimitiveEffect(defn)
+          checkUnitArg(defn) ++ checkEffects(defn, Symbol.TestEffs)
       }
       if (errs.isEmpty) {
         defn
@@ -236,7 +251,7 @@ object EntryPoints {
         case Some(err) => List(err)
         case None =>
           // Only run these on functions without type variables.
-          checkPrimitiveEffect(defn).toList ++ checkJavaTypes(defn)
+          checkEffects(defn, Symbol.PrimitiveEffs).toList ++ checkJavaTypes(defn)
       }) ++
         checkNonRootNamespace(defn) ++
         checkPub(defn) ++
@@ -322,9 +337,9 @@ object EntryPoints {
           val traitSym = root.traits.getOrElse(unknownTraitSym, throw InternalCompilerException(s"'$unknownTraitSym' trait not found", defn.sym.loc)).sym
           val constraint = TypeConstraint.Trait(traitSym, resultType, SourceLocation.Unknown)
           val hasToString = ConstraintSolver2.solveAll(List(constraint), SubstitutionTree.empty)(Scope.Top, RigidityEnv.empty, root.traitEnv, root.eqEnv, flix) match {
-            // If we could reduce all the way, it has ToString
+            // If we could reduce all the way, it has ToString.
             case (Nil, _) => true
-            // If not, there is no ToString instance
+            // If not, there is no ToString instance.
             case (_ :: _, _) => false
           }
           if (hasToString) None
@@ -336,12 +351,15 @@ object EntryPoints {
     }
 
     /**
-      * Returns `None` if `defn` has an effect that is a subset of the set of primitive effects
-      * (e.g. `IO + Console`). Returns an error otherwise.
+      * Returns `None` if `defn` has an effect that is a subset of `allowed`.
+      *
+      * Returns `None` if `defn` has a malformed effect.
+      *
+      * Return `Some(err)` otherwise.
       */
-    private def checkPrimitiveEffect(defn: TypedAst.Def)(implicit flix: Flix): Option[EntryPointError] = {
+    private def checkEffects(defn: TypedAst.Def, allowed: SortedSet[Symbol.EffSym])(implicit flix: Flix): Option[EntryPointError] = {
       val eff = defn.spec.eff
-      isPrimitiveEffect(eff) match {
+      checkSubset(eff, allowed) match {
         case Result.Ok(true) =>
           None
         case Result.Ok(false) =>
@@ -353,58 +371,18 @@ object EntryPoints {
     }
 
     /**
-      * Returns `true` if `eff` is a subset of the primitive effects.
+      * Returns `true` if `smaller` is a subset of `larger`.
       *
-      * Returns `false` for all effects with either type variables or Error.
+      * Returns `false` for all effects containing type variables or Error.
       */
-    private def isPrimitiveEffect(eff: Type): Result[Boolean, ErrorOrMalformed.type] = {
-      eval(eff).map {
-        case s =>
-          // Check that it is a set is a subset of the primitive effects.
-          // s ⊆ prim <=> s - prim = {}
-          val primEffs = CofiniteSet.mkSet(Symbol.PrimitiveEffs)
-          CofiniteSet.difference(s, primEffs).isEmpty
+    private def checkSubset(smaller: Type, larger: SortedSet[Symbol.EffSym]): Result[Boolean, ErrorOrMalformed.type] = {
+      for (
+        s <- eval(smaller)
+      ) yield {
+        // Check that s is a subset of larger.
+        // s ⊆ larger <=> s - larger = {}
+        CofiniteSet.difference(s, CofiniteSet.mkSet(larger)).isEmpty
       }
-    }
-
-    /**
-      * Evaluates `eff` if it is well-formed and has no type variables,
-      * associated types, or error types.
-      */
-    private def eval(eff: Type): Result[CofiniteSet[Symbol.EffectSym], ErrorOrMalformed.type] = eff match {
-      case Type.Cst(tc, _) => tc match {
-        case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
-        case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
-        case TypeConstructor.Effect(sym) => Result.Ok(CofiniteSet.mkSet(sym))
-        case _ => Result.Err(ErrorOrMalformed)
-      }
-      case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
-        Result.mapN(eval(x0)) {
-          case x => CofiniteSet.complement(x)
-        }
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteSet.union(x, y)
-        }
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteSet.intersection(x, y)
-        }
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteSet.difference(x, y)
-        }
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
-        Result.mapN(eval(x0), eval(y0)) {
-          case (x, y) => CofiniteSet.xor(x, y)
-        }
-      case Type.Alias(_, _, tpe, _) => eval(tpe)
-      case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
-      case Type.Apply(_, _, _) => Result.Err(ErrorOrMalformed)
-      case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
-      case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
-      case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
-      case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
     }
 
     /** Returns an error if `defn` is in the root namespace. */
@@ -506,13 +484,13 @@ object EntryPoints {
       *   - Returns Unit or has a return type with ToString defined
       *   - Has a valid signature (without type variables, etc.)
       */
-    def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
+    def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
       root.mainEntryPoint.map(root.defs(_)) match {
         case Some(main0: TypedAst.Def) =>
           isUnitType(main0.spec.retTpe) match {
             case Result.Ok(true) =>
               // main doesn't need a wrapper.
-              (root, Nil)
+              root
             case Result.Ok(false) =>
               // main needs a wrapper.
               val main = mkEntryPoint(main0, root)
@@ -520,15 +498,15 @@ object EntryPoints {
                 defs = root.defs + (main.sym -> main),
                 mainEntryPoint = Some(main.sym)
               )
-              (root1, Nil)
+              root1
             case Result.Err(ErrorOrMalformed) =>
               // Do not report an error, since previous phases should have done already.
-              (root, Nil)
+              root
           }
 
         case Some(_) | None =>
           // Main doesn't need a wrapper or no main exists.
-          (root, Nil)
+          root
       }
     }
 
@@ -539,7 +517,6 @@ object EntryPoints {
       * {{{
       *   def mainFunc(): tpe \ ef = exp
       *
-      *   //
       *   def main$(): Unit \ ef + IO = println(main())
       * }}}
       */
@@ -559,7 +536,6 @@ object EntryPoints {
         tparams = Nil,
         fparams = List(TypedAst.FormalParam(
           TypedAst.Binder(argSym, argType),
-          Modifiers.Empty,
           argType,
           TypeSource.Ascribed,
           SourceLocation.Unknown)
@@ -577,10 +553,10 @@ object EntryPoints {
       val mainArg = TypedAst.Expr.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
       val mainReturnType = mainArrowType.arrowResultType
       val mainEffect = mainArrowType.arrowEffectType
-      // `mainFunc()`
-      val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), mainArrowType, mainReturnType, mainEffect, SourceLocation.Unknown)
+      // `mainFunc()`.
+      val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), List.empty, mainArrowType, mainReturnType, mainEffect, SourceLocation.Unknown)
 
-      // `println(mainFunc())`
+      // `println(mainFunc())`.
       val printSym = DefSymUse(root.defs(new Symbol.DefnSym(None, Nil, "println", SourceLocation.Unknown)).sym, SourceLocation.Unknown)
       val printArg = mainCall
       val printArgType = mainCall.tpe
@@ -588,11 +564,83 @@ object EntryPoints {
       val printEffect = Type.IO
       val printArrowType = Type.mkArrowWithEffect(printArgType, printEffect, printReturnType, SourceLocation.Unknown)
       val printCallEffect = Type.mkUnion(printEffect, printArg.eff, SourceLocation.Unknown)
-      val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
+      val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
 
       val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
       TypedAst.Def(sym, spec, printCall, SourceLocation.Unknown)
+    }
+
+  }
+
+  private object WrapTest {
+
+    /**
+      * WrapTest takes a root and returns a new root where the tests' definitions
+      * have been wrapped in a default handler for any extra non-primitive effects
+      * (eg. Assert)
+      *
+      * From previous phases we know that each test function:
+      *   - Takes Unit as an argument
+      *   - Has a valid signature (without type variables, etc.)
+      *
+      */
+    def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+
+      val defsWithDefaultAssertHandler = ParOps.parMapValues(root.defs)(
+        defn => if (isTest(defn) && hasAssert(defn)) wrapDefWithAssertHandler(defn, root) else defn
+      )
+      root.copy(defs = defsWithDefaultAssertHandler)
+    }
+
+    /**
+      * Takes a test function and creates a new test function with a
+      * default Assert handler by using Assert.runWithIO.
+      *
+      * Takes
+      * {{{
+      * def f(arg1: tpe1, ...): tpe \ ef = exp
+      * }}}
+      * Returns
+      * {{{
+      * def f(arg1: tpe1, ...): tpe \ IO + Sys + (ef - Assert) = Assert.runWithIO(_ -> exp)
+      * }}}
+      */
+    private def wrapDefWithAssertHandler(currentDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+      // Create synthetic locations.
+      val syntheticEffLocation = currentDef.spec.eff.loc.copy(isReal = false)
+      val syntheticBaseTypeLocation = currentDef.spec.declaredScheme.base.loc.copy(isReal = false)
+      val syntheticExpLocation = currentDef.exp.loc.copy(isReal = false)
+      // The new type is the same as the wrapped test with an effect set of
+      // `IO + Sys + (eff - Assert)` where `eff` is the effect set of the previous definition.
+      val eff = Type.mkUnion(Type.IO, Type.mkDifference(currentDef.spec.eff, Type.Assert, syntheticEffLocation)
+        , syntheticEffLocation)
+      val tpe = Type.mkCurriedArrowWithEffect(currentDef.spec.fparams.map(_.tpe), eff, currentDef.spec.retTpe, syntheticBaseTypeLocation)
+      val spec = currentDef.spec.copy(
+        declaredScheme = currentDef.spec.declaredScheme.copy(base = tpe),
+        eff = eff,
+      )
+      // Get Assert.runWithIO symbol use.
+      val runWithIODef = root.defs(RunWithIOSym)
+      val runWithIOSymUse = DefSymUse(runWithIODef.sym, runWithIODef.loc)
+      // Create _ -> exp.
+      val innerLambda = TypedAst.Expr.Lambda(TypedAst.FormalParam(
+        TypedAst.Binder(Symbol.freshVarSym("_", FormalParam, syntheticExpLocation), Type.Unit),
+        Type.Unit,
+        TypeSource.Inferred,
+        syntheticExpLocation
+      ),
+        currentDef.exp,
+        Type.mkArrowWithEffect(Type.Unit, currentDef.spec.eff, currentDef.spec.retTpe, syntheticExpLocation),
+        syntheticExpLocation
+      )
+      // Create the instantiated type of runWithIO.
+      val runWithIOArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, currentDef.spec.retTpe, syntheticExpLocation)
+      // Create Assert.runWithIO(_ -> exp).
+      val runWithIOCall = TypedAst.Expr.ApplyDef(runWithIOSymUse, List(innerLambda), List(innerLambda.tpe), runWithIOArrowType, currentDef.spec.retTpe, eff, syntheticExpLocation)
+
+      currentDef.copy(spec = spec, exp = runWithIOCall)
+
     }
 
   }
@@ -605,6 +653,46 @@ object EntryPoints {
     }
     val entryPoints = s.toSet
     root.copy(entryPoints = entryPoints)
+  }
+
+  /**
+    * Evaluates `eff` if it is well-formed and has no type variables,
+    * associated types, or error types.
+    */
+  private def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], ErrorOrMalformed.type] = eff match {
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
+      case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
+      case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
+      case _ => Result.Err(ErrorOrMalformed)
+    }
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
+      Result.mapN(eval(x0)) {
+        case x => CofiniteSet.complement(x)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.union(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.intersection(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.difference(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.xor(x, y)
+      }
+    case Type.Alias(_, _, tpe, _) => eval(tpe)
+    case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.Apply(_, _, _) => Result.Err(ErrorOrMalformed)
+    case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+    case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
+    case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
   }
 
 }

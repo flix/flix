@@ -29,29 +29,40 @@ sealed trait Symbol
 object Symbol {
 
   /**
+    * The Assert effect.
+    */
+  val Assert: EffSym = mkEffSym(Name.RootNS, Ident("Assert", SourceLocation.Unknown))
+
+  /**
     * The primitive effects defined in the Prelude.
     */
-  val Chan: EffectSym = mkEffectSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
-  val Env: EffectSym = mkEffectSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
-  val Exec: EffectSym = mkEffectSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val FsRead: EffectSym = mkEffectSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
-  val FsWrite: EffectSym = mkEffectSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
-  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
-  val Net: EffectSym = mkEffectSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
-  val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
-  val Sys: EffectSym = mkEffectSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
+  val Chan: EffSym = mkEffSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
+  val Env: EffSym = mkEffSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
+  val Exec: EffSym = mkEffSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
+  val FsRead: EffSym = mkEffSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
+  val FsWrite: EffSym = mkEffSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
+  val IO: EffSym = mkEffSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
+  val Net: EffSym = mkEffSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
+  val NonDet: EffSym = mkEffSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
+  val Sys: EffSym = mkEffSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
     * The set of all primitive effects defined in the Prelude.
     */
-  val PrimitiveEffs: SortedSet[EffectSym] = SortedSet.from(List(
+  val PrimitiveEffs: SortedSet[EffSym] = SortedSet.from(List(
     Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
   ))
 
   /**
+    * The set of effects allowed in tests.
+    */
+  val TestEffs: SortedSet[EffSym] =  PrimitiveEffs + Assert
+
+
+  /**
     * Returns `true` if the given effect symbol is a primitive effect.
     */
-  def isPrimitiveEff(sym: EffectSym): Boolean = sym match {
+  def isPrimitiveEff(sym: EffSym): Boolean = sym match {
     case Chan => true
     case Env => true
     case Exec => true
@@ -69,7 +80,7 @@ object Symbol {
     *
     * The String must be a valid name of a primitive effect.
     */
-  def parsePrimitiveEff(s: String): Symbol.EffectSym = s match {
+  def parsePrimitiveEff(s: String): Symbol.EffSym = s match {
     case "Chan" => Chan
     case "Env" => Env
     case "Exec" => Exec
@@ -192,8 +203,8 @@ object Symbol {
   }
 
   /**
-   * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
-   */
+    * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
+    */
   def mkStructSym(ns: NName, ident: Ident): StructSym = {
     new StructSym(ns.parts, ident.name, ident.loc)
   }
@@ -221,10 +232,10 @@ object Symbol {
   }
 
   /**
-    * Returns the struct field symbol for the given name `name` which has position `idx` in the given struct `struct`
+    * Returns the struct field symbol for `name`.
     */
-  def mkStructFieldSym(struct: Symbol.StructSym, idx: Int, name: Name.Label): StructFieldSym = {
-    new StructFieldSym(struct, name.name, idx, name.loc)
+  def mkStructFieldSym(struct: Symbol.StructSym, name: Name.Label): StructFieldSym = {
+    new StructFieldSym(struct, name.name, name.loc)
   }
 
   /**
@@ -301,22 +312,22 @@ object Symbol {
   /**
     * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkEffectSym(ns: NName, ident: Ident): EffectSym = {
-    new EffectSym(ns.parts, ident.name, ident.loc)
+  def mkEffSym(ns: NName, ident: Ident): EffSym = {
+    new EffSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
-   * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
-   */
-  def mkEffectSym(fqn: String): EffectSym = split(fqn) match {
-      case None => new EffectSym(Nil, fqn, SourceLocation.Unknown)
-      case Some((ns, name)) => new EffectSym(ns, name, SourceLocation.Unknown)
-    }
+    * Returns the effect symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkEffSym(fqn: String): EffSym = split(fqn) match {
+    case None => new EffSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EffSym(ns, name, SourceLocation.Unknown)
+  }
 
   /**
     * Returns the operation symbol for the given name `ident` in the effect associated with the given effect symbol `effectSym`.
     */
-  def mkOpSym(effectSym: EffectSym, ident: Name.Ident): OpSym = {
+  def mkOpSym(effectSym: EffSym, ident: Name.Ident): OpSym = {
     new OpSym(effectSym, ident.name, ident.loc)
   }
 
@@ -332,9 +343,11 @@ object Symbol {
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
 
     /**
-      * The internal stack offset. Computed during variable numbering.
+      * The internal stack offset. Computed by [[ca.uwaterloo.flix.language.phase.VarOffsets]].
+      *
+      * Note: We do not use an `Option` here because there are many `VarSym`s and this wastes a lot of memory.
       */
-    private var stackOffset: Option[Int] = None
+    private var stackOffset: Int = -1
 
     /**
       * Returns `true` if `this` symbol is a wildcard.
@@ -349,18 +362,23 @@ object Symbol {
       *
       * Throws [[InternalCompilerException]] if the stack offset has not been set.
       */
-    def getStackOffset(localOffset: Int): Int = stackOffset match {
-      case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      case Some(offset) => offset + localOffset
+    def getStackOffset(localOffset: Int): Int = {
+      if (stackOffset == -1) {
+        throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
+      } else {
+        stackOffset + localOffset
+      }
     }
 
     /**
       * Sets the internal stack offset to given argument.
       */
-    def setStackOffset(offset: Int): Unit = stackOffset match {
-      case None => stackOffset = Some(offset)
-      case Some(_) =>
+    def setStackOffset(offset: Int): Unit = {
+      if (stackOffset != -1) {
         throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
+      } else {
+        stackOffset = offset
+      }
     }
 
     /**
@@ -531,8 +549,8 @@ object Symbol {
   }
 
   /**
-   * Struct Symbol.
-   */
+    * Struct Symbol.
+    */
   final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
     /**
       * Returns the name of `this` symbol.
@@ -623,31 +641,31 @@ object Symbol {
   }
 
   /**
-   * Struct Field Symbol.
-   */
-  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val idx: Int, val loc: SourceLocation) extends Symbol with QualifiedSym {
+    * Struct Field Symbol.
+    */
+  final class StructFieldSym(val structSym: Symbol.StructSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
 
     /**
-     * Returns `true` if this symbol is equal to `that` symbol.
-     */
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name && this.idx == that.idx
+      case that: StructFieldSym => this.structSym == that.structSym && this.name == that.name
       case _ => false
     }
 
     /**
-     * Returns the hash code of this symbol.
-     */
-    override val hashCode: Int = Objects.hash(structSym, name, idx)
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = Objects.hash(structSym, name)
 
     /**
-     * Human readable representation.
-     */
+      * Human readable representation.
+      */
     override def toString: String = structSym.toString + "." + name
 
     /**
-     * The symbol's namespace
-     */
+      * The symbol's namespace
+      */
     def namespace: List[String] = structSym.namespace :+ structSym.name
   }
 
@@ -862,7 +880,7 @@ object Symbol {
   /**
     * Effect symbol.
     */
-  final class EffectSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffectSym] with Symbol with QualifiedSym {
+  final class EffSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Ordered[EffSym] with Symbol with QualifiedSym {
 
     /**
       * Returns the source of `this`.
@@ -873,7 +891,7 @@ object Symbol {
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EffectSym => this.namespace == that.namespace && this.name == that.name
+      case that: EffSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
@@ -885,7 +903,7 @@ object Symbol {
     /**
       * Compares `this` and `that` effect sym.
       */
-    override def compare(that: EffectSym): Int = {
+    override def compare(that: EffSym): Int = {
       val s1 = this.namespace.mkString(".") + "." + this.name
       val s2 = that.namespace.mkString(".") + "." + that.name
       s1.compare(s2)
@@ -900,7 +918,7 @@ object Symbol {
   /**
     * Effect Operation Symbol.
     */
-  final class OpSym(val eff: Symbol.EffectSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
+  final class OpSym(val eff: Symbol.EffSym, val name: String, val loc: SourceLocation) extends Symbol with QualifiedSym {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

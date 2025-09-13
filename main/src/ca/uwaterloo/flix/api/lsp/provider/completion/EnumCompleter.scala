@@ -31,12 +31,15 @@ object EnumCompleter {
     if (qn.namespace.nonEmpty)
       root.enums.values.collect {
         case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = true) =>
-          EnumCompletion(enum, range, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
+          val priority = Priority.Lower(0)
+          EnumCompletion(enum, range, priority, ap, qualified = true, inScope = true, withTypeParameters = withTypeParameters)
       }
     else
       root.enums.values.collect({
         case enum if CompletionUtils.isAvailable(enum) && CompletionUtils.matchesName(enum.sym, qn, qualified = false) =>
-          EnumCompletion(enum, range, ap, qualified = false, inScope = inScope(enum, scp), withTypeParameters = withTypeParameters)
+          val s = inScope(enum, scp)
+          val priority = if (s) Priority.High(0) else Priority.Lower(0)
+          EnumCompletion(enum, range, priority, ap, qualified = false, inScope = s, withTypeParameters = withTypeParameters)
       })
   }
 

@@ -29,38 +29,38 @@ mod Test.Handler.Gen.Bool {
 
     @Test
     def testSample01(): Bool =
-        Assert.eq(Nil, sample(0))
+        Nil == sample(0)
 
     @Test
     def testSample02(): Bool =
-        Assert.eq(true :: Nil, sample(1))
+        true :: Nil == sample(1)
 
     @Test
     def testSample03(): Bool =
-        Assert.eq(true :: false :: Nil, sample(2))
+        true :: false :: Nil == sample(2)
 
     @Test
     def testSample04(): Bool =
-        Assert.eq(true :: false :: true :: Nil, sample(3))
+        true :: false :: true :: Nil == sample(3)
 
     @Test
     def testSample05(): Bool =
-        Assert.eq(true :: false :: true :: false :: Nil, sample(4))
+        true :: false :: true :: false :: Nil == sample(4)
 
     @Test
     def testSample06(): Bool =
-        Assert.eq(true :: false :: true :: false :: true :: Nil, sample(5))
+        true :: false :: true :: false :: true :: Nil == sample(5)
 
     @Test
     def testSample07(): Bool =
-        Assert.eq(true :: false :: true :: false :: true :: false :: Nil, sample(6))
+        true :: false :: true :: false :: true :: false :: Nil == sample(6)
 
     @Test
     def testSample08(): Bool =
-        Assert.eq(range(0, 10), sample(10))
+        range(0, 10) == sample(10)
 
     @Test
     def testSample09(): Bool =
-        Assert.eq(range(0, 100), sample(100))
+        range(0, 100) == sample(100)
 
 }

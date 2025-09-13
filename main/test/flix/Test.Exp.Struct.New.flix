@@ -137,6 +137,13 @@ mod Test.Exp.Struct.New {
     @test
     def testEmptyStruct04(): Unit =
         region rc {
+            new TwoEmpty @ rc {two_b = new Empty @ rc {}, two_a = new Empty @ rc {}};
+            ()
+        }
+
+    @test
+    def testEmptyStruct05(): Unit =
+        region rc {
             new EmptyA @ rc { emptyb = new EmptyB @ rc { b = new EmptyC @ rc { c = new Empty @ rc {} } } };
             ()
         }
@@ -172,14 +179,28 @@ mod Test.Exp.Struct.New {
     @test
     def testStructLiteral05(): Unit =
         region rc {
-            new TwoInts @ rc { x = 0, y = 0 };
+            new Cowboy @ rc { cowboy = true, cowboy_lstName = "Luke", cowboy_age = 42, cowboy_fstName = "Lucky" };
             ()
         }
 
     @test
     def testStructLiteral06(): Unit =
         region rc {
+            new TwoInts @ rc { x = 0, y = 0 };
+            ()
+        }
+
+    @test
+    def testStructLiteral07(): Unit =
+        region rc {
             new ThreeInts @ rc { three_x = 0, three_y = 0, three_z = 0 };
+            ()
+        }
+
+    @test
+    def testStructLiteral08(): Unit =
+        region rc {
+            new ThreeInts @ rc { three_y = 0, three_x = 0, three_z = 0 };
             ()
         }
 
@@ -262,6 +283,27 @@ mod Test.Exp.Struct.New {
                 left = Some(innernode),
                 right = Some(innernode),
                 value = 3
+            };
+            ()
+        }
+
+    @test
+    def binaryTree04(): Unit =
+        region rc {
+            let leaf = new BinaryTree @ rc {
+                right = None,
+                left = None,
+                value = 3
+            };
+            let innernode = new BinaryTree @ rc {
+                left = Some(leaf),
+                value = 3,
+                right = Some(leaf)
+            };
+            new BinaryTree @ rc {
+                value = 3,
+                right = Some(innernode),
+                left = Some(innernode)
             };
             ()
         }

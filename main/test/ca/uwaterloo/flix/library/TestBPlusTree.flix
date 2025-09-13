@@ -1,21 +1,5 @@
-/*
- * Copyright 2025 Casper Dalgaard Nielsen
- *                Adam Yasser Tallouzi
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestBPlusTree {
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail};
     import java.lang.Object
     import java.util.Objects
     use Array.sameElements
@@ -23,6 +7,11 @@ mod TestBPlusTree {
 
     def listToMap(l: List[(k, v)]): Map[k, v] with Order[k] =
         List.foldLeft(acc -> p -> let (x, y) = p; Map.insert(x, y, acc), Map#{}, l)
+
+    def preferSome(l: Option[Int32], r: Option[Int32]): Option[Int32] = match l {
+        case None => r
+        case Some(_) => l
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // Test concurrency                                                        //
@@ -42,6 +31,8 @@ mod TestBPlusTree {
         repeatNInternal(callNum, true)
 
     def totalInsertNum(): Int64 = 300_000i64
+
+    def totalInsertNumInt32(): Int32 = 300_000
 
     ///
     /// `gen` and `inserted` are the functions that generate the inserted values.
@@ -168,123 +159,165 @@ mod TestBPlusTree {
     }
 
     // Large concurrent insertion test-cases
-    @test
-    def concurrency01(): Bool \ IO + NonDet = concurrencyRandomInserts(10, totalInsertNum())
+    @Test
+    def concurrency01(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInserts(10, totalInsertNum()))
 
-    @test
-    def concurrency02(): Bool \ IO + NonDet = concurrencyRandomInserts(20, totalInsertNum())
+    @Test
+    def concurrency02(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInserts(20, totalInsertNum()))
 
-    @test
-    def concurrency03(): Bool \ IO + NonDet = concurrencyRandomInserts(30, totalInsertNum())
+    @Test
+    def concurrency03(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInserts(30, totalInsertNum()))
 
-    @test
-    def concurrency04(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(10, totalInsertNum(), 10_000i64)
+    @Test
+    def concurrency04(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClamped(10, totalInsertNum(), 10_000i64))
 
-    @test
-    def concurrency05(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(30, totalInsertNum(), 10_000i64)
+    @Test
+    def concurrency05(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClamped(30, totalInsertNum(), 10_000i64))
 
-    @test
-    def concurrency06(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(20, totalInsertNum(), 10_000i64)
+    @Test
+    def concurrency06(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClamped(20, totalInsertNum(), 10_000i64))
 
-    @test
-    def concurrency07(): Bool \ IO + NonDet = concurrencyRandomInsertsClamped(40, totalInsertNum(), 100_000i64)
+    @Test
+    def concurrency07(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClamped(40, totalInsertNum(), 100_000i64))
 
-    @test
-    def concurrency08(): Bool \ IO + NonDet = concurrencyLockStep(10, totalInsertNum())
+    @Test
+    def concurrency08(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyLockStep(10, totalInsertNum()))
 
-    @test
-    def concurrency09(): Bool \ IO + NonDet = concurrencyLockStep(30, totalInsertNum())
+    @Test
+    def concurrency09(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyLockStep(30, totalInsertNum()))
 
-    @test
-    def concurrency10(): Bool \ IO + NonDet = concurrencyRandomInsertsIntermittentMemberOf(10, totalInsertNum(), 10i64)
+    @Test
+    def concurrency10(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsIntermittentMemberOf(10, totalInsertNum(), 10i64))
 
-    @test
-    def concurrency11(): Bool \ IO + NonDet = concurrencyRandomInsertsIntermittentMemberOf(20, totalInsertNum(), 10i64)
+    @Test
+    def concurrency11(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsIntermittentMemberOf(20, totalInsertNum(), 10i64))
 
-    @test
-    def concurrency12(): Bool \ IO + NonDet = concurrencyRandomInsertsIntermittentMemberOf(30, totalInsertNum(), 10i64)
+    @Test
+    def concurrency12(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsIntermittentMemberOf(30, totalInsertNum(), 10i64))
 
-    @test
-    def concurrency13(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(10, totalInsertNum(), 10_000i64, 10i64)
+    @Test
+    def concurrency13(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClampedIntermittentMemberOf(10, totalInsertNum(), 10_000i64, 10i64))
 
-    @test
-    def concurrency14(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(30, totalInsertNum(), 10_000i64, 10i64)
+    @Test
+    def concurrency14(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClampedIntermittentMemberOf(30, totalInsertNum(), 10_000i64, 10i64))
 
-    @test
-    def concurrency15(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(20, totalInsertNum(), 10_000i64, 10i64)
+    @Test
+    def concurrency15(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClampedIntermittentMemberOf(20, totalInsertNum(), 10_000i64, 10i64))
 
-    @test
-    def concurrency16(): Bool \ IO + NonDet = concurrencyRandomInsertsClampedIntermittentMemberOf(40, totalInsertNum(), 100_000i64, 10i64)
+    @Test
+    def concurrency16(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyRandomInsertsClampedIntermittentMemberOf(40, totalInsertNum(), 100_000i64, 10i64))
 
-    @test
-    def concurrency17(): Bool \ IO + NonDet = concurrencyLockStepIntermittentMemberOf(10, totalInsertNum(), 10i64)
+    @Test
+    def concurrency17(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyLockStepIntermittentMemberOf(10, totalInsertNum(), 10i64))
 
-    @test
-    def concurrency18(): Bool \ IO + NonDet = concurrencyLockStepIntermittentMemberOf(30, totalInsertNum(), 10i64)
+    @Test
+    def concurrency18(): Unit \ Assert + IO + NonDet =
+        assertTrue(concurrencyLockStepIntermittentMemberOf(30, totalInsertNum(), 10i64))
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOfPair                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def memberOfPair01(): Bool = region rc {
+    @Test
+    def memberOfPair01(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        not BPlusTree.memberOfPair(0, 0, tree) and
-            not BPlusTree.memberOfPair(0, 1, tree) and
-            not BPlusTree.memberOfPair(1, 0, tree)
+        assertFalse(BPlusTree.memberOfPair(0, 0, tree));
+        assertFalse(BPlusTree.memberOfPair(0, 1, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 0, tree))
     }
-    @test
-    def memberOfPair02(): Bool = region rc {
+    @Test
+    def memberOfPair02(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(1, 2, tree);
-        BPlusTree.memberOfPair(1, 2, tree) and
-            not BPlusTree.memberOfPair(2, 1, tree) and
-            not BPlusTree.memberOfPair(1, 3, tree)
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree));
+        assertFalse(BPlusTree.memberOfPair(2, 1, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 3, tree))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.forEach(f, tree);
         let res = Vector#{0, 1, 2, 3, 4, 5};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let tree = rangeQueryMultipleValues(rc);
         let list = MutList.empty(rc);
         let f = k -> v -> MutList.push((k, v), list);
         BPlusTree.forEach(f, tree);
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foreach                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def foreach01(): Unit \ Assert = region rc {
+        let tree = rangeQueryDefaultTree(rc);
+        let list = MutList.empty(rc);
+        let f = kv -> MutList.push(fst(kv), list);
+        foreach (t <- tree) f(t);
+        let res = Vector#{0, 1, 2, 3, 4, 5};
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
+    }
+
+    @Test
+    def foreach02(): Unit \ Assert = region rc {
+        let tree = rangeQueryMultipleValues(rc);
+        let list = MutList.empty(rc);
+        let f = kv -> MutList.push(kv, list);
+        foreach(t <- tree) f(t);
+        let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def getWithDefault01(): Bool = region rc {
+    @Test
+    def getWithDefault01(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
-        42 == BPlusTree.getWithDefault(0, 42, tree)
+        assertEq(expected = 42, BPlusTree.getWithDefault(0, 42, tree))
     }
 
-    @test
-    def getWithDefault02(): Bool = region rc {
+    @Test
+    def getWithDefault02(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(0, 10, tree);
-        10 == BPlusTree.getWithDefault(0, 42, tree)
+        assertEq(expected = 10, BPlusTree.getWithDefault(0, 42, tree))
     }
 
-    @test
-    def getWithDefault03(): Bool = region rc {
+    @Test
+    def getWithDefault03(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(0, 10, tree);
         BPlusTree.put(1, 11, tree);
@@ -293,38 +326,38 @@ mod TestBPlusTree {
         BPlusTree.put(4, 14, tree);
         BPlusTree.put(5, 15, tree);
         BPlusTree.put(6, 16, tree);
-        10 == BPlusTree.getWithDefault(0, 42, tree)
-        and 11 == BPlusTree.getWithDefault(1, 42, tree)
-        and 12 == BPlusTree.getWithDefault(2, 42, tree)
-        and 13 == BPlusTree.getWithDefault(3, 42, tree)
-        and 14 == BPlusTree.getWithDefault(4, 42, tree)
-        and 15 == BPlusTree.getWithDefault(5, 42, tree)
-        and 16 == BPlusTree.getWithDefault(6, 42, tree)
-        and 42 == BPlusTree.getWithDefault(-1, 42, tree)
-        and 42 == BPlusTree.getWithDefault(-2, 42, tree)
-        and 42 == BPlusTree.getWithDefault(7, 42, tree)
-        and 42 == BPlusTree.getWithDefault(8, 42, tree)
+        assertEq(expected = 10, BPlusTree.getWithDefault(0, 42, tree));
+        assertEq(expected = 11, BPlusTree.getWithDefault(1, 42, tree));
+        assertEq(expected = 12, BPlusTree.getWithDefault(2, 42, tree));
+        assertEq(expected = 13, BPlusTree.getWithDefault(3, 42, tree));
+        assertEq(expected = 14, BPlusTree.getWithDefault(4, 42, tree));
+        assertEq(expected = 15, BPlusTree.getWithDefault(5, 42, tree));
+        assertEq(expected = 16, BPlusTree.getWithDefault(6, 42, tree));
+        assertEq(expected = 42, BPlusTree.getWithDefault(-1, 42, tree));
+        assertEq(expected = 42, BPlusTree.getWithDefault(-2, 42, tree));
+        assertEq(expected = 42, BPlusTree.getWithDefault(7, 42, tree));
+        assertEq(expected = 42, BPlusTree.getWithDefault(8, 42, tree))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isEmpty01(): Bool = region rc {
+    @Test
+    def isEmpty01(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
-        BPlusTree.isEmpty(tree)
+        assertTrue(BPlusTree.isEmpty(tree))
     }
 
-    @test
-    def isEmpty02(): Bool = region rc {
+    @Test
+    def isEmpty02(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(1, 2, tree);
-        not BPlusTree.isEmpty(tree)
+        assertFalse(BPlusTree.isEmpty(tree))
     }
 
-    @test
-    def isEmpty03(): Bool = region rc {
+    @Test
+    def isEmpty03(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         let empty0 = BPlusTree.isEmpty(tree);
         BPlusTree.put(1, 2, tree);
@@ -335,34 +368,133 @@ mod TestBPlusTree {
         let empty3 = BPlusTree.isEmpty(tree);
         BPlusTree.put(4, 5, tree);
         let empty4 = BPlusTree.isEmpty(tree);
-        empty0 and not empty1 and not empty2 and not empty3 and not empty4
+        assertTrue(empty0);
+        assertFalse(empty1);
+        assertFalse(empty2);
+        assertFalse(empty3);
+        assertFalse(empty4)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parForEach                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parForEach01(): Unit \ Assert + IO + NonDet = region rc {
+        Random.runWithIO(() -> {
+            let treeFrom = BPlusTree.empty(rc);
+            let treeTo = BPlusTree.empty(rc);
+            List.range(0, 100000) |> List.forEach(_ -> {
+                let x = Random.randomInt64();
+                let y = Random.randomInt64();
+                BPlusTree.put(x, y, treeFrom)
+            });
+            BPlusTree.parForEach(x -> y -> {
+                BPlusTree.put(x, y, treeTo)
+            }, treeFrom);
+            assertTrue(List.toVector(BPlusTree.toList(treeFrom)) `Vector.equals` List.toVector(BPlusTree.toList(treeTo)))
+        })
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // parForEachWhen                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def parForEachWhen01(): Unit \ Assert + IO + NonDet = region rc {
+        Random.runWithIO(() -> {
+            let treeFrom = BPlusTree.empty(rc);
+            let treeTo = BPlusTree.empty(rc);
+            List.range(0, 100000) |> List.forEach(_ -> {
+                let x = Random.randomInt64();
+                let y = Random.randomInt64();
+                BPlusTree.put(x, y, treeFrom)
+            });
+            let f1 = x -> y -> BPlusTree.put(x, y, treeTo);
+            let f2 = x -> y -> BPlusTree.put(x, y, treeTo);
+            BPlusTree.parForEachWhen(f1, f2, 1000, treeFrom);
+            assertTrue(List.toVector(BPlusTree.toList(treeFrom)) `Vector.equals` List.toVector(BPlusTree.toList(treeTo)))
+        })
+    }
+
+    @Test
+    def parForEachWhen02(): Unit \ Assert = region rc {
+        let tree = rangeQueryDefaultTree(rc);
+        let list = MutList.empty(rc);
+        let f = k -> _ -> MutList.push(k, list);
+        BPlusTree.parForEachWhen(f, f, 1000, tree);
+        let res = Vector#{0, 1, 2, 3, 4, 5};
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
+    }
+
+    @Test
+    def parForEachWhen03(): Unit \ Assert = region rc {
+        let tree = rangeQueryMultipleValues(rc);
+        let list = MutList.empty(rc);
+        let f = k -> v -> MutList.push((k, v), list);
+        BPlusTree.parForEachWhen(f, f, 1000, tree);
+        let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
+    }
+
+    @Test
+    def parForEachWhen04(): Unit \ Assert = region rc {
+        let values = List.range(0, 10_000) |> List.map(i -> (i, i+1));
+        let tree = BPlusTree.empty(rc);
+        foreach((k, v) <- values) {
+            BPlusTree.put(k, v, tree)
+        };
+        let sequentialCollector = MutList.empty(rc);
+        let parallelCollector = BPlusTree.empty(rc);
+        let f1 = k -> v -> MutList.push((k, v), sequentialCollector);
+        let f2 = k -> v -> BPlusTree.put(k, v, parallelCollector);
+        BPlusTree.parForEachWhen(f1, f2, 10_000, tree);
+        assertTrue(MutList.isEmpty(sequentialCollector));
+        assertEq(expected = values, BPlusTree.toList(parallelCollector))
+    }
+
+    @Test
+    def parForEachWhen05(): Unit \ Assert = region rc {
+        let values = List.range(0, 9_999) |> List.map(i -> (i, i+1));
+        let tree = BPlusTree.empty(rc);
+        foreach((k, v) <- values) {
+            BPlusTree.put(k, v, tree)
+        };
+        let sequentialCollector = MutList.empty(rc);
+        let parallelCollector = BPlusTree.empty(rc);
+        let f1 = k -> v -> MutList.push((k, v), sequentialCollector);
+        let f2 = k -> v -> BPlusTree.put(k, v, parallelCollector);
+        BPlusTree.parForEachWhen(f1, f2, 10_000, tree);
+        assertEq(expected = values, MutList.toList(sequentialCollector));
+        assertTrue(BPlusTree.isEmpty(parallelCollector))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // put                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def put01(): Bool = region rc {
+    @Test
+    def put01(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(4, 2, tree);
-        BPlusTree.memberOfPair(4, 2 ,tree) and BPlusTree.assertTreeInvariant(tree)
+        assertTrue(BPlusTree.memberOfPair(4, 2 ,tree));
+        assertTrue(BPlusTree.assertTreeInvariant(tree))
     }
 
-    @test
-    def put02(): Bool = region rc {
+    @Test
+    def put02(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(1, 10, tree);
         BPlusTree.put(2, 11, tree);
         BPlusTree.put(3, 12, tree);
-        BPlusTree.memberOfPair(1, 10, tree) and
-            BPlusTree.memberOfPair(2, 11, tree) and
-            BPlusTree.memberOfPair(3, 12, tree) and
-            BPlusTree.assertTreeInvariant(tree)
+        assertTrue(BPlusTree.memberOfPair(1, 10, tree));
+        assertTrue(BPlusTree.memberOfPair(2, 11, tree));
+        assertTrue(BPlusTree.memberOfPair(3, 12, tree));
+        assertTrue(BPlusTree.assertTreeInvariant(tree))
     }
 
-    @test
-    def put03(): Bool = region rc {
+    @Test
+    def put03(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(6, 15, tree);
         BPlusTree.put(5, 14, tree);
@@ -370,17 +502,17 @@ mod TestBPlusTree {
         BPlusTree.put(3, 12, tree);
         BPlusTree.put(2, 11, tree);
         BPlusTree.put(1, 10, tree);
-        BPlusTree.memberOfPair(1, 10, tree) and
-            BPlusTree.memberOfPair(2, 11, tree) and
-            BPlusTree.memberOfPair(3, 12, tree) and
-            BPlusTree.memberOfPair(4, 13, tree) and
-            BPlusTree.memberOfPair(5, 14, tree) and
-            BPlusTree.memberOfPair(6, 15, tree) and
-            BPlusTree.assertTreeInvariant(tree)
+        assertTrue(BPlusTree.memberOfPair(1, 10, tree));
+        assertTrue(BPlusTree.memberOfPair(2, 11, tree));
+        assertTrue(BPlusTree.memberOfPair(3, 12, tree));
+        assertTrue(BPlusTree.memberOfPair(4, 13, tree));
+        assertTrue(BPlusTree.memberOfPair(5, 14, tree));
+        assertTrue(BPlusTree.memberOfPair(6, 15, tree));
+        assertTrue(BPlusTree.assertTreeInvariant(tree))
     }
 
-    @test
-    def put04(): Bool = region rc {
+    @Test
+    def put04(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 5);
         let pairs = List.map(p -> {
             let (x, y) = p;
@@ -390,14 +522,15 @@ mod TestBPlusTree {
             let (x, y) = p;
             BPlusTree.put(x, y, tree)
         }, pairs);
-        Map.forAll(x -> y -> {
+        assertTrue(Map.forAll(x -> y -> {
             BPlusTree.memberOfPair(x, y, tree)
-        }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
+        }, listToMap(pairs)));
+        assertTrue(BPlusTree.assertTreeInvariant(tree))
     }
 
-    @test
-    def put05(): Bool = region rc {
-        List.forAll(arity -> {
+    @Test
+    def put05(): Unit \ Assert = region rc {
+        assertTrue(List.forAll(arity -> {
             let tree = BPlusTree.emptyWithArity(rc, arity);
             let pairs = List.map(p -> {
                 let (x, y) = p;
@@ -410,58 +543,85 @@ mod TestBPlusTree {
             Map.forAll((x, y) -> {
                 BPlusTree.memberOfPair(x, y, tree)
             }, listToMap(pairs)) and BPlusTree.assertTreeInvariant(tree)
-        }, List.range(3, 10))
+        }, List.range(3, 10)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def get01(): Bool = region rc {
+    @Test
+    def get01(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
-        BPlusTree.get(0, tree) |> Option.isEmpty
+        assertTrue(BPlusTree.get(0, tree) |> Option.isEmpty)
     }
 
-    @test
-    def get02(): Bool = region rc {
+    @Test
+    def get02(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(0, 1, tree);
         match BPlusTree.get(0, tree) {
-            case Some(v) => v == 1
-            case None => false
+            case Some(v) => assertEq(expected = 1, v)
+            case None => fail("Expected Some(1), got None")
         }
     }
 
-    @test
-    def get03(): Bool = region rc {
+    @Test
+    def get03(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(0, 1, tree);
-        BPlusTree.get(1, tree) |> Option.isEmpty
+        assertTrue(BPlusTree.get(1, tree) |> Option.isEmpty)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getKeyAndValue                                                          //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def getKeyAndValue01(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        assertTrue(BPlusTree.getKeyAndValue(0, tree) |> Option.isEmpty)
+    }
+
+    @Test
+    def getKeyAndValue02(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(0, 1, tree);
+        match BPlusTree.getKeyAndValue(0, tree) {
+            case Some(v) => assertEq(expected = (0, 1), v)
+            case None => fail("Expected Some((0, 1)), got None")
+        }
+    }
+
+    @Test
+    def getKeyAndValue03(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(0, 1, tree);
+        assertTrue(BPlusTree.getKeyAndValue(1, tree) |> Option.isEmpty)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // computeIfAbsent                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def computeIfAbsent01(): Bool = region rc {
+    @Test
+    def computeIfAbsent01(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.computeIfAbsent(() -> 2, 1, tree);
-        BPlusTree.memberOfPair(1, 2, tree)
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree))
     }
 
-    @test
-    def computeIfAbsent02(): Bool = region rc {
+    @Test
+    def computeIfAbsent02(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(1, 3, tree);
         BPlusTree.computeIfAbsent(() -> 2, 1, tree);
-        BPlusTree.memberOfPair(1, 3, tree) and
-            not BPlusTree.memberOfPair(1, 2, tree)
+        assertTrue(BPlusTree.memberOfPair(1, 3, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 2, tree))
     }
 
-    @test
-    def computeIfAbsent03(): Bool = region rc {
+    @Test
+    def computeIfAbsent03(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         let ref = Ref.fresh(rc, false);
         let effectfulFunction = () -> {
@@ -469,11 +629,12 @@ mod TestBPlusTree {
             2
         };
         BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
-        BPlusTree.memberOfPair(1, 2, tree) and Ref.get(ref)
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree));
+        assertTrue(Ref.get(ref))
     }
 
-    @test
-    def computeIfAbsent04(): Bool = region rc {
+    @Test
+    def computeIfAbsent04(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         let ref = Ref.fresh(rc, true);
         let effectfulFunction = () -> {
@@ -482,108 +643,398 @@ mod TestBPlusTree {
         };
         BPlusTree.put(1, 3, tree);
         BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
-        BPlusTree.memberOfPair(1, 3, tree) and Ref.get(ref)
+        assertTrue(BPlusTree.memberOfPair(1, 3, tree));
+        assertTrue(Ref.get(ref))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def memberOf01(): Bool = region rc {
+    @Test
+    def memberOf01(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(2, 3, tree);
-        BPlusTree.memberOf(2, tree)
+        assertTrue(BPlusTree.memberOf(2, tree))
     }
 
-    @test
-    def memberOf02(): Bool = region rc {
+    @Test
+    def memberOf02(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
-        not BPlusTree.memberOf(0, tree) and
-            not BPlusTree.memberOf(1, tree) and
-            not BPlusTree.memberOf(-1, tree)
+        assertFalse(BPlusTree.memberOf(0, tree));
+        assertFalse(BPlusTree.memberOf(1, tree));
+        assertFalse(BPlusTree.memberOf(-1, tree))
     }
 
-    @test
-    def memberOf03(): Bool = region rc {
+    @Test
+    def memberOf03(): Unit \ Assert = region rc {
         let tree = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(1, 2, tree);
-        BPlusTree.memberOf(1, tree) and
-            not BPlusTree.memberOf(2, tree) and
-            not BPlusTree.memberOf(0, tree)
+        assertTrue(BPlusTree.memberOf(1, tree));
+        assertFalse(BPlusTree.memberOf(2, tree));
+        assertFalse(BPlusTree.memberOf(0, tree))
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // minimumKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def minimumKey01(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        assertEq(expected = Option.None, BPlusTree.minimumKey(tree))
+    }
+
+    @Test
+    def minimumKey02(): Unit \ Assert = region rc {
+        let tree = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 3, tree);
+        assertEq(expected = Option.Some((1, 3)), BPlusTree.minimumKey(tree))
+    }
+
+    @Test
+    def minimumKey03(): Unit \ Assert = region rc {
+        let tree = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 3, tree);
+        BPlusTree.put(2, 4, tree);
+        BPlusTree.put(1, 9, tree);
+        BPlusTree.put(3, -1, tree);
+        BPlusTree.put(4, 6, tree);
+        assertEq(expected = Option.Some((1, 9)), BPlusTree.minimumKey(tree))
+    }
+
+    @Test
+    def minimumKey04(): Unit \ Assert = region rc {
+        let tree = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 3, tree);
+        BPlusTree.put(2, -12, tree);
+        BPlusTree.put(0, -5, tree);
+        BPlusTree.put(-1, -4, tree);
+        BPlusTree.put(4, -3, tree);
+        BPlusTree.put(5, -6, tree);
+        assertEq(expected = Option.Some((-1, -4)), BPlusTree.minimumKey(tree))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // putIf                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putIf01(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(_ -> _ -> _ -> _ -> true, 3, 4, tree);
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree));
+        assertTrue(BPlusTree.memberOfPair(3, 4, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 4, tree))
+    }
+
+    @Test
+    def putIf02(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(k1 -> _ -> k2 -> _ -> k1 == k2, 1, 4, tree);
+        assertTrue(BPlusTree.memberOfPair(1, 4, tree))
+    }
+
+    @Test
+    def putIf03(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(_ -> v1 -> _ -> _ -> v1 == 4, 1, 4, tree);
+        assertTrue(BPlusTree.memberOfPair(1, 4, tree))
+    }
+
+    @Test
+    def putIf04(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        BPlusTree.put(1, 2, tree);
+        BPlusTree.putIf(_ -> _ -> _ -> v2 -> v2 == 4, 1, 4, tree);
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree))
+    }
+
+    enum PutIfEnum {
+        case PutIfEnum(Int32, Int32)
+    }
+
+    instance Eq[PutIfEnum] {
+        ///
+        /// Returns `true` if and only if `x` is equal to `y`.
+        ///
+        pub def eq(x: PutIfEnum, y: PutIfEnum): Bool = match (x, y) {
+            case (PutIfEnum.PutIfEnum(x1, _), PutIfEnum.PutIfEnum(x2, _)) => x1 == x2
+        }
+    }
+
+    instance Order[PutIfEnum] {
+        ///
+        /// Returns `true` if and only if `x` is equal to `y`.
+        ///
+        pub def compare(x: PutIfEnum, y: PutIfEnum): Comparison = match (x, y) {
+            case (PutIfEnum.PutIfEnum(x1, _), PutIfEnum.PutIfEnum(x2, _)) => x1 <=> x2
+        }
+    }
+
+    @Test
+    def putIf05(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        let key1 = PutIfEnum.PutIfEnum(1, 2);
+        let key2 = PutIfEnum.PutIfEnum(1, 3);
+        BPlusTree.put(key1, 2, tree);
+        BPlusTree.putIf(k1 -> _ -> _ -> _ -> match k1 {
+            case PutIfEnum.PutIfEnum(_, y) => y == 3
+        }, key2, 4, tree);
+        assertTrue(BPlusTree.memberOfPair(key1, 4, tree))
+    }
+
+    @Test
+    def putIf06(): Unit \ Assert = region rc {
+        let tree = BPlusTree.empty(rc);
+        let key1 = PutIfEnum.PutIfEnum(1, 2);
+        let key2 = PutIfEnum.PutIfEnum(1, 3);
+        BPlusTree.put(key1, 2, tree);
+        BPlusTree.putIf(_ -> _ -> k2 -> _ -> match k2 {
+            case PutIfEnum.PutIfEnum(_, y) => y == 3
+        }, key2, 4, tree);
+        assertTrue(BPlusTree.memberOfPair(key1, 2, tree))
+    }
+
+    def putIfPreferSome(_: PutIfEnum, l: Option[Int32], _: PutIfEnum, _: Option[Int32]): Bool = match l {
+        case None => false
+        case Some(_) => true
+    }
+
+    @Test
+    pub def putIf07(): Unit \ Assert + IO = region rc {
+        let tree = BPlusTree.empty(rc);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i ->
+                        BPlusTree.putIf(putIfPreferSome, PutIfEnum.PutIfEnum(i, 1), None, tree)
+                    ): _ \ rc) as _ \ IO) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i ->
+                        BPlusTree.putIf(putIfPreferSome, PutIfEnum.PutIfEnum(i, -1), Some(1), tree)
+            ): _ \ rc) as _ \ IO) @ rc2)
+        };
+        assertTrue(List.range(0, totalInsertNumInt32()) |> List.forAll(i -> Some((PutIfEnum.PutIfEnum(i, -1), Some(1))) == BPlusTree.getKeyAndValue(PutIfEnum.PutIfEnum(i, 1), tree)))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // putWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def putWith01(): Bool = region rc {
+    @Test
+    def putWith01(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(1, 2, tree);
         BPlusTree.putWith(v1 -> v2 -> v1 + v2, 1, 3, tree);
-        BPlusTree.memberOfPair(1, 5, tree) and
-            not BPlusTree.memberOfPair(1, 2, tree) and
-            not BPlusTree.memberOfPair(1, 3, tree)
+        assertTrue(BPlusTree.memberOfPair(1, 5, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 2, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 3, tree))
     }
 
-    @test
-    def putWith02(): Bool = region rc {
+    @Test
+    def putWith02(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(1, 2, tree);
         BPlusTree.putWith(v1 -> v2 -> v1 - v2, 1, 1, tree);
-        BPlusTree.memberOfPair(1, -1, tree) and
-            not BPlusTree.memberOfPair(1, 2, tree) and
-            not BPlusTree.memberOfPair(1, 1, tree)
+        assertTrue(BPlusTree.memberOfPair(1, -1, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 2, tree));
+        assertFalse(BPlusTree.memberOfPair(1, 1, tree))
     }
 
-    @test
-    def putWith03(): Bool = region rc {
+    @Test
+    def putWith03(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.putWith(v1 -> v2 -> v1 - v2, 1, 2, tree);
-        BPlusTree.memberOfPair(1, 2, tree)
+        assertTrue(BPlusTree.memberOfPair(1, 2, tree))
+    }
+
+    @Test
+    pub def putWith04(): Unit \ Assert + IO = region rc {
+        let tree = BPlusTree.empty(rc);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i ->
+                        BPlusTree.putWith(preferSome, i, None, tree)
+                    ): _ \ rc) as _ \ IO) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(i ->
+                        BPlusTree.putWith(preferSome, i, Some(1), tree)
+            ): _ \ rc) as _ \ IO) @ rc2)
+        };
+        assertTrue(List.range(0, totalInsertNumInt32()) |> List.forAll(i -> BPlusTree.memberOfPair(i, Some(1), tree)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // size                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def size01(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        assertEq(expected = 0, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size02(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        assertEq(expected = 1, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size03(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.put(0, 0, tree);
+        assertEq(expected = 1, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size04(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.put(0, 1, tree);
+        assertEq(expected = 1, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size05(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.put(0, 1, tree);
+        BPlusTree.put(1, 1, tree);
+        assertEq(expected = 2, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size06(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.computeIfAbsent(() -> 3, 0, tree);
+        assertEq(expected = 1, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size07(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.computeIfAbsent(() -> 3, 1, tree);
+        assertEq(expected = 2, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size09(): Unit \ Assert = region rc {
+        let tree1: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree1);
+        BPlusTree.put(1, 1, tree1);
+        BPlusTree.put(2, 2, tree1);
+        BPlusTree.put(3, 3, tree1);
+        BPlusTree.put(4, 4, tree1);
+        BPlusTree.put(5, 5, tree1);
+        let tree2: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(4, 4, tree2);
+        BPlusTree.put(5, 5, tree2);
+        BPlusTree.put(6, 6, tree2);
+        BPlusTree.put(7, 7, tree2);
+        BPlusTree.put(8, 8, tree2);
+        BPlusTree.put(9, 9, tree2);
+        BPlusTree.merge(tree2, tree1);
+        assertEq(expected = 10, BPlusTree.size(tree1))
+    }
+
+    @Test
+    def size10(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.putWith(_ -> _ -> 0, 0, 0, tree);
+        assertEq(expected = 1, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size11(): Unit \ Assert = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(0, 0, tree);
+        BPlusTree.putWith(_ -> _ -> 0, 1, 0, tree);
+        assertEq(expected = 2, BPlusTree.size(tree))
+    }
+
+    @Test
+    def size12(): Unit \ Assert + IO + NonDet = region rc {
+        let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
+        let _: Unit = region rc2 {
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ ->
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ ->
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ ->
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2);
+            (spawn unchecked_cast((
+                List.range(0, totalInsertNumInt32()) |>
+                    List.forEach(_ ->
+                        Random.runWithIO(() -> BPlusTree.put(Random.randomInt32(), Random.randomInt32(), tree))
+            ): _ \ rc + NonDet + IO) as _ \ IO + NonDet) @ rc2)
+        };
+        assertEq(expected = BPlusTree.size(tree), BPlusTree.toList(tree) |> List.size)
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool = region rc {
+    @Test
+    def toList01(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.empty(rc);
-        BPlusTree.toList(tree) == List.empty()
+        assertEq(expected = List.empty(), BPlusTree.toList(tree))
     }
 
-    @test
-    def toList02(): Bool = region rc {
+    @Test
+    def toList02(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         let pairs = (1, 12) :: (2, 23) :: (3, 34) :: (4, 45) :: Nil;
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
-        BPlusTree.toList(tree) == pairs
+        assertEq(expected = pairs, BPlusTree.toList(tree))
     }
 
-    @test
-    def toList03(): Bool = region rc {
+    @Test
+    def toList03(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         let toBeOverridden = (1, 2) :: (2, 4) :: Nil;
         let finalValues = (1, 3) :: (2, 5) :: Nil;
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), toBeOverridden);
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), finalValues);
-        BPlusTree.toList(tree) == finalValues
+        assertEq(expected = finalValues, BPlusTree.toList(tree))
     }
 
-    @test
-    def toList04(): Bool = region rc {
+    @Test
+    def toList04(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         let pairs = (1, 2) :: (2, 4) :: (1, 3) :: (2, 5) :: Nil;
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
         let map = List.foldLeft(acc -> match (key, val) -> Map.insert(key, val, acc), Map#{}, pairs);
         let finalPairs = Map.toList(map);
-        BPlusTree.toList(tree) == List.sort(finalPairs)
+        assertEq(expected = List.sort(finalPairs), BPlusTree.toList(tree))
     }
 
-    @test
-    def toList05(): Bool \ NonDet + IO = region rc {
+    @Test
+    def toList05(): Unit \ Assert + NonDet + IO = region rc {
         let tree = BPlusTree.empty(rc);
         let getRandomPairs = () -> {
             List.range(0, 10_000) |> List.map(_ -> (Random.randomInt32(), Random.randomInt32()))
@@ -592,7 +1043,7 @@ mod TestBPlusTree {
         List.forEach(match (k, v) -> BPlusTree.put(k, v, tree), pairs);
         let map = List.foldLeft(acc -> match (key, val) -> Map.insert(key, val, acc), Map#{}, pairs);
         let finalPairs = Map.toList(map);
-        BPlusTree.toList(tree) == finalPairs
+        assertEq(expected = finalPairs, BPlusTree.toList(tree))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -620,83 +1071,83 @@ mod TestBPlusTree {
         BPlusTree.put(3, 14, tree);
         tree
 
-    @test
-    def rangeQueryWith01(): Bool = region rc {
+    @Test
+    def rangeQueryWith01(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, 0, 5, tree);
         let res = Vector#{0, 1, 2, 3, 4, 5};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith02(): Bool = region rc {
+    @Test
+    def rangeQueryWith02(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, -2, 5, tree);
         let res = Vector#{0, 1, 2, 3, 4, 5};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith03(): Bool = region rc {
+    @Test
+    def rangeQueryWith03(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, -2, 7, tree);
         let res = Vector#{0, 1, 2, 3, 4, 5};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith04(): Bool = region rc {
+    @Test
+    def rangeQueryWith04(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, 1, 1, tree);
         let res = Vector#{1};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith05(): Bool = region rc {
+    @Test
+    def rangeQueryWith05(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, 1, 3, tree);
         let res = Vector#{1, 2, 3};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith06(): Bool = region rc {
+    @Test
+    def rangeQueryWith06(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, -2, -2, tree);
         let res = Vector#{ };
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith07(): Bool = region rc {
+    @Test
+    def rangeQueryWith07(): Unit \ Assert = region rc {
         let tree = rangeQueryDefaultTree(rc);
         let list = MutList.empty(rc);
         let f = k -> _ -> MutList.push(k, list);
         BPlusTree.rangeQueryWith(f, 7, 7, tree);
         let res = Vector#{ };
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 
-    @test
-    def rangeQueryWith08(): Bool = region rc {
+    @Test
+    def rangeQueryWith08(): Unit \ Assert = region rc {
         let tree = rangeQueryMultipleValues(rc);
         let list = MutList.empty(rc);
         let f = k -> v -> MutList.push((k, v), list);
         BPlusTree.rangeQueryWith(f, 0, 3, tree);
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
-        MutList.toVector(list) `Vector.equals` res
+        assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
 }

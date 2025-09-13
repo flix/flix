@@ -213,7 +213,7 @@ mod MultiMap {
         MultiMap(Map.remove(k, m1))
 
     ///
-    /// Removes the mapping of `(k, v)`  from the MultiMap `m` it it exists.
+    /// Removes the mapping of `(k, v)` from the MultiMap `m` it it exists.
     ///
     pub def removeWithValue(k: k, v: v, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(m1) = m;
@@ -358,7 +358,7 @@ mod MultiMap {
         foldMapWithKey(_ -> f, m)
 
     ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -368,7 +368,7 @@ mod MultiMap {
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -384,7 +384,7 @@ mod MultiMap {
         Map.foldLeftWithKey(outer, None, m1)
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -394,7 +394,7 @@ mod MultiMap {
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///

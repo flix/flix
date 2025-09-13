@@ -1,966 +1,928 @@
-/*
- * Copyright 2017 Liam Palmer
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestBigInt {
 
-    use Mul.mul
-
-    /////////////////////////////////////////////////////////////////////////////
-    // mul                                                                     //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def mul01(): Bool = mul(1ii, 0ii) == 0ii
-
-    @test
-    def mul02(): Bool = mul(0ii, 1ii) == 0ii
-
-    @test
-    def mul03(): Bool = mul(0ii, 0ii) == 0ii
-
-    @test
-    def mul04(): Bool = mul(2ii, -3498457932459234592873452983453245ii) == -6996915864918469185746905966906490ii
-
-    @test
-    def mul05(): Bool = mul(7ii, 4681ii) == 32767ii
-
-    @test
-    def mul06(): Bool = mul(77ii, 4812ii) == 370524ii
+    use Assert.{assertEq, assertTrue, assertNone, assertSome};
 
     /////////////////////////////////////////////////////////////////////////////
     // min                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def min01(): Bool = BigInt.min(1234ii, 12123123123124151532146469083259682341ii) == 1234ii
+    @Test
+    def min01(): Unit \ Assert = assertEq(expected = 1234ii, BigInt.min(1234ii, 12123123123124151532146469083259682341ii))
 
-    @test
-    def min02(): Bool = BigInt.min(22737461919238461234728137461283412ii, -191283756ii) == -191283756ii
+    @Test
+    def min02(): Unit \ Assert = assertEq(expected = -191283756ii, BigInt.min(22737461919238461234728137461283412ii, -191283756ii))
 
-    @test
-    def min03(): Bool = BigInt.min(-33ii, -66ii) == -66ii
+    @Test
+    def min03(): Unit \ Assert = assertEq(expected = -66ii, BigInt.min(-33ii, -66ii))
 
-    @test
-    def min04(): Bool = BigInt.min(-44ii, -922337203685477580889008ii) == -922337203685477580889008ii
+    @Test
+    def min04(): Unit \ Assert = assertEq(expected = -922337203685477580889008ii, BigInt.min(-44ii, -922337203685477580889008ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // max                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def max01(): Bool = BigInt.max(48ii, 49ii) == 49ii
+    @Test
+    def max01(): Unit \ Assert = assertEq(expected = 49ii, BigInt.max(48ii, 49ii))
 
-    @test
-    def max02(): Bool = BigInt.max(4ii, -169879871293847921347918234912394789123ii) == 4ii
+    @Test
+    def max02(): Unit \ Assert = assertEq(expected = 4ii, BigInt.max(4ii, -169879871293847921347918234912394789123ii))
 
-    @test
-    def max03(): Bool = BigInt.max(-3498457932459234592873452983453245ii, -16ii) == -16ii
+    @Test
+    def max03(): Unit \ Assert = assertEq(expected = -16ii, BigInt.max(-3498457932459234592873452983453245ii, -16ii))
 
-    @test
-    def max04(): Bool = BigInt.max(-34998734957235ii, 92233720368547758078990ii) == 92233720368547758078990ii
+    @Test
+    def max04(): Unit \ Assert = assertEq(expected = 92233720368547758078990ii, BigInt.max(-34998734957235ii, 92233720368547758078990ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // abs                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def abs01(): Bool = BigInt.abs(0ii) == 0ii
+    @Test
+    def abs01(): Unit \ Assert = assertEq(expected = 0ii, BigInt.abs(0ii))
 
-    @test
-    def abs02(): Bool = BigInt.abs(1ii) == 1ii
+    @Test
+    def abs02(): Unit \ Assert = assertEq(expected = 1ii, BigInt.abs(1ii))
 
-    @test
-    def abs03(): Bool = BigInt.abs(-1ii) == 1ii
+    @Test
+    def abs03(): Unit \ Assert = assertEq(expected = 1ii, BigInt.abs(-1ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def modulo01(): Bool = (1200000000000000000000ii `BigInt.modulo` 200000000000000000000ii) == 0ii
+    @Test
+    def modulo01(): Unit \ Assert = assertEq(expected = 0ii, 1200000000000000000000ii `BigInt.modulo` 200000000000000000000ii)
 
-    @test
-    def modulo02(): Bool = (1200000000000000000000ii `BigInt.modulo` 500000000000000000000ii) == 200000000000000000000ii
+    @Test
+    def modulo02(): Unit \ Assert = assertEq(expected = 200000000000000000000ii, 1200000000000000000000ii `BigInt.modulo` 500000000000000000000ii)
 
-    @test
-    def modulo03(): Bool = (-1200000000000000000000ii `BigInt.modulo` 500000000000000000000ii) == 300000000000000000000ii
+    @Test
+    def modulo03(): Unit \ Assert = assertEq(expected = 300000000000000000000ii, -1200000000000000000000ii `BigInt.modulo` 500000000000000000000ii)
 
-    @test
-    def modulo04(): Bool = (1200000000000000000000ii `BigInt.modulo` -500000000000000000000ii) == -300000000000000000000ii
+    @Test
+    def modulo04(): Unit \ Assert = assertEq(expected = -300000000000000000000ii, 1200000000000000000000ii `BigInt.modulo` -500000000000000000000ii)
 
-    @test
-    def modulo05(): Bool = (-1200000000000000000000ii `BigInt.modulo` -500000000000000000000ii) == -200000000000000000000ii
+    @Test
+    def modulo05(): Unit \ Assert = assertEq(expected = -200000000000000000000ii, -1200000000000000000000ii `BigInt.modulo` -500000000000000000000ii)
 
-    @test
-    def modulo06(): Bool = (1ii `BigInt.modulo` 0ii) == 0ii
+    @Test
+    def modulo06(): Unit \ Assert = assertEq(expected = 0ii, 1ii `BigInt.modulo` 0ii)
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def remainder01(): Bool = (1200000000000000000000ii `BigInt.remainder` 200000000000000000000ii) == 0ii
+    @Test
+    def remainder01(): Unit \ Assert = assertEq(expected = 0ii, 1200000000000000000000ii `BigInt.remainder` 200000000000000000000ii)
 
-    @test
-    def remainder02(): Bool = (1200000000000000000000ii `BigInt.remainder` 500000000000000000000ii) == 200000000000000000000ii
+    @Test
+    def remainder02(): Unit \ Assert = assertEq(expected = 200000000000000000000ii, 1200000000000000000000ii `BigInt.remainder` 500000000000000000000ii)
 
-    @test
-    def remainder03(): Bool = (-1200000000000000000000ii `BigInt.remainder` 500000000000000000000ii) == -200000000000000000000ii
+    @Test
+    def remainder03(): Unit \ Assert = assertEq(expected = -200000000000000000000ii, -1200000000000000000000ii `BigInt.remainder` 500000000000000000000ii)
 
-    @test
-    def remainder04(): Bool = (1200000000000000000000ii `BigInt.remainder` -500000000000000000000ii) == 200000000000000000000ii
+    @Test
+    def remainder04(): Unit \ Assert = assertEq(expected = 200000000000000000000ii, 1200000000000000000000ii `BigInt.remainder` -500000000000000000000ii)
 
-    @test
-    def remainder05(): Bool = (-1200000000000000000000ii `BigInt.remainder` -500000000000000000000ii) == -200000000000000000000ii
+    @Test
+    def remainder05(): Unit \ Assert = assertEq(expected = -200000000000000000000ii, -1200000000000000000000ii `BigInt.remainder` -500000000000000000000ii)
 
-    @test
-    def remainder06(): Bool = (1ii `BigInt.remainder` 0ii) == 0ii
+    @Test
+    def remainder06(): Unit \ Assert = assertEq(expected = 0ii, 1ii `BigInt.remainder` 0ii)
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def dist01(): Bool = BigInt.dist(1ii, -1ii) == 2ii
+    @Test
+    def dist01(): Unit \ Assert = assertEq(expected = 2ii, BigInt.dist(1ii, -1ii))
 
-    @test
-    def dist02(): Bool = BigInt.dist(-1ii, 1ii) == 2ii
+    @Test
+    def dist02(): Unit \ Assert = assertEq(expected = 2ii, BigInt.dist(-1ii, 1ii))
 
-    @test
-    def dist03(): Bool = BigInt.dist(1ii, 1ii) == 0ii
+    @Test
+    def dist03(): Unit \ Assert = assertEq(expected = 0ii, BigInt.dist(1ii, 1ii))
 
-    @test
-    def dist04(): Bool = BigInt.dist(-1ii, -1ii) == 0ii
+    @Test
+    def dist04(): Unit \ Assert = assertEq(expected = 0ii, BigInt.dist(-1ii, -1ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // compare                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def compare01(): Bool = BigInt.compare(1ii, -1ii) == 1
+    @Test
+    def compare01(): Unit \ Assert = assertEq(expected = 1, BigInt.compare(1ii, -1ii))
 
-    @test
-    def compare02(): Bool = BigInt.compare(-9ii, -11ii) == 1
+    @Test
+    def compare02(): Unit \ Assert = assertEq(expected = 1, BigInt.compare(-9ii, -11ii))
 
-    @test
-    def compare03(): Bool = BigInt.compare(1ii, 1ii) == 0
+    @Test
+    def compare03(): Unit \ Assert = assertEq(expected = 0, BigInt.compare(1ii, 1ii))
 
-    @test
-    def compare04(): Bool = BigInt.compare(-1ii, -1ii) == 0
+    @Test
+    def compare04(): Unit \ Assert = assertEq(expected = 0, BigInt.compare(-1ii, -1ii))
 
-    @test
-    def compare05(): Bool = BigInt.compare(-1ii, 1ii) == -1
+    @Test
+    def compare05(): Unit \ Assert = assertEq(expected = -1, BigInt.compare(-1ii, 1ii))
 
-    @test
-    def compare06(): Bool = BigInt.compare(11ii, 21ii) == -1
+    @Test
+    def compare06(): Unit \ Assert = assertEq(expected = -1, BigInt.compare(11ii, 21ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // signum                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def signum01(): Bool = BigInt.signum(2ii) == 1
+    @Test
+    def signum01(): Unit \ Assert = assertEq(expected = 1, BigInt.signum(2ii))
 
-    @test
-    def signum02(): Bool = BigInt.signum(3ii) == 1
+    @Test
+    def signum02(): Unit \ Assert = assertEq(expected = 1, BigInt.signum(3ii))
 
-    @test
-    def signum03(): Bool = BigInt.signum(0ii) == 0
+    @Test
+    def signum03(): Unit \ Assert = assertEq(expected = 0, BigInt.signum(0ii))
 
-    @test
-    def signum04(): Bool = BigInt.signum(-2ii) == -1
+    @Test
+    def signum04(): Unit \ Assert = assertEq(expected = -1, BigInt.signum(-2ii))
 
-    @test
-    def signum05(): Bool = BigInt.signum(-10ii) == -1
+    @Test
+    def signum05(): Unit \ Assert = assertEq(expected = -1, BigInt.signum(-10ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // pow                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def pow01(): Bool = BigInt.pow(0ii, 0) == 1ii
+    @Test
+    def pow01(): Unit \ Assert = assertEq(expected = 1ii, BigInt.pow(base = 0ii, 0))
 
-    @test
-    def pow02(): Bool = BigInt.pow(0ii, 1) == 0ii
+    @Test
+    def pow02(): Unit \ Assert = assertEq(expected = 0ii, BigInt.pow(base = 0ii, 1))
 
-    @test
-    def pow03(): Bool = BigInt.pow(1ii, 0) == 1ii
+    @Test
+    def pow03(): Unit \ Assert = assertEq(expected = 1ii, BigInt.pow(base = 1ii, 0))
 
-    @test
-    def pow04(): Bool = BigInt.pow(1ii, 1) == 1ii
+    @Test
+    def pow04(): Unit \ Assert = assertEq(expected = 1ii, BigInt.pow(base = 1ii, 1))
 
-    @test
-    def pow05(): Bool = BigInt.pow(5ii, 2) == 25ii
+    @Test
+    def pow05(): Unit \ Assert = assertEq(expected = 25ii, BigInt.pow(base = 5ii, 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // gcd                                                                     //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def gcd01(): Bool = BigInt.gcd(9ii, 3ii) == 3ii
+    @Test
+    def gcd01(): Unit \ Assert = assertEq(expected = 3ii, BigInt.gcd(9ii, 3ii))
 
-    @test
-    def gcd02(): Bool = BigInt.gcd(21ii, 15ii) == 3ii
+    @Test
+    def gcd02(): Unit \ Assert = assertEq(expected = 3ii, BigInt.gcd(21ii, 15ii))
 
-    @test
-    def gcd03(): Bool = BigInt.gcd(9233ii, 0ii) == 9233ii
+    @Test
+    def gcd03(): Unit \ Assert = assertEq(expected = 9233ii, BigInt.gcd(9233ii, 0ii))
 
-    @test
-    def gcd04(): Bool = BigInt.gcd(0ii, 9233ii) == 9233ii
+    @Test
+    def gcd04(): Unit \ Assert = assertEq(expected = 9233ii, BigInt.gcd(0ii, 9233ii))
 
-    @test
-    def gcd05(): Bool = BigInt.gcd(9223ii, 33ii) == 1ii
+    @Test
+    def gcd05(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(9223ii, 33ii))
 
-    @test
-    def gcd06(): Bool = BigInt.gcd(32462531054272512000001ii, 578837438475345ii) == 1ii
+    @Test
+    def gcd06(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(32462531054272512000001ii, 578837438475345ii))
 
-    @test
-    def gcd07(): Bool = BigInt.gcd(32462531054272512000001ii, 578837982572398457234545ii) == 1ii
+    @Test
+    def gcd07(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(32462531054272512000001ii, 578837982572398457234545ii))
 
-    @test
-    def gcd08(): Bool = BigInt.gcd(32462531054272512000001ii, 92371823432134ii) == 1ii
+    @Test
+    def gcd08(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(32462531054272512000001ii, 92371823432134ii))
 
-    @test
-    def gcd09(): Bool = BigInt.gcd(-9ii, -3ii) == 3ii
+    @Test
+    def gcd09(): Unit \ Assert = assertEq(expected = 3ii, BigInt.gcd(-9ii, -3ii))
 
-    @test
-    def gcd010(): Bool = BigInt.gcd(21ii, -15ii) == 3ii
+    @Test
+    def gcd010(): Unit \ Assert = assertEq(expected = 3ii, BigInt.gcd(21ii, -15ii))
 
-    @test
-    def gcd011(): Bool = BigInt.gcd(-9233ii, 0ii) == 9233ii
+    @Test
+    def gcd011(): Unit \ Assert = assertEq(expected = 9233ii, BigInt.gcd(-9233ii, 0ii))
 
-    @test
-    def gcd012(): Bool = BigInt.gcd(0ii, -9233ii) == 9233ii
+    @Test
+    def gcd012(): Unit \ Assert = assertEq(expected = 9233ii, BigInt.gcd(0ii, -9233ii))
 
-    @test
-    def gcd013(): Bool = BigInt.gcd(9223ii, -33ii) == 1ii
+    @Test
+    def gcd013(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(9223ii, -33ii))
 
-    @test
-    def gcd014(): Bool = BigInt.gcd(-32462531054272512000001ii, 578837438475345ii) == 1ii
+    @Test
+    def gcd014(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(-32462531054272512000001ii, 578837438475345ii))
 
-    @test
-    def gcd015(): Bool = BigInt.gcd(-32462531054272512000001ii, 578837982572398457234545ii) == 1ii
+    @Test
+    def gcd015(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(-32462531054272512000001ii, 578837982572398457234545ii))
 
-    @test
-    def gcd016(): Bool = BigInt.gcd(32462531054272512000001ii, -92371823432134ii) == 1ii
+    @Test
+    def gcd016(): Unit \ Assert = assertEq(expected = 1ii, BigInt.gcd(32462531054272512000001ii, -92371823432134ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // getBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def getBit01(): Bool = BigInt.getBit(1ii, 0) == 1
+    @Test
+    def getBit01(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(1ii, 0))
 
-    @test
-    def getBit02(): Bool = BigInt.getBit(1ii, 1) == 0
+    @Test
+    def getBit02(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(1ii, 1))
 
-    @test
-    def getBit03(): Bool = BigInt.getBit(8388608ii, 23) == 1
+    @Test
+    def getBit03(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(8388608ii, 23))
 
-    @test
-    def getBit04(): Bool = BigInt.getBit(8388608ii, 22) == 0
+    @Test
+    def getBit04(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(8388608ii, 22))
 
-    @test
-    def getBit05(): Bool = BigInt.getBit(8388608ii, 24) == 0
+    @Test
+    def getBit05(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(8388608ii, 24))
 
-    @test
-    def getBit06(): Bool = BigInt.getBit(9223372036854775808ii, 63) == 1
+    @Test
+    def getBit06(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(9223372036854775808ii, 63))
 
-    @test
-    def getBit07(): Bool = BigInt.getBit(9223372036854775808ii, 62) == 0
+    @Test
+    def getBit07(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(9223372036854775808ii, 62))
 
-    @test
-    def getBit08(): Bool = BigInt.getBit(9223372036854775808ii, 64) == 0
+    @Test
+    def getBit08(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(9223372036854775808ii, 64))
 
-    @test
-    def getBit09(): Bool = BigInt.getBit(154742504910672534362390528ii, 87) == 1
+    @Test
+    def getBit09(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(154742504910672534362390528ii, 87))
 
-    @test
-    def getBit10(): Bool = BigInt.getBit(154742504910672534362390528ii, 86) == 0
+    @Test
+    def getBit10(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(154742504910672534362390528ii, 86))
 
-    @test
-    def getBit11(): Bool = BigInt.getBit(154742504910672534362390528ii, 88) == 0
+    @Test
+    def getBit11(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(154742504910672534362390528ii, 88))
 
-    @test
-    def getBit12(): Bool = BigInt.getBit(0ii, 7) == 0
+    @Test
+    def getBit12(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(0ii, 7))
 
-    @test
-    def getBit13(): Bool = BigInt.getBit(-1ii, 17) == 1
+    @Test
+    def getBit13(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-1ii, 17))
 
-    @test
-    def getBit14(): Bool = BigInt.getBit(-17ii, 4) == 0
+    @Test
+    def getBit14(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(-17ii, 4))
 
-    @test
-    def getBit15(): Bool = BigInt.getBit(-17ii, 3) == 1
+    @Test
+    def getBit15(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-17ii, 3))
 
-    @test
-    def getBit16(): Bool = BigInt.getBit(-17ii, 5) == 1
+    @Test
+    def getBit16(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-17ii, 5))
 
-    @test
-    def getBit17(): Bool = BigInt.getBit(-898274123413412341ii, 4) == 0
+    @Test
+    def getBit17(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(-898274123413412341ii, 4))
 
-    @test
-    def getBit18(): Bool = BigInt.getBit(-898274123413412341ii, 3) == 1
+    @Test
+    def getBit18(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-898274123413412341ii, 3))
 
-    @test
-    def getBit19(): Bool = BigInt.getBit(-898274123413412341ii, 35) == 0
+    @Test
+    def getBit19(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(-898274123413412341ii, 35))
 
-    @test
-    def getBit20(): Bool = BigInt.getBit(-898274123413412341ii, 36) == 1
+    @Test
+    def getBit20(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-898274123413412341ii, 36))
 
-    @test
-    def getBit21(): Bool = BigInt.getBit(-898274123413412341ii, 37) == 1
+    @Test
+    def getBit21(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-898274123413412341ii, 37))
 
-    @test
-    def getBit22(): Bool = BigInt.getBit(-8982741234134123419879712341ii, 92) == 0
+    @Test
+    def getBit22(): Unit \ Assert = assertEq(expected = 0, BigInt.getBit(-8982741234134123419879712341ii, 92))
 
-    @test
-    def getBit23(): Bool = BigInt.getBit(-8982741234134123419879712341ii, 93) == 1
+    @Test
+    def getBit23(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-8982741234134123419879712341ii, 93))
 
-    @test
-    def getBit24(): Bool = BigInt.getBit(-8982741234134123419879712341ii, 94) == 1
+    @Test
+    def getBit24(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-8982741234134123419879712341ii, 94))
 
-    @test
-    def getBit25(): Bool = BigInt.getBit(-8982741234134123419879712341ii, 95) == 1
+    @Test
+    def getBit25(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-8982741234134123419879712341ii, 95))
 
-    @test
-    def getBit26(): Bool = BigInt.getBit(-8982741234134123419879712341ii, 96) == 1
+    @Test
+    def getBit26(): Unit \ Assert = assertEq(expected = 1, BigInt.getBit(-8982741234134123419879712341ii, 96))
 
     /////////////////////////////////////////////////////////////////////////////
     // setBit                                                                  //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def setBit01(): Bool = BigInt.setBit(0ii, 0) == 1ii
+    @Test
+    def setBit01(): Unit \ Assert = assertEq(expected = 1ii, BigInt.setBit(0ii, 0))
 
-    @test
-    def setBit02(): Bool = BigInt.setBit(0ii, 1) == 2ii
+    @Test
+    def setBit02(): Unit \ Assert = assertEq(expected = 2ii, BigInt.setBit(0ii, 1))
 
-    @test
-    def setBit03(): Bool = BigInt.setBit(0ii, 31) == 2147483648ii
+    @Test
+    def setBit03(): Unit \ Assert = assertEq(expected = 2147483648ii, BigInt.setBit(0ii, 31))
 
-    @test
-    def setBit04(): Bool = BigInt.setBit(0ii, 32) == 4294967296ii
+    @Test
+    def setBit04(): Unit \ Assert = assertEq(expected = 4294967296ii, BigInt.setBit(0ii, 32))
 
-    @test
-    def setBit05(): Bool = BigInt.setBit(2305843009213693952ii, 55) == 2341871806232657920ii
+    @Test
+    def setBit05(): Unit \ Assert = assertEq(expected = 2341871806232657920ii, BigInt.setBit(2305843009213693952ii, 55))
 
-    @test
-    def setBit06(): Bool = BigInt.setBit(2305843009213693952ii, 62) == 6917529027641081856ii
+    @Test
+    def setBit06(): Unit \ Assert = assertEq(expected = 6917529027641081856ii, BigInt.setBit(2305843009213693952ii, 62))
 
-    @test
-    def setBit07(): Bool = BigInt.setBit(-17ii, 4) == -1ii
+    @Test
+    def setBit07(): Unit \ Assert = assertEq(expected = -1ii, BigInt.setBit(-17ii, 4))
 
-    @test
-    def setBit08(): Bool = BigInt.setBit(-1025ii, 10) == -1ii
+    @Test
+    def setBit08(): Unit \ Assert = assertEq(expected = -1ii, BigInt.setBit(-1025ii, 10))
 
-    @test
-    def setBit09(): Bool = BigInt.setBit(-17ii, 31) == -17ii
+    @Test
+    def setBit09(): Unit \ Assert = assertEq(expected = -17ii, BigInt.setBit(-17ii, 31))
 
-    @test
-    def setBit10(): Bool = BigInt.setBit(-17ii, 32) == -17ii
+    @Test
+    def setBit10(): Unit \ Assert = assertEq(expected = -17ii, BigInt.setBit(-17ii, 32))
 
-    @test
-    def setBit11(): Bool = BigInt.setBit(-17ii, 101) == -17ii
+    @Test
+    def setBit11(): Unit \ Assert = assertEq(expected = -17ii, BigInt.setBit(-17ii, 101))
 
     /////////////////////////////////////////////////////////////////////////////
     // clearBit                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clearBit01(): Bool = BigInt.clearBit(1ii, 0) == 0ii
+    @Test
+    def clearBit01(): Unit \ Assert = assertEq(expected = 0ii, BigInt.clearBit(1ii, 0))
 
-    @test
-    def clearBit02(): Bool = BigInt.clearBit(1ii, 1) == 1ii
+    @Test
+    def clearBit02(): Unit \ Assert = assertEq(expected = 1ii, BigInt.clearBit(1ii, 1))
 
-    @test
-    def clearBit03(): Bool = BigInt.clearBit(2ii, 1) == 0ii
+    @Test
+    def clearBit03(): Unit \ Assert = assertEq(expected = 0ii, BigInt.clearBit(2ii, 1))
 
-    @test
-    def clearBit04(): Bool = BigInt.clearBit(2ii, 2) == 2ii
+    @Test
+    def clearBit04(): Unit \ Assert = assertEq(expected = 2ii, BigInt.clearBit(2ii, 2))
 
-    @test
-    def clearBit05(): Bool = BigInt.clearBit(0ii, 31) == 0ii
+    @Test
+    def clearBit05(): Unit \ Assert = assertEq(expected = 0ii, BigInt.clearBit(0ii, 31))
 
-    @test
-    def clearBit06(): Bool = BigInt.clearBit(0ii, 32) == 0ii
+    @Test
+    def clearBit06(): Unit \ Assert = assertEq(expected = 0ii, BigInt.clearBit(0ii, 32))
 
-    @test
-    def clearBit07(): Bool = BigInt.clearBit(2147483648ii, 31) == 0ii
+    @Test
+    def clearBit07(): Unit \ Assert = assertEq(expected = 0ii, BigInt.clearBit(2147483648ii, 31))
 
-    @test
-    def clearBit08(): Bool = BigInt.clearBit(618970019642690137449562112ii, 89) == 0ii
+    @Test
+    def clearBit08(): Unit \ Assert = assertEq(expected = 0ii, BigInt.clearBit(618970019642690137449562112ii, 89))
 
-    @test
-    def clearBit09(): Bool = BigInt.clearBit(-1ii, 0) == -2ii
+    @Test
+    def clearBit09(): Unit \ Assert = assertEq(expected = -2ii, BigInt.clearBit(-1ii, 0))
 
-    @test
-    def clearBit10(): Bool = BigInt.clearBit(-1ii, 1) == -3ii
+    @Test
+    def clearBit10(): Unit \ Assert = assertEq(expected = -3ii, BigInt.clearBit(-1ii, 1))
 
-    @test
-    def clearBit11(): Bool = BigInt.clearBit(-1ii, 5) == -33ii
+    @Test
+    def clearBit11(): Unit \ Assert = assertEq(expected = -33ii, BigInt.clearBit(-1ii, 5))
 
-    @test
-    def clearBit12(): Bool = BigInt.clearBit(-1ii, 31) == -2147483649ii
+    @Test
+    def clearBit12(): Unit \ Assert = assertEq(expected = -2147483649ii, BigInt.clearBit(-1ii, 31))
 
-    @test
-    def clearBit13(): Bool = BigInt.clearBit(-1ii, 32) == -4294967297ii
+    @Test
+    def clearBit13(): Unit \ Assert = assertEq(expected = -4294967297ii, BigInt.clearBit(-1ii, 32))
 
     /////////////////////////////////////////////////////////////////////////////
     // flipBit                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def flipBit01(): Bool = BigInt.flipBit(1ii, 0) == 0ii
+    @Test
+    def flipBit01(): Unit \ Assert = assertEq(expected = 0ii, BigInt.flipBit(1ii, 0))
 
-    @test
-    def flipBit02(): Bool = BigInt.flipBit(1ii, 1) == 3ii
+    @Test
+    def flipBit02(): Unit \ Assert = assertEq(expected = 3ii, BigInt.flipBit(1ii, 1))
 
-    @test
-    def flipBit03(): Bool = BigInt.flipBit(2ii, 1) == 0ii
+    @Test
+    def flipBit03(): Unit \ Assert = assertEq(expected = 0ii, BigInt.flipBit(2ii, 1))
 
-    @test
-    def flipBit04(): Bool = BigInt.flipBit(2ii, 2) == 6ii
+    @Test
+    def flipBit04(): Unit \ Assert = assertEq(expected = 6ii, BigInt.flipBit(2ii, 2))
 
-    @test
-    def flipBit05(): Bool = BigInt.flipBit(0ii, 31) == 2147483648ii
+    @Test
+    def flipBit05(): Unit \ Assert = assertEq(expected = 2147483648ii, BigInt.flipBit(0ii, 31))
 
-    @test
-    def flipBit06(): Bool = BigInt.flipBit(0ii, 32) == 4294967296ii
+    @Test
+    def flipBit06(): Unit \ Assert = assertEq(expected = 4294967296ii, BigInt.flipBit(0ii, 32))
 
-    @test
-    def flipBit07(): Bool = BigInt.flipBit(2147483648ii, 31) == 0ii
+    @Test
+    def flipBit07(): Unit \ Assert = assertEq(expected = 0ii, BigInt.flipBit(2147483648ii, 31))
 
-    @test
-    def flipBit08(): Bool = BigInt.flipBit(618970019642690137449562112ii, 89) == 0ii
+    @Test
+    def flipBit08(): Unit \ Assert = assertEq(expected = 0ii, BigInt.flipBit(618970019642690137449562112ii, 89))
 
-    @test
-    def flipBit09(): Bool = BigInt.flipBit(-1ii, 0) == -2ii
+    @Test
+    def flipBit09(): Unit \ Assert = assertEq(expected = -2ii, BigInt.flipBit(-1ii, 0))
 
-    @test
-    def flipBit10(): Bool = BigInt.flipBit(-1ii, 1) == -3ii
+    @Test
+    def flipBit10(): Unit \ Assert = assertEq(expected = -3ii, BigInt.flipBit(-1ii, 1))
 
-    @test
-    def flipBit11(): Bool = BigInt.flipBit(-1ii, 5) == -33ii
+    @Test
+    def flipBit11(): Unit \ Assert = assertEq(expected = -33ii, BigInt.flipBit(-1ii, 5))
 
-    @test
-    def flipBit12(): Bool = BigInt.flipBit(-1ii, 31) == -2147483649ii
+    @Test
+    def flipBit12(): Unit \ Assert = assertEq(expected = -2147483649ii, BigInt.flipBit(-1ii, 31))
 
-    @test
-    def flipBit13(): Bool = BigInt.flipBit(-1ii, 32) == -4294967297ii
+    @Test
+    def flipBit13(): Unit \ Assert = assertEq(expected = -4294967297ii, BigInt.flipBit(-1ii, 32))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // leftShift
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def testBitwiseLeftShift01(): Bool = BigInt.leftShift(8ii, 0) == 8ii
+    @Test
+    def testBitwiseLeftShift01(): Unit \ Assert = assertEq(expected = 8ii, BigInt.leftShift(8ii, 0))
 
-    @test
-    def testBitwiseLeftShift02(): Bool = BigInt.leftShift(8ii, 32) == 34359738368ii
+    @Test
+    def testBitwiseLeftShift02(): Unit \ Assert = assertEq(expected = 34359738368ii, BigInt.leftShift(8ii, 32))
 
-    @test
-    def testBitwiseLeftShift03(): Bool = BigInt.leftShift(8ii, 64) == 147573952589676412928ii
+    @Test
+    def testBitwiseLeftShift03(): Unit \ Assert = assertEq(expected = 147573952589676412928ii, BigInt.leftShift(8ii, 64))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // rightShift                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def testBitwiseRightShift04(): Bool = BigInt.rightShift(1200000000000000000000ii, 0) == 1200000000000000000000ii
+    @Test
+    def testBitwiseRightShift04(): Unit \ Assert = assertEq(expected = 1200000000000000000000ii, BigInt.rightShift(1200000000000000000000ii, 0))
 
-    @test
-    def testBitwiseRightShift05(): Bool = BigInt.rightShift(1200000000000000000000ii, 2) == 300000000000000000000ii
+    @Test
+    def testBitwiseRightShift05(): Unit \ Assert = assertEq(expected = 300000000000000000000ii, BigInt.rightShift(1200000000000000000000ii, 2))
 
-    @test
-    def testBitwiseRightShift06(): Bool = BigInt.rightShift(1200000000000000000000ii, 72) == 0ii
+    @Test
+    def testBitwiseRightShift06(): Unit \ Assert = assertEq(expected = 0ii, BigInt.rightShift(1200000000000000000000ii, 72))
 
-    @test
-    def testBitwiseRightShift07(): Bool = BigInt.rightShift(-1200000000000000000000ii, 2) == -300000000000000000000ii
+    @Test
+    def testBitwiseRightShift07(): Unit \ Assert = assertEq(expected = -300000000000000000000ii, BigInt.rightShift(-1200000000000000000000ii, 2))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseAnd                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseAnd01(): Bool = BigInt.bitwiseAnd(0ii, 0ii) == 0ii
+    @Test
+    def bitwiseAnd01(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseAnd(0ii, 0ii))
 
-    @test
-    def bitwiseAnd02(): Bool = BigInt.bitwiseAnd(127ii, 0ii) == 0ii
+    @Test
+    def bitwiseAnd02(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseAnd(127ii, 0ii))
 
-    @test
-    def bitwiseAnd03(): Bool = BigInt.bitwiseAnd(-128ii, 0ii) == 0ii
+    @Test
+    def bitwiseAnd03(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseAnd(-128ii, 0ii))
 
-    @test
-    def bitwiseAnd04(): Bool = BigInt.bitwiseAnd(0ii, 1ii) == 0ii
+    @Test
+    def bitwiseAnd04(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseAnd(0ii, 1ii))
 
-    @test
-    def bitwiseAnd05(): Bool = BigInt.bitwiseAnd(127ii, 1ii) == 1ii
+    @Test
+    def bitwiseAnd05(): Unit \ Assert = assertEq(expected = 1ii, BigInt.bitwiseAnd(127ii, 1ii))
 
-    @test
-    def bitwiseAnd06(): Bool = BigInt.bitwiseAnd(-128ii, 1ii) == 0ii
+    @Test
+    def bitwiseAnd06(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseAnd(-128ii, 1ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseNot                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseNot01(): Bool = BigInt.bitwiseNot(0ii) == -1ii
+    @Test
+    def bitwiseNot01(): Unit \ Assert = assertEq(expected = -1ii, BigInt.bitwiseNot(0ii))
 
-    @test
-    def bitwiseNot02(): Bool = BigInt.bitwiseNot(1ii) == -2ii
+    @Test
+    def bitwiseNot02(): Unit \ Assert = assertEq(expected = -2ii, BigInt.bitwiseNot(1ii))
 
-    @test
-    def bitwiseNot03(): Bool = BigInt.bitwiseNot(-1ii) == -0ii
+    @Test
+    def bitwiseNot03(): Unit \ Assert = assertEq(expected = -0ii, BigInt.bitwiseNot(-1ii))
 
-    @test
-    def bitwiseNot04(): Bool = BigInt.bitwiseNot(127ii) == -128ii
+    @Test
+    def bitwiseNot04(): Unit \ Assert = assertEq(expected = -128ii, BigInt.bitwiseNot(127ii))
 
-    @test
-    def bitwiseNot05(): Bool = BigInt.bitwiseNot(-128ii) == 127ii
+    @Test
+    def bitwiseNot05(): Unit \ Assert = assertEq(expected = 127ii, BigInt.bitwiseNot(-128ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseOr                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseOr01(): Bool = BigInt.bitwiseOr(0ii, 0ii) == 0ii
+    @Test
+    def bitwiseOr01(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseOr(0ii, 0ii))
 
-    @test
-    def bitwiseOr02(): Bool = BigInt.bitwiseOr(127ii, 0ii) == 127ii
+    @Test
+    def bitwiseOr02(): Unit \ Assert = assertEq(expected = 127ii, BigInt.bitwiseOr(127ii, 0ii))
 
-    @test
-    def bitwiseOr03(): Bool = BigInt.bitwiseOr(-128ii, 0ii) == -128ii
+    @Test
+    def bitwiseOr03(): Unit \ Assert = assertEq(expected = -128ii, BigInt.bitwiseOr(-128ii, 0ii))
 
-    @test
-    def bitwiseOr04(): Bool = BigInt.bitwiseOr(0ii, 1ii) == 1ii
+    @Test
+    def bitwiseOr04(): Unit \ Assert = assertEq(expected = 1ii, BigInt.bitwiseOr(0ii, 1ii))
 
-    @test
-    def bitwiseOr05(): Bool = BigInt.bitwiseOr(127ii, 1ii) == 127ii
+    @Test
+    def bitwiseOr05(): Unit \ Assert = assertEq(expected = 127ii, BigInt.bitwiseOr(127ii, 1ii))
 
-    @test
-    def bitwiseOr06(): Bool = BigInt.bitwiseOr(-128ii, 1ii) == -127ii
+    @Test
+    def bitwiseOr06(): Unit \ Assert = assertEq(expected = -127ii, BigInt.bitwiseOr(-128ii, 1ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // bitwiseXor                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bitwiseXor01(): Bool = BigInt.bitwiseXor(0ii, 0ii) == 0ii
+    @Test
+    def bitwiseXor01(): Unit \ Assert = assertEq(expected = 0ii, BigInt.bitwiseXor(0ii, 0ii))
 
-    @test
-    def bitwiseXor02(): Bool = BigInt.bitwiseXor(127ii, 0ii) == 127ii
+    @Test
+    def bitwiseXor02(): Unit \ Assert = assertEq(expected = 127ii, BigInt.bitwiseXor(127ii, 0ii))
 
-    @test
-    def bitwiseXor03(): Bool = BigInt.bitwiseXor(-128ii, 0ii) == -128ii
+    @Test
+    def bitwiseXor03(): Unit \ Assert = assertEq(expected = -128ii, BigInt.bitwiseXor(-128ii, 0ii))
 
-    @test
-    def bitwiseXor04(): Bool = BigInt.bitwiseXor(0ii, 1ii) == 1ii
+    @Test
+    def bitwiseXor04(): Unit \ Assert = assertEq(expected = 1ii, BigInt.bitwiseXor(0ii, 1ii))
 
-    @test
-    def bitwiseXor05(): Bool = BigInt.bitwiseXor(127ii, 1ii) == 126ii
+    @Test
+    def bitwiseXor05(): Unit \ Assert = assertEq(expected = 126ii, BigInt.bitwiseXor(127ii, 1ii))
 
-    @test
-    def bitwiseXor06(): Bool = BigInt.bitwiseXor(-128ii, 1ii) == -127ii
+    @Test
+    def bitwiseXor06(): Unit \ Assert = assertEq(expected = -127ii, BigInt.bitwiseXor(-128ii, 1ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toString01(): Bool = BigInt.toString(0ii) == "0"
+    @Test
+    def toString01(): Unit \ Assert = assertEq(expected = "0", BigInt.toString(0ii))
 
-    @test
-    def toString02(): Bool = BigInt.toString(1ii) == "1"
+    @Test
+    def toString02(): Unit \ Assert = assertEq(expected = "1", BigInt.toString(1ii))
 
-    @test
-    def toString03(): Bool = BigInt.toString(-1ii) == "-1"
+    @Test
+    def toString03(): Unit \ Assert = assertEq(expected = "-1", BigInt.toString(-1ii))
 
-    @test
-    def toString04(): Bool = BigInt.toString(3498457932459234592873452983453245ii) == "3498457932459234592873452983453245"
+    @Test
+    def toString04(): Unit \ Assert = assertEq(expected = "3498457932459234592873452983453245", BigInt.toString(3498457932459234592873452983453245ii))
 
-    @test
-    def toString05(): Bool = BigInt.toString(-3498457932459234592873452983453245ii) == "-3498457932459234592873452983453245"
+    @Test
+    def toString05(): Unit \ Assert = assertEq(expected = "-3498457932459234592873452983453245", BigInt.toString(-3498457932459234592873452983453245ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def fromString01(): Bool = BigInt.fromString("Bad") |> Option.isEmpty
+    @Test
+    def fromString01(): Unit \ Assert = assertNone(BigInt.fromString("Bad"))
 
-    @test
-    def fromString02(): Bool = BigInt.fromString(" 1") == Some(1ii)
+    @Test
+    def fromString02(): Unit \ Assert = assertEq(expected = Some(1ii), BigInt.fromString(" 1"))
 
-    @test
-    def fromString03(): Bool = BigInt.fromString("1 ") == Some(1ii)
+    @Test
+    def fromString03(): Unit \ Assert = assertEq(expected = Some(1ii), BigInt.fromString("1 "))
 
-    @test
-    def fromString04(): Bool = BigInt.fromString("0") == Some(0ii)
+    @Test
+    def fromString04(): Unit \ Assert = assertEq(expected = Some(0ii), BigInt.fromString("0"))
 
-    @test
-    def fromString05(): Bool = BigInt.fromString("1") == Some(1ii)
+    @Test
+    def fromString05(): Unit \ Assert = assertEq(expected = Some(1ii), BigInt.fromString("1"))
 
-    @test
-    def fromString06(): Bool = BigInt.fromString("-1") == Some(-1ii)
+    @Test
+    def fromString06(): Unit \ Assert = assertEq(expected = Some(-1ii), BigInt.fromString("-1"))
 
-    @test
-    def fromString07(): Bool = BigInt.fromString("3498457932459234592873452983453245") == Some(3498457932459234592873452983453245ii)
+    @Test
+    def fromString07(): Unit \ Assert = assertEq(expected = Some(3498457932459234592873452983453245ii), BigInt.fromString("3498457932459234592873452983453245"))
 
-    @test
-    def fromString08(): Bool = BigInt.fromString("-3498457932459234592873452983453245") == Some(-3498457932459234592873452983453245ii)
+    @Test
+    def fromString08(): Unit \ Assert = assertEq(expected = Some(-3498457932459234592873452983453245ii), BigInt.fromString("-3498457932459234592873452983453245"))
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt8                                                               //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def tryToInt801(): Bool = BigInt.tryToInt8(0ii) == Some(0i8)
+    @Test
+    def tryToInt801(): Unit \ Assert = assertEq(expected = Some(0i8), BigInt.tryToInt8(0ii))
 
-    @test
-    def tryToInt802(): Bool = BigInt.tryToInt8(1ii) == Some(1i8)
+    @Test
+    def tryToInt802(): Unit \ Assert = assertEq(expected = Some(1i8), BigInt.tryToInt8(1ii))
 
-    @test
-    def tryToInt803(): Bool = BigInt.tryToInt8(-1ii) == Some(-1i8)
+    @Test
+    def tryToInt803(): Unit \ Assert = assertEq(expected = Some(-1i8), BigInt.tryToInt8(-1ii))
 
-    @test
-    def tryToInt804(): Bool = BigInt.tryToInt8(127ii) == Some(127i8)
+    @Test
+    def tryToInt804(): Unit \ Assert = assertEq(expected = Some(127i8), BigInt.tryToInt8(127ii))
 
-    @test
-    def tryToInt805(): Bool = BigInt.tryToInt8(128ii) == None
+    @Test
+    def tryToInt805(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt8(128ii))
 
-    @test
-    def tryToInt806(): Bool = BigInt.tryToInt8(-128ii) == Some(-128i8)
+    @Test
+    def tryToInt806(): Unit \ Assert = assertEq(expected = Some(-128i8), BigInt.tryToInt8(-128ii))
 
-    @test
-    def tryToInt807(): Bool = BigInt.tryToInt8(-129ii) == None
+    @Test
+    def tryToInt807(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt8(-129ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt16                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def tryToInt1601(): Bool = BigInt.tryToInt16(0ii) == Some(0i16)
+    @Test
+    def tryToInt1601(): Unit \ Assert = assertEq(expected = Some(0i16), BigInt.tryToInt16(0ii))
 
-    @test
-    def tryToInt1602(): Bool = BigInt.tryToInt16(1ii) == Some(1i16)
+    @Test
+    def tryToInt1602(): Unit \ Assert = assertEq(expected = Some(1i16), BigInt.tryToInt16(1ii))
 
-    @test
-    def tryToInt1603(): Bool = BigInt.tryToInt16(-1ii) == Some(-1i16)
+    @Test
+    def tryToInt1603(): Unit \ Assert = assertEq(expected = Some(-1i16), BigInt.tryToInt16(-1ii))
 
-    @test
-    def tryToInt1604(): Bool = BigInt.tryToInt16(32767ii) == Some(32767i16)
+    @Test
+    def tryToInt1604(): Unit \ Assert = assertEq(expected = Some(32767i16), BigInt.tryToInt16(32767ii))
 
-    @test
-    def tryToInt1605(): Bool = BigInt.tryToInt16(32768ii) == None
+    @Test
+    def tryToInt1605(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt16(32768ii))
 
-    @test
-    def tryToInt1606(): Bool = BigInt.tryToInt16(-32768ii) == Some(-32768i16)
+    @Test
+    def tryToInt1606(): Unit \ Assert = assertEq(expected = Some(-32768i16), BigInt.tryToInt16(-32768ii))
 
-    @test
-    def tryToInt1607(): Bool = BigInt.tryToInt16(-32769ii) == None
+    @Test
+    def tryToInt1607(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt16(-32769ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt32                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def tryToInt3201(): Bool = BigInt.tryToInt32(0ii) == Some(0)
+    @Test
+    def tryToInt3201(): Unit \ Assert = assertEq(expected = Some(0), BigInt.tryToInt32(0ii))
 
-    @test
-    def tryToInt3202(): Bool = BigInt.tryToInt32(1ii) == Some(1)
+    @Test
+    def tryToInt3202(): Unit \ Assert = assertEq(expected = Some(1), BigInt.tryToInt32(1ii))
 
-    @test
-    def tryToInt3203(): Bool = BigInt.tryToInt32(-1ii) == Some(-1)
+    @Test
+    def tryToInt3203(): Unit \ Assert = assertEq(expected = Some(-1), BigInt.tryToInt32(-1ii))
 
-    @test
-    def tryToInt3204(): Bool = BigInt.tryToInt32(2147483647ii) == Some(2147483647)
+    @Test
+    def tryToInt3204(): Unit \ Assert = assertEq(expected = Some(2147483647), BigInt.tryToInt32(2147483647ii))
 
-    @test
-    def tryToInt3205(): Bool = BigInt.tryToInt32(2147483648ii) == None
+    @Test
+    def tryToInt3205(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt32(2147483648ii))
 
-    @test
-    def tryToInt3206(): Bool = BigInt.tryToInt32(-2147483648ii) == Some(-2147483648)
+    @Test
+    def tryToInt3206(): Unit \ Assert = assertEq(expected = Some(-2147483648), BigInt.tryToInt32(-2147483648ii))
 
-    @test
-    def tryToInt3207(): Bool = BigInt.tryToInt32(-2147483649ii) == None
+    @Test
+    def tryToInt3207(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt32(-2147483649ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToInt64                                                              //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def tryToInt6401(): Bool = BigInt.tryToInt64(0ii) == Some(0i64)
+    @Test
+    def tryToInt6401(): Unit \ Assert = assertEq(expected = Some(0i64), BigInt.tryToInt64(0ii))
 
-    @test
-    def tryToInt6402(): Bool = BigInt.tryToInt64(1ii) == Some(1i64)
+    @Test
+    def tryToInt6402(): Unit \ Assert = assertEq(expected = Some(1i64), BigInt.tryToInt64(1ii))
 
-    @test
-    def tryToInt6403(): Bool = BigInt.tryToInt64(-1ii) == Some(-1i64)
+    @Test
+    def tryToInt6403(): Unit \ Assert = assertEq(expected = Some(-1i64), BigInt.tryToInt64(-1ii))
 
-    @test
-    def tryToInt6404(): Bool = BigInt.tryToInt64(9223372036854775807ii) == Some(9223372036854775807i64)
+    @Test
+    def tryToInt6404(): Unit \ Assert = assertEq(expected = Some(9223372036854775807i64), BigInt.tryToInt64(9223372036854775807ii))
 
-    @test
-    def tryToInt6405(): Bool = BigInt.tryToInt64(9223372036854775808ii) == None
+    @Test
+    def tryToInt6405(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt64(9223372036854775808ii))
 
-    @test
-    def tryToInt6406(): Bool = BigInt.tryToInt64(-9223372036854775808ii) == Some(-9223372036854775808i64)
+    @Test
+    def tryToInt6406(): Unit \ Assert = assertEq(expected = Some(-9223372036854775808i64), BigInt.tryToInt64(-9223372036854775808ii))
 
-    @test
-    def tryToInt6407(): Bool = BigInt.tryToInt64(-9223372036854775809ii) == None
+    @Test
+    def tryToInt6407(): Unit \ Assert = assertEq(expected = None, BigInt.tryToInt64(-9223372036854775809ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToFloat32                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def tryToFloat3201(): Bool = BigInt.tryToFloat32(0ii) == Some(0.0f32)
+    @Test
+    def tryToFloat3201(): Unit \ Assert = assertEq(expected = Some(0.0f32), BigInt.tryToFloat32(0ii))
 
-    @test
-    def tryToFloat3202(): Bool = BigInt.tryToFloat32(1ii) == Some(1.0f32)
+    @Test
+    def tryToFloat3202(): Unit \ Assert = assertEq(expected = Some(1.0f32), BigInt.tryToFloat32(1ii))
 
-    @test
-    def tryToFloat3203(): Bool = BigInt.tryToFloat32(-1ii) == Some(-1.0f32)
+    @Test
+    def tryToFloat3203(): Unit \ Assert = assertEq(expected = Some(-1.0f32), BigInt.tryToFloat32(-1ii))
 
-    @test
-    def tryToFloat3204(): Bool =
+    @Test
+    def tryToFloat3204(): Unit \ Assert =
         let step = () -> {
             forM (
                 max <- Float32.maxValue() |> Float32.tryToBigInt;
                 res <- BigInt.tryToFloat32(max)
             ) yield res
         };
-        step() != None
+        assertSome(step())
 
-    @test
-    def tryToFloat3205(): Bool =
+    @Test
+    def tryToFloat3205(): Unit \ Assert =
         let step = () -> {
             forM (
                 max <- Float32.maxValue() |> Float32.tryToBigInt;
                 res <- BigInt.tryToFloat32(max + 1ii)
             ) yield res
         };
-        step() == None
+        assertEq(expected = None, step())
 
-    @test
-    def tryToFloat3206(): Bool =
+    @Test
+    def tryToFloat3206(): Unit \ Assert =
         let step = () -> {
             forM (
                 min <- Float32.minValue() |> Float32.tryToBigInt;
                 res <- BigInt.tryToFloat32(min)
             ) yield res
         };
-        step() != None
+        assertSome(step())
 
-    @test
-    def tryToFloat3207(): Bool =
+    @Test
+    def tryToFloat3207(): Unit \ Assert =
         let step = () -> {
             forM (
                 min <- Float32.minValue() |> Float32.tryToBigInt;
                 res <- BigInt.tryToFloat32(min - 1ii)
             ) yield res
         };
-        step() == None
+        assertEq(expected = None, step())
 
     /////////////////////////////////////////////////////////////////////////////
     // tryToFloat64                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def tryToFloat6401(): Bool = BigInt.tryToFloat64(0ii) == Some(0.0f64)
+    @Test
+    def tryToFloat6401(): Unit \ Assert = assertEq(expected = Some(0.0f64), BigInt.tryToFloat64(0ii))
 
-    @test
-    def tryToFloat6402(): Bool = BigInt.tryToFloat64(1ii) == Some(1.0f64)
+    @Test
+    def tryToFloat6402(): Unit \ Assert = assertEq(expected = Some(1.0f64), BigInt.tryToFloat64(1ii))
 
-    @test
-    def tryToFloat6403(): Bool = BigInt.tryToFloat64(-1ii) == Some(-1.0f64)
+    @Test
+    def tryToFloat6403(): Unit \ Assert = assertEq(expected = Some(-1.0f64), BigInt.tryToFloat64(-1ii))
 
-    @test
-    def tryToFloat6404(): Bool =
+    @Test
+    def tryToFloat6404(): Unit \ Assert =
         let step = () -> {
             forM (
                 max <- Float64.maxValue() |> Float64.tryToBigInt;
                 res <- BigInt.tryToFloat64(max)
             ) yield res
         };
-        step() != None
+        assertSome(step())
 
-    @test
-    def tryToFloat6405(): Bool =
+    @Test
+    def tryToFloat6405(): Unit \ Assert =
         let step = () -> {
             forM (
                 max <- Float64.maxValue() |> Float64.tryToBigInt;
                 res <- BigInt.tryToFloat64(max + 1ii)
             ) yield res
         };
-        step() == None
+        assertEq(expected = None, step())
 
-    @test
-    def tryToFloat6406(): Bool =
+    @Test
+    def tryToFloat6406(): Unit \ Assert =
         let step = () -> {
             forM (
                 min <- Float64.minValue() |> Float64.tryToBigInt;
                 res <- BigInt.tryToFloat64(min)
             ) yield res
         };
-        step() != None
+        assertSome(step())
 
-    @test
-    def tryToFloat6407(): Bool =
+    @Test
+    def tryToFloat6407(): Unit \ Assert =
         let step = () -> {
             forM (
                 min <- Float64.minValue() |> Float64.tryToBigInt;
                 res <- BigInt.tryToFloat64(min - 1ii)
             ) yield res
         };
-        step() == None
+        assertEq(expected = None, step())
 
     /////////////////////////////////////////////////////////////////////////////
     // toBigDecimal                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def toBigDecimal01(): Bool = BigInt.toBigDecimal(0ii) == 0.0ff
+    @Test
+    def toBigDecimal01(): Unit \ Assert = assertEq(expected = 0.0ff, BigInt.toBigDecimal(0ii))
 
-    @test
-    def toBigDecimal02(): Bool = BigInt.toBigDecimal(1ii) == 1.0ff
+    @Test
+    def toBigDecimal02(): Unit \ Assert = assertEq(expected = 1.0ff, BigInt.toBigDecimal(1ii))
 
-    @test
-    def toBigDecimal03(): Bool = BigInt.toBigDecimal(-1ii) == -1.0ff
+    @Test
+    def toBigDecimal03(): Unit \ Assert = assertEq(expected = -1.0ff, BigInt.toBigDecimal(-1ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt8                                                             //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clampToInt801(): Bool = BigInt.clampToInt8(0ii, -100i8, 100i8) == 0i8
+    @Test
+    def clampToInt801(): Unit \ Assert = assertEq(expected = 0i8, BigInt.clampToInt8(min = -100i8, max = 100i8, 0ii))
 
-    @test
-    def clampToInt802(): Bool = BigInt.clampToInt8(100ii, -100i8, 100i8) == 100i8
+    @Test
+    def clampToInt802(): Unit \ Assert = assertEq(expected = 100i8, BigInt.clampToInt8(min = -100i8, max = 100i8, 100ii))
 
-    @test
-    def clampToInt803(): Bool = BigInt.clampToInt8(101ii, -100i8, 100i8) == 100i8
+    @Test
+    def clampToInt803(): Unit \ Assert = assertEq(expected = 100i8, BigInt.clampToInt8(min = -100i8, max = 100i8, 101ii))
 
-    @test
-    def clampToInt804(): Bool = BigInt.clampToInt8(-100ii, -100i8, 100i8) == -100i8
+    @Test
+    def clampToInt804(): Unit \ Assert = assertEq(expected = -100i8, BigInt.clampToInt8(min = -100i8, max = 100i8, -100ii))
 
-    @test
-    def clampToInt805(): Bool = BigInt.clampToInt8(-101ii, -100i8, 100i8) == -100i8
+    @Test
+    def clampToInt805(): Unit \ Assert = assertEq(expected = -100i8, BigInt.clampToInt8(min = -100i8, max = 100i8, -101ii))
 
-    @test
-    def clampToInt806(): Bool = BigInt.clampToInt8(8982741234134123419879712341ii, -100i8, 100i8) == 100i8
+    @Test
+    def clampToInt806(): Unit \ Assert = assertEq(expected = 100i8, BigInt.clampToInt8(min = -100i8, max = 100i8, 8982741234134123419879712341ii))
 
-    @test
-    def clampToInt807(): Bool = BigInt.clampToInt8(-8982741234134123419879712341ii, -100i8, 100i8) == -100i8
+    @Test
+    def clampToInt807(): Unit \ Assert = assertEq(expected = -100i8, BigInt.clampToInt8(min = -100i8, max = 100i8, -8982741234134123419879712341ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt16                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clampToInt1601(): Bool = BigInt.clampToInt16(0ii, -100i16, 100i16) == 0i16
+    @Test
+    def clampToInt1601(): Unit \ Assert = assertEq(expected = 0i16, BigInt.clampToInt16(min = -100i16, max = 100i16, 0ii))
 
-    @test
-    def clampToInt1602(): Bool = BigInt.clampToInt16(100ii, -100i16, 100i16) == 100i16
+    @Test
+    def clampToInt1602(): Unit \ Assert = assertEq(expected = 100i16, BigInt.clampToInt16(min = -100i16, max = 100i16, 100ii))
 
-    @test
-    def clampToInt1603(): Bool = BigInt.clampToInt16(101ii, -100i16, 100i16) == 100i16
+    @Test
+    def clampToInt1603(): Unit \ Assert = assertEq(expected = 100i16, BigInt.clampToInt16(min = -100i16, max = 100i16, 101ii))
 
-    @test
-    def clampToInt1604(): Bool = BigInt.clampToInt16(-100ii, -100i16, 100i16) == -100i16
+    @Test
+    def clampToInt1604(): Unit \ Assert = assertEq(expected = -100i16, BigInt.clampToInt16(min = -100i16, max = 100i16, -100ii))
 
-    @test
-    def clampToInt1605(): Bool = BigInt.clampToInt16(-101ii, -100i16, 100i16) == -100i16
+    @Test
+    def clampToInt1605(): Unit \ Assert = assertEq(expected = -100i16, BigInt.clampToInt16(min = -100i16, max = 100i16, -101ii))
 
-    @test
-    def clampToInt1606(): Bool = BigInt.clampToInt16(8982741234134123419879712341ii, -100i16, 100i16) == 100i16
+    @Test
+    def clampToInt1606(): Unit \ Assert = assertEq(expected = 100i16, BigInt.clampToInt16(min = -100i16, max = 100i16, 8982741234134123419879712341ii))
 
-    @test
-    def clampToInt1607(): Bool = BigInt.clampToInt16(-8982741234134123419879712341ii, -100i16, 100i16) == -100i16
+    @Test
+    def clampToInt1607(): Unit \ Assert = assertEq(expected = -100i16, BigInt.clampToInt16(min = -100i16, max = 100i16, -8982741234134123419879712341ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt32                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clampToInt3201(): Bool = BigInt.clampToInt32(0ii, -100, 100) == 0
+    @Test
+    def clampToInt3201(): Unit \ Assert = assertEq(expected = 0, BigInt.clampToInt32(min = -100, max = 100, 0ii))
 
-    @test
-    def clampToInt3202(): Bool = BigInt.clampToInt32(100ii, -100, 100) == 100
+    @Test
+    def clampToInt3202(): Unit \ Assert = assertEq(expected = 100, BigInt.clampToInt32(min = -100, max = 100, 100ii))
 
-    @test
-    def clampToInt3203(): Bool = BigInt.clampToInt32(101ii, -100, 100) == 100
+    @Test
+    def clampToInt3203(): Unit \ Assert = assertEq(expected = 100, BigInt.clampToInt32(min = -100, max = 100, 101ii))
 
-    @test
-    def clampToInt3204(): Bool = BigInt.clampToInt32(-100ii, -100, 100) == -100
+    @Test
+    def clampToInt3204(): Unit \ Assert = assertEq(expected = -100, BigInt.clampToInt32(min = -100, max = 100, -100ii))
 
-    @test
-    def clampToInt3205(): Bool = BigInt.clampToInt32(-101ii, -100, 100) == -100
+    @Test
+    def clampToInt3205(): Unit \ Assert = assertEq(expected = -100, BigInt.clampToInt32(min = -100, max = 100, -101ii))
 
-    @test
-    def clampToInt3206(): Bool = BigInt.clampToInt32(8982741234134123419879712341ii, -100i32, 100i32) == 100i32
+    @Test
+    def clampToInt3206(): Unit \ Assert = assertEq(expected = 100i32, BigInt.clampToInt32(min = -100i32, max = 100i32, 8982741234134123419879712341ii))
 
-    @test
-    def clampToInt3207(): Bool = BigInt.clampToInt32(-8982741234134123419879712341ii, -100i32, 100i32) == -100i32
+    @Test
+    def clampToInt3207(): Unit \ Assert = assertEq(expected = -100i32, BigInt.clampToInt32(min = -100i32, max = 100i32, -8982741234134123419879712341ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToInt64                                                            //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clampToInt6401(): Bool = BigInt.clampToInt64(0ii, -100i64, 100i64) == 0i64
+    @Test
+    def clampToInt6401(): Unit \ Assert = assertEq(expected = 0i64, BigInt.clampToInt64(min = -100i64, max = 100i64, 0ii))
 
-    @test
-    def clampToInt6402(): Bool = BigInt.clampToInt64(100ii, -100i64, 100i64) == 100i64
+    @Test
+    def clampToInt6402(): Unit \ Assert = assertEq(expected = 100i64, BigInt.clampToInt64(min = -100i64, max = 100i64, 100ii))
 
-    @test
-    def clampToInt6403(): Bool = BigInt.clampToInt64(101ii, -100i64, 100i64) == 100i64
+    @Test
+    def clampToInt6403(): Unit \ Assert = assertEq(expected = 100i64, BigInt.clampToInt64(min = -100i64, max = 100i64, 101ii))
 
-    @test
-    def clampToInt6404(): Bool = BigInt.clampToInt64(-100ii, -100i64, 100i64) == -100i64
+    @Test
+    def clampToInt6404(): Unit \ Assert = assertEq(expected = -100i64, BigInt.clampToInt64(min = -100i64, max = 100i64, -100ii))
 
-    @test
-    def clampToInt6405(): Bool = BigInt.clampToInt64(-101ii, -100i64, 100i64) == -100i64
+    @Test
+    def clampToInt6405(): Unit \ Assert = assertEq(expected = -100i64, BigInt.clampToInt64(min = -100i64, max = 100i64, -101ii))
 
-    @test
-    def clampToInt6406(): Bool = BigInt.clampToInt64(8982741234134123419879712341ii, -100i64, 100i64) == 100i64
+    @Test
+    def clampToInt6406(): Unit \ Assert = assertEq(expected = 100i64, BigInt.clampToInt64(min = -100i64, max = 100i64, 8982741234134123419879712341ii))
 
-    @test
-    def clampToInt6407(): Bool = BigInt.clampToInt64(-8982741234134123419879712341ii, -100i64, 100i64) == -100i64
+    @Test
+    def clampToInt6407(): Unit \ Assert = assertEq(expected = -100i64, BigInt.clampToInt64(min = -100i64, max = 100i64, -8982741234134123419879712341ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToFloat32                                                          //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clampToFloat3201(): Bool = BigInt.clampToFloat32(0ii, -100.0f32, 100.0f32) == 0.0f32
+    @Test
+    def clampToFloat3201(): Unit \ Assert = assertEq(expected = 0.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, 0ii))
 
-    @test
-    def clampToFloat3202(): Bool = BigInt.clampToFloat32(100ii, -100.0f32, 100.0f32) == 100.0f32
+    @Test
+    def clampToFloat3202(): Unit \ Assert = assertEq(expected = 100.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, 100ii))
 
-    @test
-    def clampToFloat3203(): Bool = BigInt.clampToFloat32(101ii, -100.0f32, 100.0f32) == 100.0f32
+    @Test
+    def clampToFloat3203(): Unit \ Assert = assertEq(expected = 100.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, 101ii))
 
-    @test
-    def clampToFloat3204(): Bool = BigInt.clampToFloat32(-100ii, -100.0f32, 100.0f32) == -100.0f32
+    @Test
+    def clampToFloat3204(): Unit \ Assert = assertEq(expected = -100.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, -100ii))
 
-    @test
-    def clampToFloat3205(): Bool = BigInt.clampToFloat32(-101ii, -100.0f32, 100.0f32) == -100.0f32
+    @Test
+    def clampToFloat3205(): Unit \ Assert = assertEq(expected = -100.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, -101ii))
 
-    @test
-    def clampToFloat3206(): Bool = BigInt.clampToFloat32(8982741234134123419879712341ii, -100.0f32, 100.0f32) == 100.0f32
+    @Test
+    def clampToFloat3206(): Unit \ Assert = assertEq(expected = 100.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, 8982741234134123419879712341ii))
 
-    @test
-    def clampToFloat3207(): Bool = BigInt.clampToFloat32(-8982741234134123419879712341ii, -100.0f32, 100.0f32) == -100.0f32
+    @Test
+    def clampToFloat3207(): Unit \ Assert = assertEq(expected = -100.0f32, BigInt.clampToFloat32(min = -100.0f32, max = 100.0f32, -8982741234134123419879712341ii))
 
     /////////////////////////////////////////////////////////////////////////////
     // clampToFloat64                                                          //
     /////////////////////////////////////////////////////////////////////////////
-    @test
-    def clampToFloat6401(): Bool = BigInt.clampToFloat64(0ii, -100.0f64, 100.0f64) == 0.0f64
+    @Test
+    def clampToFloat6401(): Unit \ Assert = assertEq(expected = 0.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, 0ii))
 
-    @test
-    def clampToFloat6402(): Bool = BigInt.clampToFloat64(100ii, -100.0f64, 100.0f64) == 100.0f64
+    @Test
+    def clampToFloat6402(): Unit \ Assert = assertEq(expected = 100.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, 100ii))
 
-    @test
-    def clampToFloat6403(): Bool = BigInt.clampToFloat64(101ii, -100.0f64, 100.0f64) == 100.0f64
+    @Test
+    def clampToFloat6403(): Unit \ Assert = assertEq(expected = 100.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, 101ii))
 
-    @test
-    def clampToFloat6404(): Bool = BigInt.clampToFloat64(-100ii, -100.0f64, 100.0f64) == -100.0f64
+    @Test
+    def clampToFloat6404(): Unit \ Assert = assertEq(expected = -100.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, -100ii))
 
-    @test
-    def clampToFloat6405(): Bool = BigInt.clampToFloat64(-101ii, -100.0f64, 100.0f64) == -100.0f64
+    @Test
+    def clampToFloat6405(): Unit \ Assert = assertEq(expected = -100.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, -101ii))
 
-    @test
-    def clampToFloat6406(): Bool = BigInt.clampToFloat64(8982741234134123419879712341ii, -100.0f64, 100.0f64) == 100.0f64
+    @Test
+    def clampToFloat6406(): Unit \ Assert = assertEq(expected = 100.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, 8982741234134123419879712341ii))
 
-    @test
-    def clampToFloat6407(): Bool = BigInt.clampToFloat64(-8982741234134123419879712341ii, -100.0f64, 100.0f64) == -100.0f64
+    @Test
+    def clampToFloat6407(): Unit \ Assert = assertEq(expected = -100.0f64, BigInt.clampToFloat64(min = -100.0f64, max = 100.0f64, -8982741234134123419879712341ii))
 
 }

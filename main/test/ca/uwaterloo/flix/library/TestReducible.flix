@@ -1,55 +1,41 @@
-/*
- * Copyright 2022 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestReducible {
+
+    use Assert.{assertEq, assertTrue, assertFalse}
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceLeft01(): Bool =
-        Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", Nil)) == "a"
+    @Test
+    def reduceLeft01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", Nil)))
 
-    @test
-    def reduceLeft02(): Bool =
-        Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", "b" :: Nil)) == "ab"
+    @Test
+    def reduceLeft02(): Unit \ Assert =
+        assertEq(expected = "ab", Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", "b" :: Nil)))
 
-    @test
-    def reduceLeft03(): Bool =
-        Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
+    @Test
+    def reduceLeft03(): Unit \ Assert =
+        assertEq(expected = "abc", Reducible.reduceLeft((acc, a) -> acc + a, Nel.Nel("a", "b" :: "c" :: Nil)))
 
-    @test
-    def reduceLeft04(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)) == 100
+    @Test
+    def reduceLeft04(): Unit \ Assert =
+        assertEq(expected = 100, Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)))
 
-    @test
-    def reduceLeft05(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: Nil)) == 198
+    @Test
+    def reduceLeft05(): Unit \ Assert =
+        assertEq(expected = 198, Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: Nil)))
 
-    @test
-    def reduceLeft06(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)) == 196
+    @Test
+    def reduceLeft06(): Unit \ Assert =
+        assertEq(expected = 196, Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)))
 
-    @test
-    def reduceLeft07(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
+    @Test
+    def reduceLeft07(): Unit \ Assert =
+        assertEq(expected = 386, Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)))
 
-    @test
-    def reduceLeft08(): Bool = region rc {
+    @Test
+    def reduceLeft08(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
@@ -60,43 +46,43 @@ mod TestReducible {
             0
         };
         discard Reducible.reduceLeft(f, Nel.Nel(3, 2 :: 1 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceRight                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceRight01(): Bool =
-        Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", Nil)) == "a"
+    @Test
+    def reduceRight01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", Nil)))
 
-    @test
-    def reduceRight02(): Bool =
-        Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", "b" :: Nil)) == "ab"
+    @Test
+    def reduceRight02(): Unit \ Assert =
+        assertEq(expected = "ab", Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", "b" :: Nil)))
 
-    @test
-    def reduceRight03(): Bool =
-        Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
+    @Test
+    def reduceRight03(): Unit \ Assert =
+        assertEq(expected = "abc", Reducible.reduceRight((a, acc) -> a + acc, Nel.Nel("a", "b" :: "c" :: Nil)))
 
-    @test
-    def reduceRight04(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)) == 100
+    @Test
+    def reduceRight04(): Unit \ Assert =
+        assertEq(expected = 100, Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)))
 
-    @test
-    def reduceRight05(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 100 :: Nil)) == 198
+    @Test
+    def reduceRight05(): Unit \ Assert =
+        assertEq(expected = 198, Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 100 :: Nil)))
 
-    @test
-    def reduceRight06(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)) == 194
+    @Test
+    def reduceRight06(): Unit \ Assert =
+        assertEq(expected = 194, Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)))
 
-    @test
-    def reduceRight07(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
+    @Test
+    def reduceRight07(): Unit \ Assert =
+        assertEq(expected = 382, Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)))
 
-    @test
-    def reduceRight08(): Bool = region rc {
+    @Test
+    def reduceRight08(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
@@ -107,343 +93,343 @@ mod TestReducible {
             0
         };
         discard Reducible.reduceRight(f, Nel.Nel(1, 2 :: 3 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // reduce                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduce01(): Bool =
-        Reducible.reduce(Nel.Nel("a", Nil)) == "a"
+    @Test
+    def reduce01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.reduce(Nel.Nel("a", Nil)))
 
-    @test
-    def reduce02(): Bool =
-        Reducible.reduce(Nel.Nel("a", "b" :: Nil)) == "ab"
+    @Test
+    def reduce02(): Unit \ Assert =
+        assertEq(expected = "ab", Reducible.reduce(Nel.Nel("a", "b" :: Nil)))
 
-    @test
-    def reduce03(): Bool =
-        Reducible.reduce(Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
+    @Test
+    def reduce03(): Unit \ Assert =
+        assertEq(expected = "abc", Reducible.reduce(Nel.Nel("a", "b" :: "c" :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceMap                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reduceMap01(): Bool =
-        Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, Nil)) == 1
+    @Test
+    def reduceMap01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, Nil)))
 
-    @test
-    def reduceMap02(): Bool =
-        Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, 2i16 :: Nil)) == 3
+    @Test
+    def reduceMap02(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, 2i16 :: Nil)))
 
-    @test
-    def reduceMap03(): Bool =
-        Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, 2i16 :: 3i16 :: Nil)) == 6
+    @Test
+    def reduceMap03(): Unit \ Assert =
+        assertEq(expected = 6, Reducible.reduceMap(a -> Int16.toInt32(a), Nel.Nel(1i16, 2i16 :: 3i16 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldLeft01(): Bool =
-        Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", Nil)) == "a"
+    @Test
+    def foldLeft01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", Nil)))
 
-    @test
-    def foldLeft02(): Bool =
-        Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", "b" :: Nil)) == "ab"
+    @Test
+    def foldLeft02(): Unit \ Assert =
+        assertEq(expected = "ab", Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", "b" :: Nil)))
 
-    @test
-    def foldLeft03(): Bool =
-        Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
+    @Test
+    def foldLeft03(): Unit \ Assert =
+        assertEq(expected = "abc", Reducible.foldLeft((acc, a) -> acc + a, "", Nel.Nel("a", "b" :: "c" :: Nil)))
 
-    @test
-    def foldLeft04(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+    @Test
+    def foldLeft04(): Unit \ Assert =
+        assertEq(expected = 198, Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)))
 
-    @test
-    def foldLeft05(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 196
+    @Test
+    def foldLeft05(): Unit \ Assert =
+        assertEq(expected = 196, Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def foldLeft06(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
+    @Test
+    def foldLeft06(): Unit \ Assert =
+        assertEq(expected = 386, Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def foldLeft07(): Bool = region rc {
+    @Test
+    def foldLeft07(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard Reducible.foldLeft((_, x) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRight01(): Bool =
-        Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", Nil)) == "a"
+    @Test
+    def foldRight01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", Nil)))
 
-    @test
-    def foldRight02(): Bool =
-        Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", "b" :: Nil)) == "ab"
+    @Test
+    def foldRight02(): Unit \ Assert =
+        assertEq(expected = "ab", Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", "b" :: Nil)))
 
-    @test
-    def foldRight03(): Bool =
-        Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
+    @Test
+    def foldRight03(): Unit \ Assert =
+        assertEq(expected = "abc", Reducible.foldRight((a, acc) -> a + acc, "", Nel.Nel("a", "b" :: "c" :: Nil)))
 
-    @test
-    def foldRight04(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+    @Test
+    def foldRight04(): Unit \ Assert =
+        assertEq(expected = 198, Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)))
 
-    @test
-    def foldRight05(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
+    @Test
+    def foldRight05(): Unit \ Assert =
+        assertEq(expected = 194, Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def foldRight06(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
+    @Test
+    def foldRight06(): Unit \ Assert =
+        assertEq(expected = 382, Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def foldRight07(): Bool = region rc {
+    @Test
+    def foldRight07(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard Reducible.foldRight((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRightWithCont01(): Bool =
-        Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", Nil)) == "a"
+    @Test
+    def foldRightWithCont01(): Unit \ Assert =
+        assertEq(expected = "a", Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", Nil)))
 
-    @test
-    def foldRightWithCont02(): Bool =
-        Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: Nil)) == "ab"
+    @Test
+    def foldRightWithCont02(): Unit \ Assert =
+        assertEq(expected = "ab", Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: Nil)))
 
-    @test
-    def foldRightWithCont03(): Bool =
-        Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: "c" :: Nil)) == "abc"
+    @Test
+    def foldRightWithCont03(): Unit \ Assert =
+        assertEq(expected = "abc", Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: "c" :: Nil)))
 
-    @test
-    def foldRightWithCont04(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+    @Test
+    def foldRightWithCont04(): Unit \ Assert =
+        assertEq(expected = 198, Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)))
 
-    @test
-    def foldRightWithCont05(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
+    @Test
+    def foldRightWithCont05(): Unit \ Assert =
+        assertEq(expected = 194, Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def foldRightWithCont06(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
+    @Test
+    def foldRightWithCont06(): Unit \ Assert =
+        assertEq(expected = 382, Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def foldRightWithCont07(): Bool = region rc {
+    @Test
+    def foldRightWithCont07(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard Reducible.foldRightWithCont((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def head01(): Bool =
-        Reducible.head(Nel.Nel(1, Nil)) == 1
+    @Test
+    def head01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.head(Nel.Nel(1, Nil)))
 
-    @test
-    def head02(): Bool =
-        Reducible.head(Nel.Nel(2, 1 :: Nil)) == 2
+    @Test
+    def head02(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.head(Nel.Nel(2, 1 :: Nil)))
 
-    @test
-    def head03(): Bool =
-        Reducible.head(Nel.Nel(3, 2 :: 1 :: Nil)) == 3
+    @Test
+    def head03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.head(Nel.Nel(3, 2 :: 1 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def last01(): Bool =
-        Reducible.last(Nel.Nel(1, Nil)) == 1
+    @Test
+    def last01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.last(Nel.Nel(1, Nil)))
 
-    @test
-    def last02(): Bool =
-        Reducible.last(Nel.Nel(1, 2 :: Nil)) == 2
+    @Test
+    def last02(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.last(Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def last03(): Bool =
-        Reducible.last(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
+    @Test
+    def last03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.last(Nel.Nel(1, 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // init                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def init01(): Bool =
-        Reducible.init(Nel.Nel(1, Nil)) == Nil
+    @Test
+    def init01(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.init(Nel.Nel(1, Nil)))
 
-    @test
-    def init02(): Bool =
-        Reducible.init(Nel.Nel(2, Nil)) == Nil
+    @Test
+    def init02(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.init(Nel.Nel(2, Nil)))
 
-    @test
-    def init03(): Bool =
-        Reducible.init(Nel.Nel(1, 2 :: Nil)) == 1 :: Nil
+    @Test
+    def init03(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Reducible.init(Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def init04(): Bool =
-        Reducible.init(Nel.Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: Nil
+    @Test
+    def init04(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: Nil, Reducible.init(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def init05(): Bool =
-        Reducible.init(Nel.Nel(3, 2 :: 1 :: Nil)) == 3 :: 2 :: Nil
+    @Test
+    def init05(): Unit \ Assert =
+        assertEq(expected = 3 :: 2 :: Nil, Reducible.init(Nel.Nel(3, 2 :: 1 :: Nil)))
 
-    @test
-    def init06(): Bool =
-        Reducible.init(Nel.Nel(1, 2 :: 3 :: 4 :: Nil)) == 1 :: 2 :: 3 :: Nil
+    @Test
+    def init06(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Reducible.init(Nel.Nel(1, 2 :: 3 :: 4 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // tail                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tail01(): Bool =
-        Reducible.tail(Nel.Nel(1, Nil)) == Nil
+    @Test
+    def tail01(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.tail(Nel.Nel(1, Nil)))
 
-    @test
-    def tail02(): Bool =
-        Reducible.tail(Nel.Nel(2, Nil)) == Nil
+    @Test
+    def tail02(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.tail(Nel.Nel(2, Nil)))
 
-    @test
-    def tail03(): Bool =
-        Reducible.tail(Nel.Nel(1, 2 :: Nil)) == 2 :: Nil
+    @Test
+    def tail03(): Unit \ Assert =
+        assertEq(expected = 2 :: Nil, Reducible.tail(Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def tail04(): Bool =
-        Reducible.tail(Nel.Nel(1, 2 :: 3 :: Nil)) == 2 :: 3 :: Nil
+    @Test
+    def tail04(): Unit \ Assert =
+        assertEq(expected = 2 :: 3 :: Nil, Reducible.tail(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def tail05(): Bool =
-        Reducible.tail(Nel.Nel(3, 2 :: 1 :: Nil)) == 2 :: 1 :: Nil
+    @Test
+    def tail05(): Unit \ Assert =
+        assertEq(expected = 2 :: 1 :: Nil, Reducible.tail(Nel.Nel(3, 2 :: 1 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // reverse                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def reverse01(): Bool =
-        Reducible.reverse(Nel.Nel(1, Nil)) == 1 :: Nil
+    @Test
+    def reverse01(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Reducible.reverse(Nel.Nel(1, Nil)))
 
-    @test
-    def reverse02(): Bool =
-        Reducible.reverse(Nel.Nel(1, 2 :: Nil)) == 2 :: 1 :: Nil
+    @Test
+    def reverse02(): Unit \ Assert =
+        assertEq(expected = 2 :: 1 :: Nil, Reducible.reverse(Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def reverse03(): Bool =
-        Reducible.reverse(Nel.Nel(1, 2 :: 3 :: Nil)) == 3 :: 2 :: 1 :: Nil
+    @Test
+    def reverse03(): Unit \ Assert =
+        assertEq(expected = 3 :: 2 :: 1 :: Nil, Reducible.reverse(Nel.Nel(1, 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def count01(): Bool =
-        Reducible.count(i -> i > 3, Nel.Nel(1, Nil)) == 0
+    @Test
+    def count01(): Unit \ Assert =
+        assertEq(expected = 0, Reducible.count(i -> i > 3, Nel.Nel(1, Nil)))
 
-    @test
-    def count02(): Bool =
-        Reducible.count(i -> i > 3, Nel.Nel(4, Nil)) == 1
+    @Test
+    def count02(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.count(i -> i > 3, Nel.Nel(4, Nil)))
 
-    @test
-    def count03(): Bool =
-        Reducible.count(i -> i > 3, Nel.Nel(1, 2 :: Nil)) == 0
+    @Test
+    def count03(): Unit \ Assert =
+        assertEq(expected = 0, Reducible.count(i -> i > 3, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def count04(): Bool =
-        Reducible.count(i -> i > 3, Nel.Nel(1, 8 :: Nil)) == 1
+    @Test
+    def count04(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.count(i -> i > 3, Nel.Nel(1, 8 :: Nil)))
 
-    @test
-    def count05(): Bool =
-        Reducible.count(i -> i > 3, Nel.Nel(8, 1 :: Nil)) == 1
+    @Test
+    def count05(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.count(i -> i > 3, Nel.Nel(8, 1 :: Nil)))
 
-    @test
-    def count06(): Bool =
-        Reducible.count(i -> i > 3, Nel.Nel(6, 7 :: Nil)) == 2
+    @Test
+    def count06(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.count(i -> i > 3, Nel.Nel(6, 7 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def length01(): Bool =
-        Reducible.length(Nel.Nel(1, Nil)) == 1
+    @Test
+    def length01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.length(Nel.Nel(1, Nil)))
 
-    @test
-    def length02(): Bool =
-        Reducible.length(Nel.Nel(1, 2 :: Nil)) == 2
+    @Test
+    def length02(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.length(Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def length03(): Bool =
-        Reducible.length(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
+    @Test
+    def length03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.length(Nel.Nel(1, 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def size01(): Bool =
-        Reducible.size(Nel.Nel(1, Nil)) == 1
+    @Test
+    def size01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.size(Nel.Nel(1, Nil)))
 
-    @test
-    def size02(): Bool =
-        Reducible.size(Nel.Nel(1, 2 :: Nil)) == 2
+    @Test
+    def size02(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.size(Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def size03(): Bool =
-        Reducible.size(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
+    @Test
+    def size03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.size(Nel.Nel(1, 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool =
-        Reducible.sum(Nel.Nel(1, Nil)) == 1
+    @Test
+    def sum01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.sum(Nel.Nel(1, Nil)))
 
-    @test
-    def sum02(): Bool =
-        Reducible.sum(Nel.Nel(1, 2 :: 3 :: Nil)) == 6
+    @Test
+    def sum02(): Unit \ Assert =
+        assertEq(expected = 6, Reducible.sum(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def sum03(): Bool =
-        Reducible.sum(Nel.Nel(1, 2 :: 3 :: -3 :: Nil)) == 3
+    @Test
+    def sum03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.sum(Nel.Nel(1, 2 :: 3 :: -3 :: Nil)))
 
-    @test
-    def sum04(): Bool =
-        Reducible.sum(Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)) == -10
+    @Test
+    def sum04(): Unit \ Assert =
+        assertEq(expected = -10, Reducible.sum(Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)))
 
-    @test
-    def sum05(): Bool =
-        Reducible.sum(Nel.Nel(10, -10 :: Nil)) == 0
+    @Test
+    def sum05(): Unit \ Assert =
+        assertEq(expected = 0, Reducible.sum(Nel.Nel(10, -10 :: Nil)))
 
-    @test
-    def sum06(): Bool = match List.range(1, 101) {
-        case x :: xs => Reducible.sum(Nel.Nel(x, xs)) == 5050
+    @Test
+    def sum06(): Unit \ Assert = match List.range(1, 101) {
+        case x :: xs => assertEq(expected = 5050, Reducible.sum(Nel.Nel(x, xs)))
         case _       => unreachable!()
     }
 
@@ -452,465 +438,465 @@ mod TestReducible {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool =
-        Reducible.sumWith(x -> x + 1, Nel.Nel(1, Nil)) == 2
+    @Test
+    def sumWith01(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.sumWith(x -> x + 1, Nel.Nel(1, Nil)))
 
-    @test
-    def sumWith02(): Bool =
-        Reducible.sumWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: Nil)) == 9
+    @Test
+    def sumWith02(): Unit \ Assert =
+        assertEq(expected = 9, Reducible.sumWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def sumWith03(): Bool =
-        Reducible.sumWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: -3 :: Nil)) == 7
+    @Test
+    def sumWith03(): Unit \ Assert =
+        assertEq(expected = 7, Reducible.sumWith(x -> x + 1, Nel.Nel(1, 2 :: 3 :: -3 :: Nil)))
 
-    @test
-    def sumWith04(): Bool =
-        Reducible.sumWith(x -> x + 1, Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)) == -6
+    @Test
+    def sumWith04(): Unit \ Assert =
+        assertEq(expected = -6, Reducible.sumWith(x -> x + 1, Nel.Nel(-1, -2 :: -3 :: -4 :: Nil)))
 
-    @test
-    def sumWith05(): Bool =
-        Reducible.sumWith(x -> x + 1, Nel.Nel(10, -10 :: Nil)) == 2
+    @Test
+    def sumWith05(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.sumWith(x -> x + 1, Nel.Nel(10, -10 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def exists01(): Bool =
-        Reducible.exists(x -> x == 1, Nel.Nel(1, Nil)) == true
+    @Test
+    def exists01(): Unit \ Assert =
+        assertTrue(Reducible.exists(x -> x == 1, Nel.Nel(1, Nil)))
 
-    @test
-    def exists02(): Bool =
-        Reducible.exists(x -> x == 2, Nel.Nel(1, Nil)) == false
+    @Test
+    def exists02(): Unit \ Assert =
+        assertFalse(Reducible.exists(x -> x == 2, Nel.Nel(1, Nil)))
 
-    @test
-    def exists03(): Bool =
-        Reducible.exists(x -> x == 1, Nel.Nel(1, 2 :: Nil)) == true
+    @Test
+    def exists03(): Unit \ Assert =
+        assertTrue(Reducible.exists(x -> x == 1, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def exists04(): Bool =
-        Reducible.exists(x -> x == 2, Nel.Nel(1, 2 :: Nil)) == true
+    @Test
+    def exists04(): Unit \ Assert =
+        assertTrue(Reducible.exists(x -> x == 2, Nel.Nel(1, 2 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forAll01(): Bool =
-        Reducible.forAll(x -> x == 1, Nel.Nel(1, Nil)) == true
+    @Test
+    def forAll01(): Unit \ Assert =
+        assertTrue(Reducible.forAll(x -> x == 1, Nel.Nel(1, Nil)))
 
-    @test
-    def forAll02(): Bool =
-        Reducible.forAll(x -> x == 2, Nel.Nel(1, Nil)) == false
+    @Test
+    def forAll02(): Unit \ Assert =
+        assertFalse(Reducible.forAll(x -> x == 2, Nel.Nel(1, Nil)))
 
-    @test
-    def forAll03(): Bool =
-        Reducible.forAll(x -> x == 1, Nel.Nel(1, 1 :: Nil)) == true
+    @Test
+    def forAll03(): Unit \ Assert =
+        assertTrue(Reducible.forAll(x -> x == 1, Nel.Nel(1, 1 :: Nil)))
 
-    @test
-    def forAll04(): Bool =
-        Reducible.forAll(x -> x == 1, Nel.Nel(1, 2 :: Nil)) == false
+    @Test
+    def forAll04(): Unit \ Assert =
+        assertFalse(Reducible.forAll(x -> x == 1, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def forAll05(): Bool =
-        Reducible.forAll(x -> x == 1, Nel.Nel(2, 1 :: Nil)) == false
+    @Test
+    def forAll05(): Unit \ Assert =
+        assertFalse(Reducible.forAll(x -> x == 1, Nel.Nel(2, 1 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let ri = Ref.fresh(rc, 21);
         Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, Nil));
-        1 == Ref.get(ri)
+        assertEq(expected = 1, Ref.get(ri))
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let ri = Ref.fresh(rc, 21);
         Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, 2 :: 3 :: Nil));
-        3 == Ref.get(ri)
+        assertEq(expected = 3, Ref.get(ri))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findLeft01(): Bool =
-        Reducible.findLeft(x -> x == 0, Nel.Nel(1, Nil)) == None
+    @Test
+    def findLeft01(): Unit \ Assert =
+        assertEq(expected = None, Reducible.findLeft(x -> x == 0, Nel.Nel(1, Nil)))
 
-    @test
-    def findLeft02(): Bool =
-        Reducible.findLeft(x -> x == 0, Nel.Nel(1, 2 :: Nil)) == None
+    @Test
+    def findLeft02(): Unit \ Assert =
+        assertEq(expected = None, Reducible.findLeft(x -> x == 0, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def findLeft03(): Bool =
-        Reducible.findLeft(x -> x == 0, Nel.Nel(1, 2 :: 3 :: Nil)) == None
+    @Test
+    def findLeft03(): Unit \ Assert =
+        assertEq(expected = None, Reducible.findLeft(x -> x == 0, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findLeft04(): Bool =
-        Reducible.findLeft(x -> x == 1, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(1)
+    @Test
+    def findLeft04(): Unit \ Assert =
+        assertEq(expected = Some(1), Reducible.findLeft(x -> x == 1, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findLeft05(): Bool =
-        Reducible.findLeft(x -> x == 2, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(2)
+    @Test
+    def findLeft05(): Unit \ Assert =
+        assertEq(expected = Some(2), Reducible.findLeft(x -> x == 2, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findLeft06(): Bool =
-        Reducible.findLeft(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
+    @Test
+    def findLeft06(): Unit \ Assert =
+        assertEq(expected = Some(3), Reducible.findLeft(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findLeft07(): Bool = region rc {
+    @Test
+    def findLeft07(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard Reducible.findLeft(x -> { Ref.put(x :: Ref.get(l), l); x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // findRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findRight01(): Bool =
-        Reducible.findRight(x -> x == 0, Nel.Nel(1, Nil)) == None
+    @Test
+    def findRight01(): Unit \ Assert =
+        assertEq(expected = None, Reducible.findRight(x -> x == 0, Nel.Nel(1, Nil)))
 
-    @test
-    def findRight02(): Bool =
-        Reducible.findRight(x -> x == 0, Nel.Nel(1, 2 :: Nil)) == None
+    @Test
+    def findRight02(): Unit \ Assert =
+        assertEq(expected = None, Reducible.findRight(x -> x == 0, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def findRight03(): Bool =
-        Reducible.findRight(x -> x == 0, Nel.Nel(1, 2 :: 3 :: Nil)) == None
+    @Test
+    def findRight03(): Unit \ Assert =
+        assertEq(expected = None, Reducible.findRight(x -> x == 0, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findRight04(): Bool =
-        Reducible.findRight(x -> x == 1, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(1)
+    @Test
+    def findRight04(): Unit \ Assert =
+        assertEq(expected = Some(1), Reducible.findRight(x -> x == 1, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findRight05(): Bool =
-        Reducible.findRight(x -> x == 2, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(2)
+    @Test
+    def findRight05(): Unit \ Assert =
+        assertEq(expected = Some(2), Reducible.findRight(x -> x == 2, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findRight06(): Bool =
-        Reducible.findRight(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)) == Some(3)
+    @Test
+    def findRight06(): Unit \ Assert =
+        assertEq(expected = Some(3), Reducible.findRight(x -> x == 3, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def findRight07(): Bool = region rc {
+    @Test
+    def findRight07(): Unit \ Assert = region rc {
         let l = Ref.fresh(rc, Nil);
         discard Reducible.findRight(x -> { Ref.put(x :: Ref.get(l), l); x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
-        Ref.get(l) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def memberOf01(): Bool =
-        Reducible.memberOf(0, Nel.Nel(1, Nil)) == false
+    @Test
+    def memberOf01(): Unit \ Assert =
+        assertFalse(Reducible.memberOf(0, Nel.Nel(1, Nil)))
 
-    @test
-    def memberOf02(): Bool =
-        Reducible.memberOf(0, Nel.Nel(1, 2 :: Nil)) == false
+    @Test
+    def memberOf02(): Unit \ Assert =
+        assertFalse(Reducible.memberOf(0, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def memberOf03(): Bool =
-        Reducible.memberOf(0, Nel.Nel(1, 2 :: 3 :: Nil)) == false
+    @Test
+    def memberOf03(): Unit \ Assert =
+        assertFalse(Reducible.memberOf(0, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def memberOf04(): Bool =
-        Reducible.memberOf(1, Nel.Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def memberOf04(): Unit \ Assert =
+        assertTrue(Reducible.memberOf(1, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def memberOf05(): Bool =
-        Reducible.memberOf(2, Nel.Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def memberOf05(): Unit \ Assert =
+        assertTrue(Reducible.memberOf(2, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def memberOf06(): Bool =
-        Reducible.memberOf(3, Nel.Nel(1, 2 :: 3 :: Nil))
+    @Test
+    def memberOf06(): Unit \ Assert =
+        assertTrue(Reducible.memberOf(3, Nel.Nel(1, 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // minimum                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def minimum01(): Bool =
-        Reducible.minimum(Nel.Nel(1, Nil)) == 1
+    @Test
+    def minimum01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.minimum(Nel.Nel(1, Nil)))
 
-    @test
-    def minimum02(): Bool =
-        Reducible.minimum(Nel.Nel(1, 2 :: 3 :: Nil)) == 1
+    @Test
+    def minimum02(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.minimum(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def minimum03(): Bool =
-        Reducible.minimum(Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
+    @Test
+    def minimum03(): Unit \ Assert =
+        assertEq(expected = 0, Reducible.minimum(Nel.Nel(1, 2 :: 0 :: 3 :: Nil)))
 
-    @test
-    def minimum04(): Bool =
-        Reducible.minimum(Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
+    @Test
+    def minimum04(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.minimum(Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)))
 
-    @test
-    def minimum05(): Bool =
-        Reducible.minimum(Nel.Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
+    @Test
+    def minimum05(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.minimum(Nel.Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def minimumBy01(): Bool =
-        Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, Nil)) == 1
+    @Test
+    def minimumBy01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, Nil)))
 
-    @test
-    def minimumBy02(): Bool =
-        Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 3 :: Nil)) == 1
+    @Test
+    def minimumBy02(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def minimumBy03(): Bool =
-        Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 0
+    @Test
+    def minimumBy03(): Unit \ Assert =
+        assertEq(expected = 0, Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 0 :: 3 :: Nil)))
 
-    @test
-    def minimumBy04(): Bool =
-        Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 3
+    @Test
+    def minimumBy04(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)))
 
-    @test
-    def minimumBy05(): Bool =
-        Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)) == 2
+    @Test
+    def minimumBy05(): Unit \ Assert =
+        assertEq(expected = 2, Reducible.minimumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 2 :: 7 :: 10 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // maximum                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def maximum01(): Bool =
-        Reducible.maximum(Nel.Nel(1, Nil)) == 1
+    @Test
+    def maximum01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.maximum(Nel.Nel(1, Nil)))
 
-    @test
-    def maximum02(): Bool =
-        Reducible.maximum(Nel.Nel(1, 2 :: 3 :: Nil)) == 3
+    @Test
+    def maximum02(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.maximum(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def maximum03(): Bool =
-        Reducible.maximum(Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
+    @Test
+    def maximum03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.maximum(Nel.Nel(1, 2 :: 0 :: 3 :: Nil)))
 
-    @test
-    def maximum04(): Bool =
-        Reducible.maximum(Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
+    @Test
+    def maximum04(): Unit \ Assert =
+        assertEq(expected = 9, Reducible.maximum(Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)))
 
-    @test
-    def maximum05(): Bool =
-        Reducible.maximum(Nel.Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
+    @Test
+    def maximum05(): Unit \ Assert =
+        assertEq(expected = 10, Reducible.maximum(Nel.Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // maximumBy                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def maximumBy01(): Bool =
-        Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, Nil)) == 1
+    @Test
+    def maximumBy01(): Unit \ Assert =
+        assertEq(expected = 1, Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, Nil)))
 
-    @test
-    def maximumBy02(): Bool =
-        Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 3 :: Nil)) == 3
+    @Test
+    def maximumBy02(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def maximumBy03(): Bool =
-        Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 0 :: 3 :: Nil)) == 3
+    @Test
+    def maximumBy03(): Unit \ Assert =
+        assertEq(expected = 3, Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(1, 2 :: 0 :: 3 :: Nil)))
 
-    @test
-    def maximumBy04(): Bool =
-        Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)) == 9
+    @Test
+    def maximumBy04(): Unit \ Assert =
+        assertEq(expected = 9, Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(9, 5 :: 4 :: 6 :: 7 :: 3 :: Nil)))
 
-    @test
-    def maximumBy05(): Bool =
-        Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)) == 10
+    @Test
+    def maximumBy05(): Unit \ Assert =
+        assertEq(expected = 10, Reducible.maximumBy((x, y) -> x <=> y, Nel.Nel(3, 5 :: 4 :: 9 :: 7 :: 10 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // dropWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def dropWhile01(): Bool =
-        Reducible.dropWhile(a -> a > 3, Nel.Nel(1, Nil)) == 1 :: Nil
+    @Test
+    def dropWhile01(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Reducible.dropWhile(a -> a > 3, Nel.Nel(1, Nil)))
 
-    @test
-    def dropWhile02(): Bool =
-        Reducible.dropWhile(a -> a > 3, Nel.Nel(4, Nil)) == Nil
+    @Test
+    def dropWhile02(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.dropWhile(a -> a > 3, Nel.Nel(4, Nil)))
 
-    @test
-    def dropWhile03(): Bool =
-        Reducible.dropWhile(a -> a > 3, Nel.Nel(1, 2 :: Nil)) == 1 :: 2 :: Nil
+    @Test
+    def dropWhile03(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: Nil, Reducible.dropWhile(a -> a > 3, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def dropWhile04(): Bool =
-        Reducible.dropWhile(a -> a > 3, Nel.Nel(1, 5 :: Nil)) == 1 :: 5 :: Nil
+    @Test
+    def dropWhile04(): Unit \ Assert =
+        assertEq(expected = 1 :: 5 :: Nil, Reducible.dropWhile(a -> a > 3, Nel.Nel(1, 5 :: Nil)))
 
-    @test
-    def dropWhile05(): Bool =
-        Reducible.dropWhile(a -> a > 3, Nel.Nel(5, 1 :: Nil)) == 1 :: Nil
+    @Test
+    def dropWhile05(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Reducible.dropWhile(a -> a > 3, Nel.Nel(5, 1 :: Nil)))
 
-    @test
-    def dropWhile06(): Bool =
-        Reducible.dropWhile(a -> a > 3, Nel.Nel(5, 8 :: Nil)) == Nil
+    @Test
+    def dropWhile06(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.dropWhile(a -> a > 3, Nel.Nel(5, 8 :: Nil)))
 
-    @test
-    def dropWhile07(): Bool =
-        Nel.Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Reducible.dropWhile(a -> a > 3) == -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil
+    @Test
+    def dropWhile07(): Unit \ Assert =
+        assertEq(expected = -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil, Nel.Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Reducible.dropWhile(a -> a > 3))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // takeWhile                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def takeWhile01(): Bool =
-        Reducible.takeWhile(a -> a > 3, Nel.Nel(1, Nil)) == Nil
+    @Test
+    def takeWhile01(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.takeWhile(a -> a > 3, Nel.Nel(1, Nil)))
 
-    @test
-    def takeWhile02(): Bool =
-        Reducible.takeWhile(a -> a > 3, Nel.Nel(4, Nil)) == 4 :: Nil
+    @Test
+    def takeWhile02(): Unit \ Assert =
+        assertEq(expected = 4 :: Nil, Reducible.takeWhile(a -> a > 3, Nel.Nel(4, Nil)))
 
-    @test
-    def takeWhile03(): Bool =
-        Reducible.takeWhile(a -> a > 3, Nel.Nel(1, 2 :: Nil)) == Nil
+    @Test
+    def takeWhile03(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.takeWhile(a -> a > 3, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def takeWhile04(): Bool =
-        Reducible.takeWhile(a -> a > 3, Nel.Nel(1, 5 :: Nil)) == Nil
+    @Test
+    def takeWhile04(): Unit \ Assert =
+        assertEq(expected = Nil, Reducible.takeWhile(a -> a > 3, Nel.Nel(1, 5 :: Nil)))
 
-    @test
-    def takeWhile05(): Bool =
-        Reducible.takeWhile(a -> a > 3, Nel.Nel(5, 1 :: Nil)) == 5 :: Nil
+    @Test
+    def takeWhile05(): Unit \ Assert =
+        assertEq(expected = 5 :: Nil, Reducible.takeWhile(a -> a > 3, Nel.Nel(5, 1 :: Nil)))
 
-    @test
-    def takeWhile06(): Bool =
-        Reducible.takeWhile(a -> a > 3, Nel.Nel(5, 8 :: Nil)) == 5 :: 8 :: Nil
+    @Test
+    def takeWhile06(): Unit \ Assert =
+        assertEq(expected = 5 :: 8 :: Nil, Reducible.takeWhile(a -> a > 3, Nel.Nel(5, 8 :: Nil)))
 
-    @test
-    def takeWhile07(): Bool =
-        Nel.Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
-            Reducible.takeWhile(a -> a > 3) == 4 :: 6 :: Nil
+    @Test
+    def takeWhile07(): Unit \ Assert =
+        assertEq(expected = 4 :: 6 :: Nil, Nel.Nel(4, 6 :: -3 :: 11 :: -5 :: 1 :: 2 :: 16 :: 7 :: 1 :: 7 :: Nil) |>
+            Reducible.takeWhile(a -> a > 3))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // intersperse                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def intersperse01(): Bool =
-        Reducible.intersperse(7, Nel.Nel(1, Nil)) == 1 :: Nil
+    @Test
+    def intersperse01(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Reducible.intersperse(7, Nel.Nel(1, Nil)))
 
-    @test
-    def intersperse02(): Bool =
-        Reducible.intersperse(7, Nel.Nel(1, 2 :: Nil)) == 1 :: 7 :: 2 :: Nil
+    @Test
+    def intersperse02(): Unit \ Assert =
+        assertEq(expected = 1 :: 7 :: 2 :: Nil, Reducible.intersperse(7, Nel.Nel(1, 2 :: Nil)))
 
-    @test
-    def intersperse03(): Bool =
-        Reducible.intersperse(7, Nel.Nel(1, 2 :: 3 :: Nil)) == 1 :: 7 :: 2 :: 7 :: 3 :: Nil
+    @Test
+    def intersperse03(): Unit \ Assert =
+        assertEq(expected = 1 :: 7 :: 2 :: 7 :: 3 :: Nil, Reducible.intersperse(7, Nel.Nel(1, 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region rc {
-        Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc))
     }
 
-    @test
-    def toArray02(): Bool = region rc {
-        Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc))
     }
 
-    @test
-    def toArray03(): Bool = region rc {
-        Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Reducible.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toVector01(): Bool =
-        Reducible.toVector(Nel.Nel(1, Nil)) == Vector#{1}
+    @Test
+    def toVector01(): Unit \ Assert =
+        assertEq(expected = Vector#{1}, Reducible.toVector(Nel.Nel(1, Nil)))
 
-    @test
-    def toVector02(): Bool =
-        Reducible.toVector(Nel.Nel(1, 2 :: 3 :: Nil)) == Vector#{1, 2, 3}
+    @Test
+    def toVector02(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2, 3}, Reducible.toVector(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def toVector03(): Bool =
-        Reducible.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Vector#{1, 1, 2, 3}
+    @Test
+    def toVector03(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 1, 2, 3}, Reducible.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool =
-        Reducible.toList(Nel.Nel(1, Nil)) == 1 :: Nil
+    @Test
+    def toList01(): Unit \ Assert =
+        assertEq(expected = 1 :: Nil, Reducible.toList(Nel.Nel(1, Nil)))
 
-    @test
-    def toList02(): Bool =
-        Reducible.toList(Nel.Nel(1, 2 :: 3 :: Nil)) == 1 :: 2 :: 3 :: Nil
+    @Test
+    def toList02(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, Reducible.toList(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def toList03(): Bool =
-        Reducible.toList(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == 1 :: 1 :: 2 :: 3 :: Nil
+    @Test
+    def toList03(): Unit \ Assert =
+        assertEq(expected = 1 :: 1 :: 2 :: 3 :: Nil, Reducible.toList(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMap01(): Bool =
-        Reducible.toMap(Nel.Nel((1, 1), Nil)) == Map#{1 => 1}
+    @Test
+    def toMap01(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 1}, Reducible.toMap(Nel.Nel((1, 1), Nil)))
 
-    @test
-    def toMap02(): Bool =
-        Reducible.toMap(Nel.Nel(("a", 1), ("b", 2) :: ("c", 3) :: Nil)) == Map#{"a" => 1, "b" => 2, "c" => 3}
+    @Test
+    def toMap02(): Unit \ Assert =
+        assertEq(expected = Map#{"a" => 1, "b" => 2, "c" => 3}, Reducible.toMap(Nel.Nel(("a", 1), ("b", 2) :: ("c", 3) :: Nil)))
 
-    @test
-    def toMap03(): Bool =
-        Reducible.toMap(Nel.Nel((1, 2), (4, 3) :: (2, 2) :: (3, 3) :: Nil)) == Map#{1 => 2, 2 => 2, 3 => 3, 4 => 3}
+    @Test
+    def toMap03(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 2, 2 => 2, 3 => 3, 4 => 3}, Reducible.toMap(Nel.Nel((1, 2), (4, 3) :: (2, 2) :: (3, 3) :: Nil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNel01(): Bool =
-        Reducible.toNel(Nel.Nel(1, Nil)) == Nel.Nel(1, Nil)
+    @Test
+    def toNel01(): Unit \ Assert =
+        assertEq(expected = Nel.Nel(1, Nil), Reducible.toNel(Nel.Nel(1, Nil)))
 
-    @test
-    def toNel02(): Bool =
-        Reducible.toNel(Nel.Nel(1, 2 :: 3 :: Nil)) == Nel.Nel(1, 2 :: 3 :: Nil)
+    @Test
+    def toNel02(): Unit \ Assert =
+        assertEq(expected = Nel.Nel(1, 2 :: 3 :: Nil), Reducible.toNel(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def toNel03(): Bool =
-        Reducible.toNel(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Nel.Nel(1, 1 :: 2 :: 3 :: Nil)
+    @Test
+    def toNel03(): Unit \ Assert =
+        assertEq(expected = Nel.Nel(1, 1 :: 2 :: 3 :: Nil), Reducible.toNel(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)))
 
-    @test
-    def toNel04(): Bool =
+    @Test
+    def toNel04(): Unit \ Assert =
         match List.range(0, 100) {
-            case x :: xs => Reducible.toNel(Nel.Nel(x, xs)) |> Nel.toList == List.range(0, 100)
+            case x :: xs => assertEq(expected = List.range(0, 100), Reducible.toNel(Nel.Nel(x, xs)) |> Nel.toList)
             case _       => unreachable!()
         }
 
@@ -919,16 +905,16 @@ mod TestReducible {
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toSet01(): Bool =
-        Reducible.toSet(Nel.Nel(1, Nil)) == Set#{1}
+    @Test
+    def toSet01(): Unit \ Assert =
+        assertEq(expected = Set#{1}, Reducible.toSet(Nel.Nel(1, Nil)))
 
-    @test
-    def toSet02(): Bool =
-        Reducible.toSet(Nel.Nel(1, 2 :: 3 :: Nil)) == Set#{1, 2, 3}
+    @Test
+    def toSet02(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2, 3}, Reducible.toSet(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def toSet03(): Bool =
-        Reducible.toSet(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Set#{1, 2, 3}
+    @Test
+    def toSet03(): Unit \ Assert =
+        assertEq(expected = Set#{1, 2, 3}, Reducible.toSet(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)))
 
 }

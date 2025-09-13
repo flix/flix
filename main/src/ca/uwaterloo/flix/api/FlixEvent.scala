@@ -27,6 +27,9 @@ sealed trait FlixEvent
 
 object FlixEvent {
 
+  /**
+    * An event that is fired after the Lexer phase.
+    */
   case class AfterLexer(sources: Map[Source, Array[Token]]) extends FlixEvent
 
   /**

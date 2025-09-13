@@ -1,20 +1,6 @@
-/*
- * Copyright 2023 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestAdaptor {
+
+    use Assert.{assertEq, assertTrue};
 
     import java.util.Optional
     import java.util.stream.Stream
@@ -31,392 +17,391 @@ mod TestAdaptor {
     // Comparator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def comparator01(): Bool \ IO =
+    @Test
+    def comparator01(): Unit \ Assert + IO =
         let c1 = Adaptor.comparator((Proxy.Proxy: Proxy[String]));
-        c1.compare("aaaa", "aaaa") == 0
+        assertEq(expected = 0, c1.compare("aaaa", "aaaa"))
 
-    @test
-    def comparator02(): Bool \ IO =
+    @Test
+    def comparator02(): Unit \ Assert + IO =
         let c1 = Adaptor.comparator((Proxy.Proxy: Proxy[String]));
-        c1.compare("aaaa", "bbbb") == -1
+        assertEq(expected = -1, c1.compare("aaaa", "bbbb"))
 
-    @test
-    def comparator03(): Bool \ IO =
+    @Test
+    def comparator03(): Unit \ Assert + IO =
         let c1 = Adaptor.comparator((Proxy.Proxy: Proxy[String]));
-        c1.compare("bbbb", "aaaa") == 1
+        assertEq(expected = 1, c1.compare("bbbb", "aaaa"))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromOptional                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromOptional01(): Bool \ {} =
+    @Test
+    def fromOptional01(): Unit \ Assert =
         let o = unsafe Optional.empty();
-        Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o) == (None : Option[String])
+        assertEq(expected = (None : Option[String]), Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o))
 
-    @test
-    def fromOptional02(): Bool \ {} =
+    @Test
+    def fromOptional02(): Unit \ Assert =
         let o = unsafe Optional.of("Hello");
-        Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o) == Some("Hello")
+        assertEq(expected = Some("Hello"), Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromMapEntry                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromMapEntry01(): Bool \ {} =
+    @Test
+    def fromMapEntry01(): Unit \ Assert =
         let e = unsafe JMap.entry("hello", "world");
-        Adaptor.fromMapEntry((Proxy.Proxy: Proxy[String]), (Proxy.Proxy: Proxy[String]), e) == ("hello", "world")
+        assertEq(expected = ("hello", "world"), Adaptor.fromMapEntry((Proxy.Proxy: Proxy[String]), (Proxy.Proxy: Proxy[String]), e))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromList                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromList01(): Bool \ {} =
+    @Test
+    def fromList01(): Unit \ Assert =
         let l = unsafe JList.of();
-        Adaptor.fromList(l) == (List#{} : List[String])
+        assertEq(expected = (List#{} : List[String]), Adaptor.fromList(l))
 
-    @test
-    def fromList02(): Bool \ {} =
+    @Test
+    def fromList02(): Unit \ Assert =
         let l = unsafe JList.of("hello");
-        Adaptor.fromList(l) == List#{"hello"}
+        assertEq(expected = List#{"hello"}, Adaptor.fromList(l))
 
-    @test
-    def fromList03(): Bool \ {} =
+    @Test
+    def fromList03(): Unit \ Assert =
         let l = unsafe JList.of("hello", "world");
-        Adaptor.fromList(l) == List#{"hello", "world"}
+        assertEq(expected = List#{"hello", "world"}, Adaptor.fromList(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromListToIterator                                                      //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromListToIterator01(): Bool \ {} = region rc {
+    @Test
+    def fromListToIterator01(): Unit \ Assert = region rc {
         let l = unsafe JList.of();
-        Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)) == (List#{} : List[String])
+        assertEq(expected = (List#{} : List[String]), Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
     }
 
-    @test
-    def fromListToIterator02(): Bool \ {} = region rc {
+    @Test
+    def fromListToIterator02(): Unit \ Assert = region rc {
         let l = unsafe JList.of("hello");
-        Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)) == List#{"hello"}
+        assertEq(expected = List#{"hello"}, Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
     }
 
-    @test
-    def fromListToIterator03(): Bool \ {} = region rc {
+    @Test
+    def fromListToIterator03(): Unit \ Assert = region rc {
         let l = unsafe JList.of("hello", "world");
-        Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)) == List#{"hello", "world"}
+        assertEq(expected = List#{"hello", "world"}, Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromSet                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromSet01(): Bool \ {} =
+    @Test
+    def fromSet01(): Unit \ Assert =
         let s = unsafe JSet.of();
-        Adaptor.fromSet(s) == (Set#{} : Set[String])
+        assertEq(expected = (Set#{} : Set[String]), Adaptor.fromSet(s))
 
-    @test
-    def fromSet02(): Bool \ {} =
+    @Test
+    def fromSet02(): Unit \ Assert =
         let s = unsafe JSet.of("hello");
-        Adaptor.fromSet(s) == Set#{"hello"}
+        assertEq(expected = Set#{"hello"}, Adaptor.fromSet(s))
 
-    @test
-    def fromSet03(): Bool \ {} =
+    @Test
+    def fromSet03(): Unit \ Assert =
         let s = unsafe JSet.of("hello", "world");
-        Adaptor.fromSet(s) == Set#{"hello", "world"}
+        assertEq(expected = Set#{"hello", "world"}, Adaptor.fromSet(s))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromSetToIterator                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromSetToIterator01(): Bool \ {} = region rc {
+    @Test
+    def fromSetToIterator01(): Unit \ Assert = region rc {
         let s = unsafe JSet.of();
-        Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == (Set#{} : Set[String])
+        assertEq(expected = (Set#{} : Set[String]), Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
-    @test
-    def fromSetToIterator02(): Bool \ {} = region rc {
+    @Test
+    def fromSetToIterator02(): Unit \ Assert = region rc {
         let s = unsafe JSet.of("hello");
-        Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == Set#{"hello"}
+        assertEq(expected = Set#{"hello"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
-    @test
-    def fromSetToIterator03(): Bool \ {} = region rc {
+    @Test
+    def fromSetToIterator03(): Unit \ Assert = region rc {
         let s = unsafe JSet.of("hello", "world");
-        Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == Set#{"hello", "world"}
+        assertEq(expected = Set#{"hello", "world"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromMap01(): Bool \ {} =
+    @Test
+    def fromMap01(): Unit \ Assert =
         let m = unsafe JMap.of();
-        Adaptor.fromMap(m) == (Map#{} : Map[String, String])
+        assertEq(expected = (Map#{} : Map[String, String]), Adaptor.fromMap(m))
 
-    @test
-    def fromMap02(): Bool \ {} =
+    @Test
+    def fromMap02(): Unit \ Assert =
         let m = unsafe JMap.of("a", "hello");
-        Adaptor.fromMap(m) == Map#{"a" => "hello"}
+        assertEq(expected = Map#{"a" => "hello"}, Adaptor.fromMap(m))
 
-    @test
-    def fromMap03(): Bool \ {} =
+    @Test
+    def fromMap03(): Unit \ Assert =
         let m = unsafe JMap.of("a", "hello", "b", "world");
-        Adaptor.fromMap(m) == Map#{"a" => "hello", "b" => "world"}
+        assertEq(expected = Map#{"a" => "hello", "b" => "world"}, Adaptor.fromMap(m))
 
     /////////////////////////////////////////////////////////////////////////////
     // fromMapToIterator                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromMapToIterator01(): Bool \ {} = region rc {
+    @Test
+    def fromMapToIterator01(): Unit \ Assert = region rc {
         let m = unsafe JMap.of();
-        Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == (Map#{} : Map[String, String])
+        assertEq(expected = (Map#{} : Map[String, String]), Iterator.toMap(Adaptor.fromMapToIterator(rc, m)))
     }
 
-    @test
-    def fromMapToIterator02(): Bool \ {} = region rc {
+    @Test
+    def fromMapToIterator02(): Unit \ Assert = region rc {
         let m = unsafe JMap.of("a", "hello");
-        Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == Map#{"a" => "hello"}
+        assertEq(expected = Map#{"a" => "hello"}, Iterator.toMap(Adaptor.fromMapToIterator(rc, m)))
     }
 
-    @test
-    def fromMapToIterator03(): Bool \ {} = region rc {
+    @Test
+    def fromMapToIterator03(): Unit \ Assert = region rc {
         let m = unsafe JMap.of("a", "hello", "b", "world");
-        Iterator.toMap(Adaptor.fromMapToIterator(rc, m)) == Map#{"a" => "hello", "b" => "world"}
+        assertEq(expected = Map#{"a" => "hello", "b" => "world"}, Iterator.toMap(Adaptor.fromMapToIterator(rc, m)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromIterator                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromIterator01(): Bool \ {} = region rc {
+    @Test
+    def fromIterator01(): Unit \ Assert = region rc {
         let iter = unsafe JList.of().iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
-        Iterator.toList(flixIter) == (Nil : List[String])
+        assertEq(expected = (Nil : List[String]), Iterator.toList(flixIter))
     }
 
-    @test
-    def fromIterator02(): Bool \ {} = region rc {
+    @Test
+    def fromIterator02(): Unit \ Assert = region rc {
         let iter = unsafe JList.of("hello").iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
-        Iterator.toList(flixIter) == List#{"hello"}
+        assertEq(expected = List#{"hello"}, Iterator.toList(flixIter))
     }
 
 
-    @test
-    def fromIterator03(): Bool \ {} = region rc {
+    @Test
+    def fromIterator03(): Unit \ Assert = region rc {
         let iter = unsafe JList.of("hello", "world").iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
-        Iterator.toList(flixIter) == List#{"hello", "world"}
+        assertEq(expected = List#{"hello", "world"}, Iterator.toList(flixIter))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromStreamToIterator                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromStreamToIterator01(): Bool \ {} = region rc {
+    @Test
+    def fromStreamToIterator01(): Unit \ Assert = region rc {
         let s = unsafe Stream.empty();
-        Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == (Nil : List[String])
+        assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
-    @test
-    def fromStreamToIterator02(): Bool \ {} = region rc {
+    @Test
+    def fromStreamToIterator02(): Unit \ Assert = region rc {
         let s = unsafe Stream.of("hello");
-        Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == "hello" :: Nil
+        assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
-     @test
-     def fromStreamToIterator03(): Bool \ {} = region rc {
-        unsafe let s = Arrays.stream(Vector#{"hello", "world"});
-        Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)) == "hello" :: "world" :: Nil
-     }
+    @Test
+    def fromStreamToIterator03(): Unit \ Assert = region rc {
+        let s = unsafe Arrays.stream(Vector#{"hello", "world"});
+        assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // fromCollectionToIterator                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fromCollectionToIterator01(): Bool \ {} = region rc {
+    @Test
+    def fromCollectionToIterator01(): Unit \ Assert = region rc {
         let col = checked_cast (unsafe JList.of());
-        Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == (Nil : List[String])
+        assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
     }
 
-    @test
-    def fromCollectionToIterator02(): Bool \ {} = region rc {
+    @Test
+    def fromCollectionToIterator02(): Unit \ Assert = region rc {
         let col = checked_cast (unsafe JList.of("hello"));
-        Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: Nil
+        assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
     }
 
-    @test
-    def fromCollectionToIterator03(): Bool \ {} = region rc {
+    @Test
+    def fromCollectionToIterator03(): Unit \ Assert = region rc {
         let col = checked_cast (unsafe JList.of("hello", "world"));
-        Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)) == "hello" :: "world" :: Nil
+        assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toOptional                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toOptional01(): Bool \ IO =
+    @Test
+    def toOptional01(): Unit \ Assert + IO =
         let o = Adaptor.toOptional(None);
-        o.equals(Optional.empty())
+        assertTrue(o.equals(Optional.empty()))
 
-    @test
-    def toOptional02(): Bool \ IO =
+    @Test
+    def toOptional02(): Unit \ Assert + IO =
         let o = Adaptor.toOptional(Some("hello"));
-        o.equals(Optional.of("hello"))
+        assertTrue(o.equals(Optional.of("hello")))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMapEntry                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMapEntry01(): Bool \ IO =
+    @Test
+    def toMapEntry01(): Unit \ Assert + IO =
         let e = Adaptor.toMapEntry(("hello", "world"));
-        e.equals(JMap.entry("hello", "world"))
+        assertTrue(e.equals(JMap.entry("hello", "world")))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool \ IO =
+    @Test
+    def toList01(): Unit \ Assert + IO =
         let l = Adaptor.toList(Nil);
-        JList.of().equals(l)
+        assertTrue(JList.of().equals(l))
 
-    @test
-    def toList02(): Bool \ IO =
+    @Test
+    def toList02(): Unit \ Assert + IO =
         let l = Adaptor.toList(List#{"hello"});
-        JList.of("hello").equals(l)
+        assertTrue(JList.of("hello").equals(l))
 
-    @test
-    def toList03(): Bool \ IO =
+    @Test
+    def toList03(): Unit \ Assert + IO =
         let l = Adaptor.toList(List#{"hello", "world"});
-        JList.of("hello", "world").equals(l)
+        assertTrue(JList.of("hello", "world").equals(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // toArrayList                                                             //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArrayList01(): Bool \ IO =
+    @Test
+    def toArrayList01(): Unit \ Assert + IO =
         let l = Adaptor.toArrayList(Nil);
-        new ArrayList(JList.of()).equals(l)
+        assertTrue(new ArrayList(JList.of()).equals(l))
 
-    @test
-    def toArrayList02(): Bool \ IO =
+    @Test
+    def toArrayList02(): Unit \ Assert + IO =
         let l = Adaptor.toArrayList(List#{"hello"});
-        new ArrayList(JList.of("hello")).equals(l)
+        assertTrue(new ArrayList(JList.of("hello")).equals(l))
 
-    @test
-    def toArrayList03(): Bool \ IO =
+    @Test
+    def toArrayList03(): Unit \ Assert + IO =
         let l = Adaptor.toArrayList(List#{"hello", "world"});
-        new ArrayList(JList.of("hello", "world")).equals(l)
+        assertTrue(new ArrayList(JList.of("hello", "world")).equals(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // toLinkedList                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toLinkedList01(): Bool \ IO =
+    @Test
+    def toLinkedList01(): Unit \ Assert + IO =
         let l = Adaptor.toLinkedList(Nil);
-        new LinkedList(JList.of()).equals(l)
+        assertTrue(new LinkedList(JList.of()).equals(l))
 
-    @test
-    def toLinkedList02(): Bool \ IO =
+    @Test
+    def toLinkedList02(): Unit \ Assert + IO =
         let l = Adaptor.toLinkedList(List#{"hello"});
-        new LinkedList(JList.of("hello")).equals(l)
+        assertTrue(new LinkedList(JList.of("hello")).equals(l))
 
-    @test
-    def toLinkedList03(): Bool \ IO =
+    @Test
+    def toLinkedList03(): Unit \ Assert + IO =
         let l = Adaptor.toLinkedList(List#{"hello", "world"});
-        new LinkedList(JList.of("hello", "world")).equals(l)
+        assertTrue(new LinkedList(JList.of("hello", "world")).equals(l))
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toSet01(): Bool \ IO =
+    @Test
+    def toSet01(): Unit \ Assert + IO =
         let s = Adaptor.toSet((Set#{} : Set[String]));
-        JSet.of().equals(s)
+        assertTrue(JSet.of().equals(s))
 
-    @test
-    def toSet02(): Bool \ IO =
+    @Test
+    def toSet02(): Unit \ Assert + IO =
         let s = Adaptor.toSet(Set#{"hello"});
-        JSet.of("hello").equals(s)
+        assertTrue(JSet.of("hello").equals(s))
 
-    @test
-    def toSet03(): Bool \ IO =
+    @Test
+    def toSet03(): Unit \ Assert + IO =
         let s = Adaptor.toSet(Set#{"hello", "world"});
-        JSet.of("hello", "world").equals(s)
+        assertTrue(JSet.of("hello", "world").equals(s))
 
     /////////////////////////////////////////////////////////////////////////////
     // toTreeSet                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toTreeSet01(): Bool \ IO =
+    @Test
+    def toTreeSet01(): Unit \ Assert + IO =
         let s = Adaptor.toTreeSet((Set#{} : Set[String]));
-        new TreeSet(JList.of()).equals(s)
+        assertTrue(new TreeSet(JList.of()).equals(s))
 
-    @test
-    def toTreeSet02(): Bool \ IO =
+    @Test
+    def toTreeSet02(): Unit \ Assert + IO =
         let s = Adaptor.toTreeSet(Set#{"hello"});
-        new TreeSet(JList.of("hello")).equals(s)
+        assertTrue(new TreeSet(JList.of("hello")).equals(s))
 
-    @test
-    def toTreeSet03(): Bool \ IO =
+    @Test
+    def toTreeSet03(): Unit \ Assert + IO =
         let s = Adaptor.toTreeSet(Set#{"hello", "world"});
-        new TreeSet(JList.of("hello", "world")).equals(s)
+        assertTrue(new TreeSet(JList.of("hello", "world")).equals(s))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMap01(): Bool \ IO =
+    @Test
+    def toMap01(): Unit \ Assert + IO =
         let m = Adaptor.toMap((Map#{} : Map[String, String]));
-        JMap.of().equals(m)
+        assertTrue(JMap.of().equals(m))
 
-    @test
-    def toMap02(): Bool \ IO =
+    @Test
+    def toMap02(): Unit \ Assert + IO =
         let m = Adaptor.toMap(Map#{"a" => "hello"});
-        JMap.of("a", "hello").equals(m)
+        assertTrue(JMap.of("a", "hello").equals(m))
 
-    @test
-    def toMap03(): Bool \ IO =
+    @Test
+    def toMap03(): Unit \ Assert + IO =
         let m = Adaptor.toMap(Map#{"a" => "hello", "b" => "world"});
-        JMap.of("a", "hello", "b", "world").equals(m)
+        assertTrue(JMap.of("a", "hello", "b", "world").equals(m))
 
     /////////////////////////////////////////////////////////////////////////////
     // toTreeMap                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toTreeMap01(): Bool \ IO =
+    @Test
+    def toTreeMap01(): Unit \ Assert + IO =
         let m = Adaptor.toTreeMap((Map#{} : Map[String, String]));
-        new TreeMap(JMap.of()).equals(m)
+        assertTrue(new TreeMap(JMap.of()).equals(m))
 
-    @test
-    def toTreeMap02(): Bool \ IO =
+    @Test
+    def toTreeMap02(): Unit \ Assert + IO =
         let m = Adaptor.toTreeMap(Map#{"a" => "hello"});
-        new TreeMap(JMap.of("a", "hello")).equals(m)
+        assertTrue(new TreeMap(JMap.of("a", "hello")).equals(m))
 
-    @test
-    def toTreeMap03(): Bool \ IO =
+    @Test
+    def toTreeMap03(): Unit \ Assert + IO =
         let m = Adaptor.toTreeMap(Map#{"a" => "hello", "b" => "world"});
-        new TreeMap(JMap.of("a", "hello", "b", "world")).equals(m)
-
+        assertTrue(new TreeMap(JMap.of("a", "hello", "b", "world")).equals(m))
 
 }

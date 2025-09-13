@@ -23,9 +23,10 @@ import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
 import ca.uwaterloo.flix.language.phase.unification.set.{Equation, SetFormula, SetSubstitution, SetUnification}
-import ca.uwaterloo.flix.language.phase.unification.zhegalkin.Zhegalkin
+import ca.uwaterloo.flix.language.phase.unification.shared.CofiniteIntSet
+import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, ZhegalkinAlgebra}
 import ca.uwaterloo.flix.util.collection.SortedBimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
 import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
@@ -33,35 +34,42 @@ import scala.collection.immutable.SortedSet
 object EffUnification3 {
 
   /**
+    * The Global Zhegalkin Algebra used for effects.
+    */
+  val Algebra: ZhegalkinAlgebra[CofiniteIntSet] = new ZhegalkinAlgebra[CofiniteIntSet](CofiniteIntSet.LatticeOps)
+
+  /**
     * Controls whether to enable solve-and-retry for subeffecting.
     */
   var EnableSmartSubeffecting: Boolean = true
 
   /**
-    * Computes an MGU for **ALL* equations in `eqns`.
+    * Computes an MGU for **ALL* equations in `eqns0`.
     *
-    * Returns `Result.Ok(s)` if *ALL* equations in `eqns` where solvable.
-    * The returned substitution `s` is an MGU for `eqns`.
+    * Returns `Result.Ok(s)` if *ALL* equations in `eqns0` where solvable.
+    * The returned substitution `s` is an MGU for `eqns0`.
     *
-    * Returns `Result.Err(l)` if *a single equation* in `eqns` is unsolvable.
+    * Returns `Result.Err(l)` if *a single equation* in `eqns0` is unsolvable.
     * The returned list `l` is a non-empty list of equations that were unsolvable (i.e. in conflict).
-    * The equations in `l` are derived from `eqns` but are not a strict subset of `eqns`.
-    * That is, an equation in `l` may not directly correspond to any equation in `eqns`. However, their source locations are valid.
+    * The equations in `l` are derived from `eqns0` but are not a strict subset of `eqns0`.
+    * That is, an equation in `l` may not directly correspond to any equation in `eqns0`. However, their source locations are valid.
     *
-    * Returns `Result.Err(eqns)` if `eqns` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
+    * Returns `Result.Err(eqns0)` if `eqns0` contains an equation that is ill-kinded. Hence, it is better to handle ill-kinded equations elsewhere.
     *
     * Note: Treats `Type.Error` as a constant, i.e. only equal to itself. Hence, it is better to drop equations that contain `Type.Error`.
     */
-  def unifyAll(eqs: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
+  def unifyAll(eqs0: List[TypeConstraint.Equality], scope: Scope, renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, List[TypeConstraint]] = {
     // Performance: Nothing to do if the equation list is empty
-    if (eqs.isEmpty) {
+    if (eqs0.isEmpty) {
       return Result.Ok(Substitution.empty)
     }
+
+    // Randomly reorder the constraints using the chaos monkey.
+    val eqs = ChaosMonkey.chaos(eqs0)
 
     // Add to implicit context.
     implicit val scopeImplicit: Scope = scope
     implicit val renvImplicit: RigidityEnv = renv
-    implicit val listener: SetUnification.SolverListener = SetUnification.SolverListener.DoNothing
 
     // Choose a unique number for each atom.
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(getAtomsFromConstraints(eqs))
@@ -157,7 +165,7 @@ object EffUnification3 {
         }
       }
 
-    case tpe@Type.Cst(TypeConstructor.Effect(_), _) => m.getForward(Atom.fromType(tpe)) match {
+    case tpe@Type.Cst(TypeConstructor.Effect(_, _), _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
@@ -320,7 +328,7 @@ object EffUnification3 {
     case class VarRigid(sym: Symbol.KindedTypeVarSym) extends Atom
 
     /** Representing an effect constant. */
-    case class Eff(sym: Symbol.EffectSym) extends Atom
+    case class Eff(sym: Symbol.EffSym) extends Atom
 
     /** Represents an associated effect. */
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
@@ -336,7 +344,7 @@ object EffUnification3 {
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
-      case Type.Cst(TypeConstructor.Effect(sym), _) => Atom.Eff(sym)
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => Atom.Eff(sym)
       case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
@@ -369,7 +377,7 @@ object EffUnification3 {
     def getAtoms(t: Type)(implicit scope: Scope, renv: RigidityEnv): SortedSet[Atom] = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
-      case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(Atom.Eff(sym))
+      case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(Atom.Eff(sym))
       case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
@@ -395,7 +403,7 @@ object EffUnification3 {
       * associated types are set to be [[Kind.Eff]].
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
-      case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)
       case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
@@ -427,7 +435,7 @@ object EffUnification3 {
     implicit val bimap: SortedBimap[Atom, Int] = mkBidirectionalVarMap(Atom.getAtoms(tpe))
 
     val f0 = toSetFormula(tpe)(withSlack = false, scope, renv, bimap)
-    val z = Zhegalkin.toZhegalkin(f0)
+    val z = Zhegalkin.toZhegalkin(f0)(Algebra, CofiniteIntSet.LatticeOps)
     val f1 = Zhegalkin.toSetFormula(z)
 
     fromSetFormula(f1, tpe.loc)

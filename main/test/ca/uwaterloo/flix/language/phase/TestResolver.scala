@@ -154,7 +154,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |mod B {
          |    def g(): A.S = ???
          |}
-         |"""
+         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleStruct](result)
   }
@@ -1498,39 +1498,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalWildType](result)
   }
 
-  test("UndefinedName.ForEachYield.01") {
-    val input =
-      """
-        |def foo(): List[String] =
-        |    foreach (x <- "1" :: "2" :: Nil; if y != "0")
-        |        yield x
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.ForEachYield.02") {
-    val input =
-      """
-        |def foo(): List[String] =
-        |    foreach (x <- "1" :: "2" :: Nil)
-        |        yield y
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.ForEachYield.03") {
-    val input =
-      """
-        |def foo(): List[(String, Int32)] =
-        |    foreach (x <- "1" :: "2" :: Nil; if y > 0; y <- 0 :: 1 :: Nil)
-        |        yield (x, y)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
   test("UndefinedKind.01") {
     val input =
       """
@@ -1919,42 +1886,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.ImmutableField](result)
-  }
-
-  test("ResolutionError.StructFieldIncorrectOrder.01") {
-    val input =
-      """
-        |struct S[r] {a: Int32, b: Int32}
-        |def f(rc: Region): S[r] = {
-        |    new S @ rc {b = 3, a = 4}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalFieldOrderInNew](result)
-  }
-
-  test("ResolutionError.StructFieldIncorrectOrder.02") {
-    val input =
-      """
-        |struct S[r] {f: Int32, l: Int32, i: Int32, x: Int32}
-        |def f(rc: Region): S[r] = {
-        |    new S @ rc {f = 3, l = 4, x = 2, i = 9}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalFieldOrderInNew](result)
-  }
-
-  test("ResolutionError.StructFieldIncorrectOrder.03") {
-    val input =
-      """
-        |struct S[r] {s1: String, f: Int32, l: Int32, i: Int32, x: Int32, s2: String}
-        |def f(rc: Region): S[r] = {
-        |    new S @ rc {s2 = "s", f = 1, l = 1, i = 1, x = 1, s1 = "s"}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalFieldOrderInNew](result)
   }
 
   test("ResolutionError.MissingHandlerDef.01") {

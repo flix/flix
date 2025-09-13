@@ -45,7 +45,7 @@ mod Debug {
     pub def stringify(x: a): String = {
         typematch x {
             case _: Unit => "()"
-            case b: Bool =>  if (b) "true" else "false"
+            case b: Bool => if (b) "true" else "false"
             case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
                 Float.toString(y) + "f32"
