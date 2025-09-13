@@ -77,8 +77,8 @@ object Reducer {
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
     ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
-      case Expr.Cst(cst, tpe, loc) =>
-        Expr.Cst(cst, tpe, loc)
+      case Expr.Cst(cst, loc) =>
+        Expr.Cst(cst, loc)
 
       case Expr.Var(sym, tpe, loc) =>
         Expr.Var(sym, tpe, loc)
