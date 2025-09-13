@@ -37,9 +37,6 @@ import scala.util.Random
   */
 object Lexer {
 
-  /** The maximal allowed nesting level of string interpolation. */
-  private val InterpolatedStringMaxNestingLevel = 32
-
   /** The end-of-file character (`'\u0000'`). */
   private val EOF = '\u0000'
 
@@ -742,10 +739,6 @@ object Lexer {
   private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
     // Handle max nesting level.
     s.interpolationNestingLevel += 1
-    if (s.interpolationNestingLevel > InterpolatedStringMaxNestingLevel) {
-      s.interpolationNestingLevel = 0
-      return TokenKind.Err(LexerError.StringInterpolationTooDeep(sourceLocationAtCurrent()))
-    }
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
     if (isDebug) addToken(TokenKind.LiteralDebugStringL)

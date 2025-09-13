@@ -134,24 +134,6 @@ object LexerError {
   }
 
   /**
-    * An error raised when block-comments are nested too deep.
-    *
-    * @param loc The location of the opening "${".
-    */
-  case class StringInterpolationTooDeep(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"String interpolation nested too deep."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> String interpolation nested too deep.
-         |
-         |${code(loc, "This is nested too deep.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
     * @param s   the problematic character.
