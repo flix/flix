@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.63.0:
+- Library: Added more colorful asserts (thanks Magnus!)
+- Compiler: Significantly reduced memory usage of backend (thanks Magnus!)
+- Compiler: Improved parsing of numbers (thanks Jonathan!)
+
 Version 0.62.0:
 - Library: Added `Assert` module (thanks Neo and Magnus!)
 - Library: Added `RichString` module (thanks Magnus!)
