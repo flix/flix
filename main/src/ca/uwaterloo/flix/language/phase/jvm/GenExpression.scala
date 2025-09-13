@@ -98,14 +98,13 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(cst, tpe, loc) => cst match {
+    case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case Constant.Null =>
         import BytecodeInstructions.*
         ACONST_NULL()
-        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case Constant.Bool(b) =>
         BytecodeInstructions.pushBool(b)
