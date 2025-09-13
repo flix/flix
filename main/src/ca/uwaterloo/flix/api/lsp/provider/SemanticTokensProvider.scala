@@ -39,6 +39,7 @@ object SemanticTokensProvider {
 
     // NOTE: We do not retain all tokens in the program.
     // We only retain those tokens selected by [[TokenKind.isSemanticToken]].
+    // Hence, the tokens used here must be made available by [[TokenKind.isSemanticToken]].
 
     //
     // Construct an iterator of the semantic tokens from the source code tokens.
