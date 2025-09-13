@@ -44,23 +44,7 @@ object TypeVerifier {
   }
 
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, SimpleType], lenv: Map[Symbol.LabelSym, SimpleType]): SimpleType = expr match {
-    case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit => check(expected = SimpleType.Unit)(actual = tpe, loc)
-      case Constant.Null => tpe
-      case Constant.Bool(_) => check(expected = SimpleType.Bool)(actual = tpe, loc)
-      case Constant.Char(_) => check(expected = SimpleType.Char)(actual = tpe, loc)
-      case Constant.Float32(_) => check(expected = SimpleType.Float32)(actual = tpe, loc)
-      case Constant.Float64(_) => check(expected = SimpleType.Float64)(actual = tpe, loc)
-      case Constant.BigDecimal(_) => check(expected = SimpleType.BigDecimal)(actual = tpe, loc)
-      case Constant.Int8(_) => check(expected = SimpleType.Int8)(actual = tpe, loc)
-      case Constant.Int16(_) => check(expected = SimpleType.Int16)(actual = tpe, loc)
-      case Constant.Int32(_) => check(expected = SimpleType.Int32)(actual = tpe, loc)
-      case Constant.Int64(_) => check(expected = SimpleType.Int64)(actual = tpe, loc)
-      case Constant.BigInt(_) => check(expected = SimpleType.BigInt)(actual = tpe, loc)
-      case Constant.Str(_) => check(expected = SimpleType.String)(actual = tpe, loc)
-      case Constant.Regex(_) => check(expected = SimpleType.Regex)(actual = tpe, loc)
-      case Constant.RecordEmpty => check(expected = SimpleType.RecordEmpty)(actual = tpe, loc)
-    }
+    case Expr.Cst(cst, _) => cst.tpe
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", sym.loc)

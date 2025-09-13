@@ -228,7 +228,7 @@ object EffectBinder {
     */
   private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp0: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp0 match {
     case LiftedAst.Expr.Cst(cst, tpe, loc) =>
-      ReducedAst.Expr.Cst(cst, tpe, loc)
+      ReducedAst.Expr.Cst(cst, loc)
 
     case LiftedAst.Expr.Var(sym, tpe, loc) =>
       ReducedAst.Expr.Var(sym, tpe, loc)
@@ -328,7 +328,7 @@ object EffectBinder {
     @tailrec
     def bind(e: ReducedAst.Expr): ReducedAst.Expr = e match {
       // trivial expressions
-      case ReducedAst.Expr.Cst(_, _, _) => e
+      case ReducedAst.Expr.Cst(_, _) => e
       case ReducedAst.Expr.Var(_, _, _) => e
       case ReducedAst.Expr.JumpTo(_, _, _, _) => e
       case ReducedAst.Expr.ApplyAtomic(_, _, _, _, _) => e
