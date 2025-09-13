@@ -133,7 +133,8 @@ mod TestPrelude {
     def imperativePipe01(): Unit \ Assert = region rc {
         let m: MutList[Int32, _] = MutList.empty(rc);
         let f = (x) -> MutList.push(x, m);
-        assertTrue((4 !> f) == 4 and not MutList.isEmpty(m))
+        assertTrue((4 !> f) == 4);
+        assertTrue(not MutList.isEmpty(m))
     }
 
     @Test
@@ -143,21 +144,27 @@ mod TestPrelude {
         let a = 4 !> f;
         let b = 5 !> f;
         let c = 7 !> f;
-        assertTrue(a == 4 and b == 5 and c == 7 and MutList.length(m) == 3)
+        assertTrue(a == 4);
+        assertTrue(b == 5);
+        assertTrue(c == 7);
+        assertTrue(MutList.length(m) == 3)
     }
 
     @Test
     def imperativePipe03(): Unit \ Assert = region rc {
         let a = Ref.fresh(rc, 8);
         let f = x -> Ref.put(x, a);
-        assertTrue((2 !> f) == 2 and Ref.get(a) == 2)
+        assertTrue((2 !> f) == 2);
+        assertTrue(Ref.get(a) == 2)
     }
 
     @Test
     def imperativePipe04(): Unit \ Assert = region rc {
         let a = Ref.fresh(rc, 8);
         let f = x -> Ref.put(x, a);
-        assertTrue((2 !> f) == 2 and (4 !> f) == 4 and Ref.get(a) == 4)
+        assertTrue((2 !> f) == 2);
+        assertTrue((4 !> f) == 4);
+        assertTrue(Ref.get(a) == 4)
     }
 
 }

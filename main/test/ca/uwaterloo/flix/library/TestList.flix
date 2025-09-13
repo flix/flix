@@ -2814,11 +2814,6 @@ mod TestList {
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    /// TODO - this does not test order of effects.
-    /// We need a more "effective" monad than Identity.Identity to show that effects are
-    /// sequenced in left-to-right order.
-    /// This applies to the `sequence` tests on the other container types as well.
-
     @Test
     def sequence01(): Unit \ Assert =
         let l: List[Identity[Int32]] = Nil;

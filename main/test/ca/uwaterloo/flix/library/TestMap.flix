@@ -3046,7 +3046,8 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{}) and Ref.get(st) == '#')
+        assertTrue(ans == Identity.Identity(Map#{}));
+        assertTrue(Ref.get(st) == '#')
     }
 
     @Test
@@ -3054,7 +3055,8 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == 'a')
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}));
+        assertTrue(Ref.get(st) == 'a')
     }
 
     @Test
@@ -3062,7 +3064,8 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == 'b')
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}));
+        assertTrue(Ref.get(st) == 'b')
     }
 
     @Test
@@ -3070,7 +3073,8 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == 'c')
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}));
+        assertTrue(Ref.get(st) == 'c')
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3082,7 +3086,8 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{}) and Ref.get(st) == (0, '#'))
+        assertTrue(ans == Identity.Identity(Map#{}));
+        assertTrue(Ref.get(st) == (0, '#'))
     }
 
     @Test
@@ -3090,7 +3095,8 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}) and Ref.get(st) == (1, 'a'))
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}));
+        assertTrue(Ref.get(st) == (1, 'a'))
     }
 
     @Test
@@ -3098,7 +3104,8 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and Ref.get(st) == (2, 'b'))
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}));
+        assertTrue(Ref.get(st) == (2, 'b'))
     }
 
     @Test
@@ -3106,7 +3113,8 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and Ref.get(st) == (3, 'c'))
+        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}));
+        assertTrue(Ref.get(st) == (3, 'c'))
     }
 
     /////////////////////////////////////////////////////////////////////////////

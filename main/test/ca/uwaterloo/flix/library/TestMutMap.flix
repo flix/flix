@@ -122,7 +122,8 @@ mod TestMutMap {
         MutMap.put(1, 0, m1);
         MutMap.put(2, 0, m2);
         MutMap.mergeWithKey((_, v, _) -> v, m1, m2);
-        assertTrue(MutMap.memberOf(1, m2) and MutMap.memberOf(2, m2))
+        assertTrue(MutMap.memberOf(1, m2));
+        assertTrue(MutMap.memberOf(2, m2))
     }
 
 

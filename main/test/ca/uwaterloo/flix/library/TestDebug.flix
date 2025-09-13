@@ -1,6 +1,6 @@
 mod TestDebug {
     use Debug.stringify;
-    use Assert.{assertEq, assertTrue};
+    use Assert.{assertEq, assertTrue, fail};
 
     /////////////////////////////////////////////////////////////////////////////
     // stringify                                                               //
@@ -256,7 +256,7 @@ mod TestDebug {
     def testDebug05(): Unit \ Assert =
         match dbg(Poly.This('s')) {
             case Poly.This(x) => assertEq(expected = 's', x)
-            case _ => assertTrue(false)
+            case _ => fail("Unexpected case")
         }
 
     @Test
@@ -279,7 +279,7 @@ mod TestDebug {
     def testDebugBang05(): Unit \ Assert =
         match dbg!(Poly.This('s')) {
             case Poly.This(x) => assertEq(expected = 's', x)
-            case _ => assertTrue(false)
+            case _ => fail("Unexpected case")
         }
 
     @Test
@@ -302,7 +302,7 @@ mod TestDebug {
     def testDebugBangBang05(): Unit \ Assert =
         match dbg!!(Poly.This('s')) {
             case Poly.This(x) => assertEq(expected = 's', x)
-            case _ => assertTrue(false)
+            case _ => fail("Unexpected case")
         }
 
     @Test

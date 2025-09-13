@@ -2371,42 +2371,50 @@ mod TestVector {
     @Test
     def partition01(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, (Vector#{}: Vector[Int32]));
-        assertTrue((a == Vector#{}) and (b == Vector#{}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{})
 
     @Test
     def partition02(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1});
-        assertTrue((a == Vector#{}) and (b == Vector#{1}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{1})
 
     @Test
     def partition03(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{4});
-        assertTrue((a == Vector#{4}) and (b == Vector#{}))
+        assertTrue(a == Vector#{4});
+        assertTrue(b == Vector#{})
 
     @Test
     def partition04(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 2});
-        assertTrue((a == Vector#{}) and (b == Vector#{1, 2}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{1, 2})
 
     @Test
     def partition05(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 5});
-        assertTrue((a == Vector#{5}) and (b == Vector#{1}))
+        assertTrue(a == Vector#{5});
+        assertTrue(b == Vector#{1})
 
     @Test
     def partition06(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 1});
-        assertTrue((a == Vector#{5}) and (b == Vector#{1}))
+        assertTrue(a == Vector#{5});
+        assertTrue(b == Vector#{1})
 
     @Test
     def partition07(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 8});
-        assertTrue((a == Vector#{5, 8}) and (b == (Vector#{}: Vector[Int32])))
+        assertTrue(a == Vector#{5, 8});
+        assertTrue(b == (Vector#{}: Vector[Int32]))
 
     @Test
     def partition08(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{4, -3, -5, 1, 2, 16, 7, 1, 7});
-        assertTrue((a == Vector#{4, 16, 7, 7}) and (b == Vector#{-3, -5, 1, 2, 1}))
+        assertTrue(a == Vector#{4, 16, 7, 7});
+        assertTrue(b == Vector#{-3, -5, 1, 2, 1})
 
     /////////////////////////////////////////////////////////////////////////////
     // span                                                                    //
@@ -2415,42 +2423,50 @@ mod TestVector {
     @Test
     def span01(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, (Vector#{}: Vector[Int32]));
-        assertTrue((a == Vector#{}) and (b == Vector#{}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{})
 
     @Test
     def span02(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1});
-        assertTrue((a == Vector#{}) and (b == Vector#{1}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{1})
 
     @Test
     def span03(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{4});
-        assertTrue((a == Vector#{4}) and (b == Vector#{}))
+        assertTrue(a == Vector#{4});
+        assertTrue(b == Vector#{})
 
     @Test
     def span04(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1, 2});
-        assertTrue((a == Vector#{}) and (b == Vector#{1, 2}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{1, 2})
 
     @Test
     def span05(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1, 5});
-        assertTrue((a == Vector#{}) and (b == Vector#{1, 5}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{1, 5})
 
     @Test
     def span06(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{5, 1});
-        assertTrue((a == Vector#{5}) and (b == Vector#{1}))
+        assertTrue(a == Vector#{5});
+        assertTrue(b == Vector#{1})
 
     @Test
     def span07(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{5, 8});
-        assertTrue((a == Vector#{5, 8}) and (b == Vector#{}))
+        assertTrue(a == Vector#{5, 8});
+        assertTrue(b == Vector#{})
 
     @Test
     def span08(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        assertTrue((a == Vector#{4, 6}) and (b == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}))
+        assertTrue(a == Vector#{4, 6});
+        assertTrue(b == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7})
 
     /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
@@ -3245,22 +3261,26 @@ mod TestVector {
     @Test
     def unzip01(): Unit \ Assert =
         let (a, b) = Vector.unzip((Vector#{}: Vector[(Unit, Unit)]));
-        assertTrue((a == Vector#{}) and (b == Vector#{}))
+        assertTrue(a == Vector#{});
+        assertTrue(b == Vector#{})
 
     @Test
     def unzip02(): Unit \ Assert =
         let (a, b) = Vector.unzip(Vector#{(1, true)});
-        assertTrue((a == Vector#{1}) and (b == Vector#{true}))
+        assertTrue(a == Vector#{1});
+        assertTrue(b == Vector#{true})
 
     @Test
     def unzip03(): Unit \ Assert =
         let (a,b) = Vector.unzip(Vector#{(1, true), (2, true)});
-        assertTrue((a == Vector#{1, 2}) and (b == Vector#{true, true}))
+        assertTrue(a == Vector#{1, 2});
+        assertTrue(b == Vector#{true, true})
 
     @Test
     def unzip04(): Unit \ Assert =
         let (a,b) = Vector.unzip(Vector#{(1, true), (2, true), (3, false)});
-        assertTrue((a == Vector#{1, 2, 3}) and (b == Vector#{true, true, false}))
+        assertTrue(a == Vector#{1, 2, 3});
+        assertTrue(b == Vector#{true, true, false})
 
     @Test
     def unzip05(): Unit \ Assert =
@@ -4484,24 +4504,28 @@ mod TestVector {
     def shuffle01(): Unit \ Assert + NonDet =
         let v = (Vector#{}: Vector[Int32]);
         let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{})
+        assertTrue(Vector.length(v1) == 0);
+        assertTrue(Vector.toSet(v1) == Set#{})
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
         let v = Vector#{0};
         let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0})
+        assertTrue(Vector.length(v1) == 1);
+        assertTrue(Vector.toSet(v1) == Set#{0})
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
         let v = Vector#{0, 1, 2, 3};
         let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3})
+        assertTrue(Vector.length(v1) == 4);
+        assertTrue(Vector.toSet(v1) == Set#{0, 1, 2, 3})
 
     @Test
     def shuffle04(): Unit \ Assert + NonDet =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+        assertTrue(Vector.length(v1) == 10);
+        assertTrue(Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 
 }

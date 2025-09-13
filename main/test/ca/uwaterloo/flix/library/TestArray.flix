@@ -2671,49 +2671,57 @@ mod TestArray {
     @Test
     def partition01(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
     def partition02(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1} @ rc))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
     }
 
     @Test
     def partition03(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{4} @ rc);
-        assertTrue(Array.sameElements(a, Array#{4} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+        assertTrue(Array.sameElements(a, Array#{4} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
     def partition04(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1,2} @ rc))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1,2} @ rc))
     }
 
     @Test
     def partition05(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1,5} @ rc);
-        assertTrue(Array.sameElements(a, Array#{5} @ rc) and Array.sameElements(b, Array#{1} @ rc))
+        assertTrue(Array.sameElements(a, Array#{5} @ rc));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
     }
 
     @Test
     def partition06(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{5,1} @ rc);
-        assertTrue(Array.sameElements(a, Array#{5} @ rc) and Array.sameElements(b, Array#{1} @ rc))
+        assertTrue(Array.sameElements(a, Array#{5} @ rc));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
     }
 
     @Test
     def partition07(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{5,8} @ rc);
-        assertTrue(Array.sameElements(a, Array#{5,8} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
     def partition08(): Unit \ Assert = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{4, -3, -5, 1, 2, 16, 7, 1, 7} @ rc);
-        assertTrue(Array.sameElements(a, Array#{4, 16, 7, 7} @ rc) and Array.sameElements(b, Array#{-3, -5, 1, 2, 1} @ rc))
+        assertTrue(Array.sameElements(a, Array#{4, 16, 7, 7} @ rc));
+        assertTrue(Array.sameElements(b, Array#{-3, -5, 1, 2, 1} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2723,49 +2731,57 @@ mod TestArray {
     @Test
     def span01(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
     def span02(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a,((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1} @ rc))
+        assertTrue(Array.sameElements(a,((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
     }
 
     @Test
     def span03(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{4} @ rc);
-        assertTrue(Array.sameElements(a, Array#{4} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+        assertTrue(Array.sameElements(a, Array#{4} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
     def span04(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1,2} @ rc))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1,2} @ rc))
     }
 
     @Test
     def span05(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1,5} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1,5} @ rc))
+        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])));
+        assertTrue(Array.sameElements(b, Array#{1,5} @ rc))
     }
 
     @Test
     def span06(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{5,1} @ rc);
-        assertTrue(Array.sameElements(a, Array#{5} @ rc) and Array.sameElements(b, Array#{1} @ rc))
+        assertTrue(Array.sameElements(a, Array#{5} @ rc));
+        assertTrue(Array.sameElements(b, Array#{1} @ rc))
     }
 
     @Test
     def span07(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{5,8} @ rc);
-        assertTrue(Array.sameElements(a, Array#{5,8} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
+        assertTrue(Array.sameElements(a, Array#{5,8} @ rc));
+        assertTrue(Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _])))
     }
 
     @Test
     def span08(): Unit \ Assert = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc);
-        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc) and Array.sameElements(b, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc))
+        assertTrue(Array.sameElements(a, Array#{4, 6} @ rc));
+        assertTrue(Array.sameElements(b, Array#{-3, 11, -5, 1, 2, 16, 7, 1, 7} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3682,25 +3698,29 @@ mod TestArray {
     @Test
     def unzip01(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, ((Array#{} @ rc): Array[(Unit, Unit), _]));
-        assertTrue(Array.sameElements(a, Array#{} @ rc) and Array.sameElements(b, Array#{} @ rc))
+        assertTrue(Array.sameElements(a, Array#{} @ rc));
+        assertTrue(Array.sameElements(b, Array#{} @ rc))
     }
 
     @Test
     def unzip02(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, Array#{(1, true)} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1} @ rc) and Array.sameElements(b, Array#{true} @ rc))
+        assertTrue(Array.sameElements(a, Array#{1} @ rc));
+        assertTrue(Array.sameElements(b, Array#{true} @ rc))
     }
 
     @Test
     def unzip03(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, Array#{(1, true), (2, true)} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1,2} @ rc)  and Array.sameElements(b, Array#{true,true} @ rc))
+        assertTrue(Array.sameElements(a, Array#{1,2} @ rc));
+        assertTrue(Array.sameElements(b, Array#{true,true} @ rc))
     }
 
     @Test
     def unzip04(): Unit \ Assert = region rc {
         let (a,b) = Array.unzip(rc, rc, Array#{(1, true), (2, true), (3, false)} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc) and Array.sameElements(b, Array#{true,true,false} @ rc))
+        assertTrue(Array.sameElements(a, Array#{1,2,3} @ rc));
+        assertTrue(Array.sameElements(b, Array#{true,true,false} @ rc))
     }
 
     @Test
@@ -5102,7 +5122,8 @@ mod TestArray {
         Array.copyInto(srcPos = 3, dstPos = 1, len = 2, src = src, dst);
         let copiedCorrectly = dst `sameElements` Array#{0, 4, 5, 0} @ rc;
         let sourceUnchanged = src `sameElements` Array#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10} @ rc;
-        assertTrue(copiedCorrectly and sourceUnchanged)
+        assertTrue(copiedCorrectly);
+        assertTrue(sourceUnchanged)
     }
 
     @Test
