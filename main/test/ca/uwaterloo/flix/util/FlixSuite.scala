@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.util
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
+import ca.uwaterloo.flix.verifier.{EffectVerifier, TokenVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Path, Paths}
@@ -36,6 +36,12 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     */
   private def mkFlix(): Flix = {
     val flix = new Flix()
+
+    flix.addListener {
+      case FlixEvent.AfterLexer(sources) =>
+        TokenVerifier.verify(sources)(flix)
+      case _ => // nop
+    }
 
     flix.addListener {
       case FlixEvent.AfterTailPos(root) =>
