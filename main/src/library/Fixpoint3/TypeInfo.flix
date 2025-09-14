@@ -16,12 +16,13 @@
  */
 
 ///
-/// This module defines and offers and interface for dealing with the types of the Datalog engine.
+/// This module defines and offers an interface for dealing with the types of the Datalog engine.
 ///
 /// A `Type` is uniquely defined by its `UnifiedTypePos` which is computed by `typeDatalog`.
 ///
-/// This module has a tight coupling with `Compiler` (most assign functionals identifiers in same order)
-/// and `Lowering`, which assumes that a `Type` is the same as a `UnifiedTypePoss`.
+/// This module has a tight coupling with `Compiler` since we must assign functional predicates
+/// their identifiers in same order. It also has a tight coupling with `Lowering`, which assumes
+/// that a `Type` is the same as a `UnifiedTypePoss`.
 ///
 mod Fixpoint3.TypeInfo {
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Datalog, Constraint, HeadPredicate, HeadTerm, VarSym}
@@ -51,8 +52,8 @@ mod Fixpoint3.TypeInfo {
     /// The type of a program is a vector where position `i` stores the type of
     /// the relation with predicate `PredSym(_, i)`.
     ///
-    /// For functionals the vector contains the types of the
-    /// functionals in the same order they are met by the compiler.
+    /// For functional predicates the vector contains the types of the
+    /// functional predicates in the same order they are met by the compiler.
     ///
     @Internal
     pub type alias TypeInformation = Vector[RelType]
@@ -76,8 +77,8 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Returns the type information of `d`
     ///
-    /// For functionals the vector returned vector contains the types of the
-    /// functionals in the same order they are met by the compiler.
+    /// For functional predicates the vector returned vector contains the types of the
+    /// functional predicates in the same order they are met by the compiler.
     ///
     @Internal
     pub def typeDatalog(d: Datalog, pseudoStratums: PseudoStrataOrder[r], predicates: Predicates, withProv: Bool): TypeInformation \ r = match d {
@@ -89,7 +90,7 @@ mod Fixpoint3.TypeInfo {
             // The first functional will get an id 1 greater than the largest PredSym.
             Counter.set(relNum, idCreator);
             let typeUnifier = MutDisjointSets.empty(rc);
-            // Have to traverse in same order as `Compuler.flix`
+            // Have to traverse in same order as `Compiler.flix`
             foreach ((_, pseudStrat) <- pseudoStratums) {
                 MutMap.foldLeft(_ -> rules2 -> {
                     List.forEach(match (_, rule) -> typeConstraint(rule, typeUnifier, idCreator), rules2)
@@ -102,7 +103,7 @@ mod Fixpoint3.TypeInfo {
             foreach(RelSym.Symbol(PredSym(_, id), arity, _) <- rels) {
                 Array.put(Array.repeat(rc, arity, -1), toInt32(id), arr)
             };
-            // Register functionals.
+            // Register functional predicates.
             foreach (id <- Vector.range(relNum, maxId)) {
                 let arity = computeSizeOfFunctional(Int32.toInt64(id), 0, typeUnifier);
                 Array.put(Array.repeat(rc, arity, -1), id, arr)
