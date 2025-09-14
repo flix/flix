@@ -1,6 +1,6 @@
 
 mod TestMutList {
-    use Assert.{assertEq, assertTrue, assertFalse, assertSome};
+    use Assert.{assertEq, assertTrue, assertFalse, assertSome, fail};
     use ToString.toString
     use MutList.sameElements
 
@@ -104,14 +104,6 @@ mod TestMutList {
         let v = MutList.empty(rc);
         assertFalse(u `sameElements` v)
     }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // Order.compare                                                           //
-    /////////////////////////////////////////////////////////////////////////////
-
-    // TODO
-
 
     /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
@@ -1742,7 +1734,7 @@ mod TestMutList {
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case None => assertTrue(true)
-            case _    => assertTrue(false)
+            case _    => fail("Unexpected case")
         }
     }
 
@@ -1752,7 +1744,7 @@ mod TestMutList {
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case Some(_) => assertTrue(true)
-            case _       => assertTrue(false)
+            case _       => fail("Unexpected case")
         }
     }
 
@@ -1765,7 +1757,7 @@ mod TestMutList {
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case None => assertTrue(true)
-            case _    => assertTrue(false)
+            case _    => fail("Unexpected case")
         }
     }
 
