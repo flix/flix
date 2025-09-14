@@ -118,7 +118,7 @@ object Kind {
   /**
     * A smart constructor for the [[Arrow]] kind.
     */
-  def mkArrow(k1: Kind, k2: Kind): Kind = Cache.getOrPut(Arrow(k1, k2))
+  def mkArrow(k1: Kind, k2: Kind): Kind = Cache.getCanonicalValue(Arrow(k1, k2))
 
   /**
     * Returns the kind: * -> (* ... -> *).

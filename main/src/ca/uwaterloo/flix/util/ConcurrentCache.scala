@@ -22,15 +22,17 @@ import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
   */
 class ConcurrentCache[V] {
 
-  private val Cache: ConcurrentMap[V, V] = new ConcurrentHashMap[V, V]()
+  private val cache: ConcurrentMap[V, V] = new ConcurrentHashMap[V, V]()
 
   /**
     * Returns the canonical representation of the given value `v`.
     *
     * May return `v` itself or some other value equal to `v`.
+    *
+    * The value `v` must implement correct `equals` and `hashCode` methods.
     */
-  def getOrPut(v: V): V = {
-    Cache.computeIfAbsent(v, (_: V) => v)
+  def getCanonicalValue(v: V): V = {
+    cache.computeIfAbsent(v, (_: V) => v)
   }
 
 }
