@@ -251,7 +251,7 @@ object TypeVerifier {
 
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
-          val arrType = SimpleType.Array(t1)
+          val arrType = SimpleType.mkArray(t1)
           checkEq(arrType, tpe, loc)
           check(expected = SimpleType.Int32)(actual = t2, loc)
           tpe
@@ -301,7 +301,7 @@ object TypeVerifier {
           }
 
         case AtomicOp.Tuple =>
-          val tup = SimpleType.Tuple(ts)
+          val tup = SimpleType.mkTuple(ts)
           checkEq(tup, tpe, loc)
 
         case AtomicOp.Index(idx: Int) =>

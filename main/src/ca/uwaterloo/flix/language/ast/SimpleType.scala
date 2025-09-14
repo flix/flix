@@ -93,7 +93,7 @@ object SimpleType {
 
   case class Struct(sym: Symbol.StructSym, targs: List[SimpleType]) extends SimpleType
 
-  case class Arrow(args: List[SimpleType], result: SimpleType) extends SimpleType
+  case class Arrow(targs: List[SimpleType], result: SimpleType) extends SimpleType
 
   case object RecordEmpty extends SimpleType
 
@@ -106,19 +106,35 @@ object SimpleType {
   case class Native(clazz: Class[?]) extends SimpleType
 
   /**
+    * Smart constructor for [[SimpleType.Array]].
+    */
+  def mkArray(tpe: SimpleType): SimpleType.Array = {
+    val t = Array(tpe)
+    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Array]
+  }
+
+  /**
+    * Smart constructor for [[SimpleType.Tuple]].
+    */
+  def mkTuple(tpes: List[SimpleType]): SimpleType.Tuple = {
+    val t = Tuple(tpes)
+    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Tuple]
+  }
+
+  /**
     * Smart constructor for [[SimpleType.Arrow]].
     */
-  def mkArrow(args: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
-    val tpe = Arrow(args, result)
-    Cache.computeIfAbsent(tpe, (_: SimpleType) => tpe).asInstanceOf[SimpleType.Arrow]
+  def mkArrow(targs: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
+    val t = Arrow(targs, result)
+    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Arrow]
   }
 
   /**
     * Smart constructor for [[SimpleType.Enum]].
     */
   def mkEnum(sym: Symbol.EnumSym, targs: List[SimpleType]): SimpleType.Enum = {
-    val tpe = Enum(sym, targs)
-    Cache.computeIfAbsent(tpe, (_: SimpleType) => tpe).asInstanceOf[SimpleType.Enum]
+    val t = Enum(sym, targs)
+    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Enum]
   }
 
   /** Returns `tpe` if it's a primitive type and returns [[SimpleType.Object]] otherwise. */
