@@ -771,7 +771,7 @@ object Resolver {
     case NamedAst.Kind.Arrow(k10, k20, _) =>
       val k1 = resolveKind(k10, scp0, ns0, root)
       val k2 = resolveKind(k20, scp0, ns0, root)
-      Kind.Arrow(k1, k2)
+      Kind.mkArrow(k1, k2)
   }
 
   /**

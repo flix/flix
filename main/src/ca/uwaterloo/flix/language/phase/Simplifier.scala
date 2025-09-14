@@ -389,11 +389,11 @@ object Simplifier {
           case TypeConstructor.Array =>
             // Remove the region from the array.
             val List(elm, _) = tpe.typeArguments
-            SimpleType.Array(visitType(elm))
+            SimpleType.mkArray(visitType(elm))
 
           case TypeConstructor.Vector =>
             val List(elm) = tpe.typeArguments
-            SimpleType.Array(visitType(elm))
+            SimpleType.mkArray(visitType(elm))
 
           case TypeConstructor.RegionToStar =>
             // Remove the type argument.
@@ -401,7 +401,7 @@ object Simplifier {
 
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
-            SimpleType.Tuple(targs.map(visitType))
+            SimpleType.mkTuple(targs.map(visitType))
 
           case TypeConstructor.Arrow(_) =>
             // Remove the effect from the arrow.
