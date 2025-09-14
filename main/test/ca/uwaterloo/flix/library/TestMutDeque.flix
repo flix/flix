@@ -1,6 +1,6 @@
 mod TestMutDeque {
 
-    use Assert.{assertEq, assertNeq, assertTrue, assertFalse}
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail}
 
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //
@@ -1093,7 +1093,7 @@ mod TestMutDeque {
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case None => assertTrue(true)
-            case _    => assertTrue(false)
+            case _    => fail("Unexpected case")
         }
     }
 
@@ -1103,7 +1103,7 @@ mod TestMutDeque {
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case Some(_) => assertTrue(true)
-            case _       => assertTrue(false)
+            case _       => fail("Unexpected case")
         }
     }
 
@@ -1116,7 +1116,7 @@ mod TestMutDeque {
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case None => assertTrue(true)
-            case _    => assertTrue(false)
+            case _    => fail("Unexpected case")
         }
     }
 

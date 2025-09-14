@@ -1,6 +1,6 @@
 mod TestForEach {
 
-    use Assert.assertTrue;
+    use Assert.{assertTrue, assertEq};
     use Int32.modulo;
     use ForEach.forEach;
     use ForEach.withFilter;
@@ -27,7 +27,7 @@ mod TestForEach {
         foreach((i, x) <- withIndex(2 :: 4 :: 6 :: 8 :: Nil)) {
             results |> MutList.push((i, x))
         };
-        assertTrue(results |> MutList.toList == (0, 2) :: (1, 4) :: (2, 6) :: (3, 8) :: Nil)
+        assertEq(expected = (0, 2) :: (1, 4) :: (2, 6) :: (3, 8) :: Nil, results |> MutList.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ mod TestForEach {
         foreach(x <- withFilter(x -> x `modulo` 2 == 0, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil)) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == 0 :: 2 :: 4 :: 6 :: 8 :: Nil)
+        assertEq(expected = 0 :: 2 :: 4 :: 6 :: 8 :: Nil, results |> MutList.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ mod TestForEach {
         foreach(x <- withMap(x -> x * 2, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil)) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == 0 :: 2 :: 4 :: 6 :: 8 :: 10 :: Nil)
+        assertEq(expected = 0 :: 2 :: 4 :: 6 :: 8 :: 10 :: Nil, results |> MutList.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -111,7 +111,7 @@ mod TestForEach {
         foreach(x <- withZip(1 :: 2 :: 3 :: 4 :: 5 :: Nil, "one" :: "two" :: "three" :: Nil)) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == (1, "one") :: (2, "two") :: (3, "three") :: Nil)
+        assertEq(expected = (1, "one") :: (2, "two") :: (3, "three") :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -120,7 +120,7 @@ mod TestForEach {
         foreach(x <- withZip(1 :: 2 :: 3 :: Nil, "one" :: "two" :: "three" :: "four" :: "five" :: Nil)) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == (1, "one") :: (2, "two") :: (3, "three") :: Nil)
+        assertEq(expected = (1, "one") :: (2, "two") :: (3, "three") :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -129,7 +129,7 @@ mod TestForEach {
         foreach(x <- withZip(1 :: 2 :: 3 :: 4 :: 5 :: Nil, "one" :: "two" :: "three" :: "four" :: "five" :: Nil)) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == (1, "one") :: (2, "two") :: (3, "three") :: (4, "four") :: (5, "five") :: Nil)
+        assertEq(expected = (1, "one") :: (2, "two") :: (3, "three") :: (4, "four") :: (5, "five") :: Nil, results |> MutList.toList)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -145,7 +145,7 @@ mod TestForEach {
         foreach((i, x) <- list) {
             results |> MutList.push((i, x))
         };
-        assertTrue(results |> MutList.toList == (0, 0) :: (1, 2) :: (2, 4) :: (3, 6) :: (4, 8) :: Nil)
+        assertEq(expected = (0, 0) :: (1, 2) :: (2, 4) :: (3, 6) :: (4, 8) :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -160,7 +160,7 @@ mod TestForEach {
         foreach((i, x) <- list) {
             results |> MutList.push((i, x))
         };
-        assertTrue(results |> MutList.toList == (0, 0) :: (2, 2) :: (4, 4) :: (6, 6) :: (8, 8) :: Nil)
+        assertEq(expected = (0, 0) :: (2, 2) :: (4, 4) :: (6, 6) :: (8, 8) :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -172,7 +172,7 @@ mod TestForEach {
         foreach((i, x) <- list) {
             results |> MutList.push((i, x))
         };
-        assertTrue(results |> MutList.toList == (0, 0) :: (1, 2) :: (2, 4) :: (3, 6) :: (4, 8) :: (5, 10) :: Nil)
+        assertEq(expected = (0, 0) :: (1, 2) :: (2, 4) :: (3, 6) :: (4, 8) :: (5, 10) :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -187,7 +187,7 @@ mod TestForEach {
         foreach(x <- list) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == 0 :: 1 :: 4 :: 9 :: 16 :: 25 :: Nil)
+        assertEq(expected = 0 :: 1 :: 4 :: 9 :: 16 :: 25 :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -199,7 +199,7 @@ mod TestForEach {
         foreach(x <- list) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == 0 :: 6 :: Nil)
+        assertEq(expected = 0 :: 6 :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -211,7 +211,7 @@ mod TestForEach {
         foreach(x <- list) {
             results |> MutList.push(x)
         };
-        assertTrue(results |> MutList.toList == 0 :: 6 :: 12 :: 18 :: 24 :: Nil)
+        assertEq(expected = 0 :: 6 :: 12 :: 18 :: 24 :: Nil, results |> MutList.toList)
     }
 
     @Test
@@ -221,7 +221,7 @@ mod TestForEach {
         foreach((i, (c, s)) <- list) {
             results |> MutList.push((i, c, s))
         };
-        assertTrue(results |> MutList.toList == (0, '0', "zero") :: (1, '1', "one") :: (2, '2', "two") :: (3, '3', "three") :: (4, '4', "four") :: (5, '5', "five") :: Nil)
+        assertEq(expected = (0, '0', "zero") :: (1, '1', "one") :: (2, '2', "two") :: (3, '3', "three") :: (4, '4', "four") :: (5, '5', "five") :: Nil, results |> MutList.toList)
     }
 
 }

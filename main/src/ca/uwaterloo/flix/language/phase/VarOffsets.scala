@@ -52,7 +52,7 @@ object VarOffsets {
 
   /** Assigns stack offsets to `exp0` and returns the next available stack offset. */
   private def visitExp(exp0: Expr, offset0: Int): Int = exp0 match {
-    case Expr.Cst(_, _, _) =>
+    case Expr.Cst(_, _) =>
       offset0
 
     case Expr.Var(_, _, _) =>
@@ -89,13 +89,13 @@ object VarOffsets {
     case Expr.JumpTo(_, _, _, _) =>
       offset0
 
-    case Expr.Let(sym, exp1, exp2, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _) =>
       var offset = offset0
       offset = setStackOffset(sym, exp1.tpe, offset)
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)
 
-    case Expr.Stmt(exp1, exp2, _, _) =>
+    case Expr.Stmt(exp1, exp2, _) =>
       var offset = offset0
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)

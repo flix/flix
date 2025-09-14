@@ -107,8 +107,8 @@ object Eraser {
   }
 
   private def visitExp(exp0: Expr): Expr = exp0 match {
-    case Cst(cst, tpe, loc) =>
-      Cst(cst, visitType(tpe), loc)
+    case Cst(cst, loc) =>
+      Cst(cst, loc)
     case Var(sym, tpe, loc) =>
       Var(sym, visitType(tpe), loc)
     case ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -177,10 +177,10 @@ object Eraser {
       Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
     case JumpTo(sym, tpe, purity, loc) =>
       JumpTo(sym, visitType(tpe), purity, loc)
-    case Let(sym, exp1, exp2, tpe, loc) =>
-      Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), loc)
-    case Stmt(exp1, exp2, tpe, loc) =>
-      Stmt(visitExp(exp1), visitExp(exp2), visitType(tpe), loc)
+    case Let(sym, exp1, exp2, loc) =>
+      Let(sym, visitExp(exp1), visitExp(exp2), loc)
+    case Stmt(exp1, exp2, loc) =>
+      Stmt(visitExp(exp1), visitExp(exp2), loc)
     case Scope(sym, exp, tpe, purity, loc) =>
       Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>

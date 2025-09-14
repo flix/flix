@@ -3,7 +3,7 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.{Flix, FlixEvent, FlixListener}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Options
-import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
+import ca.uwaterloo.flix.verifier.{EffectVerifier, TokenVerifier, TypeVerifier}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.Paths
@@ -38,6 +38,8 @@ class RunVerifiers extends AnyFunSuite with TestUtils {
     flix.setOptions(Options.TestWithLibAll)
     flix.addListener(new FlixListener {
       override def notify(e: FlixEvent): Unit = e match {
+        case FlixEvent.AfterLexer(sources) =>
+          TokenVerifier.verify(sources)
         case FlixEvent.AfterTyper(root) =>
           EffectVerifier.verify(root)
         case FlixEvent.AfterTailPos(root) =>
