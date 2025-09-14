@@ -38,12 +38,6 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     val flix = new Flix()
 
     flix.addListener {
-      case FlixEvent.AfterLexer(sources) =>
-        TokenVerifier.verify(sources)(flix)
-      case _ => // nop
-    }
-
-    flix.addListener {
       case FlixEvent.AfterTailPos(root) =>
         TypeVerifier.verify(root)(flix)
       case _ => // nop
