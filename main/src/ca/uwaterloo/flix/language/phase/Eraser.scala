@@ -230,7 +230,7 @@ object Eraser {
       case Regex => Regex
       case Region => Region
       case Null => Null
-      case Array(tpe) => SimpleType.Array(visitType(tpe))
+      case Array(tpe) => SimpleType.mkArray(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
       case Tuple(elms) => SimpleType.mkTuple(elms.map(erase))
       case SimpleType.Enum(sym, targs) => SimpleType.mkEnum(sym, targs.map(erase))
