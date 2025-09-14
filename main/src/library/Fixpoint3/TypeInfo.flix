@@ -118,7 +118,8 @@ mod Fixpoint3.TypeInfo {
             };
             foreach (id <- Vector.range(0, maxId)) {
                 let curArr = Array.get(id, arr);
-                foreach (index <- Vector.range(0, Array.length(curArr))) match MutDisjointSets.find((Int32.toInt64(id), index), typeUnifier) {
+                let range = Vector.range(0, Array.length(curArr));
+                foreach (index <- range) match MutDisjointSets.find((Int32.toInt64(id), index), typeUnifier) {
                     case None => Array.put(Counter.getAndIncrement(typeCreator), index, curArr)
                     case Some((id2Int64, index2)) =>
                         let id2 = toInt32(id2Int64);
