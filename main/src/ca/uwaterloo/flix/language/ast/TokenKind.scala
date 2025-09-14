@@ -817,6 +817,13 @@ sealed trait TokenKind {
     case TokenKind.Colon | TokenKind.Equal => true
     case _ => false
   })
+
+  /**
+    * Returns `true` if `this` TokenKind is a semantic token used for syntax highlighting in LSP.
+    *
+    * This code must stay in sync with [[ca.uwaterloo.flix.api.lsp.provider.SemanticTokensProvider]].
+    */
+  def isSemanticToken: Boolean = isKeyword || isModifier || isComment
 }
 
 /**
