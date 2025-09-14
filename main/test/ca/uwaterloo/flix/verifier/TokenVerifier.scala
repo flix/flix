@@ -30,6 +30,7 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
   *   - I-Bounds: Offset ranges must be inside bounds.
   *   - I-Offset: Token offsets must be in order and not overlapping.
   *   - I-Pos: Positions must be in order and not overlapping.
+  *   - I-Col-End: Exclusive column ends of ranges should never be the first column (except EOF).
   *
   * Assumptions:
   *   - Offset ranges are end-exclusive.
@@ -58,6 +59,7 @@ object TokenVerifier {
       checkSrc(src, token)
       checkRange(token)
       checkBounds(src, token)
+      checkColEnd(token)
       if (prev != null) {
         checkOffsetOrder(prev, token)
         checkPositionOrder(prev, token)
@@ -113,6 +115,13 @@ object TokenVerifier {
   private def checkPositionOrder(left: Token, right: Token): Unit = {
     // Token end positions are exclusive.
     if (!isBefore(left.sp2, right.sp1)) outOfOrderPositions(left, right)
+  }
+
+  /** Checks I-Col-End. */
+  private def checkColEnd(token: Token): Unit = {
+    if (token.kind != TokenKind.Eof) {
+      if (token.sp2.colOneIndexed == 1) unneccesaryEndCol(token)
+    }
   }
 
   private def missingEof(found: Token): Nothing = {
@@ -205,6 +214,17 @@ object TokenVerifier {
          |${Formatter.NoFormatter.code(left.mkSourceLocation(), s"left token here (${left.kind})")}
          |
          |${Formatter.NoFormatter.code(right.mkSourceLocation(), s"right token here (${right.kind})")}
+         |
+         |""".stripMargin
+    throw InternalCompilerException(msg, loc)
+  }
+
+  private def unneccesaryEndCol(found: Token): Nothing = {
+    val loc = found.mkSourceLocation()
+    val msg =
+      s""">> End column is the first column of next line instead of last column of the existing line.
+         |
+         |${Formatter.NoFormatter.code(found.mkSourceLocation(), s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)
