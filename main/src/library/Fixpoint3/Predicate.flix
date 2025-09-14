@@ -69,7 +69,8 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns 1 plus the maximum full predicate in `predicates`.
     ///
-    def getMax(predicates: Predicates): Int64 = {
+    @Internal
+    pub def getMax(predicates: Predicates): Int64 = {
         let (_, _, res) = predicates;
         res
     }
@@ -113,7 +114,7 @@ mod Fixpoint3.Predicate {
     /// a full `RelSym`.
     ///
     @Internal
-    pub def fullRelSymToType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym = 
+    pub def fullRelSymToType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym =
         fullRelSymToTypeInternal(relSym, wantedType, getMax(predInfo))
 
     ///
