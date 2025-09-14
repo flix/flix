@@ -29,7 +29,7 @@ class ConcurrentCache[V] {
     *
     * May return `v` itself or some other value equal to `v`.
     *
-    * The value `v` must implement correct `equals` and `hashCode` methods.
+    * The value `v` must correctly implement the `equals` and `hashCode` methods.
     */
   def getCanonicalValue(v: V): V = {
     cache.computeIfAbsent(v, (_: V) => v)
