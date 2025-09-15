@@ -74,7 +74,7 @@ mod TestWritable {
     }
 
     @Test
-    pub def testWriteNewLine01(): Unit \ {Assert, IO, Sys} = region rc {
+    pub def testWriteNewLine01(): Unit \ {Assert, IO, Env} = region rc {
         let writer = TestWriter.empty(rc);
         let result = Writable.writeNewLine(writer);
         let contents = TestWriter.contents(writer);
@@ -83,7 +83,7 @@ mod TestWritable {
     }
 
     @Test
-    pub def testWriteNewLine02(): Unit \ {Assert, IO, Sys} = region rc {
+    pub def testWriteNewLine02(): Unit \ {Assert, IO, Env} = region rc {
         let writer = TestWriter.empty(rc);
         let result1 = Writable.writeString("hello world", writer);
         let result2 = Writable.writeNewLine(writer);
@@ -94,7 +94,7 @@ mod TestWritable {
     }
 
     @Test
-    pub def testWriteLine01(): Unit \ {Assert, IO, Sys} = region rc {
+    pub def testWriteLine01(): Unit \ {Assert, IO, Env} = region rc {
         let writer = TestWriter.empty(rc);
         let result = Writable.writeLine("", writer);
         let contents = TestWriter.contents(writer);
@@ -103,7 +103,7 @@ mod TestWritable {
     }
 
     @Test
-    pub def testWriteLine02(): Unit \ {Assert, IO, Sys} = region rc {
+    pub def testWriteLine02(): Unit \ {Assert, IO, Env} = region rc {
         let writer = TestWriter.empty(rc);
         let result = Writable.writeLine("hello world", writer);
         let contents = TestWriter.contents(writer);
@@ -112,7 +112,7 @@ mod TestWritable {
     }
 
     @Test
-    pub def testWriteLine03(): Unit \ {Assert, IO, Sys} = region rc {
+    pub def testWriteLine03(): Unit \ {Assert, IO, Env} = region rc {
         let writer = TestWriter.empty(rc);
         let result = Writable.writeLine(newLine(), writer);
         let contents = TestWriter.contents(writer);
@@ -121,7 +121,7 @@ mod TestWritable {
     }
 
     @Test
-    pub def testWriteLine04(): Unit \ {Assert, IO, Sys} = region rc {
+    pub def testWriteLine04(): Unit \ {Assert, IO, Env} = region rc {
         let writer = TestWriter.empty(rc);
         let result = Writable.writeLine("hello" ++ newLine() ++ "world", writer);
         let contents = TestWriter.contents(writer);
@@ -129,6 +129,6 @@ mod TestWritable {
         assertEq(expected = "hello" ++ newLine() ++ "world" ++ newLine(), contents)
     }
 
-    def newLine(): String \ IO + Sys = System.getProperty("line.separator")
+    def newLine(): String \ IO + Env = System.lineSeparator()
 
 }
