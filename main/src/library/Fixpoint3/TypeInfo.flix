@@ -118,20 +118,21 @@ mod Fixpoint3.TypeInfo {
             };
             foreach (id <- Vector.range(0, maxId)) {
                 let curArr = Array.get(id, arr);
-                let range = Vector.range(0, Array.length(curArr));
-                foreach (index <- range) match MutDisjointSets.find((Int32.toInt64(id), index), typeUnifier) {
-                    case None => Array.put(Counter.getAndIncrement(typeCreator), index, curArr)
-                    case Some((id2Int64, index2)) =>
-                        let id2 = toInt32(id2Int64);
-                        let otherArr = Array.get(id2, arr);
-                        match Array.get(index2, otherArr) {
-                            case -1 =>
-                                let newType = Counter.getAndIncrement(typeCreator);
-                                Array.put(newType, index2, otherArr);
-                                Array.put(newType, index, curArr)
-                            case someType =>
-                                Array.put(someType, index, curArr)
-                        }
+                foreach (index <- Vector.range(0, Array.length(curArr))) {
+                    match MutDisjointSets.find((Int32.toInt64(id), index), typeUnifier) {
+                        case None => Array.put(Counter.getAndIncrement(typeCreator), index, curArr)
+                        case Some((id2Int64, index2)) =>
+                            let id2 = toInt32(id2Int64);
+                            let otherArr = Array.get(id2, arr);
+                            match Array.get(index2, otherArr) {
+                                case -1 =>
+                                    let newType = Counter.getAndIncrement(typeCreator);
+                                    Array.put(newType, index2, otherArr);
+                                    Array.put(newType, index, curArr)
+                                case someType =>
+                                    Array.put(someType, index, curArr)
+                            }
+                    }
                 }
             };
             // Don't copy arrays, just cast them.
