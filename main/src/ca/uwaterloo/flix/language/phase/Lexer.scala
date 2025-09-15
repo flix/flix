@@ -142,8 +142,8 @@ object Lexer {
       val (results, errors) = ParOps.parMap(staleByDecreasingSize) {
         src =>
           val (tokens, errors) = lex(src)
-          val fuzzedTokens = fuzz(tokens)
-          (src -> fuzzedTokens, errors)
+          fuzz(tokens)
+          (src -> tokens, errors)
       }.unzip
 
       // Construct a map from each source to its tokens.
@@ -1030,34 +1030,25 @@ object Lexer {
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
   }
 
-  /**
-    * Returns a fuzzed array of tokens based on the given array of `tokens`.
-    *
-    * Must not modify the last token since it is end-of-file.
-    */
-  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
+  /** Fuzzes `tokens`. */
+  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Unit = {
     // Return immediately if fuzzing is disabled.
-    if (!flix.options.xfuzzer) {
-      return tokens
-    }
+    if (!flix.options.xfuzzer) return
 
     // Return immediately if there are few tokens.
-    if (tokens.length <= 10) {
-      return tokens
-    }
+    if (tokens.length <= 10) return
 
     // Fuzz the array by picking two random indices and swapping their tokens.
+    // N.B.: Do not move the last token (EOF).
     val copy = tokens.clone()
-    val lastIndex = copy.length - 1 // Don't remove the last EOF token.
+    val swapLength = copy.length - 1
     val r = new Random()
-    val i = r.nextInt(lastIndex)
-    val j = r.nextInt(lastIndex)
+    val i = r.nextInt(swapLength)
+    val j = r.nextInt(swapLength)
 
     val tmp = copy(i)
     copy(i) = copy(j)
     copy(j) = tmp
-
-    copy
   }
 
   /**
