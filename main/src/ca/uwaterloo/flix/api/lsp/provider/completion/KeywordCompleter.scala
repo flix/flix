@@ -88,6 +88,7 @@ object KeywordCompleter {
       // A
       Completion.KeywordCompletion("and"         , range, Priority.Lowest(0)),
       // C
+      Completion.KeywordCompletion("case"        , range, Priority.Lowest(-1)),
       Completion.KeywordCompletion("catch"       , range, Priority.Lowest(0)),
       // D
       Completion.KeywordCompletion("def"         , range, Priority.Lowest(-1)),
