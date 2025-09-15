@@ -749,7 +749,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns and caches all `.flix` files from `src/` and `test/`.
       */
     def addLocalFlixFiles(): List[Path] = {
-      val filesHere = FileOps.getFlixFilesIn(projectPath, Int.MaxValue)
+      val filesHere = FileOps.getFlixFilesIn(projectPath, 1)
       val filesSrc = FileOps.getFlixFilesIn(Bootstrap.getSourceDirectory(projectPath), Int.MaxValue)
       val filesTest = FileOps.getFlixFilesIn(Bootstrap.getTestDirectory(projectPath), Int.MaxValue)
       val result = filesHere ::: filesSrc ::: filesTest
