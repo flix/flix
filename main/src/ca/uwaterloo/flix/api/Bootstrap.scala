@@ -429,21 +429,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * and .jar files that this project uses.
     */
   private def folderMode(): Validation[Unit, BootstrapError] = {
-    // 1. Add *.flix, src/**.flix and test/**.flix
     Steps.addLocalFlixFiles()
-
-    // 2. Grab all jars in lib/external
-    val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), "jar")
-    mavenPackagePaths = mavenFilesLib
-
-    // 3. Grab all jars in lib/external
-    val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.FolderName), "jar")
-    jarPackagePaths = jarFilesLib
-
-    // 3. Grab all flix packages in lib/
-    val flixFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath), "fpkg")
-    flixPackagePaths = flixFilesLib
-
+    Steps.addLocalLibs()
     Validation.Success(())
   }
 
@@ -771,14 +758,60 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private object Steps {
 
+    /**
+      * Returns and caches all `.flix` files from `src/` and `test/`.
+      */
     def addLocalFlixFiles(): List[Path] = {
-      // Add *.flix, src/**.flix and test/**.flix
       val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
       val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
       val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
       val result = filesHere ::: filesSrc ::: filesTest
       sourcePaths = result
       result
+    }
+
+    /**
+      * Returns and caches all `.fpkg` files from `lib/`.
+      * The cached result is stored in [[flixPackagePaths]].
+      */
+    private def addLocalFlixLibs(): List[Path] = {
+      val flixFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath), "fpkg")
+      flixPackagePaths = flixFilesLib
+      flixFilesLib
+    }
+
+
+    /**
+      * Returns and caches all `.jar` files from `lib/external/`.
+      * The cached result is stored in [[jarPackagePaths]].
+      */
+    private def addLocalJars(): List[Path] = {
+      val jarFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.FolderName), "jar")
+      jarPackagePaths = jarFilesLib
+      jarFilesLib
+    }
+
+    /**
+      * Returns a list of 3 lists of paths.
+      * The lists contain the following paths in the following order:
+      *   1. All `.jar` files from `lib/cache/`.
+      *   1. All `.jar` files from `lib/external/`.
+      *   1. All `.fpkg` files from `lib/`.
+      *
+      * All results are cached in [[mavenPackagePaths]], [[jarPackagePaths]], and [[flixPackagePaths]], respectively.
+      */
+    def addLocalLibs(): List[List[Path]] = {
+      addLocalMavenJars() :: addLocalJars() :: addLocalFlixLibs() :: Nil
+    }
+
+    /**
+      * Returns and caches all `.jar` files from `lib/cache/`.
+      * The cached result is stored in [[mavenPackagePaths]].
+      */
+    private def addLocalMavenJars(): List[Path] = {
+      val mavenFilesLib = Bootstrap.getAllFilesWithExt(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), "jar")
+      mavenPackagePaths = mavenFilesLib
+      mavenFilesLib
     }
 
     /**
