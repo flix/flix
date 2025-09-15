@@ -1,4 +1,4 @@
-def main(): Unit \ {Net, NonDet, Sys, IO} =
+def main(): Unit \ IO =
     run {
         Console.println("Please enter your name: ");
         let name = Console.readln();
