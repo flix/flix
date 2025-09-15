@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
