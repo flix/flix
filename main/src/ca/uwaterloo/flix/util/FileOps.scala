@@ -103,7 +103,7 @@ object FileOps {
     * The depth parameter is the maximum number of levels of directories to visit.
     *   Use a depth of 0 to only visit the given directory.
     *   Use a depth of 1 to only visit the files in the given directory.
-    *   Use a depth of MaxValue to visit all files in the directory and its subdirectories.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
