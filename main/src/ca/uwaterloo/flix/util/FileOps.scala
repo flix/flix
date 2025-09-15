@@ -105,8 +105,8 @@ object FileOps {
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
-      Files.walk(path, depth).iterator()
-        .asScala
+      Files.walk(path, depth)
+        .iterator().asScala
         .filter(Files.isRegularFile(_))
         .toList
     else
@@ -125,8 +125,8 @@ object FileOps {
     */
   def getFilesWithExtIn(path: Path, ext: String, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
-      Files.walk(path, depth).iterator()
-        .asScala
+      Files.walk(path, depth)
+        .iterator().asScala
         .filter(checkExt(_, ext))
         .toList
     else
