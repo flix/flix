@@ -89,8 +89,8 @@ object FileOps {
     *     └── Subfile.flix
     * }}}
     */
-  def getFlixFilesIn(path: String, depth: Int): List[Path] = {
-    Files.walk(Paths.get(path), depth)
+  def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
+    Files.walk(path, depth)
       .iterator().asScala
       .filter(checkExt(_, "flix"))
       .toList.sorted

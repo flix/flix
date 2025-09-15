@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
-import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -354,12 +354,7 @@ object Bootstrap {
     * Returns all .flix files directly in the directory given by `p`.
     */
   private def getAllFlixFilesHere(path: Path): List[Path] = {
-    val files = path.toFile.listFiles()
-    if (files == null) {
-      List.empty
-    } else {
-      files.toList.map(f => f.toPath).filter(p => p.getFileName.toString.endsWith(s".flix"))
-    }
+    FileOps.getFlixFilesIn(path, Int.MaxValue)
   }
 
   private class FileVisitor extends SimpleFileVisitor[Path] {
