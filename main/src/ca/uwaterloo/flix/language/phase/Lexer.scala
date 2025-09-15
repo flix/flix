@@ -933,7 +933,7 @@ object Lexer {
     * It is optional to have a trailing type indicator on number literals.
     * If it is missing Flix defaults to `i32`.
     *
-    * A hex number is accepted by `0x(\h+_?)+\h+(i8|i16|i32|i64|ii)?` where `\h = [0-9a-fA-F]`.
+    * A hex number is accepted by `0x\h+(_\h+)*(i8|i16|i32|i64|ii)?` where `\h = [0-9a-fA-F]`.
     *
     * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as an error
     * part of the same number, e.g., `0x32q` should be parsed as a single wrong number, and not a
@@ -944,31 +944,23 @@ object Lexer {
 
     advance() // Consume 'x'.
 
-    // Consume a `(\h+_?)+` string.
-    var trailingUnderscore = false
-    var prevDigits = 0
-    var continue = true
-    while (continue) {
-      val currentDigits = s.sc.advanceWhileWithCount(isHexDigit)
-      if (currentDigits != 0) {
-        prevDigits = currentDigits
-        trailingUnderscore = s.sc.advanceIfMatch('_')
-        continue = trailingUnderscore
-      } else {
-        continue = false
+    // Consume a `\h+` string
+    if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
+      wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+    }
+
+    // Consume a `(_\h+)*`
+    while (s.sc.advanceIfMatch('_')) {
+      if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
+        wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
       }
     }
 
-    val unterminated = trailingUnderscore || prevDigits == 0
+    // Consume a '(i8|i16|i32|i64|ii)?' string.
+    // For better errors, anything starting with 'i' will be considered a suffix (but maybe invalid).
+    // This means that '0xFFi33' will report 'i33' is an invalid suffix instead of saying that 'i' is unexpected.
     val c = s.sc.peek
-    if (unterminated) {
-      val error = c match {
-        case EOF => LexerError.MalformedHexNumber("<end-of-file>", sourceLocationAtCurrent())
-        case _ if isNumberLikeChar(c) => LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent())
-        case _ => LexerError.UnterminatedHexNumber(sourceLocationAtCurrent())
-      }
-      wrapAndConsume(error)
-    } else if (c == 'i') {
+    if (c == 'i') {
       // Construct the location now, for cases like `0xi322`.
       val loc = sourceLocationAtCurrent()
 

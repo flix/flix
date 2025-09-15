@@ -546,31 +546,40 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedChar](result)
   }
 
-  test("LexerError.UnterminatedHexNumber.01") {
+  test("LexerError.ExpectedHexDigit.01") {
     val input =
       s"""
          |def f(): Int32 = 0x
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedHexNumber](result)
+    expectError[LexerError.ExpectedHexDigit](result)
   }
 
-  test("LexerError.UnterminatedHexNumber.02") {
+  test("LexerError.ExpectedHexDigit.02") {
     val input =
       s"""
          |def f(): Int32 = 0xF_
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedHexNumber](result)
+    expectError[LexerError.ExpectedHexDigit](result)
   }
 
-  test("LexerError.UnterminatedHexNumber.03") {
+  test("LexerError.ExpectedHexDigit.03") {
     val input =
       s"""
          |def f(): Int32 = 0x1_
            """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedHexNumber](result)
+    expectError[LexerError.ExpectedHexDigit](result)
+  }
+
+  test("LexerError.ExpectedHexDigit.04") {
+    val input =
+      s"""
+         |def f(): Int32 = 0x1__2
+           """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.ExpectedHexDigit](result)
   }
 
   test("LexerError.UnterminatedInfixFunction.01") {
