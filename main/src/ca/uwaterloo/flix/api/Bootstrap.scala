@@ -248,12 +248,12 @@ object Bootstrap {
   /**
     * Returns `true` if the given path `p` is a jar-file.
     */
-  private def isJarFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_JAR") && isZipArchive(p)
+  private def isJarFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_JAR") && FileOps.isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  private def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_FPKG") && isZipArchive(p)
+  private def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_FPKG") && FileOps.isZipArchive(p)
 
   /**
     * Creates a new directory at the given path `p`.
@@ -275,54 +275,6 @@ object Bootstrap {
       out.println(s"Creating '$p'.")
       Files.writeString(p, s, StandardOpenOption.CREATE)
     }
-  }
-
-  /**
-    * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
-    * Here we use 2014-06-27 (the date of the first commit to Flix) to avoid the complexity introduced by this hack.
-    *
-    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
-    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in platform-independent way</a>
-    * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
-    */
-  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
-
-  /**
-    * Adds an entry to the given zip file.
-    */
-  private def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
-    if (Files.exists(p)) {
-      addToZip(zip, name, Files.readAllBytes(p))
-    }
-  }
-
-  /**
-    * Adds an entry to the given zip file.
-    */
-  private def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
-    val entry = new ZipEntry(name)
-    entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
-    zip.putNextEntry(entry)
-    zip.write(d)
-    zip.closeEntry()
-  }
-
-  /**
-    * Returns `true` if the given path `p` is a zip-archive.
-    */
-  private def isZipArchive(p: Path): Boolean = {
-    if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
-      // Read the first four bytes of the file.
-      return Using(Files.newInputStream(p)) { is =>
-        val b1 = is.read()
-        val b2 = is.read()
-        val b3 = is.read()
-        val b4 = is.read()
-        // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
-        return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
-      }.get
-    }
-    false
   }
 
   /**
@@ -483,19 +435,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           |""".stripMargin
 
       // Add manifest file.
-      Bootstrap.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
+      FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
 
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       val classDir = Bootstrap.getClassDirectory(projectPath)
       for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
-        Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
+        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
       }
 
       // Add all resources, again sorting by relative file name
       val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
       for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
-        Bootstrap.addToZip(zip, fileNameWithSlashes, resource)
+        FileOps.addToZip(zip, fileNameWithSlashes, resource)
       }
 
       if (includeDependencies) {
@@ -516,7 +468,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                 if (entry.getName.endsWith(".class") && !entry.getName.equals("module-info.class") && !entry.getName.contains("META-INF/")) {
                   // Write extracted class files to zip.
                   val classContent = zipIn.readAllBytes()
-                  Bootstrap.addToZip(zip, entry.getName, classContent)
+                  FileOps.addToZip(zip, entry.getName, classContent)
                 }
                 entry = zipIn.getNextEntry
               }
@@ -570,16 +522,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
       // Add required resources.
-      Bootstrap.addToZip(zip, FLIX_TOML, Bootstrap.getManifestFile(projectPath))
-      Bootstrap.addToZip(zip, "LICENSE.md", Bootstrap.getLicenseFile(projectPath))
-      Bootstrap.addToZip(zip, "README.md", Bootstrap.getReadmeFile(projectPath))
+      FileOps.addToZip(zip, FLIX_TOML, Bootstrap.getManifestFile(projectPath))
+      FileOps.addToZip(zip, "LICENSE.md", Bootstrap.getLicenseFile(projectPath))
+      FileOps.addToZip(zip, "README.md", Bootstrap.getReadmeFile(projectPath))
 
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       for ((sourceFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(projectPath))
         .map { path => (path, Bootstrap.convertPathToRelativeFileName(projectPath, path)) }
         .sortBy(_._2)) {
-        Bootstrap.addToZip(zip, fileNameWithSlashes, sourceFile)
+        FileOps.addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {
       case Success(()) => Validation.Success(())

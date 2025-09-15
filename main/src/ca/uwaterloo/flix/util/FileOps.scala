@@ -20,7 +20,10 @@ import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
 import java.nio.file.{Files, LinkOption, Path, Paths, StandardOpenOption}
+import java.util.{Calendar, GregorianCalendar}
+import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.util.Using
 
 object FileOps {
 
@@ -111,7 +114,7 @@ object FileOps {
       Files.walk(path, depth)
         .iterator().asScala
         .filter(Files.isRegularFile(_))
-        .toList
+        .toList.sorted
     else
       List.empty
   }
@@ -131,7 +134,7 @@ object FileOps {
       Files.walk(path, depth)
         .iterator().asScala
         .filter(checkExt(_, ext))
-        .toList
+        .toList.sorted
     else
       List.empty
   }
@@ -146,4 +149,53 @@ object FileOps {
     require(!expectedExt.startsWith("."), "The file extension must not start with '.' -- This is handled by 'checkExt'.")
     Files.isRegularFile(p) && p.getFileName.toString.endsWith(s".$expectedExt")
   }
+
+  /**
+    * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
+    * Here we use 2014-06-27 (the date of the first commit to Flix) to avoid the complexity introduced by this hack.
+    *
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in platform-independent way</a>
+    * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
+    */
+  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
+
+  /**
+    * Adds an entry to the given zip file.
+    */
+  def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
+    if (Files.exists(p) && Files.isReadable(p)) {
+      addToZip(zip, name, Files.readAllBytes(p))
+    }
+  }
+
+  /**
+    * Adds an entry to the given zip file.
+    */
+  def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
+    val entry = new ZipEntry(name)
+    entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
+    zip.putNextEntry(entry)
+    zip.write(d)
+    zip.closeEntry()
+  }
+
+  /**
+    * Returns `true` if the given path `p` is a zip-archive.
+    */
+  def isZipArchive(p: Path): Boolean = {
+    if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
+      // Read the first four bytes of the file.
+      return Using(Files.newInputStream(p)) { is =>
+        val b1 = is.read()
+        val b2 = is.read()
+        val b3 = is.read()
+        val b4 = is.read()
+        // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
+        return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+      }.get
+    }
+    false
+  }
+
 }
