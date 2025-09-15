@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_FPKG, EXT_JAR, FLIX_TOML, getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -126,6 +126,24 @@ object Bootstrap {
     Validation.Success(())
   }
 
+  /** The flix file extension. Does not contain leading '.' */
+  private val EXT_FLIX: String = "flix"
+
+  /** The flix package file extension. Does not contain leading '.' */
+  private val EXT_FPKG: String = "fpkg"
+
+  /** The jar file extension. Does not contain leading '.' */
+  private val EXT_JAR: String = "jar"
+
+  /** The manifest / flix toml file name. */
+  private val FLIX_TOML: String = "flix.toml"
+
+  /** The license file name. */
+  private val LICENSE: String = "LICENSE.md"
+
+  /** The readme file name. */
+  private val README: String = "README.md"
+
   /**
     * Returns the path to the artifact directory relative to the given path `p`.
     */
@@ -185,12 +203,12 @@ object Bootstrap {
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
-  private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
+  private def getLicenseFile(p: Path): Path = p.resolve(s"./$LICENSE").normalize()
 
   /**
     * Returns the path to the README file relative to the given path `p`.
     */
-  private def getReadmeFile(p: Path): Path = p.resolve("./README.md").normalize()
+  private def getReadmeFile(p: Path): Path = p.resolve(s"./$README").normalize()
 
   /**
     * Returns the path to the main source file relative to the given path `p`.
@@ -205,7 +223,7 @@ object Bootstrap {
   /**
     * Returns the path to the Manifest file relative to the given path `p`.
     */
-  private def getManifestFile(p: Path): Path = p.resolve("./flix.toml").normalize()
+  private def getManifestFile(p: Path): Path = p.resolve(s"./$FLIX_TOML").normalize()
 
   /**
     * Returns the path to the .gitignore file relative to the given path `p`.
@@ -215,7 +233,7 @@ object Bootstrap {
   /**
     * Returns the path to the jar file based on the given path `p`.
     */
-  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".jar").normalize()
+  private def getJarFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + s".$EXT_JAR").normalize()
 
   /**
     * Returns the package name based on the given path `p`.
@@ -225,17 +243,17 @@ object Bootstrap {
   /**
     * Returns the path to the pkg file based on the given path `p`.
     */
-  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + ".fpkg").normalize()
+  private def getPkgFile(p: Path): Path = getArtifactDirectory(p).resolve(getPackageName(p) + s".$EXT_FPKG").normalize()
 
   /**
     * Returns `true` if the given path `p` is a jar-file.
     */
-  private def isJarFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(".jar") && isZipArchive(p)
+  private def isJarFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_JAR") && isZipArchive(p)
 
   /**
     * Returns `true` if the given path `p` is a fpkg-file.
     */
-  private def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(".fpkg") && isZipArchive(p)
+  private def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_FPKG") && isZipArchive(p)
 
   /**
     * Creates a new directory at the given path `p`.
@@ -363,10 +381,10 @@ object Bootstrap {
     val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
-      out.println(s"Found '${formatter.blue("flix.toml")}'. Checking dependencies...")
+      out.println(s"Found '${formatter.blue(FLIX_TOML)}'. Checking dependencies...")
       Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
-      out.println(s"""No '${formatter.blue("flix.toml")}'. Will load source files from '${formatter.blue("*.flix")}', '${formatter.blue("src/**")}', and '${formatter.blue("test/**")}'.""")
+      out.println(s"""No '${formatter.blue(FLIX_TOML)}'. Will load source files from '${formatter.blue(s"*.$EXT_FLIX")}', '${formatter.blue("src/**")}', and '${formatter.blue("test/**")}'.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
@@ -483,7 +501,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (includeDependencies) {
         // First, we get all jar files inside the lib folder.
         // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-        val jarDependencies = if (libFolder.toFile.exists()) FileOps.getFilesWithExtIn(libFolder, "jar", Int.MaxValue) else List[Path]()
+        val jarDependencies = if (libFolder.toFile.exists()) FileOps.getFilesWithExtIn(libFolder, EXT_JAR, Int.MaxValue) else List[Path]()
         // Add jar dependencies.
         jarDependencies.foreach(dep => {
           if (!Bootstrap.isJarFile(dep))
@@ -532,7 +550,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
+      return Validation.Failure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red(FLIX_TOML)}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
@@ -543,16 +561,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a fpkg-file. Refusing to overwrite."))
+      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a $EXT_FPKG-file. Refusing to overwrite."))
     }
 
     // Copy the `flix.toml` to the artifact directory.
-    Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve("flix.toml"), StandardCopyOption.REPLACE_EXISTING)
+    Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
 
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
       // Add required resources.
-      Bootstrap.addToZip(zip, "flix.toml", Bootstrap.getManifestFile(projectPath))
+      Bootstrap.addToZip(zip, FLIX_TOML, Bootstrap.getManifestFile(projectPath))
       Bootstrap.addToZip(zip, "LICENSE.md", Bootstrap.getLicenseFile(projectPath))
       Bootstrap.addToZip(zip, "README.md", Bootstrap.getReadmeFile(projectPath))
 
@@ -762,7 +780,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The cached result is stored in [[flixPackagePaths]].
       */
     private def addLocalFlixLibs(): List[Path] = {
-      val flixFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath), "fpkg", Int.MaxValue)
+      val flixFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath), EXT_FPKG, Int.MaxValue)
       flixPackagePaths = flixFilesLib
       flixFilesLib
     }
@@ -772,7 +790,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The cached result is stored in [[jarPackagePaths]].
       */
     private def addLocalJars(): List[Path] = {
-      val jarFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.FolderName), "jar", Int.MaxValue)
+      val jarFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.FolderName), EXT_JAR, Int.MaxValue)
       jarPackagePaths = jarFilesLib
       jarFilesLib
     }
@@ -795,7 +813,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The cached result is stored in [[mavenPackagePaths]].
       */
     private def addLocalMavenJars(): List[Path] = {
-      val mavenFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), "jar", Int.MaxValue)
+      val mavenFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), EXT_JAR, Int.MaxValue)
       mavenPackagePaths = mavenFilesLib
       mavenFilesLib
     }
