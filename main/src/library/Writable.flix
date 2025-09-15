@@ -67,18 +67,18 @@ mod Writable {
     ///
     /// Writes a new line separator to `writer`.
     ///
-    /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
+    /// The new line separator is platform dependent, and is determined by the `System.lineSeparator` function from Java.
     ///
-    pub def writeNewLine(writer: t): Result[IoError, Unit] \ IO + Sys + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
-        let newLine = System.getProperty("line.separator");
+    pub def writeNewLine(writer: t): Result[IoError, Unit] \ IO + Env + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+        let newLine = System.lineSeparator();
         writeString(newLine, writer)
 
     ///
     /// Writes `line` to `writer` and appends a new line separator.
     ///
-    /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
+    /// The new line separator is platform dependent, and is determined by the `System.lineSeparator` function from Java.
     ///
-    pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Sys + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+    pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Env + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
         forM(
             _ <- writeString(line, writer);
             _ <- writeNewLine(writer)
