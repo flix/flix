@@ -898,6 +898,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Parses and returns the manifest at `tomlPath`.
+      */
     def parseManifest(tomlPath: Path): Validation[Manifest, BootstrapError] = {
       ManifestParser.parse(tomlPath) match {
         case Ok(manifest) =>
