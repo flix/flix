@@ -113,6 +113,16 @@ object FileOps {
       List.empty
   }
 
+  /**
+    * Returns a list of all files in the given path with the extension `.ext`, visited recursively.
+    *
+    * @param path  the path to start the file walk from.
+    * @param ext   the file extension to match. Must not begin with `.`
+    * @param depth the maximum number of levels of directories to visit.
+    *              Use a depth of 0 to only visit the given directory.
+    *              Use a depth of 1 to only visit the files in the given directory.
+    *              Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
   def getFilesWithExtIn(path: Path, ext: String, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
       Files.walk(path, depth).iterator()
