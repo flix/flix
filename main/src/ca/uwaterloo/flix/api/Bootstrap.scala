@@ -591,14 +591,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  /**
+    * Type checks the source files for the project.
+    */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     flatMapN(Steps.updateStaleSources(flix)) {
       updated => mapN(Steps.check(updated))(_ => ())
     }
   }
 
+  /**
+    * Checks to see if any source files or packages have been changed.
+    * If they have, they are added to flix. Then updates the timestamps
+    * map to reflect the current source files and packages.
+    */
   def reconfigureFlix(flix: Flix): Unit = {
     // TODO: Figure out if this function can be removed somehow (maybe by removing shell depending on bootstrap)
+    // TODO: Can be removed by moving `updateStaleSources` into all step functions that require updating stale sources (almost all). This also remove responsibility from the caller.
     Steps.updateStaleSources(flix)
   }
 
@@ -745,6 +754,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  /**
+    * Returns the modules of the package if manifest is present.
+    * Returns [[PackageModules.All]] if manifest is not present.
+    */
   private def getPackageModules: PackageModules = {
     optManifest match {
       case None => PackageModules.All
