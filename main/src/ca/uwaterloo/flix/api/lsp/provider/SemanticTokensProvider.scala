@@ -995,7 +995,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given body predicate `b0`.
     */
   private def visitBodyPredicate(b0: TypedAst.Predicate.Body): Iterator[SemanticToken] = b0 match {
-    case Body.Atom(pred, _, _, _, terms, _, _) =>
+    case Body.Atom(pred, _, _, _, _, terms, _, _) =>
       val t = SemanticToken(SemanticTokenType.EnumMember, Nil, pred.loc)
       Iterator(t) ++ terms.flatMap(visitPat).iterator
 

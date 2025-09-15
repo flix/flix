@@ -362,7 +362,7 @@ object PatMatch {
   }
 
   private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit sctx: SharedContext, root: TypedAst.Root, flix: Flix): Unit = b0 match {
-    case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => ()
+    case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _, _) => ()
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
   }

@@ -527,7 +527,7 @@ object Safety {
 
   /** Checks that `p` only contains [[Pattern.Var]], [[Pattern.Wild]], and [[Pattern.Cst]]. */
   private def checkBodyPattern(p: Predicate.Body)(implicit sctx: SharedContext): Unit = p match {
-    case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
+    case Predicate.Body.Atom(_, _, _, _, _, terms, _, loc) =>
       terms.foreach {
         case Pattern.Var(_, _, _) => ()
         case Pattern.Wild(_, _) => ()
@@ -545,7 +545,7 @@ object Safety {
     * @param latVars   the variables in lattice position.
     */
   private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
-    case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
+    case Predicate.Body.Atom(_, den, polarity, _, _, terms, _, loc) =>
       // Check for non-positively bound negative variables.
       polarity match {
         case Polarity.Positive => ()
@@ -591,9 +591,9 @@ object Safety {
 
   /** Returns all free and positively defined variable symbols in the given body predicate `p`. */
   private def positivelyDefinedVariables(p: Predicate.Body): Set[Symbol.VarSym] = p match {
-    case Predicate.Body.Atom(_, _, Polarity.Positive, _, terms, _, _) =>
+    case Predicate.Body.Atom(_, _, Polarity.Positive, _, _, terms, _, _) =>
       terms.flatMap(freeVarsOf).toSet
-    case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _) =>
+    case Predicate.Body.Atom(_, _, Polarity.Negative, _, _, _, _, _) =>
       Set.empty
     case Predicate.Body.Functional(_, _, _) =>
       // Functional does not positively bind any variables. Not even its outVars.
@@ -608,7 +608,7 @@ object Safety {
 
   /** Returns the free lattice variables of `p` that are marked with fix. */
   private def fixedLatticenalVariablesOf(p: Predicate.Body): Set[Symbol.VarSym] = p match {
-    case Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, terms, _, _) =>
+    case Body.Atom(_, Denotation.Latticenal, _, Fixity.Fixed, _, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
     case _ => Set.empty
   }
@@ -619,7 +619,7 @@ object Safety {
 
   /** Returns the free lattice variables of `p` that are not marked with fix. */
   private def latticeVariablesOf(p: Predicate.Body): Set[Symbol.VarSym] = p match {
-    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, terms, _, _) =>
+    case Predicate.Body.Atom(_, Denotation.Latticenal, _, Fixity.Loose, _, terms, _, _) =>
       terms.lastOption.map(freeVarsOf).getOrElse(Set.empty)
     case _ => Set.empty
   }

@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
+import ca.uwaterloo.flix.language.ast.shared.Provenance.Enabled
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
@@ -773,7 +774,7 @@ object TypeReconstruction {
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: SubstitutionTree): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
       val ts = terms.map(t => visitPattern(t))
-      TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)
+      TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, Enabled, ts, subst(tvar), loc)
 
     case KindedAst.Predicate.Body.Functional(syms, exp, loc) =>
       val e = visitExp(exp)
