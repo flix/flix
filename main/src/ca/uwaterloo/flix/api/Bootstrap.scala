@@ -317,8 +317,10 @@ object Bootstrap {
   /**
     * Returns all files in the given path `p` ending with .`ext`.
     */
-  private def getAllFilesWithExt(p: Path, ext: String): List[Path] =
+  private def getAllFilesWithExt(p: Path, ext: String): List[Path] = {
+    require(!ext.startsWith("."), "The file extension must not start with '.' -- This is handled by `getAllFilesWithExt`.")
     getAllFiles(p).filter(p => p.getFileName.toString.endsWith(s".$ext"))
+  }
 
   /**
     * Returns all files in the given path `p`.
