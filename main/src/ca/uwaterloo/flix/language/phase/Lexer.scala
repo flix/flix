@@ -946,13 +946,13 @@ object Lexer {
 
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-      wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+      return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
     }
 
     // Consume a `(_\h+)*`
     while (s.sc.advanceIfMatch('_')) {
       if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-        wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+        return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
       }
     }
 
