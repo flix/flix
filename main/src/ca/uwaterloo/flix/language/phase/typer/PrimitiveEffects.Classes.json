@@ -8,10 +8,10 @@
     "java.lang.Float": "",
     "java.lang.Integer": "",
     "java.lang.Long": "",
+    "java.lang.Number": "",
     "java.lang.Short": "",
 
-    "java.lang.Object": "IO",
-
+    "java.lang.ClassLoader": "Exec, Sys, IO",
     "java.lang.Process": "Exec, IO",
     "java.lang.ProcessBuilder": "Exec, IO",
     "java.lang.ProcessHandle": "Exec, IO",
@@ -26,6 +26,7 @@
     "java.lang.invoke.MethodHandle": "Sys, IO",
     "java.lang.invoke.MethodHandles": "Sys, IO",
     "java.lang.invoke.VarHandle": "Sys, IO",
+    "java.lang.Object": "IO",
 
     "java.net.Authenticator": "Net, IO",
     "java.net.DatagramSocket": "Net, IO",

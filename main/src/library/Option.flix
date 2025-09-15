@@ -154,6 +154,11 @@ instance Iterable[Option[a]] {
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 
+instance ForEach[Option[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, o: Option[a]): Unit \ ef = Option.forEach(f, o)
+}
+
 mod Option {
 
     ///

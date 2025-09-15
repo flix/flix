@@ -122,12 +122,12 @@ object CodeHinter {
     var traitOccurs: List[TraitSymUse] = Nil
 
     object OccurConsumer extends Consumer {
-      override def consumeCaseSymUse(sym: SymUse.CaseSymUse): Unit = enumOccurs = (sym.sym.enumSym, sym.loc) :: enumOccurs
+      override def consumeCaseSymUse(symUse: SymUse.CaseSymUse): Unit = enumOccurs = (symUse.sym.enumSym, symUse.loc) :: enumOccurs
 
-      override def consumeDefSymUse(sym: DefSymUse): Unit = defOccurs = sym :: defOccurs
+      override def consumeDefSymUse(symUse: DefSymUse): Unit = defOccurs = symUse :: defOccurs
 
       override def consumeExpr(exp: Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
+        case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
         case _ => ()
       }
 

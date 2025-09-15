@@ -1,5 +1,23 @@
 # Changelog
 
+Version 0.62.0:
+- Library: Added `Assert` module (thanks Neo and Magnus!)
+- Library: Added `RichString` module (thanks Magnus!)
+
+Version 0.61.1:
+- Compiler: Improve type error messages (thanks Magnus!)
+
+Version 0.61.0:
+- Compiler: Reworked `foreach` to use the `ForEach` trait (thanks Ry!)
+- Library: Added completely new Datalog engine with much improved performance (thanks Adam and Casper!)
+- Library: Added algebraic effects for networking (thanks Cade!)
+- Library: Added `Readable`, `Writable`, and `Peekable` traits (thanks Ry!)
+
+Version 0.60.0:
+- Compiler: Introduced brand new inliner (thanks Jakob!)
+- Compiler: Improved JVM bytecode generation (thanks Jonathan and Jakob!)
+- LSP: Improved context-aware auto-completion (thanks Chenhao!)
+
 Version 0.59.0:
 - LSP: Improved handler completions (thanks Chenhao!)
 

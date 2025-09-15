@@ -57,46 +57,46 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     * Applies `this` substitution to the given type `tpe0`.
     */
   def apply(tpe0: Type): Type = {
-    // NB: The order of cases has been determined by code coverage analysis.
-    def visit(t: Type): Type =
-      t match {
-        case x: Type.Var => m.getOrElse(x.sym, x)
-
-        case Type.Cst(_, _) => t
-
-        case app@Type.Apply(t1, t2, loc) =>
-          // Note: While we could perform simplifications here,
-          // experimental results have shown that it is not worth it.
-          val x = visit(t1)
-          val y = visit(t2)
-          // Performance: Reuse t, if possible.
-          app.renew(x, y, loc)
-
-        case Type.Alias(sym, args0, tpe0, loc) =>
-          val args = args0.map(visit)
-          val tpe = visit(tpe0)
-          Type.Alias(sym, args, tpe, loc)
-
-        case Type.AssocType(cst, args0, kind, loc) =>
-          val args = args0.map(visit)
-          Type.AssocType(cst, args, kind, loc)
-
-        case Type.JvmToType(tpe0, loc) =>
-          val tpe = visit(tpe0)
-          Type.JvmToType(tpe, loc)
-
-        case Type.JvmToEff(tpe0, loc) =>
-          val tpe = visit(tpe0)
-          Type.JvmToEff(tpe, loc)
-
-        case Type.UnresolvedJvmType(member0, loc) =>
-          val member = member0.map(visit)
-          Type.UnresolvedJvmType(member, loc)
-      }
-
     // Optimization: Return the type if the substitution is empty. Otherwise visit the type.
-    if (isEmpty) tpe0 else visit(tpe0)
+    if (isEmpty) tpe0 else visitType(tpe0)
   }
+
+  private def visitType(t: Type): Type = t match {
+    // NB: The order of cases has been determined by code coverage analysis.
+    case x: Type.Var => m.getOrElse(x.sym, x)
+
+    case Type.Cst(_, _) => t
+
+    case app@Type.Apply(t1, t2, loc) =>
+      // Note: While we could perform simplifications here,
+      // experimental results have shown that it is not worth it.
+      val x = visitType(t1)
+      val y = visitType(t2)
+      // Performance: Reuse t, if possible.
+      app.renew(x, y, loc)
+
+    case Type.Alias(sym, args0, tpe0, loc) =>
+      val args = args0.map(visitType)
+      val tpe = visitType(tpe0)
+      Type.Alias(sym, args, tpe, loc)
+
+    case Type.AssocType(cst, args0, kind, loc) =>
+      val args = args0.map(visitType)
+      Type.AssocType(cst, args, kind, loc)
+
+    case Type.JvmToType(tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      Type.JvmToType(tpe, loc)
+
+    case Type.JvmToEff(tpe0, loc) =>
+      val tpe = visitType(tpe0)
+      Type.JvmToEff(tpe, loc)
+
+    case Type.UnresolvedJvmType(member0, loc) =>
+      val member = member0.map(visitType)
+      Type.UnresolvedJvmType(member, loc)
+  }
+
 
   /**
     * Applies `this` substitution to the given types `ts`.
@@ -127,11 +127,6 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   def apply(ec: EqualityConstraint): EqualityConstraint = if (isEmpty) ec else ec match {
     case EqualityConstraint(cst, t1, t2, loc) => EqualityConstraint(cst, apply(t1), apply(t2), loc)
   }
-
-  /**
-    * Removes the binding for the given type variable `tvar` (if it exists).
-    */
-  def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
 
   /**
     * Returns the left-biased composition of `this` substitution with `that` substitution.

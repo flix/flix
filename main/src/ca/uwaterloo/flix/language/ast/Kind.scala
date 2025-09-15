@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.fmt.FormatKind
+import ca.uwaterloo.flix.util.ConcurrentCache
 
 import scala.annotation.tailrec
 
@@ -33,7 +34,7 @@ sealed trait Kind {
     *   - `Kind.Star ->: Kind.Star ->: Kind.Star`
     *   - `Kind.Star ->: (Kind.Star ->: Kind.Star)`
     */
-  def ->:(left: Kind): Kind = Kind.Arrow(left, this)
+  def ->:(left: Kind): Kind = Kind.mkArrow(left, this)
 
   /**
     * Returns a human readable representation of `this` kind.
@@ -44,6 +45,11 @@ sealed trait Kind {
 }
 
 object Kind {
+
+  /**
+    * A cache to reuse kinds.
+    */
+  private val Cache: ConcurrentCache[Kind] = new ConcurrentCache
 
   /**
     * Represents a wild kind.
@@ -110,15 +116,23 @@ object Kind {
   case object Error extends Kind
 
   /**
-    * Returns the kind: * -> (* ... -> *)
+    * A smart constructor for the [[Arrow]] kind.
     */
-  def mkArrow(length: Int): Kind = {
-    if (length == 0) {
-      return Star
-    }
+  def mkArrow(k1: Kind, k2: Kind): Kind = Cache.getCanonicalValue(Arrow(k1, k2))
 
-    (0 until length).foldRight(Star: Kind) {
-      case (_, acc) => Arrow(Star, acc)
+  /**
+    * Returns the kind: * -> (* ... -> *).
+    */
+  def mkArrow(numArgs: Int): Kind = mkArrowTo(numArgs, Kind.Star)
+
+  /**
+    * Returns the kind * -> (* -> ... ret).
+    */
+  def mkArrowTo(numArgs: Int, ret: Kind): Kind = {
+    if (numArgs == 0) {
+      ret
+    } else {
+      mkArrowTo(numArgs - 1, Star ->: ret)
     }
   }
 
@@ -127,7 +141,7 @@ object Kind {
     */
   def mkArrow(ks: List[Kind]): Kind = ks match {
     case Nil => Star
-    case x :: xs => Arrow(x, mkArrow(xs))
+    case x :: xs => mkArrow(x, mkArrow(xs))
   }
 
   /**

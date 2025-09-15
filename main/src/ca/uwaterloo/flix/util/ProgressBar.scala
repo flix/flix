@@ -24,23 +24,11 @@ class ProgressBar {
   private val SpinnerChars = Array("|", "/", "-", "\\")
 
   /**
-    * The sample rate.
-    */
-  private val SampleRate: Int = 100
-
-  /**
     * An internal counter used to print the spinner.
     *
     * Monotonically increasing.
     */
   private val spinnerTick = new AtomicInteger(0)
-
-  /**
-    * An internal counter used for sampling.
-    *
-    * Monotonically increasing.
-    */
-  private val sampleTick = new AtomicInteger(0)
 
   /**
     * A Boolean that represents whether the terminal is believed to support color.
@@ -49,19 +37,9 @@ class ProgressBar {
 
   /**
     * Updates the progress with the given message `msg` in the given `phase`.
-    *
-    * If sample is `true` then
     */
-  def observe(phase: String, msg: String, sample: Boolean): Unit = {
-    // Always print if `sample` is `false`.
-    if (!sample) {
-      print(phase, msg)
-    } else {
-      // Print if `sample` is `true` and we have passed `SampleRate` ticks.
-      if (sampleTick.getAndIncrement() % SampleRate == 0) {
-        print(phase, msg)
-      }
-    }
+  def observe(phase: String, msg: String): Unit = {
+    print(phase, msg)
   }
 
   /**
@@ -84,10 +62,20 @@ class ProgressBar {
     val index = spinnerTick.getAndIncrement() % SpinnerChars.length
     val spinner = SpinnerChars(index)
 
+    // Compute the total amount of memory in use.
+    val usedMemoryInBytes = Runtime.getRuntime.totalMemory()
+    val usedMemoryInMegaBytes = (usedMemoryInBytes / (1024L * 1024L)).toInt
+    val memoryPadded = f"$usedMemoryInMegaBytes%4dM"
+    val memPart = usedMemoryInMegaBytes match {
+      case x if x <= 1_000 => memoryPadded
+      case x if x <= 4_000 => colorYellow(memoryPadded)
+      case _ => colorRed(memoryPadded)
+    }
+
     // We abbreviate phase and msg if they are too long to fit.
     val p = abbreviate(phase, 20)
     val m = abbreviate(msg, 80 - (20 + 10))
-    val s = s" [${colorGreen(spinner)}] [${colorBlue(p)}] $m"
+    val s = s" [${colorGreen(spinner)}] [$memPart] [${colorBlue(p)}] $m "
 
     // Print the string followed by carriage return.
     // NB: We do *NOT* print a newline because then
@@ -111,6 +99,15 @@ class ProgressBar {
       s.substring(0, l - 3) + "..."
 
   /**
+    * Colors the given string `s` blue (if supported).
+    */
+  private def colorBlue(s: String): String =
+    if (supportsColors)
+      Console.BLUE + s + Console.RESET
+    else
+      s
+
+  /**
     * Colors the given string `s` green (if supported).
     */
   private def colorGreen(s: String): String =
@@ -120,11 +117,20 @@ class ProgressBar {
       s
 
   /**
-    * Colors the given string `s` blue (if supported).
+    * Colors the given string `s` red (if supported).
     */
-  private def colorBlue(s: String): String =
+  private def colorRed(s: String): String =
     if (supportsColors)
-      Console.BLUE + s + Console.RESET
+      Console.RED + s + Console.RESET
+    else
+      s
+
+  /**
+    * Colors the given string `s` yellow (if supported).
+    */
+  private def colorYellow(s: String): String =
+    if (supportsColors)
+      Console.YELLOW + s + Console.RESET
     else
       s
 

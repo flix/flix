@@ -107,21 +107,21 @@ instance Add[Identity[a]] with Add[a] {
         Identity.Identity(Add.add(x1, y1))
 }
 
-instance Sub[Identity[a]] with Sub[a]  {
+instance Sub[Identity[a]] with Sub[a] {
     pub def sub(x: Identity[a], y: Identity[a]): Identity[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;
         Identity.Identity(Sub.sub(x1, y1))
 }
 
-instance Mul[Identity[a]] with Mul[a]  {
+instance Mul[Identity[a]] with Mul[a] {
     pub def mul(x: Identity[a], y: Identity[a]): Identity[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;
         Identity.Identity(Mul.mul(x1, y1))
 }
 
-instance Div[Identity[a]] with Div[a]  {
+instance Div[Identity[a]] with Div[a] {
     pub def div(x: Identity[a], y: Identity[a]): Identity[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;

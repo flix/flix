@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, SimpleType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -98,7 +98,7 @@ object LambdaLift {
 
     case SimplifiedAst.Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
       val arrowTpe = tpe match {
-        case t: MonoType.Arrow => t
+        case t: SimpleType.Arrow => t
         case _ => throw InternalCompilerException(s"Lambda has unexpected type: $tpe", loc)
       }
 
@@ -114,7 +114,7 @@ object LambdaLift {
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Modifiers.Empty, MonoType.Unit, loc))
+        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), SimpleType.Unit, loc))
       } else cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
@@ -129,7 +129,7 @@ object LambdaLift {
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Constant.Unit, MonoType.Unit, loc))
+        List(LiftedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc))
       else freeVars.map {
         case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }
@@ -157,6 +157,10 @@ object LambdaLift {
         case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
         case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
       }
+
+    case SimplifiedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      LiftedAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
@@ -216,16 +220,12 @@ object LambdaLift {
     case SimplifiedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
-        case SimplifiedAst.HandlerRule(sym, fparams, body) =>
+        case SimplifiedAst.HandlerRule(symUse, fparams, body) =>
           val fps = fparams.map(visitFormalParam)
           val b = visitExp(body)
-          LiftedAst.HandlerRule(sym, fps, b)
+          LiftedAst.HandlerRule(symUse, fps, b)
       }
       LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
-
-    case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExp)
-      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)
@@ -243,7 +243,7 @@ object LambdaLift {
 
 
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
-    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+    case SimplifiedAst.FormalParam(sym, tpe, loc) => LiftedAst.FormalParam(sym, tpe, loc)
   }
 
   /**

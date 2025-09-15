@@ -31,7 +31,7 @@ object UseCompleter {
     root.modules.get(moduleSym).collect {
       case mod: Symbol.ModuleSym if fuzzyMatch(ident, mod.ns.last) => UseCompletion(mod.toString, range, Priority.Medium(0), CompletionItemKind.Module)
       case enm: Symbol.EnumSym if fuzzyMatch(ident, enm.name) && CompletionUtils.isAvailable(enm) => UseCompletion(enm.toString, range, Priority.Medium(0), CompletionItemKind.Enum)
-      case eff: Symbol.EffectSym if fuzzyMatch(ident, eff.name) && CompletionUtils.isAvailable(eff) => UseCompletion(eff.toString, range, Priority.Medium(0), CompletionItemKind.Event)
+      case eff: Symbol.EffSym if fuzzyMatch(ident, eff.name) && CompletionUtils.isAvailable(eff) => UseCompletion(eff.toString, range, Priority.Medium(0), CompletionItemKind.Event)
       case defn: Symbol.DefnSym if fuzzyMatch(ident, defn.name) && CompletionUtils.isAvailable(defn) => UseCompletion(defn.toString, range, Priority.Medium(0), CompletionItemKind.Function)
       case trt: Symbol.TraitSym if fuzzyMatch(ident, trt.name) && CompletionUtils.isAvailable(trt) => UseCompletion(trt.toString, range, Priority.Medium(0), CompletionItemKind.Interface)
     } ++ getSigCompletions(qn, range) ++ getOpCompletions(qn, range) ++ getTagCompletions(qn, range)
@@ -52,7 +52,7 @@ object UseCompleter {
     * Returns a List of Completion for ops.
     */
   private def getOpCompletions(qn: Name.QName, range: Range)(implicit root: TypedAst.Root): Iterable[Completion] = {
-    val effectSym = Symbol.mkEffectSym(qn.namespace.toString)
+    val effectSym = Symbol.mkEffSym(qn.namespace.toString)
     root.effects.get(effectSym).filter(CompletionUtils.isAvailable).map(_.ops.collect {
       case op if fuzzyMatch(qn.ident.name, op.sym.name) =>
         UseCompletion(op.sym.toString, range, Priority.Medium(0), CompletionItemKind.Method)

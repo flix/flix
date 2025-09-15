@@ -18,27 +18,28 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType}
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.util.collection.MapOps
 
 object JvmBackend {
 
   /** Emits JVM bytecode for `root`. */
-  def run(root: Root)(implicit flix: Flix): (Root, List[JvmClass]) = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): BytecodeAst.Root = flix.phase("JvmBackend") {
     implicit val r: Root = root
 
     // Types/classes required for Flix runtime.
     val requiredTypes = Set(
-      MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
-      MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Bool), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Char), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int8), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int16), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int32), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Int64), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Float32), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Object), // by resumptionWrappers
+      SimpleType.Arrow(List(SimpleType.Object), SimpleType.Object), // by resumptionWrappers
     )
     val allTypes = root.types ++ requiredTypes
 
@@ -151,7 +152,19 @@ object JvmBackend {
       resumptionWrappers
     ).flatten
 
-    (root, allClasses)
+    val classMap = allClasses.map(clazz => clazz.name -> clazz).toMap
+
+    val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)){
+      case defn =>
+        val nsType = BackendObjType.Namespace(defn.sym.namespace)
+        BytecodeAst.Test(nsType.jvmName, nsType.ShimMethod(defn).name, defn.ann.isSkip)
+    }
+    val main = root.mainEntryPoint.map{
+      case _ =>
+        val mainType = BackendObjType.Main
+        BytecodeAst.Def(mainType.jvmName, mainType.MainMethod.name)
+    }
+    BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
 
 }

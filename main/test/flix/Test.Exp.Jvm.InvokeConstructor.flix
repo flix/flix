@@ -57,7 +57,8 @@ mod Test.Exp.Jvm.InvokeConstructor {
     // This test doesn't pass unless explicit cast is done
     @test
     def testInvokeObjectConstructor01(): Object \ IO =
-        (checked_cast(new JString("Hello World")) : Object)
+        let obj = new JString("Hello World");
+        (checked_cast(obj) : Object)
 
     @test
     def testInvokeStaticNestedConstructor01(): Builder \ IO =

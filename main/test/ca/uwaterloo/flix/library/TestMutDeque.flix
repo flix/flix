@@ -1,84 +1,70 @@
-/*
- * Copyright 2021 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestMutDeque {
+
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse, fail}
 
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def emptyWithCapacity01(): Bool = region rc {
+    @Test
+    def emptyWithCapacity01(): Unit \ Assert = region rc {
         let l: MutDeque[Int32, rc] = MutDeque.emptyWithCapacity(rc, 10);
-        MutDeque.toString(l) == "MutDeque#{}"
+        assertEq(expected = "MutDeque#{}", MutDeque.toString(l))
     }
 
-    @test
-    def emptyWithCapacity02(): Bool = region rc {
+    @Test
+    def emptyWithCapacity02(): Unit \ Assert = region rc {
         let l: MutDeque[Int32, rc] = MutDeque.emptyWithCapacity(rc, -1);
-        MutDeque.toString(l) == "MutDeque#{}"
+        assertEq(expected = "MutDeque#{}", MutDeque.toString(l))
     }
 
-    @test
-    def emptyWithCapacity03(): Bool = region rc {
+    @Test
+    def emptyWithCapacity03(): Unit \ Assert = region rc {
         let l: MutDeque[Int32, rc] = MutDeque.emptyWithCapacity(rc, 0);
         MutDeque.pushBack(5, l);
         MutDeque.pushBack(4, l);
-        MutDeque.toString(l) == "MutDeque#{5, 4}"
+        assertEq(expected = "MutDeque#{5, 4}", MutDeque.toString(l))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toString01(): Bool = region rc {
+    @Test
+    def toString01(): Unit \ Assert = region rc {
         let d: MutDeque[Int32, rc] = MutDeque.empty(rc);
-        MutDeque.toString(d) == "MutDeque#{}"
+        assertEq(expected = "MutDeque#{}", MutDeque.toString(d))
     }
 
-    @test
-    def toString02(): Bool = region rc {
+    @Test
+    def toString02(): Unit \ Assert = region rc {
         let d: MutDeque[Int32, rc] = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.toString(d) == "MutDeque#{1}"
+        assertEq(expected = "MutDeque#{1}", MutDeque.toString(d))
     }
 
-    @test
-    def toString03(): Bool = region rc {
+    @Test
+    def toString03(): Unit \ Assert = region rc {
         let d: MutDeque[Int32, rc] = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
-        MutDeque.toString(d) == "MutDeque#{1, 2, 3, 4, 5}"
+        assertEq(expected = "MutDeque#{1, 2, 3, 4, 5}", MutDeque.toString(d))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def size01(): Bool = region rc {
-        MutDeque.size(MutDeque.empty(rc)) == 0
+    @Test
+    def size01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, MutDeque.size(MutDeque.empty(rc)))
     }
 
-    @test
-    def size02(): Bool = region rc {
+    @Test
+    def size02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
 
         MutDeque.pushBack(1, d);
@@ -86,11 +72,11 @@ mod TestMutDeque {
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(1, d);
 
-        MutDeque.size(d) == 4
+        assertEq(expected = 4, MutDeque.size(d))
     }
 
-    @test
-    def size03(): Bool = region rc {
+    @Test
+    def size03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
 
         MutDeque.pushBack(1, d);
@@ -103,11 +89,11 @@ mod TestMutDeque {
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(1, d);
 
-        MutDeque.size(d) == 8
+        assertEq(expected = 8, MutDeque.size(d))
     }
 
-    @test
-    def size04(): Bool = region rc {
+    @Test
+    def size04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
 
         MutDeque.pushFront(1, d);
@@ -124,27 +110,11 @@ mod TestMutDeque {
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
 
-        MutDeque.size(d) == 11
+        assertEq(expected = 11, MutDeque.size(d))
     }
 
-    @test
-    def size05(): Bool = region rc {
-        let d = MutDeque.empty(rc);
-
-        MutDeque.pushFront(1, d);
-        MutDeque.pushFront(1, d);
-        MutDeque.pushFront(1, d);
-        MutDeque.pushFront(1, d);
-
-        discard MutDeque.popFront(d);
-        discard MutDeque.popFront(d);
-
-        MutDeque.size(d) == 2
-
-    }
-
-    @test
-    def size06(): Bool = region rc {
+    @Test
+    def size05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
 
         MutDeque.pushFront(1, d);
@@ -154,26 +124,42 @@ mod TestMutDeque {
 
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
-        discard MutDeque.popFront(d);
-        discard MutDeque.popFront(d);
 
-        MutDeque.size(d) == 0
+        assertEq(expected = 2, MutDeque.size(d))
+
     }
 
-    @test
-    def size07(): Bool = region rc {
+    @Test
+    def size06(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+        MutDeque.pushFront(1, d);
+
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+        discard MutDeque.popFront(d);
+
+        assertEq(expected = 0, MutDeque.size(d))
+    }
+
+    @Test
+    def size07(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         discard MutDeque.popBack(d);
-        MutDeque.size(d) == 0
+        assertEq(expected = 0, MutDeque.size(d))
     }
 
-    @test
-    def size08(): Bool = region rc {
+    @Test
+    def size08(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         discard MutDeque.popFront(d);
-        MutDeque.size(d) == 0
+        assertEq(expected = 0, MutDeque.size(d))
     }
 
 
@@ -181,39 +167,39 @@ mod TestMutDeque {
     // isEmpty                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def isEmpty01(): Bool = region rc {
-        MutDeque.isEmpty(MutDeque.empty(rc))
+    @Test
+    def isEmpty01(): Unit \ Assert = region rc {
+        assertTrue(MutDeque.isEmpty(MutDeque.empty(rc)))
     }
 
-    @test
-    def isEmpty02(): Bool = region rc {
+    @Test
+    def isEmpty02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        not (MutDeque.isEmpty(d))
+        assertFalse(MutDeque.isEmpty(d))
     }
 
-    @test
-    def isEmpty03(): Bool = region rc {
+    @Test
+    def isEmpty03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         discard MutDeque.popBack(d);
-        MutDeque.isEmpty(d)
+        assertTrue(MutDeque.isEmpty(d))
     }
 
-    @test
-    def isEmpty04(): Bool = region rc {
+    @Test
+    def isEmpty04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
-        not (MutDeque.isEmpty(d))
+        assertFalse(MutDeque.isEmpty(d))
     }
 
-    @test
-    def isEmpty05(): Bool = region rc {
+    @Test
+    def isEmpty05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         discard MutDeque.popFront(d);
-        MutDeque.isEmpty(d)
+        assertTrue(MutDeque.isEmpty(d))
     }
 
 
@@ -221,39 +207,39 @@ mod TestMutDeque {
     // nonEmpty                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def nonEmpty01(): Bool = region rc {
-        not (MutDeque.nonEmpty(MutDeque.empty(rc)))
+    @Test
+    def nonEmpty01(): Unit \ Assert = region rc {
+        assertFalse(MutDeque.nonEmpty(MutDeque.empty(rc)))
     }
 
-    @test
-    def nonEmpty02(): Bool = region rc {
+    @Test
+    def nonEmpty02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.nonEmpty(d)
+        assertTrue(MutDeque.nonEmpty(d))
     }
 
-    @test
-    def nonEmpty03(): Bool = region rc {
+    @Test
+    def nonEmpty03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         discard MutDeque.popBack(d);
-        not (MutDeque.nonEmpty(d))
+        assertFalse(MutDeque.nonEmpty(d))
     }
 
-    @test
-    def nonEmpty04(): Bool = region rc {
+    @Test
+    def nonEmpty04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.nonEmpty(d)
+        assertTrue(MutDeque.nonEmpty(d))
     }
 
-    @test
-    def nonEmpty05(): Bool = region rc {
+    @Test
+    def nonEmpty05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         discard MutDeque.popFront(d);
-        not (MutDeque.nonEmpty(d))
+        assertFalse(MutDeque.nonEmpty(d))
     }
 
 
@@ -261,61 +247,61 @@ mod TestMutDeque {
     // popFront                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def popFront01(): Bool = region rc {
+    @Test
+    def popFront01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
-        MutDeque.popFront(d) == (None: Option[Int32])
+        assertEq(expected = (None: Option[Int32]), MutDeque.popFront(d))
     }
 
-    @test
-    def popFront02(): Bool = region rc {
+    @Test
+    def popFront02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.popFront(d) == Some(1)
+        assertEq(expected = Some(1), MutDeque.popFront(d))
     }
 
-    @test
-    def popFront03(): Bool = region rc {
+    @Test
+    def popFront03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(3, d);
-        MutDeque.popFront(d) == Some(3)     and
-            MutDeque.popFront(d) == Some(2) and
-            MutDeque.popFront(d) == Some(1) and
-            MutDeque.popFront(d) == None
+        assertEq(expected = Some(3), MutDeque.popFront(d));
+        assertEq(expected = Some(2), MutDeque.popFront(d));
+        assertEq(expected = Some(1), MutDeque.popFront(d));
+        assertEq(expected = None, MutDeque.popFront(d))
     }
 
-    @test
-    def popFront04(): Bool = region rc {
+    @Test
+    def popFront04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.popFront(d) == Some(1)     and
-            MutDeque.popFront(d) == Some(2) and
-            MutDeque.popFront(d) == Some(3) and
-            MutDeque.popFront(d) == None
+        assertEq(expected = Some(1), MutDeque.popFront(d));
+        assertEq(expected = Some(2), MutDeque.popFront(d));
+        assertEq(expected = Some(3), MutDeque.popFront(d));
+        assertEq(expected = None, MutDeque.popFront(d))
     }
 
-    @test
-    def popFront05(): Bool = region rc {
+    @Test
+    def popFront05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.popFront(d) == Some(1)     and
-            MutDeque.popFront(d) == Some(2) and
-            MutDeque.popFront(d) == None
+        assertEq(expected = Some(1), MutDeque.popFront(d));
+        assertEq(expected = Some(2), MutDeque.popFront(d));
+        assertEq(expected = None, MutDeque.popFront(d))
     }
 
-    @test
-    def popFront06(): Bool = region rc {
+    @Test
+    def popFront06(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(2, d);
-        MutDeque.popFront(d) == Some(2)     and
-            MutDeque.popFront(d) == Some(1) and
-            MutDeque.popFront(d) == None
+        assertEq(expected = Some(2), MutDeque.popFront(d));
+        assertEq(expected = Some(1), MutDeque.popFront(d));
+        assertEq(expected = None, MutDeque.popFront(d))
     }
 
 
@@ -323,61 +309,61 @@ mod TestMutDeque {
     // popBack                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def popBack01(): Bool = region rc {
+    @Test
+    def popBack01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
-        MutDeque.popBack(d) == (None: Option[Int32])
+        assertEq(expected = (None: Option[Int32]), MutDeque.popBack(d))
     }
 
-    @test
-    def popBack02(): Bool = region rc {
+    @Test
+    def popBack02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.popBack(d) == Some(1)
+        assertEq(expected = Some(1), MutDeque.popBack(d))
     }
 
-    @test
-    def popBack03(): Bool = region rc {
+    @Test
+    def popBack03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.popBack(d) == Some(3)     and
-            MutDeque.popBack(d) == Some(2) and
-            MutDeque.popBack(d) == Some(1) and
-            MutDeque.popBack(d) == None
+        assertEq(expected = Some(3), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = None, MutDeque.popBack(d))
     }
 
-    @test
-    def popBack04(): Bool = region rc {
+    @Test
+    def popBack04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(2, d);
         MutDeque.pushFront(3, d);
-        MutDeque.popBack(d) == Some(1)     and
-            MutDeque.popBack(d) == Some(2) and
-            MutDeque.popBack(d) == Some(3) and
-            MutDeque.popBack(d) == None
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(3), MutDeque.popBack(d));
+        assertEq(expected = None, MutDeque.popBack(d))
     }
 
-    @test
-    def popBack05(): Bool = region rc {
+    @Test
+    def popBack05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(2, d);
-        MutDeque.popBack(d) == Some(1)     and
-            MutDeque.popBack(d) == Some(2) and
-            MutDeque.popBack(d) == None
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = None, MutDeque.popBack(d))
     }
 
-    @test
-    def popBack06(): Bool = region rc {
+    @Test
+    def popBack06(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.popBack(d) == Some(2)     and
-            MutDeque.popBack(d) == Some(1) and
-            MutDeque.popBack(d) == None
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = None, MutDeque.popBack(d))
     }
 
 
@@ -385,8 +371,8 @@ mod TestMutDeque {
     // pushFrontPushBack (expansion)                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def pushFrontPushBack01(): Bool = region rc {
+    @Test
+    def pushFrontPushBack01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushFront(1, d);
@@ -410,28 +396,28 @@ mod TestMutDeque {
         MutDeque.pushBack(2, d);
         // [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popFront(d) == Some(1) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(2) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == Some(1) and
-        MutDeque.popBack(d) == None and
-        MutDeque.popFront(d) == None
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popFront(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(2), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = Some(1), MutDeque.popBack(d));
+        assertEq(expected = None, MutDeque.popBack(d));
+        assertEq(expected = None, MutDeque.popFront(d))
     }
 
 
@@ -439,49 +425,49 @@ mod TestMutDeque {
     // peekFront                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def peekFront01(): Bool = region rc {
+    @Test
+    def peekFront01(): Unit \ Assert = region rc {
         let d = (MutDeque.empty(rc): MutDeque[Int32, rc]);
-        MutDeque.peekFront(d) == None
+        assertEq(expected = None, MutDeque.peekFront(d))
     }
 
-    @test
-    def peekFront02(): Bool = region rc {
+    @Test
+    def peekFront02(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
-        MutDeque.peekFront(d) == Some(1)
+        assertEq(expected = Some(1), MutDeque.peekFront(d))
     }
 
-    @test
-    def peekFront03(): Bool = region rc {
+    @Test
+    def peekFront03(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
-        MutDeque.peekFront(d) == Some(1) and
-        MutDeque.peekFront(d) == Some(1) and
-        MutDeque.peekFront(d) == Some(1)
+        assertEq(expected = Some(1), MutDeque.peekFront(d));
+        assertEq(expected = Some(1), MutDeque.peekFront(d));
+        assertEq(expected = Some(1), MutDeque.peekFront(d))
     }
 
-    @test
-    def peekFront04(): Bool = region rc {
+    @Test
+    def peekFront04(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
-        MutDeque.peekFront(d) == Some(3)
+        assertEq(expected = Some(3), MutDeque.peekFront(d))
     }
 
-    @test
-    def peekFront05(): Bool = region rc {
+    @Test
+    def peekFront05(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popBack(d);
-        MutDeque.peekFront(d) == Some(2)
+        assertEq(expected = Some(2), MutDeque.peekFront(d))
     }
 
-    @test
-    def peekFront06(): Bool = region rc {
+    @Test
+    def peekFront06(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
-        MutDeque.peekFront(d) == None
+        assertEq(expected = None, MutDeque.peekFront(d))
     }
 
 
@@ -489,49 +475,49 @@ mod TestMutDeque {
     // peekBack                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def peekBack01(): Bool = region rc {
+    @Test
+    def peekBack01(): Unit \ Assert = region rc {
         let d = (MutDeque.empty(rc): MutDeque[Int32, rc]);
-        MutDeque.peekBack(d) == None
+        assertEq(expected = None, MutDeque.peekBack(d))
     }
 
-    @test
-    def peekBack02(): Bool = region rc {
+    @Test
+    def peekBack02(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
-        MutDeque.peekBack(d) == Some(3)
+        assertEq(expected = Some(3), MutDeque.peekBack(d))
     }
 
-    @test
-    def peekBack03(): Bool = region rc {
+    @Test
+    def peekBack03(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
-        MutDeque.peekBack(d) == Some(3) and
-        MutDeque.peekBack(d) == Some(3) and
-        MutDeque.peekBack(d) == Some(3)
+        assertEq(expected = Some(3), MutDeque.peekBack(d));
+        assertEq(expected = Some(3), MutDeque.peekBack(d));
+        assertEq(expected = Some(3), MutDeque.peekBack(d))
     }
 
-    @test
-    def peekBack04(): Bool = region rc {
+    @Test
+    def peekBack04(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
-        MutDeque.peekBack(d) == Some(1)
+        assertEq(expected = Some(1), MutDeque.peekBack(d))
     }
 
-    @test
-    def peekBack05(): Bool = region rc {
+    @Test
+    def peekBack05(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popFront(d);
-        MutDeque.peekBack(d) == Some(2)
+        assertEq(expected = Some(2), MutDeque.peekBack(d))
     }
 
-    @test
-    def peekBack06(): Bool = region rc {
+    @Test
+    def peekBack06(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
-        MutDeque.peekBack(d) == None
+        assertEq(expected = None, MutDeque.peekBack(d))
     }
 
 
@@ -539,26 +525,26 @@ mod TestMutDeque {
     // sameElements                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sameElements01(): Bool = region rc {
+    @Test
+    def sameElements01(): Unit \ Assert = region rc {
         let d1 = (MutDeque.empty(rc): MutDeque[Int32, _]);
         let d2 = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        MutDeque.sameElements(d1, d2)
+        assertTrue(MutDeque.sameElements(d1, d2))
     }
 
-    @test
-    def sameElements02(): Bool = region rc {
+    @Test
+    def sameElements02(): Unit \ Assert = region rc {
         let d1 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d1);
 
         let d2 = MutDeque.empty(rc);
         MutDeque.pushFront(1, d2);
 
-        MutDeque.sameElements(d1, d2)
+        assertTrue(MutDeque.sameElements(d1, d2))
     }
 
-    @test
-    def sameElements03(): Bool = region rc {
+    @Test
+    def sameElements03(): Unit \ Assert = region rc {
         let d1 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d1);
         MutDeque.pushBack(2, d1);
@@ -567,11 +553,11 @@ mod TestMutDeque {
         MutDeque.pushFront(1, d2);
         MutDeque.pushFront(2, d2);
 
-        not MutDeque.sameElements(d1, d2)
+        assertFalse(MutDeque.sameElements(d1, d2))
     }
 
-    @test
-    def sameElements04(): Bool = region rc {
+    @Test
+    def sameElements04(): Unit \ Assert = region rc {
         let d1 = MutDeque.empty(rc);
         MutDeque.pushBack("a", d1);
         MutDeque.pushBack("b", d1);
@@ -582,11 +568,11 @@ mod TestMutDeque {
         MutDeque.pushBack("c", d2);
         MutDeque.pushFront("a", d2);
 
-        MutDeque.sameElements(d1, d2)
+        assertTrue(MutDeque.sameElements(d1, d2))
     }
 
-    @test
-    def sameElements05(): Bool = region rc {
+    @Test
+    def sameElements05(): Unit \ Assert = region rc {
         let d1 = MutDeque.empty(rc);
         MutDeque.pushBack("a", d1);
         MutDeque.pushBack("b", d1);
@@ -597,7 +583,7 @@ mod TestMutDeque {
         MutDeque.pushFront("b", d2);
         MutDeque.pushBack("c", d2);
 
-        not MutDeque.sameElements(d1, d2)
+        assertFalse(MutDeque.sameElements(d1, d2))
     }
 
 
@@ -605,64 +591,64 @@ mod TestMutDeque {
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool = region rc {
+    @Test
+    def sum01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
-        MutDeque.sum(d) == 0
+        assertEq(expected = 0, MutDeque.sum(d))
     }
 
-    @test
-    def sum02(): Bool = region rc {
+    @Test
+    def sum02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.sum(d) == 1
+        assertEq(expected = 1, MutDeque.sum(d))
     }
 
-    @test
-    def sum03(): Bool = region rc {
+    @Test
+    def sum03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.sum(d) == 6
+        assertEq(expected = 6, MutDeque.sum(d))
     }
 
-    @test
-    def sum04(): Bool = region rc {
+    @Test
+    def sum04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(-3, d);
-        MutDeque.sum(d) == 3
+        assertEq(expected = 3, MutDeque.sum(d))
     }
 
-    @test
-    def sum05(): Bool = region rc {
+    @Test
+    def sum05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(-3, d);
-        MutDeque.sum(d) == 3
+        assertEq(expected = 3, MutDeque.sum(d))
     }
 
-    @test
-    def sum06(): Bool = region rc {
+    @Test
+    def sum06(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(-1, d);
         MutDeque.pushBack(-2, d);
         MutDeque.pushFront(-3, d);
         MutDeque.pushFront(-4, d);
-        MutDeque.sum(d) == -10
+        assertEq(expected = -10, MutDeque.sum(d))
     }
 
-    @test
-    def sum07(): Bool = region rc {
+    @Test
+    def sum07(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(10, d);
         MutDeque.pushBack(-10, d);
-        MutDeque.sum(d) == 0
+        assertEq(expected = 0, MutDeque.sum(d))
     }
 
 
@@ -670,64 +656,64 @@ mod TestMutDeque {
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool = region rc {
+    @Test
+    def sumWith01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
-        MutDeque.sumWith(x -> x + 1, d) == 0
+        assertEq(expected = 0, MutDeque.sumWith(x -> x + 1, d))
     }
 
-    @test
-    def sumWith02(): Bool = region rc {
+    @Test
+    def sumWith02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.sumWith(x -> x + 1, d) == 2
+        assertEq(expected = 2, MutDeque.sumWith(x -> x + 1, d))
     }
 
-    @test
-    def sumWith03(): Bool = region rc {
+    @Test
+    def sumWith03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.sumWith(x -> x + 1, d) == 9
+        assertEq(expected = 9, MutDeque.sumWith(x -> x + 1, d))
     }
 
-    @test
-    def sumWith04(): Bool = region rc {
+    @Test
+    def sumWith04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(-3, d);
-        MutDeque.sumWith(x -> x + 1, d) == 7
+        assertEq(expected = 7, MutDeque.sumWith(x -> x + 1, d))
     }
 
-    @test
-    def sumWith05(): Bool = region rc {
+    @Test
+    def sumWith05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(-3, d);
-        MutDeque.sumWith(x -> x + 1, d) == 7
+        assertEq(expected = 7, MutDeque.sumWith(x -> x + 1, d))
     }
 
-    @test
-    def sumWith06(): Bool = region rc {
+    @Test
+    def sumWith06(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(-1, d);
         MutDeque.pushBack(-2, d);
         MutDeque.pushFront(-3, d);
         MutDeque.pushFront(-4, d);
-        MutDeque.sumWith(x -> x + 1, d) == -6
+        assertEq(expected = -6, MutDeque.sumWith(x -> x + 1, d))
     }
 
-    @test
-    def sumWith07(): Bool = region rc {
+    @Test
+    def sumWith07(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(10, d);
         MutDeque.pushBack(-10, d);
-        MutDeque.sumWith(x -> x + 1, d) == 2
+        assertEq(expected = 2, MutDeque.sumWith(x -> x + 1, d))
     }
 
 
@@ -735,40 +721,40 @@ mod TestMutDeque {
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldLeft01(): Bool = region rc {
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)) == 100
+    @Test
+    def foldLeft01(): Unit \ Assert = region rc {
+        assertEq(expected = 100, MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)))
     }
 
-    @test
-    def foldLeft02(): Bool = region rc {
+    @Test
+    def foldLeft02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
+        assertEq(expected = 198, MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldLeft03(): Bool = region rc {
+    @Test
+    def foldLeft03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
+        assertEq(expected = 198, MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldLeft04(): Bool = region rc {
+    @Test
+    def foldLeft04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 196
+        assertEq(expected = 196, MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldLeft05(): Bool = region rc {
+    @Test
+    def foldLeft05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 386
+        assertEq(expected = 386, MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
 
@@ -776,40 +762,40 @@ mod TestMutDeque {
     // foldRight                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRight01(): Bool = region rc {
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)) == 100
+    @Test
+    def foldRight01(): Unit \ Assert = region rc {
+        assertEq(expected = 100, MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)))
     }
 
-    @test
-    def foldRight02(): Bool = region rc {
+    @Test
+    def foldRight02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
+        assertEq(expected = 198, MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldRight03(): Bool = region rc {
+    @Test
+    def foldRight03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
+        assertEq(expected = 198, MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldRight04(): Bool = region rc {
+    @Test
+    def foldRight04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 194
+        assertEq(expected = 194, MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldRight05(): Bool = region rc {
+    @Test
+    def foldRight05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 382
+        assertEq(expected = 382, MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
 
@@ -817,91 +803,91 @@ mod TestMutDeque {
     // foldRightWithCont                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldRightWithCont01(): Bool = region rc {
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)) == 100
+    @Test
+    def foldRightWithCont01(): Unit \ Assert = region rc {
+        assertEq(expected = 100, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)))
     }
 
-    @test
-    def foldRightWithCont02(): Bool = region rc {
+    @Test
+    def foldRightWithCont02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
+        assertEq(expected = 198, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldRightWithCont03(): Bool = region rc {
+    @Test
+    def foldRightWithCont03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
+        assertEq(expected = 198, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldRightWithCont04(): Bool = region rc {
+    @Test
+    def foldRightWithCont04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 194
+        assertEq(expected = 194, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
-    @test
-    def foldRightWithCont05(): Bool = region rc {
+    @Test
+    def foldRightWithCont05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 382
+        assertEq(expected = 382, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldMap01(): Bool = region rc {
-        MutDeque.foldMap(x -> 2 * x, MutDeque.empty(rc)) == 0
+    @Test
+    def foldMap01(): Unit \ Assert = region rc {
+        assertEq(expected = 0, MutDeque.foldMap(x -> 2 * x, MutDeque.empty(rc)))
     }
 
-    @test
-    def foldMap02(): Bool = region rc {
+    @Test
+    def foldMap02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldMap(x -> 2 * x, d) == 2
+        assertEq(expected = 2, MutDeque.foldMap(x -> 2 * x, d))
     }
 
-    @test
-    def foldMap03(): Bool = region rc {
+    @Test
+    def foldMap03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldMap(x -> 2 * x, d) == 6
+        assertEq(expected = 6, MutDeque.foldMap(x -> 2 * x, d))
     }
 
-    @test
-    def foldMap04(): Bool = region rc {
+    @Test
+    def foldMap04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldMap(x -> 2 * x, d) == 12
+        assertEq(expected = 12, MutDeque.foldMap(x -> 2 * x, d))
     }
 
-    @test
-    def foldMap05(): Bool = region rc {
+    @Test
+    def foldMap05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushFront("c", d);
         MutDeque.pushFront("b", d);
         MutDeque.pushFront("a", d);
-        MutDeque.foldMap(x -> if (x == "c") "b" else x, d) == "abb"
+        assertEq(expected = "abb", MutDeque.foldMap(x -> if (x == "c") "b" else x, d))
     }
 
-    @test
-    def foldMap06(): Bool = region rc {
+    @Test
+    def foldMap06(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.foldMap(Int32.toString, d) == "123"
+        assertEq(expected = "123", MutDeque.foldMap(Int32.toString, d))
     }
 
 
@@ -909,33 +895,33 @@ mod TestMutDeque {
     // toList                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toList01(): Bool = region rc {
-        MutDeque.toList((MutDeque.empty(rc): MutDeque[Int32, _])) == (Nil: List[Int32])
+    @Test
+    def toList01(): Unit \ Assert = region rc {
+        assertEq(expected = (Nil: List[Int32]), MutDeque.toList((MutDeque.empty(rc): MutDeque[Int32, _])))
     }
 
-    @test
-    def toList02(): Bool = region rc {
+    @Test
+    def toList02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.toList(d) == 1 :: Nil
+        assertEq(expected = 1 :: Nil, MutDeque.toList(d))
     }
 
-    @test
-    def toList03(): Bool = region rc {
+    @Test
+    def toList03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.toList(d) == 1 :: 2 :: Nil
+        assertEq(expected = 1 :: 2 :: Nil, MutDeque.toList(d))
     }
 
-    @test
-    def toList04(): Bool = region rc {
+    @Test
+    def toList04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.toList(d) == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, MutDeque.toList(d))
     }
 
 
@@ -943,35 +929,35 @@ mod TestMutDeque {
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region rc {
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Array#{} @ rc)
+        assertTrue(Array.sameElements(a, Array#{} @ rc))
     }
 
-    @test
-    def toArray02(): Bool = region rc {
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Array#{1} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1} @ rc))
     }
 
-    @test
-    def toArray03(): Bool = region rc {
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Array#{1, 2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{1, 2} @ rc))
     }
 
-    @test
-    def toArray04(): Bool = region rc {
+    @Test
+    def toArray04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
@@ -979,42 +965,42 @@ mod TestMutDeque {
         MutDeque.pushFront(4, d);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Array#{4, 3, 1, 2} @ rc)
+        assertTrue(Array.sameElements(a, Array#{4, 3, 1, 2} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toVector01(): Bool = region rc {
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
 
         let v = MutDeque.toVector(d);
-        v == Vector#{}
+        assertEq(expected = Vector#{}, v)
     }
 
-    @test
-    def toVector02(): Bool = region rc {
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
 
         let v = MutDeque.toVector(d);
-        v == Vector#{1}
+        assertEq(expected = Vector#{1}, v)
     }
 
-    @test
-    def toVector03(): Bool = region rc {
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
 
         let v = MutDeque.toVector(d);
-        v == Vector#{1, 2}
+        assertEq(expected = Vector#{1, 2}, v)
     }
 
-    @test
-    def toVector04(): Bool = region rc {
+    @Test
+    def toVector04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
@@ -1022,7 +1008,7 @@ mod TestMutDeque {
         MutDeque.pushFront(4, d);
 
         let v = MutDeque.toVector(d);
-        v == Vector#{4, 3, 1, 2}
+        assertEq(expected = Vector#{4, 3, 1, 2}, v)
     }
 
 
@@ -1030,34 +1016,34 @@ mod TestMutDeque {
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def join01(): Bool = region rc {
-        (MutDeque.empty(rc): MutDeque[Int32, _]) |> MutDeque.join(",") == ""
+    @Test
+    def join01(): Unit \ Assert = region rc {
+        assertEq(expected = "", (MutDeque.empty(rc): MutDeque[Int32, _]) |> MutDeque.join(","))
     }
 
-    @test
-    def join02(): Bool = region rc {
+    @Test
+    def join02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.join(",", d) == "1"
+        assertEq(expected = "1", MutDeque.join(",", d))
     }
 
-    @test
-    def join03(): Bool = region rc {
+    @Test
+    def join03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.join(",", d) == "1,2,3"
+        assertEq(expected = "1,2,3", MutDeque.join(",", d))
     }
 
-    @test
-    def join04(): Bool = region rc {
+    @Test
+    def join04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
-        MutDeque.join(",", d) == "1,2,3"
+        assertEq(expected = "1,2,3", MutDeque.join(",", d))
     }
 
 
@@ -1065,35 +1051,35 @@ mod TestMutDeque {
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool = region rc {
+    @Test
+    def joinWith01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
-        MutDeque.joinWith(x -> "${x + 1}", ",", d) == ""
+        assertEq(expected = "", MutDeque.joinWith(x -> "${x + 1}", ",", d))
     }
 
-    @test
-    def joinWith02(): Bool = region rc {
+    @Test
+    def joinWith02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.joinWith(x -> "${x + 1}", ",", d) == "2"
+        assertEq(expected = "2", MutDeque.joinWith(x -> "${x + 1}", ",", d))
     }
 
-    @test
-    def joinWith03(): Bool = region rc {
+    @Test
+    def joinWith03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
-        MutDeque.joinWith(x -> "${x + 1}", ",", d) == "2,3,4"
+        assertEq(expected = "2,3,4", MutDeque.joinWith(x -> "${x + 1}", ",", d))
     }
 
-    @test
-    def joinWith04(): Bool = region rc {
+    @Test
+    def joinWith04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack("1", d);
         MutDeque.pushBack("2", d);
         MutDeque.pushBack("3", d);
-        MutDeque.joinWith(x -> x + x, ",", d) == "11,22,33"
+        assertEq(expected = "11,22,33", MutDeque.joinWith(x -> x + x, ",", d))
     }
 
 
@@ -1101,186 +1087,189 @@ mod TestMutDeque {
     // iterator                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterator01(): Bool = region rc {
+    @Test
+    def iterator01(): Unit \ Assert = region rc {
         let d = (MutDeque.empty(rc): MutDeque[Int32, rc]);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
-            case None => true
-            case _    => false
+            case None => assertTrue(true)
+            case _    => fail("Unexpected case")
         }
     }
 
-    @test
-    def iterator02(): Bool = region rc {
+    @Test
+    def iterator02(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
-            case Some(_) => true
-            case _       => false
+            case Some(_) => assertTrue(true)
+            case _       => fail("Unexpected case")
         }
     }
 
-    @test
-    def iterator03(): Bool = region rc {
+    @Test
+    def iterator03(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
-            case None => true
-            case _    => false
+            case None => assertTrue(true)
+            case _    => fail("Unexpected case")
         }
     }
 
-    @test
-    def iterator04(): Bool = region rc {
+    @Test
+    def iterator04(): Unit \ Assert = region rc {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
-        MutDeque.iterator(rc, d) |> Iterator.toList == 1 :: 2 :: 3 :: Nil
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, MutDeque.iterator(rc, d) |> Iterator.toList)
     }
 
-    @test
-    def iterator05(): Bool = region rc {
+    @Test
+    def iterator05(): Unit \ Assert = region rc {
         let d = List.range(0, 100) |> List.toMutDeque(rc);
-        MutDeque.iterator(rc, d) |> Iterator.toList == List.range(0, 100) and
-        MutDeque.toList(d) == List.range(0, 100)
+        assertEq(expected = List.range(0, 100), MutDeque.iterator(rc, d) |> Iterator.toList);
+        assertEq(expected = List.range(0, 100), MutDeque.toList(d))
     }
 
-    @test
-    def iterator06(): Bool = region rc {
+    @Test
+    def iterator06(): Unit \ Assert = region rc {
         let d = List.range(0, 100) |> List.toMutDeque(rc);
         let iter = MutDeque.iterator(rc, d);
         MutDeque.forEach(_ -> discard Iterator.next(iter), MutList.range(rc, 0, 50) |> MutList.toMutDeque(rc));
-        iter |> Iterator.toList == List.range(50, 100) and
-        MutDeque.toList(d) == List.range(0, 100)
+        assertEq(expected = List.range(50, 100), iter |> Iterator.toList);
+        assertEq(expected = List.range(0, 100), MutDeque.toList(d))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEach01(): Bool = region rc {
+    @Test
+    def forEach01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         let l = Ref.fresh(rc, Nil);
         let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(Ref.get(l)) |> List.join("") == ""
+        assertEq(expected = "", List.reverse(Ref.get(l)) |> List.join(""))
     }
 
-    @test
-    def forEach02(): Bool = region rc {
+    @Test
+    def forEach02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(0, d);
         let l = Ref.fresh(rc, Nil);
         let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(Ref.get(l)) |> List.join("") == "F"
+        assertEq(expected = "F", List.reverse(Ref.get(l)) |> List.join(""))
     }
 
-    @test
-    def forEach03(): Bool = region rc {
+    @Test
+    def forEach03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         let l = Ref.fresh(rc, Nil);
         let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(Ref.get(l)) |> List.join("") == "T"
+        assertEq(expected = "T", List.reverse(Ref.get(l)) |> List.join(""))
     }
 
-    @test
-    def forEach04(): Bool = region rc {
+    @Test
+    def forEach04(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         let l = Ref.fresh(rc, Nil);
         let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(Ref.get(l)) |> List.join("") == "FT"
+        assertEq(expected = "FT", List.reverse(Ref.get(l)) |> List.join(""))
     }
 
-    @test
-    def forEach05(): Bool = region rc {
+    @Test
+    def forEach05(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushFront(0, d);
         let l = Ref.fresh(rc, Nil);
         let fn = x -> if (x > 0) Ref.put("T" :: Ref.get(l), l) else Ref.put("F" :: Ref.get(l), l);
         MutDeque.forEach(fn, d);
-        List.reverse(Ref.get(l)) |> List.join("") == "FT"
+        assertEq(expected = "FT", List.reverse(Ref.get(l)) |> List.join(""))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachWithIndex                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachWithIndex01(): Bool = region rc {
+    @Test
+    def forEachWithIndex01(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
-        21 == Ref.get(ri)
+        assertEq(expected = 21, Ref.get(ri))
     }
 
-    @test
-    def forEachWithIndex02(): Bool = region rc {
+    @Test
+    def forEachWithIndex02(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutDeque.pushBack(0, d);
         MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
-        0 == Ref.get(ri)
+        assertEq(expected = 0, Ref.get(ri))
     }
 
-    @test
-    def forEachWithIndex03(): Bool = region rc {
+    @Test
+    def forEachWithIndex03(): Unit \ Assert = region rc {
         let d = MutDeque.empty(rc);
         let ri = Ref.fresh(rc, 21);
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
         MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
-        1 == Ref.get(ri)
+        assertEq(expected = 1, Ref.get(ri))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def shuffle01(): Bool \ NonDet = region rc {
+    @Test
+    def shuffle01(): Unit \ {Assert, NonDet} = region rc {
         let l: List[Int32] = Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, d1);
 
-        MutDeque.size(d2) == 0 and d2 |> MutDeque.toList |> List.toSet == Set#{}
+        assertEq(expected = 0, MutDeque.size(d2));
+        assertEq(expected = Set#{}, d2 |> MutDeque.toList |> List.toSet)
     }
 
-    @test
-    def shuffle02(): Bool \ NonDet = region rc {
+    @Test
+    def shuffle02(): Unit \ {Assert, NonDet} = region rc {
         let l = 1 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, d1);
 
-        MutDeque.size(d2) == 1 and d2 |> MutDeque.toList |> List.toSet == Set#{1}
+        assertEq(expected = 1, MutDeque.size(d2));
+        assertEq(expected = Set#{1}, d2 |> MutDeque.toList |> List.toSet)
     }
 
-    @test
-    def shuffle03(): Bool \ NonDet = region rc {
+    @Test
+    def shuffle03(): Unit \ {Assert, NonDet} = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, d1);
 
-        MutDeque.size(d2) == 3 and d2 |> MutDeque.toList |> List.toSet == Set#{1, 2, 3}
+        assertEq(expected = 3, MutDeque.size(d2));
+        assertEq(expected = Set#{1, 2, 3}, d2 |> MutDeque.toList |> List.toSet)
     }
 
-    @test
-    def shuffle04(): Bool \ NonDet = region rc {
+    @Test
+    def shuffle04(): Unit \ {Assert, NonDet} = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, d1);
 
-        MutDeque.size(d2) == 10 and
-            d2 |> MutDeque.toList |> List.toSet == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+        assertEq(expected = 10, MutDeque.size(d2));
+        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, d2 |> MutDeque.toList |> List.toSet)
     }
 
 }

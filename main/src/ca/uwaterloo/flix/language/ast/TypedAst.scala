@@ -36,7 +36,7 @@ object TypedAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, RestrictableEnum],
-                  effects: Map[Symbol.EffectSym, Effect],
+                  effects: Map[Symbol.EffSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
@@ -56,7 +56,7 @@ object TypedAst {
 
   case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation) extends Decl
 
-  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tpe: Type, tconstrs: List[TraitConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation) extends Sourceable with Decl {
+  case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation) extends Sourceable with Decl {
     override def src: Source = loc.source
   }
 
@@ -78,9 +78,9 @@ object TypedAst {
   case class AssocTypeSig(doc: Doc, mod: Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
-  case class AssocTypeDef(doc: Doc, mod: Modifiers, sym: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
+  case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
 
-  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation) extends Decl
+  case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, tparams: List[TypeParam], ops: List[Op], loc: SourceLocation) extends Decl
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
@@ -122,11 +122,13 @@ object TypedAst {
 
     case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyDef(symUse: DefSymUse, exps: List[Expr], targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], arrowTpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ApplySig(symUse: SigSymUse, exps: List[Expr], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class ApplySig(symUse: SigSymUse, exps: List[Expr], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -156,13 +158,13 @@ object TypedAst {
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ExtensibleMatch(label: Name.Label, exp1: Expr, bnd1: Binder, exp2: Expr, bnd2: Binder, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Tag(sym: CaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Tag(symUse: CaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RestrictableTag(sym: RestrictableCaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RestrictableTag(symUse: RestrictableCaseSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class ExtensibleTag(label: Name.Label, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ExtTag(label: Name.Label, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Tuple(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -188,9 +190,9 @@ object TypedAst {
 
     case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Expr, sym: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructGet(exp: Expr, symUse: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Expr, sym: StructFieldSymUse, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructPut(exp1: Expr, symUse: StructFieldSymUse, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -216,19 +218,17 @@ object TypedAst {
 
     case class Unsafe(exp: Expr, runEff: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, sym: EffectSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, symUse: EffSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Handler(sym: EffectSymUse, rules: List[HandlerRule], bodyType: Type, bodyEff: Type, handledEff: Type, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Handler(symUse: EffSymUse, rules: List[HandlerRule], bodyType: Type, bodyEff: Type, handledEff: Type, tpe: Type, loc: SourceLocation) extends Expr {
       override def eff: Type = Type.Pure
     }
 
     case class RunWith(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class Do(op: OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(constructor: Constructor[?], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -272,13 +272,13 @@ object TypedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointProject(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage, tpe: Type, eff: Type) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -300,7 +300,7 @@ object TypedAst {
 
     case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Tag(sym: CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
+    case class Tag(symUse: CaseSymUse, pats: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
     case class Tuple(pats: Nel[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
@@ -323,9 +323,41 @@ object TypedAst {
 
     case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends VarOrWild
 
-    case class Tag(sym: RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
+    case class Tag(symUse: RestrictableCaseSymUse, pat: List[VarOrWild], tpe: Type, loc: SourceLocation) extends RestrictableChoosePattern
 
     case class Error(tpe: Type, loc: SourceLocation) extends VarOrWild with RestrictableChoosePattern
+
+  }
+
+  sealed trait ExtPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtPattern {
+
+    case class Default(loc: SourceLocation) extends ExtPattern
+
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
+
+    case class Error(loc: SourceLocation) extends ExtPattern
+
+  }
+
+  sealed trait ExtTagPattern {
+    def tpe: Type
+
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(tpe: Type, loc: SourceLocation) extends ExtTagPattern
 
   }
 
@@ -369,7 +401,7 @@ object TypedAst {
 
   case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
@@ -380,6 +412,8 @@ object TypedAst {
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
+
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 

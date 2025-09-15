@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.{MonoAst, Symbol}
-import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object MonoAstPrinter {
@@ -31,6 +31,7 @@ object MonoAstPrinter {
     case Expr.ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.App(print(exp1), List(print(exp2)))
     case Expr.ApplyDef(sym, exps, _, _, _, _) => DocAst.Expr.ApplyDef(sym, exps.map(print))
     case Expr.ApplyLocalDef(sym, exps, _, _, _) => DocAst.Expr.ApplyLocalDef(sym, exps.map(print))
+    case Expr.ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
     case Expr.Let(sym, exp1, exp2, _, _, _, _) => DocAst.Expr.Let(printVar(sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
     case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
@@ -38,14 +39,13 @@ object MonoAstPrinter {
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Match(exp, rules, _, _, _) => DocAst.Expr.Match(print(exp), rules.map(printMatchRule))
-    case Expr.ExtensibleMatch(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(exp, rules, _, _, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.VectorLit(exps, _, _, _) => DocAst.Expr.VectorLit(exps.map(print))
     case Expr.VectorLoad(exp1, exp2, _, _, _) => DocAst.Expr.VectorLoad(print(exp1), print(exp2))
     case Expr.VectorLength(exp, _) => DocAst.Expr.VectorLength(print(exp))
     case Expr.Cast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map(printCatchRule))
     case Expr.RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map(printHandlerRule))
-    case Expr.Do(op, exps, _, _, _) => DocAst.Expr.Do(op.sym, exps.map(print))
     case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methods.map(printJvmMethod))
   }
 
@@ -70,12 +70,20 @@ object MonoAstPrinter {
     case MonoAst.MatchRule(pat, guard, exp) => (printPattern(pat), guard.map(print), print(exp))
   }
 
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: MonoAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case MonoAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
+  }
+
   /** Returns the [[DocAst.Expr]] representation of `pattern`. */
   private def printPattern(pattern: MonoAst.Pattern): DocAst.Expr = pattern match {
     case Pattern.Wild(_, _) => DocAst.Expr.Wild
     case Pattern.Var(sym, _, _, _) => printVar(sym)
     case Pattern.Cst(cst, _, _) => ConstantPrinter.print(cst)
-    case Pattern.Tag(sym, pats, _, _) => DocAst.Expr.Tag(sym.sym, pats.map(printPattern))
+    case Pattern.Tag(symUse, pats, _, _) => DocAst.Expr.Tag(symUse.sym, pats.map(printPattern))
     case Pattern.Tuple(elms, _, _) => DocAst.Expr.Tuple(elms.map(printPattern).toList)
     case Pattern.Record(pats, pat, _, _) => printRecordPattern(pats, pat)
   }
@@ -88,13 +96,30 @@ object MonoAstPrinter {
     }
   }
 
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: MonoAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Default(_) => DocAst.Pattern.Default
+    case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+    }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtTagPattern(pattern: MonoAst.ExtTagPattern): DocAst.Expr = pattern match {
+    case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _, _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
+  }
+
   /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVar(sym: Symbol.VarSym): DocAst.Expr =
     DocAst.Expr.Var(sym)
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printFormalParam(fp: MonoAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val MonoAst.FormalParam(sym, _, tpe, _, _, _) = fp
+    val MonoAst.FormalParam(sym, tpe, _, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 
