@@ -90,10 +90,13 @@ object FileOps {
     * }}}
     */
   def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
-    Files.walk(path, depth)
-      .iterator().asScala
-      .filter(checkExt(_, "flix"))
-      .toList.sorted
+    if (Files.exists(path) && Files.isDirectory(path))
+      Files.walk(path, depth)
+        .iterator().asScala
+        .filter(checkExt(_, "flix"))
+        .toList.sorted
+    else
+      List.empty
   }
 
   /**
