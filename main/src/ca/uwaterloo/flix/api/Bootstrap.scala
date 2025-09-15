@@ -381,10 +381,10 @@ object Bootstrap {
     val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
-      out.println(s"Found `${formatter.blue("flix.toml")}`. Checking dependencies...")
+      out.println(s"Found '${formatter.blue("flix.toml")}'. Checking dependencies...")
       Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
-      out.println(s"""No `${formatter.blue("flix.toml")}`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
+      out.println(s"""No '${formatter.blue("flix.toml")}'. Will load source files from '${formatter.blue("*.flix")}', '${formatter.blue("src/**")}', and '${formatter.blue("test/**")}'.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
