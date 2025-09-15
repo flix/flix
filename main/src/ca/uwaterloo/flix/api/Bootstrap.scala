@@ -44,7 +44,7 @@ object Bootstrap {
     *
     * The project must not already exist.
     */
-  def init(p: Path)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def init(p: Path): Validation[Unit, BootstrapError] = {
     //
     // Check that the current working directory is usable.
     //
@@ -73,10 +73,10 @@ object Bootstrap {
     //
     // Create the project directories and files.
     //
-    newDirectoryIfAbsent(sourceDirectory)
-    newDirectoryIfAbsent(testDirectory)
+    FileOps.newDirectoryIfAbsent(sourceDirectory)
+    FileOps.newDirectoryIfAbsent(testDirectory)
 
-    newFileIfAbsent(manifestFile) {
+    FileOps.newFileIfAbsent(manifestFile) {
       s"""[package]
          |name        = "$packageName"
          |description = "test"
@@ -86,7 +86,7 @@ object Bootstrap {
          |""".stripMargin
     }
 
-    newFileIfAbsent(gitignoreFile) {
+    FileOps.newFileIfAbsent(gitignoreFile) {
       s"""*.fpkg
          |*.jar
          |.GITHUB_TOKEN
@@ -97,12 +97,12 @@ object Bootstrap {
          |""".stripMargin
     }
 
-    newFileIfAbsent(licenseFile) {
+    FileOps.newFileIfAbsent(licenseFile) {
       """Enter license information here.
         |""".stripMargin
     }
 
-    newFileIfAbsent(readmeFile) {
+    FileOps.newFileIfAbsent(readmeFile) {
       s"""# $packageName
          |
          |Enter some useful information.
@@ -110,14 +110,14 @@ object Bootstrap {
          |""".stripMargin
     }
 
-    newFileIfAbsent(mainSourceFile) {
+    FileOps.newFileIfAbsent(mainSourceFile) {
       """// The main entry point.
         |def main(): Unit \ IO =
         |    println("Hello World!")
         |""".stripMargin
     }
 
-    newFileIfAbsent(mainTestFile) {
+    FileOps.newFileIfAbsent(mainTestFile) {
       """@Test
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
@@ -256,28 +256,6 @@ object Bootstrap {
     * Returns `true` if the given path `p` is a fpkg-file.
     */
   private def isPkgFile(p: Path): Boolean = p.normalize().getFileName.toString.endsWith(s".$EXT_FPKG") && FileOps.isZipArchive(p)
-
-  /**
-    * Creates a new directory at the given path `p`.
-    *
-    * The path must not already contain a non-directory.
-    */
-  private def newDirectoryIfAbsent(p: Path)(implicit out: PrintStream): Unit = {
-    if (!Files.exists(p)) {
-      out.println(s"Creating '$p'.")
-      Files.createDirectories(p)
-    }
-  }
-
-  /**
-    * Creates a new text file at the given path `p` with the given content `s` if the file does not already exist.
-    */
-  private def newFileIfAbsent(p: Path)(s: String)(implicit out: PrintStream): Unit = {
-    if (!Files.exists(p)) {
-      out.println(s"Creating '$p'.")
-      Files.writeString(p, s, StandardOpenOption.CREATE)
-    }
-  }
 
   /**
     * Creates a new Bootstrap object and initializes it.

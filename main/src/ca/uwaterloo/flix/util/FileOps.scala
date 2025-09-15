@@ -78,6 +78,26 @@ object FileOps {
   }
 
   /**
+    * Creates a new directory at the given path `p`.
+    *
+    * The path must not already contain a non-directory.
+    */
+  def newDirectoryIfAbsent(p: Path): Unit = {
+    if (!Files.exists(p)) {
+      Files.createDirectories(p)
+    }
+  }
+
+  /**
+    * Creates a new file at the given path `p` with the given content `s` if the file does not already exist.
+    */
+  def newFileIfAbsent(p: Path)(s: String): Unit = {
+    if (!Files.exists(p)) {
+      Files.writeString(p, s, StandardOpenOption.CREATE)
+    }
+  }
+
+  /**
     * Returns all files ending with `.flix` in `path`.
     *
     * The search is limited at `depth - 1` levels of subdirectories.
