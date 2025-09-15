@@ -607,7 +607,7 @@ class Flix {
     // We mark all inputs that contains compilation errors as dirty.
     // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
     for (e <- cachedErrors) {
-      val i = e.loc.sp1.source.input
+      val i = e.loc.source.input
       changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
     }
 

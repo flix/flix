@@ -167,8 +167,8 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    val b = SourcePosition.firstPosition(s.src)
-    val e = SourcePosition.firstPosition(s.src)
+    val b = SourcePosition.FirstPosition
+    val e = SourcePosition.FirstPosition
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
     for (event <- s.events) {
       event match {
@@ -184,6 +184,7 @@ object Parser2 {
             // token.
             SourceLocation(
               isReal = true,
+              s.src,
               lastAdvance.sp2,
               lastAdvance.sp2
             )
@@ -192,6 +193,7 @@ object Parser2 {
             // subtree.
             SourceLocation(
               isReal = true,
+              s.src,
               openToken.sp1,
               lastAdvance.sp2
             )
@@ -209,7 +211,8 @@ object Parser2 {
     // Set source location of the root.
     stack.last.loc = SourceLocation(
       isReal = true,
-      SourcePosition.firstPosition(s.src),
+      s.src,
+      SourcePosition.FirstPosition,
       tokens.head.sp2
     )
 
@@ -224,13 +227,13 @@ object Parser2 {
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
     // TODO: It might make sense to seek the first non-comment position.
     val token = s.tokens((s.position - 1).max(0))
-    SourceLocation(isReal = true, token.sp1, token.sp2)
+    token.mkSourceLocation()
   }
 
   /** Get current position of the parser as a [[SourceLocation]]. */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     val token = s.tokens(s.position)
-    SourceLocation(isReal = true, token.sp1, token.sp2)
+    token.mkSourceLocation()
   }
 
   /**
@@ -604,7 +607,7 @@ object Parser2 {
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
-      val loc = SourceLocation(isReal = true, locBefore.sp1, locAfter.sp1)
+      val loc = SourceLocation(isReal = true, s.src, locBefore.sp1, locAfter.sp1)
       Some(NeedAtleastOne(namedTokenSet, sctx, loc = loc))
     } else {
       None

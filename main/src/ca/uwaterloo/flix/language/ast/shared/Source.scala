@@ -19,6 +19,11 @@ import ca.uwaterloo.flix.language.ast.Sourceable
 
 import scala.annotation.tailrec
 
+object Source {
+  /** An unknown source. */
+  val Unknown: Source = Source(Input.Unknown, Array.emptyCharArray)
+}
+
 /**
  * A source is a name and an array of character data.
  */
