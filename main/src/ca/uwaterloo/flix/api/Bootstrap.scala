@@ -597,7 +597,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   def reconfigureFlix(flix: Flix): Unit = {
-    // TODO: Figure out if this function can be removed somehow (maybe by remove shell depending on bootstrap)
+    // TODO: Figure out if this function can be removed somehow (maybe by removing shell depending on bootstrap)
     Steps.updateStaleSources(flix)
   }
 
