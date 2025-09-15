@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -124,6 +124,9 @@ object Bootstrap {
     }
     Validation.Success(())
   }
+
+  /** The class file extension. Does not contain leading '.' */
+  private val EXT_CLASS: String = "class"
 
   /** The flix file extension. Does not contain leading '.' */
   private val EXT_FLIX: String = "flix"
@@ -277,47 +280,6 @@ object Bootstrap {
   }
 
   /**
-    * @param root the root directory to compute a relative path from the given path
-    * @param path the path to be converted to a relative path based on the given root directory
-    * @return relative file name separated by slashes, like `path/to/file.ext`
-    */
-  private def convertPathToRelativeFileName(root: Path, path: Path): String =
-    root.relativize(path).toString.replace('\\', '/')
-
-  /**
-    * Returns all files in the given path `p`.
-    * If this is used for a build, you probably want to use [[getAllFilesSorted]]
-    */
-  private def getAllFiles(p: Path): List[Path] = {
-    if (Files.isReadable(p) && Files.isDirectory(p)) {
-      val visitor = new FileVisitor
-      Files.walkFileTree(p, visitor)
-      visitor.result.toList
-    } else {
-      Nil
-    }
-  }
-
-  /**
-    * Returns all files in the given path `p` sorted on the relative filename
-    * to make build reproducible.
-    */
-  private def getAllFilesSorted(p: Path): List[(Path, String)] = {
-    getAllFiles(p).map { path =>
-      (path, convertPathToRelativeFileName(p, path))
-    }.sortBy(_._2)
-  }
-
-  private class FileVisitor extends SimpleFileVisitor[Path] {
-    val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
-
-    override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-      result += file
-      FileVisitResult.CONTINUE
-    }
-  }
-
-  /**
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
     * downloads all required files. Otherwise, checks the /lib folder
@@ -439,13 +401,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       val classDir = Bootstrap.getClassDirectory(projectPath)
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(classDir)) {
+      val classFiles = FileOps.getFilesWithExtIn(classDir, s".$EXT_CLASS", Int.MaxValue)
+      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(classDir, classFiles)) {
         FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
       }
 
       // Add all resources, again sorting by relative file name
       val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
-      for ((resource, fileNameWithSlashes) <- Bootstrap.getAllFilesSorted(resourcesDir)) {
+      val resources = FileOps.getFilesIn(resourcesDir, Int.MaxValue)
+      for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(resourcesDir, resources)) {
         FileOps.addToZip(zip, fileNameWithSlashes, resource)
       }
 
@@ -464,7 +428,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
               var entry = zipIn.getNextEntry
               while (entry != null) {
                 // Get the class files except module-info and META-INF classes which are specific to each library.
-                if (entry.getName.endsWith(".class") && !entry.getName.equals("module-info.class") && !entry.getName.contains("META-INF/")) {
+                if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
                   // Write extracted class files to zip.
                   val classContent = zipIn.readAllBytes()
                   FileOps.addToZip(zip, entry.getName, classContent)
@@ -527,9 +491,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((sourceFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getSourceDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(projectPath, path)) }
-        .sortBy(_._2)) {
+      val srcFiles = FileOps.getFlixFilesIn(Bootstrap.getSourceDirectory(projectPath), Int.MaxValue)
+      for ((sourceFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(projectPath, srcFiles)) {
         FileOps.addToZip(zip, fileNameWithSlashes, sourceFile)
       }
     } match {

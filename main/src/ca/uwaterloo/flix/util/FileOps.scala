@@ -198,4 +198,31 @@ object FileOps {
     false
   }
 
+  /**
+    * Sorts `paths` using `prefix`.
+    *
+    * The `prefix` parameter must be a prefix of all paths in `paths`.
+    *
+    * Given a `p` in `paths` defined as `prefix/p1`, it converts `p1` to a string
+    * representation and replaces `\` (backslash) with `/` (forward slash) and sorts
+    * the list of paths on their new string representations.
+    *
+    * Returns the list of paths along with their string representations.
+    */
+  def sortPlatformIndependently(prefix: Path, paths: List[Path]): List[(Path, String)] = {
+    require(paths.forall(_.startsWith(prefix)), "All paths in 'paths' must start with 'prefix'.")
+    paths.map { path =>
+      (path, convertPathToRelativeFileName(prefix, path))
+    }.sortBy(_._2)
+  }
+
+  /**
+    * @param prefix the root directory to compute a relative path from the given path
+    * @param path   the path to be converted to a relative path based on the given root directory
+    * @return relative file name separated by slashes, like `path/to/file.ext`
+    */
+  private def convertPathToRelativeFileName(prefix: Path, path: Path): String = {
+    prefix.relativize(path).toString.replace('\\', '/')
+  }
+
 }
