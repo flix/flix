@@ -750,8 +750,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     def addLocalFlixFiles(): List[Path] = {
       val filesHere = FileOps.getFlixFilesIn(projectPath, Int.MaxValue)
-      val filesSrc = FileOps.getFilesWithExtIn(Bootstrap.getSourceDirectory(projectPath), "flix", Int.MaxValue)
-      val filesTest = FileOps.getFilesWithExtIn(Bootstrap.getTestDirectory(projectPath), "flix", Int.MaxValue)
+      val filesSrc = FileOps.getFlixFilesIn(Bootstrap.getSourceDirectory(projectPath), Int.MaxValue)
+      val filesTest = FileOps.getFlixFilesIn(Bootstrap.getTestDirectory(projectPath), Int.MaxValue)
       val result = filesHere ::: filesSrc ::: filesTest
       sourcePaths = result
       result
