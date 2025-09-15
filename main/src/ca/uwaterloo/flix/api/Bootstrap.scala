@@ -605,20 +605,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Generates API documentation.
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
-    // Add sources and packages.
-    Steps.updateStaleSources(flix)
-
-    val packageModules = optManifest match {
-      case None => PackageModules.All
-      case Some(manifest) => manifest.modules
-    }
-
-    val (result, errors) = flix.check()
-    if (errors.isEmpty) {
-      result.foreach(HtmlDocumentor.run(_, packageModules)(flix))
-      Validation.Success(())
-    } else {
-      Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    flatMapN(Steps.updateStaleSources(flix)) {
+      updated => mapN(Steps.check(updated))(HtmlDocumentor.run(_, getPackageModules)(updated))
     }
   }
 
@@ -753,6 +741,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       ))
       out.println("")
       Validation.Success(true)
+    }
+  }
+
+  private def getPackageModules: PackageModules = {
+    optManifest match {
+      case None => PackageModules.All
+      case Some(manifest) => manifest.modules
     }
   }
 
