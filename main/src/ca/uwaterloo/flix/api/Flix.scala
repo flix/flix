@@ -483,7 +483,7 @@ class Flix {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
     }
     if (!FileOps.isZipArchive(pNorm)) {
-      Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
     }
     Result.Ok(())
   }
