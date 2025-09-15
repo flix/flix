@@ -235,7 +235,6 @@ object WeederError {
     override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
   }
 
-
   /**
     * An error raised to indicate that a lowercase name was expected.
     *
@@ -379,6 +378,29 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal extensible variant pattern.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalExtPattern(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Unexpected extensible variant pattern."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected extensible variant pattern.
+         |
+         |${code(loc, "unexpected pattern")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      underline("Tip:") + " Only a default pattern or tags with wild or variable patterns are allowed, e.g., '_' or 'A(x, _, z)', respectively."
+    })
+  }
+
+  /**
     * An error raised to indicate that a negative atom is marked as fixed.
     *
     * @param loc the location where the illegal fixed atom occurs.
@@ -414,7 +436,7 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       s"""A loop must start with collection comprehension where the collection
-         |has an instance of the Iterable type class on it.
+         |has an instance of the Iterable trait on it.
          |
          |A minimal loop is written as follows:
          |
@@ -455,6 +477,24 @@ object WeederError {
       s""">> Unexpected type ascription. Type ascriptions are not permitted on effect handler cases.
          |
          |${code(loc, "unexpected type ascription")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that a provenance query was executed on a lattice relation, which is not supported.
+    *
+    * @param loc the location of the illegal latticenal atom.
+    */
+  case class IllegalLatticeProvenance(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal lattice relation in provenance query."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal lattice relation in provenance query. Provenance on lattice relations is not supported.
+         |
+         |${code(loc, "illegal lattice relation")}
          |
          |""".stripMargin
     }
@@ -532,6 +572,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a qualified extensible variant pattern.
+    *
+    * @param qname the offending qualified name.
+    */
+  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
+    override val loc: SourceLocation = qname.loc
+
+    override def summary: String = "Unexpected qualified extensible variant pattern."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected qualified extensible variant pattern.
+         |
+         |${code(loc, "unexpected qualified pattern")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      underline("Tip:") + " Extensible variants can never be qualified, i.e., A.B is not allowed. Consider using just B instead."
+    })
+  }
+
+  /**
     * An error raised to indicate that the extension of a record pattern is malformed.
     *
     * @param loc the location where the error occurred.
@@ -544,6 +609,26 @@ object WeederError {
       s""">> Unexpected record extension pattern.
          |
          |${code(loc, "A record extension must be either a variable or wildcard.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a record literal contained an operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordOperation(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal record extension in record literal"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal record extension in record literal.
+         |
+         |${code(loc, "A record literal may not contain record extensions or restrictions.")}
          |
          |""".stripMargin
     }
@@ -574,6 +659,41 @@ object WeederError {
       import formatter.*
       s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
     })
+  }
+
+  /**
+    * An error raised to indicate an illegal BigDecimal pattern.
+    *
+    * @param loc the location where the illegal BigDecimal pattern occurs.
+    */
+  case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal BigDecimal pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal BigDecimal pattern.
+         |
+         |${code(loc, "BigDecimal not allowed here.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate illegal syntax: empty tuple type.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal syntax: empty tuple type."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal syntax: empty tuple type.
+         |
+         |${code(loc, "empty tuple type")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**

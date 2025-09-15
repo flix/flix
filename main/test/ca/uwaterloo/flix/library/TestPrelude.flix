@@ -1,156 +1,170 @@
-/*
- * Copyright 2020 Magnus Madsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+mod TestPrelude {
 
-/////////////////////////////////////////////////////////////////////////////
-// identity                                                                //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def identity01(): Bool = identity(5) == 5
+    use Assert.{assertEq, assertTrue};
 
-@test
-def identity02(): Bool = identity(true) == true
+    /////////////////////////////////////////////////////////////////////////////
+    // identity                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def identity01(): Unit \ Assert =
+        assertEq(expected = 5, identity(5))
 
-@test
-def identity03(): Bool = identity(6ii) == 6ii
+    @Test
+    def identity02(): Unit \ Assert =
+        assertEq(expected = true, identity(true))
 
-/////////////////////////////////////////////////////////////////////////////
-// flip                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def flip01(): Bool =
-    let f = flip((x, y) -> x - y);
-    f(5, 4) == -1
+    @Test
+    def identity03(): Unit \ Assert =
+        assertEq(expected = 6ii, identity(6ii))
 
-@test
-def flip02(): Bool =
-    let f = flip((x, y) -> x - y);
-    f(4, 5) == 1
 
-@test
-def flip03(): Bool =
-    let f = flip((x, y) -> x / y);
-    f(10, 3) == 0
+    /////////////////////////////////////////////////////////////////////////////
+    // flip                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def flip01(): Unit \ Assert =
+        let f = flip((x, y) -> x - y);
+        assertEq(expected = -1, f(5, 4))
 
-@test
-def flip04(): Bool =
-    let f = flip((x, y) -> x / y);
-    f(3, 10) == 3
+    @Test
+    def flip02(): Unit \ Assert =
+        let f = flip((x, y) -> x - y);
+        assertEq(expected = 1, f(4, 5))
 
-/////////////////////////////////////////////////////////////////////////////
-// fst                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def fst01(): Bool = fst((5, 0.0f32)) == 5
+    @Test
+    def flip03(): Unit \ Assert =
+        let f = flip((x, y) -> x / y);
+        assertEq(expected = 0, f(10, 3))
 
-@test
-def fst02(): Bool = fst((0.0f32, 5)) == 0.0f32
+    @Test
+    def flip04(): Unit \ Assert =
+        let f = flip((x, y) -> x / y);
+        assertEq(expected = 3, f(3, 10))
 
-/////////////////////////////////////////////////////////////////////////////
-// snd                                                                     //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def snd01(): Bool = snd((5, 0.0f32)) == 0.0f32
 
-@test
-def snd02(): Bool = snd((0.0f32, 5)) == 5
+    /////////////////////////////////////////////////////////////////////////////
+    // fst                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def fst01(): Unit \ Assert =
+        assertEq(expected = 5, fst((5, 0.0f32)))
 
-/////////////////////////////////////////////////////////////////////////////
-// swap                                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def swap01(): Bool = swap((5, 0.0f32)) == (0.0f32, 5)
+    @Test
+    def fst02(): Unit \ Assert =
+        assertEq(expected = 0.0f32, fst((0.0f32, 5)))
 
-@test
-def swap02(): Bool = swap((0.0f32, 5)) == (5, 0.0f32)
 
-/////////////////////////////////////////////////////////////////////////////
-// Function Composition                                                    //
-/////////////////////////////////////////////////////////////////////////////
-@test
-def forwardComposition01(): Bool =
-    let f = x -> x + 1;
-    let g = x -> x * 2;
-    let h = f >> g;
-        h(0) == 2 // (0 + 1) * 2
+    /////////////////////////////////////////////////////////////////////////////
+    // snd                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def snd01(): Unit \ Assert =
+        assertEq(expected = 0.0f32, snd((5, 0.0f32)))
 
-@test
-def forwardPipe01(): Bool =
-    let f = x -> x + 1;
-    let g = x -> x * 2;
-    let r = 0 |> f |> g;
-        r == 2 // (0 + 1) * 2
+    @Test
+    def snd02(): Unit \ Assert =
+        assertEq(expected = 5, snd((0.0f32, 5)))
 
-@test
-def forwardPipe02(): Bool =
-    let f = match (x, y) -> x + y;
-    let r = (1, 2) |> f;
-        r == 3
 
-/////////////////////////////////////////////////////////////////////////////
-// ||> (doublePipe)                                                        //
-/////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////
+    // swap                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def swap01(): Unit \ Assert =
+        assertEq(expected = (0.0f32, 5), swap((5, 0.0f32)))
 
-@test
-def doublePipe01(): Bool = ((1, 2) ||> Add.add) == 3
+    @Test
+    def swap02(): Unit \ Assert =
+        assertEq(expected = (5, 0.0f32), swap((0.0f32, 5)))
 
-@test
-def doublePipe02(): Bool = (("a", "b") ||> Add.add) == "ab"
 
-@test
-def doublePipe03(): Bool = (("abc", "def") ||> String.concat) == "abcdef"
+    /////////////////////////////////////////////////////////////////////////////
+    // Function Composition                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def forwardComposition01(): Unit \ Assert =
+        let f = x -> x + 1;
+        let g = x -> x * 2;
+        let h = f >> g;
+        assertEq(expected = 2, h(0)) // (0 + 1) * 2
 
-@test
-def doublePipe04(): Bool =
-    ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append) == 1 :: 2 :: 3 :: 4 :: 5 :: Nil
+    @Test
+    def forwardPipe01(): Unit \ Assert =
+        let f = x -> x + 1;
+        let g = x -> x * 2;
+        let r = 0 |> f |> g;
+        assertEq(expected = 2, r) // (0 + 1) * 2
 
-@test
-def doublePipe05(): Bool = ((0, 5) ||> List.range) == 0 :: 1 :: 2 :: 3 :: 4 :: Nil
+    @Test
+    def forwardPipe02(): Unit \ Assert =
+        let f = match (x, y) -> x + y;
+        let r = (1, 2) |> f;
+        assertEq(expected = 3, r)
 
-/////////////////////////////////////////////////////////////////////////////
-// !> (imperativePipe)                                                     //
-/////////////////////////////////////////////////////////////////////////////
 
-@test
-def imperativePipe01(): Bool = region rc {
-    let m: MutList[Int32, _] = MutList.empty(rc);
-    let f = (x) -> MutList.push(x, m);
-    (4 !> f) == 4 and not MutList.isEmpty(m)
-}
+    /////////////////////////////////////////////////////////////////////////////
+    // ||> (doublePipe)                                                        //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def doublePipe01(): Unit \ Assert =
+        assertEq(expected = 3, ((1, 2) ||> Add.add))
 
-@test
-def imperativePipe02(): Bool = region rc {
-    let m: MutList[Int32, _] = MutList.empty(rc);
-    let f = (x) -> MutList.push(x, m);
+    @Test
+    def doublePipe02(): Unit \ Assert =
+        assertEq(expected = "ab", (("a", "b") ||> Add.add))
 
-    let a = 4 !> f;
-    let b = 5 !> f;
-    let c = 7 !> f;
-    a == 4 and b == 5 and c == 7 and MutList.length(m) == 3
-}
+    @Test
+    def doublePipe03(): Unit \ Assert =
+        assertEq(expected = "abcdef", (("abc", "def") ||> String.concat))
 
-@test
-def imperativePipe03(): Bool = region rc {
-    let a = Ref.fresh(rc, 8);
-    let f = x -> Ref.put(x, a);
-    (2 !> f) == 2 and Ref.get(a) == 2
-}
+    @Test
+    def doublePipe04(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: 5 :: Nil, ((1 :: 2 :: 3 :: Nil, 4 :: 5 :: Nil) ||> List.append))
 
-@test
-def imperativePipe04(): Bool = region rc {
-    let a = Ref.fresh(rc, 8);
-    let f = x -> Ref.put(x, a);
-    (2 !> f) == 2 and (4 !> f) == 4 and Ref.get(a) == 4
+    @Test
+    def doublePipe05(): Unit \ Assert =
+        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: Nil, ((0, 5) ||> List.range))
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // !> (imperativePipe)                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+    @Test
+    def imperativePipe01(): Unit \ Assert = region rc {
+        let m: MutList[Int32, _] = MutList.empty(rc);
+        let f = (x) -> MutList.push(x, m);
+        assertTrue((4 !> f) == 4);
+        assertTrue(not MutList.isEmpty(m))
+    }
+
+    @Test
+    def imperativePipe02(): Unit \ Assert = region rc {
+        let m: MutList[Int32, _] = MutList.empty(rc);
+        let f = (x) -> MutList.push(x, m);
+        let a = 4 !> f;
+        let b = 5 !> f;
+        let c = 7 !> f;
+        assertTrue(a == 4);
+        assertTrue(b == 5);
+        assertTrue(c == 7);
+        assertTrue(MutList.length(m) == 3)
+    }
+
+    @Test
+    def imperativePipe03(): Unit \ Assert = region rc {
+        let a = Ref.fresh(rc, 8);
+        let f = x -> Ref.put(x, a);
+        assertTrue((2 !> f) == 2);
+        assertTrue(Ref.get(a) == 2)
+    }
+
+    @Test
+    def imperativePipe04(): Unit \ Assert = region rc {
+        let a = Ref.fresh(rc, 8);
+        let f = x -> Ref.put(x, a);
+        assertTrue((2 !> f) == 2);
+        assertTrue((4 !> f) == 4);
+        assertTrue(Ref.get(a) == 4)
+    }
+
 }

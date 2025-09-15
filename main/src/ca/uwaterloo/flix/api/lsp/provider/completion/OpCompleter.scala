@@ -49,7 +49,7 @@ object OpCompleter {
     * We assume the user is trying to type a fully qualified name and will only match against fully qualified names.
     */
   private def fullyQualifiedCompletion(qn: Name.QName, range: Range, ap: AnchorPosition, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
-    val effSym = Symbol.mkEffectSym(qn.namespace.toString)
+    val effSym = Symbol.mkEffSym(qn.namespace.toString)
     root.effects.get(effSym).toList.flatMap(eff =>
       eff.ops.collect {
         case op if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false) =>
@@ -68,14 +68,14 @@ object OpCompleter {
     */
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[OpCompletion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
-      case Some(Resolution.Declaration(Effect(_, _, _, name, _, _))) => name.toString
+      case Some(Resolution.Declaration(Effect(_, _, _, name, _, _, _))) => name.toString
       case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
       case _ => return Nil
     }
     val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")
     val fullyQualifiedEffect = if (namespaceTail.isEmpty) fullyQualifiedNamespaceHead else s"$fullyQualifiedNamespaceHead.$namespaceTail"
     for {
-      eff <- root.effects.get(Symbol.mkEffectSym(fullyQualifiedEffect)).toList
+      eff <- root.effects.get(Symbol.mkEffSym(fullyQualifiedEffect)).toList
       op <- eff.ops
       if CompletionUtils.isAvailable(eff) && CompletionUtils.matchesName(op.sym, qn, qualified = false)
     } yield OpCompletion(op, qn.namespace.toString, range, Priority.High(0), ap, qualified = true, inScope = true, ectx)

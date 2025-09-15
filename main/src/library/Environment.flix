@@ -41,17 +41,17 @@ eff Environment {
     def getOsName(): Option[String]
 
     ///
-    ///  Returns the operating system architecture
+    /// Returns the operating system architecture
     ///
     def getOsArch(): Option[String]
 
     ///
-    ///  Returns the operating system version
+    /// Returns the operating system version
     ///
     def getOsVersion(): Option[String]
 
     ///
-    ///  Returns the file separator
+    /// Returns the file separator
     ///
     def getFileSeparator(): String
 

@@ -91,8 +91,8 @@ mod Int16 {
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int16, y: Int16): Int16 = {
-        if      (x >= 0i16 and y >= 0i16)                abs(x - y)
-        else if (x < 0i16 and y < 0i16)                  abs(x - y)
+        if      (x >= 0i16 and y >= 0i16)               abs(x - y)
+        else if (x < 0i16 and y < 0i16)                 abs(x - y)
         else if (x == minValue() or y == minValue())    -1i16
         else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
         else                                            abs(x - y)
@@ -115,9 +115,9 @@ mod Int16 {
     pub def signum(x: Int16): Int32 = compare(x, 0i16)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
+    pub def pow(base: {base = Int16}, n: Int16): Int16 = $INT16_EXP$(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.

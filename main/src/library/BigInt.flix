@@ -37,10 +37,10 @@ mod BigInt {
     pub def abs(x: BigInt): BigInt = if (x >= 0ii) x else -x
 
     ///
-    /// Returns `x` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(x: BigInt, n: Int32): BigInt =
-        unsafe x.pow(n)
+    pub def pow(base: {base = BigInt}, n: Int32): BigInt =
+        unsafe base#base.pow(n)
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.

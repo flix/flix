@@ -27,7 +27,7 @@ mod Char {
     import java.lang.Character
 
     ///
-    ///  Returns `true` if the given char `c` is an ascii character.
+    /// Returns `true` if the given char `c` is an ascii character.
     ///
     pub def isAscii(c: Char): Bool =
         c <= '\u0080'

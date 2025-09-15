@@ -114,6 +114,11 @@ instance Iterable[Chain[a]] {
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
+instance ForEach[Chain[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
+}
+
 instance ToJava[Chain[a]] {
     type Out = JList
     type Aef = IO
@@ -275,7 +280,7 @@ mod Chain {
         def loop(cc, acc, k) = match cc {
             case Empty       => k(ViewRight.NoneRight)
             case One(x)      => k(ViewRight.SomeRight(acc, x))
-            case Chain(l, r) => loop(r, append(acc, l),  k)
+            case Chain(l, r) => loop(r, append(acc, l), k)
         };
         loop(c, Empty, identity)
 
@@ -356,7 +361,7 @@ mod Chain {
     ///
     /// Accumulates the result of applying `f` to `c` going left to right.
     ///
-    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
+    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
         def loop(a, cc, acc) = match viewLeft(cc) {

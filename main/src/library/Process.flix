@@ -33,7 +33,7 @@ eff Process {
     def exitValue(ph: ProcessHandle): Option[Int32]
 
     ///
-    ///  Returns status of the process, if it alive or not.
+    /// Returns status of the process, if it alive or not.
     ///
     def isAlive(ph: ProcessHandle): Bool
 
@@ -41,6 +41,21 @@ eff Process {
     /// Returns the PID of the process.
     ///
     def pid(ph: ProcessHandle): Int64
+
+    ///
+    /// Returns stdin InputStream of the process.
+    ///
+    def stdin(ph: ProcessHandle): Process.StdIn
+
+    ///
+    /// Returns stdout OutputStream of the process.
+    ///
+    def stdout(ph: ProcessHandle): Process.StdOut
+
+    ///
+    /// Returns stderr OutputStream of the process.
+    ///
+    def stderr(ph: ProcessHandle): Process.StdErr
 
     ///
     /// Stops the process.
@@ -73,7 +88,39 @@ mod Process {
     import java.lang.ProcessBuilder
     import java.lang.Runtime
     import java.io.{File => JFile}
+    import java.io.InputStream
+    import java.io.OutputStream
     import java.util.concurrent.{TimeUnit => JTimeUnit}
+    use Process.StdIn.StdIn
+    use Process.StdErr.StdErr
+    use Process.StdOut.StdOut
+
+    pub enum StdIn(OutputStream)
+    instance Writable[StdIn] {
+        type Elm = Int8
+        type Aef = IO
+        pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
+            let StdIn(pr) = r;
+            Writable.write(b, pr)
+    }
+
+    pub enum StdOut(InputStream)
+    instance Readable[StdOut] {
+        type Elm = Int8
+        type Aef = IO
+        pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
+            let StdOut(pr) = r;
+            Readable.read(b, pr)
+    }
+
+    pub enum StdErr(InputStream)
+    instance Readable[StdErr] {
+        type Elm
+        type Aef = IO
+        pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
+            let StdErr(pr) = r;
+            Readable.read(b, pr)
+    }
 
     ///
     /// Executes the command `cmd` with the arguments `args`.
@@ -148,6 +195,18 @@ mod Process {
                     case ex: UnsupportedOperationException => Err(IoError(ErrorKind.Unsupported, ex.getMessage()))
                     case ex: IOException                   => Err(IoError(ErrorKind.Other, ex.getMessage()))
                 }
+
+            def stdin(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdIn(jProc.getOutputStream()))
+
+            def stdout(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdOut(jProc.getInputStream()))
+
+            def stderr(ph, k) =
+                let ProcessHandle(jProc) = ph;
+                k(StdErr(jProc.getErrorStream()))
 
             def stop(ph, k) =
                 try {

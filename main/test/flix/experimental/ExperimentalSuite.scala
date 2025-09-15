@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.{FlixSuite, Options}
   * Intended for work-in-progress features for which maintaining the standard options (e.g. redundancy checking)
   * would be a burden.
   *
-  * Tests should be promoted out of this suite and into [[flix.CompilerSuite]]
+  * Tests should be promoted out of this suite and into [[Flix.CompilerSuite]]
   * as soon as they run without special options.
   */
 class ExperimentalSuite extends FlixSuite(incremental = true) {

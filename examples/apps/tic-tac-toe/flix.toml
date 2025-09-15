@@ -1,0 +1,6 @@
+[package]
+name        = "tic-tac-toe"
+description = "A command line Tic Tac Toe game implemented in Flix."
+version     = "0.1.0"
+flix        = "0.60.0"
+authors     = ["Gagan Chandan <gagan@gaganchandan.com>"]

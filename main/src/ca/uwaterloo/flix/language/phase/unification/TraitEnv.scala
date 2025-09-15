@@ -30,22 +30,6 @@ object TraitEnv {
 case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
 
   /**
-    * Returns the instances of the given trait.
-    */
-  def getInstances(sym: Symbol.TraitSym): Map[TypeHead, Instance] = {
-    m(sym).instances
-  }
-
-  /**
-    * Returns the instances of the given trait.
-    *
-    * Returns None if the symbol is not in the TraitEnv.
-    */
-  def getInstancesOpt(sym: Symbol.TraitSym): Option[Map[TypeHead, Instance]] = {
-    m.get(sym).map(_.instances)
-  }
-
-  /**
     * Returns the instance corresponding to the given type, if it exists.
     *
     * Does not reduce the type.
@@ -112,7 +96,7 @@ case class TraitEnv(private val m: Map[Symbol.TraitSym, TraitContext]) {
           case (acc, s) =>
             // tparams are Nil because we are adding instances directly, but not schemas of instances
             val tparams = Nil
-            val inst = Instance(tparams, tpe, Nil)
+            val inst = Instance(tparams, tpe, Nil, Nil)
             val context = m.get(s) match {
               case Some(TraitContext(supers, insts0)) =>
                 val insts = insts0 + (head -> inst)

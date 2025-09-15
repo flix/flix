@@ -10,7 +10,7 @@
 
 ## Flix-specific
 
-- Type class instances declarations should appear just below a type declaration.
+- Trait instances declarations should appear just below a type declaration.
   - Instances should appear in the order: Eq, Order, ToString.
 - Argument lists should have the subject last to support `|>`.
 - Avoids casts.
