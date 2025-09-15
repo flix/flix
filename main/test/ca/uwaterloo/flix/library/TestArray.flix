@@ -4,6 +4,172 @@ mod TestArray {
     use Assert.{assertEq, assertNeq, assertTrue, assertFalse, assertSome, assertNone};
 
     /////////////////////////////////////////////////////////////////////////////
+    // binarySearch                                                            //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def binarySearch01(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(0, Array#{} @ rc))
+    }
+
+    @Test
+    def binarySearch02(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch(0, Array#{0} @ rc))
+    }
+
+    @Test
+    def binarySearch03(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch(0, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch04(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch05(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.binarySearch(2, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch06(): Unit \ Assert = region rc {
+        assertEq(expected = Some(3), Array.binarySearch(3, Array#{0, 1, 2, 3} @ rc))
+    }
+
+    @Test
+    def binarySearch07(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1} @ rc))
+    }
+
+    @Test
+    def binarySearch08(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2} @ rc))
+    }
+
+    @Test
+    def binarySearch09(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4} @ rc))
+    }
+
+    @Test
+    def binarySearch10(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5} @ rc))
+    }
+
+    @Test
+    def binarySearch11(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6} @ rc))
+    }
+
+    @Test
+    def binarySearch12(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6, 7} @ rc))
+    }
+
+    @Test
+    def binarySearch13(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6, 7, 8} @ rc))
+    }
+
+    @Test
+    def binarySearch14(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(1, Array#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9} @ rc))
+    }
+
+    @Test
+    def binarySearch15(): Unit \ Assert = region rc {
+        assertEq(expected = Some(2), Array.binarySearch(4, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch16(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(3, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch17(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(-1, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch18(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(11, Array#{0, 2, 4, 6, 8, 10} @ rc))
+    }
+
+    @Test
+    def binarySearch19(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(11i64, Array#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64} @ rc))
+    }
+
+    @Test
+    def binarySearch20(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch(2i64, Array#{0i64, 2i64, 4i64, 6i64, 8i64, 10i64} @ rc))
+    }
+
+    @Test
+    def binarySearch21(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch("a", Array#{"a", "b", "c", "d", "e", "f"} @ rc))
+    }
+
+    @Test
+    def binarySearch22(): Unit \ Assert = region rc {
+        assertEq(expected = Some(1), Array.binarySearch("b", Array#{"a", "b", "c", "d", "e", "f"} @ rc))
+    }
+
+    @Test
+    def binarySearch23(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch("g", Array#{"a", "b", "c", "d", "e", "f"} @ rc))
+    }
+
+    @Test
+    def binarySearch24(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(1, Array#{0, 1, 1, 2, 3, 4, 5, 6} @ rc);
+        assertTrue(pos == Some(1) or pos == Some(2))
+    }
+
+    @Test
+    def binarySearch25(): Unit \ Assert = region rc {
+        assertEq(expected = Some(0), Array.binarySearch(0, Array#{0, 1, 1, 1, 1, 1, 1, 1, 2} @ rc))
+    }
+
+    @Test
+    def binarySearch26(): Unit \ Assert = region rc {
+        assertEq(expected = None, Array.binarySearch(-1, Array#{0, 1, 1, 1, 1, 1, 1, 1, 2} @ rc))
+    }
+
+    @Test
+    def binarySearch27(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(4, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(0))
+    }
+
+    @Test
+    def binarySearch28(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(3, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(1))
+    }
+
+    @Test
+    def binarySearch29(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(2, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(2))
+    }
+
+    @Test
+    def binarySearch30(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(1, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(3))
+    }
+
+    @Test
+    def binarySearch31(): Unit \ Assert = region rc {
+        let pos = Array.binarySearch(0, Array#{4, 3, 2, 1, 0} @ rc);
+        assertTrue(pos == None or pos == Some(4))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
