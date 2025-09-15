@@ -141,6 +141,6 @@ object FileOps {
     */
   def checkExt(p: Path, expectedExt: String): Boolean = {
     require(!expectedExt.startsWith("."), "The file extension must not start with '.' -- This is handled by 'checkExt'.")
-    Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
+    Files.isRegularFile(p) && p.getFileName.toString.endsWith(s".$expectedExt")
   }
 }
