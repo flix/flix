@@ -30,9 +30,7 @@ import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipInputStream, ZipOutputStream}
-import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
 
