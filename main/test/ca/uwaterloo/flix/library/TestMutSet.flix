@@ -180,7 +180,8 @@ mod TestMutSet {
         region rc2 {
             let s2 = MutSet.empty(rc2);
             MutSet.addAll(MutSet.toSet(s1), s2);
-            assertTrue(MutSet.isSubsetOf(s1, s2) and MutSet.isSubsetOf(s2, s1))
+            assertTrue(MutSet.isSubsetOf(s1, s2));
+            assertTrue(MutSet.isSubsetOf(s2, s1))
             }
         }
 

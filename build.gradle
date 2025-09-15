@@ -13,7 +13,6 @@ repositories {
 
 dependencies {
     implementation('org.scala-lang:scala-library:2.13.16!!')
-    implementation('org.scala-lang:scala-reflect:2.13.16!!')
 
     implementation('org.java-websocket:Java-WebSocket:1.6.0')
     implementation('org.jline:jline:3.30.6')
@@ -21,7 +20,6 @@ dependencies {
     implementation('org.ow2.asm:asm:9.8')
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
-    implementation('com.google.guava:guava:33.4.8-jre')
     implementation('org.apache.commons:commons-lang3:3.18.0')
     implementation('com.lihaoyi:sourcecode_2.13:0.4.4')
 

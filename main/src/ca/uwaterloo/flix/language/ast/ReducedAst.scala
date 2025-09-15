@@ -68,7 +68,8 @@ object ReducedAst {
 
   object Expr {
 
-    case class Cst(cst: Constant, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
+      def tpe: SimpleType = cst.tpe
       def purity: Purity = Pure
     }
 
@@ -92,11 +93,15 @@ object ReducedAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+      // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
+      def tpe: SimpleType = exp2.tpe
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Stmt(exp1: Expr, exp2: Expr, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+      // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
+      def tpe: SimpleType = exp2.tpe
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 

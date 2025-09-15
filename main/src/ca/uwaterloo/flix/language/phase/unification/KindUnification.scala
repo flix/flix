@@ -34,7 +34,7 @@ object KindUnification {
       for {
         kind1 <- unify(k11, k21)
         kind2 <- unify(k12, k22)
-      } yield Kind.Arrow(kind1, kind2)
+      } yield Kind.mkArrow(kind1, kind2)
 
     // Wild ~ k = k
     case (Kind.Wild, k) =>

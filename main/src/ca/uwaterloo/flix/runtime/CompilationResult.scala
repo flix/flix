@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.runtime
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.phase.jvm.{JvmClass, JvmName}
 
 /**
   * A class representing the result of a compilation.
