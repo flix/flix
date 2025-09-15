@@ -1,4 +1,4 @@
-def main(): Unit \ {Net, IO} =
+def main(): Unit \ {Net, NonDet, IO} =
     run {
         let url = "http://example.com/";
         Logger.info("Downloading URL: '${url}'");
