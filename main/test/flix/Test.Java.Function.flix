@@ -23,7 +23,7 @@ mod Test.Java.Function {
     import java.util.stream.Stream
 
     @Test
-    def testFunction(): Bool \ {NonDet, IO} = {
+    def testFunction(): Bool \ NonDet + IO = {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
@@ -32,7 +32,7 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testConsumer(): Bool \ {NonDet, IO} = {
+    def testConsumer(): Bool \ IO = {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
@@ -43,7 +43,7 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testPredicate(): Bool \ IO = region rc {
+    def testPredicate(): Bool \ NonDet + IO = region rc {
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
@@ -53,7 +53,7 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testIntFunction(): Bool \ IO = {
+    def testIntFunction(): Bool \ NonDet + IO = {
         let stream0 = IntStream.of(42);
         let f = (i: Int32) -> new Object {
             def toString(_this: Object): String = "${i}"
@@ -117,7 +117,7 @@ mod Test.Java.Function {
     }
 
     @Test
-    def testDoubleFunction(): Bool \ IO = {
+    def testDoubleFunction(): Bool \ NonDet + IO = {
         let stream0 = DoubleStream.of(42.0f64);
         let f = d -> new Object {
             def toString(_this: Object): String = match Float64.tryToInt32(d) {
