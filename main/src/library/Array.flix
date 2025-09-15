@@ -1553,6 +1553,30 @@ mod Array {
         }
 
     ///
+    /// Perform a binary search for `x` on the sorted array `a` and returns the position of `x`.
+    ///
+    /// Returns `None` if `a` does not contain `x`. Otherwise returns `Some(i)`,
+    /// where `Array.get(i, a) == x`.
+    ///
+    /// Assumes `a` is sorted. If this is not the case the result is undefined.
+    ///
+    /// If `a` contains multiple `x`-values then the index of one of them will be returned.
+    ///
+    pub def binarySearch(x: a, a: Array[a, r]): Option[Int32] \ r with Order[a] =
+        def f(lo, hi) = {
+            if (lo <= hi) {
+                let mid = (lo + hi) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
+                match get(mid, a) <=> x {
+                    case Comparison.LessThan => f(mid + 1, hi)
+                    case Comparison.GreaterThan => f(lo, mid - 1)
+                    case Comparison.EqualTo => Some(mid)
+                }
+            } else None
+        };
+        let len = length(a);
+        f(0, len - 1)
+
+    ///
     /// Copies the range between `srcPos` (inclusive) to `srcPos + len` (exclusive) of `src` into `dst` starting from `dstPos` (inclusive).
     /// A valid range has the following properties:
     ///   0 <= len.
