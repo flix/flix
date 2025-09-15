@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_FPKG, EXT_JAR, FLIX_TOML, getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -523,8 +523,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
       // Add required resources.
       FileOps.addToZip(zip, FLIX_TOML, Bootstrap.getManifestFile(projectPath))
-      FileOps.addToZip(zip, "LICENSE.md", Bootstrap.getLicenseFile(projectPath))
-      FileOps.addToZip(zip, "README.md", Bootstrap.getReadmeFile(projectPath))
+      FileOps.addToZip(zip, LICENSE, Bootstrap.getLicenseFile(projectPath))
+      FileOps.addToZip(zip, README, Bootstrap.getReadmeFile(projectPath))
 
       // Add all source files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
