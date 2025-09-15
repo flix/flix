@@ -79,19 +79,11 @@ object Lexer {
       */
     val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
-    /**
-      * The current interpolation nesting level.
-      *
-      * This is compared to [[InterpolatedStringMaxNestingLevel]].
-      */
-    var interpolationNestingLevel: Int = 0
-
     /** Save a checkpoint to revert to. */
     def save(): Checkpoint = Checkpoint(
       start = this.start,
       sc = sc.copy(),
-      tokensLength = tokens.length,
-      interpolationNestingLevel = this.interpolationNestingLevel
+      tokensLength = tokens.length
     )
 
     /**
@@ -108,7 +100,6 @@ object Lexer {
         throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
       }
       this.sc = c.sc
-      this.interpolationNestingLevel = c.interpolationNestingLevel
     }
   }
 
@@ -121,8 +112,7 @@ object Lexer {
   private case class Checkpoint(
                                  start: Position,
                                  sc: StringCursor,
-                                 tokensLength: Int,
-                                 interpolationNestingLevel: Int
+                                 tokensLength: Int
                                )
 
   /** A source position keeping track of both line, column as well as absolute character offset. */
@@ -728,8 +718,6 @@ object Lexer {
     * including nested string literals, which might also include interpolation.
     * This is done by calling `scanToken` and `addToken` manually like in the top-most `lex`
     * function, while looking for the terminating '}'.
-    * A max nesting level is enforced via `state.interpolationNestingLevel` to avoid blowing the
-    * stack.
     *
     * Some tricky but valid strings include:
     *   - "Hello ${" // "} world!"
@@ -737,8 +725,6 @@ object Lexer {
     *   - "${"${}"}"
     */
   private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
-    // Handle max nesting level.
-    s.interpolationNestingLevel += 1
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
     if (isDebug) addToken(TokenKind.LiteralDebugStringL)
@@ -759,7 +745,6 @@ object Lexer {
         // Check for the terminating '}'.
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
-            s.interpolationNestingLevel -= 1
             if (isDebug) return TokenKind.LiteralDebugStringR
             else return TokenKind.LiteralStringInterpolationR
           }
@@ -1010,7 +995,6 @@ object Lexer {
 
   /**
     * Moves current position past a block-comment. Note that block-comments can be nested.
-    * If the max nesting level is reached a `TokenKind.Err` is immediately returned.
     * A block-comment is unterminated if there are less terminations than levels of nesting.
     */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
