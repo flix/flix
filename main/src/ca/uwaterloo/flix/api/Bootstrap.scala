@@ -415,7 +415,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * and .jar files that this project uses.
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
-    flatMapN(Steps.parseManifest) {
+    val tomlPath = getManifestFile(projectPath)
+    flatMapN(Steps.parseManifest(tomlPath)) {
       manifest =>
         flatMapN(Steps.resolveFlixDependencies(manifest)) {
           dependencyManifests =>
@@ -897,8 +898,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    def parseManifest: Validation[Manifest, BootstrapError] = {
-      val tomlPath = getManifestFile(projectPath)
+    def parseManifest(tomlPath: Path): Validation[Manifest, BootstrapError] = {
       ManifestParser.parse(tomlPath) match {
         case Ok(manifest) =>
           optManifest = Some(manifest)
