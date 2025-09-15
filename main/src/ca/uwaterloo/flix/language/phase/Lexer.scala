@@ -186,19 +186,6 @@ object Lexer {
   private def previousN(n: Int)(implicit s: State): Option[Char] =
     s.sc.nth(-(n + 1))
 
-  /**
-    * Peeks the character that state is currently sitting on without advancing.
-    * Note: Peek does not perform bound checks. This is done under the assumption that the lexer
-    * is only ever advanced using `advance`.
-    * Since `advance` cannot move past EOF peek will always be in bounds.
-    */
-  private def peek()(implicit s: State): Char = {
-    if (s.sc.getOffset >= s.src.data.length) {
-      return s.src.data.last
-    }
-    s.sc.peek
-  }
-
   /** Peeks the character after the one that state is sitting on if available. */
   private def peekPeek()(implicit s: State): Option[Char] =
     s.sc.nth(1)
@@ -269,7 +256,7 @@ object Lexer {
         } else if (previousPrevious().exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
-        } else if (peek().isWhitespace) {
+        } else if (s.sc.peekIs(_.isWhitespace)) {
           // A dot with trailing whitespace is it's own TokenKind.
           // That way we can use that as a terminator for fixpoint constraints,
           // without clashing with qualified names.
@@ -278,8 +265,8 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '$' if peek().isUpper => acceptBuiltIn()
-      case '$' if peek().isLower =>
+      case '$' if s.sc.peekIs(_.isUpper) => acceptBuiltIn()
+      case '$' if s.sc.peekIs(_.isLower) =>
         // Don't include the $ sign in the name.
         s.resetStart()
         acceptName(isUpper = false)
@@ -294,10 +281,10 @@ object Lexer {
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
-      case '@' if peek().isLetter => acceptAnnotation()
+      case '@' if s.sc.peekIs(_.isLetter) => acceptAnnotation()
       case '@' => TokenKind.At
       case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
-      case '?' if peek().isLetter => acceptNamedHole()
+      case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
       case _ if isOperator(":::") => TokenKind.TripleColon
       case _ if isOperator("::") => TokenKind.ColonColon
       case _ if isOperator(":=") => TokenKind.ColonEqual
@@ -312,7 +299,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
+        if (previousN(2).exists(_.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
@@ -424,30 +411,34 @@ object Lexer {
       case c if isMathNameChar(c) => acceptMathName()
       case c if isGreekNameChar(c) => acceptGreekName()
       case '_' =>
-        val p = peek()
-        if (p.isLetterOrDigit) {
-          acceptName(p.isUpper)
-        } else if (isMathNameChar(p)) {
-          advance()
-          acceptMathName()
-        } else if (isUserOp(p).isDefined) {
-          advance()
-          acceptUserDefinedOp()
+        if (!eof()) {
+          val p = s.sc.peek
+          if (p.isLetterOrDigit) {
+            acceptName(p.isUpper)
+          } else if (isMathNameChar(p)) {
+            advance()
+            acceptMathName()
+          } else if (isUserOp(p).isDefined) {
+            advance()
+            acceptUserDefinedOp()
+          } else TokenKind.Underscore
         } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
-      case '0' if peek() == 'x' => acceptHexNumber()
+      case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
       case c if isUserOp(c).isDefined =>
-        val p = peek()
-        if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
-          // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
-          TokenKind.AngleL
-        } else if (isUserOp(p).isDefined) {
-          acceptUserDefinedOp()
-        } else {
-          isUserOp(c).get
-        }
+        if (!eof()) {
+          val p = s.sc.peek
+          if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
+            // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
+            TokenKind.AngleL
+          } else if (isUserOp(p).isDefined) {
+            acceptUserDefinedOp()
+          } else {
+            isUserOp(c).get
+          }
+        } else isUserOp(c).get
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
@@ -551,7 +542,7 @@ object Lexer {
     val checkpoint = s.save()
     var advanced = false
     while (!eof()) {
-      val p = peek()
+      val p = s.sc.peek
 
       if (p == '$') {
         // Check for termination.
@@ -679,8 +670,11 @@ object Lexer {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
       val hasEscapes = consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      var p = s.sc.peek
+      var p = if (!eof()) {
+        s.sc.peek
+      } else {
+        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+      }
       // Check for the beginning of a string interpolation.
       val prev = previous()
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
@@ -692,7 +686,11 @@ object Lexer {
             // Resume regular string literal tokenization by resetting p and prev.
             kind = k
             consumeSingleEscapes()
-            p = peek()
+            if (!eof()) {
+              p = s.sc.peek
+            } else {
+              return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+            }
         }
       }
       // Check for termination.
@@ -1131,6 +1129,14 @@ object Lexer {
         data(offset)
       } else {
         EOF
+      }
+
+    /** Returns `p(this.peek)` if peek is available, otherwise `false`. */
+    def peekIs(p: Char => Boolean): Boolean =
+      if (this.inBounds) {
+        p(data(offset))
+      } else {
+        false
       }
 
     /** Returns true if the cursor has moved past the end. */
