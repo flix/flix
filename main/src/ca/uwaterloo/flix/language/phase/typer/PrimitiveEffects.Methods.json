@@ -59,7 +59,7 @@
     "java.net.http.HttpClient::sendAsync": "Net, IO",
 
     "java.lang.Object::toString": "NonDet, IO",
-    "java.lang.Object::finalize": "IO",
+    "java.lang.Object::finalize": "Sys, IO",
     "java.lang.Object::wait": "NonDet, IO",
     "java.lang.Object::notifyAll": "NonDet, IO",
     "java.lang.Object::notify": "NonDet, IO"
