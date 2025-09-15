@@ -38,6 +38,19 @@ object LexerError {
     }
   }
 
+  /** An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`). */
+  case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> A hexadecimal digit (0-9, a-f, or A-F) is expected here.
+         |
+         |${code(loc, "Here")}
+         |""".stripMargin
+    }
+  }
+
   /**
     * An error raised when a period has whitespace before it.
     * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
@@ -201,20 +214,6 @@ object LexerError {
       s""">> Missing `'` in char.
          |
          |${code(loc, "Char starts here")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /** An error raised when a hexadecimal number is unterminated (e.g. `0x` or `0xff_`). */
-  case class UnterminatedHexNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated Hexadecimal number."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unterminated Hexadecimal number.
-         |
-         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
