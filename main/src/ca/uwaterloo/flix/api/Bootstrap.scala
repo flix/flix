@@ -42,7 +42,7 @@ object Bootstrap {
     *
     * The project must not already exist.
     */
-  def init(p: Path): Validation[Unit, BootstrapError] = {
+  def init(p: Path)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     //
     // Check that the current working directory is usable.
     //
