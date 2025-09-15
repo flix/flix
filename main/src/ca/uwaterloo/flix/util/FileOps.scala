@@ -97,7 +97,7 @@ object FileOps {
   }
 
   /**
-    * Returns an iterator of all files in the given path, visited recursively.
+    * Returns a list of all files in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
@@ -113,11 +113,24 @@ object FileOps {
       List.empty
   }
 
+  def getFilesWithExtIn(path: Path, ext: String, depth: Int): List[Path] = {
+    if (Files.exists(path) && Files.isDirectory(path))
+      Files.walk(path, depth).iterator()
+        .asScala
+        .filter(checkExt(_, ext))
+        .toList
+    else
+      List.empty
+  }
+
   /**
     * Checks if the given path is a regular file with the expected extension.
+    *
+    * @param p           the path to the file to check.
+    * @param expectedExt the file extension to match. Must not begin with `.`
     */
   def checkExt(p: Path, expectedExt: String): Boolean = {
-    val ext = if (expectedExt.startsWith(".")) expectedExt else s".$expectedExt"
-    Files.isRegularFile(p) && p.getFileName.toString.endsWith(ext)
+    require(!expectedExt.startsWith("."), "The file extension must not start with '.' -- This is handled by 'checkExt'.")
+    Files.isRegularFile(p) && p.getFileName.toString.endsWith(expectedExt)
   }
 }

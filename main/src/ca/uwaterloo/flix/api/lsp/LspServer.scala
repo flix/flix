@@ -145,7 +145,7 @@ object LspServer {
         FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
 
       flixSources.foreach { case p =>
-        if (FileOps.checkExt(p, ".flix")) {
+        if (FileOps.checkExt(p, "flix")) {
           val source = Files.readString(p)
           addSourceCode(p.toUri.toString, source)
         }
@@ -161,10 +161,10 @@ object LspServer {
       FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
         .foreach{ case p =>
           // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-          if (FileOps.checkExt(p, ".jar"))
+          if (FileOps.checkExt(p, "jar"))
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-          if (FileOps.checkExt(p, ".fpkg")) {
+          if (FileOps.checkExt(p, "fpkg")) {
             flix.addPkg(p)(SecurityContext.AllPermissions)
           }
         }
