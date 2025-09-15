@@ -350,13 +350,6 @@ object Bootstrap {
     }.sortBy(_._2)
   }
 
-  /**
-    * Returns all .flix files directly in the directory given by `p`.
-    */
-  private def getAllFlixFilesHere(path: Path): List[Path] = {
-    FileOps.getFlixFilesIn(path, Int.MaxValue)
-  }
-
   private class FileVisitor extends SimpleFileVisitor[Path] {
     val result: mutable.ListBuffer[Path] = mutable.ListBuffer.empty
 
@@ -767,7 +760,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns and caches all `.flix` files from `src/` and `test/`.
       */
     def addLocalFlixFiles(): List[Path] = {
-      val filesHere = Bootstrap.getAllFlixFilesHere(projectPath)
+      val filesHere = FileOps.getFlixFilesIn(projectPath, Int.MaxValue)
       val filesSrc = Bootstrap.getAllFilesWithExt(Bootstrap.getSourceDirectory(projectPath), "flix")
       val filesTest = Bootstrap.getAllFilesWithExt(Bootstrap.getTestDirectory(projectPath), "flix")
       val result = filesHere ::: filesSrc ::: filesTest
