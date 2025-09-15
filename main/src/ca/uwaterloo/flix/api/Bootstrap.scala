@@ -854,6 +854,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       !timestamps.contains(file) || (timestamps(file) != file.toFile.lastModified())
     }
 
+    /**
+      * Downloads and installs all `.fpkg` and `.jar` (maven and urls) dependencies defined by `dependencyManifests`
+      * into the `lib/`, `lib/cache`, and `lib/external` directories, respectively.
+      * Requires network access.
+      * Returns a list of 3 lists of paths containing (in the following order):
+      *   1. Paths to `.fpkg` dependencies in `lib/`.
+      *   1. Paths to `.jar` dependencies in `lib/cache` (maven).
+      *   1. Paths to `.jar` dependencies in `lib/external` (urls).
+      */
     def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
       flatMapN(installFlixDependencies(dependencyManifests)) {
         flixPaths =>
@@ -868,6 +877,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Downloads and installs all `.fpkg` dependencies defined by `dependencyManifests` into the `lib/` directory.
+      * Requires network access.
+      * Returns the paths to the installed dependencies.
+      */
     private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
         case Result.Ok(paths: List[Path]) =>
@@ -878,6 +892,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Downloads and installs all `.jar` dependencies defined by `dependencyManifests` into the `lib/external/` directory.
+      * Requires network access.
+      * Returns the paths to the installed dependencies.
+      */
     private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
       JarPackageManager.installAll(dependencyManifests, projectPath) match {
         case Result.Ok(paths) =>
@@ -888,6 +907,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Downloads and installs all `.jar` dependencies defined by `dependencyManifests` into the `lib/cache/` directory.
+      * Requires network access.
+      * Returns the paths to the installed dependencies.
+      */
     private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
       MavenPackageManager.installAll(dependencyManifests, projectPath) match {
         case Result.Ok(paths) =>
@@ -910,6 +934,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
+      * Requires network access.
+      */
     def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
       FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
         case Ok(l) => Validation.Success(l)
