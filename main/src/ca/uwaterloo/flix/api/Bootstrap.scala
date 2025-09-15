@@ -771,7 +771,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       flixFilesLib
     }
 
-
     /**
       * Returns and caches all `.jar` files from `lib/external/`.
       * The cached result is stored in [[jarPackagePaths]].
