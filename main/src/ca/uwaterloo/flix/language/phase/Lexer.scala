@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import scala.collection.mutable
 import scala.util.Random
@@ -33,7 +33,7 @@ import scala.util.Random
   * string literals. In these cases a `TokenKind.Err` will still be produced but it will contain the
   * rest of the source text.
   *
-  * See `LexerError` for all error states.
+  * See [[LexerError]] for all error states.
   */
 object Lexer {
 
@@ -213,9 +213,8 @@ object Lexer {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (s.sc.peekIs(_.isWhitespace)) {
-          // A dot with trailing whitespace is it's own TokenKind.
-          // That way we can use that as a terminator for fixpoint constraints,
-          // without clashing with qualified names.
+          // A dot with trailing whitespace is it's own TokenKind. That way we can use that as a
+          // terminator for fixpoint constraints, without clashing with qualified names.
           // For example this is not allowed "Shape.    Rectangle".
           TokenKind.DotWhiteSpace
         } else {
@@ -249,7 +248,7 @@ object Lexer {
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
       case _ if isOperator("->") =>
-        // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
+        // Arrows without any whitespace around are for structs, otherwise they are for functions.
         // Examples:
         // a->b:   StructArrow
         // a ->b:  ArrowThinR
@@ -397,41 +396,21 @@ object Lexer {
   }
 
   /**
-    * Check that the potential keyword is sufficiently separated.
-    * A keyword is separated if it is surrounded by anything __but__ a character, digit, or underscore.
-    * Note that __comparison includes current__.
-    */
-  private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_')
-
-    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
-  }
-
-  /**
-    * Check that the potential operator is sufficiently separated.
-    * An operator is separated if it is followed by anything __but__ another valid user operator
-    * character.
-    * Note that __comparison includes current__.
-    */
-  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean =
-    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
-
-  /**
     * Checks whether the previous char and the following substring matches a keyword.
-    * Will advance the current position past the keyword if there is a match.
+    * Will advance the current position past the word if there is a match.
     */
-  private def isMatchPrev(keyword: String)(implicit s: State): Boolean = {
-    // Check if the keyword can appear before eof.
-    if (s.sc.getOffset + keyword.length - 1 > s.src.data.length) {
+  private def isMatchPrev(word: String)(implicit s: State): Boolean = {
+    // Check if the word can appear before eof.
+    if (s.sc.getOffset + word.length - 1 > s.src.data.length) {
       return false
     }
 
-    // Check if the next n characters in source matches those of keyword one at a time.
+    // Check if the next n characters in source matches those of word one at a time.
     val start = s.sc.getOffset - 1
     var matches = true
     var offset = 0
-    while (matches && offset < keyword.length) {
-      if (s.src.data(start + offset) != keyword(offset)) {
+    while (matches && offset < word.length) {
+      if (s.src.data(start + offset) != word(offset)) {
         matches = false
       } else {
         offset += 1
@@ -439,7 +418,7 @@ object Lexer {
     }
 
     if (matches) {
-      for (_ <- 1 until keyword.length) {
+      for (_ <- 1 until word.length) {
         s.sc.advance()
       }
     }
@@ -449,19 +428,33 @@ object Lexer {
 
   /**
     * Checks whether the following substring matches a operator.
+    *
+    * Will advance the current position past the operator if there is a match.
     * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
     */
-  private def isOperator(op: String)(implicit s: State): Boolean =
+  private def isOperator(op: String)(implicit s: State): Boolean = {
+    def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
+      s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
+    }
+
     isSeparatedOperator(op) && isMatchPrev(op)
+  }
 
   /**
     * Checks whether the following substring matches a keyword.
+    *
+    * Will advance the current position past the keyword if there is a match.
     * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
     */
-  private def isKeyword(keyword: String)(implicit s: State): Boolean =
+  private def isKeyword(keyword: String)(implicit s: State): Boolean = {
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_')
+
+    def isSeparated(keyword: String)(implicit s: State): Boolean = {
+      s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
+    }
+
     isSeparated(keyword) && isMatchPrev(keyword)
+  }
 
   /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
@@ -476,7 +469,7 @@ object Lexer {
       }
 
       if (!p.isLetter && !p.isDigit && p != '_') {
-        // Do not allow non-letters other than _.
+        // Do not allow non-letters other than `_`.
         // This handles things like block comments e.g. `$BUILT_/*IN*/$` is disallowed.
         return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
       }
@@ -566,11 +559,7 @@ object Lexer {
     }
   }
 
-  /**
-    * Moves current position past a user defined operator (e.g. "<*>").
-    * A user defined operator may be any combination of length 2 or more
-    * of the characters in [[isUserOp]].
-    */
+  /** Moves current position past a user defined operator (e.g. "<*>"). */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(c => isUserOp(c).isDefined)
     TokenKind.UserDefinedOperator
@@ -578,6 +567,7 @@ object Lexer {
 
   /**
     * Moves current position past a string literal.
+    *
     * If the string is unterminated a `TokenKind.Err` is returned.
     */
   private def acceptString()(implicit s: State): TokenKind = {
@@ -667,10 +657,11 @@ object Lexer {
 
   /**
     * Moves current position past a char literal.
+    *
     * If the char is unterminated a `TokenKind.Err` is returned.
-    * Note that chars might contain unicode hex codes like these '\u00ff'.
     */
   private def acceptChar()(implicit s: State): TokenKind = {
+    // Note that chars might contain unicode hex codes like these '\u00ff'.
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
@@ -691,7 +682,8 @@ object Lexer {
 
   /**
     * Moves current position past a regex literal.
-    * If the regex  is unterminated a `TokenKind.Err` is returned.
+    *
+    * If the regex is unterminated a `TokenKind.Err` is returned.
     */
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
@@ -848,7 +840,7 @@ object Lexer {
 
     // Consume a '(i8|i16|i32|i64|ii)?' string.
     // For better errors, anything starting with 'i' will be considered a suffix (but maybe invalid).
-    // This means that '0xFFi33' will report 'i33' is an invalid suffix instead of saying that 'i' is unexpected.
+    // This means that '0xFFi33' will report 'i33' as an invalid suffix.
     val c = s.sc.peek
     if (c == 'i') {
       // Construct the location now, for cases like `0xi322`.
@@ -891,10 +883,12 @@ object Lexer {
   }
 
   /**
-    * Moves current position past a block-comment. Note that block-comments can be nested.
-    * A block-comment is unterminated if there are less terminations than levels of nesting.
+    * Moves current position past a block-comment.
+    *
+    * If the comment is unterminated a `TokenKind.Err` is returned.
     */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
+    // Block-comments can be nested so track the nesting.
     var level = 1
     while (s.sc.inBounds) {
       if (s.sc.advanceIfMatch("/*")) {
@@ -941,10 +935,7 @@ object Lexer {
     copy
   }
 
-  /**
-    * A class to iterate through an array of characters while maintaining the line and column index
-    * of the cursor.
-    */
+  /** Iterates through an array of characters with line and column positions. */
   private final class StringCursor(val data: Array[Char]) {
 
     /** The cursor pointing into `data`. */
