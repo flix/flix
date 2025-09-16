@@ -450,7 +450,7 @@ object Lexer {
     * Note that __comparison includes current__.
     */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_')
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || c == '.')
 
     s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
