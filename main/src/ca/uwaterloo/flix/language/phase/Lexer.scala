@@ -743,14 +743,12 @@ object Lexer {
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '\'') {
+      if (s.sc.peekIs(_ == '\'')) {
         advance()
         return TokenKind.LiteralChar
       }
 
-      if ((prev, p) == ('/', '*')) {
+      if (prev == '/' && s.sc.peekIs(_ == '*')) {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
@@ -768,8 +766,7 @@ object Lexer {
     while (!eof()) {
       consumeSingleEscapes()
       // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '"') {
+      if (s.sc.peekIs(_ == '"')) {
         advance()
         return TokenKind.LiteralRegex
       }
@@ -854,7 +851,7 @@ object Lexer {
     // Now the main number is parsed. Next is the suffix.
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
-      if (isNumberLikeChar(s.sc.peek)) {
+      if (s.sc.peekIs(isNumberLikeChar)) {
         wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
       } else if (mustBeFloat && intSuffix) {
         wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
@@ -928,7 +925,7 @@ object Lexer {
       val loc = sourceLocationAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (isNumberLikeChar(s.sc.peek)) {
+        if (s.sc.peekIs(isNumberLikeChar)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
