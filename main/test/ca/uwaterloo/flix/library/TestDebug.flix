@@ -1,6 +1,6 @@
 mod TestDebug {
     use Debug.stringify;
-    use Assert.{assertEq, assertTrue};
+    use Assert.{assertEq, assertTrue, fail};
 
     /////////////////////////////////////////////////////////////////////////////
     // stringify                                                               //
@@ -235,78 +235,5 @@ mod TestDebug {
         let s = stringify({label = (checked_cast(null): String)});
         assertEq(expected = "{label = null}", s)
     }
-
-    @Test
-    def testDebug01(): Unit \ Assert =
-        assertEq(expected = 1, dbg(1))
-
-    @Test
-    def testDebug02(): Unit \ Assert =
-        assertEq(expected = "hey", dbg("hey"))
-
-    @Test
-    def testDebug03(): Unit \ Assert =
-        assertEq(expected = 'a', dbg('a'))
-
-    @Test
-    def testDebug04(): Unit \ Assert =
-        assertEq(expected = 2, dbg(x -> x + 1)(1))
-
-    @Test
-    def testDebug05(): Unit \ Assert =
-        match dbg(Poly.This('s')) {
-            case Poly.This(x) => assertEq(expected = 's', x)
-            case _ => assertTrue(false)
-        }
-
-    @Test
-    def testDebugBang01(): Unit \ Assert =
-        assertEq(expected = 1, dbg!(1))
-
-    @Test
-    def testDebugBang02(): Unit \ Assert =
-        assertEq(expected = "hey", dbg!("hey"))
-
-    @Test
-    def testDebugBang03(): Unit \ Assert =
-        assertEq(expected = 'a', dbg!('a'))
-
-    @Test
-    def testDebugBang04(): Unit \ Assert =
-        assertEq(expected = 2, dbg!(x -> x + 1)(1))
-
-    @Test
-    def testDebugBang05(): Unit \ Assert =
-        match dbg!(Poly.This('s')) {
-            case Poly.This(x) => assertEq(expected = 's', x)
-            case _ => assertTrue(false)
-        }
-
-    @Test
-    def testDebugBangBang01(): Unit \ Assert =
-        assertEq(expected = 1, dbg!!(1))
-
-    @Test
-    def testDebugBangBang02(): Unit \ Assert =
-        assertEq(expected = "hey", dbg!!("hey"))
-
-    @Test
-    def testDebugBangBang03(): Unit \ Assert =
-        assertEq(expected = 'a', dbg!!('a'))
-
-    @Test
-    def testDebugBangBang04(): Unit \ Assert =
-        assertEq(expected = 2, dbg!!(x -> x + 1)(1))
-
-    @Test
-    def testDebugBangBang05(): Unit \ Assert =
-        match dbg!!(Poly.This('s')) {
-            case Poly.This(x) => assertEq(expected = 's', x)
-            case _ => assertTrue(false)
-        }
-
-    @Test
-    def testDebugEffect01(): Unit \ {Assert, IO} =
-        assertEq(expected = (), dbg!(println("hey")))
 
 }

@@ -72,9 +72,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordCheckedECast => "'checked_ecast'"
       case TokenKind.KeywordChoose => "'choose'"
       case TokenKind.KeywordChooseStar => "'choose*'"
-      case TokenKind.KeywordDebug => "'dbg'"
-      case TokenKind.KeywordDebugBang => "'dbg!'"
-      case TokenKind.KeywordDebugBangBang => "'dbg!!'"
       case TokenKind.KeywordDef => "'def'"
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordEff => "'eff'"
@@ -186,8 +183,6 @@ sealed trait TokenKind {
       case TokenKind.InfixFunction => "<infix function>"
       case TokenKind.LiteralBigDecimal => "'<digits>ff'"
       case TokenKind.LiteralBigInt => "'<digits>ii'"
-      case TokenKind.LiteralDebugStringL => "'%{'"
-      case TokenKind.LiteralDebugStringR => "'}'"
       case TokenKind.LiteralFloat => "'<digits>.<digits>'"
       case TokenKind.LiteralFloat32 => "'<digits>f32'"
       case TokenKind.LiteralFloat64 => "'<digits>f64'"
@@ -231,9 +226,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordCheckedECast => true
     case TokenKind.KeywordChoose => true
     case TokenKind.KeywordChooseStar => true
-    case TokenKind.KeywordDebug => true
-    case TokenKind.KeywordDebugBang => true
-    case TokenKind.KeywordDebugBangBang => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordEff => true
@@ -360,8 +352,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -498,9 +488,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordChoose
          | TokenKind.KeywordChooseStar
-         | TokenKind.KeywordDebug
-         | TokenKind.KeywordDebugBang
-         | TokenKind.KeywordDebugBangBang
          | TokenKind.KeywordDef
          | TokenKind.KeywordDiscard
          | TokenKind.KeywordEMatch
@@ -543,7 +530,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -646,7 +632,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordWithout
          | TokenKind.KeywordXor
          | TokenKind.KeywordYield
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.ParenR
          | TokenKind.Semi
@@ -734,8 +719,6 @@ sealed trait TokenKind {
     case TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -817,6 +800,13 @@ sealed trait TokenKind {
     case TokenKind.Colon | TokenKind.Equal => true
     case _ => false
   })
+
+  /**
+    * Returns `true` if `this` TokenKind is a semantic token used for syntax highlighting in LSP.
+    *
+    * This code must stay in sync with [[ca.uwaterloo.flix.api.lsp.provider.SemanticTokensProvider]].
+    */
+  def isSemanticToken: Boolean = isKeyword || isModifier || isComment
 }
 
 /**
@@ -938,12 +928,6 @@ object TokenKind {
   case object KeywordChoose extends TokenKind
 
   case object KeywordChooseStar extends TokenKind
-
-  case object KeywordDebug extends TokenKind
-
-  case object KeywordDebugBang extends TokenKind
-
-  case object KeywordDebugBangBang extends TokenKind
 
   case object KeywordDef extends TokenKind
 
@@ -1098,10 +1082,6 @@ object TokenKind {
   case object LiteralBigInt extends TokenKind
 
   case object LiteralChar extends TokenKind
-
-  case object LiteralDebugStringL extends TokenKind
-
-  case object LiteralDebugStringR extends TokenKind
 
   case object LiteralFloat extends TokenKind
 

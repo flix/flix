@@ -37,38 +37,24 @@ object SemanticTokensProvider {
     //
     val sourceOpt = root.tokens.keys.find(_.name == uri)
 
-    //
-    // Construct an iterator of the semantic tokens from modifiers.
-    //
-    val modifierTokens = sourceOpt match {
-      case Some(source) =>
-        root.tokens(source).iterator.collect {
-          case Token(kind, _, _, _, sp1, sp2) if kind.isModifier =>
-            val loc = SourceLocation(isReal = true, sp1, sp2)
-            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
-        }
-      case None => Iterator.empty
-    }
+    // NOTE: We do not retain all tokens in the program.
+    // We only retain those tokens selected by [[TokenKind.isSemanticToken]].
+    // Hence, the tokens used here must be made available by [[TokenKind.isSemanticToken]].
 
     //
-    // Construct an iterator of the semantic tokens from keywords.
+    // Construct an iterator of the semantic tokens from the source code tokens.
     //
-    val keywordTokens = sourceOpt match {
+    val keywordModifierOrCommentTokens = sourceOpt match {
       case Some(source) =>
         root.tokens(source).iterator.collect {
           case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
             val loc = SourceLocation(isReal = true, sp1, sp2)
             SemanticToken(SemanticTokenType.Keyword, Nil, loc)
-        }
-      case None => Iterator.empty
-    }
 
-    //
-    // Construct an iterator of the semantic tokens from comments.
-    //
-    val commentTokens = sourceOpt match {
-      case Some(source) =>
-        root.tokens(source).iterator.collect {
+          case Token(kind, _, _, _, sp1, sp2) if kind.isModifier =>
+            val loc = SourceLocation(isReal = true, sp1, sp2)
+            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
+
           case Token(kind, _, _, _, sp1, sp2) if kind.isComment =>
             val loc = SourceLocation(isReal = true, sp1, sp2)
             SemanticToken(SemanticTokenType.Comment, Nil, loc)
@@ -135,7 +121,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (modifierTokens ++ keywordTokens ++ commentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (keywordModifierOrCommentTokens ++ traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ structTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) have the same source as `uri`, and (ii) come from real source locations.
@@ -961,7 +947,7 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: FormalParam): Iterator[SemanticToken] = fparam0 match {
-    case FormalParam(bnd, _, tpe, _, _) =>
+    case FormalParam(bnd, tpe, _, _) =>
       val bndToken = if (!bnd.sym.loc.isSynthetic) {
         val o = getSemanticTokenType(bnd.sym, tpe)
         val t = SemanticToken(o, Nil, bnd.sym.loc)

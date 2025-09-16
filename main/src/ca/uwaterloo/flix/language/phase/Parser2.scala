@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
+import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.annotation.tailrec
@@ -128,8 +129,13 @@ object Parser2 {
         (src -> tree, errors)
     }.unzip
 
+    // Compute semantic tokens to retain in the AST.
+    val retainedTokens = ParOps.parMapValues(tokens0) {
+      case tokens => tokens.filter(_.kind.isSemanticToken)
+    }
+
     // Join refreshed syntax trees with the already fresh ones.
-    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, tokens0)
+    val result = SyntaxTree.Root(refreshed.toMap ++ fresh, retainedTokens)
     (result, errors.flatten.toList)
   }
 
@@ -1681,11 +1687,7 @@ object Parser2 {
         case TokenKind.KeywordInject => fixpointInjectExpr()
         case TokenKind.KeywordQuery => fixpointQueryExpr()
         case TokenKind.BuiltIn => intrinsicExpr()
-        case TokenKind.LiteralStringInterpolationL
-             | TokenKind.LiteralDebugStringL => interpolatedStringExpr()
-        case TokenKind.KeywordDebug
-             | TokenKind.KeywordDebugBang
-             | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.LiteralStringInterpolationL => interpolatedStringExpr()
         case TokenKind.KeywordEMatch => extMatchExpr()
         case TokenKind.KeywordXvar => extTagExpr()
         case t =>
@@ -1884,7 +1886,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordXvar))
       val mark = open()
       expect(TokenKind.KeywordXvar)
-      val lhs = nameUnqualified(NAME_TAG)
+      nameUnqualified(NAME_TAG)
       nth(0) match {
         case TokenKind.ParenL => arguments()
         case _ => ()
@@ -1992,28 +1994,11 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.CurlyL)
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
-        return close(mark, TreeKind.Expr.LiteralRecord)
+        return close(mark, TreeKind.Expr.RecordOperation)
       }
       statement()
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
-    }
-
-    private val FIRST_EXPR_DEBUG: Set[TokenKind] = Set(
-      TokenKind.KeywordDebug,
-      TokenKind.KeywordDebugBang,
-      TokenKind.KeywordDebugBangBang
-    )
-
-    private def debugExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(atAny(FIRST_EXPR_DEBUG))
-      val mark = open()
-      expectAny(FIRST_EXPR_DEBUG)
-      expect(TokenKind.ParenL)
-      expression()
-      expect(TokenKind.ParenR)
-      close(mark, TreeKind.Expr.Debug)
     }
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
@@ -2300,72 +2285,18 @@ object Parser2 {
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
              | (TokenKind.Minus, TokenKind.NameLowerCase) =>
-          // Now check for record operation or record literal,
-          // by looking for a '|' before the closing '}'.
-          val isRecordOp = {
-            val tokensLeft = s.tokens.length - s.position
-            var lookahead = 1
-            var nestingLevel = 0
-            var isRecordOp = false
-            var continue = true
-            while (continue && lookahead < tokensLeft) {
-              nth(lookahead) match {
-                // Found closing '}' so stop seeking.
-                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
-                // Found '|' before closing '}' which means that it is a record operation.
-                case TokenKind.Bar if nestingLevel == 0 =>
-                  isRecordOp = true
-                  continue = false
-                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
-                  nestingLevel += 1
-                  lookahead += 1
-                case TokenKind.CurlyR =>
-                  nestingLevel -= 1
-                  lookahead += 1
-                case _ => lookahead += 1
-              }
-            }
-            isRecordOp
-          }
-          if (isRecordOp) {
+            // Either `{ +y = expr | expr }` or `{ x = expr }`.
+            // Both are parsed the same and the difference is handled in Weeder.
             recordOperation()
-          } else {
-            recordLiteral()
-          }
         case _ => block()
       }
     }
-
-    private def recordLiteral()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.CurlyL))
-      val mark = open()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-        getItem = recordLiteralField,
-        checkForItem = NAME_FIELD.contains,
-        breakWhen = _.isRecoverExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.LiteralRecord)
-    }
-
-    private def recordLiteralField()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      val mark = open()
-      nameUnqualified(NAME_FIELD)
-      expect(TokenKind.Equal)
-      expression()
-      close(mark, TreeKind.Expr.LiteralRecordFieldFragment)
-    }
-
 
     private def recordOperation()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)),
         getItem = recordOp,
         checkForItem = _.isFirstRecordOp,
@@ -2373,10 +2304,8 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => expression()))
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.Expr.RecordOperation)
-      }
+      )
+      close(mark, TreeKind.Expr.RecordOperation)
     }
 
     private def recordOp()(implicit s: State): Mark.Closed = {
@@ -3067,7 +2996,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.Intrinsic)
     }
 
-    private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)
+    private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL)
 
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
@@ -3076,13 +3005,11 @@ object Parser2 {
 
       def atTerminator(kind: Option[TokenKind]) = kind match {
         case Some(TokenKind.LiteralStringInterpolationL) => at(TokenKind.LiteralStringInterpolationR)
-        case Some(TokenKind.LiteralDebugStringL) => at(TokenKind.LiteralDebugStringR)
         case _ => false
       }
 
       def getOpener: Option[TokenKind] = nth(0) match {
         case TokenKind.LiteralStringInterpolationL => advance(); Some(TokenKind.LiteralStringInterpolationL)
-        case TokenKind.LiteralDebugStringL => advance(); Some(TokenKind.LiteralDebugStringR)
         case _ => None
       }
 
@@ -3095,7 +3022,7 @@ object Parser2 {
           lastOpener = getOpener // Try to get nested interpolation.
         }
       }
-      expectAny(Set(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
+      expectAny(Set(TokenKind.LiteralStringInterpolationR))
       close(mark, TreeKind.Expr.StringInterpolation)
     }
   }

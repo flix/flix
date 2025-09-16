@@ -210,8 +210,6 @@ object SyntaxTree {
 
       case object InvokeMethod extends Expr
 
-      case object Debug extends Expr
-
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr
@@ -281,10 +279,6 @@ object SyntaxTree {
       case object LiteralMap extends Expr
 
       case object LiteralMapKeyValueFragment extends Expr
-
-      case object LiteralRecord extends Expr
-
-      case object LiteralRecordFieldFragment extends Expr
 
       case object LiteralStructFieldFragment extends Expr
 

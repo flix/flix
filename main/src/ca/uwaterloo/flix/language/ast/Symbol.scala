@@ -29,9 +29,14 @@ sealed trait Symbol
 object Symbol {
 
   /**
-    * The Assert effect
+    * The Assert effect.
     */
   val Assert: EffSym = mkEffSym(Name.RootNS, Ident("Assert", SourceLocation.Unknown))
+
+  /**
+    * The Debug effect.
+    */
+  val Debug: EffSym = mkEffSym(Name.RootNS, Ident("Debug", SourceLocation.Unknown))
 
   /**
     * The primitive effects defined in the Prelude.
@@ -343,9 +348,11 @@ object Symbol {
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
 
     /**
-      * The internal stack offset. Computed during variable numbering.
+      * The internal stack offset. Computed by [[ca.uwaterloo.flix.language.phase.VarOffsets]].
+      *
+      * Note: We do not use an `Option` here because there are many `VarSym`s and this wastes a lot of memory.
       */
-    private var stackOffset: Option[Int] = None
+    private var stackOffset: Int = -1
 
     /**
       * Returns `true` if `this` symbol is a wildcard.
@@ -360,18 +367,23 @@ object Symbol {
       *
       * Throws [[InternalCompilerException]] if the stack offset has not been set.
       */
-    def getStackOffset(localOffset: Int): Int = stackOffset match {
-      case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      case Some(offset) => offset + localOffset
+    def getStackOffset(localOffset: Int): Int = {
+      if (stackOffset == -1) {
+        throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
+      } else {
+        stackOffset + localOffset
+      }
     }
 
     /**
       * Sets the internal stack offset to given argument.
       */
-    def setStackOffset(offset: Int): Unit = stackOffset match {
-      case None => stackOffset = Some(offset)
-      case Some(_) =>
+    def setStackOffset(offset: Int): Unit = {
+      if (stackOffset != -1) {
         throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
+      } else {
+        stackOffset = offset
+      }
     }
 
     /**

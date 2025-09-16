@@ -617,6 +617,26 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a record literal contained an operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordOperation(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal record extension in record literal"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal record extension in record literal.
+         |
+         |${code(loc, "A record literal may not contain record extensions or restrictions.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an illegal regex pattern.
     *
     * @param loc the location where the illegal regex pattern occurs.

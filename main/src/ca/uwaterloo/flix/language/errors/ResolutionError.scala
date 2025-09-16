@@ -211,7 +211,7 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that a signature does not include the class's type parameter.
+    * An error raised to indicate that a signature does not include the trait's type parameter.
     *
     * @param sym the symbol of the signature.
     * @param loc the location where the error occurred.
@@ -584,8 +584,8 @@ object ResolutionError {
   /**
     * Sealed Trait Error.
     *
-    * @param sym the class symbol.
-    * @param ns  the namespace from which the class is sealed.
+    * @param sym the trait symbol.
+    * @param ns  the namespace from which the trait is sealed.
     * @param loc the location where the error occurred.
     */
   case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {

@@ -785,7 +785,6 @@ object Weeder2 {
 
     def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
       Name.Ident("_unit", SourceLocation.Unknown),
-      Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
     )
@@ -818,7 +817,6 @@ object Weeder2 {
 
     private def visitParameter(tree: Tree, presence: Presence)(implicit sctx: SharedContext): Validation[FormalParam, CompilationMessage] = {
       expect(tree, TreeKind.Parameter)
-      val mod = pickModifiers(tree)
       flatMapN(pickNameIdent(tree)) {
         case ident =>
           val maybeType = tryPick(TreeKind.Type.Type, tree)
@@ -827,13 +825,13 @@ object Weeder2 {
             case (None, Presence.Required) =>
               val error = MissingFormalParamAscription(ident.name, tree.loc)
               sctx.errors.add(error)
-              Validation.Success(FormalParam(ident, mod, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
+              Validation.Success(FormalParam(ident, Some(Type.Error(tree.loc.asSynthetic)), tree.loc))
             case (Some(_), Presence.Forbidden) =>
               val error = IllegalFormalParamAscription(tree.loc)
               sctx.errors.add(error)
-              Validation.Success(FormalParam(ident, mod, None, tree.loc))
-            case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mod, Some(tpe), tree.loc) }
-            case (None, _) => Validation.Success(FormalParam(ident, mod, None, tree.loc))
+              Validation.Success(FormalParam(ident, None, tree.loc))
+            case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, Some(tpe), tree.loc) }
+            case (None, _) => Validation.Success(FormalParam(ident, None, tree.loc))
           }
       }
     }
@@ -890,9 +888,8 @@ object Weeder2 {
         case TreeKind.Expr.GetField => visitGetFieldExpr(tree)
         case TreeKind.Expr.LetMatch => visitLetMatchExpr(tree)
         case TreeKind.Expr.Tuple => visitTupleExpr(tree)
-        case TreeKind.Expr.LiteralRecord => visitLiteralRecordExpr(tree)
         case TreeKind.Expr.RecordSelect => visitRecordSelectExpr(tree)
-        case TreeKind.Expr.RecordOperation => visitRecordOperationExpr(tree)
+        case TreeKind.Expr.RecordOperation => visitRecordOperationOrLiteralExpr(tree)
         case TreeKind.Expr.LiteralArray => visitLiteralArrayExpr(tree)
         case TreeKind.Expr.LiteralVector => visitLiteralVectorExpr(tree)
         case TreeKind.Expr.LiteralList => visitLiteralListExpr(tree)
@@ -928,16 +925,25 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree, isPSolve = false)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
-        case TreeKind.Expr.Debug => visitDebugExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
         case TreeKind.Expr.Intrinsic =>
-          // Intrinsics must be applied to check that they have the right amount of arguments.
-          // This means that intrinsics are not "first-class" like other functions.
-          // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
-          val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
-          sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
+          intrinsic match {
+            case "FILE" =>
+              val loc = tree.loc
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.sp1.source.name}"), loc))
+            case "LINE" =>
+              val loc = tree.loc
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.beginLine}"), loc))
+            case _ =>
+              // All other intrinsics must be applied to check that they have the right amount of arguments.
+              // This means that intrinsics are not "first-class" like other functions.
+              // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
+              val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
+              sctx.errors.add(error)
+              Validation.Success(Expr.Error(error))
+          }
         case TreeKind.ErrorTree(err) => Validation.Success(Expr.Error(err))
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
@@ -964,7 +970,6 @@ object Weeder2 {
     private def visitStringInterpolationExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Constant.Str(""), tree.loc)
-      var isDebug = false
       // Check for empty interpolation
       if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
         val error = EmptyInterpolatedExpression(tree.loc)
@@ -975,10 +980,9 @@ object Weeder2 {
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
         case (acc, token@Token(_, _, _, _, _, _)) =>
-          isDebug = token.kind == TokenKind.LiteralDebugStringL
           val loc = token.mkSourceLocation()
           val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
-          val lit = if (isDebug) lit0.stripSuffix("%{") else lit0.stripSuffix("${")
+          val lit = lit0.stripSuffix("${")
           if (lit == "") {
             Validation.Success(acc)
           } else {
@@ -993,10 +997,7 @@ object Weeder2 {
         case (acc, tree: Tree) if tree.kind == TreeKind.Expr.Expr =>
           mapN(visitExpr(tree))(expr => {
             val loc = tree.loc.asSynthetic
-            val funcName = if (isDebug) {
-              isDebug = false
-              "Debug.stringify"
-            } else "ToString.toString"
+            val funcName = "ToString.toString"
             val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
             Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
           })
@@ -1614,8 +1615,18 @@ object Weeder2 {
     }
 
     private def visitLiteralRecordExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.LiteralRecord)
-      val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
+      expect(tree, TreeKind.Expr.RecordOperation)
+      // `{ +x = expr }` is not allowed.
+      pickAll(TreeKind.Expr.RecordOpExtend, tree).foreach{t =>
+        val error = IllegalRecordOperation(t.loc)
+        sctx.errors.add(error)
+      }
+      // `{ -x }` is not allowed.
+      pickAll(TreeKind.Expr.RecordOpRestrict, tree).foreach{t =>
+        val error = IllegalRecordOperation(t.loc)
+        sctx.errors.add(error)
+      }
+      val fields = pickAll(TreeKind.Expr.RecordOpUpdate, tree)
       mapN(traverse(fields)(visitLiteralRecordField)) {
         fields =>
           fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
@@ -1645,6 +1656,14 @@ object Weeder2 {
           }
       }
     }
+    private def visitRecordOperationOrLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      hasToken(TokenKind.Bar, tree) match {
+        // { +x = expr | expr }
+        case true  => visitRecordOperationExpr(tree)
+        // { x = expr }
+        case false => visitLiteralRecordExpr(tree)
+      }
+    }
 
     private def visitRecordOperationExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.RecordOperation)
@@ -1652,6 +1671,10 @@ object Weeder2 {
       val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree)
       val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
       val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
+      if (ops.isEmpty) {
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
+        sctx.errors.add(error)
+      }
       Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
         op.kind match {
           case TreeKind.Expr.RecordOpExtend => mapN(pickExpr(op), pickNameIdent(op))(
@@ -2150,22 +2173,6 @@ object Weeder2 {
             sctx.errors.add(error)
           }
           Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
-      }
-    }
-
-    private def visitDebugExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Debug)
-      mapN(pickDebugKind(tree), pickExpr(tree)) {
-        (kind, expr) => Expr.Debug(expr, kind, tree.loc)
-      }
-    }
-
-    private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
-      tree.children.headOption match {
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebug => Validation.Success(DebugKind.Debug)
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBang => Validation.Success(DebugKind.DebugWithLoc)
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBangBang => Validation.Success(DebugKind.DebugWithLocAndSrc)
-        case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
 

@@ -398,9 +398,9 @@ object Desugar {
     * Desugars the given [[WeededAst.FormalParam]] `fparam0`.
     */
   private def visitFormalParam(fparam0: WeededAst.FormalParam): DesugaredAst.FormalParam = fparam0 match {
-    case WeededAst.FormalParam(ident, mod, tpe0, loc) =>
+    case WeededAst.FormalParam(ident, tpe0, loc) =>
       val tpe = tpe0.map(visitType)
-      DesugaredAst.FormalParam(ident, mod, tpe, loc)
+      DesugaredAst.FormalParam(ident, tpe, loc)
   }
 
   /**
@@ -821,9 +821,6 @@ object Desugar {
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
       desugarFixpointQueryWithSelect(exps, selects, from, where ,loc)
-
-    case WeededAst.Expr.Debug(exp, kind, loc) =>
-      desugarDebug(exp, kind, loc)
 
     case WeededAst.Expr.Error(m) =>
       DesugaredAst.Expr.Error(m)
@@ -1401,28 +1398,6 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.Debug]] into a call to `Debug.debugWithPrefix`.
-    */
-  private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val e = visitExp(exp0)
-    val prefix = mkDebugPrefix(e, kind0, loc0)
-    val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
-    mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-  }
-
-  /**
-    * Returns a prefix used by `Debug.debugWithPrefix` based on `kind0` and `exp0`.
-    */
-  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = kind0 match {
-    case WeededAst.DebugKind.Debug => ""
-    case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
-    case WeededAst.DebugKind.DebugWithLocAndSrc =>
-      val locPart = s"[${loc0.formatWithLine}]"
-      val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
-      locPart + srcPart
-  }
-
-  /**
     * Desugars a [[WeededAst.Expr.LambdaExtMatch]] into a lambda with an extensible pattern match on its argument.
     *
     * {{{
@@ -1449,7 +1424,7 @@ object Desugar {
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.ExtMatchRule(pat0, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
@@ -1481,7 +1456,7 @@ object Desugar {
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }

@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent, FlixListener}
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
@@ -62,7 +62,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     *
     */
   def mkTestDirCollected(path: String, name: String)(implicit options: Options): Unit = {
-    val files = FileOps.getFlixFilesIn(path, 1)
+    val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
     test(name)(compileAndRun(files))
   }
 
@@ -76,7 +76,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     *
     */
   def mkTestDir(path: String)(implicit options: Options): Unit = {
-    val files = FileOps.getFlixFilesIn(path, 1)
+    val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
     for (p <- files) {
       mkTest(p.toString)
     }
