@@ -924,7 +924,6 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree, isPSolve = false)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
-        case TreeKind.Expr.Debug => visitDebugExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
         case TreeKind.Expr.Intrinsic =>
@@ -2173,22 +2172,6 @@ object Weeder2 {
             sctx.errors.add(error)
           }
           Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
-      }
-    }
-
-    private def visitDebugExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Debug)
-      mapN(pickDebugKind(tree), pickExpr(tree)) {
-        (kind, expr) => Expr.Debug(expr, kind, tree.loc)
-      }
-    }
-
-    private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
-      tree.children.headOption match {
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebug => Validation.Success(DebugKind.Debug)
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBang => Validation.Success(DebugKind.DebugWithLoc)
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBangBang => Validation.Success(DebugKind.DebugWithLocAndSrc)
-        case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
 

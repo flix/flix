@@ -1688,9 +1688,6 @@ object Parser2 {
         case TokenKind.KeywordQuery => fixpointQueryExpr()
         case TokenKind.BuiltIn => intrinsicExpr()
         case TokenKind.LiteralStringInterpolationL => interpolatedStringExpr()
-        case TokenKind.KeywordDebug
-             | TokenKind.KeywordDebugBang
-             | TokenKind.KeywordDebugBangBang => debugExpr()
         case TokenKind.KeywordEMatch => extMatchExpr()
         case TokenKind.KeywordXvar => extTagExpr()
         case t =>
@@ -2002,23 +1999,6 @@ object Parser2 {
       statement()
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
-    }
-
-    private val FIRST_EXPR_DEBUG: Set[TokenKind] = Set(
-      TokenKind.KeywordDebug,
-      TokenKind.KeywordDebugBang,
-      TokenKind.KeywordDebugBangBang
-    )
-
-    private def debugExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(atAny(FIRST_EXPR_DEBUG))
-      val mark = open()
-      expectAny(FIRST_EXPR_DEBUG)
-      expect(TokenKind.ParenL)
-      expression()
-      expect(TokenKind.ParenR)
-      close(mark, TreeKind.Expr.Debug)
     }
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
