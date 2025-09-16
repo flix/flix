@@ -928,12 +928,22 @@ object Weeder2 {
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
         case TreeKind.Expr.Intrinsic =>
-          // Intrinsics must be applied to check that they have the right amount of arguments.
-          // This means that intrinsics are not "first-class" like other functions.
-          // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
-          val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
-          sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
+          intrinsic match {
+            case "FILE" =>
+              val loc = tree.loc
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.sp1.source.name}"), loc))
+            case "LINE" =>
+              val loc = tree.loc
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.beginLine}"), loc))
+            case _ =>
+              // All other intrinsics must be applied to check that they have the right amount of arguments.
+              // This means that intrinsics are not "first-class" like other functions.
+              // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
+              val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
+              sctx.errors.add(error)
+              Validation.Success(Expr.Error(error))
+          }
         case TreeKind.ErrorTree(err) => Validation.Success(Expr.Error(err))
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
