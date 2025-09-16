@@ -427,13 +427,13 @@ object Lexer {
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
+      case '<' if s.sc.peekIs(_ == '>') && peekPeek().flatMap(isUserOp).isEmpty =>
+        // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
+        TokenKind.AngleL
       case c if isUserOp(c).isDefined =>
         if (!eof()) {
           val p = s.sc.peek
-          if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
-            // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
-            TokenKind.AngleL
-          } else if (isUserOp(p).isDefined) {
+          if (isUserOp(p).isDefined) {
             acceptUserDefinedOp()
           } else {
             isUserOp(c).get
