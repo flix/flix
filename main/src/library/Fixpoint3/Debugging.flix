@@ -94,7 +94,7 @@ mod Fixpoint3.Debugging {
     ///
     @Internal
     pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram = match program {
-        case Ram.RamProgram.Program(stmt, _, _, _) => unsafely IO run {
+        case Ram.RamProgram.Program(stmt, _, _, _, _) => unsafely IO run {
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);
