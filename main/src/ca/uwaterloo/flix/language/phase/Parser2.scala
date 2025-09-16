@@ -130,7 +130,7 @@ object Parser2 {
     }.unzip
 
     // Compute semantic tokens to retain in the AST.
-    val retainedTokens = MapOps.mapValues(tokens0) {
+    val retainedTokens = ParOps.parMapValues(tokens0) {
       case tokens => tokens.filter(_.kind.isSemanticToken)
     }
 
