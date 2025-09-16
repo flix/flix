@@ -79,41 +79,7 @@ object Lexer {
       */
     val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
-    /** Save a checkpoint to revert to. */
-    def save(): Checkpoint = Checkpoint(
-      start = this.start,
-      sc = sc.copy(),
-      tokensLength = tokens.length
-    )
-
-    /**
-      * Restore a previously saved checkpoint. No tokens must have been produced since the
-      * checkpoint was created.
-      */
-    def restore(c: Checkpoint): Unit = {
-      val tokenHasBeenAdded = tokens.length != c.tokensLength
-      if (tokenHasBeenAdded) {
-        throw InternalCompilerException("Restored checkpoint across token generation", sourceLocationAtCurrent()(this))
-      }
-      val startHasMoved = start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset
-      if (startHasMoved) {
-        throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
-      }
-      this.sc = c.sc
-    }
   }
-
-  /**
-    * The information required to return to a previous point of [[State]].
-    *
-    * `start` and `tokens` are only included to make sure checkpoint restoration does not
-    * individual cross token generation.
-    */
-  private case class Checkpoint(
-                                 start: Position,
-                                 sc: StringCursor,
-                                 tokensLength: Int
-                               )
 
   /** A source position keeping track of both line, column as well as absolute character offset. */
   private class Position(val line: Int, val column: Int, val offset: Int)
@@ -514,16 +480,8 @@ object Lexer {
   private def isKeyword(keyword: String)(implicit s: State): Boolean =
     isSeparated(keyword) && isMatchPrev(keyword)
 
-  /**
-    * Moves current position past a built-in function (e.g. "$BUILT_IN$").
-    * Note that $ can be used as a separator in java-names too (e.g. "Map$Entry").
-    * When encountering a "$" there is no way to discern between a built-in and a java-name without
-    * looking ahead.
-    * Only a TokenKind.Dollar needs to be emitted in the java name case and then the lexer needs to
-    * be retreated to just after "$".
-    */
+  /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    val checkpoint = s.save()
     var advanced = false
     while (!eof()) {
       val p = s.sc.peek
@@ -532,13 +490,6 @@ object Lexer {
         // Check for termination.
         advance()
         return TokenKind.BuiltIn
-      }
-
-      if (p.isLower) {
-        // This means that the opening '$' was a separator.
-        // we need to rewind the lexer to just after '$'.
-        if (advanced) s.restore(checkpoint)
-        return TokenKind.Dollar
       }
 
       if (!p.isLetter && !p.isDigit && p != '_') {
