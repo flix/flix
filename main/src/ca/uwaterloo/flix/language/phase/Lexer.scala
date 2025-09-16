@@ -172,7 +172,7 @@ object Lexer {
     * to work with.
     */
   private def advance()(implicit s: State): Char =
-    s.sc.advance()
+    s.sc.advanceGet()
 
   /** Peeks the previous character that state was on if available. */
   private def previous()(implicit s: State): Option[Char] =
@@ -1067,14 +1067,25 @@ object Lexer {
     /**
       * Advances cursor one char forward, returning the char it was previously sitting on.
       *
-      * If the cursor has advanced past the content, [[EOF]] is returned.
+      * A faster alternative to
+      * {{{
+      * {val c = this.peek; this.advance(); c}
+      * }}}
       */
-    def advance(): Char = {
-      if (this.eof) {
-        EOF
-      } else {
+    def advanceGet(): Char = {
+      if (this.inBounds) {
         val c = data(offset)
-        if (c == '\n') {
+        advance()
+        c
+      } else {
+        EOF
+      }
+    }
+
+    /** Advances cursor one char forward, unless out of bounds. */
+    def advance(): Unit = {
+      if (!this.eof) {
+        if (data(offset) == '\n') {
           prevLineMaxColumn = column
           line += 1
           column = 0
@@ -1082,7 +1093,6 @@ object Lexer {
           column += 1
         }
         offset += 1
-        c
       }
     }
 
