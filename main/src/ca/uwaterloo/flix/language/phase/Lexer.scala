@@ -229,7 +229,7 @@ object Lexer {
   private def scanToken()(implicit s: State): TokenKind = {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
-    s.sc.advanceGet() match {
+    s.sc.peekAndAdvance() match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
@@ -741,7 +741,7 @@ object Lexer {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
-      prev = s.sc.advanceGet()
+      prev = s.sc.peekAndAdvance()
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
@@ -1057,7 +1057,7 @@ object Lexer {
       * {val c = this.peek; this.advance(); c}
       * }}}
       */
-    def advanceGet(): Char = {
+    def peekAndAdvance(): Char = {
       if (this.inBounds) {
         val c = data(offset)
         advance()
