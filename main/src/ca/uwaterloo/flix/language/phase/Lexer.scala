@@ -398,14 +398,11 @@ object Lexer {
 
   /**
     * Check that the potential keyword is sufficiently separated.
-    * A keyword is separated if it is surrounded by anything __but__ a character, digit, or underscore.
+    * A keyword is separated if it is followed by anything __but__ a character, digit, or underscore.
     * Note that __comparison includes current__.
     */
-  private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_')
-
-    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
-  }
+  private def isSeparated(keyword: String)(implicit s: State): Boolean =
+    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => !(c.isLetter || c.isDigit || c == '_'))
 
   /**
     * Check that the potential operator is sufficiently separated.
