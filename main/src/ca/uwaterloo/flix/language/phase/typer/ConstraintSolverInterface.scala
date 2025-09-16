@@ -121,7 +121,7 @@ object ConstraintSolverInterface {
               // Success -- We can type check with [[Debug]].
               (subst2, Nil)
             case _ =>
-              // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of [[Debug]].
+              // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
               (subst, mkTypeErrors(leftovers, subst, renv, root))
           }
       }
