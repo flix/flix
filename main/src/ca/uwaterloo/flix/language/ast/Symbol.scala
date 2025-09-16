@@ -34,6 +34,11 @@ object Symbol {
   val Assert: EffSym = mkEffSym(Name.RootNS, Ident("Assert", SourceLocation.Unknown))
 
   /**
+    * The Debug effect.
+    */
+  val Debug: EffSym = mkEffSym(Name.RootNS, Ident("Debug", SourceLocation.Unknown))
+
+  /**
     * The primitive effects defined in the Prelude.
     */
   val Chan: EffSym = mkEffSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
