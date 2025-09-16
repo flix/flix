@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Denotation, EqualityConstraint, Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, RigidityEnv, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
-import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 
 import scala.annotation.tailrec
@@ -68,7 +67,7 @@ object ConstraintSolverInterface {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Scope.Top, flix))
+        case (acc, KindedAst.FormalParam(sym, paramTpe, _, _)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(paramTpe)(Scope.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -102,17 +101,20 @@ object ConstraintSolverInterface {
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
 
-      val (leftovers, tree) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
-      leftovers match {
-        case Nil => (tree, Nil)
-        case errs@(_ :: _) => (tree, errs.flatMap(toTypeErrors(_, renv, tree, root)))
-      }
+      val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+      (subst, mkTypeErrors(leftovers, subst, renv, root))
   }
 
   /**
-    * Converts the unresolved type constraint into an appropriate error.
+    * Constructs a collection of type errors from a list of unsolvable type constraints `constrs`.
     */
-  private def toTypeErrors(constr: TypeConstraint, renv: RigidityEnv, subst: SubstitutionTree, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
+  private def mkTypeErrors(constrs: List[TypeConstraint], subst: SubstitutionTree, renv: RigidityEnv, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] =
+    constrs.flatMap(mkTypeError(_, subst, renv, root))
+
+  /**
+    * Constructs a collection of type errors from a single unsolvable constraint `constr`.
+    */
+  private def mkTypeError(constr: TypeConstraint, subst: SubstitutionTree, renv: RigidityEnv, root: KindedAst.Root)(implicit flix: Flix): List[TypeError] = constr match {
     case TypeConstraint.Equality(Type.UnresolvedJvmType(member, _), _, prov) =>
       List(mkErrorFromUnresolvedJvmMember(member, renv, subst, prov.loc))
 
@@ -121,18 +123,16 @@ object ConstraintSolverInterface {
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.ExpectType(expected, actual, loc)) =>
       (tpe1.kind, tpe2.kind) match {
-        case (Kind.RecordRow, Kind.RecordRow) => {
+        case (Kind.RecordRow, Kind.RecordRow) =>
           mkErrorsFromRecords(tpe1, tpe2, renv, loc)
-        }
         case (_, _) =>
           List(TypeError.UnexpectedType(expected = subst(expected), inferred = subst(actual), renv, loc))
       }
 
     case TypeConstraint.Equality(tpe1, tpe2, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
       (tpe1.kind, tpe2.kind) match {
-        case (Kind.RecordRow, Kind.RecordRow) => {
+        case (Kind.RecordRow, Kind.RecordRow) =>
           mkErrorsFromRecords(tpe1, tpe2, renv, loc)
-        }
         case (_, _) =>
           List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
       }
@@ -202,7 +202,7 @@ object ConstraintSolverInterface {
           }
       }
     case TypeConstraint.Purification(sym, _, _, _, nested) =>
-      nested.flatMap(toTypeErrors(_, renv, subst.branches.getOrElse(sym, SubstitutionTree.empty), root))
+      nested.flatMap(mkTypeError(_, subst.branches.getOrElse(sym, SubstitutionTree.empty), renv, root))
   }
 
   /**
@@ -238,32 +238,31 @@ object ConstraintSolverInterface {
         val tpe1Labels = getRecordLabels(tpe1, List.empty[(Name.Label, Type)])
         val tpe2Labels = getRecordLabels(tpe2, List.empty[(Name.Label, Type)])
         // Extra label only.
-        if (tpe1Labels.isEmpty && !tpe2Labels.isEmpty) {
-          tpe2Labels.toList.map {
+        if (tpe1Labels.isEmpty && tpe2Labels.nonEmpty) {
+          tpe2Labels.map {
             case (label, labelTpe) =>
               TypeError.ExtraLabel(label, labelTpe, tpe2, renv, loc)
           }
           // Undefined label only.
-        } else if (tpe2Labels.unzip._1.toSet.subsetOf(tpe1Labels.unzip._1.toSet)) {
-          tpe1Labels.toList.flatMap {
-            case (label, labelTpe) => {
-              if (!tpe2Labels.unzip._1.contains(label)) {
+        } else if (tpe2Labels.map(_._1).toSet.subsetOf(tpe1Labels.map(_._1).toSet)) {
+          tpe1Labels.flatMap {
+            case (label, labelTpe) =>
+              if (!tpe2Labels.map(_._1).contains(label)) {
                 List(TypeError.UndefinedLabel(label, labelTpe, tpe2, renv, loc))
               } else Nil
-            }
           }
-        } else if (tpe2Labels.isEmpty && !tpe1Labels.isEmpty) {
-          tpe1Labels.toList.map {
+        } else if (tpe2Labels.isEmpty && tpe1Labels.nonEmpty) {
+          tpe1Labels.map {
             case (label, labelTpe) =>
               TypeError.UndefinedLabel(label, labelTpe, tpe2, renv, loc)
           }
           // Both undefined and extra labels.
         } else {
-          tpe1Labels.filterNot(tpe2Labels.contains(_)).toList.map {
+          tpe1Labels.filterNot(tpe2Labels.contains(_)).map {
             case (label, labelTpe) =>
               TypeError.UndefinedLabel(label, labelTpe, tpe2, renv, loc)
           } ++
-            tpe2Labels.filterNot(tpe1Labels.contains(_)).toList.map {
+            tpe2Labels.filterNot(tpe1Labels.contains(_)).map {
               case (label, labelTpe) =>
                 TypeError.ExtraLabel(label, labelTpe, tpe2, renv, loc)
             }
@@ -274,9 +273,10 @@ object ConstraintSolverInterface {
   /**
     * Collects the record labels from the given type.
     */
+  @tailrec
   private def getRecordLabels(tpe: Type, acc: List[(Name.Label, Type)]): List[(Name.Label, Type)] = tpe match {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), labelTpe, _), rest, _) =>
-      getRecordLabels(rest, ((label, labelTpe) :: acc))
+      getRecordLabels(rest, (label, labelTpe) :: acc)
     case _ => acc
   }
 
