@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import scala.collection.mutable
 import scala.util.Random
@@ -62,7 +62,7 @@ object Lexer {
   private class State(val src: Source) {
 
     /** A string cursor on `src.data`. */
-    var sc: StringCursor = new StringCursor(src.data)
+    val sc: StringCursor = new StringCursor(src.data)
 
     /** `start` is the first position of the token that is currently being lexed. */
     var start: Position = new Position(sc.getLine, sc.getColumn, sc.getOffset)
@@ -1120,16 +1120,6 @@ object Lexer {
       } else {
         true
       }
-    }
-
-    /** Returns a copy of `this`, pointing to the same underlying array. */
-    def copy(): StringCursor = {
-      val sc = new StringCursor(data)
-      sc.offset = offset
-      sc.line = line
-      sc.column = column
-      sc.prevLineMaxColumn = prevLineMaxColumn
-      sc
     }
 
   }
