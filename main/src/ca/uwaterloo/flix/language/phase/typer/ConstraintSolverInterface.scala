@@ -102,7 +102,28 @@ object ConstraintSolverInterface {
       ///////////////////////////////////////////////////////////////////
 
       val (leftovers, subst) = ConstraintSolver2.solveAll(constrs, initialTree)(Scope.Top, renv, tenv, eenv, flix)
-      (subst, mkTypeErrors(leftovers, subst, renv, root))
+      leftovers match {
+        case Nil =>
+          // All constraints solved. Yay!
+          (subst, Nil)
+        case _ =>
+          // We have one or more type errors. We need to report them, but first we have special logic for the [[Debug]] effect.
+
+          // We solve a new constraint system where [[Debug]] is allowed by the effect signature.
+          val declaredEffConstrWithDebug = TypeConstraint.Equality(Type.mkUnion(eff, Type.Debug, loc), infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
+          val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+          val constrsWithDebug = constrs0.map(initialTree.apply)
+          val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+
+          leftovers2 match {
+            case Nil =>
+              // Success -- We can type check with [[Debug]].
+              (subst2, Nil)
+            case _ =>
+              // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of [[Debug]].
+              (subst, mkTypeErrors(leftovers, subst, renv, root))
+          }
+      }
   }
 
   /**
