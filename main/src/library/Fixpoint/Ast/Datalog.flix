@@ -78,7 +78,7 @@ mod Fixpoint.Ast.Datalog {
                             let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
                             match toDenotation(ramSym) {
                                 case Denotation.Relational => "${ramSym}(${tupleString})."
-                                case Denotation.Latticenal(_, _, _, _) => "${ramSym}(${tupleString}; %{lat})."
+                                case Denotation.Latticenal(_, _, _, _) => "${ramSym}(${tupleString}; ${Debug.stringify(lat)})."
                             }
                         })
                     })
@@ -247,7 +247,7 @@ mod Fixpoint.Ast.Datalog {
     instance ToString[HeadTerm] {
         pub def toString(term: HeadTerm): String = match term {
             case HeadTerm.Var(varSym) => "${varSym}"
-            case HeadTerm.Lit(v) => "%{v}"
+            case HeadTerm.Lit(v) => Debug.stringify(v)
             case HeadTerm.App0(_) => "<clo>()"
             case HeadTerm.App1(_, v) => "<clo>(${v})"
             case HeadTerm.App2(_, v1, v2) => "<clo>(${v1}, ${v2})"

@@ -183,8 +183,6 @@ sealed trait TokenKind {
       case TokenKind.InfixFunction => "<infix function>"
       case TokenKind.LiteralBigDecimal => "'<digits>ff'"
       case TokenKind.LiteralBigInt => "'<digits>ii'"
-      case TokenKind.LiteralDebugStringL => "'%{'"
-      case TokenKind.LiteralDebugStringR => "'}'"
       case TokenKind.LiteralFloat => "'<digits>.<digits>'"
       case TokenKind.LiteralFloat32 => "'<digits>f32'"
       case TokenKind.LiteralFloat64 => "'<digits>f64'"
@@ -354,8 +352,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -534,7 +530,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -637,7 +632,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordWithout
          | TokenKind.KeywordXor
          | TokenKind.KeywordYield
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.ParenR
          | TokenKind.Semi
@@ -725,8 +719,6 @@ sealed trait TokenKind {
     case TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -1090,10 +1082,6 @@ object TokenKind {
   case object LiteralBigInt extends TokenKind
 
   case object LiteralChar extends TokenKind
-
-  case object LiteralDebugStringL extends TokenKind
-
-  case object LiteralDebugStringR extends TokenKind
 
   case object LiteralFloat extends TokenKind
 

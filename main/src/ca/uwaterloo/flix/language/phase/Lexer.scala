@@ -145,7 +145,7 @@ object Lexer {
   def lex(src: Source): (Array[Token], List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
-      consumeWhitespace()
+      s.sc.advanceWhile(_.isWhitespace)
       if (!eof()) {
         s.resetStart()
         val k = scanToken()
@@ -332,7 +332,7 @@ object Lexer {
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("ematch") => TokenKind.KeywordEMatch
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
-      case _ if isKeywordLiteral("false") => TokenKind.KeywordFalse
+      case _ if isKeyword("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
       case _ if isKeyword("forall") => TokenKind.KeywordForall
       case _ if isKeyword("forA") => TokenKind.KeywordForA
@@ -356,7 +356,7 @@ object Lexer {
       case _ if isKeyword("mut") => TokenKind.KeywordMut
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
-      case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
+      case _ if isKeyword("null") => TokenKind.KeywordNull
       case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
       case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
       case _ if isKeyword("or") => TokenKind.KeywordOr
@@ -384,7 +384,7 @@ object Lexer {
       case _ if isKeyword("struct") => TokenKind.KeywordStruct
       case _ if isKeyword("throw") => TokenKind.KeywordThrow
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
-      case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
+      case _ if isKeyword("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
       case _ if isKeyword("type") => TokenKind.KeywordType
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
@@ -442,12 +442,11 @@ object Lexer {
 
   /**
     * Check that the potential keyword is sufficiently separated.
-    * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or
-    * underscore.
+    * A keyword is separated if it is surrounded by anything __but__ a character, digit, or underscore.
     * Note that __comparison includes current__.
     */
-  private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
+  private def isSeparated(keyword: String)(implicit s: State): Boolean = {
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_')
 
     s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
@@ -504,22 +503,6 @@ object Lexer {
     isSeparatedOperator(op) && isMatchPrev(op)
 
   /**
-    * Checks whether the following substring matches a keyword literal (e.g. "true" or "null").
-    * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
-    */
-  private def isKeywordLiteral(keyword: String)(implicit s: State): Boolean = {
-    // Allow dot here means that the literal gets recognized even when it is followed by a '.'.
-    // We want this for literals like 'true', but not for keywords like 'not'.
-    // This is because a symbol like 'not' can be imported from Java in a qualified path.
-    // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be
-    // read as a name here.
-    // We are assuming no literal keyword needs to be imported. So no importing something called
-    // 'true' from java.
-    isSeparated(keyword, allowDot = true) && isMatchPrev(keyword)
-  }
-
-  /**
     * Checks whether the following substring matches a keyword.
     * Note that __comparison includes current__.
     * Also note that this will advance the current position past the keyword if there is a match.
@@ -565,10 +548,6 @@ object Lexer {
     }
     TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
-
-  /** Moves current position past all whitespace characters. */
-  private def consumeWhitespace()(implicit s: State): Unit =
-    s.sc.advanceWhile(_.isWhitespace)
 
   /**
     * Moves the current position past all pairs of `\` and any other character, returning
@@ -675,9 +654,8 @@ object Lexer {
       // Check for the beginning of a string interpolation.
       val prev = previous()
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
-      val isDebug = !hasEscapes && prev.contains('%') && p == '{'
-      if (isInterpolation || isDebug) {
-        acceptStringInterpolation(isDebug) match {
+      if (isInterpolation) {
+        acceptStringInterpolation() match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
@@ -719,15 +697,14 @@ object Lexer {
     *   - "My favorite number is ${ { "${"//"}"40 + 2} }!"
     *   - "${"${}"}"
     */
-  private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
+  private def acceptStringInterpolation()(implicit s: State): TokenKind = {
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
-    if (isDebug) addToken(TokenKind.LiteralDebugStringL)
-    else addToken(TokenKind.LiteralStringInterpolationL)
+    addToken(TokenKind.LiteralStringInterpolationL)
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
     while (!eof()) {
-      consumeWhitespace()
+      s.sc.advanceWhile(_.isWhitespace)
       if (!eof()) {
         s.resetStart()
         val kind = scanToken()
@@ -740,8 +717,7 @@ object Lexer {
         // Check for the terminating '}'.
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
-            if (isDebug) return TokenKind.LiteralDebugStringR
-            else return TokenKind.LiteralStringInterpolationR
+            return TokenKind.LiteralStringInterpolationR
           }
           blockNestingLevel -= 1
         }
@@ -760,14 +736,12 @@ object Lexer {
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '\'') {
+      if (s.sc.peekIs(_ == '\'')) {
         advance()
         return TokenKind.LiteralChar
       }
 
-      if ((prev, p) == ('/', '*')) {
+      if (prev == '/' && s.sc.peekIs(_ == '*')) {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
@@ -784,9 +758,7 @@ object Lexer {
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '"') {
+      if (s.sc.peekIs(_ == '"')) {
         advance()
         return TokenKind.LiteralRegex
       }
@@ -871,7 +843,7 @@ object Lexer {
     // Now the main number is parsed. Next is the suffix.
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
-      if (isNumberLikeChar(s.sc.peek)) {
+      if (s.sc.peekIs(isNumberLikeChar)) {
         wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
       } else if (mustBeFloat && intSuffix) {
         wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
@@ -945,7 +917,7 @@ object Lexer {
       val loc = sourceLocationAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (isNumberLikeChar(s.sc.peek)) {
+        if (s.sc.peekIs(isNumberLikeChar)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
