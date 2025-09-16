@@ -765,7 +765,6 @@ object Lexer {
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
       if (s.sc.peekIs(_ == '"')) {
         advance()
         return TokenKind.LiteralRegex
