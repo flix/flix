@@ -385,6 +385,11 @@ object Type {
   val Assert: Type = Type.Cst(TypeConstructor.Effect(Symbol.Assert, Kind.Eff), SourceLocation.Unknown)
 
   /**
+    * Represents the Debug effect.
+    */
+  val Debug: Type = Type.Cst(TypeConstructor.Effect(Symbol.Debug, Kind.Eff), SourceLocation.Unknown)
+
+  /**
     * Represents the Chan effect.
     */
   val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan, Kind.Eff), SourceLocation.Unknown)
