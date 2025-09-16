@@ -417,21 +417,21 @@ object Lexer {
     s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
 
   /**
-    * Checks whether the previous char and the following substring matches a keyword.
-    * Will advance the current position past the keyword if there is a match.
+    * Checks whether the previous char and the following substring matches a string.
+    * Will advance the current position past the string if there is a match.
     */
-  private def isMatchPrev(keyword: String)(implicit s: State): Boolean = {
-    // Check if the keyword can appear before eof.
-    if (s.sc.getOffset + keyword.length - 1 > s.src.data.length) {
+  private def isMatchPrev(str: String)(implicit s: State): Boolean = {
+    // Check if the string can appear before eof.
+    if (s.sc.getOffset + str.length - 1 > s.src.data.length) {
       return false
     }
 
-    // Check if the next n characters in source matches those of keyword one at a time.
+    // Check if the next n characters in source matches those of str one at a time.
     val start = s.sc.getOffset - 1
     var matches = true
     var offset = 0
-    while (matches && offset < keyword.length) {
-      if (s.src.data(start + offset) != keyword(offset)) {
+    while (matches && offset < str.length) {
+      if (s.src.data(start + offset) != str(offset)) {
         matches = false
       } else {
         offset += 1
@@ -439,7 +439,7 @@ object Lexer {
     }
 
     if (matches) {
-      for (_ <- 1 until keyword.length) {
+      for (_ <- 1 until str.length) {
         s.sc.advance()
       }
     }
