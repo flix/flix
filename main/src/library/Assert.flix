@@ -182,6 +182,7 @@ mod Assert {
     ///
     /// In other words, re-interprets the `Assert` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handle(f)()
 
     ///
