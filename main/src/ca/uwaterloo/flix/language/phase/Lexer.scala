@@ -445,12 +445,11 @@ object Lexer {
 
   /**
     * Check that the potential keyword is sufficiently separated.
-    * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or
-    * underscore.
+    * A keyword is separated if it is surrounded by anything __but__ a character, digit, or underscore.
     * Note that __comparison includes current__.
     */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || c == '.')
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_')
 
     s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
   }
@@ -740,14 +739,12 @@ object Lexer {
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '\'') {
+      if (s.sc.peekIs(_ == '\'')) {
         advance()
         return TokenKind.LiteralChar
       }
 
-      if ((prev, p) == ('/', '*')) {
+      if (prev == '/' && s.sc.peekIs(_ == '*')) {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
@@ -764,9 +761,7 @@ object Lexer {
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '"') {
+      if (s.sc.peekIs(_ == '"')) {
         advance()
         return TokenKind.LiteralRegex
       }
@@ -851,7 +846,7 @@ object Lexer {
     // Now the main number is parsed. Next is the suffix.
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
-      if (isNumberLikeChar(s.sc.peek)) {
+      if (s.sc.peekIs(isNumberLikeChar)) {
         wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
       } else if (mustBeFloat && intSuffix) {
         wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
@@ -925,7 +920,7 @@ object Lexer {
       val loc = sourceLocationAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (isNumberLikeChar(s.sc.peek)) {
+        if (s.sc.peekIs(isNumberLikeChar)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
