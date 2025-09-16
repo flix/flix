@@ -27,6 +27,15 @@ trait Annotation {
 object Annotation {
 
   /**
+    * An annotation that marks a function as a default handler for an effect.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class DefaultHandler(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@DefaultHandler"
+  }
+
+  /**
     * An annotation that marks a construct as deprecated.
     *
     * @param loc the source location of the annotation.

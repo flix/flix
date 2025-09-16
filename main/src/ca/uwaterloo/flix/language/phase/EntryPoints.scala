@@ -16,10 +16,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Name.{Ident, mkUnlocatedNName}
+import ca.uwaterloo.flix.language.ast.Symbol.mkEffSym
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
@@ -28,7 +30,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
@@ -56,22 +58,16 @@ object EntryPoints {
   // We don't use regions, so we are safe to use the global scope everywhere in this phase.
   private implicit val S: Scope = Scope.Top
 
-  /**
-    * Symbol of the Assert.runWithIO function
-    */
-  private val RunWithIOSym = new Symbol.DefnSym(None, List("Assert"), "runWithIO", SourceLocation.Unknown)
-
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
-
-    val (root2, errs2) = CheckEntryPoints.run(root1)
-    // Wrap tests to handle allowed non-primitive effects
-    val rootWithWrappedTests = WrapTest.run(root2)
+    // Wrap entry points to handle non-primitive effects with defaultHandlers
+    val (rootWithWrappedEntryPoints, errsDefaultHandlers) = WrapInDefaultHandlers.run(root1)
+    val (root2, errs2) = CheckEntryPoints.run(rootWithWrappedEntryPoints)
     // WrapMain assumes a sensible main, so CheckEntryPoints must run first.
-    val (root3, errs3) = WrapMain.run(rootWithWrappedTests)
+    val (root3, errs3) = WrapMain.run(root2)
     // WrapMain might change main, so FindEntryPoints must be after.
     val root4 = findEntryPoints(root3)
-    (root4, errs1 ++ errs2 ++ errs3)
+    (root4, errs1 ++ errs2 ++ errsDefaultHandlers ++ errs3)
   }
 
   /**
@@ -119,10 +115,6 @@ object EntryPoints {
   private def isTest(defn: TypedAst.Def): Boolean =
     defn.spec.ann.isTest
 
-  /** Returns `true` if `defn` has the Assert effect. */
-  private def hasAssert(defn: TypedAst.Def): Boolean =
-    defn.spec.eff.effects.contains(Symbol.Assert)
-
   /** Returns `true` if `defn` is an exported function. */
   private def isExport(defn: TypedAst.Def): Boolean =
     defn.spec.ann.isExport
@@ -130,6 +122,7 @@ object EntryPoints {
   /** Returns `true` if `defn` is the main function. */
   private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
     root.mainEntryPoint.contains(defn.sym)
+
 
   /** Returns `true` if `tpe` is equivalent to Unit (via type aliases). */
   @tailrec
@@ -397,6 +390,7 @@ object EntryPoints {
       }
     }
 
+
     /**
       * Returns `true` if `eff` is a subset of the allowed test effects.
       *
@@ -451,6 +445,7 @@ object EntryPoints {
       case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
       case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
     }
+
 
     /** Returns an error if `defn` is in the root namespace. */
     private def checkNonRootNamespace(defn: TypedAst.Def): Option[EntryPointError] = {
@@ -642,28 +637,135 @@ object EntryPoints {
 
   }
 
-  private object WrapTest {
+  private object WrapInDefaultHandlers {
+    private case class HandlerInfo(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, handlerDefSymUse: SymUse.DefSymUse, handledEff: Type, generatedPrimitiveEffs: List[Type])
 
     /**
-      * WrapTest takes a root and returns a new root where the tests' definitions
+      * WrapInDefaultHandlers takes a root and returns a new root where the entry points' definitions
       * have been wrapped in a default handler for any extra non-primitive effects
       * (eg. Assert)
       *
-      * From previous phases we know that each test function:
+      * From previous phases we know that each entry point function:
       *   - Takes Unit as an argument
       *   - Has a valid signature (without type variables, etc.)
       *
       */
-    def run(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
-      val defsWithDefaultAssertHandler = ParOps.parMapValues(root.defs)(
-        defn => if (isTest(defn) && hasAssert(defn)) wrapDefWithAssertHandler(defn, root) else defn
+    def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
+      val defaultHandlers = root.defs.filter {
+        case (_, defn) => defn.spec.ann.isDefaultHandler
+      }
+      val (validHandlers, errs) = defaultHandlers.partitionMap {
+        case (sym, defn) => checkHandler(sym, defn, root)
+      }
+      val haveDuplicates = validHandlers.groupBy(_.handledEff).filter(_._2.size > 1)
+      val duplicateHandlersErrs = haveDuplicates.flatMap {
+        case (eff, handlers) => handlers.map(handler => EntryPointError.MultipleDefaultHandlers(handler.handlerDef.loc, eff))
+      }
+      val defsWithDefaultHandlers = ParOps.parMapValues(root.defs)(
+        defn =>
+          if (isEntryPoint(defn)(root)) wrapDefWithDefaultHandlers(defn, validHandlers, root) else defn
       )
-      root.copy(defs = defsWithDefaultAssertHandler)
+      (root.copy(defs = defsWithDefaultHandlers), errs.toList.flatten ++ duplicateHandlersErrs)
     }
 
     /**
-      * wrapDefWithAssertHandler takes a test function and creates a new test function with a
-      * default Assert handler by using Assert.runWithIO.
+      * Validates that a function marked with @DefaultHandler has the correct signature and structure.
+      *
+      * A valid default handler must:
+      * - Be in the companion module of an existing effect
+      * - Take exactly one argument of function type: Unit -> a \ ef
+      * - Return the same type variable 'a' as the function argument
+      * - Have an effect signature of the form: (ef - HandledEffect) + PrimitiveEffect1 + ...
+      *
+      * @param handlerSym The symbol of the handler function
+      * @param handlerDef The definition of the handler function
+      * @param root The typed AST root
+      * @return Either a valid HandlerInfo or a list of entry point errors
+      */
+    private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root):
+    Either[HandlerInfo, List[EntryPointError]] = {
+      val (effNamespace, effName) = handlerSym.namespace.splitAt(handlerSym.namespace.length - 1)
+      val effSymbol = Symbol.mkEffSym(mkUnlocatedNName(effNamespace), Ident(effName.last, SourceLocation.Unknown))
+      val companionEffect = root.effects.get(effSymbol)
+      companionEffect match {
+        case Some(_) =>
+          val args = handlerDef.spec.declaredScheme.base.arrowArgTypes
+          if (args.length > 1) {
+            return Right(EntryPointError.WrongNumberOfArgsForDefaultHandler(handlerSym.loc, effSymbol) :: Nil)
+          }
+          val handlerRetType = handlerDef.spec.retTpe
+          val handlerEffects = handlerDef.spec.eff
+          val argType = args.last match {
+            case t@Type.Apply(_, _, _) => t
+            case _ => return Right(EntryPointError.ExpectedFunctionArgForDefaultHandler(handlerSym.loc, effSymbol) :: Nil)
+          }
+          argType.arrowResultType match {
+            case t@Type.Var(_, _) if t == handlerRetType => ()
+            case _ => return Right(EntryPointError.ExpectedTypeVarArgForDefaultHandler(handlerSym.loc, effSymbol) :: Nil)
+          }
+          val argFnEffType = argType.arrowEffectType match {
+            case t@Type.Var(_, _) => t
+            case _ => return Right(EntryPointError.ExpectedEffectVarForDefaultHandler(handlerSym.loc, effSymbol) :: Nil)
+          }
+          if (argType.arrowArgTypes.length != 1 || argType.arrowArgTypes.last != Type.Unit) {
+            Right(EntryPointError.ExpectedFunctionArgForDefaultHandler(handlerSym.loc, effSymbol) :: Nil)
+          } else checkHandlerEffects(handlerEffects, argFnEffType.toString, effSymbol) match {
+            case Result.Ok(primEffectsSymsGenerated) =>
+              val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), handlerEffects.loc)
+              val primEffectsGenerated = primEffectsSymsGenerated.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown))
+              val handlerDefSymUse = DefSymUse(handlerDef.sym, handlerDef.loc)
+              Left(HandlerInfo(handlerSym, handlerDef, handlerDefSymUse, handledEff, primEffectsGenerated))
+
+            case Result.Err(errs) => Right(errs)
+          }
+        case None => Right(EntryPointError.EffectNotFoundForDefaultHandler(handlerSym.loc) :: Nil)
+      }
+    }
+
+    /**
+      * Validates the effect signature of a default handler function.
+      *
+      * The handler's effect must follow the pattern: (ef - handledEffect) + primitiveEff1 + ...
+      * where:
+      * - ef is the effect variable from the function argument type
+      * - handledEffect is the effect being handled by this handler
+      * - All additional effects must be primitive effects (IO, Console, etc.)
+      *
+      * @param eff The effect type of the handler function
+      * @param effTypeVarString String representation of the effect type variable
+      * @param effSym The symbol of the effect being handled
+      * @return Either a list of primitive effect symbols generated, or a list of entry point errors
+      */
+    private def checkHandlerEffects(eff: Type, effTypeVarString: String, effSym: Symbol.EffSym): Result[List[Symbol.EffSym], List[EntryPointError]] = {
+      val effects = eff.toString.split('+').map(_.trim).toList
+      effects match {
+        case difEffects :: addedEffects =>
+          if (difEffects != s"($effTypeVarString - ${effSym.name})") {
+            Result.Err(EntryPointError.WrongSignatureForDefaultHandler(eff.loc, effSym) :: Nil)
+          } else {
+            val addedEffectsSymbols = addedEffects.map(effName => mkEffSym(Name.RootNS, Ident(effName, SourceLocation.Unknown)))
+            var errs: List[EntryPointError] = Nil
+            for (addedEff <- addedEffectsSymbols) {
+              if (!Symbol.isPrimitiveEff(addedEff)) {
+                errs = EntryPointError.NonPrimitiveEffectForDefaultHandler(eff.loc, effSym, addedEff) :: errs
+              }
+            }
+
+            if (errs.isEmpty) {
+              Result.Ok(addedEffectsSymbols)
+            } else {
+              Result.Err(errs)
+            }
+
+          }
+
+        case Nil => Result.Err(EntryPointError.WrongSignatureForDefaultHandler(eff.loc, effSym) :: Nil)
+      }
+    }
+
+    /**
+      * wrapDefWithDefaultHandlers takes an entry point function and creates a new entry point function with a
+      * default handler for every effect with a function annotated with @DefaultHandler
       *
       * Takes
       * {{{
@@ -671,26 +773,50 @@ object EntryPoints {
       * }}}
       * Returns
       * {{{
-      * def f(arg1: tpe1, ...): tpe \ IO + Sys + (ef - Assert) = Assert.runWithIO(_ -> exp)
+      * def f(arg1: tpe1, ...): tpe \ efPrim1 + efPrim2 + ... + (ef - (efDefault1 + efDefault2 + ...))
+      *   = efDefault1.defaultHandler(_ -> efDefault2.defaultHandler(_ -> ...(_ -> exp)))
       * }}}
       */
-    private def wrapDefWithAssertHandler(currentDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+    private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def, defaultHandlers: Iterable[HandlerInfo], root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+      defaultHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler, root))
+    }
+
+    /**
+      * Wraps an entry point function with a default effect handler.
+      *
+      * Transforms a function:
+      *   def f(arg1: tpe1, ...): tpe \ ef = exp
+      *
+      * Into:
+      *   def f(arg1: tpe1, ...): tpe \ (ef - handledEffect) + efPrim1 + efPrim2 + ... =
+      *     handler(_ -> exp)
+      *
+      * The wrapper:
+      * - Removes the handled effect from the function's effect set
+      * - Adds any primitive effects generated by the handler
+      * - Creates a lambda (_ -> originalBody) and passes it to the handler
+      * - Updates the function's type signature accordingly
+      *
+      * @param defn The entry point function definition to wrap
+      * @param handlerInfo Information about the default handler to apply
+      * @param root The typed AST root
+      * @return The wrapped function definition with updated effect signature
+      */
+    private def wrapInHandler(defn: TypedAst.Def, handlerInfo: HandlerInfo, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
       // Create synthetic locations
-      val syntheticEffLocation = currentDef.spec.eff.loc.copy(isReal = false)
-      val syntheticBaseTypeLocation = currentDef.spec.declaredScheme.base.loc.copy(isReal = false)
-      val syntheticExpLocation = currentDef.exp.loc.copy(isReal = false)
-      // The new type is the same as the wrapped test with an effect set of
-      // `IO + Sys + (eff - Assert)` where `eff` is the effect set of the previous definition.
-      val eff = Type.mkUnion(Type.IO, Type.Sys, Type.mkDifference(currentDef.spec.eff, Type.Assert, syntheticEffLocation)
-        , syntheticEffLocation)
-      val tpe = Type.mkCurriedArrowWithEffect(currentDef.spec.fparams.map(_.tpe), eff, currentDef.spec.retTpe, syntheticBaseTypeLocation)
-      val spec = currentDef.spec.copy(
-        declaredScheme = currentDef.spec.declaredScheme.copy(base = tpe),
+      val syntheticEffLocation = defn.spec.eff.loc.copy(isReal = false)
+      val syntheticBaseTypeLocation = defn.spec.declaredScheme.base.loc.copy(isReal = false)
+      val syntheticExpLocation = defn.exp.loc.copy(isReal = false)
+      // The new type is the same as the wrapped def with an effect set of
+      // `(ef - handledEffect) + primEff1 + primEff2 + ...` where `ef` is the effect set of the previous definition.
+      val effDif = Type.mkDifference(defn.spec.eff, handlerInfo.handledEff, syntheticEffLocation)
+      val eff = Type.mkUnion(effDif :: handlerInfo.generatedPrimitiveEffs, syntheticEffLocation)
+      val tpe = Type.mkCurriedArrowWithEffect(defn.spec.fparams.map(_.tpe), eff, defn.spec.retTpe, syntheticBaseTypeLocation)
+      val spec = defn.spec.copy(
+        declaredScheme = defn.spec.declaredScheme.copy(base = tpe),
         eff = eff,
       )
-      // Get Assert.runWithIO symbol use
-      val runWithIODef = root.defs(RunWithIOSym)
-      val runWithIOSymUse = DefSymUse(runWithIODef.sym, runWithIODef.loc)
+
       // Create _ -> exp
       val innerLambda = TypedAst.Expr.Lambda(TypedAst.FormalParam(
         TypedAst.Binder(Symbol.freshVarSym("_", FormalParam, syntheticExpLocation), Type.Unit),
@@ -699,16 +825,16 @@ object EntryPoints {
         TypeSource.Inferred,
         syntheticExpLocation
       ),
-        currentDef.exp,
-        Type.mkArrowWithEffect(Type.Unit, currentDef.spec.eff, currentDef.spec.retTpe, syntheticExpLocation),
+        defn.exp,
+        Type.mkArrowWithEffect(Type.Unit, defn.spec.eff, defn.spec.retTpe, syntheticExpLocation),
         syntheticExpLocation
       )
-      // Create the instantiated type of runWithIO
-      val runWithIOArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, currentDef.spec.retTpe, syntheticExpLocation)
-      // Create Assert.runWithIO(_ -> exp)
-      val runWithIOCall = TypedAst.Expr.ApplyDef(runWithIOSymUse, List(innerLambda), List(innerLambda.tpe), runWithIOArrowType, currentDef.spec.retTpe, eff, syntheticExpLocation)
+      // Create the instantiated type of the handler
+      val handlerArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, defn.spec.retTpe, syntheticExpLocation)
+      // Create HandledEff.handle(_ -> exp)
+      val handlerCall = TypedAst.Expr.ApplyDef(handlerInfo.handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, syntheticExpLocation)
 
-      currentDef.copy(spec = spec, exp = runWithIOCall)
+      defn.copy(spec = spec, exp = handlerCall)
 
     }
 
