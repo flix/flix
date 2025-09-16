@@ -114,7 +114,7 @@ mod Fixpoint3.Ast.Datalog {
                                 let tupleString = tuple |> Vector.map(Debug.stringify) |> Vector.join(", ");
                                 match toDenotation(relSym) {
                                     case Relational             => StringBuilder.append("${relSym}(${tupleString}).${String.lineSeparator()}", builder)
-                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; %{lat}).${String.lineSeparator()}", builder)
+                                    case Latticenal(_, _, _, _) => StringBuilder.append("${relSym}(${tupleString}; ${Debug.stringify(lat)}).${String.lineSeparator()}", builder)
                                 }
                             }
                         };
@@ -298,7 +298,7 @@ mod Fixpoint3.Ast.Datalog {
     instance ToString[HeadTerm] {
         pub def toString(term: HeadTerm): String = match term {
             case HeadTerm.Var(varSym)                 => "${varSym}"
-            case HeadTerm.Lit(v)                      => "%{v}"
+            case HeadTerm.Lit(v)                      => Debug.stringify(v)
             case HeadTerm.App1(_, v)                  => "<clo>(${v})"
             case HeadTerm.App2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
             case HeadTerm.App3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"

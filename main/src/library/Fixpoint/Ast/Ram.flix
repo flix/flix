@@ -150,7 +150,7 @@ mod Fixpoint.Ast.Ram {
 
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v) => "%{v}"
+            case RamTerm.Lit(v) => Debug.stringify(v)
             case RamTerm.RowLoad(var, index) => "${var}[${index}]"
             case RamTerm.LoadLatVar(var) => "${var}[-1]"
             case RamTerm.Meet(_, lhs, rhs) => "(${lhs} ⊓ ${rhs})"
