@@ -657,9 +657,8 @@ object Lexer {
       // Check for the beginning of a string interpolation.
       val prev = previous()
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
-      val isDebug = !hasEscapes && prev.contains('%') && p == '{'
-      if (isInterpolation || isDebug) {
-        acceptStringInterpolation(isDebug) match {
+      if (isInterpolation) {
+        acceptStringInterpolation() match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
@@ -701,11 +700,10 @@ object Lexer {
     *   - "My favorite number is ${ { "${"//"}"40 + 2} }!"
     *   - "${"${}"}"
     */
-  private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
+  private def acceptStringInterpolation()(implicit s: State): TokenKind = {
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
-    if (isDebug) addToken(TokenKind.LiteralDebugStringL)
-    else addToken(TokenKind.LiteralStringInterpolationL)
+    addToken(TokenKind.LiteralStringInterpolationL)
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
     while (!eof()) {
@@ -722,8 +720,7 @@ object Lexer {
         // Check for the terminating '}'.
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
-            if (isDebug) return TokenKind.LiteralDebugStringR
-            else return TokenKind.LiteralStringInterpolationR
+            return TokenKind.LiteralStringInterpolationR
           }
           blockNestingLevel -= 1
         }

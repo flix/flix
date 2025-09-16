@@ -324,7 +324,7 @@ mod Fixpoint3.Ast.Ram {
 
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _) => "%{v}"
+            case RamTerm.Lit(v, _) => Debug.stringify(v)
             case RamTerm.ProvMax(loads) =>
                 let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
                 "max(${loadsStr})"
