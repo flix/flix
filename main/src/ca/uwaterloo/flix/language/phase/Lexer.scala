@@ -130,16 +130,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /**
-    * Advances current position one char forward, returning the char it was previously sitting on,
-    * while keeping track of line and column numbers too.
-    * Note: If the lexer has arrived at EOF advance will continuously return EOF without advancing.
-    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious
-    * to work with.
-    */
-  private def advance()(implicit s: State): Char =
-    s.sc.advance()
-
   /** Peeks the previous character that state was on if available. */
   private def previous()(implicit s: State): Option[Char] =
     s.sc.previous
@@ -205,7 +195,7 @@ object Lexer {
   private def scanToken()(implicit s: State): TokenKind = {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
-    advance() match {
+    s.sc.peekAndAdvance() match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
@@ -379,10 +369,10 @@ object Lexer {
           if (p.isLetterOrDigit) {
             acceptName(p.isUpper)
           } else if (isMathNameChar(p)) {
-            advance()
+            s.sc.advance()
             acceptMathName()
           } else if (isUserOp(p).isDefined) {
-            advance()
+            s.sc.advance()
             acceptUserDefinedOp()
           } else TokenKind.Underscore
         } else TokenKind.Underscore
@@ -450,7 +440,7 @@ object Lexer {
 
     if (matches) {
       for (_ <- 1 until keyword.length) {
-        advance()
+        s.sc.advance()
       }
     }
 
@@ -481,7 +471,7 @@ object Lexer {
 
       if (p == '$') {
         // Check for termination.
-        advance()
+        s.sc.advance()
         return TokenKind.BuiltIn
       }
 
@@ -491,7 +481,7 @@ object Lexer {
         return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
       }
 
-      advance()
+      s.sc.advance()
       advanced = true
     }
     TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
@@ -506,9 +496,9 @@ object Lexer {
     */
   private def consumeSingleEscapes()(implicit s: State): Boolean =
     if (s.sc.advanceIfMatch('\\')) {
-      advance()
+      s.sc.advance()
       while (s.sc.advanceIfMatch('\\')) {
-        advance()
+        s.sc.advance()
       }
       true
     } else {
@@ -618,14 +608,14 @@ object Lexer {
       }
       // Check for termination.
       if (p == '\"') {
-        advance()
+        s.sc.advance()
         return kind
       }
       // Check if file ended on a '\', meaning that the string was unterminated.
       if (p == '\n') {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
-      advance()
+      s.sc.advance()
     }
     TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
@@ -647,7 +637,7 @@ object Lexer {
     */
   private def acceptStringInterpolation()(implicit s: State): TokenKind = {
     val startLocation = sourceLocationAtCurrent()
-    advance() // Consume '{'.
+    s.sc.advance() // Consume '{'.
     addToken(TokenKind.LiteralStringInterpolationL)
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
@@ -685,7 +675,7 @@ object Lexer {
     while (!eof()) {
       consumeSingleEscapes()
       if (s.sc.peekIs(_ == '\'')) {
-        advance()
+        s.sc.advance()
         return TokenKind.LiteralChar
       }
 
@@ -693,7 +683,7 @@ object Lexer {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
-      prev = advance()
+      prev = s.sc.peekAndAdvance()
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
@@ -707,10 +697,10 @@ object Lexer {
     while (!eof()) {
       consumeSingleEscapes()
       if (s.sc.peekIs(_ == '"')) {
-        advance()
+        s.sc.advance()
         return TokenKind.LiteralRegex
       }
-      advance()
+      s.sc.advance()
     }
 
     TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
@@ -842,7 +832,7 @@ object Lexer {
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-    advance() // Consume 'x'.
+    s.sc.advance() // Consume 'x'.
 
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
@@ -1004,14 +994,25 @@ object Lexer {
     /**
       * Advances cursor one char forward, returning the char it was previously sitting on.
       *
-      * If the cursor has advanced past the content, [[EOF]] is returned.
+      * A faster alternative to
+      * {{{
+      * {val c = this.peek; this.advance(); c}
+      * }}}
       */
-    def advance(): Char = {
-      if (this.eof) {
-        EOF
-      } else {
+    def peekAndAdvance(): Char = {
+      if (this.inBounds) {
         val c = data(offset)
-        if (c == '\n') {
+        advance()
+        c
+      } else {
+        EOF
+      }
+    }
+
+    /** Advances cursor one char forward, unless out of bounds. */
+    def advance(): Unit = {
+      if (!this.eof) {
+        if (data(offset) == '\n') {
           prevLineMaxColumn = column
           line += 1
           column = 0
@@ -1019,7 +1020,6 @@ object Lexer {
           column += 1
         }
         offset += 1
-        c
       }
     }
 
