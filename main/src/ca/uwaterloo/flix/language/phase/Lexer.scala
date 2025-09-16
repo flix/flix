@@ -456,15 +456,12 @@ object Lexer {
 
   /**
     * Check that the potential operator is sufficiently separated.
-    * An operator is separated if it is surrounded by anything __but__ another valid user operator
+    * An operator is separated if it is followed by anything __but__ another valid user operator
     * character.
     * Note that __comparison includes current__.
     */
-  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = isUserOp(c).isEmpty
-
-    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
-  }
+  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean =
+    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
 
   /**
     * Checks whether the previous char and the following substring matches a keyword.
