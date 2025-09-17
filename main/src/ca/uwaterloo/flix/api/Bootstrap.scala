@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -327,9 +327,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
+  def build(flix: Flix, build: Build = Build.Development): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
-    val newOptions = flix.options.copy(outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
+    val newOptions = flix.options.copy(build = build, outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
     Steps.updateStaleSources(flix)
     Steps.compile(flix)
@@ -340,7 +340,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     // Build the project before building the jar
-    val buildResult = build(flix)
+    val buildResult = build(flix, Build.Production)
     buildResult match {
       case Validation.Failure(error) =>
         return Validation.Failure(error) // Return the build error directly
