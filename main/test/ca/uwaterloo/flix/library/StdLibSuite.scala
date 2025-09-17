@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.util.{FileOps, Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
+import java.nio.file.Paths
+
 class StdLibSuite extends AnyFunSuite {
 
   /** The path to the library tests. */
@@ -36,7 +38,7 @@ class StdLibSuite extends AnyFunSuite {
     flix.setOptions(Opts)
 
     // Find and add all test suites.
-    val paths = FileOps.getFlixFilesIn(Path, 1)
+    val paths = FileOps.getFlixFilesIn(Paths.get(Path), 1)
     for (p <- paths) {
       implicit val sctx: SecurityContext = SecurityContext.AllPermissions
       flix.addFlix(p)
