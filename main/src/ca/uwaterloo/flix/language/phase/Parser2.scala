@@ -1611,6 +1611,7 @@ object Parser2 {
       // If a new expression is added here then add it to FIRST_EXPR too.
       val mark = open()
       nth(0) match {
+        case TokenKind.DebugInterpolator => debugInterpolator()
         case TokenKind.KeywordOpenVariant => openVariantExpr()
         case TokenKind.KeywordOpenVariantAs => openVariantAsExpr()
         case TokenKind.HoleNamed
@@ -1618,7 +1619,6 @@ object Parser2 {
         case TokenKind.HoleVariable => holeVariableExpr()
         case TokenKind.KeywordUse => useExpr()
         case TokenKind.LiteralString
-             | TokenKind.LiteralStringDebug
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat
              | TokenKind.LiteralFloat32
@@ -2995,6 +2995,13 @@ object Parser2 {
       val mark = open()
       advance()
       close(mark, TreeKind.Expr.Intrinsic)
+    }
+
+    private def debugInterpolator()(implicit s: State): Mark.Closed = {
+      eat(TokenKind.DebugInterpolator)
+      val mark = open()
+      interpolatedStringExpr()
+      close(mark, TreeKind.Expr.DebugInterpolator)
     }
 
     private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL)

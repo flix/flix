@@ -860,6 +860,7 @@ object Weeder2 {
         case TreeKind.QName => Validation.Success(visitQnameExpr(tree))
         case TreeKind.Expr.Paren => visitParenExpr(tree)
         case TreeKind.Expr.Block => visitBlockExpr(tree)
+        case TreeKind.Expr.DebugInterpolator => visitDebugInterpolator(tree)
         case TreeKind.Expr.StringInterpolation => visitStringInterpolationExpr(tree)
         case TreeKind.Expr.OpenVariant => visitOpenVariantExpr(tree)
         case TreeKind.Expr.OpenVariantAs => visitOpenVariantAsExpr(tree)
@@ -966,6 +967,20 @@ object Weeder2 {
       pickExpr(tree)
     }
 
+    private def visitDebugInterpolator(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.DebugInterpolator)
+      flatMapN(pick(TreeKind.Expr.StringInterpolation, tree)) {
+        case interExp => mapN(visitStringInterpolationExpr(interExp)) {
+          case exp2 =>
+            val file = tree.loc.sp1.source.name
+            val line = tree.loc.sp1.lineOneIndexed
+            val cst = Constant.Str(s"[$file:$line] ")
+            val exp1 = WeededAst.Expr.Cst(cst, tree.loc)
+            WeededAst.Expr.Binary(SemanticOp.StringOp.Concat, exp1, exp2, tree.loc)
+        }
+      }
+    }
+
     private def visitStringInterpolationExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Constant.Str(""), tree.loc)
@@ -1047,6 +1062,12 @@ object Weeder2 {
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
         case token@Token(_, _, _, _, _, _) => token.kind match {
+          case TokenKind.DebugInterpolator =>
+            val loc = tree.loc
+            val file = loc.sp1.source.name
+            val line = loc.sp1.lineOneIndexed
+            val text = token.text.stripPrefix("d\"").stripSuffix("\"")
+            Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
           case TokenKind.KeywordNull => Validation.Success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
           case TokenKind.KeywordTrue => Validation.Success(Expr.Cst(Constant.Bool(true), token.mkSourceLocation()))
           case TokenKind.KeywordFalse => Validation.Success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
@@ -1063,12 +1084,6 @@ object Weeder2 {
           case TokenKind.LiteralFloat64 => Validation.Success(Constants.toFloat64(token))
           case TokenKind.LiteralBigDecimal => Validation.Success(Constants.toBigDecimal(token))
           case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
-          case TokenKind.LiteralStringDebug =>
-            val loc = tree.loc
-            val file = loc.sp1.source.name
-            val line = loc.sp1.lineOneIndexed
-            val text = token.text.stripPrefix("d\"").stripSuffix("\"")
-            Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
           case TokenKind.NameLowerCase
                | TokenKind.NameUpperCase
                | TokenKind.NameMath

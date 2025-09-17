@@ -178,6 +178,7 @@ sealed trait TokenKind {
       case TokenKind.CommentBlock => "<block comment>"
       case TokenKind.CommentDoc => "<doc comment>"
       case TokenKind.CommentLine => "<comment>"
+      case TokenKind.DebugInterpolator => "<debug-interpolator>"
       case TokenKind.HoleNamed => "<named hole>"
       case TokenKind.HoleVariable => "<variable hole>"
       case TokenKind.InfixFunction => "<infix function>"
@@ -193,7 +194,6 @@ sealed trait TokenKind {
       case TokenKind.LiteralInt64 => "'<digits>i64'"
       case TokenKind.LiteralRegex => "<regex>"
       case TokenKind.LiteralString => "<string>"
-      case TokenKind.LiteralStringDebug => "<string-debug>"
       case TokenKind.LiteralChar => "<char>"
       case TokenKind.LiteralStringInterpolationL => "'${'"
       case TokenKind.LiteralStringInterpolationR => "'}\"'"
@@ -329,6 +329,7 @@ sealed trait TokenKind {
          | TokenKind.CommentLine
          | TokenKind.CurlyL
          | TokenKind.CurlyR
+         | TokenKind.DebugInterpolator
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
@@ -363,7 +364,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
-         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.MapHash
@@ -479,6 +479,7 @@ sealed trait TokenKind {
          | TokenKind.ArrayHash
          | TokenKind.BuiltIn
          | TokenKind.CurlyL
+         | TokenKind.DebugInterpolator
          | TokenKind.DotDotDot
          | TokenKind.HashBar
          | TokenKind.HashCurlyL
@@ -542,7 +543,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
-         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.MapHash
          | TokenKind.Minus
@@ -719,7 +719,8 @@ sealed trait TokenKind {
     * Checks if this token is a literal.
     */
   def isLiteral: Boolean = this match {
-    case TokenKind.LiteralBigDecimal
+    case TokenKind.DebugInterpolator
+         | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
          | TokenKind.LiteralFloat
@@ -732,7 +733,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt64
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
-         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.LiteralStringInterpolationR => true
     case _ => false
@@ -884,6 +884,8 @@ object TokenKind {
   case object CurlyL extends TokenKind
 
   case object CurlyR extends TokenKind
+
+  case object DebugInterpolator extends TokenKind
 
   case object Dollar extends TokenKind
 
@@ -1106,8 +1108,6 @@ object TokenKind {
   case object LiteralRegex extends TokenKind
 
   case object LiteralString extends TokenKind
-
-  case object LiteralStringDebug extends TokenKind
 
   case object LiteralStringInterpolationL extends TokenKind
 
