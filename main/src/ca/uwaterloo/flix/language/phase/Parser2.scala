@@ -1618,6 +1618,7 @@ object Parser2 {
         case TokenKind.HoleVariable => holeVariableExpr()
         case TokenKind.KeywordUse => useExpr()
         case TokenKind.LiteralString
+             | TokenKind.LiteralStringDebug
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat
              | TokenKind.LiteralFloat32

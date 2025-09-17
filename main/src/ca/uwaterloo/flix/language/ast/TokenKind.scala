@@ -193,6 +193,7 @@ sealed trait TokenKind {
       case TokenKind.LiteralInt64 => "'<digits>i64'"
       case TokenKind.LiteralRegex => "<regex>"
       case TokenKind.LiteralString => "<string>"
+      case TokenKind.LiteralStringDebug => "<string-debug>"
       case TokenKind.LiteralChar => "<char>"
       case TokenKind.LiteralStringInterpolationL => "'${'"
       case TokenKind.LiteralStringInterpolationR => "'}\"'"
@@ -362,6 +363,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
+         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.MapHash
@@ -540,6 +542,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
+         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.MapHash
          | TokenKind.Minus
@@ -729,6 +732,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt64
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
+         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.LiteralStringInterpolationR => true
     case _ => false
@@ -1102,6 +1106,8 @@ object TokenKind {
   case object LiteralRegex extends TokenKind
 
   case object LiteralString extends TokenKind
+
+  case object LiteralStringDebug extends TokenKind
 
   case object LiteralStringInterpolationL extends TokenKind
 
