@@ -286,6 +286,7 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
+          // TODO: Prompt for github token if not found
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
