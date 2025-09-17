@@ -11,10 +11,10 @@ import scala.util.Using
 
 object JarPackageManager {
 
-  val FolderName = "external"
+  val DirName = "external"
 
   /**
-    * Installs all the jar dependencies for a list of Manifests at the /lib/external folder
+    * Installs all the jar dependencies for a list of Manifests at the /lib/external directory
     * of `path` and returns a list of paths to all the dependencies.
     */
   def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
@@ -41,11 +41,11 @@ object JarPackageManager {
     */
   private def install(dep: JarDependency, p: Path)(implicit out: PrintStream): Result[Path, PackageError] = {
     val lib = Bootstrap.getLibraryDirectory(p)
-    val folderPath = lib.resolve(FolderName)
+    val dirPath = lib.resolve(DirName)
 
-    //create the folder if it does not exist
-    Files.createDirectories(folderPath)
-    val assetPath = folderPath.resolve(dep.fileName)
+    //create the directory if it does not exist
+    Files.createDirectories(dirPath)
+    val assetPath = dirPath.resolve(dep.fileName)
 
     if (Files.exists(assetPath)) {
       out.println(s"  Cached `${dep.fileName}` from `${dep.url.toString}`.")
