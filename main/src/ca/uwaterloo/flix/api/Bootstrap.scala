@@ -537,36 +537,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def release(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
 
-    // Ensure that we have a manifest
-    val manifest = optManifest match {
-      case Some(m) => m
-      case None => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
+    flatMapN(Steps.parseManifest(getManifestFile(projectPath))) {
+      manifest =>
+        flatMapN(Steps.getGithubRepository(manifest)) {
+          repo =>
+            flatMapN(Steps.getGitHubToken(flix)) {
+              token =>
+
+                Validation.Success(())
+            }
+        }
     }
 
-    // Check if `github` option is present
-    val githubRepo = manifest.repository match {
-      case Some(r) => r
-      case None => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
-    }
 
-    // Check if `--github-token` option is present
-    val githubToken = flix.options.githubToken match {
-      case Some(k) => k
-      case None => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
-    }
-
-    if (!flix.options.assumeYes) {
-      // Ask for confirmation
-      out.print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
-      val response = readLine()
-      response.toLowerCase match {
-        case "y" => // Continue
-        case "yes" => // Continue
-        case _ => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
-      }
-    }
-
-    // Build artifacts
+    // Step: Build
+    // Step: stepExportToFpkg
     out.println("Building project...")
     val buildResult = buildPkg()
     buildResult.toResult match {
@@ -574,6 +559,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Result.Err(e) => return Validation.Failure(e)
     }
 
+    // Step: releaseToGitHub
+    if (!flix.options.assumeYes) {
+      // Ask for confirmation
+      out.print(s"Release ${formatter.blue(s"github:$repo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
+      val response = readLine()
+      response.toLowerCase match {
+        case "y" => // Continue
+        case "yes" => // Continue
+        case _ => return Validation.Failure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
+      }
+    }
     // Publish to GitHub
     out.println("Publishing a new release...")
     val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
@@ -866,6 +862,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
 
       Validation.Success(flix)
+    }
+
+    def getGitHubToken(flix: Flix): Validation[String, BootstrapError] = {
+      // Check if `--github-token` option is present
+      flix.options.githubToken match {
+        case Some(token) => Validation.Success(token)
+        case None => Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+      }
+    }
+
+    def getGithubRepository(manifest: Manifest): Validation[GitHub.Project, BootstrapError] = {
+      manifest.repository match {
+        case Some(repo) => Validation.Success(repo)
+        case None => Validation.Failure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
+      }
     }
 
   }
