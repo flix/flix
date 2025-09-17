@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.util.Build.Production
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
@@ -339,12 +340,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds the jar or the fatjar
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    // Build the project before building the jar
-    val buildResult = build(flix, Build.Production)
-    buildResult match {
-      case Validation.Failure(error) =>
-        return Validation.Failure(error) // Return the build error directly
-      case _ => // Proceed if the build is successful
+    flatMapN(Steps.updateStaleSources(flix)) {
+      _ =>
+        flatMapN(Steps.configureJarOutput(flix)) {
+          _ =>
+            flatMapN(Steps.compile(flix)) {
+              result => ???
+            }
+        }
     }
 
     // The path to the jar file.
@@ -482,7 +485,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     flatMapN(Steps.updateStaleSources(flix)) {
-      updated => mapN(Steps.check(updated))(_ => ())
+      _ => mapN(Steps.check(flix))(_ => ())
     }
   }
 
@@ -502,7 +505,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
     flatMapN(Steps.updateStaleSources(flix)) {
-      updated => mapN(Steps.check(updated))(HtmlDocumentor.run(_, getPackageModules)(updated))
+      _ => mapN(Steps.check(flix))(HtmlDocumentor.run(_, getPackageModules)(flix))
     }
   }
 
@@ -732,6 +735,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    def configureJarOutput(flix: Flix): Validation[Unit, BootstrapError] = {
+      val buildDir = Bootstrap.getBuildDirectory(projectPath)
+      if (Files.exists(buildDir) && !Files.isDirectory(buildDir)) {
+        return Validation.Failure(BootstrapError.FileError(s"build directory '${buildDir.toAbsolutePath}' is not a directory"))
+      }
+      val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
+      flix.setOptions(newOptions)
+      Validation.Success(())
+    }
+
     /**
       * Returns true if the timestamp of the given source file has changed since the last reload.
       */
@@ -835,7 +848,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * If they have, they are added to flix. Then updates the timestamps
       * map to reflect the current source files and packages.
       */
-    def updateStaleSources(flix: Flix): Validation[Flix, BootstrapError] = {
+    def updateStaleSources(flix: Flix): Validation[Unit, BootstrapError] = {
       val previousSources = timestamps.keySet
 
       implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
@@ -865,8 +878,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
 
-      Validation.Success(flix)
+      Validation.Success(())
     }
-
   }
 }
