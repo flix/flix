@@ -19,8 +19,11 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
-import java.nio.file.{Files, LinkOption, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
+import java.util.{Calendar, GregorianCalendar}
+import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+import scala.util.Using
 
 object FileOps {
 
@@ -36,12 +39,12 @@ object FileOps {
   }
 
   /**
-   * Writes the given string `s` to the given file path `p`.
-   *
-   * Creates the parent directory of `p` if needed.
-   *
-   * @param append if set to true, the content will be appended to the file
-   */
+    * Writes the given string `s` to the given file path `p`.
+    *
+    * Creates the parent directory of `p` if needed.
+    *
+    * @param append if set to true, the content will be appended to the file
+    */
   def writeString(p: Path, s: String, append: Boolean = false): Unit = {
     Files.createDirectories(p.getParent)
 
@@ -66,12 +69,32 @@ object FileOps {
   }
 
   /**
-   * Writes the given json `j` to the given file path `p`.
-   *
-   * Creates the parent directory of `p` if needed.
-   */
+    * Writes the given json `j` to the given file path `p`.
+    *
+    * Creates the parent directory of `p` if needed.
+    */
   def writeJSON(p: Path, j: JValue): Unit = {
     FileOps.writeString(p, JsonMethods.pretty(JsonMethods.render(j)))
+  }
+
+  /**
+    * Creates a new directory at the given path `p`.
+    *
+    * The path must not already contain a non-directory.
+    */
+  def newDirectoryIfAbsent(p: Path): Unit = {
+    if (!Files.exists(p)) {
+      Files.createDirectories(p)
+    }
+  }
+
+  /**
+    * Creates a new file at the given path `p` with the given content `s` if the file does not already exist.
+    */
+  def newFileIfAbsent(p: Path)(s: String): Unit = {
+    if (!Files.exists(p)) {
+      Files.writeString(p, s, StandardOpenOption.CREATE)
+    }
   }
 
   /**
@@ -88,38 +111,138 @@ object FileOps {
     * └── subdir
     *     └── Subfile.flix
     * }}}
-    *
-    *
     */
-  def getFlixFilesIn(path: String, depth: Int): List[Path] = {
-    Files.walk(Paths.get(path), depth)
-      .iterator().asScala
-      .filter(checkExt(_, "flix"))
-      .toList.sorted
+  def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
+    if (Files.exists(path) && Files.isDirectory(path))
+      Files.walk(path, depth)
+        .iterator().asScala
+        .filter(checkExt(_, "flix"))
+        .toList.sorted
+    else
+      List.empty
   }
 
   /**
-    * Returns an iterator of all files in the given path, visited recursively.
+    * Returns a list of all files in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
-    *   Use a depth of 0 to only visit the given directory.
-    *   Use a depth of 1 to only visit the files in the given directory.
-    *   Use a depth of MaxValue to visit all files in the directory and its subdirectories.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
-      Files.walk(path, depth).iterator()
-        .asScala
+      Files.walk(path, depth)
+        .iterator().asScala
         .filter(Files.isRegularFile(_))
-        .toList
+        .toList.sorted
+    else
+      List.empty
+  }
+
+  /**
+    * Returns a list of all files in the given path with the extension `.ext`, visited recursively.
+    *
+    * @param path  the path to start the file walk from.
+    * @param ext   the file extension to match. Must not begin with `.`
+    * @param depth the maximum number of levels of directories to visit.
+    *              Use a depth of 0 to only visit the given directory.
+    *              Use a depth of 1 to only visit the files in the given directory.
+    *              Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  def getFilesWithExtIn(path: Path, ext: String, depth: Int): List[Path] = {
+    if (Files.exists(path) && Files.isDirectory(path))
+      Files.walk(path, depth)
+        .iterator().asScala
+        .filter(checkExt(_, ext))
+        .toList.sorted
     else
       List.empty
   }
 
   /**
     * Checks if the given path is a regular file with the expected extension.
+    *
+    * @param p           the path to the file to check.
+    * @param expectedExt the file extension to match. Must not begin with `.`
     */
   def checkExt(p: Path, expectedExt: String): Boolean = {
-    val ext = if (expectedExt.startsWith(".")) expectedExt else s".$expectedExt"
-    Files.isRegularFile(p) && p.getFileName.toString.endsWith(ext)
+    require(!expectedExt.startsWith("."), s"The file extension '$expectedExt' must not start with '.' -- This is handled by 'checkExt'.")
+    Files.isRegularFile(p) && p.getFileName.toString.endsWith(s".$expectedExt")
   }
+
+  /**
+    * To support DOS time, Java 8+ treats dates before the 1980 January in special way.
+    * Here we use 2014-06-27 (the date of the first commit to Flix) to avoid the complexity introduced by this hack.
+    *
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-4759491">JDK-4759491 that introduced the hack around 1980 January from Java 8+</a>
+    * @see <a href="https://bugs.openjdk.java.net/browse/JDK-6303183">JDK-6303183 that explains why the second should be even to create ZIP files in platform-independent way</a>
+    * @see <a href="https://github.com/gradle/gradle/blob/445deb9aa988e506120b7918bf91acb421e429ba/subprojects/core/src/main/java/org/gradle/api/internal/file/archive/ZipCopyAction.java#L42-L57">A similar case from Gradle</a>
+    */
+  private val ENOUGH_OLD_CONSTANT_TIME: Long = new GregorianCalendar(2014, Calendar.JUNE, 27, 0, 0, 0).getTimeInMillis
+
+  /**
+    * Adds an entry to the given zip file.
+    */
+  def addToZip(zip: ZipOutputStream, name: String, p: Path): Unit = {
+    if (Files.exists(p) && Files.isReadable(p)) {
+      addToZip(zip, name, Files.readAllBytes(p))
+    }
+  }
+
+  /**
+    * Adds an entry to the given zip file.
+    */
+  def addToZip(zip: ZipOutputStream, name: String, d: Array[Byte]): Unit = {
+    val entry = new ZipEntry(name)
+    entry.setTime(ENOUGH_OLD_CONSTANT_TIME)
+    zip.putNextEntry(entry)
+    zip.write(d)
+    zip.closeEntry()
+  }
+
+  /**
+    * Returns `true` if the given path `p` is a zip-archive.
+    */
+  def isZipArchive(p: Path): Boolean = {
+    if (Files.exists(p) && Files.isReadable(p) && Files.isRegularFile(p)) {
+      // Read the first four bytes of the file.
+      return Using(Files.newInputStream(p)) { is =>
+        val b1 = is.read()
+        val b2 = is.read()
+        val b3 = is.read()
+        val b4 = is.read()
+        // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
+        return b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
+      }.get
+    }
+    false
+  }
+
+  /**
+    * Sorts `paths` using `prefix`.
+    *
+    * The `prefix` parameter must be a prefix of all paths in `paths`.
+    *
+    * Given a `p` in `paths` defined as `prefix/p1`, it converts `p1` to a string
+    * representation and replaces `\` (backslash) with `/` (forward slash) and sorts
+    * the list of paths on their new string representations.
+    *
+    * Returns the list of paths along with their string representations.
+    */
+  def sortPlatformIndependently(prefix: Path, paths: List[Path]): List[(Path, String)] = {
+    require(paths.forall(_.startsWith(prefix)), "All paths in 'paths' must start with 'prefix'.")
+    paths.map { path =>
+      (path, convertPathToRelativeFileName(prefix, path))
+    }.sortBy(_._2)
+  }
+
+  /**
+    * @param prefix the root directory to compute a relative path from the given path
+    * @param path   the path to be converted to a relative path based on the given root directory
+    * @return relative file name separated by slashes, like `path/to/file.ext`
+    */
+  private def convertPathToRelativeFileName(prefix: Path, path: Path): String = {
+    prefix.relativize(path).toString.replace('\\', '/')
+  }
+
 }

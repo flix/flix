@@ -304,7 +304,7 @@ mod Fixpoint3.Ast.ExecutableRam {
 
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _)                                  => "%{v}"
+            case RamTerm.Lit(v, _)                                  => Debug.stringify(v)
             case RamTerm.LoadFromTuple(tupleIndex, indexInTuple, _) => "x${tupleIndex}[${indexInTuple}]"
             case RamTerm.LoadLatVar(i, _)                           => "LoadLatVar[${i}]"
             case RamTerm.ProvMax(loads)                             =>
