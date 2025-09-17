@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import scala.collection.mutable
 import scala.util.Random
@@ -62,7 +62,7 @@ object Lexer {
   private class State(val src: Source) {
 
     /** A string cursor on `src.data`. */
-    var sc: StringCursor = new StringCursor(src.data)
+    val sc: StringCursor = new StringCursor(src.data)
 
     /** `start` is the first position of the token that is currently being lexed. */
     var start: Position = new Position(sc.getLine, sc.getColumn, sc.getOffset)
@@ -79,51 +79,7 @@ object Lexer {
       */
     val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
-    /**
-      * The current interpolation nesting level.
-      *
-      * This is compared to [[InterpolatedStringMaxNestingLevel]].
-      */
-    var interpolationNestingLevel: Int = 0
-
-    /** Save a checkpoint to revert to. */
-    def save(): Checkpoint = Checkpoint(
-      start = this.start,
-      sc = sc.copy(),
-      tokensLength = tokens.length,
-      interpolationNestingLevel = this.interpolationNestingLevel
-    )
-
-    /**
-      * Restore a previously saved checkpoint. No tokens must have been produced since the
-      * checkpoint was created.
-      */
-    def restore(c: Checkpoint): Unit = {
-      val tokenHasBeenAdded = tokens.length != c.tokensLength
-      if (tokenHasBeenAdded) {
-        throw InternalCompilerException("Restored checkpoint across token generation", sourceLocationAtCurrent()(this))
-      }
-      val startHasMoved = start.line != c.start.line || start.column != c.start.column || start.offset != c.start.offset
-      if (startHasMoved) {
-        throw InternalCompilerException("Restored checkpoint across token generation (start was moved)", sourceLocationAtCurrent()(this))
-      }
-      this.sc = c.sc
-      this.interpolationNestingLevel = c.interpolationNestingLevel
-    }
   }
-
-  /**
-    * The information required to return to a previous point of [[State]].
-    *
-    * `start` and `tokens` are only included to make sure checkpoint restoration does not
-    * individual cross token generation.
-    */
-  private case class Checkpoint(
-                                 start: Position,
-                                 sc: StringCursor,
-                                 tokensLength: Int,
-                                 interpolationNestingLevel: Int
-                               )
 
   /** A source position keeping track of both line, column as well as absolute character offset. */
   private class Position(val line: Int, val column: Int, val offset: Int)
@@ -155,7 +111,7 @@ object Lexer {
   def lex(src: Source): (Array[Token], List[LexerError]) = {
     implicit val s: State = new State(src)
     while (!eof()) {
-      consumeWhitespace()
+      s.sc.advanceWhile(_.isWhitespace)
       if (!eof()) {
         s.resetStart()
         val k = scanToken()
@@ -174,16 +130,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /**
-    * Advances current position one char forward, returning the char it was previously sitting on,
-    * while keeping track of line and column numbers too.
-    * Note: If the lexer has arrived at EOF advance will continuously return EOF without advancing.
-    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious
-    * to work with.
-    */
-  private def advance()(implicit s: State): Char =
-    s.sc.advance()
-
   /** Peeks the previous character that state was on if available. */
   private def previous()(implicit s: State): Option[Char] =
     s.sc.previous
@@ -195,19 +141,6 @@ object Lexer {
   /** Peeks the character that is `n` characters before the current if available. */
   private def previousN(n: Int)(implicit s: State): Option[Char] =
     s.sc.nth(-(n + 1))
-
-  /**
-    * Peeks the character that state is currently sitting on without advancing.
-    * Note: Peek does not perform bound checks. This is done under the assumption that the lexer
-    * is only ever advanced using `advance`.
-    * Since `advance` cannot move past EOF peek will always be in bounds.
-    */
-  private def peek()(implicit s: State): Char = {
-    if (s.sc.getOffset >= s.src.data.length) {
-      return s.src.data.last
-    }
-    s.sc.peek
-  }
 
   /** Peeks the character after the one that state is sitting on if available. */
   private def peekPeek()(implicit s: State): Option[Char] =
@@ -262,7 +195,7 @@ object Lexer {
   private def scanToken()(implicit s: State): TokenKind = {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
-    advance() match {
+    s.sc.peekAndAdvance() match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
       case '{' => TokenKind.CurlyL
@@ -279,7 +212,7 @@ object Lexer {
         } else if (previousPrevious().exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
-        } else if (peek().isWhitespace) {
+        } else if (s.sc.peekIs(_.isWhitespace)) {
           // A dot with trailing whitespace is it's own TokenKind.
           // That way we can use that as a terminator for fixpoint constraints,
           // without clashing with qualified names.
@@ -288,8 +221,8 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '$' if peek().isUpper => acceptBuiltIn()
-      case '$' if peek().isLower =>
+      case '$' if s.sc.peekIs(_.isUpper) => acceptBuiltIn()
+      case '$' if s.sc.peekIs(_.isLower) =>
         // Don't include the $ sign in the name.
         s.resetStart()
         acceptName(isUpper = false)
@@ -304,10 +237,10 @@ object Lexer {
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
-      case '@' if peek().isLetter => acceptAnnotation()
+      case '@' if s.sc.peekIs(_.isLetter) => acceptAnnotation()
       case '@' => TokenKind.At
       case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
-      case '?' if peek().isLetter => acceptNamedHole()
+      case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
       case _ if isOperator(":::") => TokenKind.TripleColon
       case _ if isOperator("::") => TokenKind.ColonColon
       case _ if isOperator(":=") => TokenKind.ColonEqual
@@ -322,7 +255,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (previousN(2).exists(_.isWhitespace) || peek().isWhitespace) {
+        if (previousN(2).exists(_.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
@@ -349,16 +282,13 @@ object Lexer {
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
       case _ if isKeyword("choose*") => TokenKind.KeywordChooseStar
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("dbg!!") => TokenKind.KeywordDebugBangBang
-      case _ if isKeyword("dbg!") => TokenKind.KeywordDebugBang
-      case _ if isKeyword("dbg") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("ematch") => TokenKind.KeywordEMatch
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
-      case _ if isKeywordLiteral("false") => TokenKind.KeywordFalse
+      case _ if isKeyword("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
       case _ if isKeyword("forall") => TokenKind.KeywordForall
       case _ if isKeyword("forA") => TokenKind.KeywordForA
@@ -382,7 +312,7 @@ object Lexer {
       case _ if isKeyword("mut") => TokenKind.KeywordMut
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
-      case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
+      case _ if isKeyword("null") => TokenKind.KeywordNull
       case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
       case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
       case _ if isKeyword("or") => TokenKind.KeywordOr
@@ -410,7 +340,7 @@ object Lexer {
       case _ if isKeyword("struct") => TokenKind.KeywordStruct
       case _ if isKeyword("throw") => TokenKind.KeywordThrow
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
-      case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
+      case _ if isKeyword("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
       case _ if isKeyword("type") => TokenKind.KeywordType
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
@@ -430,78 +360,76 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
+      case _ if isMatchPrev("d\"") => acceptDebugString()
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
       case c if isGreekNameChar(c) => acceptGreekName()
       case '_' =>
-        val p = peek()
-        if (p.isLetterOrDigit) {
-          acceptName(p.isUpper)
-        } else if (isMathNameChar(p)) {
-          advance()
-          acceptMathName()
-        } else if (isUserOp(p).isDefined) {
-          advance()
-          acceptUserDefinedOp()
+        if (!eof()) {
+          val p = s.sc.peek
+          if (p.isLetterOrDigit) {
+            acceptName(p.isUpper)
+          } else if (isMathNameChar(p)) {
+            s.sc.advance()
+            acceptMathName()
+          } else if (isUserOp(p).isDefined) {
+            s.sc.advance()
+            acceptUserDefinedOp()
+          } else TokenKind.Underscore
         } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
-      case '0' if peek() == 'x' => acceptHexNumber()
+      case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
+      case '<' if s.sc.peekIs(_ == '>') && peekPeek().flatMap(isUserOp).isEmpty =>
+        // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
+        TokenKind.AngleL
       case c if isUserOp(c).isDefined =>
-        val p = peek()
-        if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
-          // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
-          TokenKind.AngleL
-        } else if (isUserOp(p).isDefined) {
-          acceptUserDefinedOp()
-        } else {
-          isUserOp(c).get
-        }
+        if (!eof()) {
+          val p = s.sc.peek
+          if (isUserOp(p).isDefined) {
+            acceptUserDefinedOp()
+          } else {
+            isUserOp(c).get
+          }
+        } else isUserOp(c).get
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
 
   /**
     * Check that the potential keyword is sufficiently separated.
-    * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or
-    * underscore.
+    * A keyword is separated if it is followed by anything __but__ a character, digit, or underscore.
     * Note that __comparison includes current__.
     */
-  private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
-
-    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
-  }
+  private def isSeparated(keyword: String)(implicit s: State): Boolean =
+    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => !(c.isLetter || c.isDigit || c == '_'))
 
   /**
     * Check that the potential operator is sufficiently separated.
-    * An operator is separated if it is surrounded by anything __but__ another valid user operator
+    * An operator is separated if it is followed by anything __but__ another valid user operator
     * character.
     * Note that __comparison includes current__.
     */
-  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = isUserOp(c).isEmpty
-
-    s.sc.nthIsPOrOutOfBounds(-2, isSep) && s.sc.nthIsPOrOutOfBounds(keyword.length - 1, isSep)
-  }
+  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean =
+    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
 
   /**
-    * Checks whether the previous char and the following substring matches a keyword.
-    * Will advance the current position past the keyword if there is a match.
+    * Checks whether the previous char and the following substring matches a string.
+    * Will advance the current position past the string if there is a match.
     */
-  private def isMatchPrev(keyword: String)(implicit s: State): Boolean = {
-    // Check if the keyword can appear before eof.
-    if (s.sc.getOffset + keyword.length - 1 > s.src.data.length) {
+  private def isMatchPrev(str: String)(implicit s: State): Boolean = {
+    // Check if the string can appear before eof.
+    if (s.sc.getOffset + str.length - 1 > s.src.data.length) {
       return false
     }
 
-    // Check if the next n characters in source matches those of keyword one at a time.
+    // Check if the next n characters in source matches those of str one at a time.
     val start = s.sc.getOffset - 1
     var matches = true
     var offset = 0
-    while (matches && offset < keyword.length) {
-      if (s.src.data(start + offset) != keyword(offset)) {
+    while (matches && offset < str.length) {
+      if (s.src.data(start + offset) != str(offset)) {
         matches = false
       } else {
         offset += 1
@@ -509,8 +437,8 @@ object Lexer {
     }
 
     if (matches) {
-      for (_ <- 1 until keyword.length) {
-        advance()
+      for (_ <- 1 until str.length) {
+        s.sc.advance()
       }
     }
 
@@ -526,22 +454,6 @@ object Lexer {
     isSeparatedOperator(op) && isMatchPrev(op)
 
   /**
-    * Checks whether the following substring matches a keyword literal (e.g. "true" or "null").
-    * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
-    */
-  private def isKeywordLiteral(keyword: String)(implicit s: State): Boolean = {
-    // Allow dot here means that the literal gets recognized even when it is followed by a '.'.
-    // We want this for literals like 'true', but not for keywords like 'not'.
-    // This is because a symbol like 'not' can be imported from Java in a qualified path.
-    // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be
-    // read as a name here.
-    // We are assuming no literal keyword needs to be imported. So no importing something called
-    // 'true' from java.
-    isSeparated(keyword, allowDot = true) && isMatchPrev(keyword)
-  }
-
-  /**
     * Checks whether the following substring matches a keyword.
     * Note that __comparison includes current__.
     * Also note that this will advance the current position past the keyword if there is a match.
@@ -549,31 +461,16 @@ object Lexer {
   private def isKeyword(keyword: String)(implicit s: State): Boolean =
     isSeparated(keyword) && isMatchPrev(keyword)
 
-  /**
-    * Moves current position past a built-in function (e.g. "$BUILT_IN$").
-    * Note that $ can be used as a separator in java-names too (e.g. "Map$Entry").
-    * When encountering a "$" there is no way to discern between a built-in and a java-name without
-    * looking ahead.
-    * Only a TokenKind.Dollar needs to be emitted in the java name case and then the lexer needs to
-    * be retreated to just after "$".
-    */
+  /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    val checkpoint = s.save()
     var advanced = false
     while (!eof()) {
-      val p = peek()
+      val p = s.sc.peek
 
       if (p == '$') {
         // Check for termination.
-        advance()
+        s.sc.advance()
         return TokenKind.BuiltIn
-      }
-
-      if (p.isLower) {
-        // This means that the opening '$' was a separator.
-        // we need to rewind the lexer to just after '$'.
-        if (advanced) s.restore(checkpoint)
-        return TokenKind.Dollar
       }
 
       if (!p.isLetter && !p.isDigit && p != '_') {
@@ -582,15 +479,11 @@ object Lexer {
         return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
       }
 
-      advance()
+      s.sc.advance()
       advanced = true
     }
     TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
-
-  /** Moves current position past all whitespace characters. */
-  private def consumeWhitespace()(implicit s: State): Unit =
-    s.sc.advanceWhile(_.isWhitespace)
 
   /**
     * Moves the current position past all pairs of `\` and any other character, returning
@@ -601,9 +494,9 @@ object Lexer {
     */
   private def consumeSingleEscapes()(implicit s: State): Boolean =
     if (s.sc.advanceIfMatch('\\')) {
-      advance()
+      s.sc.advance()
       while (s.sc.advanceIfMatch('\\')) {
-        advance()
+        s.sc.advance()
       }
       true
     } else {
@@ -689,32 +582,38 @@ object Lexer {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
       val hasEscapes = consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      var p = s.sc.peek
+      var p = if (!eof()) {
+        s.sc.peek
+      } else {
+        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+      }
       // Check for the beginning of a string interpolation.
       val prev = previous()
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
-      val isDebug = !hasEscapes && prev.contains('%') && p == '{'
-      if (isInterpolation || isDebug) {
-        acceptStringInterpolation(isDebug) match {
+      if (isInterpolation) {
+        acceptStringInterpolation() match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
             kind = k
             consumeSingleEscapes()
-            p = peek()
+            if (!eof()) {
+              p = s.sc.peek
+            } else {
+              return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+            }
         }
       }
       // Check for termination.
       if (p == '\"') {
-        advance()
+        s.sc.advance()
         return kind
       }
       // Check if file ended on a '\', meaning that the string was unterminated.
       if (p == '\n') {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
-      advance()
+      s.sc.advance()
     }
     TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
@@ -728,25 +627,20 @@ object Lexer {
     * including nested string literals, which might also include interpolation.
     * This is done by calling `scanToken` and `addToken` manually like in the top-most `lex`
     * function, while looking for the terminating '}'.
-    * A max nesting level is enforced via `state.interpolationNestingLevel` to avoid blowing the
-    * stack.
     *
     * Some tricky but valid strings include:
     *   - "Hello ${" // "} world!"
     *   - "My favorite number is ${ { "${"//"}"40 + 2} }!"
     *   - "${"${}"}"
     */
-  private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
-    // Handle max nesting level.
-    s.interpolationNestingLevel += 1
+  private def acceptStringInterpolation()(implicit s: State): TokenKind = {
     val startLocation = sourceLocationAtCurrent()
-    advance() // Consume '{'.
-    if (isDebug) addToken(TokenKind.LiteralDebugStringL)
-    else addToken(TokenKind.LiteralStringInterpolationL)
+    s.sc.advance() // Consume '{'.
+    addToken(TokenKind.LiteralStringInterpolationL)
     // Consume tokens until a terminating '}' is found.
     var blockNestingLevel = 0
     while (!eof()) {
-      consumeWhitespace()
+      s.sc.advanceWhile(_.isWhitespace)
       if (!eof()) {
         s.resetStart()
         val kind = scanToken()
@@ -759,9 +653,7 @@ object Lexer {
         // Check for the terminating '}'.
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
-            s.interpolationNestingLevel -= 1
-            if (isDebug) return TokenKind.LiteralDebugStringR
-            else return TokenKind.LiteralStringInterpolationR
+            return TokenKind.LiteralStringInterpolationR
           }
           blockNestingLevel -= 1
         }
@@ -780,21 +672,37 @@ object Lexer {
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '\'') {
-        advance()
+      if (s.sc.peekIs(_ == '\'')) {
+        s.sc.advance()
         return TokenKind.LiteralChar
       }
 
-      if ((prev, p) == ('/', '*')) {
+      if (prev == '/' && s.sc.peekIs(_ == '*')) {
         // This handles block comment within a char.
         return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
       }
-      prev = advance()
+      prev = s.sc.peekAndAdvance()
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
+  }
+
+  /**
+    * Moves current position past a debug string literal.
+    *
+    * If the debug string is unterminated a `TokenKind.Err` is returned.
+    */
+  private def acceptDebugString()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      consumeSingleEscapes()
+      if (s.sc.peekIs(_ == '"')) {
+        s.sc.advance()
+        return TokenKind.LiteralStringDebug
+      }
+      s.sc.advance()
+    }
+
+    TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
 
   /**
@@ -804,13 +712,11 @@ object Lexer {
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
       consumeSingleEscapes()
-      // Note: `sc.peek` returns `EOF` if out of bounds, different from `peek`.
-      val p = s.sc.peek
-      if (p == '"') {
-        advance()
+      if (s.sc.peekIs(_ == '"')) {
+        s.sc.advance()
         return TokenKind.LiteralRegex
       }
-      advance()
+      s.sc.advance()
     }
 
     TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
@@ -891,7 +797,7 @@ object Lexer {
     // Now the main number is parsed. Next is the suffix.
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
-      if (isNumberLikeChar(s.sc.peek)) {
+      if (s.sc.peekIs(isNumberLikeChar)) {
         wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
       } else if (mustBeFloat && intSuffix) {
         wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
@@ -933,7 +839,7 @@ object Lexer {
     * It is optional to have a trailing type indicator on number literals.
     * If it is missing Flix defaults to `i32`.
     *
-    * A hex number is accepted by `0x(\h+_?)+\h+(i8|i16|i32|i64|ii)?` where `\h = [0-9a-fA-F]`.
+    * A hex number is accepted by `0x\h+(_\h+)*(i8|i16|i32|i64|ii)?` where `\h = [0-9a-fA-F]`.
     *
     * Note that any characters in `[0-9a-zA-Z_.]` following a number should be treated as an error
     * part of the same number, e.g., `0x32q` should be parsed as a single wrong number, and not a
@@ -942,38 +848,30 @@ object Lexer {
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-    advance() // Consume 'x'.
+    s.sc.advance() // Consume 'x'.
 
-    // Consume a `(\h+_?)+` string.
-    var trailingUnderscore = false
-    var prevDigits = 0
-    var continue = true
-    while (continue) {
-      val currentDigits = s.sc.advanceWhileWithCount(isHexDigit)
-      if (currentDigits != 0) {
-        prevDigits = currentDigits
-        trailingUnderscore = s.sc.advanceIfMatch('_')
-        continue = trailingUnderscore
-      } else {
-        continue = false
+    // Consume a `\h+` string
+    if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
+      return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+    }
+
+    // Consume a `(_\h+)*`
+    while (s.sc.advanceIfMatch('_')) {
+      if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
+        return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
       }
     }
 
-    val unterminated = trailingUnderscore || prevDigits == 0
+    // Consume a '(i8|i16|i32|i64|ii)?' string.
+    // For better errors, anything starting with 'i' will be considered a suffix (but maybe invalid).
+    // This means that '0xFFi33' will report 'i33' is an invalid suffix instead of saying that 'i' is unexpected.
     val c = s.sc.peek
-    if (unterminated) {
-      val error = c match {
-        case EOF => LexerError.MalformedHexNumber("<end-of-file>", sourceLocationAtCurrent())
-        case _ if isNumberLikeChar(c) => LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent())
-        case _ => LexerError.UnterminatedHexNumber(sourceLocationAtCurrent())
-      }
-      wrapAndConsume(error)
-    } else if (c == 'i') {
+    if (c == 'i') {
       // Construct the location now, for cases like `0xi322`.
       val loc = sourceLocationAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (isNumberLikeChar(s.sc.peek)) {
+        if (s.sc.peekIs(isNumberLikeChar)) {
           wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
         } else token
       }
@@ -1010,7 +908,6 @@ object Lexer {
 
   /**
     * Moves current position past a block-comment. Note that block-comments can be nested.
-    * If the max nesting level is reached a `TokenKind.Err` is immediately returned.
     * A block-comment is unterminated if there are less terminations than levels of nesting.
     */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
@@ -1113,14 +1010,25 @@ object Lexer {
     /**
       * Advances cursor one char forward, returning the char it was previously sitting on.
       *
-      * If the cursor has advanced past the content, [[EOF]] is returned.
+      * A faster alternative to
+      * {{{
+      * {val c = this.peek; this.advance(); c}
+      * }}}
       */
-    def advance(): Char = {
-      if (this.eof) {
-        EOF
-      } else {
+    def peekAndAdvance(): Char = {
+      if (this.inBounds) {
         val c = data(offset)
-        if (c == '\n') {
+        advance()
+        c
+      } else {
+        EOF
+      }
+    }
+
+    /** Advances cursor one char forward, unless out of bounds. */
+    def advance(): Unit = {
+      if (!this.eof) {
+        if (data(offset) == '\n') {
           prevLineMaxColumn = column
           line += 1
           column = 0
@@ -1128,7 +1036,6 @@ object Lexer {
           column += 1
         }
         offset += 1
-        c
       }
     }
 
@@ -1155,6 +1062,14 @@ object Lexer {
         data(offset)
       } else {
         EOF
+      }
+
+    /** Returns `p(this.peek)` if peek is available, otherwise `false`. */
+    def peekIs(p: Char => Boolean): Boolean =
+      if (this.inBounds) {
+        p(data(offset))
+      } else {
+        false
       }
 
     /** Returns true if the cursor has moved past the end. */
@@ -1224,16 +1139,6 @@ object Lexer {
       } else {
         true
       }
-    }
-
-    /** Returns a copy of `this`, pointing to the same underlying array. */
-    def copy(): StringCursor = {
-      val sc = new StringCursor(data)
-      sc.offset = offset
-      sc.line = line
-      sc.column = column
-      sc.prevLineMaxColumn = prevLineMaxColumn
-      sc
     }
 
   }

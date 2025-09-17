@@ -482,21 +482,9 @@ class Flix {
     if (!pNorm.getFileName.toString.endsWith(".fpkg")) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
     }
-
-    // Read the first four bytes of the file.
-    val isZipArchive = Using(Files.newInputStream(pNorm)) { is =>
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      // Check if the four first bytes match 0x50, 0x4b, 0x03, 0x04
-      b1 == 0x50 && b2 == 0x4b && b3 == 0x03 && b4 == 0x04
-    }.getOrElse(false)
-
-    if (!isZipArchive) {
+    if (!FileOps.isZipArchive(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
     }
-
     Result.Ok(())
   }
 

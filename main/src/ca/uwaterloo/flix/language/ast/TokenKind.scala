@@ -72,9 +72,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordCheckedECast => "'checked_ecast'"
       case TokenKind.KeywordChoose => "'choose'"
       case TokenKind.KeywordChooseStar => "'choose*'"
-      case TokenKind.KeywordDebug => "'dbg'"
-      case TokenKind.KeywordDebugBang => "'dbg!'"
-      case TokenKind.KeywordDebugBangBang => "'dbg!!'"
       case TokenKind.KeywordDef => "'def'"
       case TokenKind.KeywordDiscard => "'discard'"
       case TokenKind.KeywordEff => "'eff'"
@@ -186,8 +183,6 @@ sealed trait TokenKind {
       case TokenKind.InfixFunction => "<infix function>"
       case TokenKind.LiteralBigDecimal => "'<digits>ff'"
       case TokenKind.LiteralBigInt => "'<digits>ii'"
-      case TokenKind.LiteralDebugStringL => "'%{'"
-      case TokenKind.LiteralDebugStringR => "'}'"
       case TokenKind.LiteralFloat => "'<digits>.<digits>'"
       case TokenKind.LiteralFloat32 => "'<digits>f32'"
       case TokenKind.LiteralFloat64 => "'<digits>f64'"
@@ -198,6 +193,7 @@ sealed trait TokenKind {
       case TokenKind.LiteralInt64 => "'<digits>i64'"
       case TokenKind.LiteralRegex => "<regex>"
       case TokenKind.LiteralString => "<string>"
+      case TokenKind.LiteralStringDebug => "<string-debug>"
       case TokenKind.LiteralChar => "<char>"
       case TokenKind.LiteralStringInterpolationL => "'${'"
       case TokenKind.LiteralStringInterpolationR => "'}\"'"
@@ -231,9 +227,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordCheckedECast => true
     case TokenKind.KeywordChoose => true
     case TokenKind.KeywordChooseStar => true
-    case TokenKind.KeywordDebug => true
-    case TokenKind.KeywordDebugBang => true
-    case TokenKind.KeywordDebugBangBang => true
     case TokenKind.KeywordDef => true
     case TokenKind.KeywordDiscard => true
     case TokenKind.KeywordEff => true
@@ -360,8 +353,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -372,6 +363,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
+         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.MapHash
@@ -498,9 +490,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordCheckedECast
          | TokenKind.KeywordChoose
          | TokenKind.KeywordChooseStar
-         | TokenKind.KeywordDebug
-         | TokenKind.KeywordDebugBang
-         | TokenKind.KeywordDebugBangBang
          | TokenKind.KeywordDef
          | TokenKind.KeywordDiscard
          | TokenKind.KeywordEMatch
@@ -543,7 +532,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -554,6 +542,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt8
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
+         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.MapHash
          | TokenKind.Minus
@@ -646,7 +635,6 @@ sealed trait TokenKind {
          | TokenKind.KeywordWithout
          | TokenKind.KeywordXor
          | TokenKind.KeywordYield
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.ParenR
          | TokenKind.Semi
@@ -734,8 +722,6 @@ sealed trait TokenKind {
     case TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
-         | TokenKind.LiteralDebugStringL
-         | TokenKind.LiteralDebugStringR
          | TokenKind.LiteralFloat
          | TokenKind.LiteralFloat32
          | TokenKind.LiteralFloat64
@@ -746,6 +732,7 @@ sealed trait TokenKind {
          | TokenKind.LiteralInt64
          | TokenKind.LiteralRegex
          | TokenKind.LiteralString
+         | TokenKind.LiteralStringDebug
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.LiteralStringInterpolationR => true
     case _ => false
@@ -946,12 +933,6 @@ object TokenKind {
 
   case object KeywordChooseStar extends TokenKind
 
-  case object KeywordDebug extends TokenKind
-
-  case object KeywordDebugBang extends TokenKind
-
-  case object KeywordDebugBangBang extends TokenKind
-
   case object KeywordDef extends TokenKind
 
   case object KeywordDiscard extends TokenKind
@@ -1106,10 +1087,6 @@ object TokenKind {
 
   case object LiteralChar extends TokenKind
 
-  case object LiteralDebugStringL extends TokenKind
-
-  case object LiteralDebugStringR extends TokenKind
-
   case object LiteralFloat extends TokenKind
 
   case object LiteralFloat32 extends TokenKind
@@ -1129,6 +1106,8 @@ object TokenKind {
   case object LiteralRegex extends TokenKind
 
   case object LiteralString extends TokenKind
+
+  case object LiteralStringDebug extends TokenKind
 
   case object LiteralStringInterpolationL extends TokenKind
 

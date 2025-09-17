@@ -26,10 +26,11 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, ParOps}
   *   - I-Eof-A: The last token is [[TokenKind.Eof]] and no other token is.
   *   - I-Eof-B: No token before the last is [[TokenKind.Eof]].
   *   - I-Src: All tokens have a [[Source]] consistent with the source map.
-  *   - I-Ranges: Offset- and position ranges must end after they are started.
+  *   - I-Ranges: Offset- and position ranges must end after they are started (except EOF).
   *   - I-Bounds: Offset ranges must be inside bounds.
   *   - I-Offset: Token offsets must be in order and not overlapping.
   *   - I-Pos: Positions must be in order and not overlapping.
+  *   - I-Col-End: Exclusive column ends of ranges should never be the first column (except EOF).
   *
   * Assumptions:
   *   - Offset ranges are end-exclusive.
@@ -58,6 +59,7 @@ object TokenVerifier {
       checkSrc(src, token)
       checkRange(token)
       checkBounds(src, token)
+      checkColEnd(token)
       if (prev != null) {
         checkOffsetOrder(prev, token)
         checkPositionOrder(prev, token)
@@ -85,15 +87,17 @@ object TokenVerifier {
 
   /** Checks I-Ranges. */
   private def checkRange(token: Token): Unit = {
-    if (token.start > token.end) wrongOffsetRange(token)
-    if (!isBefore(token.sp1, token.sp2)) wrongPositionRange(token)
+    if (token.kind != TokenKind.Eof) {
+      if (token.start >= token.end) wrongOffsetRange(token)
+      if (!isStrictlyBefore(token.sp1, token.sp2)) wrongPositionRange(token)
+    }
   }
 
-  /** Returns true if `sp1` is before of the same as `sp2`, ignoring [[SourcePosition.source]].  */
-  private def isBefore(sp1: SourcePosition, sp2: SourcePosition): Boolean = {
+  /** Returns true if `sp1` is strictly before `sp2`, ignoring [[SourcePosition.source]]. */
+  private def isStrictlyBefore(sp1: SourcePosition, sp2: SourcePosition): Boolean = {
     if (sp1.lineOneIndexed == sp2.lineOneIndexed) {
-      sp1.colOneIndexed <= sp2.colOneIndexed
-    } else sp1.lineOneIndexed <= sp2.lineOneIndexed
+      sp1.colOneIndexed < sp2.colOneIndexed
+    } else sp1.lineOneIndexed < sp2.lineOneIndexed
   }
 
   /** Checks I-Bounds. */
@@ -113,6 +117,20 @@ object TokenVerifier {
   private def checkPositionOrder(left: Token, right: Token): Unit = {
     // Token end positions are exclusive.
     if (!isBefore(left.sp2, right.sp1)) outOfOrderPositions(left, right)
+  }
+
+  /** Checks I-Col-End. */
+  private def checkColEnd(token: Token): Unit = {
+    if (token.kind != TokenKind.Eof) {
+      if (token.sp2.colOneIndexed == 1) unneccesaryEndCol(token)
+    }
+  }
+
+  /** Returns true if `sp1` is before or the same as `sp2`, ignoring [[SourcePosition.source]]. */
+  private def isBefore(sp1: SourcePosition, sp2: SourcePosition): Boolean = {
+    if (sp1.lineOneIndexed == sp2.lineOneIndexed) {
+      sp1.colOneIndexed <= sp2.colOneIndexed
+    } else sp1.lineOneIndexed <= sp2.lineOneIndexed
   }
 
   private def missingEof(found: Token): Nothing = {
@@ -205,6 +223,17 @@ object TokenVerifier {
          |${Formatter.NoFormatter.code(left.mkSourceLocation(), s"left token here (${left.kind})")}
          |
          |${Formatter.NoFormatter.code(right.mkSourceLocation(), s"right token here (${right.kind})")}
+         |
+         |""".stripMargin
+    throw InternalCompilerException(msg, loc)
+  }
+
+  private def unneccesaryEndCol(found: Token): Nothing = {
+    val loc = found.mkSourceLocation()
+    val msg =
+      s""">> End column is the first column of next line instead of last column of the existing line.
+         |
+         |${Formatter.NoFormatter.code(found.mkSourceLocation(), s"here (${found.kind})")}
          |
          |""".stripMargin
     throw InternalCompilerException(msg, loc)

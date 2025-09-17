@@ -130,7 +130,7 @@ object Parser2 {
     }.unzip
 
     // Compute semantic tokens to retain in the AST.
-    val retainedTokens = MapOps.mapValues(tokens0) {
+    val retainedTokens = ParOps.parMapValues(tokens0) {
       case tokens => tokens.filter(_.kind.isSemanticToken)
     }
 
@@ -1618,6 +1618,7 @@ object Parser2 {
         case TokenKind.HoleVariable => holeVariableExpr()
         case TokenKind.KeywordUse => useExpr()
         case TokenKind.LiteralString
+             | TokenKind.LiteralStringDebug
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat
              | TokenKind.LiteralFloat32
@@ -1687,11 +1688,7 @@ object Parser2 {
         case TokenKind.KeywordInject => fixpointInjectExpr()
         case TokenKind.KeywordQuery => fixpointQueryExpr()
         case TokenKind.BuiltIn => intrinsicExpr()
-        case TokenKind.LiteralStringInterpolationL
-             | TokenKind.LiteralDebugStringL => interpolatedStringExpr()
-        case TokenKind.KeywordDebug
-             | TokenKind.KeywordDebugBang
-             | TokenKind.KeywordDebugBangBang => debugExpr()
+        case TokenKind.LiteralStringInterpolationL => interpolatedStringExpr()
         case TokenKind.KeywordEMatch => extMatchExpr()
         case TokenKind.KeywordXvar => extTagExpr()
         case t =>
@@ -2003,23 +2000,6 @@ object Parser2 {
       statement()
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
-    }
-
-    private val FIRST_EXPR_DEBUG: Set[TokenKind] = Set(
-      TokenKind.KeywordDebug,
-      TokenKind.KeywordDebugBang,
-      TokenKind.KeywordDebugBangBang
-    )
-
-    private def debugExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(atAny(FIRST_EXPR_DEBUG))
-      val mark = open()
-      expectAny(FIRST_EXPR_DEBUG)
-      expect(TokenKind.ParenL)
-      expression()
-      expect(TokenKind.ParenR)
-      close(mark, TreeKind.Expr.Debug)
     }
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
@@ -3017,7 +2997,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.Intrinsic)
     }
 
-    private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)
+    private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL)
 
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
@@ -3026,13 +3006,11 @@ object Parser2 {
 
       def atTerminator(kind: Option[TokenKind]) = kind match {
         case Some(TokenKind.LiteralStringInterpolationL) => at(TokenKind.LiteralStringInterpolationR)
-        case Some(TokenKind.LiteralDebugStringL) => at(TokenKind.LiteralDebugStringR)
         case _ => false
       }
 
       def getOpener: Option[TokenKind] = nth(0) match {
         case TokenKind.LiteralStringInterpolationL => advance(); Some(TokenKind.LiteralStringInterpolationL)
-        case TokenKind.LiteralDebugStringL => advance(); Some(TokenKind.LiteralDebugStringR)
         case _ => None
       }
 
@@ -3045,7 +3023,7 @@ object Parser2 {
           lastOpener = getOpener // Try to get nested interpolation.
         }
       }
-      expectAny(Set(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
+      expectAny(Set(TokenKind.LiteralStringInterpolationR))
       close(mark, TreeKind.Expr.StringInterpolation)
     }
   }
