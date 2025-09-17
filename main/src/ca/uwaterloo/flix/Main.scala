@@ -82,6 +82,7 @@ object Main {
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
+      build = Build.Development,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubToken = githubToken,
