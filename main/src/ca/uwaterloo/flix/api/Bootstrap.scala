@@ -258,14 +258,14 @@ object Bootstrap {
   /**
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
-    * downloads all required files. Otherwise, checks the /lib folder
+    * downloads all required files. Otherwise, checks the /lib directory
     * to see what dependencies are already downloaded. Also finds
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
   def bootstrap(path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Validation[Bootstrap, BootstrapError] = {
     //
-    // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
+    // Determine the mode: If `path/flix.toml` exists then "project" mode else "directory mode".
     //
     val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
@@ -274,7 +274,7 @@ object Bootstrap {
       Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
       out.println(s"""No '${formatter.blue(FLIX_TOML)}'. Will load source files from '${formatter.blue(s"*.$EXT_FLIX")}', '${formatter.blue("src/**")}', and '${formatter.blue("test/**")}'.""")
-      Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
+      Validation.mapN(bootstrap.directoryMode())(_ => bootstrap)
     }
   }
 }
@@ -314,11 +314,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Checks the /lib folder to find existing flix packages and .jar files.
+    * Checks the /lib directory to find existing flix packages and .jar files.
     * Then makes a list of all flix source files, flix packages
     * and .jar files that this project uses.
     */
-  private def folderMode(): Validation[Unit, BootstrapError] = {
+  private def directoryMode(): Validation[Unit, BootstrapError] = {
     Steps.addLocalFlixFiles()
     Steps.addLocalLibs()
     Validation.Success(())
@@ -355,9 +355,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
-    val libFolder = Bootstrap.getLibraryDirectory(projectPath)
-    if (includeDependencies && Files.exists(libFolder) && (!Files.isDirectory(libFolder) || !Files.isReadable(libFolder))) {
-      return Validation.Failure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
+    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+    if (includeDependencies && Files.exists(libDir) && (!Files.isDirectory(libDir) || !Files.isReadable(libDir))) {
+      return Validation.Failure(BootstrapError.FileError(s"The lib directory isn't a directory or isn't readable. Refusing to build fatjar-file."))
     }
 
     // Create the artifact directory, if it does not exist.
@@ -392,7 +392,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (includeDependencies) {
         // First, we get all jar files inside the lib folder.
         // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-        val jarDependencies = if (libFolder.toFile.exists()) FileOps.getFilesWithExtIn(libFolder, EXT_JAR, Int.MaxValue) else List[Path]()
+        val jarDependencies = if (libDir.toFile.exists()) FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue) else List[Path]()
         // Add jar dependencies.
         jarDependencies.foreach(dep => {
           if (!Bootstrap.isJarFile(dep))
@@ -680,7 +680,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The cached result is stored in [[jarPackagePaths]].
       */
     private def addLocalJars(): List[Path] = {
-      val jarFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.FolderName), EXT_JAR, Int.MaxValue)
+      val jarFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(JarPackageManager.DirName), EXT_JAR, Int.MaxValue)
       jarPackagePaths = jarFilesLib
       jarFilesLib
     }
@@ -703,7 +703,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The cached result is stored in [[mavenPackagePaths]].
       */
     private def addLocalMavenJars(): List[Path] = {
-      val mavenFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.FolderName), EXT_JAR, Int.MaxValue)
+      val mavenFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.DirName), EXT_JAR, Int.MaxValue)
       mavenPackagePaths = mavenFilesLib
       mavenFilesLib
     }
