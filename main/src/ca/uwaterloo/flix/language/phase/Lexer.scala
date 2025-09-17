@@ -360,7 +360,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
-      case _ if isMatchPrev("d\"") => acceptDebugString()
+      case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
       case c if isGreekNameChar(c) => acceptGreekName()
@@ -685,24 +685,6 @@ object Lexer {
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
-  }
-
-  /**
-    * Moves current position past a debug string literal.
-    *
-    * If the debug string is unterminated a `TokenKind.Err` is returned.
-    */
-  private def acceptDebugString()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      consumeSingleEscapes()
-      if (s.sc.peekIs(_ == '"')) {
-        s.sc.advance()
-        return TokenKind.LiteralStringDebug
-      }
-      s.sc.advance()
-    }
-
-    TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
 
   /**
