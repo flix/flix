@@ -1063,6 +1063,12 @@ object Weeder2 {
           case TokenKind.LiteralFloat64 => Validation.Success(Constants.toFloat64(token))
           case TokenKind.LiteralBigDecimal => Validation.Success(Constants.toBigDecimal(token))
           case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
+          case TokenKind.LiteralStringDebug =>
+            val loc = tree.loc
+            val file = loc.sp1.source.name
+            val line = loc.sp1.lineOneIndexed
+            val text = token.text.stripPrefix("d\"").stripSuffix("\"")
+            Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
           case TokenKind.NameLowerCase
                | TokenKind.NameUpperCase
                | TokenKind.NameMath
