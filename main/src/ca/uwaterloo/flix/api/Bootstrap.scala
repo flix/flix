@@ -377,7 +377,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       val classDir = Bootstrap.getClassDirectory(projectPath)
-      val classFiles = FileOps.getFilesWithExtIn(classDir, s".$EXT_CLASS", Int.MaxValue)
+      val classFiles = FileOps.getFilesWithExtIn(classDir, EXT_CLASS, Int.MaxValue)
       for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(classDir, classFiles)) {
         FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
       }

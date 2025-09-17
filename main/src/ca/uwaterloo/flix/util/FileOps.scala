@@ -166,7 +166,7 @@ object FileOps {
     * @param expectedExt the file extension to match. Must not begin with `.`
     */
   def checkExt(p: Path, expectedExt: String): Boolean = {
-    require(!expectedExt.startsWith("."), "The file extension must not start with '.' -- This is handled by 'checkExt'.")
+    require(!expectedExt.startsWith("."), s"The file extension '$expectedExt' must not start with '.' -- This is handled by 'checkExt'.")
     Files.isRegularFile(p) && p.getFileName.toString.endsWith(s".$expectedExt")
   }
 
