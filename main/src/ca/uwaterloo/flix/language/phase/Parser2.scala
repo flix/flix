@@ -186,12 +186,7 @@ object Parser2 {
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
-            SourceLocation(
-              isReal = true,
-              openToken.src,
-              openToken.sp1,
-              lastAdvance.sp2
-            )
+            mkSourceLocation(openToken.sp1, lastAdvance.sp2)
           locationStack = locationStack.tail
           stack = stack.tail
           stack.head.children = stack.head.children :+ child
