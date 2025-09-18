@@ -418,18 +418,16 @@ object Lexer {
       s.sc.nth(offset) match {
         case Some(c) =>
           node.getNode(c) match {
-            case Some(nextNode) => search(offset + 1, nextNode)
+            case Some(nextNode) =>
+              search(offset + 1, nextNode)
             case None =>
               node.getValue match {
+                case Some(token) if c.isLetter || c.isDigit || c == '_' =>
+                  // Not separated - Not a keyword.
+                  None
                 case Some(token) =>
-                  // Check if the next is a name char.
-                  if (c.isLetter || c.isDigit || c == '_') {
-                    // Not a keyword.
-                    None
-                  } else {
-                    s.sc.advanceN(offset)
-                    Some(token)
-                  }
+                  s.sc.advanceN(offset)
+                  Some(token)
                 case None =>
                   // Not a keyword.
                   None
