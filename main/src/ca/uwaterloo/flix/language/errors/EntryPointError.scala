@@ -222,4 +222,151 @@ object EntryPointError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that the effect for default handler was not able to be found.
+    *
+    * @param loc the location of the defn.
+    */
+  case class EffectNotFoundForDefaultHandler(loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Effect for Default handler not found.\nDefault handlers must be in their respective effect's companion module"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Effect for Default handler not found. Default handlers must be in their respective effect's companion module.
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+
+  }
+
+  /**
+    * An error raised to indicate that the signature of a default handler is wrong.
+    *
+    * @param loc the location of the defn.
+    * @param eff the symbol of the effect associated with this default handler
+    */
+  case class WrongSignatureForDefaultHandler(loc: SourceLocation, eff: Symbol.EffSym) extends EntryPointError {
+    def summary: String = s"Wrong signature for $eff's default handler found.\nExpected 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${eff.name}) + PrimEf1 + ...'"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Wrong signature for $eff's default handler found. Expected 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${eff.name}) + PrimEf1 + ...'
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+  /**
+    * An error raised to indicate that the amount of arguments of a default handler is wrong.
+    *
+    * @param loc the location of the defn.
+    * @param eff the symbol of the effect associated with this default handler
+    */
+  case class WrongNumberOfArgsForDefaultHandler(loc: SourceLocation, eff: Symbol.EffSym) extends EntryPointError {
+    def summary: String = s"Wrong signature for $eff's default handler found. Expected a single argument"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Wrong signature for $eff's default handler found. Expected a single argument
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+  /**
+    * An error raised to indicate that the expected type of the argument of a default handler is a function.
+    *
+    * @param loc the location of the defn.
+    * @param eff the symbol of the effect associated with this default handler
+    */
+  case class ExpectedFunctionArgForDefaultHandler(loc: SourceLocation, eff: Symbol.EffSym) extends EntryPointError {
+    def summary: String = s"Wrong signature for $eff's default handler found.\nExpected a single function argument of type 'Unit -> a \\ ef'"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Wrong signature for $eff's default handler found. Expected a single function argument of type 'Unit -> a \\ ef'
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+  /**
+    * An error raised to indicate that the expected type of the effect set of the function argument of a default handler is wrong.
+    *
+    * @param loc the location of the defn.
+    * @param eff the symbol of the effect associated with this default handler
+    */
+  case class ExpectedEffectVarForDefaultHandler(loc: SourceLocation, eff: Symbol.EffSym) extends EntryPointError {
+    def summary: String = s"Wrong signature for $eff's default handler found.\nExpected an effect variable for the effect of the function argument."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Wrong signature for $eff's default handler found. Expected an effect variable for the effect of the function argument.
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+  /**
+    * An error raised to indicate that the expected type of the argument of a default handler or its return type is wrong.
+    *
+    * @param loc the location of the defn.
+    * @param eff the symbol of the effect associated with this default handler
+    */
+  case class ExpectedTypeVarArgForDefaultHandler(loc: SourceLocation, eff: Symbol.EffSym) extends EntryPointError {
+    def summary: String = s"Wrong signature for $eff's default handler found.\nExpected the same type variable for both the return type of the function argument and the handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Wrong signature for $eff's default handler found. Expected the same type variable for both the return type of the function argument and the handler.
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+  /**
+    * An error raised to indicate that a default handler produces non primitive effects.
+    *
+    * @param loc the location of the defn.
+    * @param eff the symbol of the effect associated with this default handler
+    * @param wrongEff the symbol of the non primitive effect produced
+    */
+  case class NonPrimitiveEffectForDefaultHandler(loc: SourceLocation, eff: Symbol.EffSym, wrongEff: Symbol.EffSym) extends EntryPointError {
+    def summary: String = s"Wrong signature for $eff's default handler found.\nNon Primitive effect $wrongEff generated."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Wrong signature for $eff's default handler found. Non Primitive effect $wrongEff generated.
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+  /**
+    * An error raised to indicate that there are multiple default handlers for the same effect.
+    *
+    * @param loc the location of the defn.
+    * @param eff the effect associated with this default handler
+    */
+  case class MultipleDefaultHandlers(loc: SourceLocation, eff: Type) extends EntryPointError {
+    def summary: String = s"Multiple default handlers for $eff."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Multiple default handlers for $eff found.
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
 }
