@@ -432,7 +432,7 @@ object Lexer {
                   }
                 case None =>
                   // Not a keyword.
-                None
+                  None
               }
           }
         case None =>
@@ -448,6 +448,7 @@ object Lexer {
           }
       }
     }
+
     search(0, Keywords)
   }
 
