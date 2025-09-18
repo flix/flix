@@ -244,12 +244,26 @@ object Doc {
     nest(breakWith(" ") |:: d)
 
   /**
-    * Right fold of `d` with `f`.
+    * Fold of `d` with `f`.
     */
-  def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
+  def fold(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = {
+    // foldRight is used to avoid right-leaning doc trees.
+    foldLeft({case (x, y) => f(y, x)}, d.reverse)
+  }
+
+  /**
+    * Left fold of `d` with `f`.
+    */
+  private def foldLeft(f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
     case Nil => empty
     case x :: Nil => x
-    case x :: xs => f(x, fold(f, xs))
+    case x :: xs => foldLeftHelper(x, f, xs)
+  }
+
+  @tailrec
+  private def foldLeftHelper(z: Doc, f: (Doc, Doc) => Doc, d: List[Doc]): Doc = d match {
+    case x :: xs => foldLeftHelper(f(z, x), f, xs)
+    case Nil => z
   }
 
   /**
