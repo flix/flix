@@ -199,7 +199,7 @@ object Lexer {
     // If the order needs to change, make sure to run tests and benchmarks.
 
     acceptKeyword() match {
-      case Some(value) => return value
+      case Some(token) => return token
       case None => // nop
     }
 
