@@ -196,6 +196,8 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
+      case object DebugInterpolator extends Expr
+
       case object ExtMatch extends Expr
 
       case object ExtMatchRuleFragment extends Expr
@@ -209,8 +211,6 @@ object SyntaxTree {
       case object InvokeConstructor extends Expr
 
       case object InvokeMethod extends Expr
-
-      case object Debug extends Expr
 
       case object FixpointConstraint extends Expr
 

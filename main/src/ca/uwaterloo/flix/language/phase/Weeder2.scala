@@ -860,6 +860,7 @@ object Weeder2 {
         case TreeKind.QName => Validation.Success(visitQnameExpr(tree))
         case TreeKind.Expr.Paren => visitParenExpr(tree)
         case TreeKind.Expr.Block => visitBlockExpr(tree)
+        case TreeKind.Expr.DebugInterpolator => visitDebugInterpolator(tree)
         case TreeKind.Expr.StringInterpolation => visitStringInterpolationExpr(tree)
         case TreeKind.Expr.OpenVariant => visitOpenVariantExpr(tree)
         case TreeKind.Expr.OpenVariantAs => visitOpenVariantAsExpr(tree)
@@ -924,16 +925,25 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree, isPSolve = false)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.FixpointQueryWithProvenance => visitFixpointQueryWithProvenanceExpr(tree)
-        case TreeKind.Expr.Debug => visitDebugExpr(tree)
         case TreeKind.Expr.ExtMatch => visitExtMatch(tree)
         case TreeKind.Expr.ExtTag => visitExtTag(tree)
         case TreeKind.Expr.Intrinsic =>
-          // Intrinsics must be applied to check that they have the right amount of arguments.
-          // This means that intrinsics are not "first-class" like other functions.
-          // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
-          val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
-          sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+          val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
+          intrinsic match {
+            case "FILE" =>
+              val loc = tree.loc
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.sp1.source.name}"), loc))
+            case "LINE" =>
+              val loc = tree.loc
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.beginLine}"), loc))
+            case _ =>
+              // All other intrinsics must be applied to check that they have the right amount of arguments.
+              // This means that intrinsics are not "first-class" like other functions.
+              // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
+              val error = UnappliedIntrinsic(text(tree).mkString(""), tree.loc)
+              sctx.errors.add(error)
+              Validation.Success(Expr.Error(error))
+          }
         case TreeKind.ErrorTree(err) => Validation.Success(Expr.Error(err))
         case k =>
           throw InternalCompilerException(s"Expected expression, got '$k'.", tree.loc)
@@ -957,10 +967,23 @@ object Weeder2 {
       pickExpr(tree)
     }
 
+    private def visitDebugInterpolator(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.DebugInterpolator)
+      flatMapN(pick(TreeKind.Expr.StringInterpolation, tree)) {
+        case interExp => mapN(visitStringInterpolationExpr(interExp)) {
+          case exp2 =>
+            val file = tree.loc.sp1.source.name
+            val line = tree.loc.sp1.lineOneIndexed
+            val cst = Constant.Str(s"[$file:$line] ")
+            val exp1 = WeededAst.Expr.Cst(cst, tree.loc)
+            WeededAst.Expr.Binary(SemanticOp.StringOp.Concat, exp1, exp2, tree.loc)
+        }
+      }
+    }
+
     private def visitStringInterpolationExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Constant.Str(""), tree.loc)
-      var isDebug = false
       // Check for empty interpolation
       if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
         val error = EmptyInterpolatedExpression(tree.loc)
@@ -971,10 +994,9 @@ object Weeder2 {
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
         case (acc, token@Token(_, _, _, _, _, _)) =>
-          isDebug = token.kind == TokenKind.LiteralDebugStringL
           val loc = token.mkSourceLocation()
           val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
-          val lit = if (isDebug) lit0.stripSuffix("%{") else lit0.stripSuffix("${")
+          val lit = lit0.stripSuffix("${")
           if (lit == "") {
             Validation.Success(acc)
           } else {
@@ -989,10 +1011,7 @@ object Weeder2 {
         case (acc, tree: Tree) if tree.kind == TreeKind.Expr.Expr =>
           mapN(visitExpr(tree))(expr => {
             val loc = tree.loc.asSynthetic
-            val funcName = if (isDebug) {
-              isDebug = false
-              "Debug.stringify"
-            } else "ToString.toString"
+            val funcName = "ToString.toString"
             val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
             Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
           })
@@ -1043,6 +1062,12 @@ object Weeder2 {
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
         case token@Token(_, _, _, _, _, _) => token.kind match {
+          case TokenKind.DebugInterpolator =>
+            val loc = tree.loc
+            val file = loc.sp1.source.name
+            val line = loc.sp1.lineOneIndexed
+            val text = token.text.stripPrefix("d\"").stripSuffix("\"")
+            Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
           case TokenKind.KeywordNull => Validation.Success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
           case TokenKind.KeywordTrue => Validation.Success(Expr.Cst(Constant.Bool(true), token.mkSourceLocation()))
           case TokenKind.KeywordFalse => Validation.Success(Expr.Cst(Constant.Bool(false), token.mkSourceLocation()))
@@ -2168,22 +2193,6 @@ object Weeder2 {
             sctx.errors.add(error)
           }
           Expr.FixpointQueryWithProvenance(expressions, select, withh.map(Name.mkPred), tree.loc)
-      }
-    }
-
-    private def visitDebugExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Debug)
-      mapN(pickDebugKind(tree), pickExpr(tree)) {
-        (kind, expr) => Expr.Debug(expr, kind, tree.loc)
-      }
-    }
-
-    private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
-      tree.children.headOption match {
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebug => Validation.Success(DebugKind.Debug)
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBang => Validation.Success(DebugKind.DebugWithLoc)
-        case Some(Token(kind, _, _, _, _, _)) if kind == TokenKind.KeywordDebugBangBang => Validation.Success(DebugKind.DebugWithLocAndSrc)
-        case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
 

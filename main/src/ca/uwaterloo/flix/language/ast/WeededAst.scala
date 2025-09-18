@@ -241,8 +241,6 @@ object WeededAst {
 
     case class FixpointQueryWithSelect(exps: List[Expr], selects: List[Expr], from: List[Predicate.Body], where: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Debug(exp: Expr, kind: DebugKind, loc: SourceLocation) extends Expr
-
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
     }
@@ -476,7 +474,6 @@ object WeededAst {
 
   case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
-
   sealed trait ForFragment {
     def loc: SourceLocation
   }
@@ -488,18 +485,6 @@ object WeededAst {
     case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
 
     case class Let(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
-  }
-
-  sealed trait DebugKind
-
-  object DebugKind {
-
-    case object Debug extends DebugKind
-
-    case object DebugWithLoc extends DebugKind
-
-    case object DebugWithLocAndSrc extends DebugKind
-
   }
 
 }
