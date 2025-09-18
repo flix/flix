@@ -2191,7 +2191,7 @@ object Weeder2 {
       expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
       val loc = tree.loc
-      Validation.Success((intrinsic, args) match {
+      val res = (intrinsic, args) match {
         case ("ARRAY_LENGTH", Some(e1 :: Nil)) => Expr.ArrayLength(e1, loc)
         case ("ARRAY_LOAD", Some(e1 :: e2 :: Nil)) => Expr.ArrayLoad(e1, e2, loc)
         case ("ARRAY_NEW", Some(e1 :: e2 :: e3 :: Nil)) => Expr.ArrayNew(e1, e2, e3, loc)
@@ -2318,7 +2318,8 @@ object Weeder2 {
           val error = UndefinedIntrinsic(loc)
           sctx.errors.add(error)
           Expr.Error(error)
-      })
+      }
+      Validation.Success(res)
     }
   }
 
