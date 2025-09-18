@@ -686,6 +686,7 @@ object Weeder2 {
       val loc = token.mkSourceLocation()
       import Annotation.*
       token.text match {
+        case "@DefaultHandler" => DefaultHandler(loc)
         case "@Deprecated" => Deprecated(loc)
         case "@DontInline" => DontInline(loc)
         case "@Experimental" => Experimental(loc)

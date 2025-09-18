@@ -313,7 +313,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val src =
           s"""def ${main.name}(): Unit \\ $effString =
              |checked_ecast(
-             |  Assert.runWithIO(_ -> println($s))
+             |  println($s)
              |)
              |""".stripMargin
         flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
