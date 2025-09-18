@@ -198,21 +198,14 @@ object Lexer {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
 
-    acceptKeyword() match {
+    acceptSimpleOperator() match {
       case Some(token) => return token
       case None => // nop
     }
 
-    s.sc.peek match {
-      case '$' if s.sc.nth(1).exists(_.isUpper) =>
-        s.sc.advance()
-        return acceptBuiltIn()
-      case '$' if s.sc.nth(1).exists(_.isLower) =>
-        // Don't include the $ sign in the name.
-        s.sc.advance()
-        s.resetStart()
-        return acceptName(isUpper = false)
-      case _ => // nop
+    acceptKeyword() match {
+      case Some(token) => return token
+      case None => // nop
     }
 
     acceptOperator() match {
@@ -221,16 +214,6 @@ object Lexer {
     }
 
     s.sc.peekAndAdvance() match {
-      case '(' => TokenKind.ParenL
-      case ')' => TokenKind.ParenR
-      case '{' => TokenKind.CurlyL
-      case '}' => TokenKind.CurlyR
-      case '[' => TokenKind.BracketL
-      case ']' => TokenKind.BracketR
-      case ';' => TokenKind.Semi
-      case ',' => TokenKind.Comma
-      case '\\' => TokenKind.Backslash
-      case _ if isMatchPrev(".{") => TokenKind.DotCurlyL
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
@@ -249,17 +232,11 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatchPrev("#|") => TokenKind.HashBar
-      case _ if isMatchPrev("|#") => TokenKind.BarHash
-      case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
-      case _ if isMatchPrev("#(") => TokenKind.HashParenL
-      case '#' => TokenKind.Hash
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if s.sc.peekIs(_.isLetter) => acceptAnnotation()
       case '@' => TokenKind.At
-      case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
       case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
       case '-' if s.sc.peekIs(_ == '>') && !s.sc.peekIs(c => isUserOp(c).isEmpty) =>
         s.sc.advance() // Consume '>'.
@@ -274,7 +251,6 @@ object Lexer {
         } else {
           TokenKind.StructArrow
         }
-      case '~' => TokenKind.Tilde
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
@@ -296,6 +272,12 @@ object Lexer {
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
+      case '$' if s.sc.peekIs(_.isUpper) =>
+        acceptBuiltIn()
+      case '$' if s.sc.peekIs(_.isLower) =>
+        // Don't include the $ sign in the name.
+        s.resetStart()
+        acceptName(isUpper = false)
       case '<' if s.sc.peekIs(_ == '>') && peekPeek().flatMap(isUserOp).isEmpty =>
         // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
         TokenKind.AngleL
@@ -312,24 +294,48 @@ object Lexer {
     }
   }
 
+  val SimpleTokens: MutPrefixTree.Node[TokenKind] = {
+    val root = new MutPrefixTree.Node[TokenKind]()
+
+    root.put("#(", TokenKind.HashParenL)
+    root.put("#{", TokenKind.HashCurlyL)
+    root.put("#|", TokenKind.HashBar)
+    root.put(".{", TokenKind.DotCurlyL)
+    root.put("???", TokenKind.HoleAnonymous)
+    root.put("|#", TokenKind.BarHash)
+    root.put('#', TokenKind.Hash)
+    root.put('(', TokenKind.ParenL)
+    root.put(')', TokenKind.ParenR)
+    root.put(',', TokenKind.Comma)
+    root.put(';', TokenKind.Semi)
+    root.put('[', TokenKind.BracketL)
+    root.put('\\', TokenKind.Backslash)
+    root.put(']', TokenKind.BracketR)
+    root.put('{', TokenKind.CurlyL)
+    root.put('}', TokenKind.CurlyR)
+    root.put('~', TokenKind.Tilde)
+
+    root
+  }
+
   val Operators: MutPrefixTree.Node[TokenKind] = {
     val root = new MutPrefixTree.Node[TokenKind]()
 
-    root.put(":::", TokenKind.TripleColon)
-    root.put("::", TokenKind.ColonColon)
-    root.put(":=", TokenKind.ColonEqual)
-    root.put(":-", TokenKind.ColonMinus)
-    root.put(":", TokenKind.Colon)
-    root.put("**", TokenKind.StarStar)
-    root.put("<-", TokenKind.ArrowThinL)
-    root.put("=>", TokenKind.ArrowThickR)
-    root.put("<=", TokenKind.AngleLEqual)
-    root.put(">=", TokenKind.AngleREqual)
-    root.put("==", TokenKind.EqualEqual)
     root.put("!=", TokenKind.BangEqual)
-    root.put("<+>", TokenKind.AngledPlus)
     root.put("&&&", TokenKind.TripleAmpersand)
+    root.put("**", TokenKind.StarStar)
+    root.put(":", TokenKind.Colon)
+    root.put(":-", TokenKind.ColonMinus)
+    root.put("::", TokenKind.ColonColon)
+    root.put(":::", TokenKind.TripleColon)
+    root.put(":=", TokenKind.ColonEqual)
+    root.put("<+>", TokenKind.AngledPlus)
+    root.put("<-", TokenKind.ArrowThinL)
     root.put("<<<", TokenKind.TripleAngleL)
+    root.put("<=", TokenKind.AngleLEqual)
+    root.put("==", TokenKind.EqualEqual)
+    root.put("=>", TokenKind.ArrowThickR)
+    root.put(">=", TokenKind.AngleREqual)
     root.put(">>>", TokenKind.TripleAngleR)
     root.put("^^^", TokenKind.TripleCaret)
     root.put("|||", TokenKind.TripleBar)
@@ -435,6 +441,12 @@ object Lexer {
   private def acceptKeyword()(implicit s: State): Option[TokenKind] =
     search(0, Keywords, c => !(c.isLetter || c.isDigit || c == '_'))
 
+  private def acceptSimpleOperator()(implicit s: State): Option[TokenKind] =
+    search(0, SimpleTokens, _ => true)
+
+  private def acceptOperator()(implicit s: State): Option[TokenKind] =
+    search(0, Operators, c => isUserOp(c).isEmpty)
+
   @tailrec
   def search(offset: Int, node: MutPrefixTree.Node[TokenKind], tailCheck: Char => Boolean)(implicit s: State): Option[TokenKind] = {
     s.sc.nth(offset) match {
@@ -458,9 +470,6 @@ object Lexer {
         res
     }
   }
-
-  private def acceptOperator()(implicit s: State): Option[TokenKind] =
-    search(0, Operators, c => isUserOp(c).isEmpty)
 
   /**
     * Checks whether the previous char and the following substring matches a string.
