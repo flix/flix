@@ -178,6 +178,7 @@ sealed trait TokenKind {
       case TokenKind.CommentBlock => "<block comment>"
       case TokenKind.CommentDoc => "<doc comment>"
       case TokenKind.CommentLine => "<comment>"
+      case TokenKind.DebugInterpolator => "<debug-interpolator>"
       case TokenKind.HoleNamed => "<named hole>"
       case TokenKind.HoleVariable => "<variable hole>"
       case TokenKind.InfixFunction => "<infix function>"
@@ -328,6 +329,7 @@ sealed trait TokenKind {
          | TokenKind.CommentLine
          | TokenKind.CurlyL
          | TokenKind.CurlyR
+         | TokenKind.DebugInterpolator
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
@@ -477,6 +479,7 @@ sealed trait TokenKind {
          | TokenKind.ArrayHash
          | TokenKind.BuiltIn
          | TokenKind.CurlyL
+         | TokenKind.DebugInterpolator
          | TokenKind.DotDotDot
          | TokenKind.HashBar
          | TokenKind.HashCurlyL
@@ -716,7 +719,8 @@ sealed trait TokenKind {
     * Checks if this token is a literal.
     */
   def isLiteral: Boolean = this match {
-    case TokenKind.LiteralBigDecimal
+    case TokenKind.DebugInterpolator
+         | TokenKind.LiteralBigDecimal
          | TokenKind.LiteralBigInt
          | TokenKind.LiteralChar
          | TokenKind.LiteralFloat
@@ -880,6 +884,8 @@ object TokenKind {
   case object CurlyL extends TokenKind
 
   case object CurlyR extends TokenKind
+
+  case object DebugInterpolator extends TokenKind
 
   case object Dollar extends TokenKind
 
