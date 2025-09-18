@@ -203,6 +203,23 @@ object Lexer {
       case None => // nop
     }
 
+    s.sc.peek match {
+      case '$' if s.sc.nth(1).exists(_.isUpper) =>
+        s.sc.advance()
+        return acceptBuiltIn()
+      case '$' if s.sc.nth(1).exists(_.isLower) =>
+        // Don't include the $ sign in the name.
+        s.sc.advance()
+        s.resetStart()
+        return acceptName(isUpper = false)
+      case _ => // nop
+    }
+
+    acceptOperator() match {
+      case Some(token) => return token
+      case None => // nop
+    }
+
     s.sc.peekAndAdvance() match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
@@ -229,11 +246,6 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '$' if s.sc.peekIs(_.isUpper) => acceptBuiltIn()
-      case '$' if s.sc.peekIs(_.isLower) =>
-        // Don't include the $ sign in the name.
-        s.resetStart()
-        acceptName(isUpper = false)
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -249,14 +261,8 @@ object Lexer {
       case '@' => TokenKind.At
       case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
       case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
-      case _ if isOperator(":::") => TokenKind.TripleColon
-      case _ if isOperator("::") => TokenKind.ColonColon
-      case _ if isOperator(":=") => TokenKind.ColonEqual
-      case _ if isOperator(":-") => TokenKind.ColonMinus
-      case _ if isOperator(":") => TokenKind.Colon
-      case _ if isOperator("**") => TokenKind.StarStar
-      case _ if isOperator("<-") => TokenKind.ArrowThinL
-      case _ if isOperator("->") =>
+      case '-' if s.sc.peekIs(_ == '>') && !s.sc.peekIs(c => isUserOp(c).isEmpty) =>
+        s.sc.advance() // Consume '>'.
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
         // Examples:
         // a->b:   StructArrow
@@ -268,18 +274,6 @@ object Lexer {
         } else {
           TokenKind.StructArrow
         }
-      case _ if isOperator("=>") => TokenKind.ArrowThickR
-      case _ if isOperator("<=") => TokenKind.AngleLEqual
-      case _ if isOperator(">=") => TokenKind.AngleREqual
-      case _ if isOperator("==") => TokenKind.EqualEqual
-      case _ if isOperator("!=") => TokenKind.BangEqual
-      case _ if isOperator("<+>") => TokenKind.AngledPlus
-      case _ if isOperator("&&&") => TokenKind.TripleAmpersand
-      case _ if isOperator("<<<") => TokenKind.TripleAngleL
-      case _ if isOperator(">>>") => TokenKind.TripleAngleR
-      case _ if isOperator("^^^") => TokenKind.TripleCaret
-      case _ if isOperator("|||") => TokenKind.TripleBar
-      case _ if isOperator("~~~") => TokenKind.TripleTilde
       case '~' => TokenKind.Tilde
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
@@ -316,6 +310,32 @@ object Lexer {
         } else isUserOp(c).get
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
+  }
+
+  val Operators: MutPrefixTree.Node[TokenKind] = {
+    val root = new MutPrefixTree.Node[TokenKind]()
+
+    root.put(":::", TokenKind.TripleColon)
+    root.put("::", TokenKind.ColonColon)
+    root.put(":=", TokenKind.ColonEqual)
+    root.put(":-", TokenKind.ColonMinus)
+    root.put(":", TokenKind.Colon)
+    root.put("**", TokenKind.StarStar)
+    root.put("<-", TokenKind.ArrowThinL)
+    root.put("=>", TokenKind.ArrowThickR)
+    root.put("<=", TokenKind.AngleLEqual)
+    root.put(">=", TokenKind.AngleREqual)
+    root.put("==", TokenKind.EqualEqual)
+    root.put("!=", TokenKind.BangEqual)
+    root.put("<+>", TokenKind.AngledPlus)
+    root.put("&&&", TokenKind.TripleAmpersand)
+    root.put("<<<", TokenKind.TripleAngleL)
+    root.put(">>>", TokenKind.TripleAngleR)
+    root.put("^^^", TokenKind.TripleCaret)
+    root.put("|||", TokenKind.TripleBar)
+    root.put("~~~", TokenKind.TripleTilde)
+
+    root
   }
 
   val Keywords: MutPrefixTree.Node[TokenKind] = {
@@ -412,47 +432,35 @@ object Lexer {
     root
   }
 
-  private def acceptKeyword()(implicit s: State): Option[TokenKind] = {
-    def advanceIfSome[T](offset: Int, opt: Option[T]): Option[T] = {
-      opt.foreach(_ => s.sc.advanceN(offset))
-      opt
-    }
+  private def acceptKeyword()(implicit s: State): Option[TokenKind] =
+    search(0, Keywords, c => !(c.isLetter || c.isDigit || c == '_'))
 
-    @tailrec
-    def search(offset: Int, node: MutPrefixTree.Node[TokenKind]): Option[TokenKind] = {
-      s.sc.nth(offset) match {
-        case Some(c) =>
-          node.getNode(c) match {
-            case Some(nextNode) =>
-              search(offset + 1, nextNode)
-            case None =>
-              if (c.isLetter || c.isDigit || c == '_') {
-                // Not a full match - Not a keyword.
-                return None
-              }
-              val res = node.getValue
-              res.foreach(_ => s.sc.advanceN(offset))
-              res
-          }
-        case None =>
-          // EOF
-          val res = node.getValue
-          res.foreach(_ => s.sc.advanceN(offset))
-          res
-      }
+  @tailrec
+  def search(offset: Int, node: MutPrefixTree.Node[TokenKind], tailCheck: Char => Boolean)(implicit s: State): Option[TokenKind] = {
+    s.sc.nth(offset) match {
+      case Some(c) =>
+        node.getNode(c) match {
+          case Some(nextNode) =>
+            search(offset + 1, nextNode, tailCheck)
+          case None =>
+            if (!tailCheck(c)) {
+              // Not a full match - Not a keyword.
+              return None
+            }
+            val res = node.getValue
+            res.foreach(_ => s.sc.advanceN(offset))
+            res
+        }
+      case None =>
+        // EOF
+        val res = node.getValue
+        res.foreach(_ => s.sc.advanceN(offset))
+        res
     }
-
-    search(0, Keywords)
   }
 
-  /**
-    * Check that the potential operator is sufficiently separated.
-    * An operator is separated if it is followed by anything __but__ another valid user operator
-    * character.
-    * Note that __comparison includes current__.
-    */
-  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean =
-    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
+  private def acceptOperator()(implicit s: State): Option[TokenKind] =
+    search(0, Operators, c => isUserOp(c).isEmpty)
 
   /**
     * Checks whether the previous char and the following substring matches a string.
@@ -484,14 +492,6 @@ object Lexer {
 
     matches
   }
-
-  /**
-    * Checks whether the following substring matches a operator.
-    * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
-    */
-  private def isOperator(op: String)(implicit s: State): Boolean =
-    isSeparatedOperator(op) && isMatchPrev(op)
 
   /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
