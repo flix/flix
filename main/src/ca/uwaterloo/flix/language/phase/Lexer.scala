@@ -413,6 +413,11 @@ object Lexer {
   }
 
   private def acceptKeyword()(implicit s: State): Option[TokenKind] = {
+    def advanceIfSome[T](offset: Int, opt: Option[T]): Option[T] = {
+      opt.foreach(_ => s.sc.advanceN(offset))
+      opt
+    }
+
     @tailrec
     def search(offset: Int, node: MutPrefixTree.Node[TokenKind]): Option[TokenKind] = {
       s.sc.nth(offset) match {
@@ -421,29 +426,19 @@ object Lexer {
             case Some(nextNode) =>
               search(offset + 1, nextNode)
             case None =>
-              node.getValue match {
-                case Some(token) if c.isLetter || c.isDigit || c == '_' =>
-                  // Not separated - Not a keyword.
-                  None
-                case Some(token) =>
-                  s.sc.advanceN(offset)
-                  Some(token)
-                case None =>
-                  // Not a keyword.
-                  None
+              if (c.isLetter || c.isDigit || c == '_') {
+                // Not a full match - Not a keyword.
+                return None
               }
+              val res = node.getValue
+              res.foreach(_ => s.sc.advanceN(offset))
+              res
           }
         case None =>
           // EOF
-          node.getValue match {
-            case Some(token) =>
-              // A keyword before EOF.
-              s.sc.advanceN(offset)
-              Some(token)
-            case None =>
-              // Not a keyword.
-              None
-          }
+          val res = node.getValue
+          res.foreach(_ => s.sc.advanceN(offset))
+          res
       }
     }
 
