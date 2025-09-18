@@ -574,8 +574,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def isLexerKeyword(s: String): Boolean = {
     // Use the lexer to determine if `s` is a keyword.
-    val (tokens, _) = Lexer.lex(mkSource(s))
-    tokens.exists(_.kind.isKeyword)
+    Lexer.Keywords.get(s).exists(_.isKeyword)
   }
 
   /**
