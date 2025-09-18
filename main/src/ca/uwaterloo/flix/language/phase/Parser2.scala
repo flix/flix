@@ -182,18 +182,13 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
-            SourceLocation(
-              isReal = true,
-              s.src,
-              lastAdvance.sp2,
-              lastAdvance.sp2
-            )
+            mkSourceLocation(lastAdvance.sp2, lastAdvance.sp2)
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
             SourceLocation(
               isReal = true,
-              s.src,
+              openToken.src,
               openToken.sp1,
               lastAdvance.sp2
             )
@@ -234,6 +229,11 @@ object Parser2 {
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     val token = s.tokens(s.position)
     token.mkSourceLocation()
+  }
+
+  /** Returns a real location of the current source and the given positions. */
+  private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State) = {
+    SourceLocation(isReal = true, s.src, start, end)
   }
 
   /**
@@ -607,7 +607,7 @@ object Parser2 {
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
-      val loc = SourceLocation(isReal = true, s.src, locBefore.sp1, locAfter.sp1)
+      val loc = mkSourceLocation(locBefore.sp1, locAfter.sp1)
       Some(NeedAtleastOne(namedTokenSet, sctx, loc = loc))
     } else {
       None
