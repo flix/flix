@@ -932,7 +932,7 @@ object Weeder2 {
           intrinsic match {
             case "FILE" =>
               val loc = tree.loc
-              Validation.Success(Expr.Cst(Constant.Str(s"${loc.sp1.source.name}"), loc))
+              Validation.Success(Expr.Cst(Constant.Str(s"${loc.source.name}"), loc))
             case "LINE" =>
               val loc = tree.loc
               Validation.Success(Expr.Cst(Constant.Str(s"${loc.beginLine}"), loc))
@@ -972,7 +972,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Expr.StringInterpolation, tree)) {
         case interExp => mapN(visitStringInterpolationExpr(interExp)) {
           case exp2 =>
-            val file = tree.loc.sp1.source.name
+            val file = tree.loc.source.name
             val line = tree.loc.sp1.lineOneIndexed
             val cst = Constant.Str(s"[$file:$line] ")
             val exp1 = WeededAst.Expr.Cst(cst, tree.loc)
@@ -1064,7 +1064,7 @@ object Weeder2 {
         case token@Token(_, _, _, _, _, _) => token.kind match {
           case TokenKind.DebugInterpolator =>
             val loc = tree.loc
-            val file = loc.sp1.source.name
+            val file = loc.source.name
             val line = loc.sp1.lineOneIndexed
             val text = token.text.stripPrefix("d\"").stripSuffix("\"")
             Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
