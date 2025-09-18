@@ -46,7 +46,7 @@ object EntryPointError {
          |${code(loc, "unhandled effect")}
          |""".stripMargin
     }
-   
+
     override def explain(formatter: Formatter): Option[String] = None
   }
 
