@@ -68,5 +68,5 @@ object SourcePosition {
   }
 }
 
-/** Represents a physical position inside a source. */
+/** Represents a source position. */
 case class SourcePosition(lineOneIndexed: Int, colOneIndexed: Short)
