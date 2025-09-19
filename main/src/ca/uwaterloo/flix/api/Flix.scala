@@ -288,6 +288,7 @@ class Flix {
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
     "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
+    "Fixpoint3/TypeInfo.flix" -> LocalResource.get("/src/library/Fixpoint3/TypeInfo.flix"),
     "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
     "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
 
@@ -607,7 +608,7 @@ class Flix {
     // We mark all inputs that contains compilation errors as dirty.
     // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
     for (e <- cachedErrors) {
-      val i = e.loc.sp1.source.input
+      val i = e.loc.source.input
       changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
     }
 
@@ -823,6 +824,21 @@ class Flix {
     } else {
       Validation.Failure(Chain.from(errors))
     }
+  }
+
+  /**
+    * Clears all caches used for incremental compilation.
+    */
+  def clearCaches(): Unit = {
+    this.cachedLexerTokens = Map.empty
+    this.cachedParserCst = SyntaxTree.empty
+    this.cachedWeederAst = WeededAst.empty
+    this.cachedDesugarAst = DesugaredAst.empty
+    this.cachedKinderAst = KindedAst.empty
+    this.cachedResolverAst = ResolvedAst.empty
+    this.cachedTyperAst = TypedAst.empty
+    this.changeSet = ChangeSet.Everything
+    this.cachedErrors = Nil
   }
 
   /**

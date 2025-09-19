@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.63.1:
+- Compiler: Fixed a bug in the package manager (thanks Jakob!)
+
 Version 0.63.0:
 - Library: Added more colorful asserts (thanks Magnus!)
 - Compiler: Significantly reduced memory usage of backend (thanks Magnus!)

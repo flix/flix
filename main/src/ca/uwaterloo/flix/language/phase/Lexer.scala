@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
-import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTokens
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.ParOps
 
@@ -105,7 +105,7 @@ object Lexer {
       // Construct a map from each source to its tokens.
       val all = results ++ fresh
       (all.toMap, errors.flatten.toList)
-    }(DebugNoOp())
+    }
 
   /** Lexes a single source (file) into an array of tokens. */
   def lex(src: Source): (Array[Token], List[LexerError]) = {
@@ -163,10 +163,10 @@ object Lexer {
     * `column`.
     */
   private def sourceLocationFromZeroIndex(src: Source, line: Int, column: Int): SourceLocation = {
-    val sp1 = SourcePosition.mkFromZeroIndexed(src, line, column)
+    val sp1 = SourcePosition.mkFromZeroIndexed(line, column)
     // It is safe not consider line breaks because `column + 1` is an exclusive index.
-    val sp2 = SourcePosition.mkFromZeroIndexed(src, line, column + 1)
-    SourceLocation(isReal = true, sp1, sp2)
+    val sp2 = SourcePosition.mkFromZeroIndexed(line, column + 1)
+    SourceLocation(isReal = true, src, sp1, sp2)
   }
 
   /**
@@ -174,12 +174,12 @@ object Lexer {
     * Afterwards `s.start` is reset to the next position after the previous token.
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    val b = SourcePosition.mkFromZeroIndexed(s.src, s.start.line, s.start.column)
+    val b = SourcePosition.mkFromZeroIndexed(s.start.line, s.start.column)
     // If we are currently at the start of a line, create a non-existent position and the
     // end of the previous line as the exclusive end position.
     // This should not happen for zero-width tokens at the start of lines.
     val (endLine, endColumn) = if (s.start.offset != s.sc.getOffset) s.sc.getExclusiveEndPosition else s.sc.getPosition
-    val e = SourcePosition.mkFromZeroIndexed(s.src, endLine, endColumn)
+    val e = SourcePosition.mkFromZeroIndexed(endLine, endColumn)
     s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
     s.resetStart()
   }
@@ -360,7 +360,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
-      case _ if isMatchPrev("d\"") => acceptDebugString()
+      case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
       case c if isGreekNameChar(c) => acceptGreekName()
@@ -685,24 +685,6 @@ object Lexer {
     }
 
     TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
-  }
-
-  /**
-    * Moves current position past a debug string literal.
-    *
-    * If the debug string is unterminated a `TokenKind.Err` is returned.
-    */
-  private def acceptDebugString()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      consumeSingleEscapes()
-      if (s.sc.peekIs(_ == '"')) {
-        s.sc.advance()
-        return TokenKind.LiteralStringDebug
-      }
-      s.sc.advance()
-    }
-
-    TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
 
   /**
