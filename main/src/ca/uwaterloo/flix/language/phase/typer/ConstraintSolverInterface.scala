@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, EqualityConstraint, Scope, TraitConstraint}
-import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, RigidityEnv, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
@@ -109,25 +109,27 @@ object ConstraintSolverInterface {
           (subst, Nil)
         case _ =>
           // We have one or more type errors. We check whether we are in development or production mode.
-          if (flix.options.build == Build.Production) {
-            // We are in production mode, so we have to return immediately with the *original* type error(s).
-            return (subst, mkTypeErrors(leftovers, subst, renv, root))
-          }
-
-          // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
-          val declaredEffWithDebug = Type.mkUnion(eff, Type.Debug, loc)
-          val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
-          val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
-          val constrsWithDebug = constrs0.map(initialTree.apply)
-          val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(Scope.Top, renv, tenv, eenv, flix)
-
-          leftovers2 match {
-            case Nil =>
-              // Success -- We can type check with [[Debug]].
-              (subst2, Nil)
-            case _ =>
-              // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
+          flix.options.build match {
+            case Build.Production =>
+              // We are in production mode, so we have to return immediately with the *original* type error(s).
               (subst, mkTypeErrors(leftovers, subst, renv, root))
+
+            case Build.Development =>
+              // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
+              val declaredEffWithDebug = Type.mkUnion(eff, Type.Debug, loc)
+              val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
+              val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
+              val constrsWithDebug = constrs0.map(initialTree.apply)
+              val (leftovers2, subst2) = ConstraintSolver2.solveAll(constrsWithDebug, initialTree)(Scope.Top, renv, tenv, eenv, flix)
+
+              leftovers2 match {
+                case Nil =>
+                  // Success -- We can type check with [[Debug]].
+                  (subst2, Nil)
+                case _ =>
+                  // Failure -- We report the *original* type error(s). We report the original errors to avoid spurious occurrences of the [[Debug]] effect.
+                  (subst, mkTypeErrors(leftovers, subst, renv, root))
+              }
           }
       }
   }
