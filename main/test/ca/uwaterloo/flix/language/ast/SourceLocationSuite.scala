@@ -8,13 +8,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 9),
-      SourcePosition.mkFromOneIndexed(source, 10, 3)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 9),
+      SourcePosition.mkFromOneIndexed(10, 3)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 4, 0),
-      SourcePosition.mkFromOneIndexed(source, 9, 10)
+      source,
+      SourcePosition.mkFromOneIndexed(4, 0),
+      SourcePosition.mkFromOneIndexed(9, 10)
     )
 
     assert(l1.contains(l2))
@@ -24,13 +26,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 4, 3),
-      SourcePosition.mkFromOneIndexed(source, 10, 3)
+      source,
+      SourcePosition.mkFromOneIndexed(4, 3),
+      SourcePosition.mkFromOneIndexed(10, 3)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 4, 4),
-      SourcePosition.mkFromOneIndexed(source, 9, 10)
+      source,
+      SourcePosition.mkFromOneIndexed(4, 4),
+      SourcePosition.mkFromOneIndexed(9, 10)
     )
 
     assert(l1.contains(l2))
@@ -40,13 +44,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 11)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 11)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 4, 4),
-      SourcePosition.mkFromOneIndexed(source, 9, 10)
+      source,
+      SourcePosition.mkFromOneIndexed(4, 4),
+      SourcePosition.mkFromOneIndexed(9, 10)
     )
 
     assert(l1.contains(l2))
@@ -56,13 +62,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 2, 12),
-      SourcePosition.mkFromOneIndexed(source, 9, 2)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 12),
+      SourcePosition.mkFromOneIndexed(9, 2)
     )
 
     assert(l1.contains(l2))
@@ -72,13 +80,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 2, 12),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 12),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
 
     assert(l1.contains(l2))
@@ -88,13 +98,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 2)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 2)
     )
 
     assert(l1.contains(l2))
@@ -104,8 +116,9 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
 
     assert(l1.contains(l1))
@@ -115,13 +128,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 5, 2),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(5, 2),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 8, 2)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(8, 2)
     )
 
     assert(!l1.contains(l2))
@@ -131,13 +146,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 2),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 2),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 5, 10),
-      SourcePosition.mkFromOneIndexed(source, 12, 2)
+      source,
+      SourcePosition.mkFromOneIndexed(5, 10),
+      SourcePosition.mkFromOneIndexed(12, 2)
     )
 
     assert(!l1.contains(l2))
@@ -147,13 +164,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 2, 2),
-      SourcePosition.mkFromOneIndexed(source, 8, 2)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 2),
+      SourcePosition.mkFromOneIndexed(8, 2)
     )
 
     assert(!l1.contains(l2))
@@ -163,13 +182,15 @@ class SourceLocationSuite extends AnyFunSuite {
     val source = Source(Input.Text("Dummy1", "dummy dummy", SecurityContext.AllPermissions), Array.emptyCharArray)
     val l1 = SourceLocation(
       isReal = true,
-      SourcePosition.mkFromOneIndexed(source, 2, 10),
-      SourcePosition.mkFromOneIndexed(source, 9, 4)
+      source,
+      SourcePosition.mkFromOneIndexed(2, 10),
+      SourcePosition.mkFromOneIndexed(9, 4)
     )
     val l2 = SourceLocation(
       isReal = false,
-      SourcePosition.mkFromOneIndexed(source, 4, 2),
-      SourcePosition.mkFromOneIndexed(source, 9, 7)
+      source,
+      SourcePosition.mkFromOneIndexed(4, 2),
+      SourcePosition.mkFromOneIndexed(9, 7)
     )
 
     assert(!l1.contains(l2))

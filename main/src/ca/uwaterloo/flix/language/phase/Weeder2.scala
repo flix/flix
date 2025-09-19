@@ -427,7 +427,7 @@ object Weeder2 {
         (ident, maybeType) =>
           val tpes = maybeType.getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
-          val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
+          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.sp1, tree.loc.sp2)
           Case(ident, tpes, loc)
       }
     }
@@ -521,7 +521,7 @@ object Weeder2 {
       ) {
         (ident, ttype) =>
           // Make a source location that spans the name and type
-          val loc = SourceLocation(isReal = true, ident.loc.sp1, tree.loc.sp2)
+          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.sp1, tree.loc.sp2)
           StructField(mod, Name.mkLabel(ident), ttype, loc)
       }
     }
@@ -957,7 +957,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Expr.StringInterpolation, tree)) {
         case interExp => mapN(visitStringInterpolationExpr(interExp)) {
           case exp2 =>
-            val file = tree.loc.sp1.source.name
+            val file = tree.loc.source.name
             val line = tree.loc.sp1.lineOneIndexed
             val cst = Constant.Str(s"[$file:$line] ")
             val exp1 = WeededAst.Expr.Cst(cst, tree.loc)
@@ -1029,7 +1029,7 @@ object Weeder2 {
           // Strip '?' suffix and update source location
           val sp1 = ident.loc.sp1
           val sp2 = SourcePosition.moveLeft(ident.loc.sp2)
-          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, sp1, sp2))
+          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, ident.loc.source, sp1, sp2))
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
@@ -1049,7 +1049,7 @@ object Weeder2 {
         case token@Token(_, _, _, _, _, _) => token.kind match {
           case TokenKind.DebugInterpolator =>
             val loc = tree.loc
-            val file = loc.sp1.source.name
+            val file = loc.source.name
             val line = loc.sp1.lineOneIndexed
             val text = token.text.stripPrefix("d\"").stripSuffix("\"")
             Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
@@ -1636,8 +1636,8 @@ object Weeder2 {
         fields =>
           fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
             case ((label, expr, loc), acc) =>
-              val SourceLocation(isReal, sp1, _) = loc
-              val extendLoc = SourceLocation(isReal, sp1, tree.loc.sp2)
+              val SourceLocation(isReal, src, sp1, _) = loc
+              val extendLoc = SourceLocation(isReal, src, sp1, tree.loc.sp2)
               Expr.RecordExtend(label, expr, acc, extendLoc)
           }
       }
@@ -1656,7 +1656,7 @@ object Weeder2 {
         expr =>
           idents.foldLeft(expr) {
             case (acc, ident) =>
-              val loc = SourceLocation(ident.loc.isReal, tree.loc.sp1, ident.loc.sp2)
+              val loc = SourceLocation(ident.loc.isReal, tree.loc.source, tree.loc.sp1, ident.loc.sp2)
               Expr.RecordSelect(acc, Name.mkLabel(ident), loc)
           }
       }
@@ -1904,7 +1904,7 @@ object Weeder2 {
             // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
 
             // The new param has the zero-width location of the actual argument.
-            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.sp1)
+            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.sp1)
             val unitParam = Decls.unitFormalParameter(loc)
             HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
           case fparams =>
@@ -2211,7 +2211,7 @@ object Weeder2 {
         case ("CHAR_LE", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc)
         case ("CHAR_LT", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc)
         case ("CHAR_NEQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc)
-        case ("FILE", None) => Expr.Cst(Constant.Str(s"${loc.sp1.source.name}"), loc)
+        case ("FILE", None) => Expr.Cst(Constant.Str(s"${loc.source.name}"), loc)
         case ("FLOAT32_ADD", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc)
         case ("FLOAT32_DIV", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc)
         case ("FLOAT32_EQ", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc)
@@ -3317,16 +3317,16 @@ object Weeder2 {
     assert(idents.nonEmpty) // We require at least one element to construct a qname
     val first = idents.head
     val last = idents.last
-    val loc = SourceLocation(isReal = true, first.loc.sp1, last.loc.sp2)
+    val loc = SourceLocation(isReal = true, first.loc.source, first.loc.sp1, last.loc.sp2)
 
     // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
       val positionAfterDot = SourcePosition.moveRight(last.loc.sp2)
-      val emptyIdentLoc = SourceLocation(isReal = true, positionAfterDot, positionAfterDot)
+      val emptyIdentLoc = SourceLocation(isReal = true, last.loc.source, positionAfterDot, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
-      val qnameLoc = SourceLocation(isReal = true, first.loc.sp1, positionAfterDot)
+      val qnameLoc = SourceLocation(isReal = true, first.loc.source, first.loc.sp1, positionAfterDot)
       Name.QName(nname, emptyIdent, qnameLoc)
     } else {
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
@@ -3393,8 +3393,8 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
     tree.children.headOption match {
-      case Some(token@Token(_, _, _, _, sp1, sp2)) =>
-        Name.Ident(token.text, SourceLocation(isReal = true, sp1, sp2))
+      case Some(token@Token(_, src, _, _, sp1, sp2)) =>
+        Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.

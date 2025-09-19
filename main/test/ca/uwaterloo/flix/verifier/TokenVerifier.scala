@@ -240,7 +240,7 @@ object TokenVerifier {
   }
 
   private def emptyTokens(src: Source): Nothing = {
-    val loc = SourceLocation.zeroPoint(isReal = true, SourcePosition.firstPosition(src))
+    val loc = SourceLocation.zeroPoint(isReal = true, src, SourcePosition.FirstPosition)
     val msg = s"Found empty token array for ${src.name}."
     throw InternalCompilerException(msg, loc)
   }
