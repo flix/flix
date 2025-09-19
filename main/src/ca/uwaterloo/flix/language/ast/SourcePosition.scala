@@ -5,11 +5,14 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object SourcePosition {
 
   /**
-    * Returns the first [[SourcePosition]] of `source`.
+    * Returns the first [[SourcePosition]].
     *
-    * OBS: This might not be a real position if `source` is empty.
+    * OBS: This might not be a real position if the relevant source is empty.
     */
   val FirstPosition: SourcePosition = SourcePosition(lineOneIndexed = 1, colOneIndexed = 1)
+
+  /** An unknown source position. */
+  val Unknown: SourcePosition = FirstPosition
 
   /**
     * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
@@ -26,9 +29,6 @@ object SourcePosition {
     */
   def mkFromOneIndexed(line: Int, col: Int): SourcePosition =
     SourcePosition(lineOneIndexed = line, colOneIndexed = col.toShort)
-
-  /** An unknown source position. */
-  val Unknown: SourcePosition = FirstPosition
 
   /**
     * Returns a new [[SourcePosition]] where the column of `pos` is reduced by 1.
