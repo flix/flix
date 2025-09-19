@@ -826,6 +826,21 @@ class Flix {
   }
 
   /**
+    * Clears all caches used for incremental compilation.
+    */
+  def clearCaches(): Unit = {
+    this.cachedLexerTokens = Map.empty
+    this.cachedParserCst = SyntaxTree.empty
+    this.cachedWeederAst = WeededAst.empty
+    this.cachedDesugarAst = DesugaredAst.empty
+    this.cachedKinderAst = KindedAst.empty
+    this.cachedResolverAst = ResolvedAst.empty
+    this.cachedTyperAst = TypedAst.empty
+    this.changeSet = ChangeSet.Everything
+    this.cachedErrors = Nil
+  }
+
+  /**
     * Enters the phase with the given name.
     */
   def phaseNew[A, B](phase: String)(f: => (A, B))(implicit d: Debug[A]): (A, B) = {

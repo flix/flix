@@ -328,9 +328,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds (compiles) the source files for the project.
     */
   def build(flix: Flix, build: Build = Build.Development): Validation[CompilationResult, BootstrapError] = {
-    // Configure a new Flix object.
-    val newOptions = flix.options.copy(build = build, outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
+    // We disable incremental compilation to ensure a clean compile.
+    val newOptions = flix.options.copy(build = build, incremental = false, outputJvm = true, outputPath = Bootstrap.getBuildDirectory(projectPath))
     flix.setOptions(newOptions)
+
+    // We also clear any cached ASTs.
+    flix.clearCaches()
+
     Steps.updateStaleSources(flix)
     Steps.compile(flix)
   }
