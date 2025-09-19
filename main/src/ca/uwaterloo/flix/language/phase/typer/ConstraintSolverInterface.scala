@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
+import ca.uwaterloo.flix.util.Build
 
 import scala.annotation.tailrec
 
@@ -107,9 +108,13 @@ object ConstraintSolverInterface {
           // All constraints solved. Yay!
           (subst, Nil)
         case _ =>
-          // We have one or more type errors. We need to report them, but first we have special logic for the [[Debug]] effect.
+          // We have one or more type errors. We check whether we are in development or production mode.
+          if (flix.options.build == Build.Production) {
+            // We are in production mode, so we have to return immediately with the *original* type error(s).
+            return (subst, mkTypeErrors(leftovers, subst, renv, root))
+          }
 
-          // We solve a new constraint system where [[Debug]] is allowed by the effect signature.
+          // Otherwise we have special logic for the [[Debug]] effect: We solve a new constraint system where [[Debug]] is allowed by the effect signature.
           val declaredEffWithDebug = Type.mkUnion(eff, Type.Debug, loc)
           val declaredEffConstrWithDebug = TypeConstraint.Equality(declaredEffWithDebug, infEff, Provenance.ExpectEffect(expected = declaredEffWithDebug, actual = infEff, loc))
           val constrs0 = declaredTpeConstr :: declaredEffConstrWithDebug :: infConstrs
