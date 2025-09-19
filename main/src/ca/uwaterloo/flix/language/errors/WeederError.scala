@@ -1108,31 +1108,13 @@ object WeederError {
     * @param loc the location where the illegal intrinsic occurs.
     */
   case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal intrinsic"
+    def summary: String = "Undefined or misapplied intrinsic"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal intrinsic.
+      s""">> Undefined or misapplied intrinsic.
          |
-         |${code(loc, "illegal intrinsic.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an unapplied intrinsic.
-    *
-    * @param intrinsic name of the intrinsic.
-    * @param loc       the location where the illegal intrinsic occurs.
-    */
-  case class UnappliedIntrinsic(intrinsic: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Unapplied intrinsic '$intrinsic'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unapplied intrinsic '${red(intrinsic)}'.
-         |
-         |${code(loc, "unapplied intrinsic.")}
+         |${code(loc, "undefined or misapplied intrinsic.")}
          |""".stripMargin
     }
   }
