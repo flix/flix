@@ -54,9 +54,8 @@ class StdLibSuite extends AnyFunSuite {
     }
   } catch {
     case ex: Throwable =>
-      ex.printStackTrace()
-      test("Standard Library") {
-        fail("Unable to compile standard library")
+      test("@Standard Library") {
+        fail(ex)
       }
   }
 
