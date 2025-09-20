@@ -32,7 +32,7 @@ class StdLibSuite extends AnyFunSuite {
   /** The default options. */
   private val Opts = Options.DefaultTest.copy(incremental = false, outputJvm = false)
 
-  private def init(): Unit = {
+  private def init(): Unit = try {
     // Create a new Flix compiler.
     val flix = new Flix
     flix.setOptions(Opts)
@@ -52,6 +52,12 @@ class StdLibSuite extends AnyFunSuite {
         val es = errors.map(_.messageWithLoc(flix.getFormatter)).mkString("\n")
         fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
     }
+  } catch {
+    case ex: Throwable =>
+      ex.printStackTrace()
+      test("Standard Library") {
+        fail("Unable to compile standard library")
+      }
   }
 
   private def runTests(r: CompilationResult): Unit = {

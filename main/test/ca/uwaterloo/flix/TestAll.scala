@@ -27,13 +27,13 @@ import flix.resiliency.ResiliencySuite
 import org.scalatest.Suites
 
 class TestAll extends Suites(
+  new StdLibSuite,
   new ApiSuite,
   new BenchmarkSuite,
   new CompilerSuite,
   new ExampleSuite,
   new ExperimentalSuite,
   new LanguageSuite,
-  new StdLibSuite,
   new ResiliencySuite,
   new TestMain,
   new RunVerifiers,
