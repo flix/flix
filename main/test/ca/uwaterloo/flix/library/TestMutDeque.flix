@@ -1092,7 +1092,7 @@ mod TestMutDeque {
         let d = (MutDeque.empty(rc): MutDeque[Int32, rc]);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
-            case None => assertTrue(true)
+            case None => ()
             case _    => fail("Unexpected case")
         }
     }
@@ -1102,7 +1102,7 @@ mod TestMutDeque {
         let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
-            case Some(_) => assertTrue(true)
+            case Some(_) => ()
             case _       => fail("Unexpected case")
         }
     }
@@ -1115,7 +1115,7 @@ mod TestMutDeque {
         discard MutDeque.popBack(d);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
-            case None => assertTrue(true)
+            case None => ()
             case _    => fail("Unexpected case")
         }
     }

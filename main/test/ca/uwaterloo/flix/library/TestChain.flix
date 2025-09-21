@@ -236,7 +236,7 @@ mod TestChain {
     @Test
     def viewLeft01(): Unit \ Assert = {
         match Chain.viewLeft((Chain.empty(): Chain[Int32])) {
-            case Chain.ViewLeft.NoneLeft => assertTrue(true)
+            case Chain.ViewLeft.NoneLeft => ()
             case _ => fail("Expected NoneLeft")
         }
     }
@@ -272,7 +272,7 @@ mod TestChain {
     @Test
     def viewRight01(): Unit \ Assert = {
         match Chain.viewRight((Chain.empty(): Chain[Int32])) {
-            case Chain.ViewRight.NoneRight => assertTrue(true)
+            case Chain.ViewRight.NoneRight => ()
             case _ => fail("Expected NoneRight")
         }
     }
