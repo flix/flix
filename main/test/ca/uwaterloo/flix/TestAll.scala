@@ -22,7 +22,6 @@ import ca.uwaterloo.flix.library.LibrarySuite
 import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import flix.CompilerSuite
-import flix.experimental.ExperimentalSuite
 import flix.resiliency.ResiliencySuite
 import org.scalatest.Suites
 
@@ -31,7 +30,6 @@ class TestAll extends Suites(
   new BenchmarkSuite,
   new CompilerSuite,
   new ExampleSuite,
-  new ExperimentalSuite,
   new LanguageSuite,
   new LibrarySuite,
   new ResiliencySuite,
