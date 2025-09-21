@@ -1733,7 +1733,7 @@ mod TestMutList {
         let l = (MutList.empty(rc): MutList[Int32, rc]);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
-            case None => assertTrue(true)
+            case None => ()
             case _    => fail("Unexpected case")
         }
     }
@@ -1743,7 +1743,7 @@ mod TestMutList {
         let l = List.toMutList(rc, 1 :: 2 :: 3 :: Nil);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
-            case Some(_) => assertTrue(true)
+            case Some(_) => ()
             case _       => fail("Unexpected case")
         }
     }
@@ -1756,7 +1756,7 @@ mod TestMutList {
         discard MutList.pop(l);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
-            case None => assertTrue(true)
+            case None => ()
             case _    => fail("Unexpected case")
         }
     }

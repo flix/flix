@@ -2263,7 +2263,7 @@ mod TestMap {
 
     @Test
     def eq06(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2} == Map#{1 => 2})
+        assertEq(expected = Map#{1 => 2}, Map#{1 => 2})
 
     @Test
     def eq07(): Unit \ Assert = 
@@ -2291,11 +2291,11 @@ mod TestMap {
 
     @Test
     def eq13(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} == Map#{1 => 2, 3 => 4})
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map#{1 => 2, 3 => 4})
 
     @Test
     def eq14(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} == Map#{3 => 4, 1 => 2})
+        assertEq(expected = Map#{1 => 2, 3 => 4}, Map#{3 => 4, 1 => 2})
 
     @Test
     def eq15(): Unit \ Assert = 
@@ -2323,23 +2323,23 @@ mod TestMap {
 
     @Test
     def eq21(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{1 => 2, 3 => 4, 5 => 6})
+        assertEq(expected = Map#{1 => 2, 3 => 4, 5 => 6}, Map#{1 => 2, 3 => 4, 5 => 6})
 
     @Test
     def eq22(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{1 => 2, 5 => 6, 3 => 4})
+        assertEq(expected = Map#{1 => 2, 3 => 4, 5 => 6}, Map#{1 => 2, 5 => 6, 3 => 4})
 
     @Test
     def eq23(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{3 => 4, 5 => 6, 1 => 2})
+        assertEq(expected = Map#{1 => 2, 3 => 4, 5 => 6}, Map#{3 => 4, 5 => 6, 1 => 2})
 
     @Test
     def eq24(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} == Map#{5 => 6, 3 => 4, 1 => 2})
+        assertEq(expected = Map#{1 => 2, 3 => 4, 5 => 6}, Map#{5 => 6, 3 => 4, 1 => 2})
 
     @Test
     def eq25(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8, 1 => 2, 3 => 4, 9 => 10, 5 => 6})
+        assertEq(expected = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10}, Map#{7 => 8, 1 => 2, 3 => 4, 9 => 10, 5 => 6})
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
