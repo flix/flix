@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.library
+package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -24,7 +24,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.Paths
 
-class StdLibSuite extends AnyFunSuite {
+class StandardLibrarySuite extends AnyFunSuite {
 
   /** The path to the library tests. */
   private val Path = "main/test/ca/uwaterloo/flix/library/"
@@ -54,7 +54,8 @@ class StdLibSuite extends AnyFunSuite {
     }
   } catch {
     case ex: Throwable =>
-      test("@Standard Library") {
+      // We create a fictitious test to ensure that something shows up.
+      test("StandardLibrary -- COMPILATION FAILED.") {
         fail(ex)
       }
   }
