@@ -77,7 +77,7 @@ mod Fixpoint3.Boxing {
     /// invalid for the returned `facts`.
     ///
     def initializeFacts(rc1: Region[r], program: RamProgram, boxingInfo: Boxing[r], mapping: RamIdToPos, withProv: Bool): EFacts[r] \ r + IO =
-        let RamProgram.Program(_, facts, _, (indexes, _)) = program;
+        let RamProgram.Program(_, facts, _, (indexes, _), _) = program;
         let (f1, f2) = facts;
         let newFacts = MutMap.empty(rc1);
         foreach ((relSym, relFacts) <- f1) {
@@ -274,7 +274,7 @@ mod Fixpoint3.Boxing {
             // and afterwards use this to assign unique ints to each
             // equivalence relation.
             let disjointSet = MutDisjointSets.empty(rc);
-            let RamProgram.Program(stmt, _, _, _) = program;
+            let RamProgram.Program(stmt, _, _, _, _) = program;
             unifyRamIds(program, disjointSet, withProv);
             let relSyms = relSymsOfProgram(program);
             let mutMap = MutMap.empty(rc);
@@ -297,7 +297,7 @@ mod Fixpoint3.Boxing {
         /// Unify all `RamId`s in `program` which can be proven to be equivalent, type-wise.
         ///
         def unifyRamIds(program: RamProgram, set: MutDisjointSets[RamId, r], withProv: Bool): Unit \ r = match program {
-            case RamProgram.Program(stmt, _, predicates, _) =>
+            case RamProgram.Program(stmt, _, predicates, _, _) =>
                 let relSyms = relSymsOfProgram(program);
                 List.forEach(unifyPredTypes(predicates, set, withProv), relSyms);
                 unifyRamIdsStmt(predicates, set, withProv, stmt)
@@ -323,20 +323,20 @@ mod Fixpoint3.Boxing {
         /// Unify all `RamId`s in `op` which can be proven to be equivalent, type-wise.
         ///
         def unifyRamIdsOp(predicates: Predicates, set: MutDisjointSets[RamId, r], withProv: Bool, op: RelOp): Unit \ r = match op {
-            case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
+            case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), _, body) =>
                 let usedArity = getProvSafeIdArity(arity, withProv);
                 foreach (i <- Vector.range(0, usedArity)) {
                     MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set)
                 };
                 unifyRamIdsOp(predicates, set, withProv, body)
-            case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
+            case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, _, body) =>
                 let usedArity = getProvSafeIdArity(arity, withProv);
                 foreach (i <- Vector.range(0, usedArity)) {
                     MutDisjointSets.union(RamId.TuplePos(rv, i), RamId.RelPos(predSym, i), set)
                 };
                 Vector.forEach(unifyRamIdsBool(set), bools);
                 unifyRamIdsOp(predicates, set, withProv, body)
-            case RelOp.Functional(rv, _, inputTerms, body, arity) =>
+            case RelOp.Functional(rv, _, inputTerms, body, arity, _) =>
                 let RowVar.Named(id) = rv;
                 foreach ((i, curTerm) <- ForEach.withIndex(inputTerms)) {
                     let termID = Ram.getTermRamId(curTerm);
@@ -401,28 +401,28 @@ mod Fixpoint3.Boxing {
         /// Unify all `RamId`s in `term` which can be proven to be equivalent, type-wise.
         ///
         def unifyRamIdsTerm(set: MutDisjointSets[RamId, r], term: RamTerm): Unit \ r = match term {
-            case RamTerm.Lit(_, _) => ()
-            case RamTerm.RowLoad(_, _, _) => ()
+            case RamTerm.Lit(_, _, _) => ()
+            case RamTerm.RowLoad(_, _, _, _) => ()
             case RamTerm.ProvMax(vec) =>
                 let id = Ram.getTermRamId(term);
                 foreach ((rv, index) <- vec) {
                     MutDisjointSets.union(RamId.TuplePos(rv, index), id, set)
                 }
-            case RamTerm.Meet(_, t1, (rv, relSym), id) =>
+            case RamTerm.Meet(_, t1, (rv, relSym), id, _) =>
                 unifyRamIdsTerm(set, t1);
                 let id1 = Ram.getTermRamId(t1);
                 let id2 = Ram.getLatVarRamId(rv, relSym);
                 MutDisjointSets.union(id1, id, set);
                 MutDisjointSets.union(id1, id2, set)
-            case RamTerm.App1(_, t1, RamId.Id(id)) =>
+            case RamTerm.App1(_, t1, RamId.Id(id), _) =>
                 unifyAppTerms(Vector#{t1}, id, set)
-            case RamTerm.App2(_, t1, t2, RamId.Id(id)) =>
+            case RamTerm.App2(_, t1, t2, RamId.Id(id), _) =>
                 unifyAppTerms(Vector#{t1, t2}, id, set)
-            case RamTerm.App3(_, t1, t2, t3, RamId.Id(id)) =>
+            case RamTerm.App3(_, t1, t2, t3, RamId.Id(id), _) =>
                 unifyAppTerms(Vector#{t1, t2, t3}, id, set)
-            case RamTerm.App4(_, t1, t2, t3, t4, RamId.Id(id)) =>
+            case RamTerm.App4(_, t1, t2, t3, t4, RamId.Id(id), _) =>
                 unifyAppTerms(Vector#{t1, t2, t3, t4}, id, set)
-            case RamTerm.App5(_, t1, t2, t3, t4, t5, RamId.Id(id)) =>
+            case RamTerm.App5(_, t1, t2, t3, t4, t5, RamId.Id(id), _) =>
                 unifyAppTerms(Vector#{t1, t2, t3, t4, t4, t5}, id, set)
             case _ => unreachable!()
         }
@@ -498,14 +498,14 @@ mod Fixpoint3.Boxing {
             let recurse = computeMappingOp(set, map, counter, withProv);
             let insert = registerRamId(set, map, counter);
             match op {
-                case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), body) =>
+                case RelOp.Search(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), _, body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
                     foreach (i <- Vector.range(0, usedArity)) {
                         insert(RamId.TuplePos(rv, i));
                         insert(RamId.RelPos(predSym, i))
                     };
                     recurse(body)
-                case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, body) =>
+                case RelOp.Query(rv, RelSym.Symbol(PredSym.PredSym(_, predSym), arity, _), bools, _, _, body) =>
                     let usedArity = getProvSafeIdArity(arity, withProv);
                     foreach (i <- Vector.range(0, usedArity)) {
                         insert(RamId.TuplePos(rv, i));
@@ -513,7 +513,7 @@ mod Fixpoint3.Boxing {
                     };
                     Vector.forEach(computeMappingBool(set, map, counter), bools);
                     recurse(body)
-                case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, arity) => // equality on the input should be handled elsewhere.
+                case RelOp.Functional(RowVar.Named(id), _, inputTerms, body, arity, _) => // equality on the input should be handled elsewhere.
                     Vector.forEach(i -> insert(RamId.TuplePos(RowVar.Named(id), i)), Vector.range(0, arity));
                     Vector.forEach(i -> insert(RamId.InId(id, i)), Vector.range(0, Vector.length(inputTerms)));
                     Vector.forEach(computeMappingTerm(set, map, counter), inputTerms);
@@ -585,25 +585,25 @@ mod Fixpoint3.Boxing {
             let computeMappingTermRec = computeMappingTerm(set, map, counter);
             let computeMappingTermAppRec = computeMappingTermApp(computeMappingTermRec, registerRamIdRec, getTermRamId(term));
             match term {
-                case RamTerm.Lit(_, id) => registerRamIdRec(id)
-                case RamTerm.RowLoad(_, _, _) => registerRamIdRec(getTermRamId(term))
-                case RamTerm.Meet(_, t1, (rv, relSym), RamId.Id(id)) =>
+                case RamTerm.Lit(_, id, _) => registerRamIdRec(id)
+                case RamTerm.RowLoad(_, _, _, _) => registerRamIdRec(getTermRamId(term))
+                case RamTerm.Meet(_, t1, (rv, relSym), RamId.Id(id), _) =>
                     computeMappingTermRec(t1);
                     registerRamIdRec(Ram.getLatVarRamId(rv, relSym));
                     registerRamIdRec(RamId.Id(id))
-                case RamTerm.App1(_, t1, _) =>
+                case RamTerm.App1(_, t1, _, _) =>
                     Vector#{t1} |> computeMappingTermAppRec
-                case RamTerm.App2(_, t1, t2, _) =>
+                case RamTerm.App2(_, t1, t2, _, _) =>
                     Vector#{t1, t2} |> computeMappingTermAppRec
-                case RamTerm.App3(_, t1, t2, t3, _) =>
+                case RamTerm.App3(_, t1, t2, t3, _, _) =>
                     Vector#{t1, t2, t3} |> computeMappingTermAppRec
-                case RamTerm.App4(_, t1, t2, t3, t4, _) =>
+                case RamTerm.App4(_, t1, t2, t3, t4, _, _) =>
                     Vector#{t1, t2, t3, t4} |> computeMappingTermAppRec
-                case RamTerm.App5(_, t1, t2, t3, t4, t5, _) =>
+                case RamTerm.App5(_, t1, t2, t3, t4, t5, _, _) =>
                     Vector#{t1, t2, t3, t4, t5} |> computeMappingTermAppRec
                 case RamTerm.ProvMax(loads) =>
                     loads |> Vector.forEach(match (rv, index) -> registerRamIdRec(RamId.TuplePos(rv, index)))
-                case RamTerm.Meet(_, _, _, _) => unreachable!()
+                case RamTerm.Meet(_, _, _, _, _) => unreachable!()
             }
 
         ///
