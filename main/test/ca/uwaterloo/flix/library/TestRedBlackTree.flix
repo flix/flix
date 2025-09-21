@@ -842,7 +842,7 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        assertEq(expected = Identity.Identity(RedBlackTree.empty()), actual = ans);
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty()));
         assertEq(expected = '#', Ref.get(st))
     }
 
@@ -851,7 +851,7 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        assertEq(expected = Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')), actual = ans);
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')));
         assertEq(expected = 'a', Ref.get(st))
     }
 
@@ -860,7 +860,7 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        assertEq(expected = Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')), actual = ans);
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')));
         assertEq(expected = 'b', Ref.get(st))
     }
 
@@ -869,9 +869,9 @@ mod TestRedBlackTree {
         let st = Ref.fresh(rc, '#');
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
         let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
-        assertEq(expected = Identity.Identity(RedBlackTree.empty()
+        assertTrue(ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
-                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')), actual = ans);
+                            |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')));
         assertEq(expected = 'c', Ref.get(st))
     }
 
