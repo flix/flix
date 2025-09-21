@@ -144,9 +144,9 @@ mod TestPrelude {
         let a = 4 !> f;
         let b = 5 !> f;
         let c = 7 !> f;
-        assertEq(expected = 4, actual = a);
-        assertEq(expected = 5, actual = b);
-        assertEq(expected = 7, actual = c);
+        assertEq(expected = 4, a);
+        assertEq(expected = 5, b);
+        assertEq(expected = 7, c);
         assertTrue(MutList.length(m) == 3)
     }
 
