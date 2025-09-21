@@ -21,8 +21,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: gradle
       - name: Build with gradle
-        run: ./gradlew clean compileTestScala --console=plain
+        run: ./gradlew compileTestScala --console=plain
       - name: Run tests with timeout
         timeout-minutes: 20
         run: ./gradlew test --console=plain
