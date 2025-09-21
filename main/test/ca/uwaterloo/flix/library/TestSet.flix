@@ -1597,75 +1597,75 @@ mod TestSet {
 
     @Test
     def eq02(): Unit \ Assert = 
-        assertTrue(Set#{1} != Set#{})
+        assertNeq(unexpected = Set#{}, actual = Set#{1})
 
     @Test
     def eq03(): Unit \ Assert = 
-        assertTrue(Set#{} != Set#{1})
+        assertNeq(unexpected = Set#{1}, actual = Set#{})
 
     @Test
     def eq04(): Unit \ Assert = 
-        assertTrue(Set#{1, 2} != Set#{})
+        assertNeq(unexpected = Set#{}, actual = Set#{1, 2})
 
     @Test
     def eq05(): Unit \ Assert = 
-        assertTrue(Set#{} != Set#{1, 2})
+        assertNeq(unexpected = Set#{1, 2}, actual = Set#{})
 
     @Test
     def eq06(): Unit \ Assert = 
-        assertTrue(Set#{1} != Set#{2})
+        assertNeq(unexpected = Set#{2}, actual = Set#{1})
 
     @Test
     def eq07(): Unit \ Assert = 
-        assertTrue(Set#{1} == Set#{1})
+        assertEq(expected = Set#{1}, actual = Set#{1})
 
     @Test
     def eq08(): Unit \ Assert = 
-        assertTrue(Set#{1, 2, 3} != Set#{})
+        assertNeq(unexpected = Set#{}, actual = Set#{1, 2, 3})
 
     @Test
     def eq09(): Unit \ Assert = 
-        assertTrue(Set#{1, 2} != Set#{1})
+        assertNeq(unexpected = Set#{1}, actual = Set#{1, 2})
 
     @Test
     def eq10(): Unit \ Assert = 
-        assertTrue(Set#{1} != Set#{1, 2})
+        assertNeq(unexpected = Set#{1, 2}, actual = Set#{1})
 
     @Test
     def eq11(): Unit \ Assert = 
-        assertTrue(Set#{} != Set#{1, 2, 3})
+        assertNeq(unexpected = Set#{1, 2, 3}, actual = Set#{})
 
     @Test
     def eq12(): Unit \ Assert = 
-        assertTrue(Set#{1, 2} != Set#{1, 3})
+        assertNeq(unexpected = Set#{1, 3}, actual = Set#{1, 2})
 
     @Test
     def eq13(): Unit \ Assert = 
-        assertTrue(Set#{1, 2} == Set#{2, 1})
+        assertEq(expected = Set#{1, 2}, actual = Set#{2, 1})
 
     @Test
     def eq14(): Unit \ Assert = 
-        assertTrue(Set#{1, 2} == Set#{1, 2})
+        assertEq(expected = Set#{1, 2}, actual = Set#{1, 2})
 
     @Test
     def eq15(): Unit \ Assert = 
-        assertTrue(Set#{1, 2, 3} != Set#{1, 2, 4})
+        assertNeq(unexpected = Set#{1, 2, 4}, actual = Set#{1, 2, 3})
 
     @Test
     def eq16(): Unit \ Assert = 
-        assertTrue(Set#{1, 2, 3} == Set#{1, 2, 3})
+        assertEq(expected = Set#{1, 2, 3}, actual = Set#{1, 2, 3})
 
     @Test
     def eq17(): Unit \ Assert = 
-        assertTrue(Set#{1, 2, 3} == Set#{2, 3, 1})
+        assertEq(expected = Set#{1, 2, 3}, actual = Set#{2, 3, 1})
 
     @Test
     def eq18(): Unit \ Assert = 
-        assertTrue(Set#{1, 2, 3} == Set#{3, 1, 2})
+        assertEq(expected = Set#{1, 2, 3}, actual = Set#{3, 1, 2})
 
     @Test
     def eq19(): Unit \ Assert = 
-        assertTrue(Set#{1, 2, 3} == Set#{2, 1, 3})
+        assertEq(expected = Set#{1, 2, 3}, actual = Set#{2, 1, 3})
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //

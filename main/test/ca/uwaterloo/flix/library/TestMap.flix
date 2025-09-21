@@ -2247,19 +2247,19 @@ mod TestMap {
 
     @Test
     def eq02(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2} != Map#{})
+        assertNeq(unexpected = Map#{}, actual = Map#{1 => 2})
 
     @Test
     def eq03(): Unit \ Assert = 
-        assertTrue(Map#{} != Map#{1 => 2})
+        assertNeq(unexpected = Map#{1 => 2}, actual = Map#{})
 
     @Test
     def eq04(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} != Map#{})
+        assertNeq(unexpected = Map#{}, actual = Map#{1 => 2, 3 => 4})
 
     @Test
     def eq05(): Unit \ Assert = 
-        assertTrue(Map#{} != Map#{1 => 2, 3 => 4})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 4}, actual = Map#{})
 
     @Test
     def eq06(): Unit \ Assert = 
@@ -2267,27 +2267,27 @@ mod TestMap {
 
     @Test
     def eq07(): Unit \ Assert = 
-        assertTrue(Map#{1 => 3} != Map#{1 => 2})
+        assertNeq(unexpected = Map#{1 => 2}, actual = Map#{1 => 3})
 
     @Test
     def eq08(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2} != Map#{1 => 3})
+        assertNeq(unexpected = Map#{1 => 3}, actual = Map#{1 => 2})
 
     @Test
     def eq09(): Unit \ Assert = 
-        assertTrue(Map#{2 => 2} != Map#{1 => 2})
+        assertNeq(unexpected = Map#{1 => 2}, actual = Map#{2 => 2})
 
     @Test
     def eq10(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2} != Map#{4 => 2})
+        assertNeq(unexpected = Map#{4 => 2}, actual = Map#{1 => 2})
 
     @Test
     def eq11(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2})
+        assertNeq(unexpected = Map#{1 => 2}, actual = Map#{1 => 2, 3 => 4})
 
     @Test
     def eq12(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2} != Map#{1 => 2, 3 => 4})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 4}, actual = Map#{1 => 2})
 
     @Test
     def eq13(): Unit \ Assert = 
@@ -2299,27 +2299,27 @@ mod TestMap {
 
     @Test
     def eq15(): Unit \ Assert = 
-        assertTrue(Map#{1 => 1, 3 => 4} != Map#{1 => 2, 3 => 4})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 4}, actual = Map#{1 => 1, 3 => 4})
 
     @Test
     def eq16(): Unit \ Assert = 
-        assertTrue(Map#{4 => 2, 3 => 4} != Map#{1 => 2, 3 => 4})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 4}, actual = Map#{4 => 2, 3 => 4})
 
     @Test
     def eq17(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2, 2 => 4})
+        assertNeq(unexpected = Map#{1 => 2, 2 => 4}, actual = Map#{1 => 2, 3 => 4})
 
     @Test
     def eq18(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 8})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 8}, actual = Map#{1 => 2, 3 => 4})
 
     @Test
     def eq19(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4, 5 => 6} != Map#{1 => 2, 3 => 4})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 4}, actual = Map#{1 => 2, 3 => 4, 5 => 6})
 
     @Test
     def eq20(): Unit \ Assert = 
-        assertTrue(Map#{1 => 2, 3 => 4} != Map#{1 => 2, 3 => 4, 5 => 6})
+        assertNeq(unexpected = Map#{1 => 2, 3 => 4, 5 => 6}, actual = Map#{1 => 2, 3 => 4})
 
     @Test
     def eq21(): Unit \ Assert = 
@@ -3046,7 +3046,7 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{}));
+        assertEq(expected = Identity.Identity(Map#{}), actual = ans);
         assertTrue(Ref.get(st) == '#')
     }
 
@@ -3055,7 +3055,7 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}));
+        assertEq(expected = Identity.Identity(Map#{1 => 'a'}), actual = ans);
         assertTrue(Ref.get(st) == 'a')
     }
 
@@ -3064,7 +3064,7 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}));
+        assertEq(expected = Identity.Identity(Map#{1 => 'a', 2 => 'b'}), actual = ans);
         assertTrue(Ref.get(st) == 'b')
     }
 
@@ -3073,7 +3073,7 @@ mod TestMap {
         let st = Ref.fresh(rc, '#');
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}));
+        assertEq(expected = Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}), actual = ans);
         assertTrue(Ref.get(st) == 'c')
     }
 
@@ -3086,7 +3086,7 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m: Map[Int32, Char] = Map#{};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{}));
+        assertEq(expected = Identity.Identity(Map#{}), actual = ans);
         assertTrue(Ref.get(st) == (0, '#'))
     }
 
@@ -3095,7 +3095,7 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a'}));
+        assertEq(expected = Identity.Identity(Map#{1 => 'a'}), actual = ans);
         assertTrue(Ref.get(st) == (1, 'a'))
     }
 
@@ -3104,7 +3104,7 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}));
+        assertEq(expected = Identity.Identity(Map#{1 => 'a', 2 => 'b'}), actual = ans);
         assertTrue(Ref.get(st) == (2, 'b'))
     }
 
@@ -3113,7 +3113,7 @@ mod TestMap {
         let st = Ref.fresh(rc, (0, '#'));
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
         let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
-        assertTrue(ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}));
+        assertEq(expected = Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}), actual = ans);
         assertTrue(Ref.get(st) == (3, 'c'))
     }
 
