@@ -21,7 +21,9 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTokens
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.PrefixTree
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.Random
 
@@ -39,6 +41,100 @@ object Lexer {
 
   /** The end-of-file character (`'\u0000'`). */
   private val EOF = '\u0000'
+
+  /** All keywords of Flix. */
+  private val Keywords: PrefixTree.Node[TokenKind] = {
+    val keywords = Array(
+      ("Array#", TokenKind.ArrayHash),
+      ("List#", TokenKind.ListHash),
+      ("Map#", TokenKind.MapHash),
+      ("Set#", TokenKind.SetHash),
+      ("Static", TokenKind.KeywordStaticUppercase),
+      ("Univ", TokenKind.KeywordUniv),
+      ("Vector#", TokenKind.VectorHash),
+      ("alias", TokenKind.KeywordAlias),
+      ("and", TokenKind.KeywordAnd),
+      ("as", TokenKind.KeywordAs),
+      ("case", TokenKind.KeywordCase),
+      ("catch", TokenKind.KeywordCatch),
+      ("checked_cast", TokenKind.KeywordCheckedCast),
+      ("checked_ecast", TokenKind.KeywordCheckedECast),
+      ("choose", TokenKind.KeywordChoose),
+      ("choose*", TokenKind.KeywordChooseStar),
+      ("def", TokenKind.KeywordDef),
+      ("discard", TokenKind.KeywordDiscard),
+      ("eff", TokenKind.KeywordEff),
+      ("else", TokenKind.KeywordElse),
+      ("ematch", TokenKind.KeywordEMatch),
+      ("enum", TokenKind.KeywordEnum),
+      ("false", TokenKind.KeywordFalse),
+      ("fix", TokenKind.KeywordFix),
+      ("forA", TokenKind.KeywordForA),
+      ("forM", TokenKind.KeywordForM),
+      ("forall", TokenKind.KeywordForall),
+      ("force", TokenKind.KeywordForce),
+      ("foreach", TokenKind.KeywordForeach),
+      ("from", TokenKind.KeywordFrom),
+      ("handler", TokenKind.KeywordHandler),
+      ("if", TokenKind.KeywordIf),
+      ("import", TokenKind.KeywordImport),
+      ("inject", TokenKind.KeywordInject),
+      ("instance", TokenKind.KeywordInstance),
+      ("instanceof", TokenKind.KeywordInstanceOf),
+      ("into", TokenKind.KeywordInto),
+      ("law", TokenKind.KeywordLaw),
+      ("lawful", TokenKind.KeywordLawful),
+      ("lazy", TokenKind.KeywordLazy),
+      ("let", TokenKind.KeywordLet),
+      ("match", TokenKind.KeywordMatch),
+      ("mod", TokenKind.KeywordMod),
+      ("mut", TokenKind.KeywordMut),
+      ("new", TokenKind.KeywordNew),
+      ("not", TokenKind.KeywordNot),
+      ("null", TokenKind.KeywordNull),
+      ("open_variant", TokenKind.KeywordOpenVariant),
+      ("open_variant_as", TokenKind.KeywordOpenVariantAs),
+      ("or", TokenKind.KeywordOr),
+      ("override", TokenKind.KeywordOverride),
+      ("par", TokenKind.KeywordPar),
+      ("pquery", TokenKind.KeywordPQuery),
+      ("project", TokenKind.KeywordProject),
+      ("psolve", TokenKind.KeywordPSolve),
+      ("pub", TokenKind.KeywordPub),
+      ("query", TokenKind.KeywordQuery),
+      ("redef", TokenKind.KeywordRedef),
+      ("region", TokenKind.KeywordRegion),
+      ("restrictable", TokenKind.KeywordRestrictable),
+      ("run", TokenKind.KeywordRun),
+      ("rvadd", TokenKind.KeywordRvadd),
+      ("rvand", TokenKind.KeywordRvand),
+      ("rvnot", TokenKind.KeywordRvnot),
+      ("rvsub", TokenKind.KeywordRvsub),
+      ("sealed", TokenKind.KeywordSealed),
+      ("select", TokenKind.KeywordSelect),
+      ("solve", TokenKind.KeywordSolve),
+      ("spawn", TokenKind.KeywordSpawn),
+      ("static", TokenKind.KeywordStatic),
+      ("struct", TokenKind.KeywordStruct),
+      ("throw", TokenKind.KeywordThrow),
+      ("trait", TokenKind.KeywordTrait),
+      ("true", TokenKind.KeywordTrue),
+      ("try", TokenKind.KeywordTry),
+      ("type", TokenKind.KeywordType),
+      ("typematch", TokenKind.KeywordTypeMatch),
+      ("unchecked_cast", TokenKind.KeywordUncheckedCast),
+      ("unsafe", TokenKind.KeywordUnsafe),
+      ("unsafely", TokenKind.KeywordUnsafely),
+      ("use", TokenKind.KeywordUse),
+      ("where", TokenKind.KeywordWhere),
+      ("with", TokenKind.KeywordWith),
+      ("without", TokenKind.KeywordWithout),
+      ("xor", TokenKind.KeywordXor),
+      ("xvar", TokenKind.KeywordXvar),
+      ("yield", TokenKind.KeywordYield),
+    )
+    PrefixTree.mk(keywords)
+  }
 
   /** The characters allowed in a user defined operator mapped to their `TokenKind`s. */
   private def isUserOp(c: Char): Option[TokenKind] = {
@@ -195,6 +291,12 @@ object Lexer {
   private def scanToken()(implicit s: State): TokenKind = {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
+
+    acceptIfKeyword() match {
+      case Some(token) => return token
+      case None => // nop
+    }
+
     s.sc.peekAndAdvance() match {
       case '(' => TokenKind.ParenL
       case ')' => TokenKind.ParenR
@@ -273,93 +375,6 @@ object Lexer {
       case _ if isOperator("|||") => TokenKind.TripleBar
       case _ if isOperator("~~~") => TokenKind.TripleTilde
       case '~' => TokenKind.Tilde
-      case _ if isKeyword("alias") => TokenKind.KeywordAlias
-      case _ if isKeyword("and") => TokenKind.KeywordAnd
-      case _ if isKeyword("as") => TokenKind.KeywordAs
-      case _ if isKeyword("case") => TokenKind.KeywordCase
-      case _ if isKeyword("catch") => TokenKind.KeywordCatch
-      case _ if isKeyword("checked_cast") => TokenKind.KeywordCheckedCast
-      case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
-      case _ if isKeyword("choose*") => TokenKind.KeywordChooseStar
-      case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("def") => TokenKind.KeywordDef
-      case _ if isKeyword("discard") => TokenKind.KeywordDiscard
-      case _ if isKeyword("eff") => TokenKind.KeywordEff
-      case _ if isKeyword("else") => TokenKind.KeywordElse
-      case _ if isKeyword("ematch") => TokenKind.KeywordEMatch
-      case _ if isKeyword("enum") => TokenKind.KeywordEnum
-      case _ if isKeyword("false") => TokenKind.KeywordFalse
-      case _ if isKeyword("fix") => TokenKind.KeywordFix
-      case _ if isKeyword("forall") => TokenKind.KeywordForall
-      case _ if isKeyword("forA") => TokenKind.KeywordForA
-      case _ if isKeyword("force") => TokenKind.KeywordForce
-      case _ if isKeyword("foreach") => TokenKind.KeywordForeach
-      case _ if isKeyword("forM") => TokenKind.KeywordForM
-      case _ if isKeyword("from") => TokenKind.KeywordFrom
-      case _ if isKeyword("handler") => TokenKind.KeywordHandler
-      case _ if isKeyword("if") => TokenKind.KeywordIf
-      case _ if isKeyword("import") => TokenKind.KeywordImport
-      case _ if isKeyword("inject") => TokenKind.KeywordInject
-      case _ if isKeyword("instanceof") => TokenKind.KeywordInstanceOf
-      case _ if isKeyword("instance") => TokenKind.KeywordInstance
-      case _ if isKeyword("into") => TokenKind.KeywordInto
-      case _ if isKeyword("lawful") => TokenKind.KeywordLawful
-      case _ if isKeyword("law") => TokenKind.KeywordLaw
-      case _ if isKeyword("lazy") => TokenKind.KeywordLazy
-      case _ if isKeyword("let") => TokenKind.KeywordLet
-      case _ if isKeyword("match") => TokenKind.KeywordMatch
-      case _ if isKeyword("mod") => TokenKind.KeywordMod
-      case _ if isKeyword("mut") => TokenKind.KeywordMut
-      case _ if isKeyword("new") => TokenKind.KeywordNew
-      case _ if isKeyword("not") => TokenKind.KeywordNot
-      case _ if isKeyword("null") => TokenKind.KeywordNull
-      case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
-      case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
-      case _ if isKeyword("or") => TokenKind.KeywordOr
-      case _ if isKeyword("override") => TokenKind.KeywordOverride
-      case _ if isKeyword("par") => TokenKind.KeywordPar
-      case _ if isKeyword("pub") => TokenKind.KeywordPub
-      case _ if isKeyword("project") => TokenKind.KeywordProject
-      case _ if isKeyword("pquery") => TokenKind.KeywordPQuery
-      case _ if isKeyword("psolve") => TokenKind.KeywordPSolve
-      case _ if isKeyword("query") => TokenKind.KeywordQuery
-      case _ if isKeyword("redef") => TokenKind.KeywordRedef
-      case _ if isKeyword("region") => TokenKind.KeywordRegion
-      case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
-      case _ if isKeyword("run") => TokenKind.KeywordRun
-      case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
-      case _ if isKeyword("rvand") => TokenKind.KeywordRvand
-      case _ if isKeyword("rvsub") => TokenKind.KeywordRvsub
-      case _ if isKeyword("rvnot") => TokenKind.KeywordRvnot
-      case _ if isKeyword("sealed") => TokenKind.KeywordSealed
-      case _ if isKeyword("select") => TokenKind.KeywordSelect
-      case _ if isKeyword("solve") => TokenKind.KeywordSolve
-      case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
-      case _ if isKeyword("static") => TokenKind.KeywordStatic
-      case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
-      case _ if isKeyword("struct") => TokenKind.KeywordStruct
-      case _ if isKeyword("throw") => TokenKind.KeywordThrow
-      case _ if isKeyword("trait") => TokenKind.KeywordTrait
-      case _ if isKeyword("true") => TokenKind.KeywordTrue
-      case _ if isKeyword("try") => TokenKind.KeywordTry
-      case _ if isKeyword("type") => TokenKind.KeywordType
-      case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
-      case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
-      case _ if isKeyword("Univ") => TokenKind.KeywordUniv
-      case _ if isKeyword("unsafe") => TokenKind.KeywordUnsafe
-      case _ if isKeyword("unsafely") => TokenKind.KeywordUnsafely
-      case _ if isKeyword("use") => TokenKind.KeywordUse
-      case _ if isKeyword("where") => TokenKind.KeywordWhere
-      case _ if isKeyword("with") => TokenKind.KeywordWith
-      case _ if isKeyword("without") => TokenKind.KeywordWithout
-      case _ if isKeyword("yield") => TokenKind.KeywordYield
-      case _ if isKeyword("xor") => TokenKind.KeywordXor
-      case _ if isKeyword("xvar") => TokenKind.KeywordXvar
-      case _ if isKeyword("Set#") => TokenKind.SetHash
-      case _ if isKeyword("Array#") => TokenKind.ArrayHash
-      case _ if isKeyword("Map#") => TokenKind.MapHash
-      case _ if isKeyword("List#") => TokenKind.ListHash
-      case _ if isKeyword("Vector#") => TokenKind.VectorHash
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
@@ -396,14 +411,6 @@ object Lexer {
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
-
-  /**
-    * Check that the potential keyword is sufficiently separated.
-    * A keyword is separated if it is followed by anything __but__ a character, digit, or underscore.
-    * Note that __comparison includes current__.
-    */
-  private def isSeparated(keyword: String)(implicit s: State): Boolean =
-    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => !(c.isLetter || c.isDigit || c == '_'))
 
   /**
     * Check that the potential operator is sufficiently separated.
@@ -453,13 +460,44 @@ object Lexer {
   private def isOperator(op: String)(implicit s: State): Boolean =
     isSeparatedOperator(op) && isMatchPrev(op)
 
-  /**
-    * Checks whether the following substring matches a keyword.
-    * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
-    */
-  private def isKeyword(keyword: String)(implicit s: State): Boolean =
-    isSeparated(keyword) && isMatchPrev(keyword)
+  /** Advance the current position past a keyword if any keyword completely matches the current word. */
+  private def acceptIfKeyword()(implicit s: State): Option[TokenKind] = {
+    // A potential match must be:
+    //   - The longest match in the keyword map.
+    //   - Followed by a char that is non-letter-like (or EOF).
+
+    /**
+      * Keep peeking input while the prefix is contained in the tree.
+      * At end of file or non-matching non-letter-like char, return the optional current mapping.
+      * At non-matching letter-like char, return none.
+      */
+    @tailrec
+    def search(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
+      s.sc.nth(offset) match {
+        case Some(c) =>
+          node.getNode(c) match {
+            case Some(nextNode) =>
+              search(offset + 1, nextNode)
+            case None =>
+              if (c.isLetter || c.isDigit || c == '_') {
+                // Not a full match - Not a keyword.
+                return None
+              }
+              // Full match - A keyword if node has a token.
+              val res = node.getValue
+              res.foreach(_ => s.sc.advanceN(offset))
+              res
+          }
+        case None =>
+          // EOF - A keyword if node has a token.
+          val res = node.getValue
+          res.foreach(_ => s.sc.advanceN(offset))
+          res
+      }
+    }
+
+    search(0, Keywords)
+  }
 
   /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
@@ -1018,6 +1056,15 @@ object Lexer {
           column += 1
         }
         offset += 1
+      }
+    }
+
+    /** Advances cursor `n` chars forward, or until out of bounds. */
+    @tailrec
+    def advanceN(n: Int): Unit = {
+      if (0 < n) {
+        advance()
+        advanceN(n - 1)
       }
     }
 
