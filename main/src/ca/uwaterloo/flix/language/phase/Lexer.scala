@@ -483,12 +483,13 @@ object Lexer {
                 // Not a full match - Not a keyword.
                 return None
               }
+              // Full match - A keyword if node has a token.
               val res = node.getValue
               res.foreach(_ => s.sc.advanceN(offset))
               res
           }
         case None =>
-          // EOF
+          // EOF - A keyword if node has a token.
           val res = node.getValue
           res.foreach(_ => s.sc.advanceN(offset))
           res
