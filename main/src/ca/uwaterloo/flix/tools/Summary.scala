@@ -98,7 +98,7 @@ object Summary {
     */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
-    val srcLoc = root.sources.getOrElse(src, unknownLocation)
+    val srcLoc = root.sources.getOrElse(src, SourceLocation.Unknown)
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
@@ -308,13 +308,6 @@ object Summary {
   private val unknownSource =
     Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
 
-  private val unknownPosition =
-    SourcePosition.firstPosition(unknownSource)
-
-  private val unknownLocation =
-    SourceLocation(isReal = false, unknownPosition, unknownPosition)
-
-
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
                                       debugSrc: Option[Source],
@@ -333,7 +326,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
+        SourceLocation(isReal = true, src, SourcePosition.FirstPosition, SourcePosition.FirstPosition)
       )
     }
 
@@ -346,7 +339,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
+          SourceLocation(isReal = true, src, SourcePosition.FirstPosition, SourcePosition.FirstPosition)
         )
       }
       FileData(

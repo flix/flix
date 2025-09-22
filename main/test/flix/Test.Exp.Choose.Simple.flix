@@ -1,8 +1,9 @@
-restrictable enum Expr[s] {
-    case Cst, Var, Not, And, Or, Xor
-}
-
 mod Test.Exp.Choose.Simple {
+
+    restrictable enum Expr[s] {
+        case Cst, Var, Not, And, Or, Xor
+    }
+
     pub def testChoose01(): Bool = {
         choose Expr.Cst {
             case Expr.Cst => true
@@ -63,14 +64,4 @@ mod Test.Exp.Choose.Simple {
         h(cstOrNot)
     }
 
-//     pub def testChoose07(): Bool = {
-//         let id = x -> choose x {
-//             case Expr.And    => open_variant Expr.And
-//             case Expr.Cst    => open_variant Expr.Cst
-//             case Expr.Not    => open_variant Expr.Not
-//             case Expr.Or     => open_variant Expr.Or
-//         };
-//         let _ = id(Expr.Cst);
-//         true
-//     }
 }

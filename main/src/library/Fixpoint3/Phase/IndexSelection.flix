@@ -78,7 +78,7 @@ mod Fixpoint3.Phase.IndexSelection {
     ///
     @Internal
     pub def indexProgram(program: RamProgram): RamProgram = match program {
-        case RamProgram.Program(stmt, facts, meta, _) =>
+        case RamProgram.Program(stmt, facts, meta, _, typeInfo) =>
             // This type annotation is apparently needed?
             let (newIndexes, newStmt): (Map[RelSym, Vector[Search]], RamStmt) = region rc {
                 let indexes = MutMap.empty(rc);
@@ -125,7 +125,7 @@ mod Fixpoint3.Phase.IndexSelection {
                 let finalState = UniqueInts.toMap(indexState);
                 (indexedStmt, finalState)
             };
-            RamProgram.Program(indexedStmt, facts, meta, (indexes, indexPlacement))
+            RamProgram.Program(indexedStmt, facts, meta, (indexes, indexPlacement), typeInfo)
     }
 
     ///
@@ -187,22 +187,22 @@ mod Fixpoint3.Phase.IndexSelection {
     /// For details about memory positions see `lookupIndex`.
     ///
     def indexOp(op: RelOp, constructedIndexes: Indexes, indexState: UniqueInts[(RelSym, Int32), r]): RelOp \ r = match op {
-        case RelOp.Search(rowVar, relSym, body) =>
-            RelOp.Search(rowVar, relSym, indexOp(body, constructedIndexes, indexState))
-        case RelOp.Query(rowVar, relSym, boolExps, _, body) =>
+        case RelOp.Search(rowVar, relSym, t, body) =>
+            RelOp.Search(rowVar, relSym, t, indexOp(body, constructedIndexes, indexState))
+        case RelOp.Query(rowVar, relSym, boolExps, _, t, body) =>
             let search = (List.empty(), boolExps) ||>
                 Vector.foldLeft(acc -> exp -> match exp {
-                    case BoolExp.Eq(RamTerm.RowLoad(_, i, _), _) => i :: acc
-                    case BoolExp.Eq(_, RamTerm.RowLoad(_, i, _)) => i :: acc
+                    case BoolExp.Eq(RamTerm.RowLoad(_, i, _, _), _) => i :: acc
+                    case BoolExp.Eq(_, RamTerm.RowLoad(_, i, _, _)) => i :: acc
                     case _ =>
                         // This is only a bug when the only index type available is `BPlusTree`
                         bug!("In Fixpoint.Phase.IndexSelection.indexOp: Found non-equality BoolExp in indexOp!")
                 }) |> List.toVector;
             let index = lookupIndex(relSym, search, constructedIndexes);
             let absoluteIndex = UniqueInts.getIndex((relSym, index), indexState);
-            RelOp.Query(rowVar, relSym, boolExps, absoluteIndex, indexOp(body, constructedIndexes, indexState))
-        case RelOp.Functional(rowVar, func, terms, body, arity) =>
-            RelOp.Functional(rowVar, func, terms, indexOp(body, constructedIndexes, indexState), arity)
+            RelOp.Query(rowVar, relSym, boolExps, absoluteIndex, t, indexOp(body, constructedIndexes, indexState))
+        case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
+            RelOp.Functional(rowVar, func, terms, indexOp(body, constructedIndexes, indexState), arity, t)
         case RelOp.Project(_, _, _) => op
         case RelOp.If(boolExps, body) => RelOp.If(boolExps, indexOp(body, constructedIndexes, indexState))
     }
@@ -242,16 +242,15 @@ mod Fixpoint3.Phase.IndexSelection {
         indexes: PrimitiveSearches[r],
         seenTuples: Set[RowVar]
     ): RelOp \ r = match op {
-        case RelOp.Search(rowVar, relSym, body) =>
+        case RelOp.Search(rowVar, relSym, t, body) =>
             let extendedSeenTuples = Set.insert(rowVar, seenTuples);
-            let res = RelOp.Search(rowVar, relSym, searchesOfOp(body, indexes, extendedSeenTuples));
-            res
-        case RelOp.Query(rowVar, relSym, boolExps, _, body) => region rc {
+            RelOp.Search(rowVar, relSym, t, searchesOfOp(body, indexes, extendedSeenTuples))
+        case RelOp.Query(rowVar, relSym, boolExps, _, t, body) => region rc {
             let otherBoolExpList = MutList.empty(rc);
             let equalExpList = MutList.empty(rc);
             let search = boolExps |>
                 Vector.foldLeft(acc -> exp -> match exp {
-                    case BoolExp.Eq(RamTerm.RowLoad(rv1, i, _), t2) if rv1 == rowVar =>
+                    case BoolExp.Eq(RamTerm.RowLoad(rv1, i, _, _), t2) if rv1 == rowVar =>
                         if (isTermGround(t2, seenTuples)) {
                             MutList.push(exp, equalExpList);
                             i :: acc
@@ -272,14 +271,13 @@ mod Fixpoint3.Phase.IndexSelection {
                 else RelOp.If(otherBoolExps, newBody);
             let equalExps = MutList.toVector(equalExpList);
             if (Vector.length(equalExps) == 0)
-                RelOp.Search(rowVar, relSym, nestedBody)
+                RelOp.Search(rowVar, relSym, t, nestedBody)
             else
-                RelOp.Query(rowVar, relSym, equalExps, -1, nestedBody)
+                RelOp.Query(rowVar, relSym, equalExps, -1, t, nestedBody)
         }
-        case RelOp.Functional(rowVar, func, terms, body, arity) =>
+        case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             let extendedSeenTuples = Set.insert(rowVar, seenTuples);
-            let res = RelOp.Functional(rowVar, func, terms, searchesOfOp(body, indexes, extendedSeenTuples), arity);
-            res
+            RelOp.Functional(rowVar, func, terms, searchesOfOp(body, indexes, extendedSeenTuples), arity, t)
         case RelOp.Project(_, _, _) => op
         case RelOp.If(boolExps, body) => RelOp.If(boolExps, searchesOfOp(body, indexes, seenTuples))
     }
@@ -299,8 +297,8 @@ mod Fixpoint3.Phase.IndexSelection {
     /// Returns true if `term` is ground (no free variables) w.r.t. `seenTuples`.
     ///
     def isTermGround(term: RamTerm, seenTuples: Set[RowVar]): Bool = match term {
-        case RamTerm.Lit(_, _) => true
-        case RamTerm.RowLoad(rowVar, _, _) =>
+        case RamTerm.Lit(_, _, _) => true
+        case RamTerm.RowLoad(rowVar, _, _, _) =>
             Set.memberOf(rowVar, seenTuples)
         case _ => false
     }

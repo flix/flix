@@ -47,16 +47,16 @@ object SemanticTokensProvider {
     val keywordModifierOrCommentTokens = sourceOpt match {
       case Some(source) =>
         root.tokens(source).iterator.collect {
-          case Token(kind, _, _, _, sp1, sp2) if kind.isKeyword =>
-            val loc = SourceLocation(isReal = true, sp1, sp2)
+          case Token(kind, src, _, _, sp1, sp2) if kind.isKeyword =>
+            val loc = SourceLocation(isReal = true, src, sp1, sp2)
             SemanticToken(SemanticTokenType.Keyword, Nil, loc)
 
-          case Token(kind, _, _, _, sp1, sp2) if kind.isModifier =>
-            val loc = SourceLocation(isReal = true, sp1, sp2)
+          case Token(kind, src, _, _, sp1, sp2) if kind.isModifier =>
+            val loc = SourceLocation(isReal = true, src, sp1, sp2)
             SemanticToken(SemanticTokenType.Modifier, Nil, loc)
 
-          case Token(kind, _, _, _, sp1, sp2) if kind.isComment =>
-            val loc = SourceLocation(isReal = true, sp1, sp2)
+          case Token(kind, src, _, _, sp1, sp2) if kind.isComment =>
+            val loc = SourceLocation(isReal = true, src, sp1, sp2)
             SemanticToken(SemanticTokenType.Comment, Nil, loc)
         }
       case None => Iterator.empty
@@ -1064,7 +1064,7 @@ object SemanticTokensProvider {
         for (line <- loc.sp1.lineOneIndexed to loc.sp2.lineOneIndexed) {
           val begin = if (line == loc.sp1.lineOneIndexed) loc.sp1.colOneIndexed else 1.toShort
           val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
-          val newLoc = SourceLocation(isReal = true, SourcePosition.mkFromOneIndexed(loc.source, line, begin), SourcePosition.mkFromOneIndexed(loc.source, line, end))
+          val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
     }
