@@ -464,7 +464,7 @@ object Lexer {
   private def acceptIfKeyword()(implicit s: State): Option[TokenKind] = {
     // A potential match must be:
     //   - The longest match in the keyword map.
-    //   - Followed by a char that is non-letter-like.
+    //   - Followed by a char that is non-letter-like (or EOF).
 
     /**
       * Keep peeking input while the prefix is contained in the tree.
