@@ -42,10 +42,10 @@ object PrefixTree {
 
     // The node is implemented as a mutable tree but none of the mutation is exposed to the outside.
 
-    /** Contains the value of the tree if present. */
+    /** Node value, if present. */
     private var value: Option[T] = None
 
-    /** The list of children. */
+    /** Node children. */
     private val children: mutable.HashMap[Char, Node[T]] = new mutable.HashMap()
 
     /** Returns the value of `this`. */
@@ -56,7 +56,11 @@ object PrefixTree {
     def getNode(c: Char): Option[Node[T]] =
       children.get(c)
 
-    /** Returns the child with prefix `s` if present. */
+    /**
+      * Returns the child with prefix `s` if present.
+      *
+      * If `s` is empty, `this` is returned.
+      */
     def getNode(s: String): Option[Node[T]] = {
       var curr = this
       var i = 0
@@ -72,30 +76,27 @@ object PrefixTree {
       Some(curr)
     }
 
-    /** Returns the value of `s` if present. */
+    /**
+      * Returns the value of `s` if present.
+      *
+      * If `s` is empty, [[getValue]] of `this` is returned.
+      */
     def get(s: String): Option[T] =
       getNode(s).flatMap(_.getValue)
 
-    /** Assigns `x` as the value of `this`. */
-    private def setValue(x: T): Unit =
-      this.value = Some(x)
-
-    /** Inserts `c` with value `v`, overriding any existing value. */
-    private def put(c: Char, v: T): Unit =
-      getNodeOrCreateIfAbsent(c).setValue(v)
+    /** Assigns `v` as the value of `this`, overriding any existing value. */
+    private def put(v: T): Unit =
+      this.value = Some(v)
 
     /** Inserts `s` with value `v`, overriding any existing value. */
     private def put(s: String, v: T): Unit = {
-      // Expand the tree over all chars except the last.
       var curr = this
       var i = 0
-      while (i < s.length - 1) {
+      while (i < s.length) {
         curr = curr.getNodeOrCreateIfAbsent(s.charAt(i))
         i = i + 1
       }
-      // Insert the last char if exists.
-      if (s.nonEmpty) curr.put(s.charAt(i), v)
-      else setValue(v)
+      curr.put(v)
     }
 
     /** Returns child `c`, creating a new node if necessary. */
