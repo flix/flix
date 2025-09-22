@@ -461,25 +461,26 @@ object Lexer {
     isSeparatedOperator(op) && isMatchPrev(op)
 
   /** Advance the current position past a keyword if any keyword completely matches the current word. */
-  private def acceptIfKeyword()(implicit s: State): Option[TokenKind] = {
-    // A potential match must be:
-    //   - The longest match in the keyword map.
-    //   - Followed by a char that is non-letter-like (or EOF).
+  private def acceptIfKeyword()(implicit s: State): Option[TokenKind] =
+    advanceIfInTree(Keywords, c => !(c.isLetter || c.isDigit || c == '_'))
 
-    /**
-      * Keep peeking input while the prefix is contained in the tree.
-      * At end of file or non-matching non-letter-like char, return the optional current mapping.
-      * At non-matching letter-like char, return none.
-      */
+  /**
+    * Advance the current position past a longest match in  `node` if it is followed by a char
+    * where `tailCondition(c)` is `true` or is followed by EOF.
+    */
+  private def advanceIfInTree(node: PrefixTree.Node[TokenKind], tailCondition: Char => Boolean)(implicit s: State): Option[TokenKind] = {
     @tailrec
-    def search(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
+    def loop(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
+      // A potential match must be:
+      //   - The longest match in the keyword map.
+      //   - Followed by a char that matches `tailCondition` (or EOF).
       s.sc.nth(offset) match {
         case Some(c) =>
           node.getNode(c) match {
             case Some(nextNode) =>
-              search(offset + 1, nextNode)
+              loop(offset + 1, nextNode)
             case None =>
-              if (c.isLetter || c.isDigit || c == '_') {
+              if (!tailCondition(c)) {
                 // Not a full match - Not a keyword.
                 return None
               }
@@ -496,7 +497,7 @@ object Lexer {
       }
     }
 
-    search(0, Keywords)
+    loop(0, node)
   }
 
   /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
