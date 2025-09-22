@@ -42,7 +42,7 @@ object Lexer {
   /** The end-of-file character (`'\u0000'`). */
   private val EOF = '\u0000'
 
-  /** All keywords of Flix. */
+  /** Keywords - tokens consumed as long as no name-like char follows. */
   private val Keywords: PrefixTree.Node[TokenKind] = {
     val keywords = Array(
       ("Array#", TokenKind.ArrayHash),
@@ -132,8 +132,30 @@ object Lexer {
       ("xor", TokenKind.KeywordXor),
       ("xvar", TokenKind.KeywordXvar),
       ("yield", TokenKind.KeywordYield),
+      ("???", TokenKind.HoleAnonymous),
     )
     PrefixTree.mk(keywords)
+  }
+
+  /** Simple tokens - tokens consumed no matter the following char. */
+  private val SimpleTokens: PrefixTree.Node[TokenKind] = {
+    val simpleTokens = Array(
+      ("#(", TokenKind.HashParenL),
+      ("#{", TokenKind.HashCurlyL),
+      ("#|", TokenKind.HashBar),
+      ("(", TokenKind.ParenL),
+      (")", TokenKind.ParenR),
+      (",", TokenKind.Comma),
+      (".{", TokenKind.DotCurlyL),
+      (";", TokenKind.Semi),
+      ("[", TokenKind.BracketL),
+      ("\\", TokenKind.Backslash),
+      ("]", TokenKind.BracketR),
+      ("{", TokenKind.CurlyL),
+      ("|#", TokenKind.BarHash),
+      ("}", TokenKind.CurlyR),
+    )
+    PrefixTree.mk(simpleTokens)
   }
 
   /** The characters allowed in a user defined operator mapped to their `TokenKind`s. */
@@ -292,22 +314,17 @@ object Lexer {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
 
+    acceptIfSimpleToken() match {
+      case Some(token) => return token
+      case None => // nop
+    }
+
     acceptIfKeyword() match {
       case Some(token) => return token
       case None => // nop
     }
 
     s.sc.peekAndAdvance() match {
-      case '(' => TokenKind.ParenL
-      case ')' => TokenKind.ParenR
-      case '{' => TokenKind.CurlyL
-      case '}' => TokenKind.CurlyR
-      case '[' => TokenKind.BracketL
-      case ']' => TokenKind.BracketR
-      case ';' => TokenKind.Semi
-      case ',' => TokenKind.Comma
-      case '\\' => TokenKind.Backslash
-      case _ if isMatchPrev(".{") => TokenKind.DotCurlyL
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
@@ -331,17 +348,12 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatchPrev("#|") => TokenKind.HashBar
-      case _ if isMatchPrev("|#") => TokenKind.BarHash
-      case _ if isMatchPrev("#{") => TokenKind.HashCurlyL
-      case _ if isMatchPrev("#(") => TokenKind.HashParenL
       case '#' => TokenKind.Hash
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if s.sc.peekIs(_.isLetter) => acceptAnnotation()
       case '@' => TokenKind.At
-      case _ if isMatchPrev("???") => TokenKind.HoleAnonymous
       case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
       case _ if isOperator(":::") => TokenKind.TripleColon
       case _ if isOperator("::") => TokenKind.ColonColon
@@ -459,6 +471,10 @@ object Lexer {
     */
   private def isOperator(op: String)(implicit s: State): Boolean =
     isSeparatedOperator(op) && isMatchPrev(op)
+
+  /** Advance the current position past a simple token if any simple token matches the current position. */
+  private def acceptIfSimpleToken()(implicit s: State): Option[TokenKind] =
+    advanceIfInTree(SimpleTokens, _ => true)
 
   /** Advance the current position past a keyword if any keyword completely matches the current word. */
   private def acceptIfKeyword()(implicit s: State): Option[TokenKind] =
