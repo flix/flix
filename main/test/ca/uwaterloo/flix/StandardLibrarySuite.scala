@@ -62,10 +62,14 @@ class StandardLibrarySuite extends AnyFunSuite {
 
   private def runTests(r: CompilationResult): Unit = {
     // Group the tests by namespace.
-    val testsByNamespace = r.getTests.groupBy(_._1.namespace)
+    val testsByNamespace = r.getTests.groupBy {
+      case (sym, _) => sym.namespace
+    }
 
     // Sort the namespaces.
-    val testsByNamespaceSorted = testsByNamespace.toList.sortBy(p => p._1.mkString("."))
+    val testsByNamespaceSorted = testsByNamespace.toList.sortBy {
+      case (ns, _) => ns.mkString(".")
+    }
 
     // Iterate through each namespace.
     for ((_, tests) <- testsByNamespaceSorted) {
@@ -73,9 +77,14 @@ class StandardLibrarySuite extends AnyFunSuite {
       val testsByName = tests.toList.sortBy(_._1.name)
 
       // Dynamically create a ScalaTest unit test for each @Test function.
-      for ((sym, TestFn(_, skip, run)) <- testsByName; if !skip) {
-        test(sym.toString) {
-          run()
+      for ((sym, TestFn(_, skip, run)) <- testsByName) {
+        val testName = sym.toString
+        if (skip){
+          ignore(testName) {}
+        } else {
+          test(testName) {
+            run()
+          }
         }
       }
     }
