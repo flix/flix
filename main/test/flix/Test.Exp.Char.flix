@@ -93,14 +93,14 @@ mod Test.Exp.Char {
 
     @Test
     def charEscape12(): Unit \ Assert =
-        assertEq(expected = ' ', '\u0020')  // Space
+        assertEq(expected = ' ', '\u0020')   // Space
 
     @Test
     def charEscape13(): Unit \ Assert =
-        assertEq(expected = '€', '\u20AC')  // Euro sign
+        assertEq(expected = '€', '\u20AC')   // Euro sign
 
     @Test
     def charEscape14(): Unit \ Assert =
-        assertEq(expected = '→', '\u2192')  // Right arrow
+        assertEq(expected = '→', '\u2192')   // Right arrow
 
 }
