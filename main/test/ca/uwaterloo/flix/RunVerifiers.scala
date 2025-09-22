@@ -12,7 +12,7 @@ import java.nio.file.Paths
 class RunVerifiers extends AnyFunSuite with TestUtils {
 
   test("RunAllVerifiers.01") {
-    compileWithVerifiers("examples/fixpoints/railroad-network.flix")
+    compileWithVerifiers("examples/datalog/railroad-network.flix")
   }
 
   test("RunAllVerifiers.02") {
