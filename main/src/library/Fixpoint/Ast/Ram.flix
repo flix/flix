@@ -83,7 +83,7 @@ mod Fixpoint.Ast.Ram {
                     "project (${terms |> Vector.join(", ")}) into ${ramSym}"
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
-                    "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
+                    "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
     }
 
