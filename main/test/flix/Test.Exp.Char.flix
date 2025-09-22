@@ -1,63 +1,106 @@
 mod Test.Exp.Char {
 
-    @test
-    def testChar01(): Char = 'a'
+    use Assert.assertEq
 
-    @test
-    def testChar02(): Char = 'b'
+    @CompileTest
+    def charLit01(): Char = 'a'
 
-    @test
-    def testChar03(): Char = 'c'
+    @CompileTest
+    def charLit02(): Char = 'b'
 
-    @test
-    def testChar04(): Char = ' '
+    @CompileTest
+    def charLit03(): Char = 'c'
 
-    @test
-    def testChar05(): Char = '\r'
+    @CompileTest
+    def charLit04(): Char = ' '
 
-    @test
-    def testChar06(): Char = '\n'
+    @CompileTest
+    def charLit05(): Char = '\r'
 
-    @test
-    def testChar07(): Char = '\t'
+    @CompileTest
+    def charLit06(): Char = '\n'
 
-    @test
-    def testChar08(): Char = '\\'
+    @CompileTest
+    def charLit07(): Char = '\t'
 
-    @test
-    def testChar09(): Char = '\''
+    @CompileTest
+    def charLit08(): Char = '\\'
 
-    @test
-    def testChar10(): Char = '0'
+    @CompileTest
+    def charLit09(): Char = '\''
 
-    @test
-    def testChar11(): Char = '\u0000'
+    @CompileTest
+    def charLit10(): Char = '0'
 
-    @test
-    def testChar12(): Char = '\u007f'
+    @CompileTest
+    def charLit11(): Char = '\u0000'
 
-    @test
-    def testChar13(): Char = '\uffff'
+    @CompileTest
+    def charLit12(): Char = '\u007f'
 
-    @test
-    def testChar14(): Char = '十'
+    @CompileTest
+    def charLit13(): Char = '\uffff'
 
-    @test
-    def testChar15(): Char = '\u200b'
+    @CompileTest
+    def charLit14(): Char = '十'
 
-    @test
-    def testChar16(): Bool = '\u0041' == 'A'
+    @CompileTest
+    def charLit15(): Char = '\u200b'
 
-    @test
-    def testChar17(): Bool = '\u005A' == 'Z'
+    @Test
+    def charEscape01(): Unit \ Assert =
+        assertEq(expected = 'A', '\u0041')
 
-    @test
-    def testChar18(): Bool = '\u0061' == 'a'
+    @Test
+    def charEscape02(): Unit \ Assert =
+        assertEq(expected = 'Z', '\u005A')
 
-    @test
-    def testChar19(): Bool = '\u007a' == 'z'
+    @Test
+    def charEscape03(): Unit \ Assert =
+        assertEq(expected = 'a', '\u0061')
 
-    @test
-    def testChar20(): Bool = '\u2603' == '☃'
+    @Test
+    def charEscape04(): Unit \ Assert =
+        assertEq(expected = 'z', '\u007a')
+
+    @Test
+    def charEscape05(): Unit \ Assert =
+        assertEq(expected = '☃',  '\u2603')   // Snowman
+
+    @Test
+    def charEscape06(): Unit \ Assert =
+        assertEq(expected = '\n', '\u000A')   // Line feed
+
+    @Test
+    def charEscape07(): Unit \ Assert =
+        assertEq(expected = '\r', '\u000D')   // Carriage return
+
+    @Test
+    def charEscape08(): Unit \ Assert =
+        assertEq(expected = '\t', '\u0009')   // Tab
+
+    @Test
+    def charEscape09(): Unit \ Assert =
+        assertEq(expected = '"', '\u0022')   // Double quote
+
+    @Test
+    def charEscape10(): Unit \ Assert =
+        assertEq(expected = '\'', '\u0027')  // Single quote
+
+    @Test
+    def charEscape11(): Unit \ Assert =
+        assertEq(expected = '\\', '\u005C')  // Backslash
+
+    @Test
+    def charEscape12(): Unit \ Assert =
+        assertEq(expected = ' ', '\u0020')  // Space
+
+    @Test
+    def charEscape13(): Unit \ Assert =
+        assertEq(expected = '€', '\u20AC')  // Euro sign
+
+    @Test
+    def charEscape14(): Unit \ Assert =
+        assertEq(expected = '→', '\u2192')  // Right arrow
 
 }
