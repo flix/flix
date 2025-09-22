@@ -142,7 +142,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
       |    > 0
       |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -165,7 +165,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |    (query p2 select x from B302(x) |> Vector.length)
         |    > 0
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 
@@ -216,7 +216,7 @@ class TestStratifier extends AnyFunSuite with TestUtils {
         |  C((c: String); 12) :- A(c).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[StratificationError](result)
   }
 

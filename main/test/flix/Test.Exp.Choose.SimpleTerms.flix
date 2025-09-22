@@ -1,13 +1,14 @@
-restrictable enum Expr[s] {
-    case Cst(Char)
-    case Var(String)
-    case Not((Int32, BigInt, BigDecimal))
-    case And(Float64, Float32)
-    case Or(Option[Bool], (Int8, Int16))
-    case Xor(Array[Array[Int64, Univ], Univ], Unit)
-}
-
 mod Test.Exp.Choose.SimpleTerms {
+
+    restrictable enum Expr[s] {
+        case Cst(Char)
+        case Var(String)
+        case Not((Int32, BigInt, BigDecimal))
+        case And(Float64, Float32)
+        case Or(Option[Bool], (Int8, Int16))
+        case Xor(Array[Array[Int64, Univ], Univ], Unit)
+    }
+
     pub def testChoose01(): Bool = {
         choose Expr.Cst('a') {
             case Expr.Cst(_) => true
@@ -68,4 +69,5 @@ mod Test.Exp.Choose.SimpleTerms {
         let cstOrNot = if (true) open_variant Expr.Cst('a') else open_variant Expr.Not((123, 123ii, 1e23ff));
         h(cstOrNot)
     }
+
 }
