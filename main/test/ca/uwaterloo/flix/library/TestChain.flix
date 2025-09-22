@@ -925,11 +925,11 @@ mod TestChain {
 
     @Test
     def foldMap03(): Unit \ Assert =
-        assertEq(expected = "b", Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)))
+        assertEq(expected = "b", Chain.foldMap(x -> if (x == "a") "b" else x, List.toChain("a" :: Nil)))
 
     @Test
     def foldMap04(): Unit \ Assert =
-        assertEq(expected = "abb", Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)))
+        assertEq(expected = "abb", Chain.foldMap(x -> if (x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)))
 
     @Test
     def foldMap05(): Unit \ Assert =

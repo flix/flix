@@ -286,7 +286,7 @@ mod Fixpoint3.Phase.IndexSelection {
     /// Returns the search `Search` for `relSym` to `indexes`.
     ///
     def searchOf(relSym: RelSym, search: Search, indexes: PrimitiveSearches[r]): Unit \ r =
-        if (not Vector.isEmpty(search)){
+        if (not Vector.isEmpty(search)) {
             let searches = MutMap.getWithDefault(relSym, List.empty(), indexes);
             if (not List.memberOf(search, searches))
                 MutMap.put(relSym, search :: searches, indexes)

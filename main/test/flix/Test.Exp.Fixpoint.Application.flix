@@ -23,7 +23,7 @@ mod Test.Exp.Fixpoint.Application {
         let n = 50;
         let r = #{
             Succ(0).
-            Succ(x + 1) :- Succ(x), if(x < n).
+            Succ(x + 1) :- Succ(x), if (x < n).
         };
         let expected = Vector.range(0, n + 1);
         let actual = query r select x from Succ(x);
@@ -102,7 +102,7 @@ mod Test.Exp.Fixpoint.Application {
         let r = #{
             Two(2).
             SuccTwo(0).
-            SuccTwo(x + y) :- SuccTwo(x), Two(y), if(x < n).
+            SuccTwo(x + y) :- SuccTwo(x), Two(y), if (x < n).
         };
         let expected = Vector#{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
         let actual = query r select x from SuccTwo(x);

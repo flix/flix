@@ -223,7 +223,7 @@ mod Fixpoint3.TypeInfo {
     ///
     def typeVar(id: Int64, index: Int32, sym: String, varSymUnifier: VarSymUnifier[r1], typeUnifier: TypeUnifier[r2]): Unit \ r1 + r2 = {
         let (repId, repIndex) = MutMap.getOrElsePut(sym, (id, index), varSymUnifier);
-        if(id == repId and repIndex == index) {
+        if (id == repId and repIndex == index) {
             MutDisjointSets.makeSet((repId, repIndex), typeUnifier)
         } else {
             MutDisjointSets.union((repId, repIndex), (id, index), typeUnifier)

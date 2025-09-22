@@ -443,9 +443,9 @@ mod FordFulkerson {
         let t = 5;
         let g = exampleGraph01() |> zeroFlow;
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        if(p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
+        if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
             minCapacity(p, g) == 9 // The path is picked as in testAugmentingPath02
-        } else if(p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
+        } else if (p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
             minCapacity(p, g) == 4 // The path is picked as in testAugmentingPath02
         } else {
             minCapacity(p, g) == 8 // The path is picked as in testAugmentingPath02
@@ -462,7 +462,7 @@ mod FordFulkerson {
             case (a, u , b) => (a, u , 0, b)
         });
         let p = augmentingPath(s, t, g) |> Option.getWithDefault(Path(Nil));
-        if(p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
+        if (p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
             minCapacity(p, g) == 1 // The path is picked as in testAugmentingPath03
         } else {
             minCapacity(p, g) == 4 // The path is picked as in testAugmentingPath03
@@ -537,9 +537,9 @@ mod FordFulkerson {
         // These are what the engine produces.
         let g2 = Vector#{(0, 10, 4, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 0, 5)};
         let g3 = Vector#{(0, 10, 8, 1), (0, 10, 0, 3), (1, 2, 0, 3), (1, 4, 0, 2), (1, 8, 8, 4), (2, 10, 0, 5), (3, 9, 0, 4), (4, 6, 0, 2), (4, 10, 8, 5)};
-        if(p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
+        if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
             increaseFlow(p, incr, g) == g1
-        } else if(p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
+        } else if (p == Path(5 :: 2 :: 1 :: 0 :: Nil)) {
             increaseFlow(p, incr, g) == g2
         } else {
             increaseFlow(p, incr, g) == g3
@@ -564,7 +564,7 @@ mod FordFulkerson {
             case _             => x
         }) |> Foldable.toVector;
         let g2 = Vector#{(0, 10, 4, 1), (0, 10, 9, 3), (1, 2, 0, 3), (1, 4, 4, 2), (1, 8, 0, 4), (2, 10, 4, 5), (3, 9, 9, 4), (4, 6, 0, 2), (4, 10, 9, 5)};
-        if(p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
+        if (p == Path(5 :: 4 :: 1 :: 0 :: Nil)) {
             increaseFlow(p, incr, g) == g1
         } else {
             increaseFlow(p, incr, g) == g2
@@ -606,7 +606,7 @@ mod FordFulkerson {
             case _ => x
         }) |> Foldable.toVector;
         let g2 = Vector#{(0, 10, 10, 1), (0, 10, 0, 3), (1, 25, 10, 2), (2, 10, 10, 5), (3, 15, 0, 4), (4, 6, 0, 1), (4, 10, 0, 5)};
-        if(p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
+        if (p == Path(5 :: 4 :: 3 :: 0 :: Nil)) {
             increaseFlow(p, incr, g) == g1
         } else {
             increaseFlow(p, incr, g) == g2
