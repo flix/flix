@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTokens
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.MutPrefixTree
+import ca.uwaterloo.flix.util.collection.PrefixTree
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -318,108 +318,102 @@ object Lexer {
     }
   }
 
-  val Keywords: MutPrefixTree.Node[TokenKind] = {
-    val root = new MutPrefixTree.Node[TokenKind]()
-
-    root.put("Array#", TokenKind.ArrayHash)
-    root.put("List#", TokenKind.ListHash)
-    root.put("Map#", TokenKind.MapHash)
-    root.put("Set#", TokenKind.SetHash)
-    root.put("Static", TokenKind.KeywordStaticUppercase)
-    root.put("Univ", TokenKind.KeywordUniv)
-    root.put("Vector#", TokenKind.VectorHash)
-    root.put("alias", TokenKind.KeywordAlias)
-    root.put("and", TokenKind.KeywordAnd)
-    root.put("as", TokenKind.KeywordAs)
-    root.put("case", TokenKind.KeywordCase)
-    root.put("catch", TokenKind.KeywordCatch)
-    root.put("checked_cast", TokenKind.KeywordCheckedCast)
-    root.put("checked_ecast", TokenKind.KeywordCheckedECast)
-    root.put("choose", TokenKind.KeywordChoose)
-    root.put("choose*", TokenKind.KeywordChooseStar)
-    root.put("def", TokenKind.KeywordDef)
-    root.put("discard", TokenKind.KeywordDiscard)
-    root.put("eff", TokenKind.KeywordEff)
-    root.put("else", TokenKind.KeywordElse)
-    root.put("ematch", TokenKind.KeywordEMatch)
-    root.put("enum", TokenKind.KeywordEnum)
-    root.put("false", TokenKind.KeywordFalse)
-    root.put("fix", TokenKind.KeywordFix)
-    root.put("forA", TokenKind.KeywordForA)
-    root.put("forM", TokenKind.KeywordForM)
-    root.put("forall", TokenKind.KeywordForall)
-    root.put("force", TokenKind.KeywordForce)
-    root.put("foreach", TokenKind.KeywordForeach)
-    root.put("from", TokenKind.KeywordFrom)
-    root.put("handler", TokenKind.KeywordHandler)
-    root.put("if", TokenKind.KeywordIf)
-    root.put("import", TokenKind.KeywordImport)
-    root.put("inject", TokenKind.KeywordInject)
-    root.put("instance", TokenKind.KeywordInstance)
-    root.put("instanceof", TokenKind.KeywordInstanceOf)
-    root.put("into", TokenKind.KeywordInto)
-    root.put("law", TokenKind.KeywordLaw)
-    root.put("lawful", TokenKind.KeywordLawful)
-    root.put("lazy", TokenKind.KeywordLazy)
-    root.put("let", TokenKind.KeywordLet)
-    root.put("match", TokenKind.KeywordMatch)
-    root.put("mod", TokenKind.KeywordMod)
-    root.put("mut", TokenKind.KeywordMut)
-    root.put("new", TokenKind.KeywordNew)
-    root.put("not", TokenKind.KeywordNot)
-    root.put("null", TokenKind.KeywordNull)
-    root.put("open_variant", TokenKind.KeywordOpenVariant)
-    root.put("open_variant_as", TokenKind.KeywordOpenVariantAs)
-    root.put("or", TokenKind.KeywordOr)
-    root.put("override", TokenKind.KeywordOverride)
-    root.put("par", TokenKind.KeywordPar)
-    root.put("pquery", TokenKind.KeywordPQuery)
-    root.put("project", TokenKind.KeywordProject)
-    root.put("psolve", TokenKind.KeywordPSolve)
-    root.put("pub", TokenKind.KeywordPub)
-    root.put("query", TokenKind.KeywordQuery)
-    root.put("redef", TokenKind.KeywordRedef)
-    root.put("region", TokenKind.KeywordRegion)
-    root.put("restrictable", TokenKind.KeywordRestrictable)
-    root.put("run", TokenKind.KeywordRun)
-    root.put("rvadd", TokenKind.KeywordRvadd)
-    root.put("rvand", TokenKind.KeywordRvand)
-    root.put("rvnot", TokenKind.KeywordRvnot)
-    root.put("rvsub", TokenKind.KeywordRvsub)
-    root.put("sealed", TokenKind.KeywordSealed)
-    root.put("select", TokenKind.KeywordSelect)
-    root.put("solve", TokenKind.KeywordSolve)
-    root.put("spawn", TokenKind.KeywordSpawn)
-    root.put("static", TokenKind.KeywordStatic)
-    root.put("struct", TokenKind.KeywordStruct)
-    root.put("throw", TokenKind.KeywordThrow)
-    root.put("trait", TokenKind.KeywordTrait)
-    root.put("true", TokenKind.KeywordTrue)
-    root.put("try", TokenKind.KeywordTry)
-    root.put("type", TokenKind.KeywordType)
-    root.put("typematch", TokenKind.KeywordTypeMatch)
-    root.put("unchecked_cast", TokenKind.KeywordUncheckedCast)
-    root.put("unsafe", TokenKind.KeywordUnsafe)
-    root.put("unsafely", TokenKind.KeywordUnsafely)
-    root.put("use", TokenKind.KeywordUse)
-    root.put("where", TokenKind.KeywordWhere)
-    root.put("with", TokenKind.KeywordWith)
-    root.put("without", TokenKind.KeywordWithout)
-    root.put("xor", TokenKind.KeywordXor)
-    root.put("xvar", TokenKind.KeywordXvar)
-    root.put("yield", TokenKind.KeywordYield)
-
-    root
+  val Keywords: PrefixTree.Node[TokenKind] = {
+    val kw = Array(
+      "Array#" -> TokenKind.ArrayHash,
+      "List#" -> TokenKind.ListHash,
+      "Map#" -> TokenKind.MapHash,
+      "Set#" -> TokenKind.SetHash,
+      "Static" -> TokenKind.KeywordStaticUppercase,
+      "Univ" -> TokenKind.KeywordUniv,
+      "Vector#" -> TokenKind.VectorHash,
+      "alias" -> TokenKind.KeywordAlias,
+      "and" -> TokenKind.KeywordAnd,
+      "as" -> TokenKind.KeywordAs,
+      "case" -> TokenKind.KeywordCase,
+      "catch" -> TokenKind.KeywordCatch,
+      "checked_cast" -> TokenKind.KeywordCheckedCast,
+      "checked_ecast" -> TokenKind.KeywordCheckedECast,
+      "choose" -> TokenKind.KeywordChoose,
+      "choose*" -> TokenKind.KeywordChooseStar,
+      "def" -> TokenKind.KeywordDef,
+      "discard" -> TokenKind.KeywordDiscard,
+      "eff" -> TokenKind.KeywordEff,
+      "else" -> TokenKind.KeywordElse,
+      "ematch" -> TokenKind.KeywordEMatch,
+      "enum" -> TokenKind.KeywordEnum,
+      "false" -> TokenKind.KeywordFalse,
+      "fix" -> TokenKind.KeywordFix,
+      "forA" -> TokenKind.KeywordForA,
+      "forM" -> TokenKind.KeywordForM,
+      "forall" -> TokenKind.KeywordForall,
+      "force" -> TokenKind.KeywordForce,
+      "foreach" -> TokenKind.KeywordForeach,
+      "from" -> TokenKind.KeywordFrom,
+      "handler" -> TokenKind.KeywordHandler,
+      "if" -> TokenKind.KeywordIf,
+      "import" -> TokenKind.KeywordImport,
+      "inject" -> TokenKind.KeywordInject,
+      "instance" -> TokenKind.KeywordInstance,
+      "instanceof" -> TokenKind.KeywordInstanceOf,
+      "into" -> TokenKind.KeywordInto,
+      "law" -> TokenKind.KeywordLaw,
+      "lawful" -> TokenKind.KeywordLawful,
+      "lazy" -> TokenKind.KeywordLazy,
+      "let" -> TokenKind.KeywordLet,
+      "match" -> TokenKind.KeywordMatch,
+      "mod" -> TokenKind.KeywordMod,
+      "mut" -> TokenKind.KeywordMut,
+      "new" -> TokenKind.KeywordNew,
+      "not" -> TokenKind.KeywordNot,
+      "null" -> TokenKind.KeywordNull,
+      "open_variant" -> TokenKind.KeywordOpenVariant,
+      "open_variant_as" -> TokenKind.KeywordOpenVariantAs,
+      "or" -> TokenKind.KeywordOr,
+      "override" -> TokenKind.KeywordOverride,
+      "par" -> TokenKind.KeywordPar,
+      "pquery" -> TokenKind.KeywordPQuery,
+      "project" -> TokenKind.KeywordProject,
+      "psolve" -> TokenKind.KeywordPSolve,
+      "pub" -> TokenKind.KeywordPub,
+      "query" -> TokenKind.KeywordQuery,
+      "redef" -> TokenKind.KeywordRedef,
+      "region" -> TokenKind.KeywordRegion,
+      "restrictable" -> TokenKind.KeywordRestrictable,
+      "run" -> TokenKind.KeywordRun,
+      "rvadd" -> TokenKind.KeywordRvadd,
+      "rvand" -> TokenKind.KeywordRvand,
+      "rvnot" -> TokenKind.KeywordRvnot,
+      "rvsub" -> TokenKind.KeywordRvsub,
+      "sealed" -> TokenKind.KeywordSealed,
+      "select" -> TokenKind.KeywordSelect,
+      "solve" -> TokenKind.KeywordSolve,
+      "spawn" -> TokenKind.KeywordSpawn,
+      "static" -> TokenKind.KeywordStatic,
+      "struct" -> TokenKind.KeywordStruct,
+      "throw" -> TokenKind.KeywordThrow,
+      "trait" -> TokenKind.KeywordTrait,
+      "true" -> TokenKind.KeywordTrue,
+      "try" -> TokenKind.KeywordTry,
+      "type" -> TokenKind.KeywordType,
+      "typematch" -> TokenKind.KeywordTypeMatch,
+      "unchecked_cast" -> TokenKind.KeywordUncheckedCast,
+      "unsafe" -> TokenKind.KeywordUnsafe,
+      "unsafely" -> TokenKind.KeywordUnsafely,
+      "use" -> TokenKind.KeywordUse,
+      "where" -> TokenKind.KeywordWhere,
+      "with" -> TokenKind.KeywordWith,
+      "without" -> TokenKind.KeywordWithout,
+      "xor" -> TokenKind.KeywordXor,
+      "xvar" -> TokenKind.KeywordXvar,
+      "yield" -> TokenKind.KeywordYield,
+    )
+    PrefixTree.mk(kw)
   }
 
   private def acceptKeyword()(implicit s: State): Option[TokenKind] = {
-    def advanceIfSome[T](offset: Int, opt: Option[T]): Option[T] = {
-      opt.foreach(_ => s.sc.advanceN(offset))
-      opt
-    }
-
     @tailrec
-    def search(offset: Int, node: MutPrefixTree.Node[TokenKind]): Option[TokenKind] = {
+    def search(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
       s.sc.nth(offset) match {
         case Some(c) =>
           node.getNode(c) match {
