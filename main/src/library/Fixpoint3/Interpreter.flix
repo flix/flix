@@ -143,7 +143,7 @@ mod Fixpoint3.Interpreter {
     pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
-        let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
+        let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _, _) = program;
         let indexNum = match Map.maximumValue(posMap) {
             case None         => 0
             case Some((_, v)) => v + 1
@@ -172,7 +172,7 @@ mod Fixpoint3.Interpreter {
         withProv: Bool,
         program: RamProgram[r]
     ): (Database[r], Predicates) \ r = match program {
-        case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), marshallIndexes) =>
+        case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), marshallIndexes, _types) =>
             let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
             let maxEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.maxValue()));
             foreach ((id1, id2, val) <- constWrites) {

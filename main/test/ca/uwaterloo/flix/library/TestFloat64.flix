@@ -414,7 +414,7 @@ mod TestFloat64 {
     def tryToBigDecimal06(): Unit \ Assert =
         match Float64.tryToBigDecimal(Float64.nan()) {
             case Some(_) => fail("Expected None for NaN")
-            case None    => assertTrue(true)
+            case None    => ()
         }
 
     /////////////////////////////////////////////////////////////////////////////
