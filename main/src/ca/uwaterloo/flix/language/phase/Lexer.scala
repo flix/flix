@@ -132,7 +132,6 @@ object Lexer {
       ("xor", TokenKind.KeywordXor),
       ("xvar", TokenKind.KeywordXvar),
       ("yield", TokenKind.KeywordYield),
-      ("???", TokenKind.HoleAnonymous),
     )
     PrefixTree.mk(keywords)
   }
@@ -148,6 +147,7 @@ object Lexer {
       (",", TokenKind.Comma),
       (".{", TokenKind.DotCurlyL),
       (";", TokenKind.Semi),
+      ("???", TokenKind.HoleAnonymous),
       ("[", TokenKind.BracketL),
       ("\\", TokenKind.Backslash),
       ("]", TokenKind.BracketR),
