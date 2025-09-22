@@ -292,7 +292,7 @@ object Lexer {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
 
-    acceptKeyword() match {
+    acceptIfKeyword() match {
       case Some(token) => return token
       case None => // nop
     }
@@ -412,34 +412,6 @@ object Lexer {
     }
   }
 
-  private def acceptKeyword()(implicit s: State): Option[TokenKind] = {
-    @tailrec
-    def search(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
-      s.sc.nth(offset) match {
-        case Some(c) =>
-          node.getNode(c) match {
-            case Some(nextNode) =>
-              search(offset + 1, nextNode)
-            case None =>
-              if (c.isLetter || c.isDigit || c == '_') {
-                // Not a full match - Not a keyword.
-                return None
-              }
-              val res = node.getValue
-              res.foreach(_ => s.sc.advanceN(offset))
-              res
-          }
-        case None =>
-          // EOF
-          val res = node.getValue
-          res.foreach(_ => s.sc.advanceN(offset))
-          res
-      }
-    }
-
-    search(0, Keywords)
-  }
-
   /**
     * Check that the potential operator is sufficiently separated.
     * An operator is separated if it is followed by anything __but__ another valid user operator
@@ -487,6 +459,44 @@ object Lexer {
     */
   private def isOperator(op: String)(implicit s: State): Boolean =
     isSeparatedOperator(op) && isMatchPrev(op)
+
+  /** Advance the current position past a keyword if any keyword completely matches the current word. */
+  private def acceptIfKeyword()(implicit s: State): Option[TokenKind] = {
+    // A potential match must be:
+    //   - The longest match in the keyword map.
+    //   - Followed by a char that is non-letter-like.
+
+    /**
+      * Keep peeking input while the prefix is contained in the tree.
+      * At end of file or non-matching non-letter-like char, return the optional current mapping.
+      * At non-matching letter-like char, return none.
+      */
+    @tailrec
+    def search(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
+      s.sc.nth(offset) match {
+        case Some(c) =>
+          node.getNode(c) match {
+            case Some(nextNode) =>
+              search(offset + 1, nextNode)
+            case None =>
+              if (c.isLetter || c.isDigit || c == '_') {
+                // Not a full match - Not a keyword.
+                return None
+              }
+              val res = node.getValue
+              res.foreach(_ => s.sc.advanceN(offset))
+              res
+          }
+        case None =>
+          // EOF
+          val res = node.getValue
+          res.foreach(_ => s.sc.advanceN(offset))
+          res
+      }
+    }
+
+    search(0, Keywords)
+  }
 
   /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
