@@ -158,13 +158,7 @@ sealed trait TokenKind {
       case TokenKind.StarStar => "'**'"
       case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
-      case TokenKind.TripleAmpersand => "'&&&'"
-      case TokenKind.TripleAngleL => "'<<<'"
-      case TokenKind.TripleAngleR => "'>>>'"
-      case TokenKind.TripleBar => "'|||'"
-      case TokenKind.TripleCaret => "'^^^'"
       case TokenKind.TripleColon => "':::'"
-      case TokenKind.TripleTilde => "'~~~'"
       case TokenKind.Underscore => "'_'"
       case TokenKind.VectorHash => "'Vector#'"
       case TokenKind.Eof => "<end-of-file>"
@@ -382,13 +376,7 @@ sealed trait TokenKind {
          | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
-         | TokenKind.TripleAmpersand
-         | TokenKind.TripleAngleL
-         | TokenKind.TripleAngleR
-         | TokenKind.TripleBar
-         | TokenKind.TripleCaret
          | TokenKind.TripleColon
-         | TokenKind.TripleTilde
          | TokenKind.Underscore
          | TokenKind.UserDefinedOperator
          | TokenKind.VectorHash => false
@@ -553,7 +541,6 @@ sealed trait TokenKind {
          | TokenKind.ParenL
          | TokenKind.Plus
          | TokenKind.SetHash
-         | TokenKind.TripleTilde
          | TokenKind.Underscore
          | TokenKind.VectorHash => true
     case TokenKind.Ampersand
@@ -643,11 +630,6 @@ sealed trait TokenKind {
          | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
-         | TokenKind.TripleAmpersand
-         | TokenKind.TripleAngleL
-         | TokenKind.TripleAngleR
-         | TokenKind.TripleBar
-         | TokenKind.TripleCaret
          | TokenKind.TripleColon
          | TokenKind.UserDefinedOperator => false
   }
@@ -1145,19 +1127,7 @@ object TokenKind {
 
   case object Tilde extends TokenKind
 
-  case object TripleAmpersand extends TokenKind
-
-  case object TripleAngleL extends TokenKind
-
-  case object TripleAngleR extends TokenKind
-
-  case object TripleBar extends TokenKind
-
-  case object TripleCaret extends TokenKind
-
   case object TripleColon extends TokenKind
-
-  case object TripleTilde extends TokenKind
 
   case object Underscore extends TokenKind
 
