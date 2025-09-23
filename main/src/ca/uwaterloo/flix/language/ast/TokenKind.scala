@@ -155,7 +155,6 @@ sealed trait TokenKind {
       case TokenKind.SetHash => "'Set#'"
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
-      case TokenKind.StarStar => "'**'"
       case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.TripleColon => "':::'"
@@ -371,7 +370,6 @@ sealed trait TokenKind {
          | TokenKind.SetHash
          | TokenKind.Slash
          | TokenKind.Star
-         | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
          | TokenKind.TripleColon
@@ -624,7 +622,6 @@ sealed trait TokenKind {
          | TokenKind.Semi
          | TokenKind.Slash
          | TokenKind.Star
-         | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
          | TokenKind.TripleColon
@@ -1113,8 +1110,6 @@ object TokenKind {
   case object Slash extends TokenKind
 
   case object Star extends TokenKind
-
-  case object StarStar extends TokenKind
 
   case object StructArrow extends TokenKind
 
