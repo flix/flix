@@ -165,7 +165,6 @@ sealed trait TokenKind {
       case TokenKind.NameLowerCase => "<name>"
       case TokenKind.NameUpperCase => "<Name>"
       case TokenKind.NameMath => "<math name>"
-      case TokenKind.NameGreek => "<greek name>"
       case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.Annotation => "<annotation>"
       case TokenKind.BuiltIn => "<built in>"
@@ -362,7 +361,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.MapHash
          | TokenKind.Minus
-         | TokenKind.NameGreek
          | TokenKind.NameLowerCase
          | TokenKind.NameMath
          | TokenKind.NameUpperCase
@@ -534,7 +532,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.MapHash
          | TokenKind.Minus
-         | TokenKind.NameGreek
          | TokenKind.NameLowerCase
          | TokenKind.NameMath
          | TokenKind.NameUpperCase
@@ -640,7 +637,6 @@ sealed trait TokenKind {
   def isFirstType: Boolean = this match {
     case TokenKind.NameUpperCase
          | TokenKind.NameMath
-         | TokenKind.NameGreek
          | TokenKind.Underscore
          | TokenKind.NameLowerCase
          | TokenKind.KeywordUniv
@@ -663,7 +659,6 @@ sealed trait TokenKind {
     */
   def isFirstPattern: Boolean = this match {
     case TokenKind.NameLowerCase
-         | TokenKind.NameGreek
          | TokenKind.NameMath
          | TokenKind.Underscore
          | TokenKind.KeywordQuery
@@ -1098,8 +1093,6 @@ object TokenKind {
   case object MapHash extends TokenKind
 
   case object Minus extends TokenKind
-
-  case object NameGreek extends TokenKind
 
   case object NameLowerCase extends TokenKind
 
