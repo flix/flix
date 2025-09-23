@@ -614,12 +614,12 @@ object Parser2 {
     *
     * Use these together with [[nameUnqualified]] and [[nameAllowQualified]].
     */
-  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
-  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
+  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
+  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
-  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
   //       refactor When Static is used as a region "@ Static" to "@ static" since lowercase is
@@ -1636,8 +1636,7 @@ object Parser2 {
         case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
         case TokenKind.NameLowerCase => nameAllowQualified(NAME_FIELD)
         case TokenKind.NameUpperCase
-             | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION)
+             | TokenKind.NameMath => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -3038,7 +3037,6 @@ object Parser2 {
       val mark = open()
       var lhs = nth(0) match {
         case TokenKind.NameLowerCase
-             | TokenKind.NameGreek
              | TokenKind.NameMath
              | TokenKind.Underscore
              | TokenKind.KeywordQuery => variablePat()
@@ -3336,7 +3334,6 @@ object Parser2 {
       nth(0) match {
         case TokenKind.NameUpperCase => nameAllowQualified(NAME_TYPE)
         case TokenKind.NameMath
-             | TokenKind.NameGreek
              | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
         case TokenKind.NameLowerCase => variableType()
         case TokenKind.KeywordUniv
@@ -3362,7 +3359,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Type)
     }
 
-    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore)
+    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
 
     private def variableType()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
@@ -3697,11 +3694,10 @@ object Parser2 {
         )
         case TokenKind.NameLowerCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek
              | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
         case at =>
           val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)),
             actual = Some(at),
             sctx,
             loc = currentSourceLocation()
