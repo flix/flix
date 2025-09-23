@@ -162,39 +162,32 @@ object Lexer {
   /** Operators - tokens consumed as long as no operator-like char follows (see [[isUserOp]]). */
   private val Operators: PrefixTree.Node[TokenKind] = {
     val simpleTokens = Array(
+      ("!", TokenKind.Bang),
       ("!=", TokenKind.BangEqual),
+      ("", TokenKind.Equal),
+      ("$", TokenKind.Dollar),
+      ("&", TokenKind.Ampersand),
+      ("*", TokenKind.Star),
       ("**", TokenKind.StarStar),
+      ("+", TokenKind.Plus),
+      ("-", TokenKind.Minus),
       (":", TokenKind.Colon),
       (":-", TokenKind.ColonMinus),
       ("::", TokenKind.ColonColon),
       (":::", TokenKind.TripleColon),
       (":=", TokenKind.ColonEqual),
+      ("<", TokenKind.AngleL),
       ("<+>", TokenKind.AngledPlus),
       ("<-", TokenKind.ArrowThinL),
       ("<=", TokenKind.AngleLEqual),
       ("==", TokenKind.EqualEqual),
       ("=>", TokenKind.ArrowThickR),
+      (">", TokenKind.AngleR),
       (">=", TokenKind.AngleREqual),
+      ("^", TokenKind.Caret),
+      ("|", TokenKind.Bar),
     )
     PrefixTree.mk(simpleTokens)
-  }
-
-  /** The characters allowed in a user defined operator mapped to their `TokenKind`s. */
-  private def isUserOp(c: Char): Option[TokenKind] = {
-    c match {
-      case '+' => Some(TokenKind.Plus)
-      case '-' => Some(TokenKind.Minus)
-      case '*' => Some(TokenKind.Star)
-      case '<' => Some(TokenKind.AngleL)
-      case '>' => Some(TokenKind.AngleR)
-      case '=' => Some(TokenKind.Equal)
-      case '!' => Some(TokenKind.Bang)
-      case '&' => Some(TokenKind.Ampersand)
-      case '|' => Some(TokenKind.Bar)
-      case '^' => Some(TokenKind.Caret)
-      case '$' => Some(TokenKind.Dollar)
-      case _ => None
-    }
   }
 
   /** The internal state of the lexer as it tokenizes a single source. */
@@ -280,10 +273,6 @@ object Lexer {
   /** Peeks the character that is `n` characters before the current if available. */
   private def previousN(n: Int)(implicit s: State): Option[Char] =
     s.sc.nth(-(n + 1))
-
-  /** Peeks the character after the one that state is sitting on if available. */
-  private def peekPeek()(implicit s: State): Option[Char] =
-    s.sc.nth(1)
 
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
@@ -381,7 +370,7 @@ object Lexer {
       case '@' if s.sc.peekIs(isAnnotationChar) => acceptAnnotation()
       case '@' => TokenKind.At
       case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
-      case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => isUserOp(c).isEmpty) =>
+      case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => !isUserOp(c)) =>
         s.sc.advance() // Consume '>'
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
         // Examples:
@@ -405,7 +394,7 @@ object Lexer {
           } else if (isMathNameChar(p)) {
             s.sc.advance()
             acceptMathName()
-          } else if (isUserOp(p).isDefined) {
+          } else if (isUserOp(p)) {
             s.sc.advance()
             acceptUserDefinedOp()
           } else TokenKind.Underscore
@@ -414,18 +403,10 @@ object Lexer {
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
-      case '<' if s.sc.peekIs(_ == '>') && peekPeek().flatMap(isUserOp).isEmpty =>
+      case '<' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => !isUserOp(c)) =>
         // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
         TokenKind.AngleL
-      case c if isUserOp(c).isDefined =>
-        if (!eof()) {
-          val p = s.sc.peek
-          if (isUserOp(p).isDefined) {
-            acceptUserDefinedOp()
-          } else {
-            isUserOp(c).get
-          }
-        } else isUserOp(c).get
+      case c if isUserOp(c) => acceptUserDefinedOp()
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
@@ -463,7 +444,7 @@ object Lexer {
 
   /** Advance the current position past an operator if any operator completely matches the current position. */
   private def acceptIfOperator()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(Operators, c => isUserOp(c).isEmpty)
+    advanceIfInTree(Operators, isUserOp)
 
   /** Advance the current position past a simple token if any simple token matches the current position. */
   private def acceptIfSimpleToken()(implicit s: State): Option[TokenKind] =
@@ -596,7 +577,6 @@ object Lexer {
     TokenKind.HoleNamed
   }
 
-
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
@@ -615,8 +595,26 @@ object Lexer {
     * of the characters in [[isUserOp]].
     */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(c => isUserOp(c).isDefined)
+    s.sc.advanceWhile(isUserOp)
     TokenKind.UserDefinedOperator
+  }
+
+  /** The characters allowed in a user defined operator. */
+  private def isUserOp(c: Char): Boolean = {
+    c match {
+      case '+' => true
+      case '-' => true
+      case '*' => true
+      case '<' => true
+      case '>' => true
+      case '=' => true
+      case '!' => true
+      case '&' => true
+      case '|' => true
+      case '^' => true
+      case '$' => true
+      case _ => false
+    }
   }
 
   /**
