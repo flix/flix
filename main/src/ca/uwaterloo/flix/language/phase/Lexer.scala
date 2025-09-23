@@ -163,7 +163,6 @@ object Lexer {
   private val Operators: PrefixTree.Node[TokenKind] = {
     val simpleTokens = Array(
       ("!=", TokenKind.BangEqual),
-      ("&&&", TokenKind.TripleAmpersand),
       ("**", TokenKind.StarStar),
       (":", TokenKind.Colon),
       (":-", TokenKind.ColonMinus),
@@ -176,8 +175,6 @@ object Lexer {
       ("==", TokenKind.EqualEqual),
       ("=>", TokenKind.ArrowThickR),
       (">=", TokenKind.AngleREqual),
-      ("^^^", TokenKind.TripleCaret),
-      ("|||", TokenKind.TripleBar),
     )
     PrefixTree.mk(simpleTokens)
   }

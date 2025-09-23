@@ -158,9 +158,6 @@ sealed trait TokenKind {
       case TokenKind.StarStar => "'**'"
       case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
-      case TokenKind.TripleAmpersand => "'&&&'"
-      case TokenKind.TripleBar => "'|||'"
-      case TokenKind.TripleCaret => "'^^^'"
       case TokenKind.TripleColon => "':::'"
       case TokenKind.Underscore => "'_'"
       case TokenKind.VectorHash => "'Vector#'"
@@ -379,9 +376,6 @@ sealed trait TokenKind {
          | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
-         | TokenKind.TripleAmpersand
-         | TokenKind.TripleBar
-         | TokenKind.TripleCaret
          | TokenKind.TripleColon
          | TokenKind.Underscore
          | TokenKind.UserDefinedOperator
@@ -636,9 +630,6 @@ sealed trait TokenKind {
          | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
-         | TokenKind.TripleAmpersand
-         | TokenKind.TripleBar
-         | TokenKind.TripleCaret
          | TokenKind.TripleColon
          | TokenKind.UserDefinedOperator => false
   }
@@ -1135,12 +1126,6 @@ object TokenKind {
   case object StructArrow extends TokenKind
 
   case object Tilde extends TokenKind
-
-  case object TripleAmpersand extends TokenKind
-
-  case object TripleBar extends TokenKind
-
-  case object TripleCaret extends TokenKind
 
   case object TripleColon extends TokenKind
 
