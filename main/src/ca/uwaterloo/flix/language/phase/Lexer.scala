@@ -378,9 +378,9 @@ object Lexer {
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
-      case '@' if s.sc.peekIs(_.isLetter) => acceptAnnotation()
+      case '@' if s.sc.peekIs(isAnnotationChar) => acceptAnnotation()
       case '@' => TokenKind.At
-      case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
+      case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
       case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => isUserOp(c).isEmpty) =>
         s.sc.advance() // Consume '>'
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
@@ -410,7 +410,7 @@ object Lexer {
             acceptUserDefinedOp()
           } else TokenKind.Underscore
         } else TokenKind.Underscore
-      case c if c.isLetter => acceptName(c.isUpper)
+      case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
@@ -471,7 +471,7 @@ object Lexer {
 
   /** Advance the current position past a keyword if any keyword completely matches the current word. */
   private def acceptIfKeyword()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(Keywords, c => !(c.isLetter || c.isDigit || c == '_'))
+    advanceIfInTree(Keywords, c => !isNameChar(c))
 
   /**
     * Advance the current position past a longest match in  `node` if it is followed by a char
@@ -548,7 +548,7 @@ object Lexer {
     * which is the reason this function will return a `TokenKind`.
     */
   private def acceptName(isUpper: Boolean)(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(c => c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$')
+    s.sc.advanceWhile(isNameChar)
     if (s.sc.advanceIfMatch('?')) {
       TokenKind.HoleVariable
     } else if (isUpper) {
@@ -557,6 +557,14 @@ object Lexer {
       TokenKind.NameLowerCase
     }
   }
+
+  /** Returns true if `c` is allowed as the first char of a name (see [[isNameChar]]). */
+  private def isFirstNameChar(c: Char): Boolean =
+    c.isLetter || c == '_'
+
+  /** Returns `true` if `c` is allowed inside a name (see [[isFirstNameChar]]). */
+  private def isNameChar(c: Char): Boolean =
+    c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$'
 
   /**
     * Moves current position past a math name.
@@ -573,7 +581,7 @@ object Lexer {
 
   /** Moves current position past a named hole (e.g. "?foo"). */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(c => c.isLetter || c.isDigit)
+    s.sc.advanceWhile(isNameChar)
     TokenKind.HoleNamed
   }
 
@@ -581,7 +589,7 @@ object Lexer {
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
-      c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c)
+      c => isNameChar(c) || c == '.' || isMathNameChar(c)
     )
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
@@ -897,9 +905,13 @@ object Lexer {
 
   /** Moves current position past an annotation (e.g. "@Test"). */
   private def acceptAnnotation()(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(_.isLetter)
+    s.sc.advanceWhile(isAnnotationChar)
     TokenKind.Annotation
   }
+
+  /** Returns `true` if `c` can be used in annotation names. */
+  private def isAnnotationChar(c: Char): Boolean =
+    c.isLetter
 
   /**
     * Moves current position past a line-comment or a line of a doc-comment.
