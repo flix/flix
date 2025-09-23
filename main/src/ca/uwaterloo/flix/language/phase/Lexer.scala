@@ -167,7 +167,6 @@ object Lexer {
       (":-", TokenKind.ColonMinus),
       ("::", TokenKind.ColonColon),
       (":::", TokenKind.TripleColon),
-      (":=", TokenKind.ColonEqual),
       ("<+>", TokenKind.AngledPlus),
       ("<-", TokenKind.ArrowThinL),
       ("<=", TokenKind.AngleLEqual),

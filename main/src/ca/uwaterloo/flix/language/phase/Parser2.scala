@@ -1530,7 +1530,7 @@ object Parser2 {
       * Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary, e.g., Plus or Minus.
       */
     private def PRECEDENCE: List[(OpKind, Array[TokenKind])] = List(
-      (OpKind.Binary, Array(TokenKind.ColonEqual, TokenKind.KeywordInstanceOf)),
+      (OpKind.Binary, Array(TokenKind.KeywordInstanceOf)),
       (OpKind.Binary, Array(TokenKind.KeywordOr)),
       (OpKind.Binary, Array(TokenKind.KeywordAnd)),
       (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)),
