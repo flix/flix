@@ -154,6 +154,33 @@ object Lexer {
       ("{", TokenKind.CurlyL),
       ("|#", TokenKind.BarHash),
       ("}", TokenKind.CurlyR),
+      ("~", TokenKind.Tilde),
+    )
+    PrefixTree.mk(simpleTokens)
+  }
+
+  /** Operators - tokens consumed as long as no operator-like char follows (see [[isUserOp]]). */
+  private val Operators: PrefixTree.Node[TokenKind] = {
+    val simpleTokens = Array(
+      ("!=", TokenKind.BangEqual),
+      ("&&&", TokenKind.TripleAmpersand),
+      ("**", TokenKind.StarStar),
+      (":", TokenKind.Colon),
+      (":-", TokenKind.ColonMinus),
+      ("::", TokenKind.ColonColon),
+      (":::", TokenKind.TripleColon),
+      (":=", TokenKind.ColonEqual),
+      ("<+>", TokenKind.AngledPlus),
+      ("<-", TokenKind.ArrowThinL),
+      ("<<<", TokenKind.TripleAngleL),
+      ("<=", TokenKind.AngleLEqual),
+      ("==", TokenKind.EqualEqual),
+      ("=>", TokenKind.ArrowThickR),
+      (">=", TokenKind.AngleREqual),
+      (">>>", TokenKind.TripleAngleR),
+      ("^^^", TokenKind.TripleCaret),
+      ("|||", TokenKind.TripleBar),
+      ("~~~", TokenKind.TripleTilde),
     )
     PrefixTree.mk(simpleTokens)
   }
@@ -314,6 +341,13 @@ object Lexer {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
 
+
+    // Operators must come before simple tokens since `~~~` is an operator and `~` is a simple token.
+    acceptIfOperator() match {
+      case Some(token) => return token
+      case None => // nop
+    }
+
     acceptIfSimpleToken() match {
       case Some(token) => return token
       case None => // nop
@@ -355,14 +389,8 @@ object Lexer {
       case '@' if s.sc.peekIs(_.isLetter) => acceptAnnotation()
       case '@' => TokenKind.At
       case '?' if s.sc.peekIs(_.isLetter) => acceptNamedHole()
-      case _ if isOperator(":::") => TokenKind.TripleColon
-      case _ if isOperator("::") => TokenKind.ColonColon
-      case _ if isOperator(":=") => TokenKind.ColonEqual
-      case _ if isOperator(":-") => TokenKind.ColonMinus
-      case _ if isOperator(":") => TokenKind.Colon
-      case _ if isOperator("**") => TokenKind.StarStar
-      case _ if isOperator("<-") => TokenKind.ArrowThinL
-      case _ if isOperator("->") =>
+      case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => isUserOp(c).isEmpty) =>
+        s.sc.advance() // Consume '>'
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
         // Examples:
         // a->b:   StructArrow
@@ -374,19 +402,6 @@ object Lexer {
         } else {
           TokenKind.StructArrow
         }
-      case _ if isOperator("=>") => TokenKind.ArrowThickR
-      case _ if isOperator("<=") => TokenKind.AngleLEqual
-      case _ if isOperator(">=") => TokenKind.AngleREqual
-      case _ if isOperator("==") => TokenKind.EqualEqual
-      case _ if isOperator("!=") => TokenKind.BangEqual
-      case _ if isOperator("<+>") => TokenKind.AngledPlus
-      case _ if isOperator("&&&") => TokenKind.TripleAmpersand
-      case _ if isOperator("<<<") => TokenKind.TripleAngleL
-      case _ if isOperator(">>>") => TokenKind.TripleAngleR
-      case _ if isOperator("^^^") => TokenKind.TripleCaret
-      case _ if isOperator("|||") => TokenKind.TripleBar
-      case _ if isOperator("~~~") => TokenKind.TripleTilde
-      case '~' => TokenKind.Tilde
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
@@ -425,15 +440,6 @@ object Lexer {
   }
 
   /**
-    * Check that the potential operator is sufficiently separated.
-    * An operator is separated if it is followed by anything __but__ another valid user operator
-    * character.
-    * Note that __comparison includes current__.
-    */
-  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean =
-    s.sc.nthIsPOrOutOfBounds(keyword.length - 1, c => isUserOp(c).isEmpty)
-
-  /**
     * Checks whether the previous char and the following substring matches a string.
     * Will advance the current position past the string if there is a match.
     */
@@ -464,13 +470,9 @@ object Lexer {
     matches
   }
 
-  /**
-    * Checks whether the following substring matches a operator.
-    * Note that __comparison includes current__.
-    * Also note that this will advance the current position past the keyword if there is a match.
-    */
-  private def isOperator(op: String)(implicit s: State): Boolean =
-    isSeparatedOperator(op) && isMatchPrev(op)
+  /** Advance the current position past an operator if any operator completely matches the current position. */
+  private def acceptIfOperator()(implicit s: State): Option[TokenKind] =
+    advanceIfInTree(Operators, c => isUserOp(c).isEmpty)
 
   /** Advance the current position past a simple token if any simple token matches the current position. */
   private def acceptIfSimpleToken()(implicit s: State): Option[TokenKind] =
