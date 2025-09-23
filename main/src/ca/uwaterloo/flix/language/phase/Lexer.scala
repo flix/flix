@@ -600,7 +600,7 @@ object Lexer {
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
-      c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c)
+      c => isNameChar(c) || c == '.' || isMathNameChar(c)
     )
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
