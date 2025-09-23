@@ -272,10 +272,6 @@ object Lexer {
   private def previousN(n: Int)(implicit s: State): Option[Char] =
     s.sc.nth(-(n + 1))
 
-  /** Peeks the character after the one that state is sitting on if available. */
-  private def peekPeek()(implicit s: State): Option[Char] =
-    s.sc.nth(1)
-
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
@@ -405,7 +401,7 @@ object Lexer {
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
-      case '<' if s.sc.peekIs(_ == '>') && peekPeek().flatMap(isUserOp).isEmpty =>
+      case '<' if s.sc.peekIs(_ == '>') && s.sc.nth(1).flatMap(isUserOp).isEmpty =>
         // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
         TokenKind.AngleL
       case c if isUserOp(c).isDefined =>
