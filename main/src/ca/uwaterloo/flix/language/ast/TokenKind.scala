@@ -643,6 +643,7 @@ sealed trait TokenKind {
          | TokenKind.CurlyL
          | TokenKind.HashCurlyL
          | TokenKind.HashParenL
+         | TokenKind.Diamond
          | TokenKind.AngleL
          | TokenKind.KeywordNot
          | TokenKind.Tilde
