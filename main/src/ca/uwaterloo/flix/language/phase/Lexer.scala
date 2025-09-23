@@ -269,10 +269,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /** Peeks the previous character that state was on if available. */
-  private def previous()(implicit s: State): Option[Char] =
-    s.sc.previous
-
   /** Peeks the character before the previous that state was on if available. */
   private def previousPrevious()(implicit s: State): Option[Char] =
     s.sc.nth(-2)
@@ -633,7 +629,7 @@ object Lexer {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
       // Check for the beginning of a string interpolation.
-      val prev = previous()
+      val prev = s.sc.previous
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
       if (isInterpolation) {
         acceptStringInterpolation() match {
