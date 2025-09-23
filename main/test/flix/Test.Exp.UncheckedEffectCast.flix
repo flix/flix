@@ -76,13 +76,13 @@
 
     @test
     def testUncheckedEffectCast23(): Unit \ IO = region rc {
-        discard unchecked_cast($ARRAY_NEW$(rc, 'A', 8) as _ \ IO);
+        discard unchecked_cast(%%ARRAY_NEW%%(rc, 'A', 8) as _ \ IO);
         ()
     }
 
     @test
     def testUncheckedEffectCast24(): Unit \ IO = region rc {
-        discard unchecked_cast($ARRAY_NEW$(rc, Some(42), 8) as _ \ IO);
+        discard unchecked_cast(%%ARRAY_NEW%%(rc, Some(42), 8) as _ \ IO);
         ()
     }
 
@@ -150,13 +150,13 @@
 
     @test
     def testUncheckedEffectCast43(): Unit = region rc {
-        let _ = unchecked_cast(f($ARRAY_NEW$(rc, 'A', 8)) as _ \ {});
+        let _ = unchecked_cast(f(%%ARRAY_NEW%%(rc, 'A', 8)) as _ \ {});
         ()
     }
 
     @test
     def testUncheckedEffectCast44(): Unit = region rc {
-        let _ = unchecked_cast(f($ARRAY_NEW$(rc, Some(42), 8)) as _ \ {});
+        let _ = unchecked_cast(f(%%ARRAY_NEW%%(rc, Some(42), 8)) as _ \ {});
         ()
     }
 

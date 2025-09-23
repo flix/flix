@@ -30,12 +30,12 @@ mod Test.Dec.AssocEff {
     }
 
     instance Add[Int32] {
-        pub def add(x: Int32, y: Int32): Int32 = $INT32_ADD$(x, y)
+        pub def add(x: Int32, y: Int32): Int32 = %%INT32_ADD%%(x, y)
     }
 
     instance Div[Int32] {
         type Aef = {}
-        pub def div(x: Int32, y: Int32): Int32 = $INT32_DIV$(x, y)
+        pub def div(x: Int32, y: Int32): Int32 = %%INT32_DIV%%(x, y)
     }
 
     instance FromInt32[Int32] {

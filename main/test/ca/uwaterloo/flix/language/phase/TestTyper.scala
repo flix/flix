@@ -484,7 +484,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
-        |def zero(): Int32 \ {} = $ARRAY_LENGTH$(mkArray())
+        |def zero(): Int32 \ {} = %%ARRAY_LENGTH%%(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)

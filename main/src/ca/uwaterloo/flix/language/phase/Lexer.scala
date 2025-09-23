@@ -366,8 +366,8 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '$' if s.sc.peekIs(_.isUpper) => acceptBuiltIn()
-      case '$' if s.sc.peekIs(_.isLower) =>
+      case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
+      case '$' if s.sc.peekIs(_.isLetter) =>
         // Don't include the $ sign in the name.
         s.resetStart()
         acceptName(isUpper = false)
@@ -509,29 +509,20 @@ object Lexer {
     loop(0, node)
   }
 
-  /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
+  /** Moves current position past a built-in function (e.g. "%%BUILT_IN%%"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    var advanced = false
-    while (!eof()) {
-      val p = s.sc.peek
-
-      if (p == '$') {
-        // Check for termination.
-        s.sc.advance()
-        return TokenKind.BuiltIn
-      }
-
-      if (!p.isLetter && !p.isDigit && p != '_') {
-        // Do not allow non-letters other than _.
-        // This handles things like block comments e.g. `$BUILT_/*IN*/$` is disallowed.
-        return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
-      }
-
-      s.sc.advance()
-      advanced = true
+    s.sc.advance() // Consume `%`.
+    s.sc.advanceWhile(isBuiltInChar)
+    if (s.sc.advanceIfMatch("%%")) {
+      TokenKind.BuiltIn
+    } else {
+      TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
     }
-    TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
+
+  /** Returns `true` if `c` is allowed inside a built-in name. */
+  private def isBuiltInChar(c: Char): Boolean =
+    (c.isLetter && c.isUpper) || c.isDigit || c == '_'
 
   /**
     * Moves the current position past all pairs of `\` and any other character, returning
