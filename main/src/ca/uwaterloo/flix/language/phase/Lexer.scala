@@ -139,6 +139,7 @@ object Lexer {
   /** Simple tokens - tokens consumed no matter the following char. */
   private val SimpleTokens: PrefixTree.Node[TokenKind] = {
     val simpleTokens = Array(
+      ("#", TokenKind.Hash),
       ("#(", TokenKind.HashParenL),
       ("#{", TokenKind.HashCurlyL),
       ("#|", TokenKind.HashBar),
@@ -372,7 +373,6 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => TokenKind.Hash
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
