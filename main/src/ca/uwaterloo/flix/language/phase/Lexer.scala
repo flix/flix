@@ -268,10 +268,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /** Peeks the character before the previous that state was on if available. */
-  private def previousPrevious()(implicit s: State): Option[Char] =
-    s.sc.nth(-2)
-
   /** Peeks the character that is `n` characters before the current if available. */
   private def previousN(n: Int)(implicit s: State): Option[Char] =
     s.sc.nth(-(n + 1))
@@ -349,7 +345,7 @@ object Lexer {
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
-        } else if (previousPrevious().exists(_.isWhitespace)) {
+        } else if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (s.sc.peekIs(_.isWhitespace)) {
