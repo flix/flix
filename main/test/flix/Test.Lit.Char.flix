@@ -1,4 +1,4 @@
-mod Test.Exp.Char {
+mod Test.Lit.Char {
 
     use Assert.assertEq
 

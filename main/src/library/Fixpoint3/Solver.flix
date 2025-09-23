@@ -80,7 +80,7 @@ mod Fixpoint3.Solver {
             case Datalog(_, r) =>
                 compiler(d, Map.empty())
                     |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc, withProv)
+                    |> Interpreter.interpret(rc)
                     |> toModelOnlyFull(withProv, r)
             case Model(_) =>
                 d
@@ -90,7 +90,7 @@ mod Fixpoint3.Solver {
                 let cs = Datalog(f, r);
                 compiler(cs, m)
                     |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc, withProv)
+                    |> Interpreter.interpret(rc)
                     |> toModelOnlyFull(withProv, r)
             case Join(Provenance(_, model), Datalog(f, r)) =>
                 let cs = Datalog(f, r);
@@ -98,7 +98,7 @@ mod Fixpoint3.Solver {
                 let m = provenanceModeltoModel(model);
                 compiler(cs, m)
                     |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc, withProv)
+                    |> Interpreter.interpret(rc)
                     |> toModelOnlyFull(withProv, r)
             case _ => bug!("Datalog Boxing bug")
         };

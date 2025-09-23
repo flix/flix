@@ -121,7 +121,7 @@ mod Fixpoint3.Debugging {
     pub def notifyPreInterpret(
         input: (ExecutableRam.RamProgram[r], BoxingType.Boxing[r])
     ): (ExecutableRam.RamProgram[r], BoxingType.Boxing[r]) = match fst(input) {
-        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _, _) => unsafely IO run {
+        case ExecutableRam.RamProgram.Program(stmt, _, _, (index, indexPos), _, _) => unsafely IO run {
             if (Options.enableDebugging()) region rc {
                 let strings = MutList.empty(rc);
                 let psh = s -> MutList.push(s, strings);
