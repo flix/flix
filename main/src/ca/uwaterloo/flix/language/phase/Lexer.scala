@@ -397,7 +397,6 @@ object Lexer {
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
       case c if isMathNameChar(c) => acceptMathName()
-      case c if isGreekNameChar(c) => acceptGreekName()
       case '_' =>
         if (!eof()) {
           val p = s.sc.peek
@@ -569,19 +568,6 @@ object Lexer {
   }
 
   /**
-    * Moves current position past a greek name.
-    * Greek names must lie in the unicode range U+0370 to U+03FF (e.g. "Χαίρετε").
-    */
-  private def acceptGreekName()(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isGreekNameChar)
-    TokenKind.NameGreek
-  }
-
-  /** Checks whether `c` lies in unicode range U+0370 to U+03FF. */
-  private def isGreekNameChar(c: Char): Boolean =
-    0x0370 <= c && c <= 0x03FF
-
-  /**
     * Moves current position past a math name.
     * Math names must lie in the unicode range U+2190 to U+22FF (e.g. "⊆")
     */
@@ -604,7 +590,7 @@ object Lexer {
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
-      c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c) || isGreekNameChar(c)
+      c => c == '.' || c == '!' || c.isLetter || c.isDigit || isMathNameChar(c)
     )
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
