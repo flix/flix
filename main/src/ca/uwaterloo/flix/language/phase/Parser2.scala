@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.annotation.tailrec
@@ -2998,7 +2997,7 @@ object Parser2 {
     private def debugInterpolator()(implicit s: State): Mark.Closed = {
       eat(TokenKind.DebugInterpolator)
       val mark = open()
-      interpolatedStringExpr()
+      exprDelimited()
       close(mark, TreeKind.Expr.DebugInterpolator)
     }
 
