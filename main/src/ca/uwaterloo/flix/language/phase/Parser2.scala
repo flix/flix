@@ -1539,7 +1539,6 @@ object Parser2 {
       (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)),
       (OpKind.Binary, Array(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)),
       (OpKind.Binary, Array(TokenKind.ColonColon, TokenKind.TripleColon)),
-      (OpKind.Binary, Array(TokenKind.TripleAngleL, TokenKind.TripleAngleR)),
       (OpKind.Binary, Array(TokenKind.Plus, TokenKind.Minus)),
       (OpKind.Binary, Array(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash)),
       (OpKind.Binary, Array(TokenKind.AngledPlus)),
@@ -1547,7 +1546,7 @@ object Parser2 {
       (OpKind.Binary, Array(TokenKind.InfixFunction)),
       (OpKind.Binary, Array(TokenKind.UserDefinedOperator, TokenKind.NameMath)),
       (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce)),
-      (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)),
+      (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus)),
       (OpKind.Unary, Array(TokenKind.KeywordNot))
     )
 
@@ -1641,7 +1640,6 @@ object Parser2 {
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
-             | TokenKind.TripleTilde
              | TokenKind.KeywordLazy
              | TokenKind.KeywordForce
              | TokenKind.KeywordDiscard => unaryExpr()
@@ -1909,7 +1907,6 @@ object Parser2 {
       TokenKind.Minus,
       TokenKind.KeywordNot,
       TokenKind.Plus,
-      TokenKind.TripleTilde,
       TokenKind.KeywordLazy,
       TokenKind.KeywordForce,
       TokenKind.KeywordDiscard

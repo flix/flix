@@ -172,15 +172,12 @@ object Lexer {
       (":=", TokenKind.ColonEqual),
       ("<+>", TokenKind.AngledPlus),
       ("<-", TokenKind.ArrowThinL),
-      ("<<<", TokenKind.TripleAngleL),
       ("<=", TokenKind.AngleLEqual),
       ("==", TokenKind.EqualEqual),
       ("=>", TokenKind.ArrowThickR),
       (">=", TokenKind.AngleREqual),
-      (">>>", TokenKind.TripleAngleR),
       ("^^^", TokenKind.TripleCaret),
       ("|||", TokenKind.TripleBar),
-      ("~~~", TokenKind.TripleTilde),
     )
     PrefixTree.mk(simpleTokens)
   }
@@ -341,14 +338,12 @@ object Lexer {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
 
-
-    // Operators must come before simple tokens since `~~~` is an operator and `~` is a simple token.
-    acceptIfOperator() match {
+    acceptIfSimpleToken() match {
       case Some(token) => return token
       case None => // nop
     }
 
-    acceptIfSimpleToken() match {
+    acceptIfOperator() match {
       case Some(token) => return token
       case None => // nop
     }
