@@ -1537,7 +1537,7 @@ object Parser2 {
       (OpKind.Binary, Array(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)),
       (OpKind.Binary, Array(TokenKind.ColonColon, TokenKind.TripleColon)),
       (OpKind.Binary, Array(TokenKind.Plus, TokenKind.Minus)),
-      (OpKind.Binary, Array(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash)),
+      (OpKind.Binary, Array(TokenKind.Star, TokenKind.Slash)),
       (OpKind.Binary, Array(TokenKind.AngledPlus)),
       (OpKind.Unary, Array(TokenKind.KeywordDiscard)),
       (OpKind.Binary, Array(TokenKind.InfixFunction)),
