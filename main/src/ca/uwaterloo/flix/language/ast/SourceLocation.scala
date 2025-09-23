@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.{SecurityContext, Source}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
   * Companion object for the [[SourceLocation]] class.
@@ -16,7 +17,7 @@ object SourceLocation {
 
   /** Returns the [[SourceLocation]] that refers the the zero-width location `sp`. */
   def zeroPoint(isReal: Boolean, src: Source, sp: SourcePosition): SourceLocation =
-    SourceLocation(isReal, src, sp, sp)
+    SourceLocation(isReal, src, sp, SourcePosition.moveRight(sp))
 
   implicit object Order extends Ordering[SourceLocation] {
 
