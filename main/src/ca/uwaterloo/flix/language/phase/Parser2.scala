@@ -1533,7 +1533,7 @@ object Parser2 {
       (OpKind.Binary, Array(TokenKind.ColonEqual, TokenKind.KeywordInstanceOf)),
       (OpKind.Binary, Array(TokenKind.KeywordOr)),
       (OpKind.Binary, Array(TokenKind.KeywordAnd)),
-      (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)),
+      (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.BangEqual)),
       (OpKind.Binary, Array(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)),
       (OpKind.Binary, Array(TokenKind.ColonColon, TokenKind.TripleColon)),
       (OpKind.Binary, Array(TokenKind.Plus, TokenKind.Minus)),

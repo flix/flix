@@ -25,7 +25,6 @@ sealed trait TokenKind {
   def display: String = {
     this match {
       case TokenKind.Ampersand => "'&'"
-      case TokenKind.AngledEqual => "'<=>'"
       case TokenKind.AngledPlus => "'<+>'"
       case TokenKind.AngleL => "'<'"
       case TokenKind.AngleLEqual => "'<='"
@@ -295,7 +294,6 @@ sealed trait TokenKind {
          | TokenKind.AngleLEqual
          | TokenKind.AngleR
          | TokenKind.AngleREqual
-         | TokenKind.AngledEqual
          | TokenKind.AngledPlus
          | TokenKind.Annotation
          | TokenKind.ArrayHash
@@ -545,7 +543,6 @@ sealed trait TokenKind {
          | TokenKind.AngleLEqual
          | TokenKind.AngleR
          | TokenKind.AngleREqual
-         | TokenKind.AngledEqual
          | TokenKind.AngledPlus
          | TokenKind.ArrowThickR
          | TokenKind.ArrowThinL
@@ -799,8 +796,6 @@ sealed trait TokenKind {
   */
 object TokenKind {
   case object Ampersand extends TokenKind
-
-  case object AngledEqual extends TokenKind
 
   case object AngledPlus extends TokenKind
 
