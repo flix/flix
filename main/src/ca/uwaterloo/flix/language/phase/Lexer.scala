@@ -277,10 +277,6 @@ object Lexer {
   private def previousPrevious()(implicit s: State): Option[Char] =
     s.sc.nth(-2)
 
-  /** Peeks the character that is `n` characters before the current if available. */
-  private def previousN(n: Int)(implicit s: State): Option[Char] =
-    s.sc.nth(-(n + 1))
-
   /** Peeks the character after the one that state is sitting on if available. */
   private def peekPeek()(implicit s: State): Option[Char] =
     s.sc.nth(1)
@@ -389,7 +385,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (previousN(2).exists(_.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
+        if (s.sc.nthIsPOrOutOfBounds(-1, _.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
