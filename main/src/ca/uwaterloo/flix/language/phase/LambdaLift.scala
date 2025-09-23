@@ -54,7 +54,7 @@ object LambdaLift {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, _, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, Map.empty, sctx, flix)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, isClosure = false, fs, e, tpe, loc)
   }
 
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
@@ -113,24 +113,20 @@ object LambdaLift {
       val mod = Modifiers(Modifier.Synthetic :: Nil)
 
       // Construct the closure parameters
-      val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), SimpleType.Unit, loc))
-      } else cparams.map(visitFormalParam)
+      val cs = cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
       val fs = fparams.map(visitFormalParam)
 
       // Construct a new definition.
       val defTpe = arrowTpe.result
-      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, loc)
+      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, isClosure = true, fs, liftedExp, defTpe, loc)
 
       // Add the new definition to the map of lifted definitions.
       sctx.liftedDefs.add(freshSymbol -> defn)
 
       // Construct the closure args.
-      val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc))
-      else freeVars.map {
+      val closureArgs = freeVars.map {
         case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
       }
 
@@ -200,7 +196,7 @@ object LambdaLift {
       val mod = Modifiers(Modifier.Synthetic :: Nil)
       val fps = fparams.map(visitFormalParam)
       val defTpe = exp1.tpe
-      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, fps, body, defTpe, loc.asSynthetic)
+      val liftedDef = LiftedAst.Def(ann, mod, freshDefnSym, List.empty, isClosure = false, fps, body, defTpe, loc.asSynthetic)
       sctx.liftedDefs.add(freshDefnSym -> liftedDef)
       visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
 

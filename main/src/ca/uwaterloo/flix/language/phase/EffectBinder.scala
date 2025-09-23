@@ -71,12 +71,12 @@ object EffectBinder {
     * operand stack.
     */
   private def visitDef(defn: LiftedAst.Def)(implicit flix: Flix): ReducedAst.Def = defn match {
-    case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, loc) =>
+    case LiftedAst.Def(ann, mod, sym, cparams0, isClosure, fparams0, exp0, tpe, loc) =>
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
       val lparams = Nil
       val exp = visitExpr(exp0)
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+      ReducedAst.Def(ann, mod, sym, cparams, isClosure, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
   }
 
   private def visitEnum(enm: LiftedAst.Enum): ReducedAst.Enum = enm match {

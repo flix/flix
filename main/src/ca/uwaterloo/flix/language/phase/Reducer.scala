@@ -54,7 +54,7 @@ object Reducer {
   }
 
   private def visitDef(d: Def)(implicit root: Root, ctx: SharedContext): Def = d match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
+    case Def(ann, mod, sym, cparams, isClosure, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
@@ -71,7 +71,7 @@ object Reducer {
       ctx.defTypes.put(unboxedType.tpe, ())
       cParamTypes.foreach(t => ctx.defTypes.put(t, ()))
 
-      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
+      Def(ann, mod, sym, cparams, isClosure, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
