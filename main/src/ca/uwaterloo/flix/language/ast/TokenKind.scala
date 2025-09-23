@@ -50,6 +50,7 @@ sealed trait TokenKind {
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
       case TokenKind.CurlyR => "'}'"
+      case TokenKind.Diamond => "'<>'"
       case TokenKind.Dollar => "'$'"
       case TokenKind.Dot => "'.'"
       case TokenKind.DotDotDot => "'...'"
@@ -320,6 +321,7 @@ sealed trait TokenKind {
          | TokenKind.CurlyL
          | TokenKind.CurlyR
          | TokenKind.DebugInterpolator
+         | TokenKind.Diamond
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
@@ -563,6 +565,7 @@ sealed trait TokenKind {
          | TokenKind.CommentDoc
          | TokenKind.CommentLine
          | TokenKind.CurlyR
+         | TokenKind.Diamond
          | TokenKind.Dollar
          | TokenKind.Dot
          | TokenKind.DotCurlyL
@@ -855,6 +858,8 @@ object TokenKind {
   case object CurlyR extends TokenKind
 
   case object DebugInterpolator extends TokenKind
+
+  case object Diamond extends TokenKind
 
   case object Dollar extends TokenKind
 

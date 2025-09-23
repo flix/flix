@@ -3338,6 +3338,7 @@ object Parser2 {
         case TokenKind.HashBar => extensibleType()
         case TokenKind.HashCurlyL => schemaType()
         case TokenKind.HashParenL => schemaRowType()
+        case TokenKind.Diamond => emptyCaseSetType()
         case TokenKind.AngleL => caseSetType()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
@@ -3540,6 +3541,14 @@ object Parser2 {
         )
         close(mark, TreeKind.Type.PredicateWithTypes)
       }
+    }
+
+    private def emptyCaseSetType()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Unknown
+      assert(at(TokenKind.Diamond))
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Type.CaseSet)
     }
 
     private def caseSetType()(implicit s: State): Mark.Closed = {
