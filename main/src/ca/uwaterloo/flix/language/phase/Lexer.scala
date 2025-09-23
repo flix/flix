@@ -164,8 +164,7 @@ object Lexer {
     val simpleTokens = Array(
       ("!", TokenKind.Bang),
       ("!=", TokenKind.BangEqual),
-      ("", TokenKind.Equal),
-      ("$", TokenKind.Dollar),
+      ("=", TokenKind.Equal),
       ("&", TokenKind.Ampersand),
       ("*", TokenKind.Star),
       ("**", TokenKind.StarStar),
@@ -360,6 +359,7 @@ object Lexer {
         // Don't include the $ sign in the name.
         s.resetStart()
         acceptName(isUpper = false)
+      case '$' if s.sc.peekIs(c => !isUserOp(c)) => TokenKind.Dollar
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -444,7 +444,7 @@ object Lexer {
 
   /** Advance the current position past an operator if any operator completely matches the current position. */
   private def acceptIfOperator()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(Operators, isUserOp)
+    advanceIfInTree(Operators, c => !isUserOp(c))
 
   /** Advance the current position past a simple token if any simple token matches the current position. */
   private def acceptIfSimpleToken()(implicit s: State): Option[TokenKind] =
