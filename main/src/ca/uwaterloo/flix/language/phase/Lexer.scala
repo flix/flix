@@ -919,6 +919,7 @@ object Lexer {
     mkErrorKind(LexerError.UnterminatedBlockComment(sourceLocationFromStart()))
   }
 
+
   /** Creates a [[SourceLocation]] of the inclusive `start` and exclusive `end` in the current source. */
   private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State): SourceLocation =
     SourceLocation(isReal = true, s.src, start, end)
