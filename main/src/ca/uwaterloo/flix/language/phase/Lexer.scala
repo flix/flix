@@ -345,7 +345,7 @@ object Lexer {
           TokenKind.Dot
         }
       case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
-      case '$' if s.sc.peekIs(_.isLetter) =>
+      case '$' if s.sc.peekIs(isFirstNameChar) =>
         // Don't include the $ sign in the name.
         s.resetStart()
         acceptName(isUpper = false)
@@ -392,7 +392,6 @@ object Lexer {
         } else TokenKind.Underscore
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
-      // User defined operators.
       case c if isUserOp(c) => acceptUserDefinedOp()
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
