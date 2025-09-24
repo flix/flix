@@ -18,6 +18,10 @@ object SourceLocation {
   def zeroPoint(isReal: Boolean, src: Source, sp: SourcePosition): SourceLocation =
     SourceLocation(isReal, src, sp, sp)
 
+  /** Returns the [[SourceLocation]] that refers the the single-width location `sp`. */
+  def point(isReal: Boolean, src: Source, sp: SourcePosition): SourceLocation =
+    SourceLocation(isReal, src, sp, SourcePosition.moveRight(sp))
+
   implicit object Order extends Ordering[SourceLocation] {
 
     import scala.math.Ordered.orderingToOrdered
