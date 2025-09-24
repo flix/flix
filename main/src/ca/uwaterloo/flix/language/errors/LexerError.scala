@@ -25,7 +25,11 @@ sealed trait LexerError extends CompilationMessage {
 
 object LexerError {
 
-  /** An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`). */
+  /**
+    * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
+    *
+    * @param loc the location of the unexpected char.
+    */
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A digit (0-9) is expected here."
 
@@ -38,7 +42,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`). */
+  /**
+    * An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`).
+    *
+    * @param loc the locations of the unexpected char.
+    */
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
 
@@ -55,7 +63,7 @@ object LexerError {
     * An error raised when a period has whitespace before it.
     * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
     *
-    * @param loc The location of the '.'.
+    * @param loc the location of the '.'.
     */
   case class FreeDot(loc: SourceLocation) extends LexerError {
     override def summary: String = s"'.' has leading whitespace."
@@ -70,7 +78,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when a hexadecimal number suffix is unrecognized. */
+  /**
+    * An error raised when a hexadecimal number suffix is unrecognized.
+    *
+    * @param loc the location of the number suffix.
+    */
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect hexadecimal number suffix."
 
@@ -86,7 +98,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when a number suffix is unrecognized. */
+  /**
+    * An error raised when a number suffix is unrecognized.
+    *
+    * @param loc the location of the number suffix.
+    */
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect number suffix."
 
@@ -102,7 +118,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when an integer suffix is put on a decimal number. */
+  /**
+    * An error raised when an integer suffix is put on a decimal number.
+    *
+    * @param loc the location of the suffix.
+    */
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A decimal number cannot have integer suffix."
 
@@ -118,8 +138,12 @@ object LexerError {
     }
   }
 
-  /** An error raised when a hexadecimal number is malformed. */
-  case class MalformedHexNumber(found: String, loc: SourceLocation) extends LexerError {
+  /**
+    * An error raised when a hexadecimal number is malformed.
+    *
+    * @param loc the location of `found`.
+    */
+  case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed hexadecimal number, found '$found'."
 
     override def message(formatter: Formatter): String = {
@@ -132,8 +156,12 @@ object LexerError {
     }
   }
 
-  /** An error raised when a number is malformed. */
-  case class MalformedNumber(found: String, loc: SourceLocation) extends LexerError {
+  /**
+    * An error raised when a number is malformed.
+    *
+    * @param loc the location of `found`
+    */
+  case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed number, found '$found'."
 
     override def message(formatter: Formatter): String = {
@@ -149,15 +177,14 @@ object LexerError {
   /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
-    * @param s   the problematic character.
-    * @param loc the location of char.
+    * @param loc the location of `found`.
     */
-  case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unexpected character '$s'."
+  case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unexpected character '$found'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected character '${red(s)}'.
+      s""">> Unexpected character '${red(found.toString)}'.
          |
          |${code(loc, "Unexpected character.")}
          |
@@ -168,7 +195,7 @@ object LexerError {
   /**
     * An error raised when an unterminated block comment is encountered.
     *
-    * @param loc The location of the opening "/ *".
+    * @param loc the location of the block comment.
     */
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated block-comment."
@@ -177,7 +204,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '*/' in block-comment.
          |
-         |${code(loc, "Block-comment starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -186,7 +213,7 @@ object LexerError {
   /**
     * An error raised when an unterminated built-in function is encountered.
     *
-    * @param loc The location of the opening "%%".
+    * @param loc the location of the built-in.
     */
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated built-in."
@@ -195,7 +222,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '%%' in built-in.
          |
-         |${code(loc, "Built-in starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -204,7 +231,7 @@ object LexerError {
   /**
     * An error raised when an unterminated char is encountered.
     *
-    * @param loc The location of the opening `'`.
+    * @param loc The location of the char.
     */
   case class UnterminatedChar(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated char."
@@ -213,7 +240,7 @@ object LexerError {
       import formatter.*
       s""">> Missing `'` in char.
          |
-         |${code(loc, "Char starts here")}
+         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -222,7 +249,7 @@ object LexerError {
   /**
     * An error raised when an unterminated infix function is encountered.
     *
-    * @param loc The location of the opening '&#96;'.
+    * @param loc the location of the infix function.
     */
   case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated infix function."
@@ -231,7 +258,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '`' in infix function.
          |
-         |${code(loc, "Infix function starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -240,7 +267,7 @@ object LexerError {
   /**
     * An error raised when an unterminated regex is encountered.
     *
-    * @param loc The location of the opening `"`.
+    * @param loc the location of the regex.
     */
   case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated regex."
@@ -249,7 +276,7 @@ object LexerError {
       import formatter.*
       s""">> Missing `"` in regex.
          |
-         |${code(loc, "Regex starts here")}
+         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -258,7 +285,7 @@ object LexerError {
   /**
     * An error raised when an unterminated string is encountered.
     *
-    * @param loc The location of the opening `"`.
+    * @param loc the location of the string.
     */
   case class UnterminatedString(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated string."
@@ -267,7 +294,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '"' in string.
          |
-         |${code(loc, "String starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
