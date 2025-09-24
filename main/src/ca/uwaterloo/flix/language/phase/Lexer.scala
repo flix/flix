@@ -817,10 +817,8 @@ object Lexer {
         TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       }
     } else if (isNumberLikeChar(c)) {
-      {
-        s.sc.advanceWhile(isNumberLikeChar)
-        TokenKind.Err(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
-      }
+      s.sc.advanceWhile(isNumberLikeChar)
+      TokenKind.Err(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
     } else {
       if (mustBeFloat) TokenKind.LiteralFloat
       else TokenKind.LiteralInt
@@ -845,19 +843,15 @@ object Lexer {
 
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-      return {
-        s.sc.advanceWhile(isNumberLikeChar)
-        TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
-      }
+      s.sc.advanceWhile(isNumberLikeChar)
+      return TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
     }
 
     // Consume a `(_\h+)*`
     while (s.sc.advanceIfMatch('_')) {
       if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-        return {
-          s.sc.advanceWhile(isNumberLikeChar)
-          TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
-        }
+        s.sc.advanceWhile(isNumberLikeChar)
+        return TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
       }
     }
 
@@ -886,10 +880,8 @@ object Lexer {
         TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       }
     } else if (isNumberLikeChar(c)) {
-      {
-        s.sc.advanceWhile(isNumberLikeChar)
-        TokenKind.Err(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
-      }
+      s.sc.advanceWhile(isNumberLikeChar)
+      TokenKind.Err(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
     } else TokenKind.LiteralInt
   }
 
