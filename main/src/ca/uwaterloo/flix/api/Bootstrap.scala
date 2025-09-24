@@ -656,6 +656,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     case Failure(e) => Validation.Failure(BootstrapError.FileError(e.getMessage))
   }
 
+  private def sequence[A](fs: Seq[A => Unit])(x: A): Unit = {
+    fs.foreach(f => f(x))
+  }
+
   private object Steps {
 
     /**
