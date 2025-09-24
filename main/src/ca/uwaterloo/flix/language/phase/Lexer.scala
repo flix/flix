@@ -744,7 +744,7 @@ object Lexer {
         TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else if (mustBeFloat && intSuffix) {
         s.sc.advanceWhile(isNumberLikeChar)
-        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+        TokenKind.Err(LexerError.IntegerSuffixOnFloat(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else token
     }
 
@@ -829,7 +829,7 @@ object Lexer {
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
         if (s.sc.peekIs(isNumberLikeChar)) {
           s.sc.advanceWhile(isNumberLikeChar)
-          TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+          TokenKind.Err(LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
         } else token
       }
 
@@ -840,7 +840,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
       else {
         s.sc.advanceWhile(isNumberLikeChar)
-        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+        TokenKind.Err(LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       }
     } else if (isNumberLikeChar(c)) {
       val loc = sourceLocationAtCurrent()
