@@ -350,47 +350,26 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
             flatMapN(Steps.compile(flix)) {
               _ =>
                 val jarFile = Bootstrap.getJarFile(projectPath)
-                flatMapN(Steps.validateOutJarFile(jarFile)) {
+                flatMapN(Steps.validateJarFile(jarFile)) {
                   _ =>
                     val libDir = Bootstrap.getLibraryDirectory(projectPath)
-                    val depValidation = if (includeDependencies) Steps.validateDirectory(libDir) else Validation.Success(())
+                    val depValidation = if (includeDependencies)
+                      flatMapN(Steps.validateDirectory(libDir)) {
+                        _ =>
+                          Validation.mapN(
+                            Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
+                          )(_ => ())
+                      } else Validation.Success(())
                     flatMapN(depValidation) {
                       _ =>
-                        val addJarsToZip = (zip: ZipOutputStream) => {
-                          // First, we get all jar files inside the lib folder.
-                          // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-                          if (libDir.toFile.exists()) {
-                            val jarDependencies = FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue)
-                            // Add jar dependencies.
-                            jarDependencies.foreach(dep => {
-                              if (!Bootstrap.isJarFile(dep))
-                                return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
-
-                              // Extract the content of the classes to the jar file.
-                              Using(new ZipInputStream(Files.newInputStream(dep))) {
-                                zipIn =>
-                                  var entry = zipIn.getNextEntry
-                                  while (entry != null) {
-                                    // Get the class files except module-info and META-INF classes which are specific to each library.
-                                    if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
-                                      // Write extracted class files to zip.
-                                      val classContent = zipIn.readAllBytes()
-                                      FileOps.addToZip(zip, entry.getName, classContent)
-                                    }
-                                    entry = zipIn.getNextEntry
-                                  }
-                              }
-                            })
-                          }
-                        }
                         Files.createDirectories(getArtifactDirectory(projectPath))
                         val outputStream = new ZipOutputStream(Files.newOutputStream(jarFile))
                         val contents = sequence(Seq(
                           Steps.addManifestToZip,
                           Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
                           Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
-                        ).appendedAll(if (includeDependencies) Seq(addJarsToZip) else Seq.empty)
-                        )
+                          if (includeDependencies) Steps.addJarsFromDirToZip(libDir) else (_: ZipOutputStream) => ()
+                        ))
                         toValidation(Using(outputStream)(contents))
                     }
                 }
@@ -654,6 +633,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    def addJarsFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
+      // First, we get all jar files inside the lib folder.
+      // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
+      if (!Files.exists(dir)) {
+        return
+      }
+      val jarDependencies = FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue)
+      // Add jar dependencies.
+      jarDependencies.foreach(dep => {
+        // Extract the content of the classes to the jar file.
+        Using(new ZipInputStream(Files.newInputStream(dep))) {
+          zipIn =>
+            var entry = zipIn.getNextEntry
+            while (entry != null) {
+              // Get the class files except module-info and META-INF classes which are specific to each library.
+              if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
+                // Write extracted class files to zip.
+                val classContent = zipIn.readAllBytes()
+                FileOps.addToZip(zip, entry.getName, classContent)
+              }
+              entry = zipIn.getNextEntry
+            }
+        }
+      })
+    }
+
     /**
       * Returns and caches all `.flix` files from `src/` and `test/`.
       */
@@ -910,7 +915,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Success(())
     }
 
-    def validateOutJarFile(jarFile: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    def validateJarFile(jarFile: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
       // Check whether it is safe to write to the file.
       if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
         Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
