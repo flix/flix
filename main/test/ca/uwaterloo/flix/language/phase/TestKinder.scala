@@ -1381,7 +1381,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case C2
         |}
         |
-        |def f(x: a[<>]): String = ???
+        |def f(x: a[< >]): String = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UninferrableKind](result)

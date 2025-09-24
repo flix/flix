@@ -186,14 +186,14 @@ object LexerError {
   /**
     * An error raised when an unterminated built-in function is encountered.
     *
-    * @param loc The location of the opening "$".
+    * @param loc The location of the opening "%%".
     */
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated built-in."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Missing '$$' in built-in.
+      s""">> Missing '%%' in built-in.
          |
          |${code(loc, "Built-in starts here.")}
          |

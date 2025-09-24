@@ -7,73 +7,73 @@ mod Test.Exp.Discard {
     @test
     def testBoolDiscard01(): Unit \ IO =
         let arr = Array#{true} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testCharDiscard01(): Unit \ IO =
         let arr = Array#{'q'} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testFloat32Discard01(): Unit \ IO =
         let arr = Array#{32.0f32} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testFloat64Discard01(): Unit \ IO =
         let arr = Array#{64.0f64} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testBigDecimalDiscard01(): Unit \ IO =
         let arr = Array#{9999999.0ff} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
 
     @test
     def testInt8Discard01(): Unit \ IO =
         let arr = Array#{8i8} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testInt16Discard01(): Unit \ IO =
         let arr = Array#{16i16} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testInt32Discard01(): Unit \ IO =
         let arr = Array#{32i32} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testInt64Discard01(): Unit \ IO =
         let arr = Array#{64i64} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testBigIntDiscard01(): Unit \ IO =
         let arr = Array#{9999999ii} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testStringDiscard01(): Unit \ IO =
         let arr = Array#{"cool string"} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testArrayOfIntDiscard01(): Unit \ IO =
         let arr = Array#{Array#{2} @ Static} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testArrayOfStringDiscard01(): Unit \ IO =
         let arr = Array#{Array#{"cool string"} @ Static} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     @test
     def testTupleDiscard01(): Unit \ IO =
         let arr = Array#{("fst", "snd")} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     enum Enum {
         case Data(Int32)
@@ -82,7 +82,7 @@ mod Test.Exp.Discard {
     @test
     def testEnumDiscard01(): Unit \ IO =
         let arr = Array#{Enum.Data(32)} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
     pub enum Poly[a, b] {
             case None,
@@ -94,7 +94,7 @@ mod Test.Exp.Discard {
     @test
     def testPolyDiscard01(): Unit \ IO =
         let arr = Array#{Poly.That("hello")} @ Static;
-        discard $ARRAY_LOAD$(arr, 0)
+        discard %%ARRAY_LOAD%%(arr, 0)
 
 
     // Longer tests
