@@ -46,7 +46,6 @@ sealed trait TokenKind {
       case TokenKind.Caret => "'^'"
       case TokenKind.Colon => "':'"
       case TokenKind.ColonColon => "'::'"
-      case TokenKind.ColonEqual => "':='"
       case TokenKind.ColonMinus => "':-'"
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
@@ -155,7 +154,6 @@ sealed trait TokenKind {
       case TokenKind.SetHash => "'Set#'"
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
-      case TokenKind.StarStar => "'**'"
       case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.TripleColon => "':::'"
@@ -314,7 +312,6 @@ sealed trait TokenKind {
          | TokenKind.Caret
          | TokenKind.Colon
          | TokenKind.ColonColon
-         | TokenKind.ColonEqual
          | TokenKind.ColonMinus
          | TokenKind.Comma
          | TokenKind.CommentBlock
@@ -371,7 +368,6 @@ sealed trait TokenKind {
          | TokenKind.SetHash
          | TokenKind.Slash
          | TokenKind.Star
-         | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
          | TokenKind.TripleColon
@@ -561,7 +557,6 @@ sealed trait TokenKind {
          | TokenKind.Caret
          | TokenKind.Colon
          | TokenKind.ColonColon
-         | TokenKind.ColonEqual
          | TokenKind.ColonMinus
          | TokenKind.Comma
          | TokenKind.CommentBlock
@@ -624,7 +619,6 @@ sealed trait TokenKind {
          | TokenKind.Semi
          | TokenKind.Slash
          | TokenKind.Star
-         | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
          | TokenKind.TripleColon
@@ -845,8 +839,6 @@ object TokenKind {
   case object Colon extends TokenKind
 
   case object ColonColon extends TokenKind
-
-  case object ColonEqual extends TokenKind
 
   case object ColonMinus extends TokenKind
 
@@ -1113,8 +1105,6 @@ object TokenKind {
   case object Slash extends TokenKind
 
   case object Star extends TokenKind
-
-  case object StarStar extends TokenKind
 
   case object StructArrow extends TokenKind
 

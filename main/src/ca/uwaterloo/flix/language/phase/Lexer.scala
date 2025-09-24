@@ -139,6 +139,7 @@ object Lexer {
   /** Simple tokens - tokens consumed no matter the following char. */
   private val SimpleTokens: PrefixTree.Node[TokenKind] = {
     val simpleTokens = Array(
+      ("#", TokenKind.Hash),
       ("#(", TokenKind.HashParenL),
       ("#{", TokenKind.HashCurlyL),
       ("#|", TokenKind.HashBar),
@@ -167,14 +168,12 @@ object Lexer {
       ("=", TokenKind.Equal),
       ("&", TokenKind.Ampersand),
       ("*", TokenKind.Star),
-      ("**", TokenKind.StarStar),
       ("+", TokenKind.Plus),
       ("-", TokenKind.Minus),
       (":", TokenKind.Colon),
       (":-", TokenKind.ColonMinus),
       ("::", TokenKind.ColonColon),
       (":::", TokenKind.TripleColon),
-      (":=", TokenKind.ColonEqual),
       ("<", TokenKind.AngleL),
       ("<+>", TokenKind.AngledPlus),
       ("<-", TokenKind.ArrowThinL),
@@ -261,14 +260,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /** Peeks the previous character that state was on if available. */
-  private def previous()(implicit s: State): Option[Char] =
-    s.sc.previous
-
-  /** Peeks the character before the previous that state was on if available. */
-  private def previousPrevious()(implicit s: State): Option[Char] =
-    s.sc.nth(-2)
-
   /** Peeks the character that is `n` characters before the current if available. */
   private def previousN(n: Int)(implicit s: State): Option[Char] =
     s.sc.nth(-(n + 1))
@@ -342,7 +333,7 @@ object Lexer {
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
-        } else if (previousPrevious().exists(_.isWhitespace)) {
+        } else if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (s.sc.peekIs(_.isWhitespace)) {
@@ -363,7 +354,6 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => TokenKind.Hash
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -631,7 +621,7 @@ object Lexer {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
       // Check for the beginning of a string interpolation.
-      val prev = previous()
+      val prev = s.sc.previous
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
       if (isInterpolation) {
         acceptStringInterpolation() match {
