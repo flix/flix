@@ -381,7 +381,27 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds a jar package for the project.
     */
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    buildJarBase(flix, includeDependencies = false)
+    val jarFile = Bootstrap.getJarFile(projectPath)
+    flatMapN(Steps.updateStaleSources(flix)) {
+      _ =>
+        flatMapN(Steps.configureJarOutput(flix)) {
+          _ =>
+            flatMapN(Steps.compile(flix)) {
+              _ =>
+                flatMapN(Steps.validateJarFile(jarFile)) {
+                  _ =>
+                    Files.createDirectories(getArtifactDirectory(projectPath))
+                    val contents = sequence(Seq(
+                      Steps.addManifestToZip,
+                      Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+                      Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
+                    ))
+                    toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
+                }
+            }
+        }
+    }
+
   }
 
   /**
