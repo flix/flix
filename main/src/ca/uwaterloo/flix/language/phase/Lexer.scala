@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.util.collection.PrefixTree
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -212,6 +213,9 @@ object Lexer {
       */
     val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
+    /** The list of errors in the `tokens` array. */
+    val errors: mutable.ArrayBuffer[LexerError] = new ArrayBuffer[LexerError]()
+
   }
 
   /** A source position keeping track of both line, column as well as absolute character offset. */
@@ -256,11 +260,7 @@ object Lexer {
     s.resetStart()
     addToken(TokenKind.Eof)
 
-    val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _) => err
-    }
-
-    (s.tokens.toArray, errors.toList)
+    (s.tokens.toArray, s.errors.toList)
   }
 
   /** Checks if the current position has landed on end-of-file. */
@@ -298,6 +298,9 @@ object Lexer {
     val (endLine, endColumn) = if (s.start.offset != s.sc.getOffset) s.sc.getExclusiveEndPosition else s.sc.getPosition
     val e = SourcePosition.mkFromZeroIndexed(endLine, endColumn)
     s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
+    kind match {
+      case TokenKind.Err(error) => s.errors.append(error)
+    }
     s.resetStart()
   }
 
