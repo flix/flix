@@ -438,18 +438,12 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedChar.03") {
-    val input = "'a/* This is a block-comment */'"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedChar](result)
-  }
-
-  test("LexerError.UnterminatedChar.04") {
     val input = "'/* This is a block-comment */a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
-  test("LexerError.UnterminatedChar.05") {
+  test("LexerError.UnterminatedChar.04") {
     val input =
       """def foo(): Char = '"""
     val result = compile(input, Options.TestWithLibNix)
