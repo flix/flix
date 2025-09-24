@@ -358,30 +358,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                       _ =>
                         Files.createDirectories(getArtifactDirectory(projectPath))
                         val result = Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
-                          // META-INF/MANIFEST.MF
-                          val manifest =
-                            """Manifest-Version: 1.0
-                              |Main-Class: Main
-                              |""".stripMargin
-
-                          // Add manifest file.
-                          FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
-
-                          // Add all class files.
-                          // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-                          val classDir = Bootstrap.getClassDirectory(projectPath)
-                          val classFiles = FileOps.getFilesWithExtIn(classDir, EXT_CLASS, Int.MaxValue)
-                          for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(classDir, classFiles)) {
-                            FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
-                          }
-
-                          // Add all resources, again sorting by relative file name
-                          val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
-                          val resources = FileOps.getFilesIn(resourcesDir, Int.MaxValue)
-                          for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(resourcesDir, resources)) {
-                            FileOps.addToZip(zip, fileNameWithSlashes, resource)
-                          }
-
+                          Steps.addManifestToZip(zip)
+                          Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath))(zip)
+                          Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))(zip)
                           // First, we get all jar files inside the lib folder.
                           // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
                           if (includeDependencies && libDir.toFile.exists()) {
@@ -662,6 +641,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private object Steps {
 
+    def addClassFilesFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
+      // Add all class files.
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      val classFiles = FileOps.getFilesWithExtIn(dir, EXT_CLASS, Int.MaxValue)
+      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, classFiles)) {
+        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
+      }
+    }
+
     /**
       * Returns and caches all `.flix` files from `src/` and `test/`.
       */
@@ -715,6 +703,25 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val mavenFilesLib = FileOps.getFilesWithExtIn(Bootstrap.getLibraryDirectory(projectPath).resolve(MavenPackageManager.DirName), EXT_JAR, Int.MaxValue)
       mavenPackagePaths = mavenFilesLib
       mavenFilesLib
+    }
+
+    def addManifestToZip(zip: ZipOutputStream): Unit = {
+      // META-INF/MANIFEST.MF
+      val manifest =
+        """Manifest-Version: 1.0
+          |Main-Class: Main
+          |""".stripMargin
+
+      // Add manifest file.
+      FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
+    }
+
+    def addResourcesFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
+      // Add all resources, again sorting by relative file name
+      val resources = FileOps.getFilesIn(dir, Int.MaxValue)
+      for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, resources)) {
+        FileOps.addToZip(zip, fileNameWithSlashes, resource)
+      }
     }
 
     /**
