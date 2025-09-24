@@ -1,20 +1,3 @@
-/*
- * Copyright 2025 Casper Dalgaard Nielsen
- *                Adam Yasser Tallouzi
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod Test.Exp.Fixpoint.Functional {
 
     use Assert.assertEq;
@@ -28,7 +11,7 @@ mod Test.Exp.Fixpoint.Functional {
             if (i > x / 2) true
             else if (Int32.modulo(x, i) == 0) false
             else loop(i+1);
-        if(x < 2) false
+        if (x < 2) false
         else loop(2)
 
     def primesInRange(b: Int32, e: Int32): Vector[Int32] =
@@ -80,7 +63,7 @@ mod Test.Exp.Fixpoint.Functional {
             End(10).
             Nat(x) :- Start(x).
             Nat(p) :- Succ(x), let p = Vector#{x}.
-            Succ(p) :- Nat(x), let p = Vector#{x + 1}, End(y), if(p <= y).
+            Succ(p) :- Nat(x), let p = Vector#{x + 1}, End(y), if (p <= y).
         };
         let res = Vector#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         assertEq(expected = res, query p select x from Nat(x))
@@ -93,7 +76,7 @@ mod Test.Exp.Fixpoint.Functional {
             End(1).
             Nat(x) :- Start(x).
             Nat(p) :- Pre(x), let p = Vector#{x}.
-            Pre(p) :- Nat(x), let p = Vector#{x - 1}, End(y), if(p >= y).
+            Pre(p) :- Nat(x), let p = Vector#{x - 1}, End(y), if (p >= y).
         };
         let res = Vector#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         assertEq(expected = res, query p select x from Nat(x))

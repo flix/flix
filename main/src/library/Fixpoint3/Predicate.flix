@@ -69,7 +69,8 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns 1 plus the maximum full predicate in `predicates`.
     ///
-    def getMax(predicates: Predicates): Int64 = {
+    @Internal
+    pub def getMax(predicates: Predicates): Int64 = {
         let (_, _, res) = predicates;
         res
     }
@@ -113,7 +114,7 @@ mod Fixpoint3.Predicate {
     /// a full `RelSym`.
     ///
     @Internal
-    pub def fullRelSymToType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym = 
+    pub def fullRelSymToType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym =
         fullRelSymToTypeInternal(relSym, wantedType, getMax(predInfo))
 
     ///
@@ -209,7 +210,15 @@ mod Fixpoint3.Predicate {
     ///
     @Internal
     pub def relSymsOfProgram(program: RamProgram): List[RelSym] = match program {
-        case RamProgram.Program(_, _, predInfo, _) => allRelSyms(predInfo)
+        case RamProgram.Program(_, _, predInfo, _, _) => allRelSyms(predInfo)
+    }
+
+    ///
+    /// Returns a list of all `RelSym` known in `program`.
+    ///
+    @Internal
+    pub def fullRelSymsOfProgram(program: RamProgram): List[RelSym] = match program {
+        case RamProgram.Program(_, _, predInfo, _, _) => allFullRelSyms(predInfo)
     }
 
     ///
@@ -274,7 +283,7 @@ mod Fixpoint3.Predicate {
     ///
     def bodyAtomToFullRelSym(body: BodyPredicate): RelSym = match body {
         case BodyAtom(pred, den, _, _, terms) => RelSym.Symbol(pred, Vector.length(terms), den)
-        case _ => unreachable!()
+        case _                                => unreachable!()
     }
 
 }

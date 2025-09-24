@@ -12,18 +12,18 @@ object SourceLocation {
     *
     * Must only be used if *absolutely necessary*.
     */
-  val Unknown: SourceLocation = SourceLocation(isReal = true, SourcePosition.Unknown, SourcePosition.Unknown)
+  val Unknown: SourceLocation = SourceLocation(isReal = true, Source.Unknown, SourcePosition.Unknown, SourcePosition.Unknown)
 
   /** Returns the [[SourceLocation]] that refers the the zero-width location `sp`. */
-  def zeroPoint(isReal: Boolean, sp: SourcePosition): SourceLocation =
-    SourceLocation(isReal, sp, sp)
+  def zeroPoint(isReal: Boolean, src: Source, sp: SourcePosition): SourceLocation =
+    SourceLocation(isReal, src, sp, sp)
 
   implicit object Order extends Ordering[SourceLocation] {
 
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.name, x.beginLine, x.beginCol, x.endLine, x.endCol).compare(y.source.name, y.beginLine, y.beginCol, y.endLine, y.endCol)
+      (x.source.name, x.sp1, x.sp2).compare((y.source.name, y.sp1, y.sp2))
   }
 
 }
@@ -33,20 +33,12 @@ object SourceLocation {
   *
   * @param isReal true if real location, false if synthetic location.
   */
-case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosition) {
-
-  // Invariant: Ensure that sp1 and sp2 come from the same source.
-  assert(sp1.source eq sp2.source)
-
-  /**
-    * Returns the source associated with the source location.
-    */
-  def source: Source = sp1.source
+case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, sp2: SourcePosition) {
 
   /**
    * Returns the security context associated with the source location.
    */
-  def security: SecurityContext = sp1.source.input.security
+  def security: SecurityContext = source.input.security
 
   /**
     * Returns the one-indexed line where the entity begins.
@@ -65,9 +57,12 @@ case class SourceLocation(isReal: Boolean, sp1: SourcePosition, sp2: SourcePosit
     * and `this` ends after `that` or at the same position. Returns `false` otherwise.
     */
   def contains(that: SourceLocation): Boolean = {
-    val thatBeginsLater = SourcePosition.PartialOrder.lteq(this.sp1, that.sp1)
-    val thatEndsBefore = SourcePosition.PartialOrder.lteq(that.sp2, this.sp2)
-    thatBeginsLater && thatEndsBefore
+    if (this.source != that.source) false
+    else {
+      val thatBeginsLater = SourcePosition.Order.lteq(this.sp1, that.sp1)
+      val thatEndsBefore = SourcePosition.Order.lteq(that.sp2, this.sp2)
+      thatBeginsLater && thatEndsBefore
+    }
   }
 
   /**

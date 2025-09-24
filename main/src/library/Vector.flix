@@ -863,7 +863,7 @@ mod Vector {
         else if (j >= len2)
             // `b` exhausted, `a` still trying to match, so failure
             false
-        else if(get(i, a) == get(j, b))
+        else if (get(i, a) == get(j, b))
             isInfixOfCheck(a, b, len1, len2, i+1, j+1)
         else
             isInfixOfSearch(a, b, len1, len2, j+1)

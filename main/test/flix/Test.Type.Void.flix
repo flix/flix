@@ -21,7 +21,7 @@ mod Test.Type.Void {
     @Test
     pub def testVoid02(): Unit =
         run {
-            if(Exc.raise()) () else ()
+            if (Exc.raise()) () else ()
         } with handler Exc {
             def raise(_k) = ()
         }
@@ -29,7 +29,7 @@ mod Test.Type.Void {
     @Test
     pub def testVoid03(): Unit =
         run {
-            if(true) (Exc.raise()) else ()
+            if (true) (Exc.raise()) else ()
         } with handler Exc {
             def raise(_k) = ()
         }

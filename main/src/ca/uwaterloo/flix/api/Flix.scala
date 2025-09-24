@@ -253,26 +253,6 @@ class Flix {
     "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
     "Time/Instant.flix" -> LocalResource.get("/src/library/Time/Instant.flix"),
 
-    "Fixpoint/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Stratifier.flix"),
-    "Fixpoint/Phase/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Compiler.flix"),
-    "Fixpoint/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Simplifier.flix"),
-    "Fixpoint/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/IndexSelection.flix"),
-    "Fixpoint/Phase/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/VarsToIndices.flix"),
-    "Fixpoint/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint/Boxable.flix"),
-    "Fixpoint/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint/Boxed.flix"),
-    "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
-    "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
-    "Fixpoint/Options.flix" -> LocalResource.get("/src/library/Fixpoint/Options.flix"),
-    "Fixpoint/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint/PredSymsOf.flix"),
-    "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
-    "Fixpoint/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint/SubstitutePredSym.flix"),
-
-    "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
-    "Fixpoint/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Shared.flix"),
-    "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
-    "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
-
-
     "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
     "Fixpoint3/Boxing.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxing.flix"),
@@ -288,6 +268,7 @@ class Flix {
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
     "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
+    "Fixpoint3/TypeInfo.flix" -> LocalResource.get("/src/library/Fixpoint3/TypeInfo.flix"),
     "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
     "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
 
@@ -607,7 +588,7 @@ class Flix {
     // We mark all inputs that contains compilation errors as dirty.
     // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
     for (e <- cachedErrors) {
-      val i = e.loc.sp1.source.input
+      val i = e.loc.source.input
       changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
     }
 
@@ -823,6 +804,21 @@ class Flix {
     } else {
       Validation.Failure(Chain.from(errors))
     }
+  }
+
+  /**
+    * Clears all caches used for incremental compilation.
+    */
+  def clearCaches(): Unit = {
+    this.cachedLexerTokens = Map.empty
+    this.cachedParserCst = SyntaxTree.empty
+    this.cachedWeederAst = WeededAst.empty
+    this.cachedDesugarAst = DesugaredAst.empty
+    this.cachedKinderAst = KindedAst.empty
+    this.cachedResolverAst = ResolvedAst.empty
+    this.cachedTyperAst = TypedAst.empty
+    this.changeSet = ChangeSet.Everything
+    this.cachedErrors = Nil
   }
 
   /**

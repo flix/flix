@@ -47,7 +47,7 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Source
     *
     * NB: Tokens are zero-indexed
     */
-  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, sp1, sp2)
+  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, sp1, sp2)
 
   /**
     * Returns a one-indexed string representation of this token. Must only be used for debugging.

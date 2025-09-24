@@ -1,7 +1,7 @@
 mod TestBoxable {
 
     use Assert.{assertEq, assertTrue};
-    use Fixpoint.Boxable.{box, unbox}
+    use Fixpoint3.Boxable.{box, unbox}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //

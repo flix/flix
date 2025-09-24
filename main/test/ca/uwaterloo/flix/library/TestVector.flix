@@ -2371,50 +2371,50 @@ mod TestVector {
     @Test
     def partition01(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, (Vector#{}: Vector[Int32]));
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{}, b)
 
     @Test
     def partition02(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1});
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{1})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{1}, b)
 
     @Test
     def partition03(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{4});
-        assertTrue(a == Vector#{4});
-        assertTrue(b == Vector#{})
+        assertEq(expected = Vector#{4}, a);
+        assertEq(expected = Vector#{}, b)
 
     @Test
     def partition04(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 2});
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{1, 2})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{1, 2}, b)
 
     @Test
     def partition05(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 5});
-        assertTrue(a == Vector#{5});
-        assertTrue(b == Vector#{1})
+        assertEq(expected = Vector#{5}, a);
+        assertEq(expected = Vector#{1}, b)
 
     @Test
     def partition06(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 1});
-        assertTrue(a == Vector#{5});
-        assertTrue(b == Vector#{1})
+        assertEq(expected = Vector#{5}, a);
+        assertEq(expected = Vector#{1}, b)
 
     @Test
     def partition07(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{5, 8});
-        assertTrue(a == Vector#{5, 8});
-        assertTrue(b == (Vector#{}: Vector[Int32]))
+        assertEq(expected = Vector#{5, 8}, a);
+        assertEq(expected = (Vector#{}: Vector[Int32]), b)
 
     @Test
     def partition08(): Unit \ Assert =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{4, -3, -5, 1, 2, 16, 7, 1, 7});
-        assertTrue(a == Vector#{4, 16, 7, 7});
-        assertTrue(b == Vector#{-3, -5, 1, 2, 1})
+        assertEq(expected = Vector#{4, 16, 7, 7}, a);
+        assertEq(expected = Vector#{-3, -5, 1, 2, 1}, b)
 
     /////////////////////////////////////////////////////////////////////////////
     // span                                                                    //
@@ -2423,50 +2423,50 @@ mod TestVector {
     @Test
     def span01(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, (Vector#{}: Vector[Int32]));
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{}, b)
 
     @Test
     def span02(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1});
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{1})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{1}, b)
 
     @Test
     def span03(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{4});
-        assertTrue(a == Vector#{4});
-        assertTrue(b == Vector#{})
+        assertEq(expected = Vector#{4}, a);
+        assertEq(expected = Vector#{}, b)
 
     @Test
     def span04(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1, 2});
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{1, 2})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{1, 2}, b)
 
     @Test
     def span05(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{1, 5});
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{1, 5})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{1, 5}, b)
 
     @Test
     def span06(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{5, 1});
-        assertTrue(a == Vector#{5});
-        assertTrue(b == Vector#{1})
+        assertEq(expected = Vector#{5}, a);
+        assertEq(expected = Vector#{1}, b)
 
     @Test
     def span07(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{5, 8});
-        assertTrue(a == Vector#{5, 8});
-        assertTrue(b == Vector#{})
+        assertEq(expected = Vector#{5, 8}, a);
+        assertEq(expected = Vector#{}, b)
 
     @Test
     def span08(): Unit \ Assert =
         let (a, b) = Vector.span(i -> i > 3, Vector#{4, 6, -3, 11, -5, 1, 2, 16, 7, 1, 7});
-        assertTrue(a == Vector#{4, 6});
-        assertTrue(b == Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7})
+        assertEq(expected = Vector#{4, 6}, a);
+        assertEq(expected = Vector#{-3, 11, -5, 1, 2, 16, 7, 1, 7}, b)
 
     /////////////////////////////////////////////////////////////////////////////
     // drop                                                                    //
@@ -3261,26 +3261,26 @@ mod TestVector {
     @Test
     def unzip01(): Unit \ Assert =
         let (a, b) = Vector.unzip((Vector#{}: Vector[(Unit, Unit)]));
-        assertTrue(a == Vector#{});
-        assertTrue(b == Vector#{})
+        assertEq(expected = Vector#{}, a);
+        assertEq(expected = Vector#{}, b)
 
     @Test
     def unzip02(): Unit \ Assert =
         let (a, b) = Vector.unzip(Vector#{(1, true)});
-        assertTrue(a == Vector#{1});
-        assertTrue(b == Vector#{true})
+        assertEq(expected = Vector#{1}, a);
+        assertEq(expected = Vector#{true}, b)
 
     @Test
     def unzip03(): Unit \ Assert =
         let (a,b) = Vector.unzip(Vector#{(1, true), (2, true)});
-        assertTrue(a == Vector#{1, 2});
-        assertTrue(b == Vector#{true, true})
+        assertEq(expected = Vector#{1, 2}, a);
+        assertEq(expected = Vector#{true, true}, b)
 
     @Test
     def unzip04(): Unit \ Assert =
         let (a,b) = Vector.unzip(Vector#{(1, true), (2, true), (3, false)});
-        assertTrue(a == Vector#{1, 2, 3});
-        assertTrue(b == Vector#{true, true, false})
+        assertEq(expected = Vector#{1, 2, 3}, a);
+        assertEq(expected = Vector#{true, true, false}, b)
 
     @Test
     def unzip05(): Unit \ Assert =

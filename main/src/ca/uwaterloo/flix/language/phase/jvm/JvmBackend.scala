@@ -154,7 +154,7 @@ object JvmBackend {
 
     val classMap = allClasses.map(clazz => clazz.name -> clazz).toMap
 
-    val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)){
+    val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)) {
       case defn =>
         val nsType = BackendObjType.Namespace(defn.sym.namespace)
         BytecodeAst.Test(nsType.jvmName, nsType.ShimMethod(defn).name, defn.ann.isSkip)

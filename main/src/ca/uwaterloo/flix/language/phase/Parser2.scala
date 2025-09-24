@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import scala.annotation.tailrec
@@ -167,8 +166,8 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    val b = SourcePosition.firstPosition(s.src)
-    val e = SourcePosition.firstPosition(s.src)
+    val b = SourcePosition.FirstPosition
+    val e = SourcePosition.FirstPosition
     var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
     for (event <- s.events) {
       event match {
@@ -182,19 +181,11 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
-            SourceLocation(
-              isReal = true,
-              lastAdvance.sp2,
-              lastAdvance.sp2
-            )
+            mkSourceLocation(lastAdvance.sp2, lastAdvance.sp2)
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
-            SourceLocation(
-              isReal = true,
-              openToken.sp1,
-              lastAdvance.sp2
-            )
+            mkSourceLocation(openToken.sp1, lastAdvance.sp2)
           locationStack = locationStack.tail
           stack = stack.tail
           stack.head.children = stack.head.children :+ child
@@ -209,7 +200,8 @@ object Parser2 {
     // Set source location of the root.
     stack.last.loc = SourceLocation(
       isReal = true,
-      SourcePosition.firstPosition(s.src),
+      s.src,
+      SourcePosition.FirstPosition,
       tokens.head.sp2
     )
 
@@ -224,13 +216,18 @@ object Parser2 {
   private def previousSourceLocation()(implicit s: State): SourceLocation = {
     // TODO: It might make sense to seek the first non-comment position.
     val token = s.tokens((s.position - 1).max(0))
-    SourceLocation(isReal = true, token.sp1, token.sp2)
+    token.mkSourceLocation()
   }
 
   /** Get current position of the parser as a [[SourceLocation]]. */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     val token = s.tokens(s.position)
-    SourceLocation(isReal = true, token.sp1, token.sp2)
+    token.mkSourceLocation()
+  }
+
+  /** Returns a real location of the current source and the given positions. */
+  private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State) = {
+    SourceLocation(isReal = true, s.src, start, end)
   }
 
   /**
@@ -604,7 +601,7 @@ object Parser2 {
     val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, separation, delimiterL, delimiterR, optionallyWith)
     val locAfter = previousSourceLocation()
     if (itemCount < 1) {
-      val loc = SourceLocation(isReal = true, locBefore.sp1, locAfter.sp1)
+      val loc = mkSourceLocation(locBefore.sp1, locAfter.sp1)
       Some(NeedAtleastOne(namedTokenSet, sctx, loc = loc))
     } else {
       None
@@ -617,12 +614,12 @@ object Parser2 {
     *
     * Use these together with [[nameUnqualified]] and [[nameAllowQualified]].
     */
-  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
-  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
+  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
+  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
-  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
   //       refactor When Static is used as a region "@ Static" to "@ static" since lowercase is
@@ -1533,24 +1530,20 @@ object Parser2 {
       * Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary, e.g., Plus or Minus.
       */
     private def PRECEDENCE: List[(OpKind, Array[TokenKind])] = List(
-      (OpKind.Binary, Array(TokenKind.ColonEqual, TokenKind.KeywordInstanceOf)),
+      (OpKind.Binary, Array(TokenKind.KeywordInstanceOf)),
       (OpKind.Binary, Array(TokenKind.KeywordOr)),
       (OpKind.Binary, Array(TokenKind.KeywordAnd)),
-      (OpKind.Binary, Array(TokenKind.TripleBar)),
-      (OpKind.Binary, Array(TokenKind.TripleCaret)),
-      (OpKind.Binary, Array(TokenKind.TripleAmpersand)),
       (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)),
       (OpKind.Binary, Array(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)),
       (OpKind.Binary, Array(TokenKind.ColonColon, TokenKind.TripleColon)),
-      (OpKind.Binary, Array(TokenKind.TripleAngleL, TokenKind.TripleAngleR)),
       (OpKind.Binary, Array(TokenKind.Plus, TokenKind.Minus)),
-      (OpKind.Binary, Array(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash)),
+      (OpKind.Binary, Array(TokenKind.Star, TokenKind.Slash)),
       (OpKind.Binary, Array(TokenKind.AngledPlus)),
       (OpKind.Unary, Array(TokenKind.KeywordDiscard)),
       (OpKind.Binary, Array(TokenKind.InfixFunction)),
       (OpKind.Binary, Array(TokenKind.UserDefinedOperator, TokenKind.NameMath)),
       (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce)),
-      (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)),
+      (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus)),
       (OpKind.Unary, Array(TokenKind.KeywordNot))
     )
 
@@ -1611,6 +1604,7 @@ object Parser2 {
       // If a new expression is added here then add it to FIRST_EXPR too.
       val mark = open()
       nth(0) match {
+        case TokenKind.DebugInterpolator => debugInterpolator()
         case TokenKind.KeywordOpenVariant => openVariantExpr()
         case TokenKind.KeywordOpenVariantAs => openVariantAsExpr()
         case TokenKind.HoleNamed
@@ -1618,7 +1612,6 @@ object Parser2 {
         case TokenKind.HoleVariable => holeVariableExpr()
         case TokenKind.KeywordUse => useExpr()
         case TokenKind.LiteralString
-             | TokenKind.LiteralStringDebug
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat
              | TokenKind.LiteralFloat32
@@ -1639,12 +1632,10 @@ object Parser2 {
         case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
         case TokenKind.NameLowerCase => nameAllowQualified(NAME_FIELD)
         case TokenKind.NameUpperCase
-             | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION)
+             | TokenKind.NameMath => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
-             | TokenKind.TripleTilde
              | TokenKind.KeywordLazy
              | TokenKind.KeywordForce
              | TokenKind.KeywordDiscard => unaryExpr()
@@ -1912,7 +1903,6 @@ object Parser2 {
       TokenKind.Minus,
       TokenKind.KeywordNot,
       TokenKind.Plus,
-      TokenKind.TripleTilde,
       TokenKind.KeywordLazy,
       TokenKind.KeywordForce,
       TokenKind.KeywordDiscard
@@ -2997,6 +2987,13 @@ object Parser2 {
       close(mark, TreeKind.Expr.Intrinsic)
     }
 
+    private def debugInterpolator()(implicit s: State): Mark.Closed = {
+      eat(TokenKind.DebugInterpolator)
+      val mark = open()
+      exprDelimited()
+      close(mark, TreeKind.Expr.DebugInterpolator)
+    }
+
     private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL)
 
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
@@ -3034,7 +3031,6 @@ object Parser2 {
       val mark = open()
       var lhs = nth(0) match {
         case TokenKind.NameLowerCase
-             | TokenKind.NameGreek
              | TokenKind.NameMath
              | TokenKind.Underscore
              | TokenKind.KeywordQuery => variablePat()
@@ -3332,7 +3328,6 @@ object Parser2 {
       nth(0) match {
         case TokenKind.NameUpperCase => nameAllowQualified(NAME_TYPE)
         case TokenKind.NameMath
-             | TokenKind.NameGreek
              | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
         case TokenKind.NameLowerCase => variableType()
         case TokenKind.KeywordUniv
@@ -3358,7 +3353,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Type)
     }
 
-    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore)
+    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
 
     private def variableType()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
@@ -3693,11 +3688,10 @@ object Parser2 {
         )
         case TokenKind.NameLowerCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek
              | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
         case at =>
           val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)),
             actual = Some(at),
             sctx,
             loc = currentSourceLocation()
