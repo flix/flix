@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.util.collection.PrefixTree
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -214,7 +213,7 @@ object Lexer {
     val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
     /** The list of errors in the `tokens` array. */
-    val errors: mutable.ArrayBuffer[LexerError] = new ArrayBuffer[LexerError]()
+    val errors: mutable.ArrayBuffer[LexerError] = new mutable.ArrayBuffer[LexerError]()
 
   }
 
