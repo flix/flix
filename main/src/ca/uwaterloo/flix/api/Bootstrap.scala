@@ -349,23 +349,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           _ =>
             flatMapN(Steps.compile(flix)) {
               _ =>
-              //
+                val jarFile = Bootstrap.getJarFile(projectPath)
+                flatMapN(Steps.validateOutJarFile(jarFile)) {
+                  _ =>
+                    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+                    val depValidation = if (includeDependencies) Steps.validateDiretory(libDir) else Validation.Success(())
+                    flatMapN(depValidation) {
+                      _ =>
+                    }
+                }
             }
         }
     }
 
-    // The path to the jar file.
-    val jarFile = Bootstrap.getJarFile(projectPath)
-
-    // Check whether it is safe to write to the file.
-    if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
-    }
-
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
-    if (includeDependencies && Files.exists(libDir) && (!Files.isDirectory(libDir) || !Files.isReadable(libDir))) {
-      return Validation.Failure(BootstrapError.FileError(s"The lib directory isn't a directory or isn't readable. Refusing to build fatjar-file."))
-    }
 
     // Create the artifact directory, if it does not exist.
     Files.createDirectories(getArtifactDirectory(projectPath))
@@ -883,6 +879,27 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
 
       Validation.Success(())
+    }
+
+    def validateDiretory(dir: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+      if (Files.exists(dir)) {
+        if (!Files.isDirectory(dir)) {
+          return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not a directory."))
+        }
+        if (!Files.isReadable(dir)) {
+          return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not readable."))
+        }
+      }
+      Validation.Success(())
+    }
+
+    def validateOutJarFile(jarFile: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+      // Check whether it is safe to write to the file.
+      if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
+        Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
+      } else {
+        Validation.Success(())
+      }
     }
   }
 }
