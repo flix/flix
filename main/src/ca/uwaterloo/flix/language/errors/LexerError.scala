@@ -159,7 +159,7 @@ object LexerError {
   /**
     * An error raised when a number is malformed.
     *
-    * @param loc The location of `found`.
+    * @param loc the location of `found`.
     */
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed number, found '$found'."
@@ -177,7 +177,7 @@ object LexerError {
   /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
-    * @param loc The location of `found`.
+    * @param loc the location of `found`.
     */
   case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unexpected character '$found'."
