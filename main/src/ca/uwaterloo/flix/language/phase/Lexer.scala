@@ -39,6 +39,9 @@ import scala.util.Random
   */
 object Lexer {
 
+  /** An average token length estimation used for optimization purposes. */
+  private val MedianTokenLength: Double = 7.5
+
   /** The end-of-file character (`'\u0000'`). */
   private val EOF = '\u0000'
 
@@ -205,12 +208,9 @@ object Lexer {
       start = new Position(sc.getLine, sc.getColumn, sc.getOffset)
     }
 
-    /**
-      * The sequence of tokens produced by the lexer.
-      *
-      * Note: The initial size of the array buffer has been determined by careful profiling.
-      */
-    val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
+    /** The sequence of tokens produced by the lexer. */
+    val tokens: mutable.ArrayBuffer[Token] =
+      new mutable.ArrayBuffer(initialSize = (src.data.length / MedianTokenLength).toInt)
 
     /** The list of errors in the `tokens` array. */
     val errors: mutable.ArrayBuffer[LexerError] = new mutable.ArrayBuffer[LexerError]()
