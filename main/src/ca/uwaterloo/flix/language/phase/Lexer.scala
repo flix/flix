@@ -350,19 +350,29 @@ object Lexer {
           TokenKind.Dot
         }
       case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
-      case '$' if s.sc.peekIs(isFirstNameChar) =>
-        // Don't include the $ sign in the name.
-        s.resetStart()
-        acceptName(isUpper = false)
-      case '$' if s.sc.peekIs(c => !isUserOp(c)) => TokenKind.Dollar
+      case '$' =>
+        if (s.sc.peekIs(isFirstNameChar)) {
+          acceptEscapedName()
+        } else if (s.sc.peekIs(isUserOp)) {
+          acceptUserDefinedOp()
+        } else {
+          TokenKind.Dollar
+        }
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '/' if s.sc.advanceIfMatch('/') => acceptLineOrDocComment()
-      case '/' if s.sc.advanceIfMatch('*') => acceptBlockComment()
-      case '/' => TokenKind.Slash
-      case '@' if s.sc.peekIs(isAnnotationChar) => acceptAnnotation()
-      case '@' => TokenKind.At
+      case '/' =>
+        if (s.sc.advanceIfMatch('/')) {
+          acceptLineOrDocComment()
+        } else if (s.sc.advanceIfMatch('*')) {
+          acceptBlockComment()
+        } else TokenKind.Slash
+      case '@' =>
+        if (s.sc.peekIs(isAnnotationChar)) {
+          acceptAnnotation()
+        } else {
+          TokenKind.At
+        }
       case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
       case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => !isUserOp(c)) =>
         s.sc.advance() // Consume '>'
@@ -395,8 +405,12 @@ object Lexer {
             acceptUserDefinedOp()
           } else TokenKind.Underscore
         } else TokenKind.Underscore
-      case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
-      case c if c.isDigit => acceptNumber()
+      case c if c.isDigit =>
+        if (c == '0' && s.sc.peekIs(_ == 'x')) {
+          acceptHexNumber()
+        } else {
+          acceptNumber()
+        }
       case c if isUserOp(c) => acceptUserDefinedOp()
       case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtStart()))
     }
@@ -540,6 +554,13 @@ object Lexer {
     } else {
       mkErrorKind(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
     }
+  }
+
+  /** Moves current position past an escaped name (e.g. `$run`). */
+  private def acceptEscapedName()(implicit s: State): TokenKind = {
+    // Don't include the $ sign in the name.
+    s.resetStart()
+    acceptName(isUpper = false)
   }
 
   /**
