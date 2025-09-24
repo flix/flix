@@ -358,7 +358,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val jarFile = Bootstrap.getJarFile(projectPath)
 
     // Check whether it is safe to write to the file.
-    if (Files.exists(jarFile) && (!Bootstrap.isJarFile(jarFile) || !Files.isRegularFile(jarFile))) {
+    if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
       return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
