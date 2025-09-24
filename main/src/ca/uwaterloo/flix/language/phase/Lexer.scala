@@ -44,6 +44,7 @@ object Lexer {
 
   /** Keywords - tokens consumed as long as no name-like char follows. */
   private val Keywords: PrefixTree.Node[TokenKind] = {
+    // N.B.: `advanceIfInTree` takes the longest match, regardless of the ordering here.
     val keywords = Array(
       ("Array#", TokenKind.ArrayHash),
       ("List#", TokenKind.ListHash),
@@ -138,6 +139,7 @@ object Lexer {
 
   /** Simple tokens - tokens consumed no matter the following char. */
   private val SimpleTokens: PrefixTree.Node[TokenKind] = {
+    // N.B.: `advanceIfInTree` takes the longest match, regardless of the ordering here.
     val simpleTokens = Array(
       ("#", TokenKind.Hash),
       ("#(", TokenKind.HashParenL),
@@ -162,6 +164,7 @@ object Lexer {
 
   /** Operators - tokens consumed as long as no operator-like char follows (see [[isUserOp]]). */
   private val Operators: PrefixTree.Node[TokenKind] = {
+    // N.B.: `advanceIfInTree` takes the longest match, regardless of the ordering here.
     val simpleTokens = Array(
       ("!", TokenKind.Bang),
       ("!=", TokenKind.BangEqual),
