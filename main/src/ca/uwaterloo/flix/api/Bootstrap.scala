@@ -356,11 +356,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                     val depValidation = if (includeDependencies) Steps.validateDirectory(libDir) else Validation.Success(())
                     flatMapN(depValidation) {
                       _ =>
-                        Files.createDirectories(getArtifactDirectory(projectPath))
-                        val result = Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
-                          Steps.addManifestToZip(zip)
-                          Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath))(zip)
-                          Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))(zip)
+                        val addJarsToZip = (zip: ZipOutputStream) => {
                           // First, we get all jar files inside the lib folder.
                           // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
                           if (includeDependencies && libDir.toFile.exists()) {
@@ -387,7 +383,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                             })
                           }
                         }
-                        toValidation(result)
+                        Files.createDirectories(getArtifactDirectory(projectPath))
+                        val outputStream = new ZipOutputStream(Files.newOutputStream(jarFile))
+                        val contents = sequence(Seq(
+                          Steps.addManifestToZip,
+                          Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+                          Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
+                          addJarsToZip
+                        ))
+                        toValidation(Using(outputStream)(contents))
                     }
                 }
             }
