@@ -25,7 +25,11 @@ sealed trait LexerError extends CompilationMessage {
 
 object LexerError {
 
-  /** An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`). */
+  /**
+    * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
+    *
+    * @param loc The location of the unexpected char.
+    */
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A digit (0-9) is expected here."
 
@@ -38,7 +42,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`). */
+  /**
+    * An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`).
+    *
+    * @param loc The location of the unexpected char.
+    */
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
 
@@ -70,7 +78,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when a hexadecimal number suffix is unrecognized. */
+  /**
+    * An error raised when a hexadecimal number suffix is unrecognized.
+    *
+    * @param loc The location of the start of the suffix.
+    */
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect hexadecimal number suffix."
 
@@ -86,7 +98,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when a number suffix is unrecognized. */
+  /**
+    * An error raised when a number suffix is unrecognized.
+    *
+    * @param loc The location of the start of the suffix.
+    */
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect number suffix."
 
@@ -102,7 +118,11 @@ object LexerError {
     }
   }
 
-  /** An error raised when an integer suffix is put on a decimal number. */
+  /**
+    * An error raised when an integer suffix is put on a decimal number.
+    *
+    * @param loc The location of the start of the suffix.
+    */
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A decimal number cannot have integer suffix."
 
@@ -118,8 +138,12 @@ object LexerError {
     }
   }
 
-  /** An error raised when a hexadecimal number is malformed. */
-  case class MalformedHexNumber(found: String, loc: SourceLocation) extends LexerError {
+  /**
+    * An error raised when a hexadecimal number is malformed.
+    *
+    * @param loc The location of `found`.
+    */
+  case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed hexadecimal number, found '$found'."
 
     override def message(formatter: Formatter): String = {
@@ -132,8 +156,12 @@ object LexerError {
     }
   }
 
-  /** An error raised when a number is malformed. */
-  case class MalformedNumber(found: String, loc: SourceLocation) extends LexerError {
+  /**
+    * An error raised when a number is malformed.
+    *
+    * @param loc the location of `found`.
+    */
+  case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed number, found '$found'."
 
     override def message(formatter: Formatter): String = {
@@ -149,15 +177,14 @@ object LexerError {
   /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
-    * @param s   the problematic character.
-    * @param loc the location of char.
+    * @param loc the location of `found`.
     */
-  case class UnexpectedChar(s: String, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unexpected character '$s'."
+  case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unexpected character '$found'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected character '${red(s)}'.
+      s""">> Unexpected character '${red(found.toString)}'.
          |
          |${code(loc, "Unexpected character.")}
          |
