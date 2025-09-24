@@ -698,11 +698,6 @@ object Lexer {
         s.sc.advance()
         return TokenKind.LiteralChar
       }
-
-      if (prev == '/' && s.sc.peekIs(_ == '*')) {
-        // This handles block comment within a char.
-        return TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
-      }
       prev = s.sc.peekAndAdvance()
     }
 
