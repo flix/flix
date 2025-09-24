@@ -276,7 +276,7 @@ object Lexer {
     s.resetStart()
   }
 
-  /** Wraps `error` in [[TokenKind]] and pushes the error to [[State]]. */
+  /**  Wraps `error` in [[TokenKind]] and pushes the error to [[State]]. */
   private def mkErrorKind(error: LexerError)(implicit s: State): TokenKind = {
     s.errors.append(error)
     TokenKind.Err(error)
