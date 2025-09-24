@@ -382,11 +382,13 @@ object Lexer {
         }
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
+      case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case c if isMathNameChar(c) => acceptMathName()
       case '_' =>
         if (!eof()) {
           val p = s.sc.peek
-          if (p.isLetterOrDigit) {
+          if (isFirstNameChar(p)) {
+            s.sc.advance()
             acceptName(p.isUpper)
           } else if (isMathNameChar(p)) {
             s.sc.advance()
@@ -396,7 +398,6 @@ object Lexer {
             acceptUserDefinedOp()
           } else TokenKind.Underscore
         } else TokenKind.Underscore
-      case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
@@ -555,9 +556,13 @@ object Lexer {
     }
   }
 
-  /** Returns true if `c` is allowed as the first char of a name (see [[isNameChar]]). */
+  /**
+    * Returns true if `c` is allowed as the first char of a name (see [[isNameChar]]).
+    *
+    * All chars where `true` is returned has lower/upper case defined.
+    */
   private def isFirstNameChar(c: Char): Boolean =
-    c.isLetter || c == '_'
+    c.isLetter
 
   /** Returns `true` if `c` is allowed inside a name (see [[isFirstNameChar]]). */
   private def isNameChar(c: Char): Boolean =
