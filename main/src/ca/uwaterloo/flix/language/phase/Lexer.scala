@@ -712,18 +712,6 @@ object Lexer {
   private def isNumberLikeChar(c: Char): Boolean =
     c.isDigit || c.isLetter || c == '.' || c == '_'
 
-  /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error`. */
-  private def wrapAndConsume(error: LexerError)(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isNumberLikeChar)
-    TokenKind.Err(error)
-  }
-
-  /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error` with the exclusive position of the last [[isNumberLikeChar]]. */
-  private def wrapAndConsumeWithLoc(error: SourcePosition => LexerError)(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isNumberLikeChar)
-    TokenKind.Err(error(sourcePositionAtCurrent()))
-  }
-
   /** This should be understood as a control effect - fully handled inside [[acceptNumber]]. */
   private sealed case class NumberError(kind: TokenKind) extends RuntimeException
 
@@ -748,11 +736,17 @@ object Lexer {
       */
     def acceptDigits(soft: Boolean): Unit = {
       if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
-        throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+        throw NumberError({
+          s.sc.advanceWhile(isNumberLikeChar)
+          TokenKind.Err(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+        })
       }
       while (s.sc.advanceIfMatch('_')) {
         if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
-          throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+          throw NumberError({
+            s.sc.advanceWhile(isNumberLikeChar)
+            TokenKind.Err(LexerError.ExpectedDigit(sourceLocationAtCurrent()))
+          })
         }
       }
     }
@@ -790,9 +784,11 @@ object Lexer {
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, suffixStart: SourcePosition): TokenKind = {
       if (s.sc.peekIs(isNumberLikeChar)) {
-        wrapAndConsumeWithLoc(end => LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, end)))
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else if (mustBeFloat && intSuffix) {
-        wrapAndConsumeWithLoc(end => LexerError.IntegerSuffixOnFloat(mkSourceLocation(suffixStart, end)))
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else token
     }
 
@@ -809,7 +805,10 @@ object Lexer {
       else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32, intSuffix = true, suffixStart)
       else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64, intSuffix = true, suffixStart)
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt, intSuffix = true, suffixStart)
-      else wrapAndConsumeWithLoc(end => LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, end)))
+      else {
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+      }
     } else if (c == 'f') {
       // Construct the location now, for cases like `42f322`.
       val suffixStart = sourcePositionAtCurrent()
@@ -817,9 +816,15 @@ object Lexer {
       if (s.sc.advanceIfMatch("f32")) acceptOrSuffixError(TokenKind.LiteralFloat32, intSuffix = false, suffixStart)
       else if (s.sc.advanceIfMatch("f64")) acceptOrSuffixError(TokenKind.LiteralFloat64, intSuffix = false, suffixStart)
       else if (s.sc.advanceIfMatch("ff")) acceptOrSuffixError(TokenKind.LiteralBigDecimal, intSuffix = false, suffixStart)
-      else wrapAndConsumeWithLoc(end => LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, end)))
+      else {
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+      }
     } else if (isNumberLikeChar(c)) {
-      wrapAndConsume(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
+      {
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
+      }
     } else {
       if (mustBeFloat) TokenKind.LiteralFloat
       else TokenKind.LiteralInt
@@ -844,13 +849,19 @@ object Lexer {
 
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-      return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+      return {
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+      }
     }
 
     // Consume a `(_\h+)*`
     while (s.sc.advanceIfMatch('_')) {
       if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-        return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+        return {
+          s.sc.advanceWhile(isNumberLikeChar)
+          TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+        }
       }
     }
 
@@ -864,7 +875,8 @@ object Lexer {
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
         if (s.sc.peekIs(isNumberLikeChar)) {
-          wrapAndConsumeWithLoc(end => LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, end)))
+          s.sc.advanceWhile(isNumberLikeChar)
+          TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
         } else token
       }
 
@@ -873,9 +885,15 @@ object Lexer {
       else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32)
       else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64)
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
-      else wrapAndConsumeWithLoc(end => LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, end)))
+      else {
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+      }
     } else if (isNumberLikeChar(c)) {
-      wrapAndConsume(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
+      {
+        s.sc.advanceWhile(isNumberLikeChar)
+        TokenKind.Err(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
+      }
     } else TokenKind.LiteralInt
   }
 
