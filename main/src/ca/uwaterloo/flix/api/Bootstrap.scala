@@ -353,7 +353,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                 flatMapN(Steps.validateOutJarFile(jarFile)) {
                   _ =>
                     val libDir = Bootstrap.getLibraryDirectory(projectPath)
-                    val depValidation = if (includeDependencies) Steps.validateDiretory(libDir) else Validation.Success(())
+                    val depValidation = if (includeDependencies) Steps.validateDirectory(libDir) else Validation.Success(())
                     flatMapN(depValidation) {
                       _ =>
                         flatMapN(Steps.mkZipFile(jarFile)) {
@@ -887,7 +887,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Success(())
     }
 
-    def validateDiretory(dir: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    def validateDirectory(dir: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
       if (Files.exists(dir)) {
         if (!Files.isDirectory(dir)) {
           return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not a directory."))
