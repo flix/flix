@@ -817,8 +817,9 @@ object Lexer {
         TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       }
     } else if (isNumberLikeChar(c)) {
+      val loc = sourceLocationAtCurrent()
       s.sc.advanceWhile(isNumberLikeChar)
-      TokenKind.Err(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
+      TokenKind.Err(LexerError.MalformedNumber(c, loc))
     } else {
       if (mustBeFloat) TokenKind.LiteralFloat
       else TokenKind.LiteralInt
@@ -880,8 +881,9 @@ object Lexer {
         TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       }
     } else if (isNumberLikeChar(c)) {
+      val loc = sourceLocationAtCurrent()
       s.sc.advanceWhile(isNumberLikeChar)
-      TokenKind.Err(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
+      TokenKind.Err(LexerError.MalformedHexNumber(c, loc))
     } else TokenKind.LiteralInt
   }
 
