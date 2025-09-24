@@ -2089,7 +2089,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |
         |def h(): Unit \ IO =
         |    let arr = Array#{()} @ Static;
-        |    discard f((i: Int32) -> $ARRAY_LOAD$(arr, i), 0)
+        |    discard f((i: Int32) -> %%ARRAY_LOAD%%(arr, i), 0)
         |
         |""".stripMargin
 
@@ -2226,7 +2226,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |            checked_ecast(())
         |        else
         |            region rc {
-        |                let _ = $ARRAY_NEW$(rc, 8, 8);
+        |                let _ = %%ARRAY_NEW%%(rc, 8, 8);
         |                ()
         |            };
         |    ()

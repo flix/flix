@@ -316,7 +316,7 @@ mod Float32 {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = Float32}, n: Float32): Float32 = $FLOAT32_EXP$(base#base, n)
+    pub def pow(base: {base = Float32}, n: Float32): Float32 = %%FLOAT32_EXP%%(base#base, n)
 
     ///
     /// Get the primitive Float32 value from its object representation (i.e. java.lang.Float).

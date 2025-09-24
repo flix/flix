@@ -2183,13 +2183,13 @@ object Weeder2 {
     /**
       * Returns the intrinsic expression corresponding to the given intrinsic.
       *
-      *   - `args = None` is an unapplied intrinsic (e.g. `$LINE$`)
-      *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `$EXAMPLE$()`)
-      *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `$VECTOR_LENGTH$(v)`)
+      *   - `args = None` is an unapplied intrinsic (e.g. `%%LINE%%`)
+      *   - `args = Some(Nil)` is an applied intrinsic with zero arguments (e.g. `%%EXAMPLE%%()`)
+      *   - `args = Some(Cons(.., ..))` is an applied intrinsic with some arguments (e.g. `%%VECTOR_LENGTH%%(v)`)
       */
     private def visitIntrinsic(tree: Tree, args: Option[List[Expr]])(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Intrinsic)
-      val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
+      val intrinsic = text(tree).head.stripPrefix("%%").stripSuffix("%%")
       val loc = tree.loc
       val res = (intrinsic, args) match {
         case ("ARRAY_LENGTH", Some(e1 :: Nil)) => Expr.ArrayLength(e1, loc)
