@@ -266,36 +266,12 @@ object Lexer {
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
 
-  /** Returns a single-width [[SourceLocation]] starting at [[State.start]]. */
-  private def sourceLocationAtStart()(implicit s: State): SourceLocation =
-    sourceLocationFromZeroIndex(s.src, line = s.start.line, column = s.start.column)
-
-  /** Returns a single-width [[SourceLocation]] starting at the current position. */
-  private def sourceLocationAtCurrent()(implicit s: State): SourceLocation =
-    sourceLocationFromZeroIndex(s.src, line = s.sc.getLine, column = s.sc.getColumn)
-
-  /**
-    * Returns a single-width [[SourceLocation]] with the `src` and the zero-indexed `line` and
-    * `column`.
-    */
-  private def sourceLocationFromZeroIndex(src: Source, line: Int, column: Int): SourceLocation = {
-    val sp1 = SourcePosition.mkFromZeroIndexed(line, column)
-    // It is safe not consider line breaks because `column + 1` is an exclusive index.
-    val sp2 = SourcePosition.mkFromZeroIndexed(line, column + 1)
-    SourceLocation(isReal = true, src, sp1, sp2)
-  }
-
   /**
     * Consumes the text between `s.start` and `s.offset` to produce a token.
     * Afterwards `s.start` is reset to the next position after the previous token.
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    val b = SourcePosition.mkFromZeroIndexed(s.start.line, s.start.column)
-    // If we are currently at the start of a line, create a non-existent position and the
-    // end of the previous line as the exclusive end position.
-    // This should not happen for zero-width tokens at the start of lines.
-    val (endLine, endColumn) = if (s.start.offset != s.sc.getOffset) s.sc.getExclusiveEndPosition else s.sc.getPosition
-    val e = SourcePosition.mkFromZeroIndexed(endLine, endColumn)
+    val (b, e) = getRangeFromStart()
     s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
     s.resetStart()
   }
@@ -925,6 +901,43 @@ object Lexer {
     mkErrorKind(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
   }
 
+
+  /** Creates a [[SourceLocation]] of the inclusive `start` and exclusive `end` in the current source. */
+  private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State): SourceLocation =
+    SourceLocation(isReal = true, s.src, start, end)
+
+  /** Returns the [[SourcePosition]] at [[State.start]]. */
+  private def sourcePositionAtStart()(implicit s: State): SourcePosition =
+    SourcePosition.mkFromZeroIndexed(s.start.line, s.start.column)
+
+  /** Returns a single-width [[SourceLocation]] starting at [[State.start]]. */
+  private def sourceLocationAtStart()(implicit s: State): SourceLocation =
+    SourceLocation.point(isReal = true, s.src, sourcePositionAtStart())
+
+  /** Returns the [[SourcePosition]] at the current cursor position (might be out of bounds). */
+  private def sourcePositionAtCurrent()(implicit s: State): SourcePosition =
+    SourcePosition.mkFromZeroIndexed(s.sc.getLine, s.sc.getColumn)
+
+  /** Returns a single-width [[SourceLocation]] starting at the current position. */
+  private def sourceLocationAtCurrent()(implicit s: State): SourceLocation =
+    SourceLocation.point(isReal = true, s.src, sourcePositionAtCurrent())
+
+  /** Returns the position of [[State.start]] and the exclusive endpoint of the current position. */
+  private def getRangeFromStart()(implicit s: State): (SourcePosition, SourcePosition) = {
+    val b = sourcePositionAtStart()
+    val e = if (s.start.offset != s.sc.getOffset) exclusiveSourcePositionAtCurrent() else sourcePositionAtCurrent()
+    (b, e)
+  }
+
+  /** Returns the [[SourcePosition]] at the current cursor position as an exclusive endpoint. */
+  private def exclusiveSourcePositionAtCurrent()(implicit s: State): SourcePosition = {
+    // If we are currently at the start of a line, create a non-existent position and the
+    // end of the previous line as the exclusive end position.
+    // This should not happen for zero-width tokens at the start of lines.
+    val (endLine, endColumn) = s.sc.getExclusiveEndPosition
+    SourcePosition.mkFromZeroIndexed(endLine, endColumn)
+  }
+
   /**
     * Returns a fuzzed array of tokens based on the given array of `tokens`.
     *
@@ -981,9 +994,6 @@ object Lexer {
 
     /** Returns the current source offset. */
     def getOffset: Int = offset
-
-    /** Returns `(line, column)`. */
-    def getPosition: (Int, Int) = (line, column)
 
     /**
       * Returns `(line, column)` where non-existent positions are preferred instead of the first
