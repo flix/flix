@@ -348,7 +348,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         flatMapN(Steps.configureJarOutput(flix)) {
           _ =>
             flatMapN(Steps.compile(flix)) {
-              result => ???
+              _ =>
+              //
             }
         }
     }
@@ -357,7 +358,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val jarFile = Bootstrap.getJarFile(projectPath)
 
     // Check whether it is safe to write to the file.
-    if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
+    if (Files.exists(jarFile) && (!Bootstrap.isJarFile(jarFile) || !Files.isRegularFile(jarFile))) {
       return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
@@ -395,10 +396,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         FileOps.addToZip(zip, fileNameWithSlashes, resource)
       }
 
-      if (includeDependencies) {
-        // First, we get all jar files inside the lib folder.
-        // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-        val jarDependencies = if (libDir.toFile.exists()) FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue) else List[Path]()
+      // First, we get all jar files inside the lib folder.
+      // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
+      if (includeDependencies && libDir.toFile.exists()) {
+        val jarDependencies = FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue)
         // Add jar dependencies.
         jarDependencies.foreach(dep => {
           if (!Bootstrap.isJarFile(dep))
