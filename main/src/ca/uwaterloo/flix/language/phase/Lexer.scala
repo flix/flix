@@ -268,10 +268,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /** Peeks the character that is `n` characters before the current if available. */
-  private def previousN(n: Int)(implicit s: State): Option[Char] =
-    s.sc.nth(-(n + 1))
-
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
@@ -375,7 +371,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (previousN(2).exists(_.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
+        if (s.sc.nthIsPOrOutOfBounds(-3, _.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
