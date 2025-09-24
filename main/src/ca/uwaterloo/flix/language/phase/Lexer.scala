@@ -736,13 +736,15 @@ object Lexer {
       */
     def acceptDigits(soft: Boolean): Unit = {
       if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
+        val loc = sourceLocationAtCurrent()
         s.sc.advanceWhile(isNumberLikeChar)
-        throw NumberError(TokenKind.Err(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+        throw NumberError(TokenKind.Err(LexerError.ExpectedDigit(loc)))
       }
       while (s.sc.advanceIfMatch('_')) {
         if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
+          val loc = sourceLocationAtCurrent()
           s.sc.advanceWhile(isNumberLikeChar)
-          throw NumberError(TokenKind.Err(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+          throw NumberError(TokenKind.Err(LexerError.ExpectedDigit(loc)))
         }
       }
     }
