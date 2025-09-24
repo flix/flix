@@ -808,7 +808,7 @@ object Lexer {
         TokenKind.Err(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       }
     } else if (c == 'f') {
-      // Construct the location now, for cases like `42f322`.
+      // Construct the position now, for cases like `42f322`.
       val suffixStart = sourcePositionAtCurrent()
 
       if (s.sc.advanceIfMatch("f32")) acceptOrSuffixError(TokenKind.LiteralFloat32, intSuffix = false, suffixStart)
