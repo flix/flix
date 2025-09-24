@@ -708,7 +708,7 @@ object Lowering {
       LoweredAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
 
     // New channel expressions are rewritten as follows:
-    //     $CHANNEL_NEW$(m)
+    //     %%CHANNEL_NEW%%(m)
     // becomes a call to the standard library function:
     //     Concurrent/Channel.newChannel(10)
     //

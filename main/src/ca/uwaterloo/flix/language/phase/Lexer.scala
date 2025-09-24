@@ -263,10 +263,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /** Peeks the character that is `n` characters before the current if available. */
-  private def previousN(n: Int)(implicit s: State): Option[Char] =
-    s.sc.nth(-(n + 1))
-
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
@@ -348,8 +344,8 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '$' if s.sc.peekIs(_.isUpper) => acceptBuiltIn()
-      case '$' if s.sc.peekIs(_.isLower) =>
+      case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
+      case '$' if s.sc.peekIs(_.isLetter) =>
         // Don't include the $ sign in the name.
         s.resetStart()
         acceptName(isUpper = false)
@@ -371,18 +367,20 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (previousN(2).exists(_.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
+        if (s.sc.nthIsPOrOutOfBounds(-3, _.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
         }
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case _ if isMatchPrev("regex\"") => acceptRegex()
+      case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case c if isMathNameChar(c) => acceptMathName()
       case '_' =>
         if (!eof()) {
           val p = s.sc.peek
-          if (p.isLetterOrDigit) {
+          if (isFirstNameChar(p)) {
+            s.sc.advance()
             acceptName(p.isUpper)
           } else if (isMathNameChar(p)) {
             s.sc.advance()
@@ -392,13 +390,9 @@ object Lexer {
             acceptUserDefinedOp()
           } else TokenKind.Underscore
         } else TokenKind.Underscore
-      case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
-      case '<' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => !isUserOp(c)) =>
-        // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
-        TokenKind.AngleL
       case c if isUserOp(c) => acceptUserDefinedOp()
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
@@ -483,31 +477,20 @@ object Lexer {
     loop(0, node)
   }
 
-  /** Moves current position past a built-in function (e.g. "$BUILT_IN$"). */
+  /** Moves current position past a built-in function (e.g. "%%BUILT_IN%%"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    var advanced = false
-    while (!eof()) {
-      val p = s.sc.peek
-
-      if (p == '$') {
-        // Check for termination.
-        s.sc.advance()
-        return TokenKind.BuiltIn
-      }
-
-      if (!isBuiltInChar(p)) {
-        return TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
-      }
-
-      s.sc.advance()
-      advanced = true
+    s.sc.advance() // Consume `%`.
+    s.sc.advanceWhile(isBuiltInChar)
+    if (s.sc.advanceIfMatch("%%")) {
+      TokenKind.BuiltIn
+    } else {
+      TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
     }
-    TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
   }
 
   /** Returns `true` if `c` is allowed inside a built-in name. */
   private def isBuiltInChar(c: Char): Boolean =
-    c.isLetter || c.isDigit || c == '_'
+    (c.isLetter && c.isUpper) || c.isDigit || c == '_'
 
   /**
     * Moves the current position past all pairs of `\` and any other character, returning
@@ -543,9 +526,13 @@ object Lexer {
     }
   }
 
-  /** Returns true if `c` is allowed as the first char of a name (see [[isNameChar]]). */
+  /**
+    * Returns true if `c` is allowed as the first char of a name (see [[isNameChar]]).
+    *
+    * All chars where `true` is returned has lower/upper case defined.
+    */
   private def isFirstNameChar(c: Char): Boolean =
-    c.isLetter || c == '_'
+    c.isLetter
 
   /** Returns `true` if `c` is allowed inside a name (see [[isFirstNameChar]]). */
   private def isNameChar(c: Char): Boolean =

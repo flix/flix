@@ -230,7 +230,7 @@ mod Vector {
     ///
     /// Retrieves the value at position `i` in the vector `v`.
     ///
-    pub def get(i: Int32, v: Vector[a]): a = $VECTOR_GET$(v, i)
+    pub def get(i: Int32, v: Vector[a]): a = %%VECTOR_GET%%(v, i)
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
@@ -254,7 +254,7 @@ mod Vector {
     ///
     /// Returns the number of elements in the vector `v`.
     ///
-    pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
+    pub def length(v: Vector[a]): Int32 = %%VECTOR_LENGTH%%(v)
 
     ///
     /// Returns the number of elements in the vector `v`.

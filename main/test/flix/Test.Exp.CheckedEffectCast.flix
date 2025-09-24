@@ -70,13 +70,13 @@
 
     @test
     def testCheckedEffectCast23(): Unit \ IO = region rc {
-        discard checked_ecast($ARRAY_NEW$(rc, 'A', 8));
+        discard checked_ecast(%%ARRAY_NEW%%(rc, 'A', 8));
         ()
     }
 
     @test
     def testCheckedEffectCast24(): Unit \ IO = region rc {
-        discard checked_ecast($ARRAY_NEW$(rc, Some(42), 8));
+        discard checked_ecast(%%ARRAY_NEW%%(rc, Some(42), 8));
         ()
     }
 
