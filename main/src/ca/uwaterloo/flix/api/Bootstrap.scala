@@ -340,44 +340,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Builds the jar or the fatjar
-    */
-  private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    val jarFile = Bootstrap.getJarFile(projectPath)
-    flatMapN(Steps.updateStaleSources(flix)) {
-      _ =>
-        flatMapN(Steps.configureJarOutput(flix)) {
-          _ =>
-            flatMapN(Steps.compile(flix)) {
-              _ =>
-                flatMapN(Steps.validateJarFile(jarFile)) {
-                  _ =>
-                    val libDir = Bootstrap.getLibraryDirectory(projectPath)
-                    val depValidation = if (includeDependencies)
-                      flatMapN(Steps.validateDirectory(libDir)) {
-                        _ =>
-                          Validation.mapN(
-                            Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
-                          )(_ => ())
-                      } else Validation.Success(())
-                    flatMapN(depValidation) {
-                      _ =>
-                        Files.createDirectories(getArtifactDirectory(projectPath))
-                        val contents = sequence(Seq(
-                          Steps.addManifestToZip,
-                          Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-                          Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
-                          if (includeDependencies) Steps.addJarsFromDirToZip(libDir) else (_: ZipOutputStream) => ()
-                        ))
-                        toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
-                    }
-                }
-            }
-        }
-    }
-  }
-
-  /**
     * Builds a jar package for the project.
     */
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
@@ -408,7 +370,34 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds a fatjar package for the project.
     */
   def buildFatJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    buildJarBase(flix, includeDependencies = true)
+    val jarFile = Bootstrap.getJarFile(projectPath)
+    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+    flatMapN(Steps.updateStaleSources(flix)) {
+      _ =>
+        flatMapN(Steps.configureJarOutput(flix)) {
+          _ =>
+            flatMapN(Steps.compile(flix)) {
+              _ =>
+                flatMapN(Steps.validateJarFile(jarFile)) {
+                  _ =>
+                    flatMapN(Steps.validateDirectory(libDir)) {
+                      _ =>
+                        flatMapN(Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)) {
+                          _ =>
+                            Files.createDirectories(getArtifactDirectory(projectPath))
+                            val contents = sequence(Seq(
+                              Steps.addManifestToZip,
+                              Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+                              Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
+                              Steps.addJarsFromDirToZip(libDir)
+                            ))
+                            toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
+                        }
+                    }
+                }
+            }
+        }
+    }
   }
 
   /**
