@@ -358,12 +358,17 @@ object Lexer {
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
       case '/' =>
-        if (s.sc.advanceIfMatch('/')) acceptLineOrDocComment()
-        else if (s.sc.advanceIfMatch('*')) acceptBlockComment()
-        else TokenKind.Slash
+        if (s.sc.advanceIfMatch('/')) {
+          acceptLineOrDocComment()
+        } else if (s.sc.advanceIfMatch('*')) {
+          acceptBlockComment()
+        } else TokenKind.Slash
       case '@' =>
-        if (s.sc.peekIs(isAnnotationChar)) acceptAnnotation()
-        else TokenKind.At
+        if (s.sc.peekIs(isAnnotationChar)) {
+          acceptAnnotation()
+        } else {
+          TokenKind.At
+        }
       case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
       case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => !isUserOp(c)) =>
         s.sc.advance() // Consume '>'
@@ -397,8 +402,11 @@ object Lexer {
           } else TokenKind.Underscore
         } else TokenKind.Underscore
       case c if c.isDigit =>
-        if (c == '0' && s.sc.peekIs(_ == 'x')) acceptHexNumber()
-        else acceptNumber()
+        if (c == '0' && s.sc.peekIs(_ == 'x')) {
+          acceptHexNumber()
+        } else {
+          acceptNumber()
+        }
       case c if isUserOp(c) => acceptUserDefinedOp()
       case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtStart()))
     }
