@@ -32,7 +32,7 @@ import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
-import scala.util.{Failure, Success, Using}
+import scala.util.{Failure, Success, Try, Using}
 
 
 object Bootstrap {
@@ -356,70 +356,64 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                     val depValidation = if (includeDependencies) Steps.validateDiretory(libDir) else Validation.Success(())
                     flatMapN(depValidation) {
                       _ =>
+                        flatMapN(Steps.mkZipFile(jarFile)) {
+                          addToZip =>
+                            addToZip { zip =>
+                              // META-INF/MANIFEST.MF
+                              val manifest =
+                                """Manifest-Version: 1.0
+                                  |Main-Class: Main
+                                  |""".stripMargin
+
+                              // Add manifest file.
+                              FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
+
+                              // Add all class files.
+                              // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+                              val classDir = Bootstrap.getClassDirectory(projectPath)
+                              val classFiles = FileOps.getFilesWithExtIn(classDir, EXT_CLASS, Int.MaxValue)
+                              for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(classDir, classFiles)) {
+                                FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
+                              }
+
+                              // Add all resources, again sorting by relative file name
+                              val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
+                              val resources = FileOps.getFilesIn(resourcesDir, Int.MaxValue)
+                              for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(resourcesDir, resources)) {
+                                FileOps.addToZip(zip, fileNameWithSlashes, resource)
+                              }
+
+                              // First, we get all jar files inside the lib folder.
+                              // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
+                              if (includeDependencies && libDir.toFile.exists()) {
+                                val jarDependencies = FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue)
+                                // Add jar dependencies.
+                                jarDependencies.foreach(dep => {
+                                  if (!Bootstrap.isJarFile(dep))
+                                    return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
+
+                                  // Extract the content of the classes to the jar file.
+                                  Using(new ZipInputStream(Files.newInputStream(dep))) {
+                                    zipIn =>
+                                      var entry = zipIn.getNextEntry
+                                      while (entry != null) {
+                                        // Get the class files except module-info and META-INF classes which are specific to each library.
+                                        if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
+                                          // Write extracted class files to zip.
+                                          val classContent = zipIn.readAllBytes()
+                                          FileOps.addToZip(zip, entry.getName, classContent)
+                                        }
+                                        entry = zipIn.getNextEntry
+                                      }
+                                  }
+                                })
+                              }
+                            }
+                        }
                     }
                 }
             }
         }
-    }
-
-
-    // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
-
-    // Construct a new zip file.
-    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
-      // META-INF/MANIFEST.MF
-      val manifest =
-        """Manifest-Version: 1.0
-          |Main-Class: Main
-          |""".stripMargin
-
-      // Add manifest file.
-      FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
-
-      // Add all class files.
-      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      val classDir = Bootstrap.getClassDirectory(projectPath)
-      val classFiles = FileOps.getFilesWithExtIn(classDir, EXT_CLASS, Int.MaxValue)
-      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(classDir, classFiles)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
-      }
-
-      // Add all resources, again sorting by relative file name
-      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
-      val resources = FileOps.getFilesIn(resourcesDir, Int.MaxValue)
-      for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(resourcesDir, resources)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, resource)
-      }
-
-      // First, we get all jar files inside the lib folder.
-      // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-      if (includeDependencies && libDir.toFile.exists()) {
-        val jarDependencies = FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue)
-        // Add jar dependencies.
-        jarDependencies.foreach(dep => {
-          if (!Bootstrap.isJarFile(dep))
-            return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
-
-          // Extract the content of the classes to the jar file.
-          Using(new ZipInputStream(Files.newInputStream(dep))) {
-            zipIn =>
-              var entry = zipIn.getNextEntry
-              while (entry != null) {
-                // Get the class files except module-info and META-INF classes which are specific to each library.
-                if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
-                  // Write extracted class files to zip.
-                  val classContent = zipIn.readAllBytes()
-                  FileOps.addToZip(zip, entry.getName, classContent)
-                }
-                entry = zipIn.getNextEntry
-              }
-          }
-        })
-      }
-    } match {
-      case Success(()) => Validation.Success(())
-      case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
     }
   }
 
@@ -818,6 +812,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Result.Err(e) =>
           Validation.Failure(BootstrapError.MavenPackageError(e))
       }
+    }
+
+    def mkZipFile(zipFile: Path): Validation[(ZipOutputStream => Unit) => Validation[Unit, BootstrapError], BootstrapError] = {
+      Files.createDirectories(zipFile.getParent.normalize())
+      val zip: (ZipOutputStream => Unit) => Try[Unit] = Using(new ZipOutputStream(Files.newOutputStream(zipFile)))
+      val callback = (contents: ZipOutputStream => Unit) => {
+        zip(contents) match {
+          case Success(()) => Validation.Success(())
+          case Failure(exception) => Validation.Failure(BootstrapError.FileError(exception.getMessage))
+        }
+      }
+      Validation.Success(callback)
     }
 
     /**
