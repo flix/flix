@@ -39,8 +39,8 @@ import scala.util.Random
   */
 object Lexer {
 
-  /** An average token length estimation used for the initial size of the token array buffer. */
-  private val MedianTokenLength: Int = {
+  /** A median chars per token estimation used for the initial size of the token array buffer. */
+  private val CharsPerToken: Int = {
     // As of September 2025 the standard library has a median of 6.9.
     8
   }
@@ -214,7 +214,7 @@ object Lexer {
     /** The sequence of tokens produced by the lexer. */
     val tokens: mutable.ArrayBuffer[Token] = {
       // The needed size is guessed based on the token length estimate, reducing the amount of enlargements.
-      new mutable.ArrayBuffer(initialSize = src.data.length / MedianTokenLength)
+      new mutable.ArrayBuffer(initialSize = src.data.length / CharsPerToken)
     }
 
     /** The list of errors in the `tokens` array. */
