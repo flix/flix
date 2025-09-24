@@ -213,7 +213,7 @@ object Lexer {
 
     /** The sequence of tokens produced by the lexer. */
     val tokens: mutable.ArrayBuffer[Token] = {
-      // The needed size is guessed based on the token length estimate, reducing the amount of enlargements.
+      // The needed size is guessed based on the chars per token estimate, reducing the amount of enlargements.
       new mutable.ArrayBuffer(initialSize = src.data.length / CharsPerToken)
     }
 
