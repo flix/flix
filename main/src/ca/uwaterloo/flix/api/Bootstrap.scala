@@ -359,7 +359,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                         val addJarsToZip = (zip: ZipOutputStream) => {
                           // First, we get all jar files inside the lib folder.
                           // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-                          if (includeDependencies && libDir.toFile.exists()) {
+                          if (libDir.toFile.exists()) {
                             val jarDependencies = FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue)
                             // Add jar dependencies.
                             jarDependencies.foreach(dep => {
@@ -389,8 +389,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                           Steps.addManifestToZip,
                           Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
                           Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
-                          addJarsToZip
-                        ))
+                        ).appendedAll(if (includeDependencies) Seq(addJarsToZip) else Seq.empty)
+                        )
                         toValidation(Using(outputStream)(contents))
                     }
                 }
