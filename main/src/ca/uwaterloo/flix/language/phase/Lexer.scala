@@ -212,6 +212,9 @@ object Lexer {
       */
     val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
 
+    /** The list of errors in the `tokens` array. */
+    val errors: mutable.ArrayBuffer[LexerError] = new mutable.ArrayBuffer[LexerError]()
+
   }
 
   /** A source position keeping track of both line, column as well as absolute character offset. */
@@ -256,11 +259,7 @@ object Lexer {
     s.resetStart()
     addToken(TokenKind.Eof)
 
-    val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _) => err
-    }
-
-    (s.tokens.toArray, errors.toList)
+    (s.tokens.toArray, s.errors.toList)
   }
 
   /** Checks if the current position has landed on end-of-file. */
@@ -301,6 +300,12 @@ object Lexer {
     s.resetStart()
   }
 
+  /**  Wraps `error` in [[TokenKind]] and pushes the error to [[State]]. */
+  private def mkErrorKind(error: LexerError)(implicit s: State): TokenKind = {
+    s.errors.append(error)
+    TokenKind.Err(error)
+  }
+
   /**
     * Scans the source for the next available token.
     * This is the heart of the lexer implementation.
@@ -334,7 +339,7 @@ object Lexer {
           TokenKind.DotDotDot
         } else if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
-          TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
+          mkErrorKind(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (s.sc.peekIs(_.isWhitespace)) {
           // A dot with trailing whitespace is it's own TokenKind.
           // That way we can use that as a terminator for fixpoint constraints,
@@ -395,7 +400,7 @@ object Lexer {
         if (c == '0' && s.sc.peekIs(_ == 'x')) acceptHexNumber()
         else acceptNumber()
       case c if isUserOp(c) => acceptUserDefinedOp()
-      case c => TokenKind.Err(LexerError.UnexpectedChar(c, sourceLocationAtStart()))
+      case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtStart()))
     }
   }
 
@@ -454,7 +459,7 @@ object Lexer {
     if (s.sc.advanceIfMatch("%%")) {
       TokenKind.BuiltIn
     } else {
-      TokenKind.Err(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
+      mkErrorKind(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
     }
   }
 
@@ -535,7 +540,7 @@ object Lexer {
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
     } else {
-      TokenKind.Err(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
+      mkErrorKind(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
     }
   }
 
@@ -585,7 +590,7 @@ object Lexer {
       var p = if (!eof()) {
         s.sc.peek
       } else {
-        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+        return mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
       // Check for the beginning of a string interpolation.
       val prev = s.sc.previous
@@ -600,7 +605,7 @@ object Lexer {
             if (!eof()) {
               p = s.sc.peek
             } else {
-              return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+              return mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
             }
         }
       }
@@ -611,11 +616,11 @@ object Lexer {
       }
       // Check if file ended on a '\', meaning that the string was unterminated.
       if (p == '\n') {
-        return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+        return mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
       s.sc.advance()
     }
-    TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
   }
 
   /**
@@ -660,7 +665,7 @@ object Lexer {
         addToken(kind)
       }
     }
-    TokenKind.Err(LexerError.UnterminatedStringInterpolation(startLocation))
+    mkErrorKind(LexerError.UnterminatedStringInterpolation(startLocation))
   }
 
   /**
@@ -679,7 +684,7 @@ object Lexer {
       prev = s.sc.peekAndAdvance()
     }
 
-    TokenKind.Err(LexerError.UnterminatedChar(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedChar(sourceLocationAtStart()))
   }
 
   /**
@@ -696,7 +701,7 @@ object Lexer {
       s.sc.advance()
     }
 
-    TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedRegex(sourceLocationAtStart()))
   }
 
   /** Returns `true` if `c` is recognized by `[0-9a-z._]`. */
@@ -706,7 +711,7 @@ object Lexer {
   /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error`. */
   private def wrapAndConsume(error: LexerError)(implicit s: State): TokenKind = {
     s.sc.advanceWhile(isNumberLikeChar)
-    TokenKind.Err(error)
+    mkErrorKind(error)
   }
 
   /** This should be understood as a control effect - fully handled inside [[acceptNumber]]. */
@@ -905,7 +910,7 @@ object Lexer {
         s.sc.advance()
       }
     }
-    TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
   }
 
   /**
