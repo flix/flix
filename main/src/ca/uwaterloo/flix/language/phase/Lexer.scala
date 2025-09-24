@@ -299,6 +299,7 @@ object Lexer {
     s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
     kind match {
       case TokenKind.Err(error) => s.errors.append(error)
+      case _ => // nop
     }
     s.resetStart()
   }
