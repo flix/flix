@@ -28,7 +28,7 @@ object LexerError {
   /**
     * An error raised when a digit is expected in a number (e.g. `1.` or `1.2e`).
     *
-    * @param loc the location of the unexpected char.
+    * @param loc The location of the unexpected char.
     */
   case class ExpectedDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A digit (0-9) is expected here."
@@ -45,7 +45,7 @@ object LexerError {
   /**
     * An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`).
     *
-    * @param loc the locations of the unexpected char.
+    * @param loc The locations of the unexpected char.
     */
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
@@ -63,7 +63,7 @@ object LexerError {
     * An error raised when a period has whitespace before it.
     * This is problematic because we want to disallow tokens like: "Rectangle   .Shape".
     *
-    * @param loc the location of the '.'.
+    * @param loc The location of the '.'.
     */
   case class FreeDot(loc: SourceLocation) extends LexerError {
     override def summary: String = s"'.' has leading whitespace."
@@ -81,7 +81,7 @@ object LexerError {
   /**
     * An error raised when a hexadecimal number suffix is unrecognized.
     *
-    * @param loc the location of the number suffix.
+    * @param loc The location of the number suffix.
     */
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect hexadecimal number suffix."
@@ -101,7 +101,7 @@ object LexerError {
   /**
     * An error raised when a number suffix is unrecognized.
     *
-    * @param loc the location of the number suffix.
+    * @param loc The location of the number suffix.
     */
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect number suffix."
@@ -121,7 +121,7 @@ object LexerError {
   /**
     * An error raised when an integer suffix is put on a decimal number.
     *
-    * @param loc the location of the suffix.
+    * @param loc The location of the suffix.
     */
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A decimal number cannot have integer suffix."
@@ -141,7 +141,7 @@ object LexerError {
   /**
     * An error raised when a hexadecimal number is malformed.
     *
-    * @param loc the location of `found`.
+    * @param loc The location of `found`.
     */
   case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed hexadecimal number, found '$found'."
@@ -159,7 +159,7 @@ object LexerError {
   /**
     * An error raised when a number is malformed.
     *
-    * @param loc the location of `found`
+    * @param loc The location of `found`
     */
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed number, found '$found'."
@@ -177,7 +177,7 @@ object LexerError {
   /**
     * An error raised when an unexpected character, such as €, is encountered.
     *
-    * @param loc the location of `found`.
+    * @param loc The location of `found`.
     */
   case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unexpected character '$found'."
@@ -195,7 +195,7 @@ object LexerError {
   /**
     * An error raised when an unterminated block comment is encountered.
     *
-    * @param loc the location of the block comment.
+    * @param loc The location of the block comment.
     */
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated block-comment."
@@ -213,7 +213,7 @@ object LexerError {
   /**
     * An error raised when an unterminated built-in function is encountered.
     *
-    * @param loc the location of the built-in.
+    * @param loc The location of the built-in.
     */
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated built-in."
@@ -249,7 +249,7 @@ object LexerError {
   /**
     * An error raised when an unterminated infix function is encountered.
     *
-    * @param loc the location of the infix function.
+    * @param loc The location of the infix function.
     */
   case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated infix function."
@@ -267,7 +267,7 @@ object LexerError {
   /**
     * An error raised when an unterminated regex is encountered.
     *
-    * @param loc the location of the regex.
+    * @param loc The location of the regex.
     */
   case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated regex."
@@ -285,7 +285,7 @@ object LexerError {
   /**
     * An error raised when an unterminated string is encountered.
     *
-    * @param loc the location of the string.
+    * @param loc The location of the string.
     */
   case class UnterminatedString(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated string."
