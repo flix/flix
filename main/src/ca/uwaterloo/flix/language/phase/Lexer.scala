@@ -371,8 +371,8 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case _ if isMatchPrev("//") => acceptLineOrDocComment()
-      case _ if isMatchPrev("/*") => acceptBlockComment()
+      case '/' if s.sc.advanceIfMatch('/') => acceptLineOrDocComment()
+      case '/' if s.sc.advanceIfMatch('*') => acceptBlockComment()
       case '/' => TokenKind.Slash
       case '@' if s.sc.peekIs(isAnnotationChar) => acceptAnnotation()
       case '@' => TokenKind.At
@@ -391,7 +391,7 @@ object Lexer {
           TokenKind.StructArrow
         }
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
-      case _ if isMatchPrev("regex\"") => acceptRegex()
+      case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
       case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case c if isMathNameChar(c) => acceptMathName()
       case '_' =>
@@ -413,37 +413,6 @@ object Lexer {
       case c if isUserOp(c) => acceptUserDefinedOp()
       case c => TokenKind.Err(LexerError.UnexpectedChar(c, sourceLocationAtCurrent()))
     }
-  }
-
-  /**
-    * Checks whether the previous char and the following substring matches a string.
-    * Will advance the current position past the string if there is a match.
-    */
-  private def isMatchPrev(str: String)(implicit s: State): Boolean = {
-    // Check if the string can appear before eof.
-    if (s.sc.getOffset + str.length - 1 > s.src.data.length) {
-      return false
-    }
-
-    // Check if the next n characters in source matches those of str one at a time.
-    val start = s.sc.getOffset - 1
-    var matches = true
-    var offset = 0
-    while (matches && offset < str.length) {
-      if (s.src.data(start + offset) != str(offset)) {
-        matches = false
-      } else {
-        offset += 1
-      }
-    }
-
-    if (matches) {
-      for (_ <- 1 until str.length) {
-        s.sc.advance()
-      }
-    }
-
-    matches
   }
 
   /** Advance the current position past an operator if any operator completely matches the current position. */
