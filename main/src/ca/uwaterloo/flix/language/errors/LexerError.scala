@@ -45,7 +45,7 @@ object LexerError {
   /**
     * An error raised when a hexadecimal digit is expected in a number (e.g. `0x` or `0xFF_`).
     *
-    * @param loc The locations of the unexpected char.
+    * @param loc The location of the unexpected char.
     */
   case class ExpectedHexDigit(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A hexadecimal digit (0-9, a-f, or A-F) is expected here."
@@ -81,7 +81,7 @@ object LexerError {
   /**
     * An error raised when a hexadecimal number suffix is unrecognized.
     *
-    * @param loc The location of the number suffix.
+    * @param loc The location of the start of the suffix.
     */
   case class IncorrectHexNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect hexadecimal number suffix."
@@ -101,7 +101,7 @@ object LexerError {
   /**
     * An error raised when a number suffix is unrecognized.
     *
-    * @param loc The location of the number suffix.
+    * @param loc The location of the start of the suffix.
     */
   case class IncorrectNumberSuffix(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Incorrect number suffix."
@@ -121,7 +121,7 @@ object LexerError {
   /**
     * An error raised when an integer suffix is put on a decimal number.
     *
-    * @param loc The location of the suffix.
+    * @param loc The location of the start of the suffix.
     */
   case class IntegerSuffixOnFloat(loc: SourceLocation) extends LexerError {
     override def summary: String = s"A decimal number cannot have integer suffix."
@@ -159,7 +159,7 @@ object LexerError {
   /**
     * An error raised when a number is malformed.
     *
-    * @param loc The location of `found`
+    * @param loc The location of `found`.
     */
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
     override def summary: String = s"Malformed number, found '$found'."
