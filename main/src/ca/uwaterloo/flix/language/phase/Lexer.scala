@@ -369,7 +369,7 @@ object Lexer {
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       case c if isUserOp(c) => acceptUserDefinedOp()
-      case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
+      case c => TokenKind.Err(LexerError.UnexpectedChar(c, sourceLocationAtStart()))
     }
   }
 
@@ -771,7 +771,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("ff")) acceptOrSuffixError(TokenKind.LiteralBigDecimal, intSuffix = false, loc)
       else wrapAndConsume(LexerError.IncorrectNumberSuffix(loc))
     } else if (isNumberLikeChar(c)) {
-      wrapAndConsume(LexerError.MalformedNumber(c.toString, sourceLocationAtCurrent()))
+      wrapAndConsume(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
     } else {
       if (mustBeFloat) TokenKind.LiteralFloat
       else TokenKind.LiteralInt
@@ -827,7 +827,7 @@ object Lexer {
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
       else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
     } else if (isNumberLikeChar(c)) {
-      wrapAndConsume(LexerError.MalformedHexNumber(c.toString, sourceLocationAtCurrent()))
+      wrapAndConsume(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
     } else TokenKind.LiteralInt
   }
 
