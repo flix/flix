@@ -139,6 +139,7 @@ object Lexer {
   /** Simple tokens - tokens consumed no matter the following char. */
   private val SimpleTokens: PrefixTree.Node[TokenKind] = {
     val simpleTokens = Array(
+      ("#", TokenKind.Hash),
       ("#(", TokenKind.HashParenL),
       ("#{", TokenKind.HashCurlyL),
       ("#|", TokenKind.HashBar),
@@ -163,12 +164,10 @@ object Lexer {
   private val Operators: PrefixTree.Node[TokenKind] = {
     val simpleTokens = Array(
       ("!=", TokenKind.BangEqual),
-      ("**", TokenKind.StarStar),
       (":", TokenKind.Colon),
       (":-", TokenKind.ColonMinus),
       ("::", TokenKind.ColonColon),
       (":::", TokenKind.TripleColon),
-      (":=", TokenKind.ColonEqual),
       ("<+>", TokenKind.AngledPlus),
       ("<-", TokenKind.ArrowThinL),
       ("<=", TokenKind.AngleLEqual),
@@ -269,18 +268,6 @@ object Lexer {
     (s.tokens.toArray, errors.toList)
   }
 
-  /** Peeks the previous character that state was on if available. */
-  private def previous()(implicit s: State): Option[Char] =
-    s.sc.previous
-
-  /** Peeks the character before the previous that state was on if available. */
-  private def previousPrevious()(implicit s: State): Option[Char] =
-    s.sc.nth(-2)
-
-  /** Peeks the character after the one that state is sitting on if available. */
-  private def peekPeek()(implicit s: State): Option[Char] =
-    s.sc.nth(1)
-
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
     s.sc.eof
@@ -350,7 +337,7 @@ object Lexer {
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
-        } else if (previousPrevious().exists(_.isWhitespace)) {
+        } else if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           TokenKind.Err(LexerError.FreeDot(sourceLocationAtStart()))
         } else if (s.sc.peekIs(_.isWhitespace)) {
@@ -370,7 +357,6 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => TokenKind.Hash
       case _ if isMatchPrev("//") => acceptLineOrDocComment()
       case _ if isMatchPrev("/*") => acceptBlockComment()
       case '/' => TokenKind.Slash
@@ -410,7 +396,7 @@ object Lexer {
       case '0' if s.sc.peekIs(_ == 'x') => acceptHexNumber()
       case c if c.isDigit => acceptNumber()
       // User defined operators.
-      case '<' if s.sc.peekIs(_ == '>') && peekPeek().flatMap(isUserOp).isEmpty =>
+      case '<' if s.sc.peekIs(_ == '>') && s.sc.nth(1).flatMap(isUserOp).isEmpty =>
         // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
         TokenKind.AngleL
       case c if isUserOp(c).isDefined =>
@@ -629,7 +615,7 @@ object Lexer {
         return TokenKind.Err(LexerError.UnterminatedString(sourceLocationAtStart()))
       }
       // Check for the beginning of a string interpolation.
-      val prev = previous()
+      val prev = s.sc.previous
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
       if (isInterpolation) {
         acceptStringInterpolation() match {
