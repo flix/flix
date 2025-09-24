@@ -31,8 +31,8 @@ class ConcurrentCache[V] {
     *
     * The value `v` must correctly implement the `equals` and `hashCode` methods.
     */
-  def getCanonicalValue(v: V): V = {
-    cache.computeIfAbsent(v, (_: V) => v)
+  def getCanonicalValue[T <: V](v: T): T = {
+    cache.computeIfAbsent(v, (_: V) => v).asInstanceOf[T]
   }
 
 }
