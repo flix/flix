@@ -844,15 +844,17 @@ object Lexer {
 
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
+      val loc = sourceLocationAtCurrent()
       s.sc.advanceWhile(isNumberLikeChar)
-      return TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+      return TokenKind.Err(LexerError.ExpectedHexDigit(loc))
     }
 
     // Consume a `(_\h+)*`
     while (s.sc.advanceIfMatch('_')) {
       if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
+        val loc = sourceLocationAtCurrent()
         s.sc.advanceWhile(isNumberLikeChar)
-        return TokenKind.Err(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+        return TokenKind.Err(LexerError.ExpectedHexDigit(loc))
       }
     }
 
