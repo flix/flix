@@ -394,51 +394,15 @@ object Lexer {
 
   /** Advance the current position past an operator if any operator completely matches the current position. */
   private def acceptIfOperator()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(Operators, c => !isUserOp(c))
+    s.sc.advanceIfInTree(Operators, c => !isUserOp(c))
 
   /** Advance the current position past a simple token if any simple token matches the current position. */
   private def acceptIfSimpleToken()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(SimpleTokens, _ => true)
+    s.sc.advanceIfInTree(SimpleTokens, _ => true)
 
   /** Advance the current position past a keyword if any keyword completely matches the current word. */
   private def acceptIfKeyword()(implicit s: State): Option[TokenKind] =
-    advanceIfInTree(Keywords, c => !isNameChar(c))
-
-  /**
-    * Advance the current position past a longest match in  `node` if it is followed by a char
-    * where `tailCondition(c)` is `true` or is followed by EOF.
-    */
-  private def advanceIfInTree(node: PrefixTree.Node[TokenKind], tailCondition: Char => Boolean)(implicit s: State): Option[TokenKind] = {
-    @tailrec
-    def loop(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
-      // A potential match must be:
-      //   - The longest match in the keyword map.
-      //   - Followed by a char that matches `tailCondition` (or EOF).
-      s.sc.nth(offset) match {
-        case Some(c) =>
-          node.getNode(c) match {
-            case Some(nextNode) =>
-              loop(offset + 1, nextNode)
-            case None =>
-              if (!tailCondition(c)) {
-                // Not a full match - Not a keyword.
-                return None
-              }
-              // Full match - A keyword if node has a token.
-              val res = node.getValue
-              res.foreach(_ => s.sc.advanceN(offset))
-              res
-          }
-        case None =>
-          // EOF - A keyword if node has a token.
-          val res = node.getValue
-          res.foreach(_ => s.sc.advanceN(offset))
-          res
-      }
-    }
-
-    loop(0, node)
-  }
+    s.sc.advanceIfInTree(Keywords, c => !isNameChar(c))
 
   /** Moves current position past a built-in function (e.g. "%%BUILT_IN%%"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
@@ -1156,6 +1120,43 @@ object Lexer {
       } else {
         true
       }
+    }
+
+    /**
+      * Advance the cursor past a longest match in `node` if it is followed by a char
+      * where `tailCondition(c)` is `true` or is followed by EOF.
+      */
+    def advanceIfInTree(node: PrefixTree.Node[TokenKind], tailCondition: Char => Boolean): Option[TokenKind] = {
+      @tailrec
+      def loop(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
+        // A potential match must be:
+        //   - The longest match in the keyword map.
+        //   - Followed by a char that matches `tailCondition` (or EOF).
+        if (inBounds) {
+          val c = data(offset)
+          node.getNode(c) match {
+            case Some(nextNode) =>
+              loop(offset + 1, nextNode)
+            case None =>
+              if (tailCondition(c)) {
+                // Full match if node has a value.
+                val res = node.getValue
+                res.foreach(_ => advanceN(offset))
+                res
+              } else {
+                // Not a full match.
+                None
+              }
+          }
+        } else {
+          // EOF - Full match if node has a value.
+          val res = node.getValue
+          res.foreach(_ => advanceN(offset))
+          res
+        }
+      }
+
+      loop(0, node)
     }
 
   }
