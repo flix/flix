@@ -351,9 +351,13 @@ object Lexer {
         }
       case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
       case '$' =>
-        if (s.sc.peekIs(isFirstNameChar)) acceptEscapedName()
-        else if (s.sc.peekIs(isUserOp)) acceptUserDefinedOp()
-        else TokenKind.Dollar
+        if (s.sc.peekIs(isFirstNameChar)) {
+          acceptEscapedName()
+        } else if (s.sc.peekIs(isUserOp)) {
+          acceptUserDefinedOp()
+        } else {
+          TokenKind.Dollar
+        }
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
