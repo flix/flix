@@ -343,13 +343,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Builds the jar or the fatjar
     */
   private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    val jarFile = Bootstrap.getJarFile(projectPath)
     flatMapN(Steps.updateStaleSources(flix)) {
       _ =>
         flatMapN(Steps.configureJarOutput(flix)) {
           _ =>
             flatMapN(Steps.compile(flix)) {
               _ =>
-                val jarFile = Bootstrap.getJarFile(projectPath)
                 flatMapN(Steps.validateJarFile(jarFile)) {
                   _ =>
                     val libDir = Bootstrap.getLibraryDirectory(projectPath)
@@ -363,14 +363,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
                     flatMapN(depValidation) {
                       _ =>
                         Files.createDirectories(getArtifactDirectory(projectPath))
-                        val outputStream = new ZipOutputStream(Files.newOutputStream(jarFile))
                         val contents = sequence(Seq(
                           Steps.addManifestToZip,
                           Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
                           Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
                           if (includeDependencies) Steps.addJarsFromDirToZip(libDir) else (_: ZipOutputStream) => ()
                         ))
-                        toValidation(Using(outputStream)(contents))
+                        toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
                     }
                 }
             }
