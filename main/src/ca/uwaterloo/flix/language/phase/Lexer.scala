@@ -39,8 +39,8 @@ import scala.util.Random
   */
 object Lexer {
 
-  /** An average token length estimation used for optimization purposes. */
-  private val MedianTokenLength: Double = 7.5
+  /** An average token length estimation used for the initial size of the token array buffer. */
+  private val MedianTokenLength: Double = 10
 
   /** The end-of-file character (`'\u0000'`). */
   private val EOF = '\u0000'
