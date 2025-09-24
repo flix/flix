@@ -896,12 +896,6 @@ object Lexer {
   private def sourceLocationAtCurrent()(implicit s: State): SourceLocation =
     SourceLocation.point(isReal = true, s.src, sourcePositionAtCurrent())
 
-  /** Returns a [[SourceLocation]] spanning the current consumed input since the last token, exclusive of the current position. */
-  private def sourceLocationFromStart()(implicit s: State): SourceLocation = {
-    val (b, e) = getRangeFromStart()
-    mkSourceLocation(b, e)
-  }
-
   /** Returns the position of [[State.start]] and the exclusive endpoint of the current position. */
   private def getRangeFromStart()(implicit s: State): (SourcePosition, SourcePosition) = {
     val b = sourcePositionAtStart()
