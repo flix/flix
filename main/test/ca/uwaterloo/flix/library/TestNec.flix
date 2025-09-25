@@ -810,10 +810,10 @@ mod TestNec {
     def foldMap01(): Unit \ Assert = assertEq(expected = 6, Nec.foldMap(x -> 2 * x, necOf2(1, 2)))
 
     @Test
-    def foldMap02(): Unit \ Assert = assertEq(expected = "b", Nec.foldMap(x -> if(x == "a") "b" else x, singleton("a")))
+    def foldMap02(): Unit \ Assert = assertEq(expected = "b", Nec.foldMap(x -> if (x == "a") "b" else x, singleton("a")))
 
     @Test
-    def foldMap03(): Unit \ Assert = assertEq(expected = "abb", Nec.foldMap(x -> if(x == "c") "b" else x, necOf3("a", "b", "c")))
+    def foldMap03(): Unit \ Assert = assertEq(expected = "abb", Nec.foldMap(x -> if (x == "c") "b" else x, necOf3("a", "b", "c")))
 
     @Test
     def foldMap04(): Unit \ Assert = assertEq(expected = "123", Nec.foldMap(Int32.toString, necOf3(1, 2, 3)))

@@ -72,7 +72,7 @@ mod Int8 {
         if (n == 0i8)
             0i8
         else
-            $INT8_REM$($INT8_REM$(x, n) + n, n)
+            %%INT8_REM%%(%%INT8_REM%%(x, n) + n, n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -84,7 +84,7 @@ mod Int8 {
         if (n == 0i8)
             0i8
         else
-            $INT8_REM$(x, n)
+            %%INT8_REM%%(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -117,7 +117,7 @@ mod Int8 {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = Int8}, n: Int8): Int8 = $INT8_EXP$(base#base, n)
+    pub def pow(base: {base = Int8}, n: Int8): Int8 = %%INT8_EXP%%(base#base, n)
 
 
     ///
@@ -295,32 +295,32 @@ mod Int8 {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int8, y: Int32): Int8 = $INT8_SHL$(x, y)
+    pub def leftShift(x: Int8, y: Int32): Int8 = %%INT8_SHL%%(x, y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int8, y: Int32): Int8 = $INT8_SHR$(x, y)
+    pub def rightShift(x: Int8, y: Int32): Int8 = %%INT8_SHR%%(x, y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: Int8, y: Int8): Int8 = $INT8_AND$(x, y)
+    pub def bitwiseAnd(x: Int8, y: Int8): Int8 = %%INT8_AND%%(x, y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: Int8): Int8 = $INT8_NOT$(x)
+    pub def bitwiseNot(x: Int8): Int8 = %%INT8_NOT%%(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int8, y: Int8): Int8 = $INT8_OR$(x, y)
+    pub def bitwiseOr(x: Int8, y: Int8): Int8 = %%INT8_OR%%(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: Int8, y: Int8): Int8 = $INT8_XOR$(x, y)
+    pub def bitwiseXor(x: Int8, y: Int8): Int8 = %%INT8_XOR%%(x, y)
 
     ///
     /// Returns the factorial of `x`.

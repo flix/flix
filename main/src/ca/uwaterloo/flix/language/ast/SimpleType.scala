@@ -15,9 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ConcurrentCache, InternalCompilerException}
 
-import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 import scala.annotation.tailrec
 
 /**
@@ -34,7 +33,7 @@ object SimpleType {
     *
     * Note: We do not cache all simple types because it is not worth it.
     */
-  private val Cache: ConcurrentMap[SimpleType, SimpleType] = new ConcurrentHashMap()
+  private val Cache: ConcurrentCache[SimpleType] = new ConcurrentCache()
 
   //
   // Primitive Types.
@@ -110,7 +109,7 @@ object SimpleType {
     */
   def mkArray(tpe: SimpleType): SimpleType.Array = {
     val t = Array(tpe)
-    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Array]
+    Cache.getCanonicalValue(t)
   }
 
   /**
@@ -118,7 +117,7 @@ object SimpleType {
     */
   def mkTuple(tpes: List[SimpleType]): SimpleType.Tuple = {
     val t = Tuple(tpes)
-    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Tuple]
+    Cache.getCanonicalValue(t)
   }
 
   /**
@@ -126,7 +125,7 @@ object SimpleType {
     */
   def mkArrow(targs: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
     val t = Arrow(targs, result)
-    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Arrow]
+    Cache.getCanonicalValue(t)
   }
 
   /**
@@ -134,7 +133,7 @@ object SimpleType {
     */
   def mkEnum(sym: Symbol.EnumSym, targs: List[SimpleType]): SimpleType.Enum = {
     val t = Enum(sym, targs)
-    Cache.computeIfAbsent(t, (_: SimpleType) => t).asInstanceOf[SimpleType.Enum]
+    Cache.getCanonicalValue(t)
   }
 
   /** Returns `tpe` if it's a primitive type and returns [[SimpleType.Object]] otherwise. */

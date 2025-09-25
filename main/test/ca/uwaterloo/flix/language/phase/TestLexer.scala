@@ -402,25 +402,25 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedBuiltIn.01") {
-    val input = "$BUILT_IN; 42"
+    val input = "%%BUILT_IN; 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.02") {
-    val input = "$BUILT_IN"
+    val input = "%%BUILT_IN"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.03") {
-    val input = "$BUILT_/*IN*/$"
+    val input = "%%BUILT_/*IN*/%%"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
 
   test("LexerError.UnterminatedBuiltIn.04") {
-    val input = "$BUILT_IN"
+    val input = "%%BUILT_IN"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }
@@ -438,18 +438,12 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedChar.03") {
-    val input = "'a/* This is a block-comment */'"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedChar](result)
-  }
-
-  test("LexerError.UnterminatedChar.04") {
     val input = "'/* This is a block-comment */a"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedChar](result)
   }
 
-  test("LexerError.UnterminatedChar.05") {
+  test("LexerError.UnterminatedChar.04") {
     val input =
       """def foo(): Char = '"""
     val result = compile(input, Options.TestWithLibNix)

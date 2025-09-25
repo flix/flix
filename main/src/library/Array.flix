@@ -92,19 +92,19 @@ mod Array {
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
     pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
-        $ARRAY_NEW$(rc, Reflect.default(), l)
+        %%ARRAY_NEW%%(rc, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
     ///
     pub def get(i: Int32, a: Array[a, r]): a \ r =
-        $ARRAY_LOAD$(a, i)
+        %%ARRAY_LOAD%%(a, i)
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ r =
-        $ARRAY_STORE$(a, i, x)
+        %%ARRAY_STORE%%(a, i, x)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
@@ -128,7 +128,7 @@ mod Array {
     ///
     /// Returns the number of elements in the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
+    pub def length(a: Array[a, r]): Int32 = %%ARRAY_LENGTH%%(a)
 
     ///
     /// Returns the number of elements in the array `a`.
@@ -398,7 +398,7 @@ mod Array {
         if (n <= 0)
             Array#{} @ rc
         else
-            $ARRAY_NEW$(rc, x, n)
+            %%ARRAY_NEW%%(rc, x, n)
 
     ///
     /// Alias for `scanLeft`.

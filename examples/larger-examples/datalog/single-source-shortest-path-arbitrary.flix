@@ -37,7 +37,7 @@ mod ShortestPathN {
             case (_, Bot)                   => Comparison.GreaterThan
             case (Path(list1, l1), Path(list2, l2)) =>
                 let comp1 = l1 <=> l2;
-                if(comp1 != Comparison.EqualTo) {
+                if (comp1 != Comparison.EqualTo) {
                     comp1
                 } else {
                     list1 <=> list2

@@ -1,20 +1,3 @@
-/*
- * Copyright 2025 Casper Dalgaard Nielsen
- *                Adam Yasser Tallouzi
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod Test.Exp.Fixpoint.Application {
 
     use Assert.assertEq;
@@ -40,7 +23,7 @@ mod Test.Exp.Fixpoint.Application {
         let n = 50;
         let r = #{
             Succ(0).
-            Succ(x + 1) :- Succ(x), if(x < n).
+            Succ(x + 1) :- Succ(x), if (x < n).
         };
         let expected = Vector.range(0, n + 1);
         let actual = query r select x from Succ(x);
@@ -119,7 +102,7 @@ mod Test.Exp.Fixpoint.Application {
         let r = #{
             Two(2).
             SuccTwo(0).
-            SuccTwo(x + y) :- SuccTwo(x), Two(y), if(x < n).
+            SuccTwo(x + y) :- SuccTwo(x), Two(y), if (x < n).
         };
         let expected = Vector#{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
         let actual = query r select x from SuccTwo(x);
