@@ -21,9 +21,11 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -1491,7 +1493,7 @@ object Parser2 {
                 // we avoid consuming any fuel.
                 // The next nth lookup will always fail, so we add fuel to account for it.
                 // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                if (left == Op.FCons) s.fuel += 2
+                if (left == BinaryOp.FCons) s.fuel += 2
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
@@ -1505,7 +1507,7 @@ object Parser2 {
           case None =>
             // Non-operator or EOF.
             // Add fuel for the same reason as above.
-            if (leftOpt.contains(Op.FCons)) s.fuel += 2
+            if (leftOpt.contains(BinaryOp.FCons)) s.fuel += 2
             continue = false
         }
       }
@@ -1541,40 +1543,40 @@ object Parser2 {
       lhs
     }
 
-    private def parseBinaryOp(token: Token): Option[Op] = {
+    private def parseBinaryOp(token: Token): Option[BinaryOp] = {
       token.kind match {
-        case TokenKind.AngleL => Some(Op.Less)
-        case TokenKind.AngleLEqual => Some(Op.LessEqual)
-        case TokenKind.AngleR => Some(Op.Greater)
-        case TokenKind.AngleREqual => Some(Op.GreaterEqual)
-        case TokenKind.AngledEqual => Some(Op.Compare)
-        case TokenKind.AngledPlus => Some(Op.FixpointMerge)
-        case TokenKind.BangEqual => Some(Op.Neq)
-        case TokenKind.ColonColon => Some(Op.FCons)
-        case TokenKind.EqualEqual => Some(Op.Eq)
-        case TokenKind.InfixFunction => Some(Op.Infix)
-        case TokenKind.KeywordAnd => Some(Op.And)
-        case TokenKind.KeywordInstanceOf => Some(Op.InstanceOf)
-        case TokenKind.KeywordOr => Some(Op.Or)
-        case TokenKind.Minus => Some(Op.MinusBinary)
-        case TokenKind.NameMath => Some(Op.MathOperator)
-        case TokenKind.Plus => Some(Op.PlusBinary)
-        case TokenKind.Slash => Some(Op.Div)
-        case TokenKind.Star => Some(Op.Mul)
-        case TokenKind.TripleColon => Some(Op.FAppend)
-        case TokenKind.UserDefinedOperator => Some(Op.UserOperator)
+        case TokenKind.AngleL => Some(BinaryOp.Less)
+        case TokenKind.AngleLEqual => Some(BinaryOp.LessEqual)
+        case TokenKind.AngleR => Some(BinaryOp.Greater)
+        case TokenKind.AngleREqual => Some(BinaryOp.GreaterEqual)
+        case TokenKind.AngledEqual => Some(BinaryOp.Compare)
+        case TokenKind.AngledPlus => Some(BinaryOp.FixpointMerge)
+        case TokenKind.BangEqual => Some(BinaryOp.Neq)
+        case TokenKind.ColonColon => Some(BinaryOp.FCons)
+        case TokenKind.EqualEqual => Some(BinaryOp.Eq)
+        case TokenKind.InfixFunction => Some(BinaryOp.Infix)
+        case TokenKind.KeywordAnd => Some(BinaryOp.And)
+        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
+        case TokenKind.KeywordOr => Some(BinaryOp.Or)
+        case TokenKind.Minus => Some(BinaryOp.Sub)
+        case TokenKind.NameMath => Some(BinaryOp.MathOperator)
+        case TokenKind.Plus => Some(BinaryOp.Add)
+        case TokenKind.Slash => Some(BinaryOp.Div)
+        case TokenKind.Star => Some(BinaryOp.Mul)
+        case TokenKind.TripleColon => Some(BinaryOp.FAppend)
+        case TokenKind.UserDefinedOperator => Some(BinaryOp.UserOperator)
         case _ => None
       }
     }
 
-    private def parseUnaryOp(token: Token): Option[Op] = {
+    private def parseUnaryOp(token: Token): Option[UnaryOp] = {
       token.kind match {
-        case TokenKind.KeywordDiscard => Some(Op.Discard)
-        case TokenKind.KeywordForce => Some(Op.Force)
-        case TokenKind.KeywordLazy => Some(Op.Lazy)
-        case TokenKind.KeywordNot => Some(Op.Not)
-        case TokenKind.Minus => Some(Op.MinusUnary)
-        case TokenKind.Plus => Some(Op.PlusUnary)
+        case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
+        case TokenKind.KeywordForce => Some(UnaryOp.Force)
+        case TokenKind.KeywordLazy => Some(UnaryOp.Lazy)
+        case TokenKind.KeywordNot => Some(UnaryOp.Not)
+        case TokenKind.Minus => Some(UnaryOp.Minus)
+        case TokenKind.Plus => Some(UnaryOp.Plus)
         case _ => None
       }
     }
@@ -1583,21 +1585,21 @@ object Parser2 {
 
       /** Precedence for operators, lower is higher precedence. */
       private def precedence: Int = this match {
-        case Op.InstanceOf => 0
-        case Op.Or => 1
-        case Op.And => 2
-        case Op.Eq | Op.Compare | Op.Neq => 3
-        case Op.Less | Op.Greater | Op.LessEqual | Op.GreaterEqual => 4
-        case Op.FCons | Op.FAppend => 5
-        case Op.PlusBinary | Op.MinusBinary => 6
-        case Op.Mul | Op.Div => 7
-        case Op.FixpointMerge => 8
-        case Op.Discard => 9
-        case Op.Infix => 10
-        case Op.UserOperator | Op.MathOperator => 11
-        case Op.Lazy | Op.Force => 12
-        case Op.PlusUnary | Op.MinusUnary => 13
-        case Op.Not => 14
+        case BinaryOp.InstanceOf => 0
+        case BinaryOp.Or => 1
+        case BinaryOp.And => 2
+        case BinaryOp.Eq | BinaryOp.Compare | BinaryOp.Neq => 3
+        case BinaryOp.Less | BinaryOp.Greater | BinaryOp.LessEqual | BinaryOp.GreaterEqual => 4
+        case BinaryOp.FCons | BinaryOp.FAppend => 5
+        case BinaryOp.Add | BinaryOp.Sub => 6
+        case BinaryOp.Mul | BinaryOp.Div => 7
+        case BinaryOp.FixpointMerge => 8
+        case UnaryOp.Discard => 9
+        case BinaryOp.Infix => 10
+        case BinaryOp.UserOperator | BinaryOp.MathOperator => 11
+        case UnaryOp.Lazy | UnaryOp.Force => 12
+        case UnaryOp.Plus | UnaryOp.Minus => 13
+        case UnaryOp.Not => 14
       }
 
       /**
@@ -1605,14 +1607,13 @@ object Parser2 {
         * "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z".
         */
       private def isRightAssoc: Boolean = this match {
-        case Op.FAppend => true
-        case Op.FCons => true
+        case BinaryOp.FAppend => true
+        case BinaryOp.FCons => true
         case _ => false
       }
     }
 
     private object Op {
-
       def rightBindsTighter(left: Op, right: Op): Boolean = {
         if (left.precedence == right.precedence && left.isRightAssoc) {
           true
@@ -1620,58 +1621,70 @@ object Parser2 {
           right.precedence > left.precedence
         }
       }
+    }
 
-      case object And extends Op
+    sealed trait UnaryOp extends Op
 
-      case object Compare extends Op
+    private object UnaryOp {
 
-      case object Discard extends Op
+      case object Discard extends UnaryOp
 
-      case object Div extends Op
+      case object Force extends UnaryOp
 
-      case object Eq extends Op
+      case object Lazy extends UnaryOp
 
-      case object FAppend extends Op
+      case object Minus extends UnaryOp
 
-      case object FCons extends Op
+      case object Not extends UnaryOp
 
-      case object FixpointMerge extends Op
+      case object Plus extends UnaryOp
 
-      case object Force extends Op
+    }
 
-      case object Greater extends Op
+    sealed trait BinaryOp extends Op
 
-      case object GreaterEqual extends Op
+    private object BinaryOp {
 
-      case object Infix extends Op
+      case object And extends BinaryOp
 
-      case object InstanceOf extends Op
+      case object Compare extends BinaryOp
 
-      case object Lazy extends Op
+      case object Div extends BinaryOp
 
-      case object Less extends Op
+      case object Eq extends BinaryOp
 
-      case object LessEqual extends Op
+      case object FAppend extends BinaryOp
 
-      case object MathOperator extends Op
+      case object FCons extends BinaryOp
 
-      case object MinusBinary extends Op
+      case object FixpointMerge extends BinaryOp
 
-      case object MinusUnary extends Op
+      case object Greater extends BinaryOp
 
-      case object Mul extends Op
+      case object GreaterEqual extends BinaryOp
 
-      case object Neq extends Op
+      case object Infix extends BinaryOp
 
-      case object Not extends Op
+      case object InstanceOf extends BinaryOp
 
-      case object Or extends Op
+      case object Less extends BinaryOp
 
-      case object PlusBinary extends Op
+      case object LessEqual extends BinaryOp
 
-      case object PlusUnary extends Op
+      case object MathOperator extends BinaryOp
 
-      case object UserOperator extends Op
+      case object Sub extends BinaryOp
+
+      case object Mul extends BinaryOp
+
+      case object Neq extends BinaryOp
+
+      case object Or extends BinaryOp
+
+      case object Add extends BinaryOp
+
+      case object UserOperator extends BinaryOp
+
     }
 
     private def arguments()(implicit s: State): Unit = {
