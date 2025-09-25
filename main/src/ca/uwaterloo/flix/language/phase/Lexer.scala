@@ -318,7 +318,6 @@ object Lexer {
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
       case c if isFirstNameChar(c) => acceptName(c.isUpper)
-      case c if isMathNameChar(c) => acceptMathName()
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
@@ -393,6 +392,7 @@ object Lexer {
           acceptNumber()
         }
       case c if isUserOp(c) => acceptUserDefinedOp()
+      case c if isMathNameChar(c) => acceptMathName()
       case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtCurrent()))
     }
   }
