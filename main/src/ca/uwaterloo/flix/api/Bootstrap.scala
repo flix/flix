@@ -348,22 +348,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     Steps.updateStaleSources(flix)
-    flatMapN(Steps.configureJarOutput(flix).toValidation) {
-      _ =>
-        flatMapN(Steps.compile(flix).toValidation) {
-          _ =>
-            flatMapN(Steps.validateJarFile(jarFile).toValidation) {
-              _ =>
-                Files.createDirectories(getArtifactDirectory(projectPath))
-                val contents = sequence(Seq(
-                  Steps.addManifestToZip,
-                  Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-                  Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
-                ))
-                toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
-            }
-        }
+    val result = for {
+      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.compile(flix)
+      _ <- Steps.validateJarFile(jarFile)
+      _ = Files.createDirectories(getArtifactDirectory(projectPath))
+      contents = sequence(Seq(
+        Steps.addManifestToZip,
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
+      ))
+      _ <- toResult(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
+    } yield {
+      ()
     }
+    result.toValidation
   }
 
   /**
@@ -620,6 +619,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def toValidation[A](t: Try[A]): Validation[A, BootstrapError] = t match {
     case Success(v) => Validation.Success(v)
     case Failure(e) => Validation.Failure(BootstrapError.FileError(e.getMessage))
+  }
+
+  /**
+    * Converts `t` to a [[Validation]].
+    * If `t` is a failure then a [[BootstrapError.FileError]] is returned.
+    */
+  private def toResult[A](t: Try[A]): Result[A, BootstrapError] = t match {
+    case Success(v) => Ok(v)
+    case Failure(e) => Err(BootstrapError.FileError(e.getMessage))
   }
 
   private def sequence[A](fs: Seq[A => Unit])(x: A): Unit = {
