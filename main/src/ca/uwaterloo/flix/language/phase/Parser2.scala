@@ -1507,7 +1507,7 @@ object Parser2 {
                 // we avoid consuming any fuel.
                 // The next nth lookup will always fail, so we add fuel to account for it.
                 // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                if (left == BinaryOp.FCons) s.fuel += 2
+                if (left == BinaryOp.ColonColon) s.fuel += 2
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
@@ -1521,7 +1521,7 @@ object Parser2 {
           case None =>
             // Non-operator or EOF.
             // Add fuel for the same reason as above.
-            if (leftOpt.contains(BinaryOp.FCons)) s.fuel += 2
+            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 2
             continue = false
         }
       }
@@ -1559,26 +1559,26 @@ object Parser2 {
 
     private def parseBinaryOp(token: Token): Option[BinaryOp] = {
       token.kind match {
-        case TokenKind.AngleL => Some(BinaryOp.Less)
-        case TokenKind.AngleLEqual => Some(BinaryOp.LessEqual)
-        case TokenKind.AngleR => Some(BinaryOp.Greater)
-        case TokenKind.AngleREqual => Some(BinaryOp.GreaterEqual)
-        case TokenKind.AngledEqual => Some(BinaryOp.Compare)
-        case TokenKind.AngledPlus => Some(BinaryOp.FixpointMerge)
-        case TokenKind.BangEqual => Some(BinaryOp.Neq)
-        case TokenKind.ColonColon => Some(BinaryOp.FCons)
-        case TokenKind.EqualEqual => Some(BinaryOp.Eq)
-        case TokenKind.InfixFunction => Some(BinaryOp.Infix)
+        case TokenKind.AngleL => Some(BinaryOp.AngleL)
+        case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
+        case TokenKind.AngleR => Some(BinaryOp.AngleR)
+        case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
+        case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
+        case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
+        case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
+        case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
+        case TokenKind.InfixFunction => Some(BinaryOp.InfixFunction)
         case TokenKind.KeywordAnd => Some(BinaryOp.And)
         case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
         case TokenKind.KeywordOr => Some(BinaryOp.Or)
-        case TokenKind.Minus => Some(BinaryOp.Sub)
-        case TokenKind.NameMath => Some(BinaryOp.MathOperator)
-        case TokenKind.Plus => Some(BinaryOp.Add)
-        case TokenKind.Slash => Some(BinaryOp.Div)
-        case TokenKind.Star => Some(BinaryOp.Mul)
-        case TokenKind.TripleColon => Some(BinaryOp.FAppend)
-        case TokenKind.UserDefinedOperator => Some(BinaryOp.UserOperator)
+        case TokenKind.Minus => Some(BinaryOp.Minus)
+        case TokenKind.NameMath => Some(BinaryOp.NameMath)
+        case TokenKind.Plus => Some(BinaryOp.Plus)
+        case TokenKind.Slash => Some(BinaryOp.Slash)
+        case TokenKind.Star => Some(BinaryOp.Star)
+        case TokenKind.TripleColon => Some(BinaryOp.TripleColon)
+        case TokenKind.UserDefinedOperator => Some(BinaryOp.UserDefinedOperator)
         case _ => None
       }
     }
@@ -1602,15 +1602,15 @@ object Parser2 {
         case BinaryOp.InstanceOf => 0
         case BinaryOp.Or => 1
         case BinaryOp.And => 2
-        case BinaryOp.Eq | BinaryOp.Compare | BinaryOp.Neq => 3
-        case BinaryOp.Less | BinaryOp.Greater | BinaryOp.LessEqual | BinaryOp.GreaterEqual => 4
-        case BinaryOp.FCons | BinaryOp.FAppend => 5
-        case BinaryOp.Add | BinaryOp.Sub => 6
-        case BinaryOp.Mul | BinaryOp.Div => 7
-        case BinaryOp.FixpointMerge => 8
+        case BinaryOp.EqualEqual | BinaryOp.AngledEqual | BinaryOp.BangEqual => 3
+        case BinaryOp.AngleL | BinaryOp.AngleR | BinaryOp.AngleLEqual | BinaryOp.AngleREqual => 4
+        case BinaryOp.ColonColon | BinaryOp.TripleColon => 5
+        case BinaryOp.Plus | BinaryOp.Minus => 6
+        case BinaryOp.Star | BinaryOp.Slash => 7
+        case BinaryOp.AngledPlus => 8
         case UnaryOp.Discard => 9
-        case BinaryOp.Infix => 10
-        case BinaryOp.UserOperator | BinaryOp.MathOperator => 11
+        case BinaryOp.InfixFunction => 10
+        case BinaryOp.UserDefinedOperator | BinaryOp.NameMath => 11
         case UnaryOp.Lazy | UnaryOp.Force => 12
         case UnaryOp.Plus | UnaryOp.Minus => 13
         case UnaryOp.Not => 14
@@ -1621,8 +1621,8 @@ object Parser2 {
         * "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z".
         */
       private def isRightAssoc: Boolean = this match {
-        case BinaryOp.FAppend => true
-        case BinaryOp.FCons => true
+        case BinaryOp.TripleColon => true
+        case BinaryOp.ColonColon => true
         case _ => false
       }
     }
@@ -1661,43 +1661,43 @@ object Parser2 {
 
       case object And extends BinaryOp
 
-      case object Compare extends BinaryOp
+      case object AngleL extends BinaryOp
 
-      case object Div extends BinaryOp
+      case object AngleLEqual extends BinaryOp
 
-      case object Eq extends BinaryOp
+      case object AngleR extends BinaryOp
 
-      case object FAppend extends BinaryOp
+      case object AngleREqual extends BinaryOp
 
-      case object FCons extends BinaryOp
+      case object AngledEqual extends BinaryOp
 
-      case object FixpointMerge extends BinaryOp
+      case object AngledPlus extends BinaryOp
 
-      case object Greater extends BinaryOp
+      case object BangEqual extends BinaryOp
 
-      case object GreaterEqual extends BinaryOp
+      case object ColonColon extends BinaryOp
 
-      case object Infix extends BinaryOp
+      case object EqualEqual extends BinaryOp
+
+      case object InfixFunction extends BinaryOp
 
       case object InstanceOf extends BinaryOp
 
-      case object Less extends BinaryOp
+      case object Minus extends BinaryOp
 
-      case object LessEqual extends BinaryOp
-
-      case object MathOperator extends BinaryOp
-
-      case object Sub extends BinaryOp
-
-      case object Mul extends BinaryOp
-
-      case object Neq extends BinaryOp
+      case object NameMath extends BinaryOp
 
       case object Or extends BinaryOp
 
-      case object Add extends BinaryOp
+      case object Plus extends BinaryOp
 
-      case object UserOperator extends BinaryOp
+      case object Slash extends BinaryOp
+
+      case object Star extends BinaryOp
+
+      case object TripleColon extends BinaryOp
+
+      case object UserDefinedOperator extends BinaryOp
 
     }
 
