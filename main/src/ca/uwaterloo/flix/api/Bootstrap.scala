@@ -300,17 +300,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(projectPath)
-    flatMapN(Steps.parseManifest(tomlPath).toValidation) {
-      manifest =>
-        flatMapN(Steps.resolveFlixDependencies(manifest).toValidation) {
-          dependencyManifests =>
-            mapN(Steps.installDependencies(dependencyManifests).toValidation) {
-              _ =>
-                Steps.addLocalFlixFiles()
-                ()
-            }
-        }
+    val result = for {
+      manifest <- Steps.parseManifest(tomlPath)
+      deps <- Steps.resolveFlixDependencies(manifest)
+      _ <- Steps.installDependencies(deps)
+      _ = Steps.addLocalFlixFiles()
+    } yield {
+      ()
     }
+    result.toValidation
   }
 
   /**
