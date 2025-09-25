@@ -348,7 +348,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     Steps.updateStaleSources(flix)
-    flatMapN(Steps.configureJarOutput(flix)) {
+    flatMapN(Steps.configureJarOutput(flix).toValidation) {
       _ =>
         flatMapN(Steps.compile(flix).toValidation) {
           _ =>
@@ -373,7 +373,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
     Steps.updateStaleSources(flix)
-    flatMapN(Steps.configureJarOutput(flix)) {
+    flatMapN(Steps.configureJarOutput(flix).toValidation) {
       _ =>
         flatMapN(Steps.compile(flix).toValidation) {
           _ =>
@@ -761,14 +761,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    def configureJarOutput(flix: Flix): Validation[Unit, BootstrapError] = {
+    def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
       val buildDir = Bootstrap.getBuildDirectory(projectPath)
       if (Files.exists(buildDir) && !Files.isDirectory(buildDir)) {
-        return Validation.Failure(BootstrapError.FileError(s"build directory '${buildDir.toAbsolutePath}' is not a directory"))
+        return Err(BootstrapError.FileError(s"build directory '${buildDir.toAbsolutePath}' is not a directory"))
       }
       val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
       flix.setOptions(newOptions)
-      Validation.Success(())
+      Ok(())
     }
 
     /**
