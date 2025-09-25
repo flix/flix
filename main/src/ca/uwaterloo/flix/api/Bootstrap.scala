@@ -614,6 +614,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     case Failure(e) => Err(BootstrapError.FileError(e.getMessage))
   }
 
+  /**
+    * Applies all functions in `fs` to `x`.
+    */
   private def sequence[A](fs: Seq[A => Unit])(x: A): Unit = {
     fs.foreach(f => f(x))
   }
