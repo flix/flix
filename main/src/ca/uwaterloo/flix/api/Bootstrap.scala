@@ -344,26 +344,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
-    flatMapN(Steps.updateStaleSources(flix)) {
+    Steps.updateStaleSources(flix)
+    flatMapN(Steps.configureJarOutput(flix)) {
       _ =>
-        flatMapN(Steps.configureJarOutput(flix)) {
+        flatMapN(Steps.compile(flix)) {
           _ =>
-            flatMapN(Steps.compile(flix)) {
+            flatMapN(Steps.validateJarFile(jarFile)) {
               _ =>
-                flatMapN(Steps.validateJarFile(jarFile)) {
-                  _ =>
-                    Files.createDirectories(getArtifactDirectory(projectPath))
-                    val contents = sequence(Seq(
-                      Steps.addManifestToZip,
-                      Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-                      Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
-                    ))
-                    toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
-                }
+                Files.createDirectories(getArtifactDirectory(projectPath))
+                val contents = sequence(Seq(
+                  Steps.addManifestToZip,
+                  Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+                  Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
+                ))
+                toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
             }
         }
     }
-
   }
 
   /**
@@ -372,27 +369,25 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildFatJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
-    flatMapN(Steps.updateStaleSources(flix)) {
+    Steps.updateStaleSources(flix)
+    flatMapN(Steps.configureJarOutput(flix)) {
       _ =>
-        flatMapN(Steps.configureJarOutput(flix)) {
+        flatMapN(Steps.compile(flix)) {
           _ =>
-            flatMapN(Steps.compile(flix)) {
+            flatMapN(Steps.validateJarFile(jarFile)) {
               _ =>
-                flatMapN(Steps.validateJarFile(jarFile)) {
+                flatMapN(Steps.validateDirectory(libDir)) {
                   _ =>
-                    flatMapN(Steps.validateDirectory(libDir)) {
+                    flatMapN(Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)) {
                       _ =>
-                        flatMapN(Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)) {
-                          _ =>
-                            Files.createDirectories(getArtifactDirectory(projectPath))
-                            val contents = sequence(Seq(
-                              Steps.addManifestToZip,
-                              Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-                              Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
-                              Steps.addJarsFromDirToZip(libDir)
-                            ))
-                            toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
-                        }
+                        Files.createDirectories(getArtifactDirectory(projectPath))
+                        val contents = sequence(Seq(
+                          Steps.addManifestToZip,
+                          Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+                          Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
+                          Steps.addJarsFromDirToZip(libDir)
+                        ))
+                        toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
                     }
                 }
             }
@@ -447,8 +442,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Type checks the source files for the project.
     */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
-    flatMapN(Steps.updateStaleSources(flix)) {
-      _ => mapN(Steps.check(flix))(_ => ())
+    Steps.updateStaleSources(flix)
+    Steps.check(flix) match {
+      case Ok(_) => Validation.Success(())
+      case Err(e) => Validation.Failure(e)
     }
   }
 
@@ -467,8 +464,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Generates API documentation.
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
-    flatMapN(Steps.updateStaleSources(flix)) {
-      _ => mapN(Steps.check(flix))(HtmlDocumentor.run(_, getPackageModules)(flix))
+    Steps.updateStaleSources(flix)
+    Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix)) match {
+      case Ok(_) => Validation.Success(())
+      case Err(e) => Validation.Failure(e)
     }
   }
 
@@ -744,12 +743,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Type checks the source files for the project.
       */
-    def check(flix: Flix): Validation[TypedAst.Root, BootstrapError] = {
+    def check(flix: Flix): Result[TypedAst.Root, BootstrapError] = {
       val (optRoot, errors) = flix.check()
       if (errors.isEmpty) {
-        Validation.Success(optRoot.get)
+        Result.Ok(optRoot.get)
       } else {
-        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Result.Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
       }
     }
 
@@ -878,7 +877,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * If they have, they are added to flix. Then updates the timestamps
       * map to reflect the current source files and packages.
       */
-    def updateStaleSources(flix: Flix): Validation[Unit, BootstrapError] = {
+    def updateStaleSources(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
       implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
