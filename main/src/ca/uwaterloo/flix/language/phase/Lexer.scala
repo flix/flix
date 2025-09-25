@@ -202,12 +202,16 @@ object Lexer {
     /** A string cursor on `src.data`. */
     val sc: StringCursor = new StringCursor(src.data)
 
-    /** `start` is the first position of the token that is currently being lexed. */
-    var start: Position = new Position(sc.getLine, sc.getColumn, sc.getOffset)
+    /** The first position of the token that is currently being lexed. */
+    var startPos: SourcePosition = SourcePosition.mkFromZeroIndexed(sc.getLine, sc.getColumn.toShort)
+
+    /** The first offset of the token that is currently being lexed. */
+    var startOffset: Int = sc.getOffset
 
     /** Set `start` to the current position. */
     def resetStart(): Unit = {
-      start = new Position(sc.getLine, sc.getColumn, sc.getOffset)
+      startPos = SourcePosition.mkFromZeroIndexed(sc.getLine, sc.getColumn.toShort)
+      startOffset = sc.getOffset
     }
 
     /** The sequence of tokens produced by the lexer. */
@@ -220,9 +224,6 @@ object Lexer {
     val errors: mutable.ArrayBuffer[LexerError] = new mutable.ArrayBuffer[LexerError]()
 
   }
-
-  /** A source position keeping track of both line, column as well as absolute character offset. */
-  private class Position(val line: Int, val column: Int, val offset: Int)
 
   /** Run the lexer on multiple `Source`s in parallel. */
   def run(root: ReadAst.Root, oldTokens: Map[Source, Array[Token]], changeSet: ChangeSet)(implicit flix: Flix): (Map[Source, Array[Token]], List[LexerError]) =
@@ -276,7 +277,7 @@ object Lexer {
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
     val (b, e) = getRangeFromStart()
-    s.tokens.append(Token(kind, s.src, s.start.offset, s.sc.getOffset, b, e))
+    s.tokens.append(Token(kind, s.src, s.startOffset, s.sc.getOffset, b, e))
     s.resetStart()
   }
 
@@ -923,11 +924,11 @@ object Lexer {
   private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State): SourceLocation =
     SourceLocation(isReal = true, s.src, start, end)
 
-  /** Returns the [[SourcePosition]] at [[State.start]]. */
+  /** Returns the [[SourcePosition]] at [[State.startPos]]. */
   private def sourcePositionAtStart()(implicit s: State): SourcePosition =
-    SourcePosition.mkFromZeroIndexed(s.start.line, s.start.column)
+    s.startPos
 
-  /** Returns a single-width [[SourceLocation]] starting at [[State.start]]. */
+  /** Returns a single-width [[SourceLocation]] starting at [[State.startPos]]. */
   private def sourceLocationAtStart()(implicit s: State): SourceLocation =
     SourceLocation.point(isReal = true, s.src, sourcePositionAtStart())
 
@@ -945,10 +946,10 @@ object Lexer {
     mkSourceLocation(b, e)
   }
 
-  /** Returns the position of [[State.start]] and the exclusive endpoint of the current position. */
+  /** Returns the position of [[State.startPos]] and the exclusive endpoint of the current position. */
   private def getRangeFromStart()(implicit s: State): (SourcePosition, SourcePosition) = {
     val b = sourcePositionAtStart()
-    val e = if (s.start.offset != s.sc.getOffset) exclusiveSourcePositionAtCurrent() else sourcePositionAtCurrent()
+    val e = if (s.startOffset != s.sc.getOffset) exclusiveSourcePositionAtCurrent() else sourcePositionAtCurrent()
     (b, e)
   }
 
