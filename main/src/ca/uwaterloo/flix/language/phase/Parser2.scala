@@ -1487,7 +1487,7 @@ object Parser2 {
         nthToken(0).flatMap(parseBinaryOp) match {
           case Some(right) =>
             leftOpt match {
-              case Some(left) if !rightBindsTighter(left, right) =>
+              case Some(left) if !Op.rightBindsTighter(left, right) =>
                 // We want to allow an unbounded number of cons `a :: b :: c :: ...`.
                 // Hence we special case on whether the left token is ::. If it is,
                 // we avoid consuming any fuel.
@@ -1584,7 +1584,7 @@ object Parser2 {
     sealed trait Op {
 
       /** Precedence for operators, lower is higher precedence. */
-      def precedence: Int = this match {
+      private def precedence: Int = this match {
         case Op.InstanceOf => 0
         case Op.Or => 1
         case Op.And => 2
@@ -1606,7 +1606,7 @@ object Parser2 {
         * These operators are right associative.
         * "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z".
         */
-      def isRightAssoc: Boolean = this match {
+      private def isRightAssoc: Boolean = this match {
         case Op.Concat => true
         case Op.Cons => true
         case _ => false
@@ -1614,6 +1614,15 @@ object Parser2 {
     }
 
     private object Op {
+
+      def rightBindsTighter(left: Op, right: Op): Boolean = {
+        if (left.precedence == right.precedence && left.isRightAssoc) {
+          true
+        } else {
+          right.precedence > left.precedence
+        }
+      }
+
       case object And extends Op
 
       case object Compare extends Op
@@ -1665,14 +1674,6 @@ object Parser2 {
       case object PlusUnary extends Op
 
       case object UserOperator extends Op
-    }
-
-    private def rightBindsTighter(left: Op, right: Op): Boolean = {
-      if (left.precedence == right.precedence && left.isRightAssoc) {
-        true
-      } else {
-        right.precedence > left.precedence
-      }
     }
 
     private def arguments()(implicit s: State): Unit = {
