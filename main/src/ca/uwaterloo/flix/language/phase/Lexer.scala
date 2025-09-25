@@ -578,6 +578,7 @@ object Lexer {
   private def acceptString()(implicit s: State): TokenKind = {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
+      s.sc.advanceWhile(c => c != '\\' && c != '{' && c != '\"' && c != '\n')
       val hasEscapes = consumeSingleEscapes()
       var p = if (!eof()) {
         s.sc.peek
@@ -586,7 +587,7 @@ object Lexer {
       }
       // Check for the beginning of a string interpolation.
       val prev = s.sc.nth(-1)
-      val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
+      val isInterpolation = p == '{' && !hasEscapes && prev.contains('$')
       if (isInterpolation) {
         acceptStringInterpolation() match {
           case e@TokenKind.Err(_) => return e
@@ -684,6 +685,7 @@ object Lexer {
     */
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
+      s.sc.advanceWhile(c => c != '\\' && c != '"')
       consumeSingleEscapes()
       if (s.sc.advanceIfMatch('"')) {
         return TokenKind.LiteralRegex
