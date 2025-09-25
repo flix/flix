@@ -299,22 +299,12 @@ object Lexer {
     // Beware that the order of these match cases affect both behaviour and performance.
     // If the order needs to change, make sure to run tests and benchmarks.
 
-    acceptIfKeyword() match {
+    acceptIfSimpleToken() match {
       case Some(token) => return token
       case None => // nop
     }
 
-    val peeked = s.sc.peekAndAdvance()
-
-    peeked match {
-      case 'd' if s.sc.peekIs(_ == '"') => return TokenKind.DebugInterpolator
-      case 'r' if s.sc.advanceIfMatch("egex\"") => return acceptRegex()
-      case c if isFirstNameChar(c) => return acceptName(c.isUpper)
-      case c if isMathNameChar(c) => return acceptMathName()
-      case _ => // nop
-    }
-
-    acceptIfSimpleToken() match {
+    acceptIfKeyword() match {
       case Some(token) => return token
       case None => // nop
     }
@@ -324,7 +314,11 @@ object Lexer {
       case None => // nop
     }
 
-   peeked match {
+    s.sc.peekAndAdvance() match {
+     case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
+     case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
+     case c if isFirstNameChar(c) => acceptName(c.isUpper)
+     case c if isMathNameChar(c) => acceptMathName()
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
