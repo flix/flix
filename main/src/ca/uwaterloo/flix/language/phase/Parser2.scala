@@ -690,7 +690,6 @@ object Parser2 {
     while (continue && !isTail && !eof()) {
       nth(0) match {
         case TokenKind.Dot =>
-          println(nth(1))
           if (!kinds.contains(nth(1))) {
             if (!allowTrailingDot) {
               // Trailing dot: stop parsing the qualified name.
@@ -711,7 +710,6 @@ object Parser2 {
               continue = false
             }
           } else {
-            println("continue")
             advance() // Eat the dot
             val mark = open()
             val found = expectAnyOpt(kinds)
