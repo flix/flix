@@ -39,6 +39,12 @@ import scala.util.Random
   */
 object Lexer {
 
+  /** A median chars per token estimation used for the initial size of the token array buffer. */
+  private val CharsPerToken: Int = {
+    // As of September 2025 the standard library has a median of 6.9.
+    8
+  }
+
   /** The end-of-file character (`'\u0000'`). */
   private val EOF = '\u0000'
 
@@ -205,12 +211,11 @@ object Lexer {
       start = new Position(sc.getLine, sc.getColumn, sc.getOffset)
     }
 
-    /**
-      * The sequence of tokens produced by the lexer.
-      *
-      * Note: The initial size of the array buffer has been determined by careful profiling.
-      */
-    val tokens: mutable.ArrayBuffer[Token] = new mutable.ArrayBuffer(initialSize = 256)
+    /** The sequence of tokens produced by the lexer. */
+    val tokens: mutable.ArrayBuffer[Token] = {
+      // The needed size is guessed based on the chars per token estimate, reducing the amount of enlargements.
+      new mutable.ArrayBuffer(initialSize = src.data.length / CharsPerToken)
+    }
 
     /** The list of errors in the `tokens` array. */
     val errors: mutable.ArrayBuffer[LexerError] = new mutable.ArrayBuffer[LexerError]()
@@ -325,7 +330,7 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
+      case '%' if s.sc.advanceIfMatch('%') => acceptBuiltIn()
       case '$' =>
         if (s.sc.peekIs(isFirstNameChar)) {
           acceptEscapedName()
@@ -382,13 +387,13 @@ object Lexer {
           } else TokenKind.Underscore
         } else TokenKind.Underscore
       case c if c.isDigit =>
-        if (c == '0' && s.sc.peekIs(_ == 'x')) {
+        if (c == '0' && s.sc.advanceIfMatch('x')) {
           acceptHexNumber()
         } else {
           acceptNumber()
         }
       case c if isUserOp(c) => acceptUserDefinedOp()
-      case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtStart()))
+      case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtCurrent()))
     }
   }
 
@@ -406,12 +411,11 @@ object Lexer {
 
   /** Moves current position past a built-in function (e.g. "%%BUILT_IN%%"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    s.sc.advance() // Consume `%`.
     s.sc.advanceWhile(isBuiltInChar)
     if (s.sc.advanceIfMatch("%%")) {
       TokenKind.BuiltIn
     } else {
-      mkErrorKind(LexerError.UnterminatedBuiltIn(sourceLocationAtStart()))
+      mkErrorKind(LexerError.UnterminatedBuiltIn(sourceLocationFromStart()))
     }
   }
 
@@ -492,7 +496,7 @@ object Lexer {
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
     } else {
-      mkErrorKind(LexerError.UnterminatedInfixFunction(sourceLocationAtStart()))
+      mkErrorKind(LexerError.UnterminatedInfixFunction(sourceLocationFromStart()))
     }
   }
 
@@ -542,10 +546,10 @@ object Lexer {
       var p = if (!eof()) {
         s.sc.peek
       } else {
-        return mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
+        return mkErrorKind(LexerError.UnterminatedString(sourceLocationFromStart()))
       }
       // Check for the beginning of a string interpolation.
-      val prev = s.sc.previous
+      val prev = s.sc.nth(-1)
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
       if (isInterpolation) {
         acceptStringInterpolation() match {
@@ -557,7 +561,7 @@ object Lexer {
             if (!eof()) {
               p = s.sc.peek
             } else {
-              return mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
+              return mkErrorKind(LexerError.UnterminatedString(sourceLocationFromStart()))
             }
         }
       }
@@ -568,11 +572,11 @@ object Lexer {
       }
       // Check if file ended on a '\', meaning that the string was unterminated.
       if (p == '\n') {
-        return mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
+        return mkErrorKind(LexerError.UnterminatedString(sourceLocationFromStart()))
       }
       s.sc.advance()
     }
-    mkErrorKind(LexerError.UnterminatedString(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedString(sourceLocationFromStart()))
   }
 
   /**
@@ -629,14 +633,13 @@ object Lexer {
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
-      if (s.sc.peekIs(_ == '\'')) {
-        s.sc.advance()
+      if (s.sc.advanceIfMatch('\'')) {
         return TokenKind.LiteralChar
       }
       prev = s.sc.peekAndAdvance()
     }
 
-    mkErrorKind(LexerError.UnterminatedChar(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedChar(sourceLocationFromStart()))
   }
 
   /**
@@ -646,25 +649,18 @@ object Lexer {
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
       consumeSingleEscapes()
-      if (s.sc.peekIs(_ == '"')) {
-        s.sc.advance()
+      if (s.sc.advanceIfMatch('"')) {
         return TokenKind.LiteralRegex
       }
       s.sc.advance()
     }
 
-    mkErrorKind(LexerError.UnterminatedRegex(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedRegex(sourceLocationFromStart()))
   }
 
   /** Returns `true` if `c` is recognized by `[0-9a-z._]`. */
   private def isNumberLikeChar(c: Char): Boolean =
     c.isDigit || c.isLetter || c == '.' || c == '_'
-
-  /** Consumes the remaining [[isNumberLikeChar]] characters and returns `error`. */
-  private def wrapAndConsume(error: LexerError)(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isNumberLikeChar)
-    mkErrorKind(error)
-  }
 
   /** This should be understood as a control effect - fully handled inside [[acceptNumber]]. */
   private sealed case class NumberError(kind: TokenKind) extends RuntimeException
@@ -690,11 +686,15 @@ object Lexer {
       */
     def acceptDigits(soft: Boolean): Unit = {
       if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
-        throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+        val loc = sourceLocationAtCurrent()
+        s.sc.advanceWhile(isNumberLikeChar)
+        throw NumberError(mkErrorKind(LexerError.ExpectedDigit(loc)))
       }
       while (s.sc.advanceIfMatch('_')) {
         if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
-          throw NumberError(wrapAndConsume(LexerError.ExpectedDigit(sourceLocationAtCurrent())))
+          val loc = sourceLocationAtCurrent()
+          s.sc.advanceWhile(isNumberLikeChar)
+          throw NumberError(mkErrorKind(LexerError.ExpectedDigit(loc)))
         }
       }
     }
@@ -730,11 +730,13 @@ object Lexer {
 
     // Now the main number is parsed. Next is the suffix.
 
-    def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, start: SourceLocation): TokenKind = {
+    def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, suffixStart: SourcePosition): TokenKind = {
       if (s.sc.peekIs(isNumberLikeChar)) {
-        wrapAndConsume(LexerError.IncorrectNumberSuffix(start))
+        s.sc.advanceWhile(isNumberLikeChar)
+        mkErrorKind(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else if (mustBeFloat && intSuffix) {
-        wrapAndConsume(LexerError.IntegerSuffixOnFloat(start))
+        s.sc.advanceWhile(isNumberLikeChar)
+        mkErrorKind(LexerError.IntegerSuffixOnFloat(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else token
     }
 
@@ -743,25 +745,33 @@ object Lexer {
     // This means that '32i33' will report 'i33' is an invalid suffix instead of saying that 'i' is unexpected.
     val c = s.sc.peek
     if (c == 'i') {
-      // Construct the location now, for cases like `42i322`.
-      val loc = sourceLocationAtCurrent()
+      // Construct the position now, for cases like `42i322`.
+      val suffixStart = sourcePositionAtCurrent()
 
-      if (s.sc.advanceIfMatch("i8")) acceptOrSuffixError(TokenKind.LiteralInt8, intSuffix = true, loc)
-      else if (s.sc.advanceIfMatch("i16")) acceptOrSuffixError(TokenKind.LiteralInt16, intSuffix = true, loc)
-      else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32, intSuffix = true, loc)
-      else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64, intSuffix = true, loc)
-      else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt, intSuffix = true, loc)
-      else wrapAndConsume(LexerError.IncorrectNumberSuffix(loc))
+      if (s.sc.advanceIfMatch("i8")) acceptOrSuffixError(TokenKind.LiteralInt8, intSuffix = true, suffixStart)
+      else if (s.sc.advanceIfMatch("i16")) acceptOrSuffixError(TokenKind.LiteralInt16, intSuffix = true, suffixStart)
+      else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32, intSuffix = true, suffixStart)
+      else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64, intSuffix = true, suffixStart)
+      else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt, intSuffix = true, suffixStart)
+      else {
+        s.sc.advanceWhile(isNumberLikeChar)
+        mkErrorKind(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+      }
     } else if (c == 'f') {
-      // Construct the location now, for cases like `42f322`.
-      val loc = sourceLocationAtCurrent()
+      // Construct the position now, for cases like `42f322`.
+      val suffixStart = sourcePositionAtCurrent()
 
-      if (s.sc.advanceIfMatch("f32")) acceptOrSuffixError(TokenKind.LiteralFloat32, intSuffix = false, loc)
-      else if (s.sc.advanceIfMatch("f64")) acceptOrSuffixError(TokenKind.LiteralFloat64, intSuffix = false, loc)
-      else if (s.sc.advanceIfMatch("ff")) acceptOrSuffixError(TokenKind.LiteralBigDecimal, intSuffix = false, loc)
-      else wrapAndConsume(LexerError.IncorrectNumberSuffix(loc))
+      if (s.sc.advanceIfMatch("f32")) acceptOrSuffixError(TokenKind.LiteralFloat32, intSuffix = false, suffixStart)
+      else if (s.sc.advanceIfMatch("f64")) acceptOrSuffixError(TokenKind.LiteralFloat64, intSuffix = false, suffixStart)
+      else if (s.sc.advanceIfMatch("ff")) acceptOrSuffixError(TokenKind.LiteralBigDecimal, intSuffix = false, suffixStart)
+      else {
+        s.sc.advanceWhile(isNumberLikeChar)
+        mkErrorKind(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+      }
     } else if (isNumberLikeChar(c)) {
-      wrapAndConsume(LexerError.MalformedNumber(c, sourceLocationAtCurrent()))
+      val loc = sourceLocationAtCurrent()
+      s.sc.advanceWhile(isNumberLikeChar)
+      mkErrorKind(LexerError.MalformedNumber(c, loc))
     } else {
       if (mustBeFloat) TokenKind.LiteralFloat
       else TokenKind.LiteralInt
@@ -782,17 +792,19 @@ object Lexer {
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
-    s.sc.advance() // Consume 'x'.
-
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-      return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+      val loc = sourceLocationAtCurrent()
+      s.sc.advanceWhile(isNumberLikeChar)
+      return mkErrorKind(LexerError.ExpectedHexDigit(loc))
     }
 
     // Consume a `(_\h+)*`
     while (s.sc.advanceIfMatch('_')) {
       if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
-        return wrapAndConsume(LexerError.ExpectedHexDigit(sourceLocationAtCurrent()))
+        val loc = sourceLocationAtCurrent()
+        s.sc.advanceWhile(isNumberLikeChar)
+        return mkErrorKind(LexerError.ExpectedHexDigit(loc))
       }
     }
 
@@ -801,12 +813,13 @@ object Lexer {
     // This means that '0xFFi33' will report 'i33' is an invalid suffix instead of saying that 'i' is unexpected.
     val c = s.sc.peek
     if (c == 'i') {
-      // Construct the location now, for cases like `0xi322`.
-      val loc = sourceLocationAtCurrent()
+      // Construct the position now, for cases like `0xi322`.
+      val suffixStart = sourcePositionAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
         if (s.sc.peekIs(isNumberLikeChar)) {
-          wrapAndConsume(LexerError.IncorrectHexNumberSuffix(loc))
+          s.sc.advanceWhile(isNumberLikeChar)
+          mkErrorKind(LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
         } else token
       }
 
@@ -815,9 +828,14 @@ object Lexer {
       else if (s.sc.advanceIfMatch("i32")) acceptOrSuffixError(TokenKind.LiteralInt32)
       else if (s.sc.advanceIfMatch("i64")) acceptOrSuffixError(TokenKind.LiteralInt64)
       else if (s.sc.advanceIfMatch("ii")) acceptOrSuffixError(TokenKind.LiteralBigInt)
-      else wrapAndConsume(LexerError.IncorrectHexNumberSuffix(sourceLocationAtCurrent()))
+      else {
+        s.sc.advanceWhile(isNumberLikeChar)
+        mkErrorKind(LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
+      }
     } else if (isNumberLikeChar(c)) {
-      wrapAndConsume(LexerError.MalformedHexNumber(c, sourceLocationAtCurrent()))
+      val loc = sourceLocationAtCurrent()
+      s.sc.advanceWhile(isNumberLikeChar)
+      mkErrorKind(LexerError.MalformedHexNumber(c, loc))
     } else TokenKind.LiteralInt
   }
 
@@ -862,7 +880,7 @@ object Lexer {
         s.sc.advance()
       }
     }
-    mkErrorKind(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
+    mkErrorKind(LexerError.UnterminatedBlockComment(sourceLocationFromStart()))
   }
 
 
@@ -885,6 +903,12 @@ object Lexer {
   /** Returns a single-width [[SourceLocation]] starting at the current position. */
   private def sourceLocationAtCurrent()(implicit s: State): SourceLocation =
     SourceLocation.point(isReal = true, s.src, sourcePositionAtCurrent())
+
+  /** Returns a [[SourceLocation]] spanning the current consumed input since the last token, exclusive of the current position. */
+  private def sourceLocationFromStart()(implicit s: State): SourceLocation = {
+    val (b, e) = getRangeFromStart()
+    mkSourceLocation(b, e)
+  }
 
   /** Returns the position of [[State.start]] and the exclusive endpoint of the current position. */
   private def getRangeFromStart()(implicit s: State): (SourcePosition, SourcePosition) = {
@@ -1029,9 +1053,6 @@ object Lexer {
         None
       }
     }
-
-    /** Peeks the previous character if available. */
-    def previous: Option[Char] = nth(-1)
 
     /**
       * Peeks the character that cursor is currently sitting on without advancing.
