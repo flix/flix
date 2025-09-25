@@ -109,7 +109,7 @@ object SimpleType {
     */
   def mkArray(tpe: SimpleType): SimpleType.Array = {
     val t = Array(tpe)
-    Cache.getCanonicalValue(t).asInstanceOf[SimpleType.Array]
+    Cache.getCanonicalValue(t)
   }
 
   /**
@@ -117,7 +117,7 @@ object SimpleType {
     */
   def mkTuple(tpes: List[SimpleType]): SimpleType.Tuple = {
     val t = Tuple(tpes)
-    Cache.getCanonicalValue(t).asInstanceOf[SimpleType.Tuple]
+    Cache.getCanonicalValue(t)
   }
 
   /**
@@ -125,7 +125,7 @@ object SimpleType {
     */
   def mkArrow(targs: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
     val t = Arrow(targs, result)
-    Cache.getCanonicalValue(t).asInstanceOf[SimpleType.Arrow]
+    Cache.getCanonicalValue(t)
   }
 
   /**
@@ -133,7 +133,7 @@ object SimpleType {
     */
   def mkEnum(sym: Symbol.EnumSym, targs: List[SimpleType]): SimpleType.Enum = {
     val t = Enum(sym, targs)
-    Cache.getCanonicalValue(t).asInstanceOf[SimpleType.Enum]
+    Cache.getCanonicalValue(t)
   }
 
   /** Returns `tpe` if it's a primitive type and returns [[SimpleType.Object]] otherwise. */
