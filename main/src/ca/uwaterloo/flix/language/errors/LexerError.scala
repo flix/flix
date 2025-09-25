@@ -195,7 +195,7 @@ object LexerError {
   /**
     * An error raised when an unterminated block comment is encountered.
     *
-    * @param loc The location of the opening "/ *".
+    * @param loc The location of the block comment.
     */
   case class UnterminatedBlockComment(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated block-comment."
@@ -204,7 +204,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '*/' in block-comment.
          |
-         |${code(loc, "Block-comment starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -213,7 +213,7 @@ object LexerError {
   /**
     * An error raised when an unterminated built-in function is encountered.
     *
-    * @param loc The location of the opening "%%".
+    * @param loc The location of the built-in.
     */
   case class UnterminatedBuiltIn(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated built-in."
@@ -222,7 +222,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '%%' in built-in.
          |
-         |${code(loc, "Built-in starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -231,7 +231,7 @@ object LexerError {
   /**
     * An error raised when an unterminated char is encountered.
     *
-    * @param loc The location of the opening `'`.
+    * @param loc The location of the char.
     */
   case class UnterminatedChar(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated char."
@@ -240,7 +240,7 @@ object LexerError {
       import formatter.*
       s""">> Missing `'` in char.
          |
-         |${code(loc, "Char starts here")}
+         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -249,7 +249,7 @@ object LexerError {
   /**
     * An error raised when an unterminated infix function is encountered.
     *
-    * @param loc The location of the opening '&#96;'.
+    * @param loc The location of the infix function.
     */
   case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated infix function."
@@ -258,7 +258,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '`' in infix function.
          |
-         |${code(loc, "Infix function starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
@@ -267,7 +267,7 @@ object LexerError {
   /**
     * An error raised when an unterminated regex is encountered.
     *
-    * @param loc The location of the opening `"`.
+    * @param loc The location of the regex.
     */
   case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated regex."
@@ -276,7 +276,7 @@ object LexerError {
       import formatter.*
       s""">> Missing `"` in regex.
          |
-         |${code(loc, "Regex starts here")}
+         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -285,7 +285,7 @@ object LexerError {
   /**
     * An error raised when an unterminated string is encountered.
     *
-    * @param loc The location of the opening `"`.
+    * @param loc The location of the string.
     */
   case class UnterminatedString(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Unterminated string."
@@ -294,7 +294,7 @@ object LexerError {
       import formatter.*
       s""">> Missing '"' in string.
          |
-         |${code(loc, "String starts here.")}
+         |${code(loc, "Here.")}
          |
          |""".stripMargin
     }
