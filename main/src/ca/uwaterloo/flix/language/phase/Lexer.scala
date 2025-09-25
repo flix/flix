@@ -281,7 +281,7 @@ object Lexer {
     s.resetStart()
   }
 
-  /**  Wraps `error` in [[TokenKind]] and pushes the error to [[State]]. */
+  /** Wraps `error` in [[TokenKind]] and pushes the error to [[State]]. */
   private def mkErrorKind(error: LexerError)(implicit s: State): TokenKind = {
     s.errors.append(error)
     TokenKind.Err(error)
@@ -315,10 +315,10 @@ object Lexer {
     }
 
     s.sc.peekAndAdvance() match {
-     case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
-     case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
-     case c if isFirstNameChar(c) => acceptName(c.isUpper)
-     case c if isMathNameChar(c) => acceptMathName()
+      case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
+      case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
+      case c if isFirstNameChar(c) => acceptName(c.isUpper)
+      case c if isMathNameChar(c) => acceptMathName()
       case '.' =>
         if (s.sc.advanceIfMatch("..")) {
           TokenKind.DotDotDot
