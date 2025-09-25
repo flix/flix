@@ -371,6 +371,7 @@ object Lexer {
         } else {
           TokenKind.StructArrow
         }
+      case c if isMathNameChar(c) => acceptMathName()
       case '_' =>
         if (!eof()) {
           val p = s.sc.peek
@@ -392,7 +393,6 @@ object Lexer {
           acceptNumber()
         }
       case c if isUserOp(c) => acceptUserDefinedOp()
-      case c if isMathNameChar(c) => acceptMathName()
       case c => mkErrorKind(LexerError.UnexpectedChar(c, sourceLocationAtCurrent()))
     }
   }
