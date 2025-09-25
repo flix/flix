@@ -661,8 +661,9 @@ object Parser2 {
     *
     * @param tail If any kind found is in `tail` then no further dot separated tokens will be
     *             consumed.
+    * @param allowTrailingDot If this is `false`, a trailing `.` will result in a parser error.
     */
-  private def nameAllowQualified(kinds: Set[TokenKind], tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
+  private def nameAllowQualified(kinds: Set[TokenKind], allowTrailingDot: Boolean = false, tail: Set[TokenKind] = Set(TokenKind.NameLowerCase))(implicit sctx: SyntacticContext, s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
 
     // Check if we are at a keyword and emit nice error if so.
@@ -689,21 +690,28 @@ object Parser2 {
     while (continue && !isTail && !eof()) {
       nth(0) match {
         case TokenKind.Dot =>
+          println(nth(1))
           if (!kinds.contains(nth(1))) {
-            // Trailing dot: stop parsing the qualified name.
-            val error = UnexpectedToken(
-              expected = NamedTokenSet.FromKinds(kinds),
-              actual = None,
-              sctx = sctx,
-              hint = Some("expect ident after '.'."),
-              loc = currentSourceLocation()
-            )
-            val mark = open()
-            advance()
-            close(mark, TreeKind.TrailingDot)
-            s.errors.append(error)
-            continue = false
+            if (!allowTrailingDot) {
+              // Trailing dot: stop parsing the qualified name.
+              val error = UnexpectedToken(
+                expected = NamedTokenSet.FromKinds(kinds),
+                actual = None,
+                sctx = sctx,
+                hint = Some("expect ident after '.'."),
+                loc = currentSourceLocation()
+              )
+              val mark = open()
+              advance()
+              close(mark, TreeKind.TrailingDot)
+              s.errors.append(error)
+              continue = false
+            } else {
+              // Leave the dot for further parsing.
+              continue = false
+            }
           } else {
+            println("continue")
             advance() // Eat the dot
             val mark = open()
             val found = expectAnyOpt(kinds)
@@ -803,19 +811,23 @@ object Parser2 {
     assert(at(TokenKind.KeywordUse))
     val mark = open()
     expect(TokenKind.KeywordUse)
-    nameAllowQualified(NAME_USE)
+    nameAllowQualified(NAME_USE, allowTrailingDot = true)
     // Handle use many case.
-    if (at(TokenKind.DotCurlyL)) {
-      val mark = open()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Name,
-        getItem = () => aliasedName(NAME_USE),
-        checkForItem = NAME_USE.contains,
-        breakWhen = _.isRecoverUseOrImport,
-        delimiterL = TokenKind.DotCurlyL,
-        delimiterR = TokenKind.CurlyR,
-      )
-      close(mark, TreeKind.UsesOrImports.UseMany)
+    if (eat(TokenKind.Dot)) {
+      if (at(TokenKind.CurlyL)) {
+        val mark = open()
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.Name,
+          getItem = () => aliasedName(NAME_USE),
+          checkForItem = NAME_USE.contains,
+          breakWhen = _.isRecoverUseOrImport,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+        )
+        close(mark, TreeKind.UsesOrImports.UseMany)
+      } else {
+        expectAny(Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.CurlyL))
+      }
     }
     close(mark, TreeKind.UsesOrImports.Use)
   }
@@ -825,19 +837,23 @@ object Parser2 {
     assert(at(TokenKind.KeywordImport))
     val mark = open()
     expect(TokenKind.KeywordImport)
-    nameAllowQualified(NAME_JAVA, tail = Set())
+    nameAllowQualified(NAME_JAVA, allowTrailingDot = true, tail = Set())
     // Handle import many case.
-    if (at(TokenKind.DotCurlyL)) {
-      val mark = open()
-      oneOrMore(
-        namedTokenSet = NamedTokenSet.Name,
-        getItem = () => aliasedName(NAME_JAVA),
-        checkForItem = NAME_JAVA.contains,
-        breakWhen = _.isRecoverUseOrImport,
-        delimiterL = TokenKind.DotCurlyL,
-        delimiterR = TokenKind.CurlyR,
-      )
-      close(mark, TreeKind.UsesOrImports.ImportMany)
+    if (eat(TokenKind.Dot)) {
+      if (at(TokenKind.CurlyL)) {
+        val mark = open()
+        oneOrMore(
+          namedTokenSet = NamedTokenSet.Name,
+          getItem = () => aliasedName(NAME_JAVA),
+          checkForItem = NAME_JAVA.contains,
+          breakWhen = _.isRecoverUseOrImport,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR,
+        )
+        close(mark, TreeKind.UsesOrImports.ImportMany)
+      } else {
+        expectAny(Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.CurlyL))
+      }
     }
     close(mark, TreeKind.UsesOrImports.Import)
   }

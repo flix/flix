@@ -154,7 +154,6 @@ object Lexer {
       ("(", TokenKind.ParenL),
       (")", TokenKind.ParenR),
       (",", TokenKind.Comma),
-      (".{", TokenKind.DotCurlyL),
       (";", TokenKind.Semi),
       ("???", TokenKind.HoleAnonymous),
       ("[", TokenKind.BracketL),
