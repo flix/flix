@@ -325,7 +325,7 @@ object LexerError {
       case '\n' => "\\n"
       case '\t' => "\\t"
       case _ if 32 <= c.toInt && c.toInt <= 126 => c.toString
-      case _ => s"\\u${c.toHexString}"
+      case _ => s"\\u${c.toHexString.toUpperCase}"
     }
   }
 
