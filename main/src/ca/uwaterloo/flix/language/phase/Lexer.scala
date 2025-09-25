@@ -1149,20 +1149,20 @@ object Lexer {
       */
     def advanceIfInTree(node: PrefixTree.Node[TokenKind], tailCondition: Char => Boolean): Option[TokenKind] = {
       @tailrec
-      def loop(offset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
+      def loop(localOffset: Int, node: PrefixTree.Node[TokenKind]): Option[TokenKind] = {
         // A potential match must be:
         //   - The longest match in the keyword map.
         //   - Followed by a char that matches `tailCondition` (or EOF).
-        if (inBounds) {
-          val c = data(offset)
+        if (localOffset < data.length) {
+          val c = data(localOffset)
           node.getNode(c) match {
             case Some(nextNode) =>
-              loop(offset + 1, nextNode)
+              loop(localOffset + 1, nextNode)
             case None =>
               if (tailCondition(c)) {
                 // Full match if node has a value.
                 val res = node.getValue
-                res.foreach(_ => advanceN(offset))
+                res.foreach(_ => advanceN(localOffset))
                 res
               } else {
                 // Not a full match.
@@ -1172,12 +1172,12 @@ object Lexer {
         } else {
           // EOF - Full match if node has a value.
           val res = node.getValue
-          res.foreach(_ => advanceN(offset))
+          res.foreach(_ => advanceN(localOffset))
           res
         }
       }
 
-      loop(0, node)
+      loop(this.offset, node)
     }
 
   }
