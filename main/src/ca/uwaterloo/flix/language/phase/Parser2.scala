@@ -1487,25 +1487,15 @@ object Parser2 {
         nthToken(0).flatMap(parseBinaryOp) match {
           case Some(right) =>
             leftOpt match {
-              case Some(left) =>
-                if (rightBindsTighter(left, right)) {
-                  val mark = openBefore(lhs)
-                  val markOp = open()
-                  advance()
-                  close(markOp, TreeKind.Operator)
-                  expression(Some(right))
-                  lhs = close(mark, TreeKind.Expr.Binary)
-                  lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-                } else {
-                  // We want to allow an unbounded number of cons `a :: b :: c :: ...`.
-                  // Hence we special case on whether the left token is ::. If it is,
-                  // we avoid consuming any fuel.
-                  // The next nth lookup will always fail, so we add fuel to account for it.
-                  // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                  if (left == Op.Cons) s.fuel += 2
-                  continue = false
-                }
-              case None =>
+              case Some(left) if !rightBindsTighter(left, right) =>
+                // We want to allow an unbounded number of cons `a :: b :: c :: ...`.
+                // Hence we special case on whether the left token is ::. If it is,
+                // we avoid consuming any fuel.
+                // The next nth lookup will always fail, so we add fuel to account for it.
+                // The lookup for KeywordWithout will always happen so we add fuel to account for it.
+                if (left == Op.Cons) s.fuel += 2
+                continue = false
+              case _ =>
                 val mark = openBefore(lhs)
                 val markOp = open()
                 advance()
@@ -1515,13 +1505,8 @@ object Parser2 {
                 lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
             }
           case None =>
-            // Non-operator or EOF
-
-            // We want to allow an unbounded number of cons `a :: b :: c :: ...`.
-            // Hence we special case on whether the left token is ::. If it is,
-            // we avoid consuming any fuel.
-            // The next nth lookup will always fail, so we add fuel to account for it.
-            // The lookup for KeywordWithout will always happen so we add fuel to account for it.
+            // Non-operator or EOF.
+            // Add fuel for the same reason as above.
             if (leftOpt.contains(Op.Cons)) s.fuel += 2
             continue = false
         }
@@ -1630,40 +1615,56 @@ object Parser2 {
 
     private object Op {
       case object And extends Op
+
       case object Compare extends Op
+
       case object Concat extends Op
+
       case object Cons extends Op
+
       case object DatalogCompose extends Op
+
       case object Discard extends Op
+
       case object Div extends Op
+
       case object Eq extends Op
+
       case object Force extends Op
+
       case object Greater extends Op
+
       case object GreaterEq extends Op
+
       case object Infix extends Op
+
       case object InstanceOf extends Op
+
       case object Lazy extends Op
+
       case object Less extends Op
+
       case object LessEq extends Op
+
       case object MathName extends Op
+
       case object MinusBinary extends Op
+
       case object MinusUnary extends Op
+
       case object Mul extends Op
+
       case object Neq extends Op
+
       case object Not extends Op
+
       case object Or extends Op
+
       case object PlusBinary extends Op
+
       case object PlusUnary extends Op
+
       case object UserOperator extends Op
-    }
-
-    sealed trait OpKind
-
-    private object OpKind {
-
-      case object Unary extends OpKind
-
-      case object Binary extends OpKind
     }
 
     private def rightBindsTighter(left: Op, right: Op): Boolean = {
@@ -2020,7 +2021,7 @@ object Parser2 {
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
-      expression(leftOpt = parseUnaryOp(op.get))
+      expression(leftOpt = op.flatMap(parseUnaryOp))
       close(mark, TreeKind.Expr.Unary)
     }
 
@@ -2381,9 +2382,9 @@ object Parser2 {
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
              | (TokenKind.Minus, TokenKind.NameLowerCase) =>
-            // Either `{ +y = expr | expr }` or `{ x = expr }`.
-            // Both are parsed the same and the difference is handled in Weeder.
-            recordOperation()
+          // Either `{ +y = expr | expr }` or `{ x = expr }`.
+          // Both are parsed the same and the difference is handled in Weeder.
+          recordOperation()
         case _ => block()
       }
     }
