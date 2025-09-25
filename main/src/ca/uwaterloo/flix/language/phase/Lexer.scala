@@ -304,12 +304,12 @@ object Lexer {
       case None => // nop
     }
 
-    acceptIfKeyword() match {
+    acceptIfOperator() match {
       case Some(token) => return token
       case None => // nop
     }
 
-    acceptIfOperator() match {
+    acceptIfKeyword() match {
       case Some(token) => return token
       case None => // nop
     }
