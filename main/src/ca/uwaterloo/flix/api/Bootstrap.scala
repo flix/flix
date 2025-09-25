@@ -304,7 +304,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       manifest =>
         flatMapN(Steps.resolveFlixDependencies(manifest)) {
           dependencyManifests =>
-            mapN(Steps.installDependencies(dependencyManifests)) {
+            mapN(Steps.installDependencies(dependencyManifests).toValidation) {
               _ =>
                 Steps.addLocalFlixFiles()
                 ()
@@ -787,17 +787,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *   1. Paths to `.jar` dependencies in `lib/cache` (maven).
       *   1. Paths to `.jar` dependencies in `lib/external` (urls).
       */
-    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
-      flatMapN(installFlixDependencies(dependencyManifests)) {
-        flixPaths =>
-          flatMapN(installMavenDependencies(dependencyManifests)) {
-            mavenPaths =>
-              mapN(installJarDependencies(dependencyManifests)) {
-                jarPaths =>
-                  out.println("Dependency resolution completed.")
-                  List(flixPaths, mavenPaths, jarPaths)
-              }
-          }
+    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[List[Path]], BootstrapError] = {
+      for {
+        flixPaths <- installFlixDependencies(dependencyManifests)
+        mavenPaths <- installMavenDependencies(dependencyManifests)
+        jarPaths <- installJarDependencies(dependencyManifests)
+      } yield {
+        out.println("Dependency resolution completed.")
+        List(flixPaths, mavenPaths, jarPaths)
       }
     }
 
@@ -806,13 +803,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
         case Ok(paths: List[Path]) =>
           flixPackagePaths = paths
-          Validation.Success(paths)
+          Ok(paths)
         case Err(e) =>
-          Validation.Failure(BootstrapError.FlixPackageError(e))
+          Err(BootstrapError.FlixPackageError(e))
       }
     }
 
@@ -821,13 +818,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
       JarPackageManager.installAll(dependencyManifests, projectPath) match {
         case Ok(paths) =>
           jarPackagePaths = paths
-          Validation.Success(paths)
+          Ok(paths)
         case Err(e) =>
-          Validation.Failure(BootstrapError.JarPackageError(e))
+          Err(BootstrapError.JarPackageError(e))
       }
     }
 
@@ -836,13 +833,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
       MavenPackageManager.installAll(dependencyManifests, projectPath) match {
         case Ok(paths) =>
           mavenPackagePaths = paths
-          Validation.Success(paths)
+          Ok(paths)
         case Err(e) =>
-          Validation.Failure(BootstrapError.MavenPackageError(e))
+          Err(BootstrapError.MavenPackageError(e))
       }
     }
 
