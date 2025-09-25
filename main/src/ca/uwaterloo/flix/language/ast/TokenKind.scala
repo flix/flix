@@ -54,7 +54,6 @@ sealed trait TokenKind {
       case TokenKind.Dot => "'.'"
       case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
-      case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
       case TokenKind.Hash => "'#'"
@@ -322,7 +321,6 @@ sealed trait TokenKind {
          | TokenKind.DebugInterpolator
          | TokenKind.Dollar
          | TokenKind.Dot
-         | TokenKind.DotCurlyL
          | TokenKind.DotDotDot
          | TokenKind.DotWhiteSpace
          | TokenKind.Eof
@@ -565,7 +563,6 @@ sealed trait TokenKind {
          | TokenKind.CurlyR
          | TokenKind.Dollar
          | TokenKind.Dot
-         | TokenKind.DotCurlyL
          | TokenKind.DotWhiteSpace
          | TokenKind.Eof
          | TokenKind.Equal
@@ -863,8 +860,6 @@ object TokenKind {
   case object DotDotDot extends TokenKind
 
   case object DotWhiteSpace extends TokenKind
-
-  case object DotCurlyL extends TokenKind
 
   case object Equal extends TokenKind
 
