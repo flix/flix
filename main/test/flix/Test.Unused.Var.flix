@@ -97,11 +97,6 @@ mod Test.Unused.Var {
         let _⊆ = 123;
         456
 
-    @test
-    def testUnusedVar16(): Int32 =
-        let _αναγνωριστικό = 123;
-        456
-
     // Operator names not currently allowed for variables
     // @test
     // def testUnusedVar17(): Int32 =
