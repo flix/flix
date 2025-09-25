@@ -904,6 +904,7 @@ object Lexer {
   private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
     while (s.sc.inBounds) {
+      s.sc.advanceWhile(c => c != '/' && c != '*')
       if (s.sc.advanceIfMatch("/*")) {
         level += 1
       } else if (s.sc.advanceIfMatch("*/")) {
