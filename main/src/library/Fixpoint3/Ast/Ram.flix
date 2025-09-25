@@ -262,9 +262,7 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// Represents a Relational Algebra Machine (RAM) term.
     ///
-    /// Enums with a `RamId` can be referred to by the `RamId`.
-    ///
-    /// `Lit(val, id, type)` represents the literal `val`.
+    /// `Lit(val, id)` represents the literal `val`.
     ///
     /// `ProvMax([(rv1, i1), (rv2, i2), (rv3, i3), ...])` where represents computing
     /// `max(rv1[i1], rv2[i2], rv3[i3], ...)`.
@@ -288,54 +286,30 @@ mod Fixpoint3.Ast.Ram {
     ///
     @Internal
     pub enum RamTerm {
-        case Lit(Boxed, RamId, Type)
+        case Lit(Boxed, Type)
         case ProvMax(Vector[(RowVar, Int32)])
         case RowLoad(RowVar, Int32, Type, RelSym)
-        case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), RamId, Type)
-        case App1(Boxed -> Boxed, RamTerm, RamId, Type)
-        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamId, Type)
-        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamId, Type)
-        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamId, Type)
-        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm, RamId, Type)
+        case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), Type)
+        case App1(Boxed -> Boxed, RamTerm, Type)
+        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm, Type)
+        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, Type)
+        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, Type)
+        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm, Type)
     }
-
-    ///
-    /// Returns the `RamId` of `t`.
-    ///
-    @Internal
-    pub def getTermRamId(t: RamTerm): RamId = match t {
-        case RamTerm.Lit(_, id, _) => id
-        case RamTerm.ProvMax(_) => RamId.Id(-1)
-        case RamTerm.RowLoad(rv, index, _, _) => RamId.TuplePos(rv, index)
-        case RamTerm.Meet(_, _, _, id, _) => id
-        case RamTerm.App1(_ , _, id, _) => id
-        case RamTerm.App2(_, _, _, id, _) => id
-        case RamTerm.App3(_, _, _, _, id, _) => id
-        case RamTerm.App4(_, _, _, _, _, id, _) => id
-        case RamTerm.App5(_, _, _, _, _, _, id, _) => id
-    }
-
-    ///
-    /// Returns the `RamId` of the lattice-element of `rv`.
-    ///
-    @Internal
-    pub def getLatVarRamId(rv: RowVar, relSym: RelSym): RamId =
-        let arity = arityOfNonLat(relSym);
-        RamId.TuplePos(rv, arity)
 
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _, _)                      => Debug.stringify(v)
-            case RamTerm.ProvMax(loads)                    =>
+            case RamTerm.Lit(v, _)                      => Debug.stringify(v)
+            case RamTerm.ProvMax(loads)                 =>
                 let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
                 "max(${loadsStr})"
-            case RamTerm.RowLoad(var, index, _, _)         => "${var}[${index}]"
-            case RamTerm.Meet(_, lhs, rhs, _, _)           => "(${lhs} ⊓ ${rhs})"
-            case RamTerm.App1(_, v, _, _)                  => "<clo>(${v})"
-            case RamTerm.App2(_, v1, v2, _, _)             => "<clo>(${v1}, ${v2})"
-            case RamTerm.App3(_, v1, v2, v3, _, _)         => "<clo>(${v1}, ${v2}, ${v3})"
-            case RamTerm.App4(_, v1, v2, v3, v4, _, _)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-            case RamTerm.App5(_, v1, v2, v3, v4, v5, _, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case RamTerm.RowLoad(var, index, _, _)      => "${var}[${index}]"
+            case RamTerm.Meet(_, lhs, rhs, _)           => "(${lhs} ⊓ ${rhs})"
+            case RamTerm.App1(_, v, _)                  => "<clo>(${v})"
+            case RamTerm.App2(_, v1, v2, _)             => "<clo>(${v1}, ${v2})"
+            case RamTerm.App3(_, v1, v2, v3, _)         => "<clo>(${v1}, ${v2}, ${v3})"
+            case RamTerm.App4(_, v1, v2, v3, v4, _)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case RamTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
 
@@ -462,72 +436,4 @@ mod Fixpoint3.Ast.Ram {
         }
     }
 
-    /////////////////////////////////////////////////////////////////////////////
-    // RamId                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
-
-    ///
-    /// `RamId` represents a unique identifier for literals, positions in relations,
-    /// positions in tuples or input to a function.
-    ///
-    /// The uniqueness is broken by provenance for convenience of implementation.
-    /// Literals describing rules also use `Id(-1)`.
-    ///
-    /// `Id(id)` represents the id `id`. If `Id(id)` exists `RowVar.Named(id)` does not.
-    ///
-    /// `InId(id, i)` represents the `i`'th input of the term represented by `id`.
-    ///
-    /// `TuplePos(rv, i)` represents `rv[i]`.
-    ///
-    /// `RelPos(predId, i)` represents `i`'th index of the `RelSym` with PredSym-id `predId`.
-    ///
-    @Internal
-    pub enum RamId {
-        case Id(Int32)
-        case InId(Int32, Int32)
-        case TuplePos(RowVar, Int32)
-        case RelPos(Int64, Int32)
-    }
-
-    instance ToString[RamId] {
-        pub def toString(x: RamId): String = match x {
-            case (RamId.Id(i1)) => "Id[${i1}]"
-            case (RamId.InId(i0, i1)) => "InId[${i0}, ${i1}]"
-            case (RamId.TuplePos(i0, i1)) => "TuplePos[${i0}, ${i1}]"
-            case (RamId.RelPos(i0, i1)) => "RelPos[${i0}, ${i1}]"
-        }
-    }
-
-    instance Eq[RamId] {
-        pub def eq(a: RamId, b: RamId): Bool = match (a, b) {
-            case (RamId.Id(i1), RamId.Id(i2)) => i1 == i2
-            case (RamId.InId(id1, index1), RamId.InId(id2, index2)) => id1 == id2 and index1 == index2
-            case (RamId.TuplePos(i0, i1), RamId.TuplePos(j0, j1)) => i0 == j0 and i1 == j1
-            case (RamId.RelPos(i0, i1), RamId.RelPos(j0, j1)) => i0 == j0 and i1 == j1
-            case _ => false
-        }
-    }
-
-    instance Order[RamId] {
-        pub def compare(a: RamId, b: RamId): Comparison = match (a, b) {
-            case (RamId.Id(i1), RamId.Id(i2)) => i1 <=> i2
-            case (RamId.TuplePos(i0, i1), RamId.TuplePos(j0, j1)) =>
-                let firstComp = i0 <=> j0;
-                if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
-            case (RamId.RelPos(i0, i1), RamId.RelPos(j0, j1)) =>
-                let firstComp = i0 <=> j0;
-                if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
-            case (RamId.InId(i0, i1), RamId.InId(j0, j1)) =>
-                let firstComp = i0 <=> j0;
-                if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
-            case (RamId.TuplePos(_, _), _) => Comparison.LessThan
-            case (_, RamId.TuplePos(_, _)) => Comparison.GreaterThan
-            case (RamId.RelPos(_, _), _) => Comparison.LessThan
-            case (_, RamId.RelPos(_, _)) => Comparison.GreaterThan
-            case (RamId.Id(_), _) => Comparison.LessThan
-            case (_, RamId.Id(_)) => Comparison.GreaterThan
-            case (RamId.InId(_, _), _) => Comparison.LessThan
-            case (_, RamId.InId(_, _)) => Comparison.GreaterThan
-        }
-    }
 }

@@ -313,11 +313,11 @@ mod Fixpoint3.Phase.Lowering {
                     case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv2, i2, _, _), Ram.RamTerm.RowLoad(rv1, i1, _, _)) if rv == rv1 =>
                         addWriteTo(rv2, i2, rv1, i1, idToIndex, writeTo);
                         None
-                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _, _), Ram.RamTerm.Lit(val, _, ty)) if rv == rv1 =>
+                    case Ram.BoolExp.Eq(Ram.RamTerm.RowLoad(rv1, i, _, _), Ram.RamTerm.Lit(val, ty)) if rv == rv1 =>
                         let unboxed = Boxing.unboxWith(val, ty, boxing);
                         addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
                         None
-                    case Ram.BoolExp.Eq(Ram.RamTerm.Lit(val, _, ty), Ram.RamTerm.RowLoad(rv1, i, _, _)) if rv == rv1 =>
+                    case Ram.BoolExp.Eq(Ram.RamTerm.Lit(val, ty), Ram.RamTerm.RowLoad(rv1, i, _, _)) if rv == rv1 =>
                         let unboxed = Boxing.unboxWith(val, ty, boxing);
                         addConstWriteTo(unboxed, rv, i, idToIndex, writeTo, rc);
                         None
@@ -373,7 +373,7 @@ mod Fixpoint3.Phase.Lowering {
         let lowerT = lowerTerm(idToIndex, boxingInfo, meetWithMap);
         let boxing = boxingInfo;
         match term {
-            case Ram.RamTerm.Lit(val, _, ty) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, ty, boxing), val)
+            case Ram.RamTerm.Lit(val, ty) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, ty, boxing), val)
             case Ram.RamTerm.ProvMax(vec) =>
                 vec
                     |> Vector.map(match (rv, i) -> (UniqueInts.getIndex(rv, idToIndex), i))
@@ -388,15 +388,15 @@ mod Fixpoint3.Phase.Lowering {
                             ExecutableRam.RamTerm.LoadLatVar(UniqueInts.getIndex(rv, idToIndex), ty)
                         }
                 }
-            case Ram.RamTerm.Meet(_, _, _, _, ty) =>
+            case Ram.RamTerm.Meet(_, _, _, ty) =>
                 let representingRowVar = lowerMeet(term, idToIndex, meetWithMap);
                 let pos = computeLatticeMeetPos(representingRowVar, idToIndex, meetWithMap);
                 ExecutableRam.RamTerm.LoadLatVar(pos, ty)
-            case Ram.RamTerm.App1(f, t1, _, ty)                   => ExecutableRam.RamTerm.App1(f, lowerT(t1), ty)
-            case Ram.RamTerm.App2(f, t1, t2, _, ty)               => ExecutableRam.RamTerm.App2(f, lowerT(t1), lowerT(t2), ty)
-            case Ram.RamTerm.App3(f, t1, t2, t3, _, ty)           => ExecutableRam.RamTerm.App3(f, lowerT(t1), lowerT(t2), lowerT(t3), ty)
-            case Ram.RamTerm.App4(f, t1, t2, t3, t4, _, ty)       => ExecutableRam.RamTerm.App4(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), ty)
-            case Ram.RamTerm.App5(f, t1, t2, t3, t4, t5, _, ty)   => ExecutableRam.RamTerm.App5(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), lowerT(t5), ty)
+            case Ram.RamTerm.App1(f, t1, ty)                   => ExecutableRam.RamTerm.App1(f, lowerT(t1), ty)
+            case Ram.RamTerm.App2(f, t1, t2, ty)               => ExecutableRam.RamTerm.App2(f, lowerT(t1), lowerT(t2), ty)
+            case Ram.RamTerm.App3(f, t1, t2, t3, ty)           => ExecutableRam.RamTerm.App3(f, lowerT(t1), lowerT(t2), lowerT(t3), ty)
+            case Ram.RamTerm.App4(f, t1, t2, t3, t4, ty)       => ExecutableRam.RamTerm.App4(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), ty)
+            case Ram.RamTerm.App5(f, t1, t2, t3, t4, t5, ty)   => ExecutableRam.RamTerm.App5(f, lowerT(t1), lowerT(t2), lowerT(t3), lowerT(t4), lowerT(t5), ty)
         }
 
     ///
@@ -413,7 +413,7 @@ mod Fixpoint3.Phase.Lowering {
             let (_, meetDisjointSet) = meetWithMap;
             MutDisjointSets.makeSet(rv, meetDisjointSet);
             rv
-        case Ram.RamTerm.Meet(_, t1, (rv, _), _, _) =>
+        case Ram.RamTerm.Meet(_, t1, (rv, _), _) =>
             let (_, meetDisjointSet) = meetWithMap;
             let prevRv = lowerMeet(t1, idToIndex, meetWithMap);
             MutDisjointSets.makeSet(rv, meetDisjointSet);

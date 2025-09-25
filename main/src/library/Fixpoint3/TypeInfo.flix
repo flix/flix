@@ -72,6 +72,7 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Returns the type of provenance annotations.
     ///
+    @Internal
     pub def provType(): Type = 0
 
     ///
@@ -144,6 +145,7 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Expands `typeInfo` to include the provenance annotations types.
     ///
+    @Internal
     pub def expandTypeInfoToProv(typeInfo: TypeInformation, predicates: Predicates): TypeInformation =
         let max = getMax(predicates);
         Vector.mapWithIndex(i -> v -> match Int32.toInt64(i) < max {
@@ -155,6 +157,7 @@ mod Fixpoint3.TypeInfo {
     ///
     /// Expands `relType` to include the provenance annotations types.
     ///
+    @Internal
     pub def expandTypeToProv(relType: RelType): RelType = relType ++ Vector#{provType(), provType()}
 
     ///

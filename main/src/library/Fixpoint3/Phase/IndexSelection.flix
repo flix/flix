@@ -297,10 +297,9 @@ mod Fixpoint3.Phase.IndexSelection {
     /// Returns true if `term` is ground (no free variables) w.r.t. `seenTuples`.
     ///
     def isTermGround(term: RamTerm, seenTuples: Set[RowVar]): Bool = match term {
-        case RamTerm.Lit(_, _, _) => true
-        case RamTerm.RowLoad(rowVar, _, _, _) =>
-            Set.memberOf(rowVar, seenTuples)
-        case _ => false
+        case RamTerm.Lit(_, _)                => true
+        case RamTerm.RowLoad(rowVar, _, _, _) => Set.memberOf(rowVar, seenTuples)
+        case                                  _ => false
     }
 
     mod AutomaticIndexSelection {
