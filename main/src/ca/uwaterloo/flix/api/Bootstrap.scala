@@ -352,7 +352,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ =>
         flatMapN(Steps.compile(flix).toValidation) {
           _ =>
-            flatMapN(Steps.validateJarFile(jarFile)) {
+            flatMapN(Steps.validateJarFile(jarFile).toValidation) {
               _ =>
                 Files.createDirectories(getArtifactDirectory(projectPath))
                 val contents = sequence(Seq(
@@ -377,11 +377,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ =>
         flatMapN(Steps.compile(flix).toValidation) {
           _ =>
-            flatMapN(Steps.validateJarFile(jarFile)) {
+            flatMapN(Steps.validateJarFile(jarFile).toValidation) {
               _ =>
-                flatMapN(Steps.validateDirectory(libDir)) {
+                flatMapN(Steps.validateDirectory(libDir).toValidation) {
                   _ =>
-                    flatMapN(Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)) {
+                    flatMapN(Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(f => Steps.validateJarFile(f).toValidation)) {
                       _ =>
                         Files.createDirectories(getArtifactDirectory(projectPath))
                         val contents = sequence(Seq(
@@ -902,24 +902,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Success(())
     }
 
-    def validateDirectory(dir: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    def validateDirectory(dir: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
       if (Files.exists(dir)) {
         if (!Files.isDirectory(dir)) {
-          return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not a directory."))
+          return Err(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not a directory."))
         }
         if (!Files.isReadable(dir)) {
-          return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not readable."))
+          return Err(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not readable."))
         }
       }
-      Validation.Success(())
+      Ok(())
     }
 
-    def validateJarFile(jarFile: Path)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    def validateJarFile(jarFile: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
       // Check whether it is safe to write to the file.
       if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-        Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
+        Err(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
       } else {
-        Validation.Success(())
+        Ok(())
       }
     }
   }
