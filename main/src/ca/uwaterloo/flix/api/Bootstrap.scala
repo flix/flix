@@ -620,6 +620,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   private object Steps {
 
+    /**
+      * Adds all class files from `dir` to `zip`.
+      */
     def addClassFilesFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
@@ -629,6 +632,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Adds all jars in `dir` to `zip`.
+      * Ignores non-jar files and does nothing if `dir` does not exist.
+      */
     def addJarsFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
       // First, we get all jar files inside the lib folder.
       // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
@@ -710,6 +717,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       mavenFilesLib
     }
 
+    /**
+      * Adds a `META-INF/MANIFEST.MF` file to `zip`.
+      */
     def addManifestToZip(zip: ZipOutputStream): Unit = {
       // META-INF/MANIFEST.MF
       val manifest =
@@ -721,6 +731,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
     }
 
+    /**
+      * Adds all files in `dir` to `zip`.
+      */
     def addResourcesFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
       // Add all resources, again sorting by relative file name
       val resources = FileOps.getFilesIn(dir, Int.MaxValue)
