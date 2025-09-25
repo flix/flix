@@ -243,8 +243,8 @@ object Lexer {
       }.unzip
 
       // Construct a map from each source to its tokens.
-      val all = results ++ fresh
-      (all.toMap, errors.flatten.toList)
+      val all = fresh.concat(results)
+      (all, errors.flatten.toList)
     }
 
   /** Lexes a single source (file) into an array of tokens. */
