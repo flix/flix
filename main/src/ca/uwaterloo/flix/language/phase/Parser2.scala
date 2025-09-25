@@ -328,6 +328,26 @@ object Parser2 {
     }
   }
 
+  /**
+    * Look-ahead `lookahead` tokens.
+    *
+    * Consume one fuel and throws [[InternalCompilerException]] if the parser is out of fuel but
+    * does not consume fuel if parser has hit end-of-file. This lets the parser return whatever
+    * errors were produced from a deep call-stack without running out of fuel.
+    */
+  private def nthToken(lookahead: Int)(implicit s: State): Option[Token] = {
+    if (s.fuel == 0) {
+      throw InternalCompilerException(s"Parser is stuck", currentSourceLocation())
+    }
+
+    if (s.position + lookahead >= s.tokens.length - 1) {
+      None
+    } else {
+      s.fuel -= 1
+      Some(s.tokens(s.position + lookahead))
+    }
+  }
+
   /** Checks if the parser is at a token of a specific `kind`. */
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
     nth(0) == kind
@@ -1413,7 +1433,7 @@ object Parser2 {
       lhs
     }
 
-    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
+    def expression(leftOpt: Option[Op] = None)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       var lhs = exprDelimited()
       // Handle chained calls and record lookups.
@@ -1478,23 +1498,31 @@ object Parser2 {
       // Handle binary operators.
       continue = true
       while (continue) {
-        val right = nth(0)
-        if (rightBindsTighter(left, right, leftIsUnary)) {
-          val mark = openBefore(lhs)
-          val markOp = open()
-          advance()
-          close(markOp, TreeKind.Operator)
-          expression(right)
-          lhs = close(mark, TreeKind.Expr.Binary)
-          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-        } else {
-          // We want to allow an unbounded number of cons `a :: b :: c :: ...`.
-          // Hence we special case on whether the left token is ::. If it is,
-          // we avoid consuming any fuel.
-          // The next nth lookup will always fail, so we add fuel to account for it.
-          // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-          if (left == TokenKind.ColonColon) s.fuel += 2
-          continue = false
+        nthToken(0).flatMap(parseBinaryOp) match {
+          case Some(right) =>
+            leftOpt match {
+              case Some(left) if !Op.rightBindsTighter(left, right) =>
+                // We want to allow an unbounded number of cons `a :: b :: c :: ...`.
+                // Hence we special case on whether the left token is ::. If it is,
+                // we avoid consuming any fuel.
+                // The next nth lookup will always fail, so we add fuel to account for it.
+                // The lookup for KeywordWithout will always happen so we add fuel to account for it.
+                if (left == BinaryOp.ColonColon) s.fuel += 2
+                continue = false
+              case _ =>
+                val mark = openBefore(lhs)
+                val markOp = open()
+                advance()
+                close(markOp, TreeKind.Operator)
+                expression(Some(right))
+                lhs = close(mark, TreeKind.Expr.Binary)
+                lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            }
+          case None =>
+            // Non-operator or EOF.
+            // Add fuel for the same reason as above.
+            if (leftOpt.contains(BinaryOp.ColonColon)) s.fuel += 2
+            continue = false
         }
       }
       // Handle without expressions.
@@ -1529,58 +1557,148 @@ object Parser2 {
       lhs
     }
 
-    sealed trait OpKind
-
-    private object OpKind {
-
-      case object Unary extends OpKind
-
-      case object Binary extends OpKind
+    private def parseBinaryOp(token: Token): Option[BinaryOp] = {
+      token.kind match {
+        case TokenKind.AngleL => Some(BinaryOp.AngleL)
+        case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
+        case TokenKind.AngleR => Some(BinaryOp.AngleR)
+        case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
+        case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
+        case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
+        case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
+        case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+        case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
+        case TokenKind.InfixFunction => Some(BinaryOp.InfixFunction)
+        case TokenKind.KeywordAnd => Some(BinaryOp.And)
+        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
+        case TokenKind.KeywordOr => Some(BinaryOp.Or)
+        case TokenKind.Minus => Some(BinaryOp.Minus)
+        case TokenKind.NameMath => Some(BinaryOp.NameMath)
+        case TokenKind.Plus => Some(BinaryOp.Plus)
+        case TokenKind.Slash => Some(BinaryOp.Slash)
+        case TokenKind.Star => Some(BinaryOp.Star)
+        case TokenKind.TripleColon => Some(BinaryOp.TripleColon)
+        case TokenKind.UserDefinedOperator => Some(BinaryOp.UserDefinedOperator)
+        case _ => None
+      }
     }
 
-    /**
-      * A precedence table for operators, lower is higher precedence.
-      *
-      * Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary, e.g., Plus or Minus.
-      */
-    private def PRECEDENCE: List[(OpKind, Array[TokenKind])] = List(
-      (OpKind.Binary, Array(TokenKind.KeywordInstanceOf)),
-      (OpKind.Binary, Array(TokenKind.KeywordOr)),
-      (OpKind.Binary, Array(TokenKind.KeywordAnd)),
-      (OpKind.Binary, Array(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)),
-      (OpKind.Binary, Array(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)),
-      (OpKind.Binary, Array(TokenKind.ColonColon, TokenKind.TripleColon)),
-      (OpKind.Binary, Array(TokenKind.Plus, TokenKind.Minus)),
-      (OpKind.Binary, Array(TokenKind.Star, TokenKind.Slash)),
-      (OpKind.Binary, Array(TokenKind.AngledPlus)),
-      (OpKind.Unary, Array(TokenKind.KeywordDiscard)),
-      (OpKind.Binary, Array(TokenKind.InfixFunction)),
-      (OpKind.Binary, Array(TokenKind.UserDefinedOperator, TokenKind.NameMath)),
-      (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce)),
-      (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus)),
-      (OpKind.Unary, Array(TokenKind.KeywordNot))
-    )
+    private def parseUnaryOp(token: Token): Option[UnaryOp] = {
+      token.kind match {
+        case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
+        case TokenKind.KeywordForce => Some(UnaryOp.Force)
+        case TokenKind.KeywordLazy => Some(UnaryOp.Lazy)
+        case TokenKind.KeywordNot => Some(UnaryOp.Not)
+        case TokenKind.Minus => Some(UnaryOp.Minus)
+        case TokenKind.Plus => Some(UnaryOp.Plus)
+        case _ => None
+      }
+    }
 
-    // These operators are right associative, e.g. "x :: y :: z" becomes
-    // "x :: (y :: z)" rather than "(x :: y) :: z".
-    private val rightAssoc: Array[TokenKind] = Array(TokenKind.ColonColon, TokenKind.TripleColon)
+    sealed trait Op {
 
-    private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
-      def tightness(kind: TokenKind, opKind: OpKind = OpKind.Binary): Int = {
-        PRECEDENCE.indexWhere { case (k, l) => k == opKind && l.contains(kind) }
+      /** Precedence for operators, lower is higher precedence. */
+      private def precedence: Int = this match {
+        case BinaryOp.InstanceOf => 0
+        case BinaryOp.Or => 1
+        case BinaryOp.And => 2
+        case BinaryOp.EqualEqual | BinaryOp.AngledEqual | BinaryOp.BangEqual => 3
+        case BinaryOp.AngleL | BinaryOp.AngleR | BinaryOp.AngleLEqual | BinaryOp.AngleREqual => 4
+        case BinaryOp.ColonColon | BinaryOp.TripleColon => 5
+        case BinaryOp.Plus | BinaryOp.Minus => 6
+        case BinaryOp.Star | BinaryOp.Slash => 7
+        case BinaryOp.AngledPlus => 8
+        case UnaryOp.Discard => 9
+        case BinaryOp.InfixFunction => 10
+        case BinaryOp.UserDefinedOperator | BinaryOp.NameMath => 11
+        case UnaryOp.Lazy | UnaryOp.Force => 12
+        case UnaryOp.Plus | UnaryOp.Minus => 13
+        case UnaryOp.Not => 14
       }
 
-      val rt = tightness(right)
-      if (rt == -1) {
-        return false
+      /**
+        * These operators are right associative.
+        * "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z".
+        */
+      private def isRightAssoc: Boolean = this match {
+        case BinaryOp.TripleColon => true
+        case BinaryOp.ColonColon => true
+        case _ => false
       }
-      val lt = tightness(left, if (leftIsUnary) OpKind.Unary else OpKind.Binary)
-      if (lt == -1) {
-        assert(left == TokenKind.Eof)
-        return true
-      }
+    }
 
-      if (lt == rt && rightAssoc.contains(left)) true else rt > lt
+    private object Op {
+      def rightBindsTighter(left: Op, right: Op): Boolean = {
+        if (left.precedence == right.precedence && left.isRightAssoc) {
+          true
+        } else {
+          right.precedence > left.precedence
+        }
+      }
+    }
+
+    sealed trait UnaryOp extends Op
+
+    private object UnaryOp {
+
+      case object Discard extends UnaryOp
+
+      case object Force extends UnaryOp
+
+      case object Lazy extends UnaryOp
+
+      case object Minus extends UnaryOp
+
+      case object Not extends UnaryOp
+
+      case object Plus extends UnaryOp
+
+    }
+
+    sealed trait BinaryOp extends Op
+
+    private object BinaryOp {
+
+      case object And extends BinaryOp
+
+      case object AngleL extends BinaryOp
+
+      case object AngleLEqual extends BinaryOp
+
+      case object AngleR extends BinaryOp
+
+      case object AngleREqual extends BinaryOp
+
+      case object AngledEqual extends BinaryOp
+
+      case object AngledPlus extends BinaryOp
+
+      case object BangEqual extends BinaryOp
+
+      case object ColonColon extends BinaryOp
+
+      case object EqualEqual extends BinaryOp
+
+      case object InfixFunction extends BinaryOp
+
+      case object InstanceOf extends BinaryOp
+
+      case object Minus extends BinaryOp
+
+      case object NameMath extends BinaryOp
+
+      case object Or extends BinaryOp
+
+      case object Plus extends BinaryOp
+
+      case object Slash extends BinaryOp
+
+      case object Star extends BinaryOp
+
+      case object TripleColon extends BinaryOp
+
+      case object UserDefinedOperator extends BinaryOp
+
     }
 
     private def arguments()(implicit s: State): Unit = {
@@ -1925,11 +2043,11 @@ object Parser2 {
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
-      val op = nth(0)
+      val op = nthToken(0)
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
-      expression(left = op, leftIsUnary = true)
+      expression(leftOpt = op.flatMap(parseUnaryOp))
       close(mark, TreeKind.Expr.Unary)
     }
 
