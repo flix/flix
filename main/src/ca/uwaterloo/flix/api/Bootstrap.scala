@@ -300,7 +300,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(projectPath)
-    flatMapN(Steps.parseManifest(tomlPath)) {
+    flatMapN(Steps.parseManifest(tomlPath).toValidation) {
       manifest =>
         flatMapN(Steps.resolveFlixDependencies(manifest)) {
           dependencyManifests =>
@@ -846,12 +846,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Parses and returns the manifest at `tomlPath`.
       */
-    def parseManifest(tomlPath: Path): Validation[Manifest, BootstrapError] = {
+    def parseManifest(tomlPath: Path): Result[Manifest, BootstrapError] = {
       ManifestParser.parse(tomlPath) match {
         case Ok(manifest) =>
           optManifest = Some(manifest)
-          Validation.Success(manifest)
-        case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
+          Ok(manifest)
+        case Err(e) =>
+          Err(BootstrapError.ManifestParseError(e))
       }
     }
 
