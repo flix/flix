@@ -302,7 +302,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val tomlPath = getManifestFile(projectPath)
     flatMapN(Steps.parseManifest(tomlPath).toValidation) {
       manifest =>
-        flatMapN(Steps.resolveFlixDependencies(manifest)) {
+        flatMapN(Steps.resolveFlixDependencies(manifest).toValidation) {
           dependencyManifests =>
             mapN(Steps.installDependencies(dependencyManifests).toValidation) {
               _ =>
@@ -860,11 +860,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
       * Requires network access.
       */
-    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
-      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
-        case Ok(l) => Validation.Success(l)
-        case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
-      }
+    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], BootstrapError] = {
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).mapErr(BootstrapError.FlixPackageError(_))
     }
 
     /**
