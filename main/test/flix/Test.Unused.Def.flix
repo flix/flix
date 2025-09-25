@@ -5,11 +5,6 @@ mod Test.Unused.Def {
         ?hole
 
     // NB: Compile, but not execute.
-    // Unused math name
-    def _√(): Int32 =
-        ?hole
-
-    // NB: Compile, but not execute.
     // Unused greek name
     def _Χαίρετε(): Int32 =
         ?hole

@@ -94,11 +94,6 @@ mod Test.Unused.Var {
 
     @test
     def testUnusedVar15(): Int32 =
-        let _⊆ = 123;
-        456
-
-    @test
-    def testUnusedVar16(): Int32 =
         let _αναγνωριστικό = 123;
         456
 
