@@ -336,7 +336,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.clearCaches()
 
     Steps.updateStaleSources(flix)
-    Steps.compile(flix)
+    Steps.compile(flix) match {
+      case Ok(result) => Validation.Success(result)
+      case Err(e) => Validation.Failure(e)
+    }
   }
 
   /**
@@ -347,7 +350,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     flatMapN(Steps.configureJarOutput(flix)) {
       _ =>
-        flatMapN(Steps.compile(flix)) {
+        flatMapN(Steps.compile(flix).toValidation) {
           _ =>
             flatMapN(Steps.validateJarFile(jarFile)) {
               _ =>
@@ -372,7 +375,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Steps.updateStaleSources(flix)
     flatMapN(Steps.configureJarOutput(flix)) {
       _ =>
-        flatMapN(Steps.compile(flix)) {
+        flatMapN(Steps.compile(flix).toValidation) {
           _ =>
             flatMapN(Steps.validateJarFile(jarFile)) {
               _ =>
@@ -443,10 +446,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
-    Steps.check(flix) match {
-      case Ok(_) => Validation.Success(())
-      case Err(e) => Validation.Failure(e)
-    }
+    Steps.check(flix).map(_ => ()).toValidation
   }
 
   /**
@@ -465,10 +465,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
     Steps.updateStaleSources(flix)
-    Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix)) match {
-      case Ok(_) => Validation.Success(())
-      case Err(e) => Validation.Failure(e)
-    }
+    Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix)).toValidation
   }
 
   /**
@@ -535,8 +532,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.println("Building project...")
     val buildResult = buildPkg()
     buildResult.toResult match {
-      case Result.Ok(_) => // Continue
-      case Result.Err(e) => return Validation.Failure(e)
+      case Ok(_) => // Continue
+      case Err(e) => return Validation.Failure(e)
     }
 
     // Publish to GitHub
@@ -746,9 +743,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def check(flix: Flix): Result[TypedAst.Root, BootstrapError] = {
       val (optRoot, errors) = flix.check()
       if (errors.isEmpty) {
-        Result.Ok(optRoot.get)
+        Ok(optRoot.get)
       } else {
-        Result.Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
       }
     }
 
@@ -757,10 +754,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * It is up to the caller to set the appropriate options on `flix`.
       * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
       */
-    def compile(flix: Flix): Validation[CompilationResult, BootstrapError] = {
+    def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
       flix.compile() match {
-        case Validation.Success(result: CompilationResult) => Validation.Success(result)
-        case Validation.Failure(errors) => Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+        case Validation.Success(result: CompilationResult) => Ok(result)
+        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
       }
     }
 
@@ -811,10 +808,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
-        case Result.Ok(paths: List[Path]) =>
+        case Ok(paths: List[Path]) =>
           flixPackagePaths = paths
           Validation.Success(paths)
-        case Result.Err(e) =>
+        case Err(e) =>
           Validation.Failure(BootstrapError.FlixPackageError(e))
       }
     }
@@ -826,10 +823,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
       JarPackageManager.installAll(dependencyManifests, projectPath) match {
-        case Result.Ok(paths) =>
+        case Ok(paths) =>
           jarPackagePaths = paths
           Validation.Success(paths)
-        case Result.Err(e) =>
+        case Err(e) =>
           Validation.Failure(BootstrapError.JarPackageError(e))
       }
     }
@@ -841,10 +838,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
       MavenPackageManager.installAll(dependencyManifests, projectPath) match {
-        case Result.Ok(paths) =>
+        case Ok(paths) =>
           mavenPackagePaths = paths
           Validation.Success(paths)
-        case Result.Err(e) =>
+        case Err(e) =>
           Validation.Failure(BootstrapError.MavenPackageError(e))
       }
     }
