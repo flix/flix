@@ -72,7 +72,7 @@ object LexerError {
       import formatter.*
       s""">> '.' has leading whitespace.
          |
-         |${code(loc, "here")}
+         |${code(loc, "Here")}
          |
          |""".stripMargin
     }
@@ -144,11 +144,11 @@ object LexerError {
     * @param loc The location of `found`.
     */
   case class MalformedHexNumber(found: Char, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Malformed hexadecimal number, found '$found'."
+    override def summary: String = s"Malformed hexadecimal number, found '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed hexadecimal number, found '$found'.
+      s""">> Malformed hexadecimal number, found '${showChar(found)}'.
          |
          |${code(loc, "Number was correct up to here")}
          |
@@ -162,11 +162,11 @@ object LexerError {
     * @param loc the location of `found`.
     */
   case class MalformedNumber(found: Char, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Malformed number, found '$found'."
+    override def summary: String = s"Malformed number, found '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Malformed number, found '$found'.
+      s""">> Malformed number, found '${showChar(found)}'.
          |
          |${code(loc, "Number was correct up to here")}
          |
@@ -180,11 +180,11 @@ object LexerError {
     * @param loc the location of `found`.
     */
   case class UnexpectedChar(found: Char, loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unexpected character '$found'."
+    override def summary: String = s"Unexpected character '${showChar(found)}'."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected character '${red(found.toString)}'.
+      s""">> Unexpected character '${red(showChar(found))}'.
          |
          |${code(loc, "Unexpected character.")}
          |
@@ -317,4 +317,16 @@ object LexerError {
          |""".stripMargin
     }
   }
+
+  /** Returns an ASCII printable version of `c`. */
+  private def showChar(c: Char): String = {
+    c match {
+      case '\r' => "\\r"
+      case '\n' => "\\n"
+      case '\t' => "\\t"
+      case _ if 32 <= c.toInt && c.toInt <= 126 => c.toString
+      case _ => s"\\u${c.toHexString.toUpperCase}"
+    }
+  }
+
 }
