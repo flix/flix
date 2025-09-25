@@ -753,14 +753,22 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    /**
+      * Configures `flix` to emit class files to the build directory (on the file system)
+      * in production mode.
+      *
+      * @see [[Bootstrap.getBuildDirectory]]
+      * @see [[Build.Production]]
+      */
     def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
       val buildDir = Bootstrap.getBuildDirectory(projectPath)
-      if (Files.exists(buildDir) && !Files.isDirectory(buildDir)) {
-        return Err(BootstrapError.FileError(s"build directory '${buildDir.toAbsolutePath}' is not a directory"))
+      for {
+        _ <- validateDirectory(buildDir)
+      } yield {
+        val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
+        flix.setOptions(newOptions)
+        ()
       }
-      val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
-      flix.setOptions(newOptions)
-      Ok(())
     }
 
     /**
@@ -898,13 +906,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns `OK(())` if `dir` exists and is a readable directory.
       * If `dir` does not exist, it returns `Ok(())` too.
       */
-    def validateDirectory(dir: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    def validateDirectory(dir: Path): Result[Unit, BootstrapError] = {
       if (Files.exists(dir)) {
         if (!Files.isDirectory(dir)) {
-          return Err(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not a directory."))
+          return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not a directory."))
         }
         if (!Files.isReadable(dir)) {
-          return Err(BootstrapError.FileError(s"The path '${formatter.red(dir.toString)}' is not readable."))
+          return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not readable."))
         }
       }
       Ok(())
@@ -916,10 +924,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *
       * @see [[Bootstrap.isJarFile]]
       */
-    def validateJarFile(jarFile: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    def validateJarFile(jarFile: Path): Result[Unit, BootstrapError] = {
       // Check whether it is safe to write to the file.
       if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-        return Err(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
+        return Err(BootstrapError.FileError(s"The path '${jarFile.toString}' exists and is not a jar-file. Refusing to overwrite."))
       }
       Ok(())
     }
