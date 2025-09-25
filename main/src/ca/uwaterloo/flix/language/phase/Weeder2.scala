@@ -1069,8 +1069,7 @@ object Weeder2 {
           case TokenKind.LiteralBigDecimal => Validation.Success(Constants.toBigDecimal(token))
           case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
           case TokenKind.NameLowerCase
-               | TokenKind.NameUpperCase
-               | TokenKind.NameMath => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
+               | TokenKind.NameUpperCase => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
           case _ =>
             val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
             sctx.errors.add(error)

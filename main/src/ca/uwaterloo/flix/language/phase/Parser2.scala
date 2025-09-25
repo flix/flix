@@ -614,12 +614,12 @@ object Parser2 {
     *
     * Use these together with [[nameUnqualified]] and [[nameAllowQualified]].
     */
-  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
-  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
-  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
+  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.UserDefinedOperator)
+  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.Underscore)
+  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.Underscore)
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
-  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
+  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.UserDefinedOperator)
   private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
   // TODO: Static is used as a type in Prelude.flix. Static is also an expression.
   //       refactor When Static is used as a region "@ Static" to "@ static" since lowercase is
@@ -1555,7 +1555,7 @@ object Parser2 {
       (OpKind.Binary, Array(TokenKind.AngledPlus)),
       (OpKind.Unary, Array(TokenKind.KeywordDiscard)),
       (OpKind.Binary, Array(TokenKind.InfixFunction)),
-      (OpKind.Binary, Array(TokenKind.UserDefinedOperator, TokenKind.NameMath)),
+      (OpKind.Binary, Array(TokenKind.UserDefinedOperator)),
       (OpKind.Unary, Array(TokenKind.KeywordLazy, TokenKind.KeywordForce)),
       (OpKind.Unary, Array(TokenKind.Plus, TokenKind.Minus)),
       (OpKind.Unary, Array(TokenKind.KeywordNot))
@@ -1645,8 +1645,7 @@ object Parser2 {
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameUnqualified(NAME_VARIABLE)
         case TokenKind.NameLowerCase if nth(1) == TokenKind.ArrowThinR => unaryLambdaExpr()
         case TokenKind.NameLowerCase => nameAllowQualified(NAME_FIELD)
-        case TokenKind.NameUpperCase
-             | TokenKind.NameMath => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION)
+        case TokenKind.NameUpperCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else nameAllowQualified(NAME_DEFINITION)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -3045,7 +3044,6 @@ object Parser2 {
       val mark = open()
       var lhs = nth(0) match {
         case TokenKind.NameLowerCase
-             | TokenKind.NameMath
              | TokenKind.Underscore
              | TokenKind.KeywordQuery => variablePat()
         case TokenKind.LiteralString
@@ -3341,8 +3339,7 @@ object Parser2 {
       val mark = open()
       nth(0) match {
         case TokenKind.NameUpperCase => nameAllowQualified(NAME_TYPE)
-        case TokenKind.NameMath
-             | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
+        case TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
         case TokenKind.NameLowerCase => variableType()
         case TokenKind.KeywordUniv
              | TokenKind.KeywordFalse
@@ -3367,7 +3364,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Type)
     }
 
-    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
+    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.Underscore)
 
     private def variableType()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Unknown
@@ -3701,11 +3698,10 @@ object Parser2 {
           breakWhen = kind => kind == TokenKind.Equal || kind.isFirstExpr
         )
         case TokenKind.NameLowerCase
-             | TokenKind.NameMath
              | TokenKind.Underscore => nameUnqualified(NAME_VARIABLE)
         case at =>
           val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)),
+            expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL, TokenKind.NameLowerCase, TokenKind.Underscore)),
             actual = Some(at),
             sctx,
             loc = currentSourceLocation()

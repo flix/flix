@@ -371,16 +371,12 @@ object Lexer {
       case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
       case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
       case c if isFirstNameChar(c) => acceptName(c.isUpper)
-      case c if isMathNameChar(c) => acceptMathName()
       case '_' =>
         if (!eof()) {
           val p = s.sc.peek
           if (isFirstNameChar(p)) {
             s.sc.advance()
             acceptName(p.isUpper)
-          } else if (isMathNameChar(p)) {
-            s.sc.advance()
-            acceptMathName()
           } else if (isUserOp(p)) {
             s.sc.advance()
             acceptUserDefinedOp()
@@ -505,19 +501,6 @@ object Lexer {
   private def isNameChar(c: Char): Boolean =
     c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$'
 
-  /**
-    * Moves current position past a math name.
-    * Math names must lie in the unicode range U+2190 to U+22FF (e.g. "⊆")
-    */
-  private def acceptMathName()(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(isMathNameChar)
-    TokenKind.NameMath
-  }
-
-  /** Checks whether `c` lies in unicode range U+2190 to U+22FF. */
-  private def isMathNameChar(c: Char): Boolean =
-    0x2190 <= c && c <= 0x22FF
-
   /** Moves current position past a named hole (e.g. "?foo"). */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(isNameChar)
@@ -527,7 +510,7 @@ object Lexer {
   /** Moves current position past an infix function. */
   private def acceptInfixFunction()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(
-      c => isNameChar(c) || c == '.' || isMathNameChar(c)
+      c => isNameChar(c) || c == '.'
     )
     if (s.sc.advanceIfMatch('`')) {
       TokenKind.InfixFunction
