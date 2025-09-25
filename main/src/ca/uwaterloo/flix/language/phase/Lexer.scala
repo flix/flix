@@ -330,7 +330,7 @@ object Lexer {
         } else {
           TokenKind.Dot
         }
-      case '%' if s.sc.peekIs(_ == '%') => acceptBuiltIn()
+      case '%' if s.sc.advanceIfMatch('%') => acceptBuiltIn()
       case '$' =>
         if (s.sc.peekIs(isFirstNameChar)) {
           acceptEscapedName()
@@ -387,7 +387,7 @@ object Lexer {
           } else TokenKind.Underscore
         } else TokenKind.Underscore
       case c if c.isDigit =>
-        if (c == '0' && s.sc.peekIs(_ == 'x')) {
+        if (c == '0' && s.sc.advanceIfMatch('x')) {
           acceptHexNumber()
         } else {
           acceptNumber()
@@ -447,7 +447,6 @@ object Lexer {
 
   /** Moves current position past a built-in function (e.g. "%%BUILT_IN%%"). */
   private def acceptBuiltIn()(implicit s: State): TokenKind = {
-    s.sc.advance() // Consume `%`.
     s.sc.advanceWhile(isBuiltInChar)
     if (s.sc.advanceIfMatch("%%")) {
       TokenKind.BuiltIn
@@ -670,8 +669,7 @@ object Lexer {
     var prev = ' '
     while (!eof()) {
       consumeSingleEscapes()
-      if (s.sc.peekIs(_ == '\'')) {
-        s.sc.advance()
+      if (s.sc.advanceIfMatch('\'')) {
         return TokenKind.LiteralChar
       }
       prev = s.sc.peekAndAdvance()
@@ -687,8 +685,7 @@ object Lexer {
   private def acceptRegex()(implicit s: State): TokenKind = {
     while (!eof()) {
       consumeSingleEscapes()
-      if (s.sc.peekIs(_ == '"')) {
-        s.sc.advance()
+      if (s.sc.advanceIfMatch('"')) {
         return TokenKind.LiteralRegex
       }
       s.sc.advance()
@@ -830,8 +827,6 @@ object Lexer {
     */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     def isHexDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
-
-    s.sc.advance() // Consume 'x'.
 
     // Consume a `\h+` string
     if (s.sc.advanceWhileWithCount(isHexDigit) == 0) {
