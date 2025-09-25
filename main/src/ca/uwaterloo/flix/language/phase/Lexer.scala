@@ -1051,7 +1051,7 @@ object Lexer {
     def peekAndAdvance(): Char = {
       if (this.inBounds) {
         val c = data(offset)
-        advance()
+        advanceUnsafe()
         c
       } else {
         EOF
@@ -1060,16 +1060,19 @@ object Lexer {
 
     /** Advances cursor one char forward, unless out of bounds. */
     def advance(): Unit = {
-      if (!this.eof) {
-        if (data(offset) == '\n') {
-          prevLineMaxColumn = column
-          line += 1
-          column = 0
-        } else {
-          column += 1
-        }
-        offset += 1
+      if (!this.eof) advanceUnsafe()
+    }
+
+    /** Advances cursor one char forward, assuming [[inBounds]]. */
+    private def advanceUnsafe(): Unit = {
+      if (data(offset) == '\n') {
+        prevLineMaxColumn = column
+        line += 1
+        column = 0
+      } else {
+        column += 1
       }
+      offset += 1
     }
 
     /** Advances cursor `n` chars forward, or until out of bounds. */
@@ -1136,7 +1139,7 @@ object Lexer {
       }
 
       for (_ <- 0 until s.length) {
-        advance()
+        advanceUnsafe()
       }
 
       true
@@ -1149,7 +1152,7 @@ object Lexer {
       */
     def advanceIfMatch(c: Char): Boolean =
       if (this.inBounds && data(offset) == c) {
-        advance()
+        advanceUnsafe()
         true
       } else {
         false
@@ -1158,14 +1161,14 @@ object Lexer {
     /** Continuously advance the cursor while `p` returns true. */
     def advanceWhile(p: Char => Boolean): Unit =
       while (this.inBounds && p(data(offset))) {
-        advance()
+        advanceUnsafe()
       }
 
     /** Continuously advance the cursor while `p` returns true. Returns the number of advances. */
     def advanceWhileWithCount(p: Char => Boolean): Int = {
       val startingOffset = offset
       while (this.inBounds && p(data(offset))) {
-        advance()
+        advanceUnsafe()
       }
       offset - startingOffset
     }
