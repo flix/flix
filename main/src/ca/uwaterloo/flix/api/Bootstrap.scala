@@ -911,10 +911,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def validateJarFile(jarFile: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
       // Check whether it is safe to write to the file.
       if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-        Err(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
-      } else {
-        Ok(())
+        return Err(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
       }
+      Ok(())
     }
   }
 }
