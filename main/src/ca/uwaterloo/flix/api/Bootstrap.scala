@@ -894,6 +894,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Validation.Success(())
     }
 
+    /**
+      * Returns `OK(())` if `dir` exists and is a readable directory.
+      * If `dir` does not exist, it returns `Ok(())` too.
+      */
     def validateDirectory(dir: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
       if (Files.exists(dir)) {
         if (!Files.isDirectory(dir)) {
