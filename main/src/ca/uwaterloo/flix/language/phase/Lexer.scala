@@ -585,7 +585,7 @@ object Lexer {
         return mkErrorKind(LexerError.UnterminatedString(sourceLocationFromStart()))
       }
       // Check for the beginning of a string interpolation.
-      val prev = s.sc.previous
+      val prev = s.sc.nth(-1)
       val isInterpolation = !hasEscapes && prev.contains('$') & p == '{'
       if (isInterpolation) {
         acceptStringInterpolation() match {
@@ -1089,9 +1089,6 @@ object Lexer {
         None
       }
     }
-
-    /** Peeks the previous character if available. */
-    def previous: Option[Char] = nth(-1)
 
     /**
       * Peeks the character that cursor is currently sitting on without advancing.
