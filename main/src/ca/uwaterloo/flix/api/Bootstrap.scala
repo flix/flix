@@ -372,29 +372,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val jarFile = Bootstrap.getJarFile(projectPath)
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
     Steps.updateStaleSources(flix)
-    flatMapN(Steps.configureJarOutput(flix).toValidation) {
-      _ =>
-        flatMapN(Steps.compile(flix).toValidation) {
-          _ =>
-            flatMapN(Steps.validateJarFile(jarFile).toValidation) {
-              _ =>
-                flatMapN(Steps.validateDirectory(libDir).toValidation) {
-                  _ =>
-                    flatMapN(Validation.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(f => Steps.validateJarFile(f).toValidation)) {
-                      _ =>
-                        Files.createDirectories(getArtifactDirectory(projectPath))
-                        val contents = sequence(Seq(
-                          Steps.addManifestToZip,
-                          Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-                          Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
-                          Steps.addJarsFromDirToZip(libDir)
-                        ))
-                        toValidation(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
-                    }
-                }
-            }
-        }
+    val result = for {
+      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.compile(flix)
+      _ <- Steps.validateJarFile(jarFile)
+      _ <- Steps.validateDirectory(libDir)
+      _ <- Result.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
+      _ = Files.createDirectories(getArtifactDirectory(projectPath))
+      contents = sequence(Seq(
+        Steps.addManifestToZip,
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
+        Steps.addJarsFromDirToZip(libDir)
+      ))
+      _ <- toResult(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
+    } yield {
+      ()
     }
+    result.toValidation
   }
 
   /**
@@ -610,15 +605,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case None => PackageModules.All
       case Some(manifest) => manifest.modules
     }
-  }
-
-  /**
-    * Converts `t` to a [[Validation]].
-    * If `t` is a failure then a [[BootstrapError.FileError]] is returned.
-    */
-  private def toValidation[A](t: Try[A]): Validation[A, BootstrapError] = t match {
-    case Success(v) => Validation.Success(v)
-    case Failure(e) => Validation.Failure(BootstrapError.FileError(e.getMessage))
   }
 
   /**
