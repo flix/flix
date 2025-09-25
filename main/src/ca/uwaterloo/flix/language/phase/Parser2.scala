@@ -22,10 +22,8 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast.shared.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.ParseError.*
-import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.ParOps
 
-import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -1493,7 +1491,7 @@ object Parser2 {
                 // we avoid consuming any fuel.
                 // The next nth lookup will always fail, so we add fuel to account for it.
                 // The lookup for KeywordWithout will always happen so we add fuel to account for it.
-                if (left == Op.Cons) s.fuel += 2
+                if (left == Op.FCons) s.fuel += 2
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
@@ -1507,7 +1505,7 @@ object Parser2 {
           case None =>
             // Non-operator or EOF.
             // Add fuel for the same reason as above.
-            if (leftOpt.contains(Op.Cons)) s.fuel += 2
+            if (leftOpt.contains(Op.FCons)) s.fuel += 2
             continue = false
         }
       }
@@ -1545,25 +1543,25 @@ object Parser2 {
 
     private def parseBinaryOp(token: Token): Option[Op] = {
       token.kind match {
-        case TokenKind.AngledEqual => Some(Op.Compare)
-        case TokenKind.AngledPlus => Some(Op.DatalogCompose)
         case TokenKind.AngleL => Some(Op.Less)
-        case TokenKind.AngleLEqual => Some(Op.LessEq)
+        case TokenKind.AngleLEqual => Some(Op.LessEqual)
         case TokenKind.AngleR => Some(Op.Greater)
-        case TokenKind.AngleREqual => Some(Op.GreaterEq)
+        case TokenKind.AngleREqual => Some(Op.GreaterEqual)
+        case TokenKind.AngledEqual => Some(Op.Compare)
+        case TokenKind.AngledPlus => Some(Op.FixpointMerge)
         case TokenKind.BangEqual => Some(Op.Neq)
-        case TokenKind.ColonColon => Some(Op.Cons)
+        case TokenKind.ColonColon => Some(Op.FCons)
         case TokenKind.EqualEqual => Some(Op.Eq)
         case TokenKind.InfixFunction => Some(Op.Infix)
         case TokenKind.KeywordAnd => Some(Op.And)
         case TokenKind.KeywordInstanceOf => Some(Op.InstanceOf)
         case TokenKind.KeywordOr => Some(Op.Or)
         case TokenKind.Minus => Some(Op.MinusBinary)
-        case TokenKind.NameMath => Some(Op.MathName)
+        case TokenKind.NameMath => Some(Op.MathOperator)
         case TokenKind.Plus => Some(Op.PlusBinary)
         case TokenKind.Slash => Some(Op.Div)
         case TokenKind.Star => Some(Op.Mul)
-        case TokenKind.TripleColon => Some(Op.Concat)
+        case TokenKind.TripleColon => Some(Op.FAppend)
         case TokenKind.UserDefinedOperator => Some(Op.UserOperator)
         case _ => None
       }
@@ -1589,14 +1587,14 @@ object Parser2 {
         case Op.Or => 1
         case Op.And => 2
         case Op.Eq | Op.Compare | Op.Neq => 3
-        case Op.Less | Op.Greater | Op.LessEq | Op.GreaterEq => 4
-        case Op.Cons | Op.Concat => 5
+        case Op.Less | Op.Greater | Op.LessEqual | Op.GreaterEqual => 4
+        case Op.FCons | Op.FAppend => 5
         case Op.PlusBinary | Op.MinusBinary => 6
         case Op.Mul | Op.Div => 7
-        case Op.DatalogCompose => 8
+        case Op.FixpointMerge => 8
         case Op.Discard => 9
         case Op.Infix => 10
-        case Op.UserOperator | Op.MathName => 11
+        case Op.UserOperator | Op.MathOperator => 11
         case Op.Lazy | Op.Force => 12
         case Op.PlusUnary | Op.MinusUnary => 13
         case Op.Not => 14
@@ -1607,8 +1605,8 @@ object Parser2 {
         * "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z".
         */
       private def isRightAssoc: Boolean = this match {
-        case Op.Concat => true
-        case Op.Cons => true
+        case Op.FAppend => true
+        case Op.FCons => true
         case _ => false
       }
     }
@@ -1627,23 +1625,23 @@ object Parser2 {
 
       case object Compare extends Op
 
-      case object Concat extends Op
-
-      case object Cons extends Op
-
-      case object DatalogCompose extends Op
-
       case object Discard extends Op
 
       case object Div extends Op
 
       case object Eq extends Op
 
+      case object FAppend extends Op
+
+      case object FCons extends Op
+
+      case object FixpointMerge extends Op
+
       case object Force extends Op
 
       case object Greater extends Op
 
-      case object GreaterEq extends Op
+      case object GreaterEqual extends Op
 
       case object Infix extends Op
 
@@ -1653,9 +1651,9 @@ object Parser2 {
 
       case object Less extends Op
 
-      case object LessEq extends Op
+      case object LessEqual extends Op
 
-      case object MathName extends Op
+      case object MathOperator extends Op
 
       case object MinusBinary extends Op
 
@@ -2383,9 +2381,9 @@ object Parser2 {
              | (TokenKind.NameLowerCase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowerCase)
              | (TokenKind.Minus, TokenKind.NameLowerCase) =>
-            // Either `{ +y = expr | expr }` or `{ x = expr }`.
-            // Both are parsed the same and the difference is handled in Weeder.
-            recordOperation()
+          // Either `{ +y = expr | expr }` or `{ x = expr }`.
+          // Both are parsed the same and the difference is handled in Weeder.
+          recordOperation()
         case _ => block()
       }
     }
