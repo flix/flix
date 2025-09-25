@@ -56,9 +56,9 @@ object GenFunAndClosureClasses {
     }, _ ++ _)
   }
 
-  private def isClosure(defn: Def): Boolean = defn.cparams.nonEmpty
+  private def isClosure(defn: Def): Boolean = defn.isClosure
 
-  private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
+  private def isFunction(defn: Def): Boolean = !defn.isClosure
 
   private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
 
