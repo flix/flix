@@ -910,6 +910,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       Ok(())
     }
 
+    /**
+      * Returns `Ok(())` if `jarFile` exists and is a readable jar file (a zip archive).
+      * If `jarFile` does not exist, it also returns `Ok(())`.
+      *
+      * @see [[Bootstrap.isJarFile]]
+      */
     def validateJarFile(jarFile: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
       // Check whether it is safe to write to the file.
       if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
