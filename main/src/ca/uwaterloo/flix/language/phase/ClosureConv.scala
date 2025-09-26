@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
