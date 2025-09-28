@@ -355,7 +355,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
       ))
-      _ <- createZip(jarFile, contents)
+      _ <- Steps.createZip(jarFile, contents)
     } yield {
       ()
     }
@@ -381,7 +381,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
         Steps.addJarsFromDirToZip(libDir)
       ))
-      _ <- createZip(jarFile, contents)
+      _ <- Steps.createZip(jarFile, contents)
     } yield {
       ()
     }
@@ -610,17 +610,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     fs.foreach(f => f(x))
   }
 
-  /**
-    * Writes `contents` to the zip file located at `zip`.
-    *
-    * Creates the zip file if it does not exist, and truncates it if it already exists.
-    */
-  private def createZip(zip: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
-    Files.createDirectories(zip.getParent.normalize())
-    Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(zip)))(contents))
-      .mapErr(e => BootstrapError.FileError(e.getMessage))
-  }
-
   private object Steps {
 
     /**
@@ -785,6 +774,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         flix.setOptions(newOptions)
         ()
       }
+    }
+
+    /**
+      * Writes `contents` to the zip file located at `zip`.
+      *
+      * Creates the zip file if it does not exist, and truncates it if it already exists.
+      */
+    def createZip(zip: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
+      Files.createDirectories(zip.getParent.normalize())
+      Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(zip)))(contents))
+        .mapErr(e => BootstrapError.FileError(e.getMessage))
     }
 
     /**
