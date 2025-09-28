@@ -350,7 +350,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.configureJarOutput(flix)
       _ <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
-      _ = Files.createDirectories(getArtifactDirectory(projectPath))
       contents = sequence(Seq(
         Steps.addManifestToZip,
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
@@ -376,7 +375,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.validateJarFile(jarFile)
       _ <- Steps.validateDirectory(libDir)
       _ <- Result.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
-      _ = Files.createDirectories(getArtifactDirectory(projectPath))
       contents = sequence(Seq(
         Steps.addManifestToZip,
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
@@ -618,6 +616,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Creates the zip file if it does not exist, and truncates it if it already exists.
     */
   private def createZip(zip: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
+    Files.createDirectories(zip.getParent.normalize())
     Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(zip)))(contents))
       .mapErr(e => BootstrapError.FileError(e.getMessage))
   }
@@ -915,8 +914,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
-
-      Validation.Success(())
     }
 
     /**
