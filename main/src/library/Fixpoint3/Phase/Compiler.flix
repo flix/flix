@@ -17,7 +17,7 @@
  */
 
 mod Fixpoint3.Phase.Compiler {
-    use Fixpoint3.Ast.Ram.{arityOfNonLat, BoolExp, Facts, Predicates, RamId, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
+    use Fixpoint3.Ast.Ram.{arityOfNonLat, BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, Fixity, HeadTerm, Polarity, VarSym}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
@@ -274,7 +274,7 @@ mod Fixpoint3.Phase.Compiler {
             let HeadAtom(PredSym(_, headId), _, headTerms) = headAtom;
             let augBody = augmentBody(body, counter);
             let env = unifyVars(predicates, functionalCounter, typeInfo, augBody);
-            let ramTerms = Vector.mapWithIndex(i -> atom -> compileHeadTerm(env, counter, getType(headId, i, typeInfo), atom), headTerms);
+            let ramTerms = Vector.mapWithIndex(i -> atom -> compileHeadTerm(env, getType(headId, i, typeInfo), atom), headTerms);
             let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates), ruleNum);
             match compileBody(env, augBody, predicates, typeInfo) {
                 case None       => ()
@@ -338,7 +338,7 @@ mod Fixpoint3.Phase.Compiler {
                 let augBody = augmentBody(body, counter);
                 let delta = snd(Vector.get(deltaIndex, augBody));
                 let env = unifyVars(predicates, functionalCounter, typeInfo, augBody);
-                let ramTerms = Vector.mapWithIndex(i -> atom -> compileHeadTerm(env, counter, getType(headId, i, typeInfo), atom), headTerms);
+                let ramTerms = Vector.mapWithIndex(i -> atom -> compileHeadTerm(env, getType(headId, i, typeInfo), atom), headTerms);
                 let projection = RelOp.Project(ramTerms, Predicate.headAtomToRelSym(headAtom, New, predicates), ruleNum);
                 match compileBody(env, augBody, predicates, typeInfo) {
                     case None       => ()
@@ -393,34 +393,34 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Substitute Datalog head term `term` for a RAM term according to the given substitution `env`.
     ///
-    def compileHeadTerm(env: Map[VarSym, RamTerm], counter: Counter[r], ty: Type, term: HeadTerm): RamTerm \ r = match term {
+    def compileHeadTerm(env: Map[VarSym, RamTerm], ty: Type, term: HeadTerm): RamTerm = match term {
         case HeadTerm.Var(var)   => getOrCrash(Map.get(var, env))
-        case HeadTerm.Lit(v)     => RamTerm.Lit(v, RamId.Id(Counter.getAndIncrement(counter)), ty)
+        case HeadTerm.Lit(v)     => RamTerm.Lit(v, ty)
         case HeadTerm.App1(f, v) =>
             let t = getOrCrash(Map.get(v, env));
-            RamTerm.App1(f, t, RamId.Id(-42), ty)
+            RamTerm.App1(f, t, ty)
         case HeadTerm.App2(f, v1, v2) =>
             let t1 = getOrCrash(Map.get(v1, env));
             let t2 = getOrCrash(Map.get(v2, env));
-            RamTerm.App2(f, t1, t2, RamId.Id(-42), ty)
+            RamTerm.App2(f, t1, t2, ty)
         case HeadTerm.App3(f, v1, v2, v3) =>
             let t1 = getOrCrash(Map.get(v1, env));
             let t2 = getOrCrash(Map.get(v2, env));
             let t3 = getOrCrash(Map.get(v3, env));
-            RamTerm.App3(f, t1, t2, t3, RamId.Id(-42), ty)
+            RamTerm.App3(f, t1, t2, t3, ty)
         case HeadTerm.App4(f, v1, v2, v3, v4) =>
             let t1 = getOrCrash(Map.get(v1, env));
             let t2 = getOrCrash(Map.get(v2, env));
             let t3 = getOrCrash(Map.get(v3, env));
             let t4 = getOrCrash(Map.get(v4, env));
-            RamTerm.App4(f, t1, t2, t3, t4, RamId.Id(-42), ty)
+            RamTerm.App4(f, t1, t2, t3, t4, ty)
         case HeadTerm.App5(f, v1, v2, v3, v4, v5) =>
             let t1 = getOrCrash(Map.get(v1, env));
             let t2 = getOrCrash(Map.get(v2, env));
             let t3 = getOrCrash(Map.get(v3, env));
             let t4 = getOrCrash(Map.get(v4, env));
             let t5 = getOrCrash(Map.get(v5, env));
-            RamTerm.App5(f, t1, t2, t3, t4, t5, RamId.Id(-42), ty)
+            RamTerm.App5(f, t1, t2, t3, t4, t5, ty)
     }
 
     ///
@@ -466,7 +466,7 @@ mod Fixpoint3.Phase.Compiler {
                                     if (i < Vector.length(terms) - 1)
                                         Map.insertWith(_ -> t -> t, var, RamTerm.RowLoad(rowVar, i, sType, toFullSym(atom)), acc1)
                                     else
-                                        let f = _ -> t2 -> RamTerm.Meet(glb, t2, (rowVar, toFullSym(atom)), RamId.Id(-42), getType(id, i, typeInfo));
+                                        let f = _ -> t2 -> RamTerm.Meet(glb, t2, (rowVar, toFullSym(atom)), getType(id, i, typeInfo));
                                         Map.insertWith(f, var, RamTerm.RowLoad(rowVar, i, sType, toFullSym(atom)), acc1)
                             }
                             case _ => acc1
@@ -540,7 +540,7 @@ mod Fixpoint3.Phase.Compiler {
                 let compileBodyTerm = id -> j -> term -> match term {
                     case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j, getType(id, j, typeInfo), toFullSym(atom))
                     case BodyTerm.Var(var)  => getOrCrash(Map.get(var, env))
-                    case BodyTerm.Lit(v)    => RamTerm.Lit(v, RamId.Id(-42), getType(id, j, typeInfo))
+                    case BodyTerm.Lit(v)    => RamTerm.Lit(v, getType(id, j, typeInfo))
                 };
                 match atom {
                     case BodyAtom(PredSym(_, id), denotation, Polarity.Positive, _, terms) =>
@@ -593,7 +593,7 @@ mod Fixpoint3.Phase.Compiler {
     /// Compile the RamTerm `t` to either a Leq or NotBot depending on whether the atom was `Pi(;x)`, `Pi(;_)`, or `P(;1)`.
     ///
     def compileBoolForLatticeenal(t: RamTerm, leq: Boxed -> Boxed -> Bool, bot: Boxed, rv: RowVar, relSym: RelSym): BoolExp = match t {
-        case RamTerm.Lit(val, _, _) =>
+        case RamTerm.Lit(val, _) =>
             BoolExp.Leq(val, rv, relSym)
         case _ => BoolExp.NotBot(t, leq, bot)
     }

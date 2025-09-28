@@ -386,7 +386,7 @@ object Lexer {
             acceptUserDefinedOp()
           } else TokenKind.Underscore
         } else TokenKind.Underscore
-      case c if c.isDigit =>
+      case c if isDigit(c) =>
         if (c == '0' && s.sc.advanceIfMatch('x')) {
           acceptHexNumber()
         } else {
@@ -457,7 +457,7 @@ object Lexer {
 
   /** Returns `true` if `c` is allowed inside a built-in name. */
   private def isBuiltInChar(c: Char): Boolean =
-    (c.isLetter && c.isUpper) || c.isDigit || c == '_'
+    (isLetter(c) && c.isUpper) || isDigit(c) || c == '_'
 
   /**
     * Moves the current position past all pairs of `\` and any other character, returning
@@ -499,11 +499,11 @@ object Lexer {
     * All chars where `true` is returned has lower/upper case defined.
     */
   private def isFirstNameChar(c: Char): Boolean =
-    c.isLetter
+    isLetter(c)
 
   /** Returns `true` if `c` is allowed inside a name (see [[isFirstNameChar]]). */
   private def isNameChar(c: Char): Boolean =
-    c.isLetter || c.isDigit || c == '_' || c == '!' || c == '$'
+    isLetter(c) || isDigit(c) || c == '_' || c == '!' || c == '$'
 
   /**
     * Moves current position past a math name.
@@ -696,7 +696,7 @@ object Lexer {
 
   /** Returns `true` if `c` is recognized by `[0-9a-z._]`. */
   private def isNumberLikeChar(c: Char): Boolean =
-    c.isDigit || c.isLetter || c == '.' || c == '_'
+    isDigit(c) || isLetter(c) || c == '.' || c == '_'
 
   /** This should be understood as a control effect - fully handled inside [[acceptNumber]]. */
   private sealed case class NumberError(kind: TokenKind) extends RuntimeException
@@ -721,13 +721,13 @@ object Lexer {
       * Throws [[NumberError]] if not matched.
       */
     def acceptDigits(soft: Boolean): Unit = {
-      if (s.sc.advanceWhileWithCount(_.isDigit) == 0 && !soft) {
+      if (s.sc.advanceWhileWithCount(isDigit) == 0 && !soft) {
         val loc = sourceLocationAtCurrent()
         s.sc.advanceWhile(isNumberLikeChar)
         throw NumberError(mkErrorKind(LexerError.ExpectedDigit(loc)))
       }
       while (s.sc.advanceIfMatch('_')) {
-        if (s.sc.advanceWhileWithCount(_.isDigit) == 0) {
+        if (s.sc.advanceWhileWithCount(isDigit) == 0) {
           val loc = sourceLocationAtCurrent()
           s.sc.advanceWhile(isNumberLikeChar)
           throw NumberError(mkErrorKind(LexerError.ExpectedDigit(loc)))
@@ -883,7 +883,7 @@ object Lexer {
 
   /** Returns `true` if `c` can be used in annotation names. */
   private def isAnnotationChar(c: Char): Boolean =
-    c.isLetter
+    isLetter(c)
 
   /**
     * Moves current position past a line-comment or a line of a doc-comment.
@@ -920,6 +920,13 @@ object Lexer {
     mkErrorKind(LexerError.UnterminatedBlockComment(sourceLocationFromStart()))
   }
 
+  /** Returns `true` if `c` is a letter. */
+  private def isLetter(c: Char): Boolean =
+    ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+
+  /** Returns `true` if `c` is a digit. */
+  private def isDigit(c: Char): Boolean =
+    '0' <= c && c <= '9'
 
   /** Creates a [[SourceLocation]] of the inclusive `start` and exclusive `end` in the current source. */
   private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State): SourceLocation =

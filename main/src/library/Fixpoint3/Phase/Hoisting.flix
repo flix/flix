@@ -83,7 +83,7 @@
 /// When arriving at `if (...)` and `project(...)` `termMap` will remain unchanged.
 ///
 mod Fixpoint3.Phase.Hoisting {
-    use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, BoolExp, RamId, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
+    use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, BoolExp, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Boxed
     use Fixpoint3.Phase.Compiler.functionalRelSym
     use Fixpoint3.Util.getOrCrash
@@ -107,17 +107,17 @@ mod Fixpoint3.Phase.Hoisting {
             let termMap = (Map.empty(), constEqualities) ||>
                 MutMap.foldLeftWithKey(acc -> load -> listOfPairs ->
                     (acc, listOfPairs) ||>
-                        List.foldLeft(innerAcc -> match (val, id, ty) -> {
+                        List.foldLeft(innerAcc -> match (val, ty) -> {
                             // `load` must have been registered by `unifyEqualitiesStmt`.
                             let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
                             match Map.get(rep, innerAcc) {
-                                case Some(RamTerm.Lit(v, _, _)) => {
+                                case Some(RamTerm.Lit(v, _)) => {
                                         if (v != val) MutSet.add(fst(rep), impossible)
                                         else ()
                                     };
                                     innerAcc
                                 case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")
-                                case None    => Map.insert(rep, RamTerm.Lit(val, id, ty), innerAcc)
+                                case None    => Map.insert(rep, RamTerm.Lit(val, ty), innerAcc)
                             }
                         })
                 );
@@ -467,21 +467,21 @@ mod Fixpoint3.Phase.Hoisting {
         let termVarsOf = termVariablesOf(termMap, equalitySets);
         let getRepVar = getRepRowVar(termMap, equalitySets);
         match term {
-            case RamTerm.Lit(_, _, _)                    => Set#{}
-            case RamTerm.ProvMax(vec)                    => Vector.foldLeft(acc -> match (rv, _) -> Set.insert(rv, acc), Set#{}, vec)
-            case RamTerm.RowLoad(rv, i, _, _)            => getRepVar(rv, i)
-            case RamTerm.Meet(_, t1, (rv, relSym), _, _) => Set.union(termVarsOf(t1), getRepVar(rv, arityOfNonLat(relSym)))
-            case RamTerm.App1(_, t1, _, _)               => termVarsOf(t1)
-            case RamTerm.App2(_, t1, t2, _, _) =>
+            case RamTerm.Lit(_, _)                    => Set#{}
+            case RamTerm.ProvMax(vec)                 => Vector.foldLeft(acc -> match (rv, _) -> Set.insert(rv, acc), Set#{}, vec)
+            case RamTerm.RowLoad(rv, i, _, _)         => getRepVar(rv, i)
+            case RamTerm.Meet(_, t1, (rv, relSym), _) => Set.union(termVarsOf(t1), getRepVar(rv, arityOfNonLat(relSym)))
+            case RamTerm.App1(_, t1, _)               => termVarsOf(t1)
+            case RamTerm.App2(_, t1, t2, _) =>
                 Vector#{t1, t2} |>
                     Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
-            case RamTerm.App3(_, t1, t2, t3, _, _) =>
+            case RamTerm.App3(_, t1, t2, t3, _) =>
                 Vector#{t1, t2, t3} |>
                     Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
-            case RamTerm.App4(_, t1, t2, t3, t4, _, _) =>
+            case RamTerm.App4(_, t1, t2, t3, t4, _) =>
                 Vector#{t1, t2, t3, t4} |>
                     Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
-            case RamTerm.App5(_, t1, t2, t3, t4, t5, _, _) =>
+            case RamTerm.App5(_, t1, t2, t3, t4, t5, _) =>
                 Vector#{t1, t2, t3, t4, t5} |>
                     Vector.foldRight(t -> acc -> termVarsOf(t) `Set.union` acc, Set#{})
         }
@@ -502,7 +502,7 @@ mod Fixpoint3.Phase.Hoisting {
             case None => Set#{rv}
             case Some(rep) => match rep {
                 case RamTerm.RowLoad(rv1, _, _, _) => Set#{rv1}
-                case RamTerm.Lit(_, _, _) => Set#{}
+                case RamTerm.Lit(_, _) => Set#{}
                 case _ => unreachable!()
             }
     }
@@ -559,15 +559,15 @@ mod Fixpoint3.Phase.Hoisting {
         };
         let replaceRec = replaceByRepRamTerm(termMap, equalitySets);
         match ramTerm {
-            case RamTerm.Lit(_, _, _)                        => ramTerm
-            case RamTerm.ProvMax(_)                          => ramTerm
-            case RamTerm.RowLoad(_, _, _, _)                 => getRep(ramTerm)
-            case RamTerm.Meet(_, _, _, _, _)                 => ramTerm
-            case RamTerm.App1(f, t1, id, ty)                 => RamTerm.App1(f, replaceRec(t1), id, ty)
-            case RamTerm.App2(f, t1, t2, id, ty)             => RamTerm.App2(f, replaceRec(t1), replaceRec(t2), id, ty)
-            case RamTerm.App3(f, t1, t2, t3, id, ty)         => RamTerm.App3(f, replaceRec(t1), replaceRec(t2), replaceRec(t3), id, ty)
-            case RamTerm.App4(f, t1, t2, t3, t4, id, ty)     => RamTerm.App4(f, replaceRec(t1), replaceRec(t2), replaceRec(t3), replaceRec(t4), id, ty)
-            case RamTerm.App5(f, t1, t2, t3, t4, t5, id, ty) => RamTerm.App5(f, replaceRec(t1), replaceRec(t2), replaceRec(t3), replaceRec(t4), replaceRec(t5), id, ty)
+            case RamTerm.Lit(_, _)                       => ramTerm
+            case RamTerm.ProvMax(_)                      => ramTerm
+            case RamTerm.RowLoad(_, _, _, _)             => getRep(ramTerm)
+            case RamTerm.Meet(_, _, _, _)                => ramTerm
+            case RamTerm.App1(f, t1, ty)                 => RamTerm.App1(f, replaceRec(t1), ty)
+            case RamTerm.App2(f, t1, t2, ty)             => RamTerm.App2(f, replaceRec(t1), replaceRec(t2), ty)
+            case RamTerm.App3(f, t1, t2, t3, ty)         => RamTerm.App3(f, replaceRec(t1), replaceRec(t2), replaceRec(t3), ty)
+            case RamTerm.App4(f, t1, t2, t3, t4, ty)     => RamTerm.App4(f, replaceRec(t1), replaceRec(t2), replaceRec(t3), replaceRec(t4), ty)
+            case RamTerm.App5(f, t1, t2, t3, t4, t5, ty) => RamTerm.App5(f, replaceRec(t1), replaceRec(t2), replaceRec(t3), replaceRec(t4), replaceRec(t5), ty)
     }
 
 
@@ -610,7 +610,7 @@ mod Fixpoint3.Phase.Hoisting {
     ): Bool \ r =
         let termGround = isTermGround(termMap, equalitySets);
         match term {
-            case RamTerm.Lit(_, _, _) => true
+            case RamTerm.Lit(_, _) => true
             case RamTerm.ProvMax(loads) =>
                 loads |>
                     Vector.forAll(load -> {
@@ -618,12 +618,12 @@ mod Fixpoint3.Phase.Hoisting {
                     })
             case RamTerm.RowLoad(rv, i, _, _) =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, i), equalitySets)), termMap)
-            case RamTerm.Meet(_, t1, (rv, relSym), _, _) => termGround(t1) and Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)
-            case RamTerm.App1(_, t1, _, _) => termGround(t1)
-            case RamTerm.App2(_, t1, t2, _, _) => termGround(t1) and termGround(t2)
-            case RamTerm.App3(_, t1, t2, t3, _, _) => termGround(t1) and termGround(t2) and termGround(t3)
-            case RamTerm.App4(_, t1, t2, t3, t4, _, _) => termGround(t1) and termGround(t2) and termGround(t3) and termGround(t4)
-            case RamTerm.App5(_, t1, t2, t3, t4, t5, _, _) => termGround(t1) and termGround(t2) and termGround(t3) and termGround(t4) and termGround(t5)
+            case RamTerm.Meet(_, t1, (rv, relSym), _) => termGround(t1) and Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)
+            case RamTerm.App1(_, t1, _) => termGround(t1)
+            case RamTerm.App2(_, t1, t2, _) => termGround(t1) and termGround(t2)
+            case RamTerm.App3(_, t1, t2, t3, _) => termGround(t1) and termGround(t2) and termGround(t3)
+            case RamTerm.App4(_, t1, t2, t3, t4, _) => termGround(t1) and termGround(t2) and termGround(t3) and termGround(t4)
+            case RamTerm.App5(_, t1, t2, t3, t4, t5, _) => termGround(t1) and termGround(t2) and termGround(t3) and termGround(t4) and termGround(t5)
         }
 
     ///
@@ -639,7 +639,7 @@ mod Fixpoint3.Phase.Hoisting {
     @Internal
     pub def unifyEqualitiesStmt(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
-        constEqualities: MutMap[(RowVar, Int32), List[(Boxed, RamId, Type)], r],
+        constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],
         stmt: RamStmt
     ): Unit \ r = match stmt {
         case RamStmt.Seq(xs) => Vector.forEach(unifyEqualitiesStmt(equalitySets, constEqualities), xs)
@@ -662,7 +662,7 @@ mod Fixpoint3.Phase.Hoisting {
     @Internal
     pub def unifyEqualitiesOp(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
-        constEqualities: MutMap[(RowVar, Int32), List[(Boxed, RamId, Type)], r],
+        constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],
         op: RelOp
     ): Unit \ r = match op {
         case RelOp.Search(rowVar, RelSym.Symbol(_, arity, _), _, body) =>
@@ -686,17 +686,17 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     def unifyBoolExp(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
-        constEqualities: MutMap[(RowVar, Int32), List[(Boxed, RamId, Type)], r],
+        constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],
         boolExp: BoolExp
     ): Unit \ r = match boolExp {
         case BoolExp.Eq(RamTerm.RowLoad(rv1, i1, _, _), RamTerm.RowLoad(rv2, i2, _, _)) =>
             MutDisjointSets.makeSet((rv1, i1), equalitySets);
             MutDisjointSets.makeSet((rv2, i2), equalitySets);
             MutDisjointSets.union((rv1, i1), (rv2, i2), equalitySets)
-        case BoolExp.Eq(RamTerm.RowLoad(rv, i, _, _), RamTerm.Lit(val, id, ty)) =>
-            MutMap.putWith(_ -> list -> (val, id, ty) :: list, (rv, i), (val, id, ty) :: Nil, constEqualities)
-        case BoolExp.Eq(RamTerm.Lit(val, id, ty), RamTerm.RowLoad(rv, i, _, _)) =>
-            MutMap.putWith(_ -> list -> (val, id, ty) :: list, (rv, i), (val, id, ty) :: Nil, constEqualities)
+        case BoolExp.Eq(RamTerm.RowLoad(rv, i, _, _), RamTerm.Lit(val, ty)) =>
+            MutMap.putWith(_ -> list -> (val, ty) :: list, (rv, i), (val, ty) :: Nil, constEqualities)
+        case BoolExp.Eq(RamTerm.Lit(val, ty), RamTerm.RowLoad(rv, i, _, _)) =>
+            MutMap.putWith(_ -> list -> (val, ty) :: list, (rv, i), (val, ty) :: Nil, constEqualities)
         case _ => ()
     }
 

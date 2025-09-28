@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
-import ca.uwaterloo.flix.util.collection.MapOps
 
 import java.lang.reflect.Executable
 
@@ -726,14 +725,14 @@ object TypeReconstruction {
     * Reconstructs types in the given ext pattern.
     */
   private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
-    case KindedAst.ExtPattern.Default(tvar, loc) =>
+    case KindedAst.ExtPattern.Default(_, loc) =>
       TypedAst.ExtPattern.Default(loc)
 
     case KindedAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPat)
       TypedAst.ExtPattern.Tag(label, ps, loc)
 
-    case KindedAst.ExtPattern.Error(tvar, loc) =>
+    case KindedAst.ExtPattern.Error(_, loc) =>
       TypedAst.ExtPattern.Error(loc)
   }
 
