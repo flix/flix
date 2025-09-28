@@ -348,11 +348,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       contents = (zip: ZipOutputStream) => {
-        Steps.addManifestToZip(zip)
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
       }
-      _ <- Steps.createZip(jarFile, contents)
+      _ <- Steps.createJar(jarFile, contents)
     } yield {
       ()
     }
@@ -373,12 +372,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.validateDirectory(libDir)
       _ <- Steps.validateJarFilesIn(libDir)
       contents = (zip: ZipOutputStream) => {
-        Steps.addManifestToZip(zip)
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
         Steps.addJarsFromDirToZip(libDir, zip)
       }
-      _ <- Steps.createZip(jarFile, contents)
+      _ <- Steps.createJar(jarFile, contents)
     } yield {
       ()
     }
@@ -702,7 +700,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds a `META-INF/MANIFEST.MF` file to `zip`.
       */
-    def addManifestToZip(zip: ZipOutputStream): Unit = {
+    private def addManifestToZip(zip: ZipOutputStream): Unit = {
       // META-INF/MANIFEST.MF
       val manifest =
         """Manifest-Version: 1.0
@@ -767,13 +765,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     /**
-      * Writes `contents` to the zip file located at `zip`.
+      * Writes `contents` to the jar file located at `jar`.
       *
-      * Creates the zip file if it does not exist, and truncates it if it already exists.
+      * This function also adds a manifest to the jar file.
+      *
+      * Creates the jar file if it does not exist, and truncates it if it already exists.
+      *
+      * @see [[Steps.addManifestToZip]]
       */
-    def createZip(zip: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
-      Files.createDirectories(zip.getParent.normalize())
-      Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(zip)))(contents))
+    def createJar(jar: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
+      Files.createDirectories(jar.getParent.normalize())
+      val contentsWithManifest = (zip: ZipOutputStream) => {
+        Steps.addManifestToZip(zip)
+        contents(zip)
+      }
+      Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(jar)))(contentsWithManifest))
         .mapErr(e => BootstrapError.FileError(e.getMessage))
     }
 
@@ -939,7 +945,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Returns `Ok(())` if all files ending with `.jar` in `dir` are valid jar files.
       *
-      * @see [[validateJarFile]]
+      * @see [[Steps.validateJarFile]]
       */
     def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
       Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile).map(_ => ())
