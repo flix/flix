@@ -347,11 +347,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.configureJarOutput(flix)
       _ <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
-      contents = sequence(Seq(
-        Steps.addManifestToZip,
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
-      ))
+      contents = (zip: ZipOutputStream) => {
+        Steps.addManifestToZip(zip)
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath))(zip)
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))(zip)
+      }
       _ <- Steps.createZip(jarFile, contents)
     } yield {
       ()
@@ -372,12 +372,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.validateJarFile(jarFile)
       _ <- Steps.validateDirectory(libDir)
       _ <- Result.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
-      contents = sequence(Seq(
-        Steps.addManifestToZip,
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
-        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
-        Steps.addJarsFromDirToZip(libDir)
-      ))
+      contents = (zip: ZipOutputStream) => {
+        Steps.addManifestToZip(zip)
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath))(zip)
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))(zip)
+        Steps.addJarsFromDirToZip(libDir)(zip)
+      }
       _ <- Steps.createZip(jarFile, contents)
     } yield {
       ()
@@ -598,13 +598,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case None => PackageModules.All
       case Some(manifest) => manifest.modules
     }
-  }
-
-  /**
-    * Applies all functions in `fs` to `x`.
-    */
-  private def sequence[A](fs: Seq[A => Unit])(x: A): Unit = {
-    fs.foreach(f => f(x))
   }
 
   private object Steps {
