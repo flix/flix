@@ -32,9 +32,9 @@ mod TcpAccept {
     ///
     /// Handles the `TcpAccept` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpAccept` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpAccept + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpAccept + IO = x ->
         run {
             Ok(f(x))
         } with handler TcpAccept {
@@ -55,8 +55,8 @@ mod TcpAccept {
     ///
     /// Runs the `TcpAccept` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpAccept` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpAccept` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpAccept + {IO, Net} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpAccept + IO = handle(f)()
 
 }

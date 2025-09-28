@@ -36,7 +36,7 @@ mod Eff {
         ///
         /// In other words, re-interprets the `BiasedCoin` effect using the `NonDet` and `IO` effects.
         ///
-        pub def handle(f: a -> b \ ef): (a -> b \ (ef - BiasedCoin) + {NonDet, IO}) \ {NonDet, IO} =
+        pub def handle(f: a -> b \ ef): (a -> b \ (ef - BiasedCoin) + {NonDet, IO}) \ IO =
             let rnd = new JRandom();
             x -> run {
                 f(x)

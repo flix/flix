@@ -395,19 +395,9 @@ object Type {
   val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan, Kind.Eff), SourceLocation.Unknown)
 
   /**
-    * Represents the Net effect.
-    */
-  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net, Kind.Eff), SourceLocation.Unknown)
-
-  /**
     * Represents the NonDet effect.
     */
   val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet, Kind.Eff), SourceLocation.Unknown)
-
-  /**
-    * Represents the Sys effect.
-    */
-  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.

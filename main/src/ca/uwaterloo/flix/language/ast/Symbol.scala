@@ -42,20 +42,14 @@ object Symbol {
     * The primitive effects defined in the Prelude.
     */
   val Chan: EffSym = mkEffSym(Name.RootNS, Ident("Chan", SourceLocation.Unknown))
-  val Env: EffSym = mkEffSym(Name.RootNS, Ident("Env", SourceLocation.Unknown))
-  val Exec: EffSym = mkEffSym(Name.RootNS, Ident("Exec", SourceLocation.Unknown))
-  val FsRead: EffSym = mkEffSym(Name.RootNS, Ident("FsRead", SourceLocation.Unknown))
-  val FsWrite: EffSym = mkEffSym(Name.RootNS, Ident("FsWrite", SourceLocation.Unknown))
   val IO: EffSym = mkEffSym(Name.RootNS, Ident("IO", SourceLocation.Unknown))
-  val Net: EffSym = mkEffSym(Name.RootNS, Ident("Net", SourceLocation.Unknown))
   val NonDet: EffSym = mkEffSym(Name.RootNS, Ident("NonDet", SourceLocation.Unknown))
-  val Sys: EffSym = mkEffSym(Name.RootNS, Ident("Sys", SourceLocation.Unknown))
 
   /**
     * The set of all primitive effects defined in the Prelude.
     */
   val PrimitiveEffs: SortedSet[EffSym] = SortedSet.from(List(
-    Chan, Env, Exec, FsRead, FsWrite, IO, Net, NonDet, Sys
+    Chan, IO, NonDet
   ))
 
   /**
@@ -69,14 +63,8 @@ object Symbol {
     */
   def isPrimitiveEff(sym: EffSym): Boolean = sym match {
     case Chan => true
-    case Env => true
-    case Exec => true
-    case FsRead => true
-    case FsWrite => true
     case IO => true
-    case Net => true
     case NonDet => true
-    case Sys => true
     case _ => false
   }
 
@@ -87,14 +75,8 @@ object Symbol {
     */
   def parsePrimitiveEff(s: String): Symbol.EffSym = s match {
     case "Chan" => Chan
-    case "Env" => Env
-    case "Exec" => Exec
-    case "FsRead" => FsRead
-    case "FsWrite" => FsWrite
     case "IO" => IO
-    case "Net" => Net
     case "NonDet" => NonDet
-    case "Sys" => Sys
     case _ => throw InternalCompilerException(s"Unknown primitive effect: '$s'.", SourceLocation.Unknown)
   }
 
@@ -1008,7 +990,7 @@ object Symbol {
     override val hashCode: Int = Objects.hash(ns)
 
     /**
-      * Human readable representation.
+      * Human-readable representation.
       */
     override def toString: String = ns.mkString(".")
   }
