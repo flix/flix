@@ -93,13 +93,13 @@ mod TestRedBlackTree {
         assertTrue(checkBinarySearchTreeInvariant(tree))
 
     @Test
-    def testBinarySearchTreeInvariant10(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(10)))
+    def testBinarySearchTreeInvariant10(): Unit \ {Assert, IO} = assertTrue(checkBinarySearchTreeInvariant(random(10)))
 
     @Test
-    def testBinarySearchTreeInvariant11(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(100)))
+    def testBinarySearchTreeInvariant11(): Unit \ {Assert, IO} = assertTrue(checkBinarySearchTreeInvariant(random(100)))
 
     @Test
-    def testBinarySearchTreeInvariant12(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(1000)))
+    def testBinarySearchTreeInvariant12(): Unit \ {Assert, IO} = assertTrue(checkBinarySearchTreeInvariant(random(1000)))
 
     @Test
     def testRedParentInvariant01(): Unit \ Assert =
