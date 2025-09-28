@@ -349,8 +349,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.validateJarFile(jarFile)
       contents = (zip: ZipOutputStream) => {
         Steps.addManifestToZip(zip)
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath))(zip)
-        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))(zip)
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
       }
       _ <- Steps.createZip(jarFile, contents)
     } yield {
@@ -374,9 +374,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Result.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
       contents = (zip: ZipOutputStream) => {
         Steps.addManifestToZip(zip)
-        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath))(zip)
-        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))(zip)
-        Steps.addJarsFromDirToZip(libDir)(zip)
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
+        Steps.addJarsFromDirToZip(libDir, zip)
       }
       _ <- Steps.createZip(jarFile, contents)
     } yield {
@@ -605,7 +605,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds all class files from `dir` to `zip`.
       */
-    def addClassFilesFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
+    def addClassFilesFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
       val classFiles = FileOps.getFilesWithExtIn(dir, EXT_CLASS, Int.MaxValue)
@@ -618,7 +618,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Adds all jars in `dir` to `zip`.
       * Ignores non-jar files and does nothing if `dir` does not exist.
       */
-    def addJarsFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
+    def addJarsFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
       // First, we get all jar files inside the lib folder.
       // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
       if (!Files.exists(dir)) {
@@ -716,7 +716,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     /**
       * Adds all files in `dir` to `zip`.
       */
-    def addResourcesFromDirToZip(dir: Path)(zip: ZipOutputStream): Unit = {
+    def addResourcesFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
       // Add all resources, again sorting by relative file name
       val resources = FileOps.getFilesIn(dir, Int.MaxValue)
       for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, resources)) {
