@@ -1084,6 +1084,19 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.InlineAndDontInline](result)
   }
 
+  test("IllegalTypeParamReuse.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f[a: Type](x: a): Int32
+        |}
+        |
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalTypeParamReuse](result)
+  }
+
   // This is supposed to check that the identifier does not include '$'.
   // But since a user defined operation like '<$>' is perfectly valid,
   // checking the identifier becomes tricky,

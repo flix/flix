@@ -721,6 +721,36 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that the type parameter `name` was re-defined illegally.
+    *
+    * @param name the name of the type parameter.
+    * @param loc1 the location of the original definition.
+    * @param loc2 the location of the redefinition.
+    */
+  case class IllegalTypeParamReuse(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+    def summary: String = s"Redefinition fo type parameter '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Redefinition of type parameter '${red(name)}'.
+         |
+         |${code(loc1, "the original definition was here.")}
+         |
+         |${code(loc2, "the redefinition was here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Rename one of the two type parameters."
+    })
+
+    def loc: SourceLocation = loc2
+
+  }
+
+  /**
     * An error raised to indicate that the case of an alias does not match the case of the original value.
     *
     * @param fromName the original name.

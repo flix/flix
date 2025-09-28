@@ -261,6 +261,15 @@ object Weeder2 {
         traverse(laws)(visitLawDecl)
       ) {
         (doc, ident, tparam, tconstr, sigs, laws) =>
+          // Assert that none of the functions redefine the type parameter of the trait.
+          sigs.foreach {
+            case Declaration.Sig(_, _, _, _, tparams, _, _, _, _, _, _, _) =>
+              tparams.foreach(tp => {
+                if (tp.ident == tparam.ident) {
+                  sctx.errors.add(IllegalTypeParamReuse(tp.ident.name, tparam.loc, tp.loc))
+                }
+              })
+          }
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
             assocs => Declaration.Trait(doc, ann, mod, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
@@ -3238,11 +3247,12 @@ object Weeder2 {
 
     def visitParameter(tree: Tree)(implicit sctx: SharedContext): Validation[TypeParam, CompilationMessage] = {
       expect(tree, TreeKind.Parameter)
-      mapN(pickNameIdent(tree)) {
-        ident =>
+      mapN(pick(TreeKind.Ident, tree)) {
+        tokenIdent =>
+          val ident = tokenToIdent(tokenIdent)
           tryPickKind(tree)
-            .map(kind => TypeParam.Kinded(ident, kind))
-            .getOrElse(TypeParam.Unkinded(ident))
+            .map(kind => TypeParam.Kinded(ident, kind, tokenIdent.loc))
+            .getOrElse(TypeParam.Unkinded(ident, tokenIdent.loc))
       }
     }
 

@@ -460,13 +460,16 @@ object WeededAst {
 
   case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
-  sealed trait TypeParam
+  sealed trait TypeParam {
+    def ident: Name.Ident
+    def loc: SourceLocation
+  }
 
   object TypeParam {
 
-    case class Unkinded(ident: Name.Ident) extends TypeParam
+    case class Unkinded(ident: Name.Ident, loc: SourceLocation) extends TypeParam
 
-    case class Kinded(ident: Name.Ident, kind: Kind) extends TypeParam
+    case class Kinded(ident: Name.Ident, kind: Kind, loc: SourceLocation) extends TypeParam
 
   }
 
