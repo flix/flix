@@ -371,7 +371,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       _ <- Steps.validateDirectory(libDir)
-      _ <- Result.traverse(FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile)
+      _ <- Steps.validateJarFilesIn(libDir)
       contents = (zip: ZipOutputStream) => {
         Steps.addManifestToZip(zip)
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
@@ -935,5 +935,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
       Ok(())
     }
+
+    /**
+      * Returns `Ok(())` if all files ending with `.jar` in `dir` are valid jar files.
+      *
+      * @see [[validateJarFile]]
+      */
+    def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
+      Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile).map(_ => ())
+    }
+
   }
 }
