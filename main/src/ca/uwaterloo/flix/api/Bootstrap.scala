@@ -356,7 +356,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath)),
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath))
       ))
-      _ <- toResult(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
+      _ <- createZip(jarFile, contents)
     } yield {
       ()
     }
@@ -383,7 +383,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath)),
         Steps.addJarsFromDirToZip(libDir)
       ))
-      _ <- toResult(Using(new ZipOutputStream(Files.newOutputStream(jarFile)))(contents))
+      _ <- createZip(jarFile, contents)
     } yield {
       ()
     }
@@ -606,19 +606,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Converts `t` to a [[Validation]].
-    * If `t` is a failure then a [[BootstrapError.FileError]] is returned.
-    */
-  private def toResult[A](t: Try[A]): Result[A, BootstrapError] = t match {
-    case Success(v) => Ok(v)
-    case Failure(e) => Err(BootstrapError.FileError(e.getMessage))
-  }
-
-  /**
     * Applies all functions in `fs` to `x`.
     */
   private def sequence[A](fs: Seq[A => Unit])(x: A): Unit = {
     fs.foreach(f => f(x))
+  }
+
+  /**
+    * Writes `contents` to the zip file located at `zip`.
+    *
+    * Creates the zip file if it does not exist, and truncates it if it already exists.
+    */
+  private def createZip(zip: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
+    Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(zip)))(contents))
+      .mapErr(e => BootstrapError.FileError(e.getMessage))
   }
 
   private object Steps {
