@@ -334,10 +334,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.clearCaches()
 
     Steps.updateStaleSources(flix)
-    Steps.compile(flix) match {
-      case Ok(result) => Validation.Success(result)
-      case Err(e) => Validation.Failure(e)
-    }
+    Steps.compile(flix).toValidation
   }
 
   /**
