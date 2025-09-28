@@ -193,7 +193,7 @@ mod TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] \ {NonDet, IO} = {
+    def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
         let rnd = new Random();
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
             List.map(_ -> rnd.nextInt(), List.range(0, n)))
