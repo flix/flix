@@ -701,13 +701,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Adds a `META-INF/MANIFEST.MF` file to `zip`.
       */
     private def addManifestToZip(zip: ZipOutputStream): Unit = {
-      // META-INF/MANIFEST.MF
       val manifest =
         """Manifest-Version: 1.0
           |Main-Class: Main
           |""".stripMargin
 
-      // Add manifest file.
       FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
     }
 
@@ -935,9 +933,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * @see [[Bootstrap.isJarFile]]
       */
     def validateJarFile(jarFile: Path): Result[Unit, BootstrapError] = {
-      // Check whether it is safe to write to the file.
       if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-        return Err(BootstrapError.FileError(s"The path '${jarFile.toString}' exists and is not a jar-file. Refusing to overwrite."))
+        return Err(BootstrapError.FileError(s"The path '${jarFile.toString}' exists and is not a jar-file."))
       }
       Ok(())
     }
