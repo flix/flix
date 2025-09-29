@@ -55,83 +55,285 @@ object PackageTrust {
   }
 
   private def visitExp(expr0: TypedAst.Expr)(implicit sctx: SharedContext): Unit = expr0 match {
-    case Expr.Cst(cst, tpe, loc) => ???
-    case Expr.Var(sym, tpe, loc) => ???
-    case Expr.Hole(sym, scp, tpe, eff, loc) => ???
-    case Expr.HoleWithExp(exp, scp, tpe, eff, loc) => ???
-    case Expr.OpenAs(symUse, exp, tpe, loc) => ???
-    case Expr.Use(sym, alias, exp, loc) => ???
-    case Expr.Lambda(fparam, exp, tpe, loc) => ???
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) => ???
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) => ???
-    case Expr.ApplyOp(symUse, exps, tpe, eff, loc) => ???
-    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) => ???
-    case Expr.Unary(sop, exp, tpe, eff, loc) => ???
-    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.Let(bnd, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.Region(tpe, loc) => ???
-    case Expr.Scope(bnd, regSym, exp, tpe, eff, loc) => ???
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => ???
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.Discard(exp, eff, loc) => ???
-    case Expr.Match(exp, rules, tpe, eff, loc) => ???
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) => ???
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ???
-    case Expr.ExtMatch(exp, rules, tpe, eff, loc) => ???
-    case Expr.Tag(symUse, exps, tpe, eff, loc) => ???
-    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) => ???
-    case Expr.ExtTag(label, exps, tpe, eff, loc) => ???
-    case Expr.Tuple(exps, tpe, eff, loc) => ???
-    case Expr.RecordSelect(exp, label, tpe, eff, loc) => ???
-    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ???
-    case Expr.ArrayLit(exps, exp, tpe, eff, loc) => ???
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => ???
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.ArrayLength(exp, eff, loc) => ???
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => ???
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) => ???
-    case Expr.StructGet(exp, symUse, tpe, eff, loc) => ???
-    case Expr.StructPut(exp1, symUse, exp2, tpe, eff, loc) => ???
-    case Expr.VectorLit(exps, tpe, eff, loc) => ???
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.VectorLength(exp, loc) => ???
-    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) => ???
-    case Expr.InstanceOf(exp, clazz, loc) => ???
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) => ???
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) => ???
-    case Expr.Without(exp, symUse, tpe, eff, loc) => ???
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) => ???
-    case Expr.Throw(exp, tpe, eff, loc) => ???
-    case Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, loc) => ???
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => ???
-    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => ???
-    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => ???
-    case Expr.GetField(field, exp, tpe, eff, loc) => ???
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => ???
-    case Expr.GetStaticField(field, tpe, eff, loc) => ???
-    case Expr.PutStaticField(field, exp, tpe, eff, loc) => ???
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
-    case Expr.NewChannel(exp, tpe, eff, loc) => ???
-    case Expr.GetChannel(exp, tpe, eff, loc) => ???
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) => ???
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.ParYield(frags, exp, tpe, eff, loc) => ???
-    case Expr.Lazy(exp, tpe, loc) => ???
-    case Expr.Force(exp, tpe, eff, loc) => ???
-    case Expr.FixpointConstraintSet(cs, tpe, loc) => ???
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ???
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ???
-    case Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) => ???
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) => ???
-    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) => ???
-    case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) => ???
-    case Expr.Error(m, tpe, eff) => ???
+    case Expr.Cst(_, _, _) =>
+      ()
+
+    case Expr.Var(_, _, _) =>
+      ()
+
+    case Expr.Hole(_, _, _, _, _) =>
+      ()
+
+    case Expr.HoleWithExp(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.OpenAs(_, exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Use(_, _, exp, _) =>
+      visitExp(exp)
+
+    case Expr.Lambda(_, exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.Unary(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.Let(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.Region(_, _) =>
+      ()
+
+    case Expr.Scope(_, _, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
+    case Expr.Stm(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.Discard(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Match(exp, rules, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.TypeMatch(exp, rules, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.Tag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.RestrictableTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.ExtTag(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.Tuple(exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.RecordSelect(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.RecordRestrict(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.ArrayLit(exps, exp, _, _, _) =>
+      visitExp(exp)
+      exps.foreach(visitExp)
+
+    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
+    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.ArrayLength(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+      visitExp(exp3)
+
+    case Expr.StructNew(_, fields, region, _, _, _) =>
+      // TODO
+      ???
+
+    case Expr.StructGet(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.VectorLit(exps, _, _, _) =>
+      exps.foreach(visitExp)
+
+    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.VectorLength(exp, _) =>
+      visitExp(exp)
+
+    case Expr.Ascribe(exp, _, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.InstanceOf(exp, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.CheckedCast(_, exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.Unsafe(exp, _, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.Without(exp, _, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.TryCatch(exp, rules, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.Throw(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.Handler(_, rules, _, _, _, _, _) =>
+      // TODO
+      ???
+
+    case Expr.RunWith(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.InvokeConstructor(_, exps, _, _, _) =>
+      // TODO
+      exps.foreach(visitExp)
+
+    case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
+      // TODO
+      visitExp(exp)
+      exps.foreach(visitExp)
+
+    case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
+      // TODO
+      exps.foreach(visitExp)
+
+    case Expr.GetField(_, exp, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.PutField(_, exp1, exp2, _, _, _) =>
+      // TODO
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.GetStaticField(_, _, _, _) =>
+      // TODO
+      ???
+
+    case Expr.PutStaticField(_, exp, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.NewObject(_, _, _, _, methods, _) =>
+      // TODO
+      ???
+
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.SelectChannel(rules, default, _, _, _) =>
+      // TODO
+      default.foreach(visitExp)
+
+    case Expr.Spawn(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.ParYield(frags, exp, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.Lazy(exp, _, _) =>
+      visitExp(exp)
+
+    case Expr.Force(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.FixpointConstraintSet(cs, _, _) =>
+      // TODO
+      ???
+
+    case Expr.FixpointLambda(pparams, exp, _, _, _) =>
+      // TODO
+      visitExp(exp)
+
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      visitExp(exp1)
+      visitExp(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, select, withh, _, _, _) =>
+      // TODO
+      exps.foreach(visitExp)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, _, _, _) =>
+      // TODO
+      exps.foreach(visitExp)
+
+    case Expr.FixpointSolveWithProject(exps, optPreds, mode, _, _, _) =>
+      // TODO
+      exps.foreach(visitExp)
+
+    case Expr.FixpointInjectInto(exps, predsAndArities, _, _, _) =>
+      // TODO
+      exps.foreach(visitExp)
+
+    case Expr.Error(_, _, _) =>
+      ()
+
   }
 
   /** Companion object for [[SharedContext]] */
