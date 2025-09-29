@@ -410,7 +410,7 @@ object ManifestParser {
       val permissions = permArray.toList.asScala.toList.map({
         // Ensure the contents of the array are strings.
         case s: String => Permission.mkPermission(s) match {
-          case Some(p) => p
+          case Some(permission) => permission
           case None => return Err(ManifestError.FlixUnknownPermissionError(path, key, s))
         }
         // If an entry is not a string, return an error.
