@@ -94,7 +94,7 @@ object ManifestParser {
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
       moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
-      packageModules <- toPackageModules(moduleStrings, p);
+      packageModules <- toPackageModules(moduleStrings);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -504,7 +504,7 @@ object ManifestParser {
   /**
     * Creates the `PackageModules` object from `optList`.
     */
-  private def toPackageModules(optList: Option[List[String]], p: Path): Result[PackageModules, ManifestError] = {
+  private def toPackageModules(optList: Option[List[String]]): Result[PackageModules, ManifestError] = {
     optList match {
       case None =>
         Ok(PackageModules.All)
