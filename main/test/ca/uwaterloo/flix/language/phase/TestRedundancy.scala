@@ -455,6 +455,20 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.ShadowingName](result)
   }
 
+  test("ShadowedName.Trait.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f[a: Type](x: a): Int32
+        |}
+        |
+        |def f(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.ShadowedName](result)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
   test("ShadowedName.Use.01") {
     val input =
       s"""
