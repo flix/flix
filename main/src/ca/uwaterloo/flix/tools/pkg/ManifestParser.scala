@@ -29,7 +29,7 @@ import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
 object ManifestParser {
   /**
-    * Regular expression defining a valid string for user name and project name.
+    * Regular expression defining a valid string for username and project name.
     * Concretely, a valid name is a [[String]] consisting only of alphanumeric characters
     * or the symbols `.`,`:`,`/`,`_` and `-`.
     */
