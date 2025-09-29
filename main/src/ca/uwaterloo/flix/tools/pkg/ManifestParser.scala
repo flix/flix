@@ -255,8 +255,8 @@ object ManifestParser {
     * overrides `flixDep` and `prodDep`.
     * Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
-    deps match {
+  private def collectDependencies(optDeps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+    optDeps match {
       case None => Ok(List.empty)
       case Some(deps) =>
         val depsEntries = deps.entrySet().asScala
