@@ -209,8 +209,8 @@ object Desugar {
     * Desugars the given [[WeededAst.TypeParam]] `tparam0`.
     */
   private def visitTypeParam(tparam0: WeededAst.TypeParam): DesugaredAst.TypeParam = tparam0 match {
-    case WeededAst.TypeParam.Unkinded(ident, _) => DesugaredAst.TypeParam.Unkinded(ident)
-    case WeededAst.TypeParam.Kinded(ident, kind0, _) =>
+    case WeededAst.TypeParam.Unkinded(ident) => DesugaredAst.TypeParam.Unkinded(ident)
+    case WeededAst.TypeParam.Kinded(ident, kind0) =>
       val kind = visitKind(kind0)
       DesugaredAst.TypeParam.Kinded(ident, kind)
   }
