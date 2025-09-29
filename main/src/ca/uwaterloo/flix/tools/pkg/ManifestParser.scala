@@ -137,81 +137,81 @@ object ManifestParser {
   }
 
   /**
-    * Parses a String which should be at `propString`
+    * Parses a String which should be at `prop`
     * and returns the String or an error if the result
     * cannot be found.
     */
-  private def getRequiredStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
+  private def getRequiredStringProperty(prop: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
     try {
-      val prop = parser.getString(propString)
-      if (prop == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
+      val result = parser.getString(prop)
+      if (result == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, prop, None))
       }
-      Ok(prop)
+      Ok(result)
     } catch {
-      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, prop, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
     }
   }
 
   /**
-    * Parses a String which might be at `propString`
+    * Parses a String which might be at `prop`
     * and returns the String as an Option.
     */
-  private def getOptionalStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[String], ManifestError] = {
+  private def getOptionalStringProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[String], ManifestError] = {
     try {
-      val prop = parser.getString(propString)
-      Ok(Option(prop))
+      val result = parser.getString(prop)
+      Ok(Option(result))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
     }
   }
 
   /**
-    * Parses an Array which should be at `propString`
+    * Parses an Array which should be at `prop`
     * and returns the Array or an error if the result
     * cannot be found.
     */
-  private def getRequiredArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
+  private def getRequiredArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
     try {
-      val array = parser.getArray(propString)
+      val array = parser.getArray(prop)
       if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
+        return Err(ManifestError.MissingRequiredProperty(p, prop, None))
       }
       Ok(array)
     } catch {
-      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, prop, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
   /**
-    * Parses an Array which might be at `propString`
+    * Parses an Array which might be at `prop`
     * and returns the Array as an Option.
     */
-  private def getOptionalArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
+  private def getOptionalArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
     try {
-      val array = parser.getArray(propString)
+      val array = parser.getArray(prop)
       Ok(Option(array))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
   /**
-    * Parses a Table which should be at `propString`
+    * Parses a Table which should be at `prop`
     * and returns the Table or an error if the result
     * cannot be found.
     */
-  private def getOptionalTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlTable], ManifestError] = {
+  private def getOptionalTableProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[TomlTable], ManifestError] = {
     try {
-      val table = parser.getTable(propString)
+      val table = parser.getTable(prop)
       Ok(Option(table))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table", e.getMessage))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Table", e.getMessage))
     }
   }
 
