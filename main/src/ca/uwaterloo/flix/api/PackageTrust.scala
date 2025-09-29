@@ -19,6 +19,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 
 object PackageTrust {
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = ???
+  def run(root: TypedAst.Root)(implicit flix: Flix): List[SuspiciousExpr] = ???
 
 }
