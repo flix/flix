@@ -32,7 +32,7 @@ import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
-import scala.util.{Failure, Success, Using}
+import scala.util.{Failure, Success, Try, Using}
 
 
 object Bootstrap {
@@ -300,17 +300,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(projectPath)
-    flatMapN(Steps.parseManifest(tomlPath)) {
-      manifest =>
-        flatMapN(Steps.resolveFlixDependencies(manifest)) {
-          dependencyManifests =>
-            mapN(Steps.installDependencies(dependencyManifests)) {
-              _ =>
-                Steps.addLocalFlixFiles()
-                ()
-            }
-        }
+    val result = for {
+      manifest <- Steps.parseManifest(tomlPath)
+      deps <- Steps.resolveFlixDependencies(manifest)
+      _ <- Steps.installDependencies(deps)
+      _ = Steps.addLocalFlixFiles()
+    } yield {
+      ()
     }
+    result.toValidation
   }
 
   /**
@@ -336,106 +334,53 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     flix.clearCaches()
 
     Steps.updateStaleSources(flix)
-    Steps.compile(flix)
-  }
-
-  /**
-    * Builds the jar or the fatjar
-    */
-  private def buildJarBase(flix: Flix, includeDependencies: Boolean)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    // Build the project before building the jar
-    val buildResult = build(flix, Build.Production)
-    buildResult match {
-      case Validation.Failure(error) =>
-        return Validation.Failure(error) // Return the build error directly
-      case _ => // Proceed if the build is successful
-    }
-
-    // The path to the jar file.
-    val jarFile = Bootstrap.getJarFile(projectPath)
-
-    // Check whether it is safe to write to the file.
-    if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.Failure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
-    }
-
-    val libDir = Bootstrap.getLibraryDirectory(projectPath)
-    if (includeDependencies && Files.exists(libDir) && (!Files.isDirectory(libDir) || !Files.isReadable(libDir))) {
-      return Validation.Failure(BootstrapError.FileError(s"The lib directory isn't a directory or isn't readable. Refusing to build fatjar-file."))
-    }
-
-    // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
-
-    // Construct a new zip file.
-    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zip =>
-      // META-INF/MANIFEST.MF
-      val manifest =
-        """Manifest-Version: 1.0
-          |Main-Class: Main
-          |""".stripMargin
-
-      // Add manifest file.
-      FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
-
-      // Add all class files.
-      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      val classDir = Bootstrap.getClassDirectory(projectPath)
-      val classFiles = FileOps.getFilesWithExtIn(classDir, EXT_CLASS, Int.MaxValue)
-      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(classDir, classFiles)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
-      }
-
-      // Add all resources, again sorting by relative file name
-      val resourcesDir = Bootstrap.getResourcesDirectory(projectPath)
-      val resources = FileOps.getFilesIn(resourcesDir, Int.MaxValue)
-      for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(resourcesDir, resources)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, resource)
-      }
-
-      if (includeDependencies) {
-        // First, we get all jar files inside the lib folder.
-        // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-        val jarDependencies = if (libDir.toFile.exists()) FileOps.getFilesWithExtIn(libDir, EXT_JAR, Int.MaxValue) else List[Path]()
-        // Add jar dependencies.
-        jarDependencies.foreach(dep => {
-          if (!Bootstrap.isJarFile(dep))
-            return Validation.Failure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
-
-          // Extract the content of the classes to the jar file.
-          Using(new ZipInputStream(Files.newInputStream(dep))) {
-            zipIn =>
-              var entry = zipIn.getNextEntry
-              while (entry != null) {
-                // Get the class files except module-info and META-INF classes which are specific to each library.
-                if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
-                  // Write extracted class files to zip.
-                  val classContent = zipIn.readAllBytes()
-                  FileOps.addToZip(zip, entry.getName, classContent)
-                }
-                entry = zipIn.getNextEntry
-              }
-          }
-        })
-      }
-    } match {
-      case Success(()) => Validation.Success(())
-      case Failure(e) => Validation.Failure(BootstrapError.GeneralError(List(e.getMessage)))
-    }
+    Steps.compile(flix).toValidation
   }
 
   /**
     * Builds a jar package for the project.
     */
   def buildJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    buildJarBase(flix, includeDependencies = false)
+    val jarFile = Bootstrap.getJarFile(projectPath)
+    Steps.updateStaleSources(flix)
+    val result = for {
+      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.compile(flix)
+      _ <- Steps.validateJarFile(jarFile)
+      contents = (zip: ZipOutputStream) => {
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
+      }
+      _ <- Steps.createJar(jarFile, contents)
+    } yield {
+      ()
+    }
+    result.toValidation
   }
 
   /**
     * Builds a fatjar package for the project.
     */
   def buildFatJar(flix: Flix)(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
-    buildJarBase(flix, includeDependencies = true)
+    val jarFile = Bootstrap.getJarFile(projectPath)
+    val libDir = Bootstrap.getLibraryDirectory(projectPath)
+    Steps.updateStaleSources(flix)
+    val result = for {
+      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.compile(flix)
+      _ <- Steps.validateJarFile(jarFile)
+      _ <- Steps.validateDirectory(libDir)
+      _ <- Steps.validateJarFilesIn(libDir)
+      contents = (zip: ZipOutputStream) => {
+        Steps.addClassFilesFromDirToZip(Bootstrap.getClassDirectory(projectPath), zip)
+        Steps.addResourcesFromDirToZip(Bootstrap.getResourcesDirectory(projectPath), zip)
+        Steps.addJarsFromDirToZip(libDir, zip)
+      }
+      _ <- Steps.createJar(jarFile, contents)
+    } yield {
+      ()
+    }
+    result.toValidation
   }
 
   /**
@@ -485,9 +430,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Type checks the source files for the project.
     */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
-    flatMapN(Steps.updateStaleSources(flix)) {
-      updated => mapN(Steps.check(updated))(_ => ())
-    }
+    Steps.updateStaleSources(flix)
+    Steps.check(flix).map(_ => ()).toValidation
   }
 
   /**
@@ -505,9 +449,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Generates API documentation.
     */
   def doc(flix: Flix): Validation[Unit, BootstrapError] = {
-    flatMapN(Steps.updateStaleSources(flix)) {
-      updated => mapN(Steps.check(updated))(HtmlDocumentor.run(_, getPackageModules)(updated))
-    }
+    Steps.updateStaleSources(flix)
+    Steps.check(flix).map(HtmlDocumentor.run(_, getPackageModules)(flix)).toValidation
   }
 
   /**
@@ -574,8 +517,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.println("Building project...")
     val buildResult = buildPkg()
     buildResult.toResult match {
-      case Result.Ok(_) => // Continue
-      case Result.Err(e) => return Validation.Failure(e)
+      case Ok(_) => // Continue
+      case Err(e) => return Validation.Failure(e)
     }
 
     // Publish to GitHub
@@ -658,6 +601,48 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private object Steps {
 
     /**
+      * Adds all class files from `dir` to `zip`.
+      */
+    def addClassFilesFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
+      // Add all class files.
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      val classFiles = FileOps.getFilesWithExtIn(dir, EXT_CLASS, Int.MaxValue)
+      for ((buildFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, classFiles)) {
+        FileOps.addToZip(zip, fileNameWithSlashes, buildFile)
+      }
+    }
+
+    /**
+      * Adds all jars in `dir` to `zip`.
+      * Ignores non-jar files and does nothing if `dir` does not exist.
+      */
+    def addJarsFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
+      // First, we get all jar files inside the lib folder.
+      // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
+      if (!Files.exists(dir)) {
+        return
+      }
+      val jarDependencies = FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue)
+      // Add jar dependencies.
+      jarDependencies.foreach(dep => {
+        // Extract the content of the classes to the jar file.
+        Using(new ZipInputStream(Files.newInputStream(dep))) {
+          zipIn =>
+            var entry = zipIn.getNextEntry
+            while (entry != null) {
+              // Get the class files except module-info and META-INF classes which are specific to each library.
+              if (entry.getName.endsWith(s".$EXT_CLASS") && !entry.getName.equals(s"module-info.$EXT_CLASS") && !entry.getName.contains("META-INF/")) {
+                // Write extracted class files to zip.
+                val classContent = zipIn.readAllBytes()
+                FileOps.addToZip(zip, entry.getName, classContent)
+              }
+              entry = zipIn.getNextEntry
+            }
+        }
+      })
+    }
+
+    /**
       * Returns and caches all `.flix` files from `src/` and `test/`.
       */
     def addLocalFlixFiles(): List[Path] = {
@@ -713,14 +698,39 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     /**
+      * Adds a `META-INF/MANIFEST.MF` file to `zip`.
+      */
+    private def addManifestToZip(zip: ZipOutputStream): Unit = {
+      // META-INF/MANIFEST.MF
+      val manifest =
+        """Manifest-Version: 1.0
+          |Main-Class: Main
+          |""".stripMargin
+
+      // Add manifest file.
+      FileOps.addToZip(zip, "META-INF/MANIFEST.MF", manifest.getBytes)
+    }
+
+    /**
+      * Adds all files in `dir` to `zip`.
+      */
+    def addResourcesFromDirToZip(dir: Path, zip: ZipOutputStream): Unit = {
+      // Add all resources, again sorting by relative file name
+      val resources = FileOps.getFilesIn(dir, Int.MaxValue)
+      for ((resource, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(dir, resources)) {
+        FileOps.addToZip(zip, fileNameWithSlashes, resource)
+      }
+    }
+
+    /**
       * Type checks the source files for the project.
       */
-    def check(flix: Flix): Validation[TypedAst.Root, BootstrapError] = {
+    def check(flix: Flix): Result[TypedAst.Root, BootstrapError] = {
       val (optRoot, errors) = flix.check()
       if (errors.isEmpty) {
-        Validation.Success(optRoot.get)
+        Ok(optRoot.get)
       } else {
-        Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+        Err(BootstrapError.GeneralError(flix.mkMessages(errors)))
       }
     }
 
@@ -729,11 +739,48 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * It is up to the caller to set the appropriate options on `flix`.
       * It is often the case that `outputJvm` and `loadClassFiles` must be toggled on or off.
       */
-    def compile(flix: Flix): Validation[CompilationResult, BootstrapError] = {
+    def compile(flix: Flix): Result[CompilationResult, BootstrapError] = {
       flix.compile() match {
-        case Validation.Success(result: CompilationResult) => Validation.Success(result)
-        case Validation.Failure(errors) => Validation.Failure(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
+        case Validation.Success(result: CompilationResult) => Ok(result)
+        case Validation.Failure(errors) => Err(BootstrapError.GeneralError(flix.mkMessages(errors.toList)))
       }
+    }
+
+    /**
+      * Configures `flix` to emit class files to the build directory (on the file system)
+      * in production mode.
+      *
+      * @see [[Bootstrap.getBuildDirectory]]
+      * @see [[Build.Production]]
+      */
+    def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
+      val buildDir = Bootstrap.getBuildDirectory(projectPath)
+      for {
+        _ <- validateDirectory(buildDir)
+      } yield {
+        val newOptions = flix.options.copy(build = Build.Production, outputJvm = true, outputPath = buildDir)
+        flix.setOptions(newOptions)
+        ()
+      }
+    }
+
+    /**
+      * Writes `contents` to the jar file located at `jar`.
+      *
+      * This function also adds a manifest to the jar file.
+      *
+      * Creates the jar file if it does not exist, and truncates it if it already exists.
+      *
+      * @see [[Steps.addManifestToZip]]
+      */
+    def createJar(jar: Path, contents: ZipOutputStream => Unit): Result[Unit, BootstrapError.FileError] = {
+      Files.createDirectories(jar.getParent.normalize())
+      val contentsWithManifest = (zip: ZipOutputStream) => {
+        Steps.addManifestToZip(zip)
+        contents(zip)
+      }
+      Result.fromTry(Using(new ZipOutputStream(Files.newOutputStream(jar)))(contentsWithManifest))
+        .mapErr(e => BootstrapError.FileError(e.getMessage))
     }
 
     /**
@@ -752,17 +799,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *   1. Paths to `.jar` dependencies in `lib/cache` (maven).
       *   1. Paths to `.jar` dependencies in `lib/external` (urls).
       */
-    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[List[Path]], BootstrapError] = {
-      flatMapN(installFlixDependencies(dependencyManifests)) {
-        flixPaths =>
-          flatMapN(installMavenDependencies(dependencyManifests)) {
-            mavenPaths =>
-              mapN(installJarDependencies(dependencyManifests)) {
-                jarPaths =>
-                  out.println("Dependency resolution completed.")
-                  List(flixPaths, mavenPaths, jarPaths)
-              }
-          }
+    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[List[Path]], BootstrapError] = {
+      for {
+        flixPaths <- installFlixDependencies(dependencyManifests)
+        mavenPaths <- installMavenDependencies(dependencyManifests)
+        jarPaths <- installJarDependencies(dependencyManifests)
+      } yield {
+        out.println("Dependency resolution completed.")
+        List(flixPaths, mavenPaths, jarPaths)
       }
     }
 
@@ -771,13 +815,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
-        case Result.Ok(paths: List[Path]) =>
+        case Ok(paths: List[Path]) =>
           flixPackagePaths = paths
-          Validation.Success(paths)
-        case Result.Err(e) =>
-          Validation.Failure(BootstrapError.FlixPackageError(e))
+          Ok(paths)
+        case Err(e) =>
+          Err(BootstrapError.FlixPackageError(e))
       }
     }
 
@@ -786,13 +830,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installJarDependencies(dependencyManifests: List[Manifest])(implicit out: PrintStream): Result[List[Path], BootstrapError] = {
       JarPackageManager.installAll(dependencyManifests, projectPath) match {
-        case Result.Ok(paths) =>
+        case Ok(paths) =>
           jarPackagePaths = paths
-          Validation.Success(paths)
-        case Result.Err(e) =>
-          Validation.Failure(BootstrapError.JarPackageError(e))
+          Ok(paths)
+        case Err(e) =>
+          Err(BootstrapError.JarPackageError(e))
       }
     }
 
@@ -801,25 +845,26 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Validation[List[Path], BootstrapError] = {
+    private def installMavenDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
       MavenPackageManager.installAll(dependencyManifests, projectPath) match {
-        case Result.Ok(paths) =>
+        case Ok(paths) =>
           mavenPackagePaths = paths
-          Validation.Success(paths)
-        case Result.Err(e) =>
-          Validation.Failure(BootstrapError.MavenPackageError(e))
+          Ok(paths)
+        case Err(e) =>
+          Err(BootstrapError.MavenPackageError(e))
       }
     }
 
     /**
       * Parses and returns the manifest at `tomlPath`.
       */
-    def parseManifest(tomlPath: Path): Validation[Manifest, BootstrapError] = {
+    def parseManifest(tomlPath: Path): Result[Manifest, BootstrapError] = {
       ManifestParser.parse(tomlPath) match {
         case Ok(manifest) =>
           optManifest = Some(manifest)
-          Validation.Success(manifest)
-        case Err(e) => Validation.Failure(BootstrapError.ManifestParseError(e))
+          Ok(manifest)
+        case Err(e) =>
+          Err(BootstrapError.ManifestParseError(e))
       }
     }
 
@@ -827,11 +872,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
       * Requires network access.
       */
-    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Validation[List[Manifest], BootstrapError] = {
-      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
-        case Ok(l) => Validation.Success(l)
-        case Err(e) => Validation.Failure(BootstrapError.FlixPackageError(e))
-      }
+    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], BootstrapError] = {
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).mapErr(BootstrapError.FlixPackageError(_))
     }
 
     /**
@@ -839,7 +881,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * If they have, they are added to flix. Then updates the timestamps
       * map to reflect the current source files and packages.
       */
-    def updateStaleSources(flix: Flix): Validation[Flix, BootstrapError] = {
+    def updateStaleSources(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
       implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
@@ -868,8 +910,45 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap
+    }
 
-      Validation.Success(flix)
+    /**
+      * Returns `OK(())` if `dir` exists and is a readable directory.
+      * If `dir` does not exist, it returns `Ok(())` too.
+      */
+    def validateDirectory(dir: Path): Result[Unit, BootstrapError] = {
+      if (Files.exists(dir)) {
+        if (!Files.isDirectory(dir)) {
+          return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not a directory."))
+        }
+        if (!Files.isReadable(dir)) {
+          return Err(BootstrapError.FileError(s"The path '${dir.toString}' is not readable."))
+        }
+      }
+      Ok(())
+    }
+
+    /**
+      * Returns `Ok(())` if `jarFile` exists and is a readable jar file (a zip archive).
+      * If `jarFile` does not exist, it also returns `Ok(())`.
+      *
+      * @see [[Bootstrap.isJarFile]]
+      */
+    def validateJarFile(jarFile: Path): Result[Unit, BootstrapError] = {
+      // Check whether it is safe to write to the file.
+      if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
+        return Err(BootstrapError.FileError(s"The path '${jarFile.toString}' exists and is not a jar-file. Refusing to overwrite."))
+      }
+      Ok(())
+    }
+
+    /**
+      * Returns `Ok(())` if all files ending with `.jar` in `dir` are valid jar files.
+      *
+      * @see [[Steps.validateJarFile]]
+      */
+    def validateJarFilesIn(dir: Path): Result[Unit, BootstrapError] = {
+      Result.traverse(FileOps.getFilesWithExtIn(dir, EXT_JAR, Int.MaxValue))(Steps.validateJarFile).map(_ => ())
     }
 
   }
