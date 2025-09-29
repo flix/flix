@@ -17,8 +17,30 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.TypedAst
 
+import java.util.concurrent.ConcurrentLinkedQueue
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 object PackageTrust {
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): List[SuspiciousExpr] = ???
+  def run(root: TypedAst.Root)(implicit flix: Flix): List[SuspiciousExpr] = {
+    implicit val sctx: SharedContext = SharedContext.mk()
+    sctx.exprs.asScala.toList
+  }
+
+
+  /** Companion object for [[SharedContext]] */
+  private object SharedContext {
+
+    /** Returns a fresh shared context. */
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+  }
+
+  /**
+    * A globally shared context. Must be thread-safe.
+    *
+    * @param exprs the [[SuspiciousExpr]]s in the AST, if any.
+    */
+  private case class SharedContext(exprs: ConcurrentLinkedQueue[SuspiciousExpr])
+
 
 }
