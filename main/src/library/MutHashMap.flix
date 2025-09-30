@@ -115,12 +115,6 @@ mod MutHashMap {
         foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
-    /// Returns the number of entries in `m`.
-    ///
-    pub def size(m: MutHashMap[k, v, r]): Int32 \ r =
-        m->size
-
-    ///
     /// Returns `true` if `m` is empty.
     ///
     pub def isEmpty(m: MutHashMap[k, v, r]): Bool \ r =
@@ -133,11 +127,28 @@ mod MutHashMap {
         not isEmpty(m)
 
     ///
+    /// Returns the number of entries in `m`.
+    ///
+    pub def size(m: MutHashMap[k, v, r]): Int32 \ r =
+        m->size
+
+    ///
     /// Computes the hash code for key `k`.
     /// Returns the raw hash code (may be negative).
     ///
     def computeHash(k: k): Int32 with Hash[k] =
         Hash.hash(k)
+
+    ///
+    /// Returns `Some(v)` if key `k` exists in `m`, otherwise `None`.
+    ///
+    pub def get(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case None => None
+            case Some(entry) => Some(Entry.getValue(entry))
+        }
 
     ///
     /// Converts hash code to a valid bucket index.
@@ -157,17 +168,6 @@ mod MutHashMap {
                     Some(entry)
                 else
                     findInBucket(k, Entry.getBucketNext(entry))
-        }
-
-    ///
-    /// Returns `Some(v)` if key `k` exists in `m`, otherwise `None`.
-    ///
-    pub def get(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
-        let hash = computeHash(k);
-        let idx = bucketIndex(hash, Array.length(m->buckets));
-        match findInBucket(k, Array.get(idx, m->buckets)) {
-            case None => None
-            case Some(entry) => Some(Entry.getValue(entry))
         }
 
     ///
