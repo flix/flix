@@ -94,6 +94,7 @@ mod MutHashMap {
 
     ///
     /// Returns an empty mutable hash map with the given capacity.
+    ///
     /// The capacity is rounded up to the minimum capacity.
     ///
     pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutHashMap[k, v, r] \ r =
@@ -294,6 +295,18 @@ mod MutHashMap {
                 m->size = m->size + 1;
                 expand(m)
         }
+
+    ///
+    /// Inserts all key-value pairs from immutable map `src` into mutable map `dst`.
+    ///
+    pub def putAll(src: Map[k, v], dst: MutHashMap[k, v, r]): Unit \ r with Order[k], Hash[k] =
+        Map.forEach((k, v) -> put(k, v, dst), src)
+
+    ///
+    /// Inserts all key-value pairs from mutable map `src` into mutable map `dst`.
+    ///
+    pub def putAllMut(src: MutHashMap[k, v, r1], dst: MutHashMap[k, v, r2]): Unit \ {r1, r2} with Eq[k], Hash[k] =
+        forEach((k, v) -> put(k, v, dst), src)
 
     ///
     /// Updates the value at key `k` using function `f` if the key exists.
@@ -690,18 +703,6 @@ mod MutHashMap {
     ///
     pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutHashMap[k, v, r]): Int32 \ {ef, r} =
         foldLeftWithKey((acc, k, v) -> acc + f(k, v), 0, m)
-
-    ///
-    /// Inserts all key-value pairs from immutable map `src` into mutable map `dst`.
-    ///
-    pub def putAll(src: Map[k, v], dst: MutHashMap[k, v, r]): Unit \ r with Order[k], Hash[k] =
-        Map.forEach((k, v) -> put(k, v, dst), src)
-
-    ///
-    /// Inserts all key-value pairs from mutable map `src` into mutable map `dst`.
-    ///
-    pub def putAllMut(src: MutHashMap[k, v, r1], dst: MutHashMap[k, v, r2]): Unit \ {r1, r2} with Eq[k], Hash[k] =
-        forEach((k, v) -> put(k, v, dst), src)
 
     ///
     /// Returns the value associated with key `k` in `m`.
