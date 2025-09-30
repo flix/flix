@@ -260,6 +260,7 @@ mod MutHashMap {
 
     ///
     /// Updates the value at key `k` using function `f` if the key exists.
+    ///
     /// Does nothing if the key does not exist.
     ///
     pub def adjust(f: v -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
@@ -272,6 +273,7 @@ mod MutHashMap {
 
     ///
     /// Updates the value at key `k` using function `f` with key if the key exists.
+    ///
     /// Does nothing if the key does not exist.
     ///
     pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
@@ -284,8 +286,11 @@ mod MutHashMap {
 
     ///
     /// Updates or removes the value at key `k` based on function `f`.
+    ///
     /// If key exists and `f(oldValue) = Some(newValue)`, updates to newValue.
+    ///
     /// If key exists and `f(oldValue) = None`, removes the entry.
+    ///
     /// Does nothing if the key does not exist.
     ///
     pub def update(f: v -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
@@ -302,8 +307,11 @@ mod MutHashMap {
 
     ///
     /// Updates or removes the value at key `k` based on function `f` with key.
+    ///
     /// If key exists and `f(k, oldValue) = Some(newValue)`, updates to newValue.
+    ///
     /// If key exists and `f(k, oldValue) = None`, removes the entry.
+    ///
     /// Does nothing if the key does not exist.
     ///
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
@@ -320,6 +328,7 @@ mod MutHashMap {
 
     ///
     /// Removes key `k` from `m`.
+    ///
     /// Returns `Some(v)` if the key existed, otherwise `None`.
     ///
     pub def remove(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
