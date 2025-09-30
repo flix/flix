@@ -238,17 +238,6 @@ mod MutHashMap {
                 expand(m)
         }
 
-    ///
-    /// Inserts all key-value pairs from immutable map `src` into mutable map `dst`.
-    ///
-    pub def putAll(src: Map[k, v], dst: MutHashMap[k, v, r]): Unit \ r with Order[k], Hash[k] =
-        Map.forEach((k, v) -> put(k, v, dst), src)
-
-    ///
-    /// Inserts all key-value pairs from mutable map `src` into mutable map `dst`.
-    ///
-    pub def putAllMut(src: MutHashMap[k, v, r1], dst: MutHashMap[k, v, r2]): Unit \ {r1, r2} with Eq[k], Hash[k] =
-        forEach((k, v) -> put(k, v, dst), src)
 
     ///
     /// Updates the value at key `k` using function `f` if the key exists.
@@ -697,7 +686,7 @@ mod MutHashMap {
     ///
     pub def fromMap(rc: Region[r], m: Map[k, v]): MutHashMap[k, v, r] \ r with Order[k], Hash[k] =
         let result = empty(rc);
-        putAll(m, result);
+        Map.forEach((k, v) -> put(k, v, result), m);
         result
 
     ///
