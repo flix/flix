@@ -149,7 +149,7 @@ mod MutHashMap {
     ///
     /// Returns `Some(v)` if key `k` exists in `m`, otherwise `None`.
     ///
-    pub def get(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Hash[k], Eq[k] =
+    pub def get(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let idx = bucketIndex(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
@@ -160,13 +160,13 @@ mod MutHashMap {
     ///
     /// Returns the value associated with key `k`, or `default` if not found.
     ///
-    pub def getWithDefault(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Hash[k], Eq[k] =
+    pub def getWithDefault(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
         Option.getWithDefault(default, get(k, m))
 
     ///
     /// Returns `true` if key `k` exists in `m`.
     ///
-    pub def memberOf(k: k, m: MutHashMap[k, v, r]): Bool \ r with Hash[k], Eq[k] =
+    pub def memberOf(k: k, m: MutHashMap[k, v, r]): Bool \ r with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let idx = bucketIndex(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
@@ -178,7 +178,7 @@ mod MutHashMap {
     /// Inserts key `k` with value `v` into `m`.
     /// If the key already exists, updates its value (does not change insertion order).
     ///
-    pub def put(k: k, v: v, m: MutHashMap[k, v, r]): Unit \ r with Hash[k], Eq[k] =
+    pub def put(k: k, v: v, m: MutHashMap[k, v, r]): Unit \ r with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let numBuckets = Array.length(m->buckets);
         let idx = bucketIndex(hash, numBuckets);
@@ -224,7 +224,7 @@ mod MutHashMap {
     /// If key exists with value `oldV`, updates to `f(v, oldV)`.
     /// Otherwise, inserts `k => v`.
     ///
-    pub def putWith(f: (v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def putWith(f: (v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let numBuckets = Array.length(m->buckets);
         let idx = bucketIndex(hash, numBuckets);
@@ -262,7 +262,7 @@ mod MutHashMap {
     /// If key exists with value `oldV`, updates to `f(k, v, oldV)`.
     /// Otherwise, inserts `k => v`.
     ///
-    pub def putWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def putWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let numBuckets = Array.length(m->buckets);
         let idx = bucketIndex(hash, numBuckets);
@@ -299,7 +299,7 @@ mod MutHashMap {
     /// Updates the value at key `k` using function `f` if the key exists.
     /// Does nothing if the key does not exist.
     ///
-    pub def adjust(f: v -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def adjust(f: v -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let idx = bucketIndex(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
@@ -311,7 +311,7 @@ mod MutHashMap {
     /// Updates the value at key `k` using function `f` with key if the key exists.
     /// Does nothing if the key does not exist.
     ///
-    pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let idx = bucketIndex(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
@@ -325,7 +325,7 @@ mod MutHashMap {
     /// If key exists and `f(oldValue) = None`, removes the entry.
     /// Does nothing if the key does not exist.
     ///
-    pub def update(f: v -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def update(f: v -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let idx = bucketIndex(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
@@ -343,7 +343,7 @@ mod MutHashMap {
     /// If key exists and `f(k, oldValue) = None`, removes the entry.
     /// Does nothing if the key does not exist.
     ///
-    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let idx = bucketIndex(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
@@ -359,7 +359,7 @@ mod MutHashMap {
     /// Removes key `k` from `m`.
     /// Returns `Some(v)` if the key existed, otherwise `None`.
     ///
-    pub def remove(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Hash[k], Eq[k] =
+    pub def remove(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
         let hash = computeHash(k);
         let numBuckets = Array.length(m->buckets);
         let idx = bucketIndex(hash, numBuckets);
@@ -550,7 +550,7 @@ mod MutHashMap {
     ///
     /// Removes all entries from `m` where `f(value)` returns false.
     ///
-    pub def retainWhere(f: v -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def retainWhere(f: v -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         // Two-pass: collect keys to remove, then remove them
         def collectKeys(curr, acc) = match curr {
             case None => acc
@@ -566,7 +566,7 @@ mod MutHashMap {
     ///
     /// Removes all entries from `m` where `f(key, value)` returns false.
     ///
-    pub def retainWhereWithKey(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+    pub def retainWhereWithKey(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         // Two-pass: collect keys to remove, then remove them
         def collectKeys(curr, acc) = match curr {
             case None => acc
@@ -694,20 +694,20 @@ mod MutHashMap {
     ///
     /// Inserts all key-value pairs from immutable map `src` into mutable map `dst`.
     ///
-    pub def putAll(src: Map[k, v], dst: MutHashMap[k, v, r]): Unit \ r with Hash[k], Order[k] =
+    pub def putAll(src: Map[k, v], dst: MutHashMap[k, v, r]): Unit \ r with Order[k], Hash[k] =
         Map.forEach((k, v) -> put(k, v, dst), src)
 
     ///
     /// Inserts all key-value pairs from mutable map `src` into mutable map `dst`.
     ///
-    pub def putAllMut(src: MutHashMap[k, v, r1], dst: MutHashMap[k, v, r2]): Unit \ {r1, r2} with Hash[k], Eq[k] =
+    pub def putAllMut(src: MutHashMap[k, v, r1], dst: MutHashMap[k, v, r2]): Unit \ {r1, r2} with Eq[k], Hash[k] =
         forEach((k, v) -> put(k, v, dst), src)
 
     ///
     /// Returns the value associated with key `k` in `m`.
     /// If `k` does not exist, inserts `k` with value `default` and returns `default`.
     ///
-    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Hash[k], Eq[k] =
+    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
         match get(k, m) {
             case Some(v) => v
             case None =>
@@ -752,7 +752,7 @@ mod MutHashMap {
     ///
     /// Returns a new mutable hash map containing all key-value pairs from immutable map `m`.
     ///
-    pub def fromMap(rc: Region[r], m: Map[k, v]): MutHashMap[k, v, r] \ r with Hash[k], Order[k] =
+    pub def fromMap(rc: Region[r], m: Map[k, v]): MutHashMap[k, v, r] \ r with Order[k], Hash[k] =
         let result = empty(rc);
         putAll(m, result);
         result
@@ -761,7 +761,7 @@ mod MutHashMap {
     /// Returns a new mutable hash map containing all key-value pairs from list `l`.
     /// If the list contains duplicate keys, the last occurrence wins.
     ///
-    pub def fromList(rc: Region[r], l: List[(k, v)]): MutHashMap[k, v, r] \ r with Hash[k], Eq[k] =
+    pub def fromList(rc: Region[r], l: List[(k, v)]): MutHashMap[k, v, r] \ r with Eq[k], Hash[k] =
         let result = empty(rc);
         List.forEach(match (k, v) -> put(k, v, result), l);
         result
