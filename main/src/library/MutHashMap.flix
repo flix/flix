@@ -321,7 +321,7 @@ mod MutHashMap {
             case Some(entry) =>
                 match f(Entry.getValue(entry)) {
                     case Some(newValue) => Entry.setValue(newValue, entry)
-                    case None => discard remove(k, m)
+                    case None => remove(k, m)
                 }
             case None => ()
         }
@@ -342,7 +342,7 @@ mod MutHashMap {
             case Some(entry) =>
                 match f(k, Entry.getValue(entry)) {
                     case Some(newValue) => Entry.setValue(newValue, entry)
-                    case None => discard remove(k, m)
+                    case None => remove(k, m)
                 }
             case None => ()
         }
@@ -350,9 +350,7 @@ mod MutHashMap {
     ///
     /// Removes key `k` from `m`.
     ///
-    /// Returns `Some(v)` if the key existed, otherwise `None`.
-    ///
-    pub def remove(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
+    pub def remove(k: k, m: MutHashMap[k, v, r]): Unit \ r with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
         let numBuckets = Array.length(m->buckets);
         let idx = hash2bucket(hash, numBuckets);
@@ -379,7 +377,7 @@ mod MutHashMap {
         };
 
         match removeFromBucket(bucket, None) {
-            case None => None
+            case None => ()
             case Some(entry) =>
                 // Remove from order chain
                 match Entry.getOrderPrev(entry) {
@@ -400,9 +398,7 @@ mod MutHashMap {
 
                 // Decrement size and check if should shrink
                 m->size = m->size - 1;
-                shrink(m);
-
-                Some(Entry.getValue(entry))
+                shrink(m)
         }
 
     ///
@@ -574,7 +570,7 @@ mod MutHashMap {
                 collectKeys(Entry.getOrderNext(entry), newAcc)
         };
         let keysToRemove = collectKeys(m->head, Nil);
-        List.forEach(k -> discard remove(k, m), keysToRemove)
+        List.forEach(k -> remove(k, m), keysToRemove)
 
     ///
     /// Removes all entries from `m` where `f(key, value)` returns false.
@@ -590,7 +586,7 @@ mod MutHashMap {
                 collectKeys(Entry.getOrderNext(entry), newAcc)
         };
         let keysToRemove = collectKeys(m->head, Nil);
-        List.forEach(k -> discard remove(k, m), keysToRemove)
+        List.forEach(k -> remove(k, m), keysToRemove)
 
     ///
     /// Applies `f` to a start value `s` and all values in `m` going from left to right (insertion order).

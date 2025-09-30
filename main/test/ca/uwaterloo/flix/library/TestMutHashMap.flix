@@ -548,14 +548,15 @@ mod TestMutHashMap {
     @Test
     def remove01(): Unit \ Assert = region rc {
         let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
-        assertEq(expected = (None: Option[String]), MutHashMap.remove(1, m))
+        MutHashMap.remove(1, m);
+        assertEq(expected = 0, MutHashMap.size(m))
     }
 
     @Test
     def remove02(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
-        assertEq(expected = Some("one"), MutHashMap.remove(1, m));
+        MutHashMap.remove(1, m);
         assertEq(expected = 0, MutHashMap.size(m))
     }
 
@@ -564,7 +565,7 @@ mod TestMutHashMap {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
-        assertEq(expected = Some("one"), MutHashMap.remove(1, m));
+        MutHashMap.remove(1, m);
         assertEq(expected = 1, MutHashMap.size(m));
         assertEq(expected = (None: Option[String]), MutHashMap.get(1, m));
         assertEq(expected = Some("two"), MutHashMap.get(2, m))
