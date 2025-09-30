@@ -34,9 +34,9 @@ mod DnsWithResult {
     ///
     /// Handles the `DnsWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `DnsWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `DnsWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - DnsWithResult) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - DnsWithResult) + IO = x ->
         run {
             f(x)
         } with handler DnsWithResult {
@@ -73,9 +73,9 @@ mod DnsWithResult {
     ///
     /// Handles the `DnsWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `DnsWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `DnsWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - DnsWithResult + IO = handle(f)()
 
 }
 

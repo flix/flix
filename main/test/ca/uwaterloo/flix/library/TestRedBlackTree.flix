@@ -93,13 +93,13 @@ mod TestRedBlackTree {
         assertTrue(checkBinarySearchTreeInvariant(tree))
 
     @Test
-    def testBinarySearchTreeInvariant10(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(10)))
+    def testBinarySearchTreeInvariant10(): Unit \ {Assert, IO} = assertTrue(checkBinarySearchTreeInvariant(random(10)))
 
     @Test
-    def testBinarySearchTreeInvariant11(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(100)))
+    def testBinarySearchTreeInvariant11(): Unit \ {Assert, IO} = assertTrue(checkBinarySearchTreeInvariant(random(100)))
 
     @Test
-    def testBinarySearchTreeInvariant12(): Unit \ {Assert, NonDet, IO} = assertTrue(checkBinarySearchTreeInvariant(random(1000)))
+    def testBinarySearchTreeInvariant12(): Unit \ {Assert, IO} = assertTrue(checkBinarySearchTreeInvariant(random(1000)))
 
     @Test
     def testRedParentInvariant01(): Unit \ Assert =
@@ -141,13 +141,13 @@ mod TestRedBlackTree {
         assertTrue(checkRedParentInvariant(tree))
 
     @Test
-    def testRedParentInvariant10(): Unit \ {Assert, NonDet, IO} = assertTrue(checkRedParentInvariant(random(10)))
+    def testRedParentInvariant10(): Unit \ {Assert, IO} = assertTrue(checkRedParentInvariant(random(10)))
 
     @Test
-    def testRedParentInvariant11(): Unit \ {Assert, NonDet, IO} = assertTrue(checkRedParentInvariant(random(100)))
+    def testRedParentInvariant11(): Unit \ {Assert, IO} = assertTrue(checkRedParentInvariant(random(100)))
 
     @Test
-    def testRedParentInvariant12(): Unit \ {Assert, NonDet, IO} = assertTrue(checkRedParentInvariant(random(1000)))
+    def testRedParentInvariant12(): Unit \ {Assert, IO} = assertTrue(checkRedParentInvariant(random(1000)))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -193,7 +193,7 @@ mod TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] \ {NonDet, IO} = {
+    def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
         let rnd = new Random();
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
             List.map(_ -> rnd.nextInt(), List.range(0, n)))

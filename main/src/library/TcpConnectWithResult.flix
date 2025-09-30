@@ -32,9 +32,9 @@ mod TcpConnectWithResult {
     ///
     /// Handles the `TcpConnectWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpConnectWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpConnectWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpConnectWithResult + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpConnectWithResult + IO = x ->
         run {
             f(x)
         } with handler TcpConnectWithResult {
@@ -54,8 +54,8 @@ mod TcpConnectWithResult {
     ///
     /// Runs the `TcpConnectWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpConnectWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpConnectWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpConnectWithResult + {IO, Net} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpConnectWithResult + IO = handle(f)()
 
 }

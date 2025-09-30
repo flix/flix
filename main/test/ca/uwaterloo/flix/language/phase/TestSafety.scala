@@ -423,69 +423,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with handler Exec {}
-        |
-        |def g(): Unit \ Exec = ???
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.03") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler FsRead {}
-        |
-        |def g(): Unit \ FsRead = ???
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.04") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler FsWrite {}
-        |
-        |def g(): Unit \ FsWrite = ???
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.05") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler Net {}
-        |
-        |def g(): Unit \ Net = ???
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.06") {
-    val input =
-      """
-        |def f(): Unit =
         |    run g() with handler NonDet {}
         |
         |def g(): Unit \ NonDet = ???
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.07") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler Sys {}
-        |
-        |def g(): Unit \ Sys = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInRunWith](result)
