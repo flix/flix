@@ -121,10 +121,6 @@ class Flix {
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
-    // Threads
-    "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
-    "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
-
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
@@ -248,10 +244,6 @@ class Flix {
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
-
-    "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
-    "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
-    "Time/Instant.flix" -> LocalResource.get("/src/library/Time/Instant.flix"),
 
     "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
