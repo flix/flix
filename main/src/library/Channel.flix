@@ -15,7 +15,8 @@
  */
 
 mod Channel {
-    use Time.Duration
+
+    import java.lang.{Thread => JThread}
 
     ///
     /// Returns a new buffered channel with capacity for `n` elements.
@@ -44,11 +45,12 @@ mod Channel {
     pub def send(m: t, sender: Sender[t]): Unit \ Chan = %%CHANNEL_PUT%%(sender, m)
 
     ///
-    /// Returns a channel that receives the `Unit` message after duration `d`.
+    /// Returns a channel that receives the `Unit` message after `duration` in the given time `unit`.
     ///
-    pub def timeout(d: Duration): Receiver[Unit] \ {Chan, IO} =
+    pub def timeout(duration: Int32, unit: TimeUnit): Receiver[Unit] \ {Chan, IO} =
+        let millis =  Int32.toInt64(duration * TimeUnit.toMilliseconds(unit));
         let (tx, rx) = Channel.buffered(1);
-        spawn { Thread.sleep(d); send((), tx) } @ Static;
+        spawn { JThread.sleep(millis); send((), tx) } @ Static;
         rx
 
 }
