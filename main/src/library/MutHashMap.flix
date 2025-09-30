@@ -74,7 +74,7 @@ mod MutHashMap {
     ///
     /// Constant denoting the minimum allowed capacity of the bucket array.
     ///
-    def minCapacity(): Int32 = 16
+    def minCapacity(): Int32 = 8
 
     ///
     /// Constant denoting the smallest valid load factor.
@@ -85,34 +85,6 @@ mod MutHashMap {
     /// Constant denoting the largest valid load factor.
     ///
     def maxLoadFactor(): Float32 = 0.75f32
-
-    ///
-    /// Returns an empty MutHashMap.
-    ///
-    pub def empty(rc: Region[r]): MutHashMap[k, v, r] \ r =
-        emptyWithCapacity(rc, minCapacity())
-
-    ///
-    /// Returns an empty mutable hash map with the given capacity.
-    ///
-    /// The capacity is rounded up to the minimum capacity.
-    ///
-    pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutHashMap[k, v, r] \ r =
-        let cap = Int32.max(capacity, minCapacity());
-        let buckets = Array.repeat(rc, cap, None);
-        new MutHashMap @ rc { rc = rc, buckets = buckets, head = None, tail = None, size = 0 }
-
-    ///
-    /// Returns a list of all keys in `m` in insertion order.
-    ///
-    pub def keysOf(m: MutHashMap[k, v, r]): List[k] \ r =
-        foldRightWithKey((k, _, acc) -> k :: acc, Nil, m)
-
-    ///
-    /// Returns a list of all values in `m` in insertion order.
-    ///
-    pub def valuesOf(m: MutHashMap[k, v, r]): List[v] \ r =
-        foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Returns `true` if `m` is empty.
@@ -131,6 +103,34 @@ mod MutHashMap {
     ///
     pub def size(m: MutHashMap[k, v, r]): Int32 \ r =
         m->size
+
+    ///
+    /// Returns an empty MutHashMap.
+    ///
+    pub def empty(rc: Region[r]): MutHashMap[k, v, r] \ r =
+        emptyWithCapacity(rc, minCapacity())
+
+    ///
+    /// Returns an empty mutable hash map with the given capacity.
+    ///
+    /// The capacity is rounded up to the minimum capacity.
+    ///
+    pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutHashMap[k, v, r] \ r =
+        let cap = Int32.max(capacity, minCapacity());
+        let buckets = Array.repeat(rc, cap, None);
+        new MutHashMap @ rc { rc = rc, buckets = buckets, head = None, tail = None, size = 0 }
+
+    ///
+    /// Returns the set of all keys in `m`.
+    ///
+    pub def keysOf(m: MutHashMap[k, v, r]): Set[k] \ r with Order[k] =
+        foldLeftWithKey((acc, k, _) -> Set.insert(k, acc), Set.empty(), m)
+
+    ///
+    /// Returns a list of all values in `m` in insertion order.
+    ///
+    pub def valuesOf(m: MutHashMap[k, v, r]): List[v] \ r =
+        foldRight((v, acc) -> v :: acc, Nil, m)
 
     ///
     /// Computes the hash code for key `k`.
