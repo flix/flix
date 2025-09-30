@@ -305,14 +305,14 @@ object Redundancy {
   }
 
   /**
-    * Finds unused type parameters.
+    * Finds shadowed type parameters in traits.
     */
   private def findShadowedTraitTypeParams(traitt: Trait): Used = {
     val traitParam = traitt.tparam
     val traitParamName = traitParam.name.name
-    val dummyEnv = Env.empty + (traitParamName, traitParam.loc)
+    val env = Env.empty + (traitParamName, traitParam.loc)
     traitt.sigs.flatMap(_.spec.tparams).foldLeft(Used.empty)({
-      case (acc, tparam) => acc ++ shadowing(tparam.name.name, tparam.name.loc, dummyEnv)
+      case (acc, tparam) => acc ++ shadowing(tparam.name.name, tparam.name.loc, env)
     })
   }
 
