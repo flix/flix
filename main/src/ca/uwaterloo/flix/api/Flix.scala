@@ -197,6 +197,7 @@ class Flix {
     "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
+    "MutHashMap.flix" -> LocalResource.get("/src/library/MutHashMap.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),

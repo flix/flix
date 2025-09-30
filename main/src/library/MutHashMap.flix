@@ -1,0 +1,821 @@
+/*
+ * Copyright 2025 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+///
+/// Represents a mutable hash map that preserves insertion order.
+///
+/// Uses a hash table with separate chaining for collisions and a doubly-linked list
+/// to maintain insertion order.
+///
+pub struct MutHashMap[k: Type, v: Type, r: Region] {
+    r: Region[r],
+    mut buckets: Array[Option[MutHashMap.Entry[k, v, r]], r],   // Hash table buckets
+    mut head: Option[MutHashMap.Entry[k, v, r]],                // First entry in insertion order
+    mut tail: Option[MutHashMap.Entry[k, v, r]],                // Last entry in insertion order
+    mut size: Int32                                             // Number of entries
+}
+
+instance Iterable[MutHashMap[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def iterator(rc: Region[r1], m: MutHashMap[k, v, r]): Iterator[(k, v), r + r1, r1] \ (r + r1) =
+        MutHashMap.iterator(rc, m)
+}
+
+instance ForEach[MutHashMap[k, v, r]] {
+    type Elm = (k, v)
+    type Aef = r
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ ef + r =
+        MutHashMap.forEach((k, v) -> f((k, v)), m)
+}
+
+mod MutHashMap {
+
+    ///
+    /// Internal entry node for the hash map.
+    /// Each entry is part of both a hash bucket chain and the insertion order chain.
+    ///
+    pub struct Entry[k: Type, v: Type, r: Region] {
+        key: k,
+        mut value: v,
+        hash: Int32,
+        mut bucketNext: Option[Entry[k, v, r]],
+        mut orderPrev: Option[Entry[k, v, r]],
+        mut orderNext: Option[Entry[k, v, r]]
+    }
+
+    mod Entry {
+        pub def getKey(e: Entry[k, v, r]): k = e->key
+        pub def getValue(e: Entry[k, v, r]): v \ r = e->value
+        pub def setValue(v: v, e: Entry[k, v, r]): Unit \ r = e->value = v
+        pub def getHash(e: Entry[k, v, r]): Int32 = e->hash
+        pub def getBucketNext(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->bucketNext
+        pub def setBucketNext(next: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->bucketNext = next
+        pub def getOrderPrev(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->orderPrev
+        pub def setOrderPrev(prev: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->orderPrev = prev
+        pub def getOrderNext(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->orderNext
+        pub def setOrderNext(next: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->orderNext = next
+    }
+
+    ///
+    /// Constant denoting the minimum allowed capacity of the bucket array.
+    ///
+    def minCapacity(): Int32 = 16
+
+    ///
+    /// Constant denoting the smallest valid load factor.
+    ///
+    def minLoadFactor(): Float32 = 0.25f32
+
+    ///
+    /// Constant denoting the largest valid load factor.
+    ///
+    def maxLoadFactor(): Float32 = 0.75f32
+
+    ///
+    /// Returns an empty MutHashMap.
+    ///
+    pub def empty(rc: Region[r]): MutHashMap[k, v, r] \ r =
+        emptyWithCapacity(rc, minCapacity())
+
+    ///
+    /// Returns an empty mutable hash map with the given capacity.
+    /// The capacity is rounded up to the minimum capacity.
+    ///
+    pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutHashMap[k, v, r] \ r =
+        let cap = Int32.max(capacity, minCapacity());
+        let buckets = Array.repeat(rc, cap, None);
+        new MutHashMap @ rc { r = rc, buckets = buckets, head = None, tail = None, size = 0 }
+
+    ///
+    /// Returns the number of entries in `m`.
+    ///
+    pub def size(m: MutHashMap[k, v, r]): Int32 \ r =
+        m->size
+
+    ///
+    /// Returns `true` if `m` is empty.
+    ///
+    pub def isEmpty(m: MutHashMap[k, v, r]): Bool \ r =
+        m->size == 0
+
+    ///
+    /// Returns `true` if `m` is non-empty.
+    ///
+    pub def nonEmpty(m: MutHashMap[k, v, r]): Bool \ r =
+        not isEmpty(m)
+
+    ///
+    /// Computes the hash code for key `k`.
+    /// Returns the raw hash code (may be negative).
+    ///
+    def computeHash(k: k): Int32 with Hash[k] =
+        Hash.hash(k)
+
+    ///
+    /// Converts hash code to a valid bucket index.
+    /// Handles negative hashes correctly using bitwise AND.
+    ///
+    def bucketIndex(hash: Int32, numBuckets: Int32): Int32 =
+        Int32.bitwiseAnd(hash, numBuckets - 1)
+
+    ///
+    /// Searches for an entry with the given key in the bucket chain.
+    ///
+    def findInBucket(k: k, bucket: Option[Entry[k, v, r]]): Option[Entry[k, v, r]] \ r with Eq[k] =
+        match bucket {
+            case None => None
+            case Some(entry) =>
+                if (Eq.eq(k, Entry.getKey(entry)))
+                    Some(entry)
+                else
+                    findInBucket(k, Entry.getBucketNext(entry))
+        }
+
+    ///
+    /// Returns `Some(v)` if key `k` exists in `m`, otherwise `None`.
+    ///
+    pub def get(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case None => None
+            case Some(entry) => Some(Entry.getValue(entry))
+        }
+
+    ///
+    /// Returns the value associated with key `k`, or `default` if not found.
+    ///
+    pub def getWithDefault(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Hash[k], Eq[k] =
+        Option.getWithDefault(default, get(k, m))
+
+    ///
+    /// Returns `true` if key `k` exists in `m`.
+    ///
+    pub def memberOf(k: k, m: MutHashMap[k, v, r]): Bool \ r with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case None => false
+            case Some(_) => true
+        }
+
+    ///
+    /// Inserts key `k` with value `v` into `m`.
+    /// If the key already exists, updates its value (does not change insertion order).
+    ///
+    pub def put(k: k, v: v, m: MutHashMap[k, v, r]): Unit \ r with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let numBuckets = Array.length(m->buckets);
+        let idx = bucketIndex(hash, numBuckets);
+        let bucket = Array.get(idx, m->buckets);
+
+        match findInBucket(k, bucket) {
+            case Some(entry) =>
+                // Key exists, update value (don't change order)
+                Entry.setValue(v, entry)
+            case None =>
+                // Key doesn't exist, create new entry
+                let entry = new Entry @ m->r {
+                    key = k,
+                    value = v,
+                    hash = hash,
+                    bucketNext = bucket,
+                    orderPrev = m->tail,
+                    orderNext = None
+                };
+
+                // Link into bucket chain
+                Array.put(Some(entry), idx, m->buckets);
+
+                // Link into order chain
+                match m->tail {
+                    case None =>
+                        // First entry
+                        m->head = Some(entry);
+                        m->tail = Some(entry)
+                    case Some(tailEntry) =>
+                        // Append to tail
+                        Entry.setOrderNext(Some(entry), tailEntry);
+                        m->tail = Some(entry)
+                };
+
+                // Increment size and check if should expand
+                m->size = m->size + 1;
+                expand(m)
+        }
+
+    ///
+    /// Inserts key `k` with value `v` into `m`, using combiner function `f` if key exists.
+    /// If key exists with value `oldV`, updates to `f(v, oldV)`.
+    /// Otherwise, inserts `k => v`.
+    ///
+    pub def putWith(f: (v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let numBuckets = Array.length(m->buckets);
+        let idx = bucketIndex(hash, numBuckets);
+        let bucket = Array.get(idx, m->buckets);
+
+        match findInBucket(k, bucket) {
+            case Some(entry) =>
+                // Key exists, combine values
+                Entry.setValue(f(v, Entry.getValue(entry)), entry)
+            case None =>
+                // Key doesn't exist, insert normally
+                let entry = new Entry @ m->r {
+                    key = k,
+                    value = v,
+                    hash = hash,
+                    bucketNext = bucket,
+                    orderPrev = m->tail,
+                    orderNext = None
+                };
+                Array.put(Some(entry), idx, m->buckets);
+                match m->tail {
+                    case None =>
+                        m->head = Some(entry);
+                        m->tail = Some(entry)
+                    case Some(tailEntry) =>
+                        Entry.setOrderNext(Some(entry), tailEntry);
+                        m->tail = Some(entry)
+                };
+                m->size = m->size + 1;
+                expand(m)
+        }
+
+    ///
+    /// Inserts key `k` with value `v` into `m`, using combiner function `f` with key if key exists.
+    /// If key exists with value `oldV`, updates to `f(k, v, oldV)`.
+    /// Otherwise, inserts `k => v`.
+    ///
+    pub def putWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let numBuckets = Array.length(m->buckets);
+        let idx = bucketIndex(hash, numBuckets);
+        let bucket = Array.get(idx, m->buckets);
+
+        match findInBucket(k, bucket) {
+            case Some(entry) =>
+                // Key exists, combine values with key
+                Entry.setValue(f(k, v, Entry.getValue(entry)), entry)
+            case None =>
+                // Key doesn't exist, insert normally
+                let entry = new Entry @ m->r {
+                    key = k,
+                    value = v,
+                    hash = hash,
+                    bucketNext = bucket,
+                    orderPrev = m->tail,
+                    orderNext = None
+                };
+                Array.put(Some(entry), idx, m->buckets);
+                match m->tail {
+                    case None =>
+                        m->head = Some(entry);
+                        m->tail = Some(entry)
+                    case Some(tailEntry) =>
+                        Entry.setOrderNext(Some(entry), tailEntry);
+                        m->tail = Some(entry)
+                };
+                m->size = m->size + 1;
+                expand(m)
+        }
+
+    ///
+    /// Updates the value at key `k` using function `f` if the key exists.
+    /// Does nothing if the key does not exist.
+    ///
+    pub def adjust(f: v -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case Some(entry) => Entry.setValue(f(Entry.getValue(entry)), entry)
+            case None => ()
+        }
+
+    ///
+    /// Updates the value at key `k` using function `f` with key if the key exists.
+    /// Does nothing if the key does not exist.
+    ///
+    pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case Some(entry) => Entry.setValue(f(k, Entry.getValue(entry)), entry)
+            case None => ()
+        }
+
+    ///
+    /// Updates or removes the value at key `k` based on function `f`.
+    /// If key exists and `f(oldValue) = Some(newValue)`, updates to newValue.
+    /// If key exists and `f(oldValue) = None`, removes the entry.
+    /// Does nothing if the key does not exist.
+    ///
+    pub def update(f: v -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case Some(entry) =>
+                match f(Entry.getValue(entry)) {
+                    case Some(newValue) => Entry.setValue(newValue, entry)
+                    case None => discard remove(k, m)
+                }
+            case None => ()
+        }
+
+    ///
+    /// Updates or removes the value at key `k` based on function `f` with key.
+    /// If key exists and `f(k, oldValue) = Some(newValue)`, updates to newValue.
+    /// If key exists and `f(k, oldValue) = None`, removes the entry.
+    /// Does nothing if the key does not exist.
+    ///
+    pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let idx = bucketIndex(hash, Array.length(m->buckets));
+        match findInBucket(k, Array.get(idx, m->buckets)) {
+            case Some(entry) =>
+                match f(k, Entry.getValue(entry)) {
+                    case Some(newValue) => Entry.setValue(newValue, entry)
+                    case None => discard remove(k, m)
+                }
+            case None => ()
+        }
+
+    ///
+    /// Removes key `k` from `m`.
+    /// Returns `Some(v)` if the key existed, otherwise `None`.
+    ///
+    pub def remove(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Hash[k], Eq[k] =
+        let hash = computeHash(k);
+        let numBuckets = Array.length(m->buckets);
+        let idx = bucketIndex(hash, numBuckets);
+        let bucket = Array.get(idx, m->buckets);
+
+        // Helper to remove from bucket chain
+        def removeFromBucket(curr, prev) = match curr {
+            case None => None
+            case Some(entry) =>
+                if (Eq.eq(k, Entry.getKey(entry))) {
+                    // Found the entry
+                    match prev {
+                        case None =>
+                            // Removing first entry in bucket
+                            Array.put(Entry.getBucketNext(entry), idx, m->buckets)
+                        case Some(prevEntry) =>
+                            // Removing from middle/end of bucket chain
+                            Entry.setBucketNext(Entry.getBucketNext(entry), prevEntry)
+                    };
+                    Some(entry)
+                } else {
+                    removeFromBucket(Entry.getBucketNext(entry), Some(entry))
+                }
+        };
+
+        match removeFromBucket(bucket, None) {
+            case None => None
+            case Some(entry) =>
+                // Remove from order chain
+                match Entry.getOrderPrev(entry) {
+                    case None =>
+                        // Removing head
+                        m->head = Entry.getOrderNext(entry)
+                    case Some(prevEntry) =>
+                        Entry.setOrderNext(Entry.getOrderNext(entry), prevEntry)
+                };
+
+                match Entry.getOrderNext(entry) {
+                    case None =>
+                        // Removing tail
+                        m->tail = Entry.getOrderPrev(entry)
+                    case Some(nextEntry) =>
+                        Entry.setOrderPrev(Entry.getOrderPrev(entry), nextEntry)
+                };
+
+                // Decrement size and check if should shrink
+                m->size = m->size - 1;
+                shrink(m);
+
+                Some(Entry.getValue(entry))
+        }
+
+    ///
+    /// Removes all entries from `m`.
+    ///
+    pub def clear(m: MutHashMap[k, v, r]): Unit \ r =
+        let numBuckets = Array.length(m->buckets);
+        Array.updateSequence(0, Array.repeat(m->r, numBuckets, None), m->buckets);
+        m->head = None;
+        m->tail = None;
+        m->size = 0
+
+    ///
+    /// Returns the load factor of `m`.
+    ///
+    def loadFactor(m: MutHashMap[k, v, r]): Float32 \ r =
+        Int32.toFloat32(m->size) / Int32.toFloat32(Array.length(m->buckets))
+
+    ///
+    /// Doubles the bucket array size if load factor >= maxLoadFactor.
+    ///
+    def expand(m: MutHashMap[k, v, r]): Unit \ r =
+        if (loadFactor(m) >= maxLoadFactor())
+            resize(m, Array.length(m->buckets) * 2)
+        else
+            ()
+
+    ///
+    /// Halves the bucket array size if load factor <= minLoadFactor.
+    ///
+    def shrink(m: MutHashMap[k, v, r]): Unit \ r =
+        let currentCapacity = Array.length(m->buckets);
+        let newCapacity = currentCapacity / 2;
+        if (loadFactor(m) <= minLoadFactor() and newCapacity >= minCapacity())
+            resize(m, newCapacity)
+        else
+            ()
+
+    ///
+    /// Resizes the bucket array to `newCapacity` and rehashes all entries.
+    ///
+    def resize(m: MutHashMap[k, v, r], newCapacity: Int32): Unit \ r =
+        // Create new bucket array
+        let newBuckets = Array.repeat(m->r, newCapacity, None);
+
+        // Rehash all entries by walking the order chain
+        def rehashEntry(curr) = match curr {
+            case None => ()
+            case Some(entry) =>
+                // Compute new bucket index
+                let idx = bucketIndex(Entry.getHash(entry), newCapacity);
+                let bucket = Array.get(idx, newBuckets);
+
+                // Insert into new bucket chain
+                Entry.setBucketNext(bucket, entry);
+                Array.put(Some(entry), idx, newBuckets);
+
+                // Continue with next entry in order chain
+                rehashEntry(Entry.getOrderNext(entry))
+        };
+
+        rehashEntry(m->head);
+        m->buckets = newBuckets
+
+    ///
+    /// Applies `f` to each key-value pair in `m` in insertion order.
+    ///
+    pub def forEach(f: (k, v) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => ()
+            case Some(entry) =>
+                f(Entry.getKey(entry), Entry.getValue(entry));
+                loop(Entry.getOrderNext(entry))
+        };
+        loop(m->head)
+
+    ///
+    /// Applies `f` to each key-value pair in `m` along with its index in insertion order.
+    ///
+    pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} = region rc {
+        let ix = Ref.fresh(rc, 0);
+        forEach((k, v) -> {
+            let i = Ref.get(ix);
+            f(i, k, v);
+            Ref.put(i + 1, ix)
+        }, m)
+    }
+
+    ///
+    /// Returns an iterator over key-value pairs in `m` in insertion order.
+    ///
+    pub def iterator(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[(k, v), r2 + r, r2] \ {r, r2} =
+        let curr = Ref.fresh(rc, m->head);
+        let next = () -> match Ref.get(curr) {
+            case None => None
+            case Some(entry) =>
+                Ref.put(Entry.getOrderNext(entry), curr);
+                Some((Entry.getKey(entry), Entry.getValue(entry)))
+        };
+        Iterator.iterate(rc, next)
+
+    ///
+    /// Returns an iterator over keys in `m` in insertion order.
+    ///
+    pub def iteratorKeys(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[k, r2 + r, r2] \ {r, r2} =
+        iterator(rc, m) |> Iterator.map(fst)
+
+    ///
+    /// Returns an iterator over values in `m` in insertion order.
+    ///
+    pub def iteratorValues(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[v, r2 + r, r2] \ {r, r2} =
+        iterator(rc, m) |> Iterator.map(snd)
+
+    ///
+    /// Transforms all values in `m` in-place using function `f`.
+    ///
+    pub def transform(f: v -> v \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => ()
+            case Some(entry) =>
+                Entry.setValue(f(Entry.getValue(entry)), entry);
+                loop(Entry.getOrderNext(entry))
+        };
+        loop(m->head)
+
+    ///
+    /// Transforms all values in `m` in-place using function `f` with access to keys.
+    ///
+    pub def transformWithKey(f: (k, v) -> v \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => ()
+            case Some(entry) =>
+                Entry.setValue(f(Entry.getKey(entry), Entry.getValue(entry)), entry);
+                loop(Entry.getOrderNext(entry))
+        };
+        loop(m->head)
+
+    ///
+    /// Removes all entries from `m` where `f(value)` returns false.
+    ///
+    pub def retainWhere(f: v -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        // Two-pass: collect keys to remove, then remove them
+        def collectKeys(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                let k = Entry.getKey(entry);
+                let v = Entry.getValue(entry);
+                let newAcc = if (f(v)) acc else k :: acc;
+                collectKeys(Entry.getOrderNext(entry), newAcc)
+        };
+        let keysToRemove = collectKeys(m->head, Nil);
+        List.forEach(k -> discard remove(k, m), keysToRemove)
+
+    ///
+    /// Removes all entries from `m` where `f(key, value)` returns false.
+    ///
+    pub def retainWhereWithKey(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Hash[k], Eq[k] =
+        // Two-pass: collect keys to remove, then remove them
+        def collectKeys(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                let k = Entry.getKey(entry);
+                let v = Entry.getValue(entry);
+                let newAcc = if (f(k, v)) acc else k :: acc;
+                collectKeys(Entry.getOrderNext(entry), newAcc)
+        };
+        let keysToRemove = collectKeys(m->head, Nil);
+        List.forEach(k -> discard remove(k, m), keysToRemove)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from left to right (insertion order).
+    ///
+    pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MutHashMap[k, v, r]): b \ {ef, r} =
+        def loop(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                loop(Entry.getOrderNext(entry), f(acc, Entry.getValue(entry)))
+        };
+        loop(m->head, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from left to right (insertion order).
+    ///
+    pub def foldLeftWithKey(f: (b, k, v) -> b \ ef, s: b, m: MutHashMap[k, v, r]): b \ {ef, r} =
+        def loop(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                loop(Entry.getOrderNext(entry), f(acc, Entry.getKey(entry), Entry.getValue(entry)))
+        };
+        loop(m->head, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all values in `m` going from right to left (reverse insertion order).
+    ///
+    pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MutHashMap[k, v, r]): b \ {ef, r} =
+        def loop(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                loop(Entry.getOrderPrev(entry), f(Entry.getValue(entry), acc))
+        };
+        loop(m->tail, s)
+
+    ///
+    /// Applies `f` to a start value `s` and all key-value pairs in `m` going from right to left (reverse insertion order).
+    ///
+    pub def foldRightWithKey(f: (k, v, b) -> b \ ef, s: b, m: MutHashMap[k, v, r]): b \ {ef, r} =
+        def loop(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                loop(Entry.getOrderPrev(entry), f(Entry.getKey(entry), Entry.getValue(entry), acc))
+        };
+        loop(m->tail, s)
+
+    ///
+    /// Returns the result of mapping each value and combining the results using a monoid.
+    ///
+    pub def foldMap(f: v -> b \ ef, m: MutHashMap[k, v, r]): b \ {ef, r} with Monoid[b] =
+        foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), m)
+
+    ///
+    /// Returns `true` if at least one key-value pair in `m` satisfies the predicate `f`.
+    ///
+    pub def exists(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Bool \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => false
+            case Some(entry) =>
+                if (f(Entry.getKey(entry), Entry.getValue(entry)))
+                    true
+                else
+                    loop(Entry.getOrderNext(entry))
+        };
+        loop(m->head)
+
+    ///
+    /// Returns `true` if all key-value pairs in `m` satisfy the predicate `f`.
+    ///
+    pub def forAll(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Bool \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => true
+            case Some(entry) =>
+                if (f(Entry.getKey(entry), Entry.getValue(entry)))
+                    loop(Entry.getOrderNext(entry))
+                else
+                    false
+        };
+        loop(m->head)
+
+    ///
+    /// Returns the number of key-value pairs in `m` that satisfy the predicate `f`.
+    ///
+    pub def count(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Int32 \ {ef, r} =
+        def loop(curr, acc) = match curr {
+            case None => acc
+            case Some(entry) =>
+                let newAcc = if (f(Entry.getKey(entry), Entry.getValue(entry))) acc + 1 else acc;
+                loop(Entry.getOrderNext(entry), newAcc)
+        };
+        loop(m->head, 0)
+
+    ///
+    /// Returns the first key-value pair in `m` (in insertion order) that satisfies the predicate `f`.
+    ///
+    pub def find(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Option[(k, v)] \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => None
+            case Some(entry) =>
+                let k = Entry.getKey(entry);
+                let v = Entry.getValue(entry);
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    loop(Entry.getOrderNext(entry))
+        };
+        loop(m->head)
+
+    ///
+    /// Returns the sum of all values computed by `f` for each key-value pair in `m`.
+    ///
+    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutHashMap[k, v, r]): Int32 \ {ef, r} =
+        foldLeftWithKey((acc, k, v) -> acc + f(k, v), 0, m)
+
+    ///
+    /// Inserts all key-value pairs from immutable map `src` into mutable map `dst`.
+    ///
+    pub def putAll(src: Map[k, v], dst: MutHashMap[k, v, r]): Unit \ r with Hash[k], Order[k] =
+        Map.forEach((k, v) -> put(k, v, dst), src)
+
+    ///
+    /// Inserts all key-value pairs from mutable map `src` into mutable map `dst`.
+    ///
+    pub def putAllMut(src: MutHashMap[k, v, r1], dst: MutHashMap[k, v, r2]): Unit \ {r1, r2} with Hash[k], Eq[k] =
+        forEach((k, v) -> put(k, v, dst), src)
+
+    ///
+    /// Returns the value associated with key `k` in `m`.
+    /// If `k` does not exist, inserts `k` with value `default` and returns `default`.
+    ///
+    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Hash[k], Eq[k] =
+        match get(k, m) {
+            case Some(v) => v
+            case None =>
+                put(k, default, m);
+                default
+        }
+
+    ///
+    /// Returns a list of all key-value pairs in `m` in insertion order.
+    ///
+    pub def toList(m: MutHashMap[k, v, r]): List[(k, v)] \ r =
+        foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m) |> List.reverse
+
+    ///
+    /// Returns an array of all key-value pairs in `m` in insertion order.
+    ///
+    pub def toArray(rc: Region[r2], m: MutHashMap[k, v, r]): Array[(k, v), r2] \ {r, r2} =
+        let len = size(m);
+        let arr = Array.empty(rc, len);
+        let idx = Ref.fresh(rc, 0);
+        forEach((k, v) -> {
+            let i = Ref.get(idx);
+            Array.put((k, v), i, arr);
+            Ref.put(i + 1, idx)
+        }, m);
+        arr
+
+    ///
+    /// Returns a vector of all key-value pairs in `m` in insertion order.
+    ///
+    pub def toVector(m: MutHashMap[k, v, r]): Vector[(k, v)] \ r = region rc {
+        let arr = toArray(rc, m);
+        Array.toVector(arr)
+    }
+
+    ///
+    /// Returns an immutable map containing all key-value pairs from `m`.
+    ///
+    pub def toMap(m: MutHashMap[k, v, r]): Map[k, v] \ r with Order[k] =
+        foldLeftWithKey((acc, k, v) -> Map.insert(k, v, acc), Map.empty(), m)
+
+    ///
+    /// Returns a new mutable hash map containing all key-value pairs from immutable map `m`.
+    ///
+    pub def fromMap(rc: Region[r], m: Map[k, v]): MutHashMap[k, v, r] \ r with Hash[k], Order[k] =
+        let result = empty(rc);
+        putAll(m, result);
+        result
+
+    ///
+    /// Returns a new mutable hash map containing all key-value pairs from list `l`.
+    /// If the list contains duplicate keys, the last occurrence wins.
+    ///
+    pub def fromList(rc: Region[r], l: List[(k, v)]): MutHashMap[k, v, r] \ r with Hash[k], Eq[k] =
+        let result = empty(rc);
+        List.forEach(match (k, v) -> put(k, v, result), l);
+        result
+
+    ///
+    /// Returns a string representation of `m`.
+    ///
+    pub def toString(m: MutHashMap[k, v, r]): String \ r with ToString[k], ToString[v] =
+        let kvs = foldLeftWithKey((acc, k, v) -> "${k} -> ${v}" :: acc, Nil, m);
+        let inner = String.intercalate(", ", List.reverse(kvs));
+        "MutHashMap#{${inner}}"
+
+    ///
+    /// Returns a string formed by joining all values in `m` with `sep`.
+    ///
+    pub def join(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[v] =
+        let strs = foldLeft((acc, v) -> "${v}" :: acc, Nil, m);
+        String.intercalate(sep, List.reverse(strs))
+
+    ///
+    /// Returns a string formed by applying `f` to each key-value pair and joining with `sep`.
+    ///
+    pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: MutHashMap[k, v, r]): String \ {ef, r} =
+        let strs = foldLeftWithKey((acc, k, v) -> f(k, v) :: acc, Nil, m);
+        String.intercalate(sep, List.reverse(strs))
+
+    ///
+    /// Returns a list of all keys in `m` in insertion order.
+    ///
+    pub def keysOf(m: MutHashMap[k, v, r]): List[k] \ r =
+        foldRightWithKey((k, _, acc) -> k :: acc, Nil, m)
+
+    ///
+    /// Returns a list of all values in `m` in insertion order.
+    ///
+    pub def valuesOf(m: MutHashMap[k, v, r]): List[v] \ r =
+        foldRight((v, acc) -> v :: acc, Nil, m)
+
+    ///
+    /// Returns `true` if `m1` and `m2` have the same elements in the same insertion order.
+    ///
+    pub def sameElements(m1: MutHashMap[k, v, r1], m2: MutHashMap[k, v, r2]): Bool \ {r1, r2} with Eq[k], Eq[v] =
+        if (size(m1) != size(m2))
+            false
+        else
+            // Walk both order chains in parallel
+            def loop(curr1, curr2) = match (curr1, curr2) {
+                case (None, None) => true
+                case (Some(e1), Some(e2)) =>
+                    if (Eq.eq(Entry.getKey(e1), Entry.getKey(e2)) and Eq.eq(Entry.getValue(e1), Entry.getValue(e2)))
+                        loop(Entry.getOrderNext(e1), Entry.getOrderNext(e2))
+                    else
+                        false
+                case _ => false
+            };
+            loop(m1->head, m2->head)
+
+}
