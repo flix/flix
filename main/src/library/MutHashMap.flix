@@ -182,90 +182,27 @@ mod MutHashMap {
 
     ///
     /// Inserts key `k` with value `v` into `m`.
+    ///
     /// If the key already exists, updates its value (does not change insertion order).
     ///
     pub def put(k: k, v: v, m: MutHashMap[k, v, r]): Unit \ r with Eq[k], Hash[k] =
-        let hash = Hash.hash(k);
-        let numBuckets = Array.length(m->buckets);
-        let idx = hash2bucket(hash, numBuckets);
-        let bucket = Array.get(idx, m->buckets);
-
-        match findInBucket(k, bucket) {
-            case Some(entry) =>
-                // Key exists, update value (don't change order)
-                Entry.setValue(v, entry)
-            case None =>
-                // Key doesn't exist, create new entry
-                let entry = new Entry @ m->rc {
-                    key = k,
-                    value = v,
-                    hash = hash,
-                    bucketNext = bucket,
-                    orderPrev = m->tail,
-                    orderNext = None
-                };
-
-                // Link into bucket chain
-                Array.put(Some(entry), idx, m->buckets);
-
-                // Link into order chain
-                match m->tail {
-                    case None =>
-                        // First entry
-                        m->head = Some(entry);
-                        m->tail = Some(entry)
-                    case Some(tailEntry) =>
-                        // Append to tail
-                        Entry.setOrderNext(Some(entry), tailEntry);
-                        m->tail = Some(entry)
-                };
-
-                // Increment size and check if should expand
-                m->size = m->size + 1;
-                expand(m)
-        }
+        putWithKey((_, newV, _) -> newV, k, v, m)
 
     ///
     /// Inserts key `k` with value `v` into `m`, using combiner function `f` if key exists.
+    ///
     /// If key exists with value `oldV`, updates to `f(v, oldV)`.
+    ///
     /// Otherwise, inserts `k => v`.
     ///
     pub def putWith(f: (v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
-        let hash = Hash.hash(k);
-        let numBuckets = Array.length(m->buckets);
-        let idx = hash2bucket(hash, numBuckets);
-        let bucket = Array.get(idx, m->buckets);
-
-        match findInBucket(k, bucket) {
-            case Some(entry) =>
-                // Key exists, combine values
-                Entry.setValue(f(v, Entry.getValue(entry)), entry)
-            case None =>
-                // Key doesn't exist, insert normally
-                let entry = new Entry @ m->rc {
-                    key = k,
-                    value = v,
-                    hash = hash,
-                    bucketNext = bucket,
-                    orderPrev = m->tail,
-                    orderNext = None
-                };
-                Array.put(Some(entry), idx, m->buckets);
-                match m->tail {
-                    case None =>
-                        m->head = Some(entry);
-                        m->tail = Some(entry)
-                    case Some(tailEntry) =>
-                        Entry.setOrderNext(Some(entry), tailEntry);
-                        m->tail = Some(entry)
-                };
-                m->size = m->size + 1;
-                expand(m)
-        }
+        putWithKey((_, newV, oldV) -> f(newV, oldV), k, v, m)
 
     ///
     /// Inserts key `k` with value `v` into `m`, using combiner function `f` with key if key exists.
+    ///
     /// If key exists with value `oldV`, updates to `f(k, v, oldV)`.
+    ///
     /// Otherwise, inserts `k => v`.
     ///
     pub def putWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
