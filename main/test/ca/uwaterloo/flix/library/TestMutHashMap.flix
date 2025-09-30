@@ -1617,29 +1617,55 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // join                                                                    //
+    // joinKeys                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def join01(): Unit \ Assert = region rc {
+    def joinKeys01(): Unit \ Assert = region rc {
         let m: MutHashMap[Int32, String, _] = MutHashMap.empty(rc);
-        assertEq(expected = "", MutHashMap.join(", ", m))
+        assertEq(expected = "", MutHashMap.joinKeys(", ", m))
     }
 
     @Test
-    def join02(): Unit \ Assert = region rc {
+    def joinKeys02(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
-        assertEq(expected = "one", MutHashMap.join(", ", m))
+        assertEq(expected = "1", MutHashMap.joinKeys(", ", m))
     }
 
     @Test
-    def join03(): Unit \ Assert = region rc {
+    def joinKeys03(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
         MutHashMap.put(3, "three", m);
-        assertEq(expected = "one, two, three", MutHashMap.join(", ", m))
+        assertEq(expected = "1, 2, 3", MutHashMap.joinKeys(", ", m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def joinValues01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, _] = MutHashMap.empty(rc);
+        assertEq(expected = "", MutHashMap.joinValues(", ", m))
+    }
+
+    @Test
+    def joinValues02(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m);
+        assertEq(expected = "one", MutHashMap.joinValues(", ", m))
+    }
+
+    @Test
+    def joinValues03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m);
+        MutHashMap.put(2, "two", m);
+        MutHashMap.put(3, "three", m);
+        assertEq(expected = "one, two, three", MutHashMap.joinValues(", ", m))
     }
 
     /////////////////////////////////////////////////////////////////////////////

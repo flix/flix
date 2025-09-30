@@ -760,9 +760,16 @@ mod MutHashMap {
         "MutHashMap#{${inner}}"
 
     ///
+    /// Returns a string formed by joining all keys in `m` with `sep`.
+    ///
+    pub def joinKeys(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[k] =
+        let strs = foldLeftWithKey((acc, k, _v) -> "${k}" :: acc, Nil, m);
+        String.intercalate(sep, List.reverse(strs))
+
+    ///
     /// Returns a string formed by joining all values in `m` with `sep`.
     ///
-    pub def join(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[v] =
+    pub def joinValues(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[v] =
         let strs = foldLeft((acc, v) -> "${v}" :: acc, Nil, m);
         String.intercalate(sep, List.reverse(strs))
 
