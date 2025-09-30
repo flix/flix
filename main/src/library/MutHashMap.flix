@@ -140,6 +140,14 @@ mod MutHashMap {
         new MutHashMap @ rc { rc = rc, buckets = buckets, head = None, tail = None, size = 0 }
 
     ///
+    /// Returns a mutable hash map with a single key-value pair `k => v`.
+    ///
+    pub def singleton(rc: Region[r], k: k, v: v): MutHashMap[k, v, r] \ r with Eq[k], Hash[k] =
+        let m = empty(rc);
+        put(k, v, m);
+        m
+
+    ///
     /// Returns the set of all keys in `m`.
     ///
     pub def keysOf(m: MutHashMap[k, v, r]): Set[k] \ r with Order[k] =

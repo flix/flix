@@ -49,6 +49,31 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // singleton                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def singleton01(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = 1, MutHashMap.size(m))
+    }
+
+    @Test
+    def singleton02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some("one"), MutHashMap.get(1, m))
+    }
+
+    @Test
+    def singleton03(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 42, "answer");
+        assertFalse(MutHashMap.isEmpty(m));
+        assertTrue(MutHashMap.nonEmpty(m));
+        assertTrue(MutHashMap.memberOf(42, m));
+        assertFalse(MutHashMap.memberOf(41, m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
