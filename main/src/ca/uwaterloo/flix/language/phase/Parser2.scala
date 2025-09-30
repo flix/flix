@@ -811,6 +811,7 @@ object Parser2 {
     val mark = open(consumeDocComments = false)
     var continue = true
     while (continue && !eof()) {
+      comments()
       nth(0) match {
         case TokenKind.KeywordUse =>
           use()

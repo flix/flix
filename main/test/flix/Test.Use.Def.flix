@@ -43,7 +43,9 @@ mod C {
     @test
     def testMod07(): Bool =
         use A.{f => fa};
+        // Comment
         use B.{f => fb};
+        /* More comment */
         use C.{f => fc};
         (fa() + fb() + fc()) == 6
 }
