@@ -695,12 +695,6 @@ mod MutHashMap {
         loop(m->tail)
 
     ///
-    /// Returns a list of all key-value pairs in `m` in insertion order.
-    ///
-    pub def toList(m: MutHashMap[k, v, r]): List[(k, v)] \ r =
-        foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m) |> List.reverse
-
-    ///
     /// Returns an array of all key-value pairs in `m` in insertion order.
     ///
     pub def toArray(rc: Region[r2], m: MutHashMap[k, v, r]): Array[(k, v), r2] \ {r, r2} =
@@ -715,18 +709,24 @@ mod MutHashMap {
         arr
 
     ///
+    /// Returns an immutable map containing all key-value pairs from `m`.
+    ///
+    pub def toMap(m: MutHashMap[k, v, r]): Map[k, v] \ r with Order[k] =
+        foldLeftWithKey((acc, k, v) -> Map.insert(k, v, acc), Map.empty(), m)
+
+    ///
+    /// Returns a list of all key-value pairs in `m` in insertion order.
+    ///
+    pub def toList(m: MutHashMap[k, v, r]): List[(k, v)] \ r =
+        foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m) |> List.reverse
+
+    ///
     /// Returns a vector of all key-value pairs in `m` in insertion order.
     ///
     pub def toVector(m: MutHashMap[k, v, r]): Vector[(k, v)] \ r = region rc {
         let arr = toArray(rc, m);
         Array.toVector(arr)
     }
-
-    ///
-    /// Returns an immutable map containing all key-value pairs from `m`.
-    ///
-    pub def toMap(m: MutHashMap[k, v, r]): Map[k, v] \ r with Order[k] =
-        foldLeftWithKey((acc, k, v) -> Map.insert(k, v, acc), Map.empty(), m)
 
     ///
     /// Returns a new mutable hash map containing all key-value pairs from immutable map `m`.
