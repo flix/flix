@@ -42,6 +42,25 @@ instance ForEach[MutHashMap[k, v, r]] {
         MutHashMap.forEach((k, v) -> f((k, v)), m)
 }
 
+instance Indexable[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
+    type Elm = v
+    type Idx = k
+    type Aef = r + KeyNotFound
+
+    pub def get(t: MutHashMap[k, v, r], i: k): v \ r + KeyNotFound = {
+        match MutHashMap.get(i, t) {
+            case Some(v) => v
+            case None => KeyNotFound.keyNotFound("key not found")
+        }
+    }
+}
+
+instance IndexableMut[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
+    type Aef = r
+
+    pub def put(t: MutHashMap[k, v, r], i: k, v: v): Unit \ r = MutHashMap.put(i, v, t)
+}
+
 mod MutHashMap {
 
     ///
