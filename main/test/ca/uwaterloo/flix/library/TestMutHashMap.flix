@@ -960,23 +960,23 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // retainWhere                                                             //
+    // refine                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def retainWhere01(): Unit \ Assert = region rc {
+    def refine01(): Unit \ Assert = region rc {
         let m: MutHashMap[Int32, Int32, rc] = MutHashMap.empty(rc);
-        MutHashMap.retainWhere(x -> x > 0, m);
+        MutHashMap.refine(x -> x > 0, m);
         assertTrue(MutHashMap.isEmpty(m))
     }
 
     @Test
-    def retainWhere02(): Unit \ Assert = region rc {
+    def refine02(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, 10, m);
         MutHashMap.put(2, 20, m);
         MutHashMap.put(3, 30, m);
-        MutHashMap.retainWhere(x -> x >= 20, m);
+        MutHashMap.refine(x -> x >= 20, m);
         assertEq(expected = 2, MutHashMap.size(m));
         assertEq(expected = (None: Option[Int32]), MutHashMap.get(1, m));
         assertEq(expected = Some(20), MutHashMap.get(2, m));
@@ -984,35 +984,35 @@ mod TestMutHashMap {
     }
 
     @Test
-    def retainWhere03(): Unit \ Assert = region rc {
+    def refine03(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, 10, m);
         MutHashMap.put(2, 20, m);
         MutHashMap.put(3, 5, m);
-        MutHashMap.retainWhere(v -> v >= 10, m);
+        MutHashMap.refine(v -> v >= 10, m);
         assertEq(expected = 2, MutHashMap.size(m));
         assertEq(expected = Some(10), MutHashMap.get(1, m));
         assertEq(expected = Some(20), MutHashMap.get(2, m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // retainWhereWithKey                                                      //
+    // refineWithKey                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def retainWhereWithKey01(): Unit \ Assert = region rc {
+    def refineWithKey01(): Unit \ Assert = region rc {
         let m: MutHashMap[Int32, Int32, rc] = MutHashMap.empty(rc);
-        MutHashMap.retainWhereWithKey((k, _v) -> k > 0, m);
+        MutHashMap.refineWithKey((k, _v) -> k > 0, m);
         assertTrue(MutHashMap.isEmpty(m))
     }
 
     @Test
-    def retainWhereWithKey02(): Unit \ Assert = region rc {
+    def refineWithKey02(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, 10, m);
         MutHashMap.put(2, 20, m);
         MutHashMap.put(3, 30, m);
-        MutHashMap.retainWhereWithKey((k, v) -> k + v > 20, m);
+        MutHashMap.refineWithKey((k, v) -> k + v > 20, m);
         assertEq(expected = 2, MutHashMap.size(m));
         assertEq(expected = (None: Option[Int32]), MutHashMap.get(1, m));
         assertEq(expected = Some(20), MutHashMap.get(2, m));
@@ -1020,12 +1020,12 @@ mod TestMutHashMap {
     }
 
     @Test
-    def retainWhereWithKey03(): Unit \ Assert = region rc {
+    def refineWithKey03(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, 5, m);
         MutHashMap.put(2, 10, m);
         MutHashMap.put(3, 15, m);
-        MutHashMap.retainWhereWithKey((k, v) -> k * v > 20, m);
+        MutHashMap.refineWithKey((k, v) -> k * v > 20, m);
         assertEq(expected = 1, MutHashMap.size(m));
         assertEq(expected = Some(15), MutHashMap.get(3, m))
     }
@@ -1292,33 +1292,6 @@ mod TestMutHashMap {
         MutHashMap.put(3, 20, m);
         // Should return first match in insertion order
         assertEq(expected = Some((1, 10)), MutHashMap.find((k, v) -> k + v > 10, m))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // sumWith                                                                 //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def sumWith01(): Unit \ Assert = region rc {
-        let m: MutHashMap[Int32, Int32, rc] = MutHashMap.empty(rc);
-        assertEq(expected = 0, MutHashMap.sumWith((k, v) -> k + v, m))
-    }
-
-    @Test
-    def sumWith02(): Unit \ Assert = region rc {
-        let m = MutHashMap.empty(rc);
-        MutHashMap.put(1, 10, m);
-        MutHashMap.put(2, 20, m);
-        MutHashMap.put(3, 30, m);
-        assertEq(expected = 66, MutHashMap.sumWith((k, v) -> k + v, m))
-    }
-
-    @Test
-    def sumWith03(): Unit \ Assert = region rc {
-        let m = MutHashMap.empty(rc);
-        MutHashMap.put(1, 10, m);
-        MutHashMap.put(2, 20, m);
-        assertEq(expected = 30, MutHashMap.sumWith((_k, v) -> v, m))
     }
 
     /////////////////////////////////////////////////////////////////////////////

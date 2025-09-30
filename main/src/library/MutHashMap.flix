@@ -163,6 +163,25 @@ mod MutHashMap {
         }
 
     ///
+    /// Returns the value associated with key `k` in `m`.
+    ///
+    /// If `k` does not exist, inserts `k` with value `default` and returns `default`.
+    ///
+    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
+        match get(k, m) {
+            case Some(v) => v
+            case None =>
+                put(k, default, m);
+                default
+        }
+
+    ///
+    /// Returns the value associated with key `k`, or `default` if not found.
+    ///
+    pub def getWithDefault(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
+        Option.getWithDefault(default, get(k, m))
+
+    ///
     /// Converts hash code to a valid bucket index.
     /// Handles negative hashes correctly using bitwise AND.
     ///
@@ -181,12 +200,6 @@ mod MutHashMap {
                 else
                     findInBucket(k, Entry.getBucketNext(entry))
         }
-
-    ///
-    /// Returns the value associated with key `k`, or `default` if not found.
-    ///
-    pub def getWithDefault(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
-        Option.getWithDefault(default, get(k, m))
 
     ///
     /// Returns `true` if key `k` exists in `m`.
@@ -522,7 +535,7 @@ mod MutHashMap {
     ///
     /// Removes all entries from `m` where `f(value)` returns false.
     ///
-    pub def retainWhere(f: v -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
+    pub def refine(f: v -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         // Two-pass: collect keys to remove, then remove them
         def collectKeys(curr, acc) = match curr {
             case None => acc
@@ -538,7 +551,7 @@ mod MutHashMap {
     ///
     /// Removes all entries from `m` where `f(key, value)` returns false.
     ///
-    pub def retainWhereWithKey(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
+    pub def refineWithKey(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         // Two-pass: collect keys to remove, then remove them
         def collectKeys(curr, acc) = match curr {
             case None => acc
@@ -656,24 +669,6 @@ mod MutHashMap {
                     loop(Entry.getOrderNext(entry))
         };
         loop(m->head)
-
-    ///
-    /// Returns the sum of all values computed by `f` for each key-value pair in `m`.
-    ///
-    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutHashMap[k, v, r]): Int32 \ {ef, r} =
-        foldLeftWithKey((acc, k, v) -> acc + f(k, v), 0, m)
-
-    ///
-    /// Returns the value associated with key `k` in `m`.
-    /// If `k` does not exist, inserts `k` with value `default` and returns `default`.
-    ///
-    pub def getOrElsePut(k: k, default: v, m: MutHashMap[k, v, r]): v \ r with Eq[k], Hash[k] =
-        match get(k, m) {
-            case Some(v) => v
-            case None =>
-                put(k, default, m);
-                default
-        }
 
     ///
     /// Returns a list of all key-value pairs in `m` in insertion order.
