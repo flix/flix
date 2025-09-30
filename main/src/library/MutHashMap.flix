@@ -517,6 +517,26 @@ mod MutHashMap {
         iterator(rc, m) |> Iterator.map(snd)
 
     ///
+    /// Returns a new mutable hash map with values transformed by function `f`.
+    ///
+    /// Keys and insertion order are preserved.
+    ///
+    pub def map(rc: Region[r2], f: v1 -> v2 \ ef, m: MutHashMap[k, v1, r1]): MutHashMap[k, v2, r2] \ {ef, r1, r2} with Eq[k], Hash[k] =
+        let result = emptyWithCapacity(rc, size(m));
+        forEach((k, v) -> put(k, f(v), result), m);
+        result
+
+    ///
+    /// Returns a new mutable hash map with values transformed by function `f` with access to keys.
+    ///
+    /// Keys and insertion order are preserved.
+    ///
+    pub def mapWithKey(rc: Region[r2], f: (k, v1) -> v2 \ ef, m: MutHashMap[k, v1, r1]): MutHashMap[k, v2, r2] \ {ef, r1, r2} with Eq[k], Hash[k] =
+        let result = emptyWithCapacity(rc, size(m));
+        forEach((k, v) -> put(k, f(k, v), result), m);
+        result
+
+    ///
     /// Transforms all values in `m` in-place using function `f`.
     ///
     pub def transform(f: v -> v \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} =

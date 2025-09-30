@@ -976,6 +976,94 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // map                                                                     //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def map01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, Int32, _] = MutHashMap.empty(rc);
+        let result = MutHashMap.map(rc, x -> x * 2, m);
+        assertTrue(MutHashMap.isEmpty(result))
+    }
+
+    @Test
+    def map02(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 20, m);
+        MutHashMap.put(3, 30, m);
+        let result = MutHashMap.map(rc, x -> x * 2, m);
+        assertEq(expected = 3, MutHashMap.size(result));
+        assertEq(expected = Some(20), MutHashMap.get(1, result));
+        assertEq(expected = Some(40), MutHashMap.get(2, result));
+        assertEq(expected = Some(60), MutHashMap.get(3, result))
+    }
+
+    @Test
+    def map03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(3, 30, m);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 20, m);
+        let result = MutHashMap.map(rc, x -> x / 10, m);
+        // Verify insertion order is preserved
+        let keys = MutHashMap.iteratorKeys(rc, result) |> Iterator.toList;
+        assertEq(expected = 3 :: 1 :: 2 :: Nil, keys)
+    }
+
+    @Test
+    def map04(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 20, m);
+        let result = MutHashMap.map(rc, x -> x * 2, m);
+        // Mutating original should not affect result
+        MutHashMap.put(3, 30, m);
+        MutHashMap.put(1, 100, m);
+        assertEq(expected = 2, MutHashMap.size(result));
+        assertEq(expected = Some(20), MutHashMap.get(1, result))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // mapWithKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def mapWithKey01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, Int32, _] = MutHashMap.empty(rc);
+        let result = MutHashMap.mapWithKey(rc, (k, v) -> k + v, m);
+        assertTrue(MutHashMap.isEmpty(result))
+    }
+
+    @Test
+    def mapWithKey02(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 20, m);
+        MutHashMap.put(3, 30, m);
+        let result = MutHashMap.mapWithKey(rc, (k, v) -> k + v, m);
+        assertEq(expected = 3, MutHashMap.size(result));
+        assertEq(expected = Some(11), MutHashMap.get(1, result));
+        assertEq(expected = Some(22), MutHashMap.get(2, result));
+        assertEq(expected = Some(33), MutHashMap.get(3, result))
+    }
+
+    @Test
+    def mapWithKey03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, 10, m);
+        MutHashMap.put(2, 20, m);
+        MutHashMap.put(8, 30, m);
+        let result = MutHashMap.mapWithKey(rc, (k, v) -> k * v, m);
+        // Verify insertion order is preserved
+        let keys = MutHashMap.iteratorKeys(rc, result) |> Iterator.toList;
+        assertEq(expected = 5 :: 2 :: 8 :: Nil, keys);
+        assertEq(expected = Some(50), MutHashMap.get(5, result));
+        assertEq(expected = Some(40), MutHashMap.get(2, result));
+        assertEq(expected = Some(240), MutHashMap.get(8, result))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // transform                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
