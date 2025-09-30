@@ -1,6 +1,7 @@
 mod Test.Exp.Concurrency.Spawn {
 
     import java.lang.NullPointerException
+    import java.lang.{Thread => JThread}
 
     @test
     def testSpawn01(): Unit = region rc { spawn () @ rc }
@@ -63,7 +64,7 @@ mod Test.Exp.Concurrency.Spawn {
                 spawn {
                     spawn { println(String.concat(checked_cast(null), "foo")) } @ rc
                 } @ rc;
-                Thread.sleep(Time.Duration.fromSeconds(1));
+                JThread.sleep(1_000i64);
                 false
             }
         } catch {
@@ -82,7 +83,7 @@ mod Test.Exp.Concurrency.Spawn {
                 }
             } @ rc
         } @ rc;
-        Thread.sleep(Time.Duration.fromSeconds(1));
+        JThread.sleep(1_000i64);
         true
     }
 
