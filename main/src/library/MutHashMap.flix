@@ -21,7 +21,7 @@
 /// to maintain insertion order.
 ///
 pub struct MutHashMap[k: Type, v: Type, r: Region] {
-    r: Region[r],
+    rc: Region[r],
     mut buckets: Array[Option[MutHashMap.Entry[k, v, r]], r],   // Hash table buckets
     mut head: Option[MutHashMap.Entry[k, v, r]],                // First entry in insertion order
     mut tail: Option[MutHashMap.Entry[k, v, r]],                // Last entry in insertion order
@@ -45,16 +45,17 @@ instance ForEach[MutHashMap[k, v, r]] {
 mod MutHashMap {
 
     ///
-    /// Internal entry node for the hash map.
+    /// Represents an internal entry node for the hash map.
+    ///
     /// Each entry is part of both a hash bucket chain and the insertion order chain.
     ///
     pub struct Entry[k: Type, v: Type, r: Region] {
-        key: k,
-        mut value: v,
-        hash: Int32,
-        mut bucketNext: Option[Entry[k, v, r]],
-        mut orderPrev: Option[Entry[k, v, r]],
-        mut orderNext: Option[Entry[k, v, r]]
+        key: k,                                    // The key for this entry
+        hash: Int32,                               // Cached hash code for the key
+        mut value: v,                              // The value associated with the key
+        mut bucketNext: Option[Entry[k, v, r]],    // Next entry in the same bucket
+        mut orderPrev: Option[Entry[k, v, r]],     // Previous entry in insertion order
+        mut orderNext: Option[Entry[k, v, r]]      // Next entry in insertion order
     }
 
     mod Entry {
@@ -98,7 +99,7 @@ mod MutHashMap {
     pub def emptyWithCapacity(rc: Region[r], capacity: Int32): MutHashMap[k, v, r] \ r =
         let cap = Int32.max(capacity, minCapacity());
         let buckets = Array.repeat(rc, cap, None);
-        new MutHashMap @ rc { r = rc, buckets = buckets, head = None, tail = None, size = 0 }
+        new MutHashMap @ rc { rc = rc, buckets = buckets, head = None, tail = None, size = 0 }
 
     ///
     /// Returns the number of entries in `m`.
@@ -189,7 +190,7 @@ mod MutHashMap {
                 Entry.setValue(v, entry)
             case None =>
                 // Key doesn't exist, create new entry
-                let entry = new Entry @ m->r {
+                let entry = new Entry @ m->rc {
                     key = k,
                     value = v,
                     hash = hash,
@@ -235,7 +236,7 @@ mod MutHashMap {
                 Entry.setValue(f(v, Entry.getValue(entry)), entry)
             case None =>
                 // Key doesn't exist, insert normally
-                let entry = new Entry @ m->r {
+                let entry = new Entry @ m->rc {
                     key = k,
                     value = v,
                     hash = hash,
@@ -273,7 +274,7 @@ mod MutHashMap {
                 Entry.setValue(f(k, v, Entry.getValue(entry)), entry)
             case None =>
                 // Key doesn't exist, insert normally
-                let entry = new Entry @ m->r {
+                let entry = new Entry @ m->rc {
                     key = k,
                     value = v,
                     hash = hash,
@@ -416,7 +417,7 @@ mod MutHashMap {
     ///
     pub def clear(m: MutHashMap[k, v, r]): Unit \ r =
         let numBuckets = Array.length(m->buckets);
-        Array.updateSequence(0, Array.repeat(m->r, numBuckets, None), m->buckets);
+        Array.updateSequence(0, Array.repeat(m->rc, numBuckets, None), m->buckets);
         m->head = None;
         m->tail = None;
         m->size = 0
@@ -452,7 +453,7 @@ mod MutHashMap {
     ///
     def resize(m: MutHashMap[k, v, r], newCapacity: Int32): Unit \ r =
         // Create new bucket array
-        let newBuckets = Array.repeat(m->r, newCapacity, None);
+        let newBuckets = Array.repeat(m->rc, newCapacity, None);
 
         // Rehash all entries by walking the order chain
         def rehashEntry(curr) = match curr {
