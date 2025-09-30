@@ -588,6 +588,21 @@ mod TestMutHashMap {
         assertEq(expected = Some("twenty"), MutHashMap.get(20, m))
     }
 
+    @Test
+    def multipleInserts03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        // Insert 200 elements
+        List.range(1, 201) |> List.forEach(i -> MutHashMap.put(i, "value${i}", m));
+        assertEq(expected = 200, MutHashMap.size(m));
+        // Check some random elements
+        assertEq(expected = Some("value1"), MutHashMap.get(1, m));
+        assertEq(expected = Some("value50"), MutHashMap.get(50, m));
+        assertEq(expected = Some("value100"), MutHashMap.get(100, m));
+        assertEq(expected = Some("value150"), MutHashMap.get(150, m));
+        assertEq(expected = Some("value200"), MutHashMap.get(200, m));
+        assertEq(expected = None, MutHashMap.get(201, m))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // Hash collisions                                                         //
     /////////////////////////////////////////////////////////////////////////////
