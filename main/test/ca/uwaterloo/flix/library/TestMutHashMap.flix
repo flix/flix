@@ -1760,7 +1760,7 @@ mod TestMutHashMap {
     @Test
     def keysOf01(): Unit \ Assert = region rc {
         let m: MutHashMap[Int32, String, _] = MutHashMap.empty(rc);
-        assertEq(expected = Nil, MutHashMap.keysOf(m))
+        assertEq(expected = Set.empty(), MutHashMap.keysOf(m))
     }
 
     @Test
@@ -1769,7 +1769,7 @@ mod TestMutHashMap {
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
         MutHashMap.put(3, "three", m);
-        assertEq(expected = 1 :: 2 :: 3 :: Nil, MutHashMap.keysOf(m))
+        assertEq(expected = Set#{1, 2, 3}, MutHashMap.keysOf(m))
     }
 
     @Test
@@ -1778,7 +1778,7 @@ mod TestMutHashMap {
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
         MutHashMap.put(1, "ONE", m);  // Update doesn't change order
-        assertEq(expected = 1 :: 2 :: Nil, MutHashMap.keysOf(m))
+        assertEq(expected = Set#{1, 2}, MutHashMap.keysOf(m))
     }
 
     /////////////////////////////////////////////////////////////////////////////
