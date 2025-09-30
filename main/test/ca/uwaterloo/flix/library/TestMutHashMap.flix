@@ -74,6 +74,57 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // copy                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def copy01(): Unit \ Assert = region rc {
+        let m1: MutHashMap[Int32, String, _] = MutHashMap.empty(rc);
+        let m2 = MutHashMap.copy(rc, m1);
+        assertEq(expected = 0, MutHashMap.size(m2))
+    }
+
+    @Test
+    def copy02(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m1);
+        MutHashMap.put(2, "two", m1);
+        MutHashMap.put(3, "three", m1);
+        let m2 = MutHashMap.copy(rc, m1);
+        assertEq(expected = 3, MutHashMap.size(m2));
+        assertEq(expected = Some("one"), MutHashMap.get(1, m2));
+        assertEq(expected = Some("two"), MutHashMap.get(2, m2));
+        assertEq(expected = Some("three"), MutHashMap.get(3, m2))
+    }
+
+    @Test
+    def copy03(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m1);
+        MutHashMap.put(2, "two", m1);
+        let m2 = MutHashMap.copy(rc, m1);
+        // Mutating m1 should not affect m2
+        MutHashMap.put(3, "three", m1);
+        MutHashMap.put(1, "ONE", m1);
+        assertEq(expected = 2, MutHashMap.size(m2));
+        assertEq(expected = Some("one"), MutHashMap.get(1, m2));
+        assertEq(expected = None, MutHashMap.get(3, m2))
+    }
+
+    @Test
+    def copy04(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        MutHashMap.put(3, "three", m1);
+        MutHashMap.put(1, "one", m1);
+        MutHashMap.put(2, "two", m1);
+        let m2 = MutHashMap.copy(rc, m1);
+        // Verify insertion order is preserved
+        let list1 = MutHashMap.toList(m1);
+        let list2 = MutHashMap.toList(m2);
+        assertEq(expected = list1, list2)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -703,6 +703,16 @@ mod MutHashMap {
         loop(m->tail)
 
     ///
+    /// Returns a shallow copy of `m` in region `rc2`.
+    ///
+    /// All key-value pairs are copied in insertion order.
+    ///
+    pub def copy(rc: Region[r2], m: MutHashMap[k, v, r1]): MutHashMap[k, v, r2] \ {r1, r2} with Eq[k], Hash[k] =
+        let result = emptyWithCapacity(rc, size(m));
+        forEach((k, v) -> put(k, v, result), m);
+        result
+
+    ///
     /// Returns an array of all key-value pairs in `m` in insertion order.
     ///
     pub def toArray(rc: Region[r2], m: MutHashMap[k, v, r]): Array[(k, v), r2] \ {r, r2} =
