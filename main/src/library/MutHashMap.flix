@@ -800,23 +800,4 @@ mod MutHashMap {
     pub def valuesOf(m: MutHashMap[k, v, r]): List[v] \ r =
         foldRight((v, acc) -> v :: acc, Nil, m)
 
-    ///
-    /// Returns `true` if `m1` and `m2` have the same elements in the same insertion order.
-    ///
-    pub def sameElements(m1: MutHashMap[k, v, r1], m2: MutHashMap[k, v, r2]): Bool \ {r1, r2} with Eq[k], Eq[v] =
-        if (size(m1) != size(m2))
-            false
-        else
-            // Walk both order chains in parallel
-            def loop(curr1, curr2) = match (curr1, curr2) {
-                case (None, None) => true
-                case (Some(e1), Some(e2)) =>
-                    if (Eq.eq(Entry.getKey(e1), Entry.getKey(e2)) and Eq.eq(Entry.getValue(e1), Entry.getValue(e2)))
-                        loop(Entry.getOrderNext(e1), Entry.getOrderNext(e2))
-                    else
-                        false
-                case _ => false
-            };
-            loop(m1->head, m2->head)
-
 }
