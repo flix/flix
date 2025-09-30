@@ -103,6 +103,18 @@ mod MutHashMap {
         new MutHashMap @ rc { rc = rc, buckets = buckets, head = None, tail = None, size = 0 }
 
     ///
+    /// Returns a list of all keys in `m` in insertion order.
+    ///
+    pub def keysOf(m: MutHashMap[k, v, r]): List[k] \ r =
+        foldRightWithKey((k, _, acc) -> k :: acc, Nil, m)
+
+    ///
+    /// Returns a list of all values in `m` in insertion order.
+    ///
+    pub def valuesOf(m: MutHashMap[k, v, r]): List[v] \ r =
+        foldRight((v, acc) -> v :: acc, Nil, m)
+
+    ///
     /// Returns the number of entries in `m`.
     ///
     pub def size(m: MutHashMap[k, v, r]): Int32 \ r =
@@ -788,17 +800,5 @@ mod MutHashMap {
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: MutHashMap[k, v, r]): String \ {ef, r} =
         let strs = foldLeftWithKey((acc, k, v) -> f(k, v) :: acc, Nil, m);
         String.intercalate(sep, List.reverse(strs))
-
-    ///
-    /// Returns a list of all keys in `m` in insertion order.
-    ///
-    pub def keysOf(m: MutHashMap[k, v, r]): List[k] \ r =
-        foldRightWithKey((k, _, acc) -> k :: acc, Nil, m)
-
-    ///
-    /// Returns a list of all values in `m` in insertion order.
-    ///
-    pub def valuesOf(m: MutHashMap[k, v, r]): List[v] \ r =
-        foldRight((v, acc) -> v :: acc, Nil, m)
 
 }
