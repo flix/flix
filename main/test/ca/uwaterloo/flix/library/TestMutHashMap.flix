@@ -163,7 +163,7 @@ mod TestMutHashMap {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
-        discard MutHashMap.remove(1, m);
+        MutHashMap.remove(1, m);
         assertEq(expected = 1, MutHashMap.size(m))
     }
 
@@ -188,7 +188,7 @@ mod TestMutHashMap {
     def isEmpty03(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
-        discard MutHashMap.remove(1, m);
+        MutHashMap.remove(1, m);
         assertTrue(MutHashMap.isEmpty(m))
     }
 
@@ -213,7 +213,7 @@ mod TestMutHashMap {
     def nonEmpty03(): Unit \ Assert = region rc {
         let m = MutHashMap.empty(rc);
         MutHashMap.put(1, "one", m);
-        discard MutHashMap.remove(1, m);
+        MutHashMap.remove(1, m);
         assertFalse(MutHashMap.nonEmpty(m))
     }
 
@@ -576,7 +576,7 @@ mod TestMutHashMap {
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
         MutHashMap.put(3, "three", m);
-        discard MutHashMap.remove(2, m);
+        MutHashMap.remove(2, m);
         assertEq(expected = 2, MutHashMap.size(m));
         assertEq(expected = Some("one"), MutHashMap.get(1, m));
         assertEq(expected = (None: Option[String]), MutHashMap.get(2, m));
@@ -721,20 +721,20 @@ mod TestMutHashMap {
         MutHashMap.put(15, "fifteen", m);
         MutHashMap.put(16, "sixteen", m);
         // Remove most elements to trigger shrinking
-        discard MutHashMap.remove(1, m);
-        discard MutHashMap.remove(2, m);
-        discard MutHashMap.remove(3, m);
-        discard MutHashMap.remove(4, m);
-        discard MutHashMap.remove(5, m);
-        discard MutHashMap.remove(6, m);
-        discard MutHashMap.remove(7, m);
-        discard MutHashMap.remove(8, m);
-        discard MutHashMap.remove(9, m);
-        discard MutHashMap.remove(10, m);
-        discard MutHashMap.remove(11, m);
-        discard MutHashMap.remove(12, m);
-        discard MutHashMap.remove(13, m);
-        discard MutHashMap.remove(14, m);
+        MutHashMap.remove(1, m);
+        MutHashMap.remove(2, m);
+        MutHashMap.remove(3, m);
+        MutHashMap.remove(4, m);
+        MutHashMap.remove(5, m);
+        MutHashMap.remove(6, m);
+        MutHashMap.remove(7, m);
+        MutHashMap.remove(8, m);
+        MutHashMap.remove(9, m);
+        MutHashMap.remove(10, m);
+        MutHashMap.remove(11, m);
+        MutHashMap.remove(12, m);
+        MutHashMap.remove(13, m);
+        MutHashMap.remove(14, m);
         assertEq(expected = 2, MutHashMap.size(m));
         assertEq(expected = Some("fifteen"), MutHashMap.get(15, m));
         assertEq(expected = Some("sixteen"), MutHashMap.get(16, m))
@@ -970,7 +970,7 @@ mod TestMutHashMap {
         MutHashMap.put(1, "one", m);
         MutHashMap.put(2, "two", m);
         MutHashMap.put(3, "three", m);
-        discard MutHashMap.remove(2, m);  // Remove middle element
+        MutHashMap.remove(2, m);  // Remove middle element
         let keys = MutHashMap.iteratorKeys(rc, m) |> Iterator.toList;
         assertEq(expected = 1 :: 3 :: Nil, keys)
     }
