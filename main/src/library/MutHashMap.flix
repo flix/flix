@@ -657,7 +657,15 @@ mod MutHashMap {
     ///
     /// Returns the first key-value pair in `m` (in insertion order) that satisfies the predicate `f`.
     ///
+    /// Alias for `findLeft`.
+    ///
     pub def find(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Option[(k, v)] \ {ef, r} =
+        findLeft(f, m)
+
+    ///
+    /// Returns the first key-value pair in `m` (from left, in insertion order) that satisfies the predicate `f`.
+    ///
+    pub def findLeft(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Option[(k, v)] \ {ef, r} =
         def loop(curr) = match curr {
             case None => None
             case Some(entry) =>
@@ -669,6 +677,22 @@ mod MutHashMap {
                     loop(Entry.getOrderNext(entry))
         };
         loop(m->head)
+
+    ///
+    /// Returns the first key-value pair in `m` (from right, in reverse insertion order) that satisfies the predicate `f`.
+    ///
+    pub def findRight(f: (k, v) -> Bool \ ef, m: MutHashMap[k, v, r]): Option[(k, v)] \ {ef, r} =
+        def loop(curr) = match curr {
+            case None => None
+            case Some(entry) =>
+                let k = Entry.getKey(entry);
+                let v = Entry.getValue(entry);
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    loop(Entry.getOrderPrev(entry))
+        };
+        loop(m->tail)
 
     ///
     /// Returns a list of all key-value pairs in `m` in insertion order.

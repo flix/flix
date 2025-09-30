@@ -1266,6 +1266,64 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // findLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findLeft01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, Int32, rc] = MutHashMap.empty(rc);
+        assertEq(expected = (None: Option[(Int32, Int32)]), MutHashMap.findLeft((_k, v) -> v > 15, m))
+    }
+
+    @Test
+    def findLeft02(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 20, m);
+        MutHashMap.put(3, 30, m);
+        assertEq(expected = Some((2, 20)), MutHashMap.findLeft((_k, v) -> v > 15, m))
+    }
+
+    @Test
+    def findLeft03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 5, m);
+        MutHashMap.put(3, 20, m);
+        // Should return first match in insertion order (from left)
+        assertEq(expected = Some((1, 10)), MutHashMap.findLeft((k, v) -> k + v > 10, m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // findRight                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def findRight01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, Int32, rc] = MutHashMap.empty(rc);
+        assertEq(expected = (None: Option[(Int32, Int32)]), MutHashMap.findRight((_k, v) -> v > 15, m))
+    }
+
+    @Test
+    def findRight02(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 20, m);
+        MutHashMap.put(3, 30, m);
+        assertEq(expected = Some((3, 30)), MutHashMap.findRight((_k, v) -> v > 15, m))
+    }
+
+    @Test
+    def findRight03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.put(2, 5, m);
+        MutHashMap.put(3, 20, m);
+        // Should return first match in reverse insertion order (from right)
+        assertEq(expected = Some((3, 20)), MutHashMap.findRight((k, v) -> k + v > 10, m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
