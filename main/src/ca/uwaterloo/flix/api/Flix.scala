@@ -293,8 +293,6 @@ class Flix {
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
-    "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
-    "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
     "FileRead.flix" -> LocalResource.get("/src/library/FileRead.flix"),
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
