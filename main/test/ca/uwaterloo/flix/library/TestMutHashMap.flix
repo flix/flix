@@ -1475,6 +1475,34 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // toSet                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toSet01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, _] = MutHashMap.empty(rc);
+        assertEq(expected = Set.empty(), MutHashMap.toSet(m))
+    }
+
+    @Test
+    def toSet02(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m);
+        MutHashMap.put(2, "two", m);
+        MutHashMap.put(3, "three", m);
+        let expected = Set#{(1, "one"), (2, "two"), (3, "three")};
+        assertEq(expected = expected, MutHashMap.toSet(m))
+    }
+
+    @Test
+    def toSet03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, "one", m);
+        let expected = Set#{(1, "one")};
+        assertEq(expected = expected, MutHashMap.toSet(m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

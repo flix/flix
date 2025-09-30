@@ -721,6 +721,12 @@ mod MutHashMap {
         foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m) |> List.reverse
 
     ///
+    /// Returns a set containing all key-value pairs from `m`.
+    ///
+    pub def toSet(m: MutHashMap[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =
+        foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
+
+    ///
     /// Returns a vector of all key-value pairs in `m` in insertion order.
     ///
     pub def toVector(m: MutHashMap[k, v, r]): Vector[(k, v)] \ r = region rc {
