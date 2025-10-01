@@ -79,14 +79,23 @@ mod MutHashMap {
 
     mod Entry {
         pub def getKey(e: Entry[k, v, r]): k = e->key
+
         pub def getValue(e: Entry[k, v, r]): v \ r = e->value
+
         pub def setValue(v: v, e: Entry[k, v, r]): Unit \ r = e->value = v
+
         pub def getHash(e: Entry[k, v, r]): Int32 = e->hash
+
         pub def getBucketNext(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->bucketNext
+
         pub def setBucketNext(next: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->bucketNext = next
+
         pub def getOrderPrev(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->orderPrev
+
         pub def setOrderPrev(prev: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->orderPrev = prev
+
         pub def getOrderNext(e: Entry[k, v, r]): Option[Entry[k, v, r]] \ r = e->orderNext
+
         pub def setOrderNext(next: Option[Entry[k, v, r]], e: Entry[k, v, r]): Unit \ r = e->orderNext = next
     }
 
@@ -164,7 +173,7 @@ mod MutHashMap {
     ///
     pub def get(k: k, m: MutHashMap[k, v, r]): Option[v] \ r with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
-        let idx = hash2bucket(hash, Array.length(m->buckets));
+        let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case None => None
             case Some(entry) => Some(Entry.getValue(entry))
@@ -191,10 +200,11 @@ mod MutHashMap {
 
     ///
     /// Converts hash code to a valid bucket index.
-    /// Handles negative hashes correctly using bitwise AND.
     ///
-    def hash2bucket(hash: Int32, numBuckets: Int32): Int32 =
-        Int32.bitwiseAnd(hash, numBuckets - 1)
+    def indexOfBucket(hash: Int32, numBuckets: Int32): Int32 =
+        // Note: Modulo ensures that the result cannot be negative.
+        // So there is no risk that we index into the array with a negative index.
+        Int32.modulo(hash, numBuckets)
 
     ///
     /// Searches for an entry with the given key in the bucket chain.
@@ -214,7 +224,7 @@ mod MutHashMap {
     ///
     pub def memberOf(k: k, m: MutHashMap[k, v, r]): Bool \ r with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
-        let idx = hash2bucket(hash, Array.length(m->buckets));
+        let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case None => false
             case Some(_) => true
@@ -248,7 +258,7 @@ mod MutHashMap {
     pub def putWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
         let numBuckets = Array.length(m->buckets);
-        let idx = hash2bucket(hash, numBuckets);
+        let idx = indexOfBucket(hash, numBuckets);
         let bucket = Array.get(idx, m->buckets);
 
         match findInBucket(k, bucket) {
@@ -286,7 +296,7 @@ mod MutHashMap {
     ///
     pub def adjust(f: v -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
-        let idx = hash2bucket(hash, Array.length(m->buckets));
+        let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case Some(entry) => Entry.setValue(f(Entry.getValue(entry)), entry)
             case None => ()
@@ -299,7 +309,7 @@ mod MutHashMap {
     ///
     pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
-        let idx = hash2bucket(hash, Array.length(m->buckets));
+        let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case Some(entry) => Entry.setValue(f(k, Entry.getValue(entry)), entry)
             case None => ()
@@ -316,7 +326,7 @@ mod MutHashMap {
     ///
     pub def update(f: v -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
-        let idx = hash2bucket(hash, Array.length(m->buckets));
+        let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case Some(entry) =>
                 match f(Entry.getValue(entry)) {
@@ -337,7 +347,7 @@ mod MutHashMap {
     ///
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
-        let idx = hash2bucket(hash, Array.length(m->buckets));
+        let idx = indexOfBucket(hash, Array.length(m->buckets));
         match findInBucket(k, Array.get(idx, m->buckets)) {
             case Some(entry) =>
                 match f(k, Entry.getValue(entry)) {
@@ -353,7 +363,7 @@ mod MutHashMap {
     pub def remove(k: k, m: MutHashMap[k, v, r]): Unit \ r with Eq[k], Hash[k] =
         let hash = Hash.hash(k);
         let numBuckets = Array.length(m->buckets);
-        let idx = hash2bucket(hash, numBuckets);
+        let idx = indexOfBucket(hash, numBuckets);
         let bucket = Array.get(idx, m->buckets);
 
         // Helper to remove from bucket chain
@@ -449,7 +459,7 @@ mod MutHashMap {
             case None => ()
             case Some(entry) =>
                 // Compute new bucket index
-                let idx = hash2bucket(Entry.getHash(entry), newCapacity);
+                let idx = indexOfBucket(Entry.getHash(entry), newCapacity);
                 let bucket = Array.get(idx, newBuckets);
 
                 // Insert into new bucket chain
