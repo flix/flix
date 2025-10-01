@@ -1203,8 +1203,7 @@ object Weeder2 {
     private def visitLambdaMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LambdaMatch)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) =>
-          Expr.LambdaMatch(Patterns.restrictToNonConstant(pat), expr, tree.loc)
+        (pat, expr) => Expr.LambdaMatch(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
@@ -1550,16 +1549,14 @@ object Weeder2 {
     private def visitForFragmentGenerator(tree: Tree)(implicit sctx: SharedContext): Validation[ForFragment.Generator, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ForFragmentGenerator)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) =>
-          ForFragment.Generator(Patterns.restrictToNonConstant(pat), expr, tree.loc)
+        (pat, expr) => ForFragment.Generator(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
     private def visitForFragmentLet(tree: Tree)(implicit sctx: SharedContext): Validation[ForFragment.Let, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ForFragmentLet)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) =>
-          ForFragment.Let(Patterns.restrictToNonConstant(pat), expr, tree.loc)
+        (pat, expr) => ForFragment.Let(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
@@ -2097,8 +2094,7 @@ object Weeder2 {
     private def visitParYieldFragment(tree: Tree)(implicit sctx: SharedContext): Validation[ParYieldFragment, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ParYieldFragment)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) =>
-          ParYieldFragment(Patterns.restrictToNonConstant(pat), expr, tree.loc)
+        (pat, expr) => ParYieldFragment(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
