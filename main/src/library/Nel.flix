@@ -710,7 +710,7 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ NonDet = region rc {
+    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ Shuffle = region rc {
         toArray(rc, l) !> Array.shuffle |> Array.toNel
     }
 

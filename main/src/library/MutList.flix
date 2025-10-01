@@ -901,7 +901,7 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
+    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = region rc2 {
         toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
     }
 

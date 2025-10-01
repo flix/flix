@@ -1467,7 +1467,7 @@ mod List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: List[a]): List[a] \ NonDet = region rc {
+    pub def shuffle(l: List[a]): List[a] \ Shuffle = region rc {
         toArray(rc, l) !> Array.shuffle |> Array.toList
     }
 

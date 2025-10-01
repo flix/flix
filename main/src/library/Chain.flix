@@ -973,7 +973,7 @@ mod Chain {
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(c: Chain[a]): Chain[a] \ NonDet = region rc {
+    pub def shuffle(c: Chain[a]): Chain[a] \ Shuffle = region rc {
         toArray(rc, c) !> Array.shuffle |> Array.toChain
     }
 

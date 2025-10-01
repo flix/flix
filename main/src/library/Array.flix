@@ -57,7 +57,6 @@ mod Array {
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays
-    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -1634,21 +1633,13 @@ mod Array {
         }
 
     ///
-    /// Shuffles `a` using the Fisher–Yates shuffle.
+    /// Shuffles `a` using a random permutation.
     ///
-    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
-        let rnd = new JRandom();
+    pub def shuffle(rc: Region[r2], a: Array[a, r1]): Array[a, r2] \ {r1, r2, Shuffle} = {
         let len = Array.length(a);
-        def loop(i) = {
-            if (i > 0) {
-                let j = rnd.nextInt(i + 1);
-                Array.swap(i, j, a);
-                loop(i - 1)
-            }
-            else
-                ()
-        };
-        loop(len - 1)
-    } as _ \ {r, NonDet})
+        let perm = Shuffle.permutation(len);
+        // Apply the permutation: result[i] = a[perm[i]]
+        Array.init(rc, i -> Array.get(Vector.get(i, perm), a), len)
+    }
 
 }
