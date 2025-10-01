@@ -69,7 +69,7 @@ mod Writable {
     ///
     /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
     ///
-    pub def writeNewLine(writer: t): Result[IoError, Unit] \ IO + Sys + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+    pub def writeNewLine(writer: t): Result[IoError, Unit] \ IO + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
         let newLine = System.getProperty("line.separator");
         writeString(newLine, writer)
 
@@ -78,7 +78,7 @@ mod Writable {
     ///
     /// The new line separator is platform dependent, and is determined by the "line.separator" system property.
     ///
-    pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Sys + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
+    pub def writeLine(line: String, writer: t): Result[IoError, Unit] \ IO + Writable.Aef[t] with Writable[t] where Writable.Elm[t] ~ Char =
         forM(
             _ <- writeString(line, writer);
             _ <- writeNewLine(writer)

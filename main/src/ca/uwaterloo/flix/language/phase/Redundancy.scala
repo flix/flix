@@ -67,10 +67,15 @@ object Redundancy {
       case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
     }, _ ++ _).errors.toList
 
+    val errorsFromTraits = root.traits.foldLeft(Used.empty)({
+      case (acc, (_, t)) => acc ++ findShadowedTraitTypeParams(t)
+    }).errors.toList
+
     // Check for unused symbols.
     val errors = errorsFromDefs ++
       errorsFromInst ++
       errorsFromSigs ++
+      errorsFromTraits ++
       checkUnusedDefs()(sctx, root) ++
       checkUnusedEffects()(sctx, root) ++
       checkUnusedEnumsAndTags()(sctx, root) ++
@@ -299,6 +304,17 @@ object Redundancy {
       }
   }
 
+  /**
+    * Finds shadowed type parameters in traits.
+    */
+  private def findShadowedTraitTypeParams(traitt: Trait): Used = {
+    val traitParam = traitt.tparam
+    val traitParamName = traitParam.name.name
+    val env = Env.empty + (traitParamName, traitParam.loc)
+    traitt.sigs.flatMap(_.spec.tparams).foldLeft(Used.empty)({
+      case (acc, tparam) => acc ++ shadowing(tparam.name.name, tparam.name.loc, env)
+    })
+  }
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.

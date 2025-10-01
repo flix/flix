@@ -218,7 +218,7 @@ mod Assert {
     ///
     /// Assertions continue execution after printing the assertion failure.
     ///
-    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
+    pub def handleWithStdOut(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
         run {
             f(x)
         } with handler Assert {
@@ -237,7 +237,7 @@ mod Assert {
     ///
     /// Assertions continue execution after printing the assertion failure.
     ///
-    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
+    pub def handleWithStdErr(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
         run {
             f(x)
         } with handler Assert {
@@ -260,7 +260,7 @@ mod Assert {
     /// When an assertion fails, prints the assertion failure and asks the user if they want to continue.
     /// If the user chooses not to continue, the program throws an exception.
     ///
-    pub def handleWithPrompt(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO + Sys) = x ->
+    pub def handleWithPrompt(f: a -> b \ ef): (a -> b \ (ef - Assert) + IO) = x ->
         run {
             f(x)
         } with handler Assert {

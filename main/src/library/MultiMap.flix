@@ -416,29 +416,8 @@ mod MultiMap {
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Int32 \ ef =
-        sumWith((k, v) -> if (f(k,v)) 1 else 0, m)
-
-    ///
-    /// Returns the sum of all keys in the MultiMap `m`.
-    ///
-    pub def sumKeys(m: MultiMap[Int32, v]): Int32 =
-        sumWith((k, _) -> k, m)
-
-    ///
-    /// Returns the sum of all values in the MultiMap `m`.
-    ///
-    pub def sumValues(m: MultiMap[k, Int32]): Int32 =
-        sumWith((_, v) -> v, m)
-
-    ///
-    /// Returns the sum of all key-value pairs `k => v` in the MultiMap `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
         let MultiMap(m1) = m;
-        let outer = (k, vs) -> Set.sumWith(v -> f(k, v), vs);
+        let outer = (k, vs) -> Set.count(v -> f(k, v), vs);
         Map.sumWith(outer, m1)
 
     ///

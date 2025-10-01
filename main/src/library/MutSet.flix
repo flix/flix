@@ -296,22 +296,6 @@ mod MutSet {
         Set.count(f, Ref.get(ms))
 
     ///
-    /// Returns the sum of all elements in the mutable set `s`.
-    ///
-    pub def sum(s: MutSet[Int32, r]): Int32 \ r =
-        let MutSet(_, ms) = s;
-        Set.sum(Ref.get(ms))
-
-    ///
-    /// Returns the sum of all elements in the mutable set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    pub def sumWith(f: a -> Int32 \ ef, s: MutSet[a, r]): Int32 \ { ef, r } =
-        let MutSet(_, ms) = s;
-        Set.sumWith(f, Ref.get(ms))
-
-    ///
     /// Returns `true` if and only if at least one element in the mutable set `s` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `s` is the empty set.
