@@ -369,30 +369,6 @@ mod Set {
         }
 
     ///
-    /// Returns the sum of all elements in the set `s`.
-    ///
-    pub def sum(s: Set[Int32]): Int32 =
-        Foldable.sum(s)
-
-    ///
-    /// Returns the sum of all elements in the set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def sumWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
-        let Set(t) = s;
-        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
-        match purityOf(f) {
-            case Purity.Pure(g) =>
-                if (useParallelEvaluation(s))
-                    RedBlackTree.parSumWith((k, _) -> g(k), t)
-                else
-                    sw()
-            case Purity.Impure(_) => sw()
-        }
-
-    ///
     /// Returns the union of the elements in `s`.
     ///
     pub def flatten(s: Set[Set[a]]): Set[a] with Order[a] =
