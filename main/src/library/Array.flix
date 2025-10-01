@@ -1640,6 +1640,7 @@ mod Array {
         let perm = Shuffle.permutation(len);
         // Apply the permutation: result[i] = a[perm[i]]
         let result = Vector.init(i -> Array.get(Vector.get(i, perm), a), len);
+        // Write the result back into a.
         Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
     }
 
