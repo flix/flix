@@ -696,6 +696,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal constant pattern.
+    *
+    * @param loc the location where the constant pattern occurs.
+    */
+  case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal constant pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal constant pattern.
+         |
+         |${code(loc, "Constants not allowed in destructuring pattern.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate illegal syntax: empty tuple type.
     *
     * @param loc the location where the error occurs.
