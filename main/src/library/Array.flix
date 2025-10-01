@@ -1635,11 +1635,12 @@ mod Array {
     ///
     /// Shuffles `a` using a random permutation.
     ///
-    pub def shuffle(rc: Region[r2], a: Array[a, r1]): Array[a, r2] \ {r1, r2, Shuffle} = {
+    pub def shuffle(a: Array[a, r]): Unit \ {r, Shuffle} = {
         let len = Array.length(a);
         let perm = Shuffle.permutation(len);
         // Apply the permutation: result[i] = a[perm[i]]
-        Array.init(rc, i -> Array.get(Vector.get(i, perm), a), len)
+        let result = Vector.init(i -> Array.get(Vector.get(i, perm), a), len);
+        Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
     }
 
 }
