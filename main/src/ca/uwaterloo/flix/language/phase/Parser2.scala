@@ -426,10 +426,13 @@ object Parser2 {
     closeWithError(mark, error)
   }
 
-  /** Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error. */
-  private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Unit = {
+  /**
+    * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
+    * Optionally returns the error mark
+    */
+  private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Boolean = {
     if (eatAny(kinds)) {
-      return
+      return true
     }
     val mark = open()
     val error = nth(0) match {
@@ -439,6 +442,7 @@ object Parser2 {
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
+    false
   }
 
   /**
@@ -634,6 +638,7 @@ object Parser2 {
     *
     * Use these together with [[nameUnqualified]] and [[nameAllowQualified]].
     */
+  private val NAME_LIKE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
@@ -671,7 +676,10 @@ object Parser2 {
       ))
     }
 
-    expectAny(kinds)
+    if (!expectAny(kinds)) {
+      // Not the expected name kind. Eat it anyway if it looks like a name.
+      eatAny(NAME_LIKE)
+    }
     close(mark, TreeKind.Ident)
   }
 
