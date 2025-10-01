@@ -1,5 +1,10 @@
 # Changelog
 
+Version 0.64.0
+- Language: Added support for `Debug.dprintln` (thanks Magnus!)
+- Language: Added support for debug string interpolations (thanks Magnus!)
+- Compiler: Improved lexer performance (thanks Jonathan!)
+
 Version 0.63.1:
 - Compiler: Fixed a bug in the package manager (thanks Jakob!)
 

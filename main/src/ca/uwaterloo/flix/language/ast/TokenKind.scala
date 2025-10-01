@@ -46,7 +46,6 @@ sealed trait TokenKind {
       case TokenKind.Caret => "'^'"
       case TokenKind.Colon => "':'"
       case TokenKind.ColonColon => "'::'"
-      case TokenKind.ColonEqual => "':='"
       case TokenKind.ColonMinus => "':-'"
       case TokenKind.Comma => "','"
       case TokenKind.CurlyL => "'{'"
@@ -55,7 +54,6 @@ sealed trait TokenKind {
       case TokenKind.Dot => "'.'"
       case TokenKind.DotDotDot => "'...'"
       case TokenKind.DotWhiteSpace => "'. '"
-      case TokenKind.DotCurlyL => "'.{'"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
       case TokenKind.Hash => "'#'"
@@ -155,23 +153,15 @@ sealed trait TokenKind {
       case TokenKind.SetHash => "'Set#'"
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
-      case TokenKind.StarStar => "'**'"
       case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
-      case TokenKind.TripleAmpersand => "'&&&'"
-      case TokenKind.TripleAngleL => "'<<<'"
-      case TokenKind.TripleAngleR => "'>>>'"
-      case TokenKind.TripleBar => "'|||'"
-      case TokenKind.TripleCaret => "'^^^'"
       case TokenKind.TripleColon => "':::'"
-      case TokenKind.TripleTilde => "'~~~'"
       case TokenKind.Underscore => "'_'"
       case TokenKind.VectorHash => "'Vector#'"
       case TokenKind.Eof => "<end-of-file>"
       case TokenKind.NameLowerCase => "<name>"
       case TokenKind.NameUpperCase => "<Name>"
       case TokenKind.NameMath => "<math name>"
-      case TokenKind.NameGreek => "<greek name>"
       case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.Annotation => "<annotation>"
       case TokenKind.BuiltIn => "<built in>"
@@ -321,7 +311,6 @@ sealed trait TokenKind {
          | TokenKind.Caret
          | TokenKind.Colon
          | TokenKind.ColonColon
-         | TokenKind.ColonEqual
          | TokenKind.ColonMinus
          | TokenKind.Comma
          | TokenKind.CommentBlock
@@ -332,7 +321,6 @@ sealed trait TokenKind {
          | TokenKind.DebugInterpolator
          | TokenKind.Dollar
          | TokenKind.Dot
-         | TokenKind.DotCurlyL
          | TokenKind.DotDotDot
          | TokenKind.DotWhiteSpace
          | TokenKind.Eof
@@ -368,7 +356,6 @@ sealed trait TokenKind {
          | TokenKind.LiteralStringInterpolationR
          | TokenKind.MapHash
          | TokenKind.Minus
-         | TokenKind.NameGreek
          | TokenKind.NameLowerCase
          | TokenKind.NameMath
          | TokenKind.NameUpperCase
@@ -379,16 +366,9 @@ sealed trait TokenKind {
          | TokenKind.SetHash
          | TokenKind.Slash
          | TokenKind.Star
-         | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
-         | TokenKind.TripleAmpersand
-         | TokenKind.TripleAngleL
-         | TokenKind.TripleAngleR
-         | TokenKind.TripleBar
-         | TokenKind.TripleCaret
          | TokenKind.TripleColon
-         | TokenKind.TripleTilde
          | TokenKind.Underscore
          | TokenKind.UserDefinedOperator
          | TokenKind.VectorHash => false
@@ -546,14 +526,12 @@ sealed trait TokenKind {
          | TokenKind.LiteralStringInterpolationL
          | TokenKind.MapHash
          | TokenKind.Minus
-         | TokenKind.NameGreek
          | TokenKind.NameLowerCase
          | TokenKind.NameMath
          | TokenKind.NameUpperCase
          | TokenKind.ParenL
          | TokenKind.Plus
          | TokenKind.SetHash
-         | TokenKind.TripleTilde
          | TokenKind.Underscore
          | TokenKind.VectorHash => true
     case TokenKind.Ampersand
@@ -577,7 +555,6 @@ sealed trait TokenKind {
          | TokenKind.Caret
          | TokenKind.Colon
          | TokenKind.ColonColon
-         | TokenKind.ColonEqual
          | TokenKind.ColonMinus
          | TokenKind.Comma
          | TokenKind.CommentBlock
@@ -586,7 +563,6 @@ sealed trait TokenKind {
          | TokenKind.CurlyR
          | TokenKind.Dollar
          | TokenKind.Dot
-         | TokenKind.DotCurlyL
          | TokenKind.DotWhiteSpace
          | TokenKind.Eof
          | TokenKind.Equal
@@ -640,14 +616,8 @@ sealed trait TokenKind {
          | TokenKind.Semi
          | TokenKind.Slash
          | TokenKind.Star
-         | TokenKind.StarStar
          | TokenKind.StructArrow
          | TokenKind.Tilde
-         | TokenKind.TripleAmpersand
-         | TokenKind.TripleAngleL
-         | TokenKind.TripleAngleR
-         | TokenKind.TripleBar
-         | TokenKind.TripleCaret
          | TokenKind.TripleColon
          | TokenKind.UserDefinedOperator => false
   }
@@ -658,7 +628,6 @@ sealed trait TokenKind {
   def isFirstType: Boolean = this match {
     case TokenKind.NameUpperCase
          | TokenKind.NameMath
-         | TokenKind.NameGreek
          | TokenKind.Underscore
          | TokenKind.NameLowerCase
          | TokenKind.KeywordUniv
@@ -681,7 +650,6 @@ sealed trait TokenKind {
     */
   def isFirstPattern: Boolean = this match {
     case TokenKind.NameLowerCase
-         | TokenKind.NameGreek
          | TokenKind.NameMath
          | TokenKind.Underscore
          | TokenKind.KeywordQuery
@@ -869,8 +837,6 @@ object TokenKind {
 
   case object ColonColon extends TokenKind
 
-  case object ColonEqual extends TokenKind
-
   case object ColonMinus extends TokenKind
 
   case object Comma extends TokenKind
@@ -894,8 +860,6 @@ object TokenKind {
   case object DotDotDot extends TokenKind
 
   case object DotWhiteSpace extends TokenKind
-
-  case object DotCurlyL extends TokenKind
 
   case object Equal extends TokenKind
 
@@ -1117,8 +1081,6 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
-  case object NameGreek extends TokenKind
-
   case object NameLowerCase extends TokenKind
 
   case object NameMath extends TokenKind
@@ -1139,25 +1101,11 @@ object TokenKind {
 
   case object Star extends TokenKind
 
-  case object StarStar extends TokenKind
-
   case object StructArrow extends TokenKind
 
   case object Tilde extends TokenKind
 
-  case object TripleAmpersand extends TokenKind
-
-  case object TripleAngleL extends TokenKind
-
-  case object TripleAngleR extends TokenKind
-
-  case object TripleBar extends TokenKind
-
-  case object TripleCaret extends TokenKind
-
   case object TripleColon extends TokenKind
-
-  case object TripleTilde extends TokenKind
 
   case object Underscore extends TokenKind
 

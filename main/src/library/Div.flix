@@ -27,11 +27,11 @@ pub trait Div[a] {
 }
 
 instance Div[Float32] {
-    pub def div(x: Float32, y: Float32): Float32 = $FLOAT32_DIV$(x, y)
+    pub def div(x: Float32, y: Float32): Float32 = %%FLOAT32_DIV%%(x, y)
 }
 
 instance Div[Float64] {
-    pub def div(x: Float64, y: Float64): Float64 = $FLOAT64_DIV$(x, y)
+    pub def div(x: Float64, y: Float64): Float64 = %%FLOAT64_DIV%%(x, y)
 }
 
 instance Div[BigDecimal] {
@@ -47,7 +47,7 @@ instance Div[Int8] {
         if (y == 0i8)
             0i8
         else
-            $INT8_DIV$(x, y)
+            %%INT8_DIV%%(x, y)
 }
 
 instance Div[Int16] {
@@ -55,7 +55,7 @@ instance Div[Int16] {
         if (y == 0i16)
             0i16
         else
-            $INT16_DIV$(x, y)
+            %%INT16_DIV%%(x, y)
 }
 
 instance Div[Int32] {
@@ -63,7 +63,7 @@ instance Div[Int32] {
         if (y == 0i32)
             0i32
         else
-            $INT32_DIV$(x, y)
+            %%INT32_DIV%%(x, y)
 }
 
 instance Div[Int64] {
@@ -71,7 +71,7 @@ instance Div[Int64] {
         if (y == 0i64)
             0i64
         else
-            $INT64_DIV$(x, y)
+            %%INT64_DIV%%(x, y)
 }
 
 instance Div[BigInt] {

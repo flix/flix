@@ -22,6 +22,7 @@ mod Fixpoint3.Ast.Ram {
     use Fixpoint3.Boxed
     use Fixpoint3.PredSymsOf
     use Fixpoint3.SubstitutePredSym
+    use Fixpoint3.TypeInfo.{provType, RelType, Type, TypeInformation}
 
     /////////////////////////////////////////////////////////////////////////////
     // RamProgram                                                              //
@@ -32,7 +33,7 @@ mod Fixpoint3.Ast.Ram {
     ///
     @Internal
     pub enum RamProgram {
-        case Program(RamStmt, FactTuple, Predicates, IndexInformation)
+        case Program(RamStmt, FactTuple, Predicates, IndexInformation, TypeInformation)
     }
 
     ///
@@ -133,16 +134,16 @@ mod Fixpoint3.Ast.Ram {
         pub def toString(stmt: RamStmt): String =
             let nl = String.lineSeparator();
             match stmt {
-                case RamStmt.Insert(op) => ToString.toString(op)
+                case RamStmt.Insert(op)          => ToString.toString(op)
                 case RamStmt.MergeInto(src, dst) => "Merge ${src} into ${dst}"
-                case RamStmt.Swap(lhs, rhs) => "Swap ${lhs} and ${rhs}"
-                case RamStmt.Purge(relSym) => "Purge ${relSym}"
-                case RamStmt.Seq(xs) => Vector.join(";${nl}", xs)
-                case RamStmt.Par(xs) => Vector.join("|${nl}", xs)
-                case RamStmt.Until(test, body) =>
+                case RamStmt.Swap(lhs, rhs)      => "Swap ${lhs} and ${rhs}"
+                case RamStmt.Purge(relSym)       => "Purge ${relSym}"
+                case RamStmt.Seq(xs)             => Vector.join(";${nl}", xs)
+                case RamStmt.Par(xs)             => Vector.join("|${nl}", xs)
+                case RamStmt.Until(test, body)   =>
                     let tst = test |> Vector.join(" && ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
-                case RamStmt.Comment(comment) => "/* ${comment} */"
+                case RamStmt.Comment(comment)    => "/* ${comment} */"
             }
     }
 
@@ -151,14 +152,14 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// `Search(rv, relSym, body)` iterates through the facts in relation `relSym`, saving
-    /// them as RowVar `rv` and executes `body`.
+    /// `Search(rv, relSym, relType, body)` iterates through the facts in relation
+    /// `relSym`, saving them as RowVar `rv` and executes `body`.
     ///
-    /// `Query(rv, relSym, bools, indexPos, body)` iterates through the facts in relation
+    /// `Query(rv, relSym, bools, indexPos, relType, body)` iterates through the facts in relation
     /// `relSym`, saving them as `rv` and executes `body` if `bools` is
     /// true. The index saved at `indexPos` will be used.
     ///
-    /// `Functional(rv, f, input, body, arity)` evaluates `f(input)`, for each result,
+    /// `Functional(rv, f, input, body, arity, relType)` evaluates `f(input)`, for each result,
     /// saves it as `rv` and executes `body`. `arity` is the arity of the output tuples.
     ///
     /// `Project(terms, relSym, ruleNum)` constructs a tuple from `terms` and inserts it as a fact
@@ -169,9 +170,9 @@ mod Fixpoint3.Ast.Ram {
     ///
     @Internal
     pub enum RelOp {
-        case Search(RowVar, RelSym, RelOp)
-        case Query(RowVar, RelSym, Vector[BoolExp], Int32, RelOp)
-        case Functional(RowVar, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], RelOp, Int32)
+        case Search(RowVar, RelSym, RelType, RelOp)
+        case Query(RowVar, RelSym, Vector[BoolExp], Int32, RelType, RelOp)
+        case Functional(RowVar, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], RelOp, Int32, RelType)
         case Project(Vector[RamTerm], RelSym, Int32)
         case If(Vector[BoolExp], RelOp)
     }
@@ -180,20 +181,20 @@ mod Fixpoint3.Ast.Ram {
         pub def toString(op: RelOp): String =
             let nl = String.lineSeparator();
             match op {
-                case RelOp.Search(var, relSym, body) =>
+                case RelOp.Search(var, relSym, _, body) =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, relSym, prefixQuery, _, body) =>
+                case RelOp.Query(var, relSym, prefixQuery, _, _, body) =>
                     let qry = Vector.joinWith(match term -> {
                         ToString.toString(term)
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Functional(RowVar.Named(id), _, terms, body, _) =>
+                case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Project(terms, relSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${relSym}"
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
-                    "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
+                    "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
     }
 
@@ -240,16 +241,16 @@ mod Fixpoint3.Ast.Ram {
     instance ToString[BoolExp] {
         pub def toString(exp: BoolExp): String =
             match exp {
-                case BoolExp.Not(boolExp) => "not (${boolExp})"
-                case BoolExp.IsEmpty(relSym) => "${relSym} = ∅"
-                case BoolExp.NotMemberOf(terms, relSym) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
-                case BoolExp.NotBot(term, _, _) => "(${term}) ≠ ⊥"
-                case BoolExp.Leq(elem, _, term) => "${elem} ≤ (${term})"
-                case BoolExp.Eq(lhs, rhs) => "${lhs} = ${rhs}"
-                case BoolExp.Guard1(_, v) => "<clo>(${v})"
-                case BoolExp.Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
-                case BoolExp.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
-                case BoolExp.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case BoolExp.Not(boolExp)                  => "not (${boolExp})"
+                case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
+                case BoolExp.NotMemberOf(terms, relSym)    => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
+                case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
+                case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
+                case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
+                case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
+                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
+                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
+                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
@@ -263,12 +264,12 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// Enums with a `RamId` can be referred to by the `RamId`.
     ///
-    /// `Lit(val, id)` represents the literal `val`.
+    /// `Lit(val, id, type)` represents the literal `val`.
     ///
     /// `ProvMax([(rv1, i1), (rv2, i2), (rv3, i3), ...])` where represents computing
     /// `max(rv1[i1], rv2[i2], rv3[i3], ...)`.
     ///
-    /// `RowLoad(x, i, relSym)` represents an index into the tuple
+    /// `RowLoad(x, i, type, relSym)` represents an index into the tuple
     /// bound to the local variable `x`, i.e. `x[i]`. `x` is a tuple
     /// from `relSym`.
     ///
@@ -287,15 +288,15 @@ mod Fixpoint3.Ast.Ram {
     ///
     @Internal
     pub enum RamTerm {
-        case Lit(Boxed, RamId)
+        case Lit(Boxed, RamId, Type)
         case ProvMax(Vector[(RowVar, Int32)])
-        case RowLoad(RowVar, Int32, RelSym)
-        case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), RamId)
-        case App1(Boxed -> Boxed, RamTerm, RamId)
-        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamId)
-        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamId)
-        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamId)
-        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm, RamId)
+        case RowLoad(RowVar, Int32, Type, RelSym)
+        case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), RamId, Type)
+        case App1(Boxed -> Boxed, RamTerm, RamId, Type)
+        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamId, Type)
+        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamId, Type)
+        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamId, Type)
+        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm, RamId, Type)
     }
 
     ///
@@ -303,15 +304,15 @@ mod Fixpoint3.Ast.Ram {
     ///
     @Internal
     pub def getTermRamId(t: RamTerm): RamId = match t {
-        case RamTerm.Lit(_, id) => id
+        case RamTerm.Lit(_, id, _) => id
         case RamTerm.ProvMax(_) => RamId.Id(-1)
-        case RamTerm.RowLoad(rv, index, _) => RamId.TuplePos(rv, index)
-        case RamTerm.Meet(_, _, _, id) => id
-        case RamTerm.App1(_ , _, id) => id
-        case RamTerm.App2(_, _, _, id) => id
-        case RamTerm.App3(_, _, _, _, id) => id
-        case RamTerm.App4(_, _, _, _, _, id) => id
-        case RamTerm.App5(_, _, _, _, _, _, id) => id
+        case RamTerm.RowLoad(rv, index, _, _) => RamId.TuplePos(rv, index)
+        case RamTerm.Meet(_, _, _, id, _) => id
+        case RamTerm.App1(_ , _, id, _) => id
+        case RamTerm.App2(_, _, _, id, _) => id
+        case RamTerm.App3(_, _, _, _, id, _) => id
+        case RamTerm.App4(_, _, _, _, _, id, _) => id
+        case RamTerm.App5(_, _, _, _, _, _, id, _) => id
     }
 
     ///
@@ -324,17 +325,17 @@ mod Fixpoint3.Ast.Ram {
 
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _) => Debug.stringify(v)
-            case RamTerm.ProvMax(loads) =>
+            case RamTerm.Lit(v, _, _)                      => Debug.stringify(v)
+            case RamTerm.ProvMax(loads)                    =>
                 let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
                 "max(${loadsStr})"
-            case RamTerm.RowLoad(var, index, _) => "${var}[${index}]"
-            case RamTerm.Meet(_, lhs, rhs, _) => "(${lhs} ⊓ ${rhs})"
-            case RamTerm.App1(_, v, _) => "<clo>(${v})"
-            case RamTerm.App2(_, v1, v2, _) => "<clo>(${v1}, ${v2})"
-            case RamTerm.App3(_, v1, v2, v3, _) => "<clo>(${v1}, ${v2}, ${v3})"
-            case RamTerm.App4(_, v1, v2, v3, v4, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
-            case RamTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+            case RamTerm.RowLoad(var, index, _, _)         => "${var}[${index}]"
+            case RamTerm.Meet(_, lhs, rhs, _, _)           => "(${lhs} ⊓ ${rhs})"
+            case RamTerm.App1(_, v, _, _)                  => "<clo>(${v})"
+            case RamTerm.App2(_, v1, v2, _, _)             => "<clo>(${v1}, ${v2})"
+            case RamTerm.App3(_, v1, v2, v3, _, _)         => "<clo>(${v1}, ${v2}, ${v3})"
+            case RamTerm.App4(_, v1, v2, v3, v4, _, _)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case RamTerm.App5(_, v1, v2, v3, v4, v5, _, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
 
@@ -409,7 +410,7 @@ mod Fixpoint3.Ast.Ram {
     pub def arityOfNonLat(relSym: RelSym): Int32 = match relSym {
         case RelSym.Symbol(_, arity, den) => match den {
             case Relational => arity
-            case _ => arity - 1
+            case _          => arity - 1
         }
     }
 

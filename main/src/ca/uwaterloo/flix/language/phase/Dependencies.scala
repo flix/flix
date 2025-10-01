@@ -66,7 +66,7 @@ object Dependencies {
     * The value is fixed to () since it doesn't matter.
     */
   private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
+    sctx.deps.put((src.source.input, dst.source.input), ())
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {

@@ -25,11 +25,11 @@ pub trait Neg[a] {
 }
 
 instance Neg[Float32] {
-    pub def neg(x: Float32): Float32 = $FLOAT32_NEG$(x)
+    pub def neg(x: Float32): Float32 = %%FLOAT32_NEG%%(x)
 }
 
 instance Neg[Float64] {
-    pub def neg(x: Float64): Float64 = $FLOAT64_NEG$(x)
+    pub def neg(x: Float64): Float64 = %%FLOAT64_NEG%%(x)
 }
 
 instance Neg[BigDecimal] {
@@ -37,19 +37,19 @@ instance Neg[BigDecimal] {
 }
 
 instance Neg[Int8] {
-    pub def neg(x: Int8): Int8 = $INT8_NEG$(x)
+    pub def neg(x: Int8): Int8 = %%INT8_NEG%%(x)
 }
 
 instance Neg[Int16] {
-    pub def neg(x: Int16): Int16 = $INT16_NEG$(x)
+    pub def neg(x: Int16): Int16 = %%INT16_NEG%%(x)
 }
 
 instance Neg[Int32] {
-    pub def neg(x: Int32): Int32 = $INT32_NEG$(x)
+    pub def neg(x: Int32): Int32 = %%INT32_NEG%%(x)
 }
 
 instance Neg[Int64] {
-    pub def neg(x: Int64): Int64 = $INT64_NEG$(x)
+    pub def neg(x: Int64): Int64 = %%INT64_NEG%%(x)
 }
 
 instance Neg[BigInt] {

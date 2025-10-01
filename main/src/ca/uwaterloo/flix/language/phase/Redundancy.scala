@@ -1183,6 +1183,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
+    !decl.spec.ann.isCompileTest &&
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !decl.spec.ann.isExport &&

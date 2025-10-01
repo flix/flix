@@ -236,7 +236,7 @@ mod TestChain {
     @Test
     def viewLeft01(): Unit \ Assert = {
         match Chain.viewLeft((Chain.empty(): Chain[Int32])) {
-            case Chain.ViewLeft.NoneLeft => assertTrue(true)
+            case Chain.ViewLeft.NoneLeft => ()
             case _ => fail("Expected NoneLeft")
         }
     }
@@ -272,7 +272,7 @@ mod TestChain {
     @Test
     def viewRight01(): Unit \ Assert = {
         match Chain.viewRight((Chain.empty(): Chain[Int32])) {
-            case Chain.ViewRight.NoneRight => assertTrue(true)
+            case Chain.ViewRight.NoneRight => ()
             case _ => fail("Expected NoneRight")
         }
     }
@@ -925,11 +925,11 @@ mod TestChain {
 
     @Test
     def foldMap03(): Unit \ Assert =
-        assertEq(expected = "b", Chain.foldMap(x -> if(x == "a") "b" else x, List.toChain("a" :: Nil)))
+        assertEq(expected = "b", Chain.foldMap(x -> if (x == "a") "b" else x, List.toChain("a" :: Nil)))
 
     @Test
     def foldMap04(): Unit \ Assert =
-        assertEq(expected = "abb", Chain.foldMap(x -> if(x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)))
+        assertEq(expected = "abb", Chain.foldMap(x -> if (x == "c") "b" else x, List.toChain("a" :: "b" :: "c" :: Nil)))
 
     @Test
     def foldMap05(): Unit \ Assert =

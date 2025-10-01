@@ -14,7 +14,7 @@ mod Person {
     /// increase their height by 10.
     pub def birthday(person: Person[r]): Unit \ r =
         person->age = person->age + 1;
-        if(person->age < 18) {
+        if (person->age < 18) {
             person->height = person->height + 10
         } else {
             ()

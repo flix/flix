@@ -29,6 +29,14 @@ instance ToString[RichString] {
     pub def toString(x: RichString): String = RichString.toString(x)
 }
 
+instance SemiGroup[RichString] {
+    pub def combine(x: RichString, y: RichString): RichString = RichString.combine(x, y)
+}
+
+instance Monoid[RichString] {
+    pub def empty(): RichString = RichString.empty()
+}
+
 mod RichString {
 
     ///

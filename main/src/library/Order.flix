@@ -177,18 +177,18 @@ instance Order[Bool] {
 
 instance Order[Char] {
 
-    redef less(x: Char, y: Char): Bool = $CHAR_LT$(x, y)
+    redef less(x: Char, y: Char): Bool = %%CHAR_LT%%(x, y)
 
-    redef lessEqual(x: Char, y: Char): Bool = $CHAR_LE$(x, y)
+    redef lessEqual(x: Char, y: Char): Bool = %%CHAR_LE%%(x, y)
 
-    redef greater(x: Char, y: Char): Bool = $CHAR_GT$(x, y)
+    redef greater(x: Char, y: Char): Bool = %%CHAR_GT%%(x, y)
 
-    redef greaterEqual(x: Char, y: Char): Bool = $CHAR_GE$(x, y)
+    redef greaterEqual(x: Char, y: Char): Bool = %%CHAR_GE%%(x, y)
 
     pub def compare(x: Char, y: Char): Comparison =
-        if ($CHAR_LT$(x, y))
+        if (%%CHAR_LT%%(x, y))
             Comparison.LessThan
-        else if ($CHAR_GT$(x, y))
+        else if (%%CHAR_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo
@@ -197,18 +197,18 @@ instance Order[Char] {
 
 instance Order[Float32] {
 
-    redef less(x: Float32, y: Float32): Bool = $FLOAT32_LT$(x, y)
+    redef less(x: Float32, y: Float32): Bool = %%FLOAT32_LT%%(x, y)
 
-    redef lessEqual(x: Float32, y: Float32): Bool = $FLOAT32_LE$(x, y)
+    redef lessEqual(x: Float32, y: Float32): Bool = %%FLOAT32_LE%%(x, y)
 
-    redef greater(x: Float32, y: Float32): Bool = $FLOAT32_GT$(x, y)
+    redef greater(x: Float32, y: Float32): Bool = %%FLOAT32_GT%%(x, y)
 
-    redef greaterEqual(x: Float32, y: Float32): Bool = $FLOAT32_GE$(x, y)
+    redef greaterEqual(x: Float32, y: Float32): Bool = %%FLOAT32_GE%%(x, y)
 
     pub def compare(x: Float32, y: Float32): Comparison =
-        if ($FLOAT32_LT$(x, y))
+        if (%%FLOAT32_LT%%(x, y))
             Comparison.LessThan
-        else if ($FLOAT32_GT$(x, y))
+        else if (%%FLOAT32_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo
@@ -217,18 +217,18 @@ instance Order[Float32] {
 
 instance Order[Float64] {
 
-    redef less(x: Float64, y: Float64): Bool = $FLOAT64_LT$(x, y)
+    redef less(x: Float64, y: Float64): Bool = %%FLOAT64_LT%%(x, y)
 
-    redef lessEqual(x: Float64, y: Float64): Bool = $FLOAT64_LE$(x, y)
+    redef lessEqual(x: Float64, y: Float64): Bool = %%FLOAT64_LE%%(x, y)
 
-    redef greater(x: Float64, y: Float64): Bool = $FLOAT64_GT$(x, y)
+    redef greater(x: Float64, y: Float64): Bool = %%FLOAT64_GT%%(x, y)
 
-    redef greaterEqual(x: Float64, y: Float64): Bool = $FLOAT64_GE$(x, y)
+    redef greaterEqual(x: Float64, y: Float64): Bool = %%FLOAT64_GE%%(x, y)
 
     pub def compare(x: Float64, y: Float64): Comparison =
-        if ($FLOAT64_LT$(x, y))
+        if (%%FLOAT64_LT%%(x, y))
             Comparison.LessThan
-        else if ($FLOAT64_GT$(x, y))
+        else if (%%FLOAT64_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo
@@ -260,18 +260,18 @@ instance Order[BigDecimal] {
 
 instance Order[Int8] {
 
-    redef less(x: Int8, y: Int8): Bool = $INT8_LT$(x, y)
+    redef less(x: Int8, y: Int8): Bool = %%INT8_LT%%(x, y)
 
-    redef lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
+    redef lessEqual(x: Int8, y: Int8): Bool = %%INT8_LE%%(x, y)
 
-    redef greater(x: Int8, y: Int8): Bool = $INT8_GT$(x, y)
+    redef greater(x: Int8, y: Int8): Bool = %%INT8_GT%%(x, y)
 
-    redef greaterEqual(x: Int8, y: Int8): Bool = $INT8_GE$(x, y)
+    redef greaterEqual(x: Int8, y: Int8): Bool = %%INT8_GE%%(x, y)
 
     pub def compare(x: Int8, y: Int8): Comparison =
-        if ($INT8_LT$(x, y))
+        if (%%INT8_LT%%(x, y))
             Comparison.LessThan
-        else if ($INT8_GT$(x, y))
+        else if (%%INT8_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo
@@ -280,18 +280,18 @@ instance Order[Int8] {
 
 instance Order[Int16] {
 
-    redef less(x: Int16, y: Int16): Bool = $INT16_LT$(x, y)
+    redef less(x: Int16, y: Int16): Bool = %%INT16_LT%%(x, y)
 
-    redef lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
+    redef lessEqual(x: Int16, y: Int16): Bool = %%INT16_LE%%(x, y)
 
-    redef greater(x: Int16, y: Int16): Bool = $INT16_GT$(x, y)
+    redef greater(x: Int16, y: Int16): Bool = %%INT16_GT%%(x, y)
 
-    redef greaterEqual(x: Int16, y: Int16): Bool = $INT16_GE$(x, y)
+    redef greaterEqual(x: Int16, y: Int16): Bool = %%INT16_GE%%(x, y)
 
     pub def compare(x: Int16, y: Int16): Comparison =
-        if ($INT16_LT$(x, y))
+        if (%%INT16_LT%%(x, y))
             Comparison.LessThan
-        else if ($INT16_GT$(x, y))
+        else if (%%INT16_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo
@@ -300,18 +300,18 @@ instance Order[Int16] {
 
 instance Order[Int32] {
 
-    redef less(x: Int32, y: Int32): Bool = $INT32_LT$(x, y)
+    redef less(x: Int32, y: Int32): Bool = %%INT32_LT%%(x, y)
 
-    redef lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
+    redef lessEqual(x: Int32, y: Int32): Bool = %%INT32_LE%%(x, y)
 
-    redef greater(x: Int32, y: Int32): Bool = $INT32_GT$(x, y)
+    redef greater(x: Int32, y: Int32): Bool = %%INT32_GT%%(x, y)
 
-    redef greaterEqual(x: Int32, y: Int32): Bool = $INT32_GE$(x, y)
+    redef greaterEqual(x: Int32, y: Int32): Bool = %%INT32_GE%%(x, y)
 
     pub def compare(x: Int32, y: Int32): Comparison =
-        if ($INT32_LT$(x, y))
+        if (%%INT32_LT%%(x, y))
             Comparison.LessThan
-        else if ($INT32_GT$(x, y))
+        else if (%%INT32_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo
@@ -320,18 +320,18 @@ instance Order[Int32] {
 
 instance Order[Int64] {
 
-    redef less(x: Int64, y: Int64): Bool = $INT64_LT$(x, y)
+    redef less(x: Int64, y: Int64): Bool = %%INT64_LT%%(x, y)
 
-    redef lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
+    redef lessEqual(x: Int64, y: Int64): Bool = %%INT64_LE%%(x, y)
 
-    redef greater(x: Int64, y: Int64): Bool = $INT64_GT$(x, y)
+    redef greater(x: Int64, y: Int64): Bool = %%INT64_GT%%(x, y)
 
-    redef greaterEqual(x: Int64, y: Int64): Bool = $INT64_GE$(x, y)
+    redef greaterEqual(x: Int64, y: Int64): Bool = %%INT64_GE%%(x, y)
 
     pub def compare(x: Int64, y: Int64): Comparison =
-        if ($INT64_LT$(x, y))
+        if (%%INT64_LT%%(x, y))
             Comparison.LessThan
-        else if ($INT64_GT$(x, y))
+        else if (%%INT64_GT%%(x, y))
             Comparison.GreaterThan
         else
             Comparison.EqualTo

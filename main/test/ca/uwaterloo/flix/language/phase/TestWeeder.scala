@@ -28,7 +28,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """@test @test
         |def foo(x: Int32): Int32 = 42
     """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
@@ -682,7 +682,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    let _ = pquery p select A(1; 2) with { B };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
   }
 
@@ -696,7 +696,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    let _ = pquery p select A("hello"; 2) with { B };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
   }
 
@@ -708,7 +708,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    let _ = pquery p select A("hello"; 2) with { B };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.Default)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalLatticeProvenance](result)
   }
 
@@ -1479,7 +1479,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("UndefinedIntrinsic.01") {
     val input =
       """
-        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
+        |def f(): Unit = %%NOT_A_VALID_INTRINSIC%%()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedIntrinsic](result)
@@ -1488,7 +1488,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("UndefinedIntrinsic.02") {
     val input =
       """
-        |def f(): Unit = $BOOLNOT$()
+        |def f(): Unit = %%BOOLNOT%%()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedIntrinsic](result)
@@ -1497,7 +1497,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("UndefinedIntrinsic.03") {
     val input =
       """
-        |def f(): Unit = $ARRAY_NEW$($ARRAYNEW$())
+        |def f(): Unit = %%ARRAY_NEW%%(%%ARRAYNEW%%())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedIntrinsic](result)

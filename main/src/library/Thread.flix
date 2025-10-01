@@ -26,7 +26,7 @@ mod Thread {
     pub def sleep(d: Duration): Unit \ IO =
         let Duration(nsTotal) = d;
         let ms = nsTotal / 1_000_000i64;
-        let ns: Int32 = if (nsTotal > 0i64) (Long.valueOf($INT64_REM$(nsTotal, 1_000_000i64))).intValue() else 0;
+        let ns: Int32 = if (nsTotal > 0i64) (Long.valueOf(%%INT64_REM%%(nsTotal, 1_000_000i64))).intValue() else 0;
         Thread.sleep(ms, ns)
 
 }

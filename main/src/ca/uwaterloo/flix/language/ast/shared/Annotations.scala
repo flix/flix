@@ -32,6 +32,16 @@ object Annotations {
 case class Annotations(annotations: List[Annotation]) {
 
   /**
+    * Returns `true` if `this` sequence contains the `@CompileTest` annotation.
+    */
+  def isCompileTest: Boolean = annotations exists (_.isInstanceOf[Annotation.CompileTest])
+
+  /**
+    * Returns `true` if `this` sequence contains the `@DefaultHandler` annotation.
+    */
+  def isDefaultHandler: Boolean = annotations exists (_.isInstanceOf[Annotation.DefaultHandler])
+
+  /**
     * Returns `true` if `this` sequence contains the `@Deprecated` annotation.
     */
   def isDeprecated: Boolean = annotations exists (_.isInstanceOf[Annotation.Deprecated])
