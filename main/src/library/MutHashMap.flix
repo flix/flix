@@ -286,12 +286,7 @@ mod MutHashMap {
     /// Does nothing if the key does not exist.
     ///
     pub def adjust(f: v -> v \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
-        let hash = Hash.hash(k);
-        let idx = indexOfBucket(hash, Array.length(m->buckets));
-        match findInBucket(k, Array.get(idx, m->buckets)) {
-            case Some(entry) => Entry.setValue(f(Entry.getValue(entry)), entry)
-            case None => ()
-        }
+        adjustWithKey((_, v) -> f(v), k, m)
 
     ///
     /// Updates the value at key `k` using function `f` with key if the key exists.
@@ -316,16 +311,7 @@ mod MutHashMap {
     /// Does nothing if the key does not exist.
     ///
     pub def update(f: v -> Option[v] \ ef, k: k, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
-        let hash = Hash.hash(k);
-        let idx = indexOfBucket(hash, Array.length(m->buckets));
-        match findInBucket(k, Array.get(idx, m->buckets)) {
-            case Some(entry) =>
-                match f(Entry.getValue(entry)) {
-                    case Some(newValue) => Entry.setValue(newValue, entry)
-                    case None => remove(k, m)
-                }
-            case None => ()
-        }
+        updateWithKey((_, v) -> f(v), k, m)
 
     ///
     /// Updates or removes the value at key `k` based on function `f` with key.
@@ -352,52 +338,63 @@ mod MutHashMap {
     /// Removes key `k` from `m`.
     ///
     pub def remove(k: k, m: MutHashMap[k, v, r]): Unit \ r with Eq[k], Hash[k] =
+        // Removal is a two-phase process:
+        // 1. Remove the entry from its bucket chain (hash table structure)
+        // 2. Remove the entry from the insertion order chain (doubly-linked list)
+
+        // Phase 1: Find and remove from bucket chain
         let hash = Hash.hash(k);
         let numBuckets = Array.length(m->buckets);
         let idx = indexOfBucket(hash, numBuckets);
         let bucket = Array.get(idx, m->buckets);
 
-        // Helper to remove from bucket chain
+        // Helper to traverse bucket chain and remove matching entry
+        // Returns Some(entry) if found and removed, None otherwise
         def removeFromBucket(curr, prev) = match curr {
             case None => None
             case Some(entry) =>
                 if (k == Entry.getKey(entry)) {
-                    // Found the entry
+                    // Found the entry - remove it from bucket chain
                     match prev {
                         case None =>
-                            // Removing first entry in bucket
+                            // Entry is first in bucket - update bucket head
                             Array.put(Entry.getBucketNext(entry), idx, m->buckets)
                         case Some(prevEntry) =>
-                            // Removing from middle/end of bucket chain
+                            // Entry is in middle/end - bypass it in the chain
                             Entry.setBucketNext(Entry.getBucketNext(entry), prevEntry)
                     };
                     Some(entry)
                 } else {
+                    // Keep searching
                     removeFromBucket(Entry.getBucketNext(entry), Some(entry))
                 }
         };
 
+        // Phase 2: If entry was found, also remove from insertion order chain
         match removeFromBucket(bucket, None) {
-            case None => ()
+            case None => ()  // Key not found, nothing to do
             case Some(entry) =>
-                // Remove from order chain
+                // Update the previous entry's next pointer (or map head if no previous)
                 match Entry.getOrderPrev(entry) {
                     case None =>
-                        // Removing head
+                        // Removing the head of insertion order
                         m->head = Entry.getOrderNext(entry)
                     case Some(prevEntry) =>
+                        // Bypass this entry in the order chain
                         Entry.setOrderNext(Entry.getOrderNext(entry), prevEntry)
                 };
 
+                // Update the next entry's previous pointer (or map tail if no next)
                 match Entry.getOrderNext(entry) {
                     case None =>
-                        // Removing tail
+                        // Removing the tail of insertion order
                         m->tail = Entry.getOrderPrev(entry)
                     case Some(nextEntry) =>
+                        // Bypass this entry in the order chain
                         Entry.setOrderPrev(Entry.getOrderPrev(entry), nextEntry)
                 };
 
-                // Decrement size and check if should shrink
+                // Update size and potentially shrink the bucket array
                 m->size = m->size - 1;
                 shrink(m)
         }
