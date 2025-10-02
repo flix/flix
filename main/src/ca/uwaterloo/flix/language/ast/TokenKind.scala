@@ -154,6 +154,7 @@ sealed trait TokenKind {
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
       case TokenKind.StructArrow => "'->'"
+      case TokenKind.Tick => "'`'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.TripleColon => "':::'"
       case TokenKind.Underscore => "'_'"
@@ -171,7 +172,6 @@ sealed trait TokenKind {
       case TokenKind.DebugInterpolator => "<debug-interpolator>"
       case TokenKind.HoleNamed => "<named hole>"
       case TokenKind.HoleVariable => "<variable hole>"
-      case TokenKind.InfixFunction => "<infix function>"
       case TokenKind.LiteralBigDecimal => "'<digits>ff'"
       case TokenKind.LiteralBigInt => "'<digits>ii'"
       case TokenKind.LiteralFloat => "'<digits>.<digits>'"
@@ -334,7 +334,6 @@ sealed trait TokenKind {
          | TokenKind.HoleAnonymous
          | TokenKind.HoleNamed
          | TokenKind.HoleVariable
-         | TokenKind.InfixFunction
          | TokenKind.KeywordMut
          | TokenKind.KeywordRedef
          | TokenKind.KeywordStaticUppercase
@@ -367,6 +366,7 @@ sealed trait TokenKind {
          | TokenKind.Slash
          | TokenKind.Star
          | TokenKind.StructArrow
+         | TokenKind.Tick
          | TokenKind.Tilde
          | TokenKind.TripleColon
          | TokenKind.Underscore
@@ -569,7 +569,6 @@ sealed trait TokenKind {
          | TokenKind.EqualEqual
          | TokenKind.Err(_)
          | TokenKind.Hash
-         | TokenKind.InfixFunction
          | TokenKind.KeywordAlias
          | TokenKind.KeywordAnd
          | TokenKind.KeywordAs
@@ -617,6 +616,7 @@ sealed trait TokenKind {
          | TokenKind.Slash
          | TokenKind.Star
          | TokenKind.StructArrow
+         | TokenKind.Tick
          | TokenKind.Tilde
          | TokenKind.TripleColon
          | TokenKind.UserDefinedOperator => false
@@ -879,8 +879,6 @@ object TokenKind {
 
   case object HoleVariable extends TokenKind
 
-  case object InfixFunction extends TokenKind
-
   case object KeywordAlias extends TokenKind
 
   case object KeywordAnd extends TokenKind
@@ -1102,6 +1100,8 @@ object TokenKind {
   case object Star extends TokenKind
 
   case object StructArrow extends TokenKind
+
+  case object Tick extends TokenKind
 
   case object Tilde extends TokenKind
 
