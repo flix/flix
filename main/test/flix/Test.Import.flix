@@ -1,12 +1,14 @@
 mod Test.Import {
 
-    import java.lang.{CharSequence => ASeqOfChars}
-    import java.lang.StringBuffer
-    import java.lang.{StringBuffer => RenamedBuffer1}
-    import java.sql.Time
+    import java.lang.{CharSequence => ASeqOfChars};
+    import java.lang.StringBuffer;
+    // Comment is fine.
+    import java.lang.{StringBuffer => RenamedBuffer1};
+    import java.sql.Time;
 
     // Doesn't cause an error because different names from above
     import java.lang.CharSequence
+    /* Comment is also fine here. */
     import java.lang.{StringBuffer => RenamedBuffer2}
 
     @test
