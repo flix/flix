@@ -378,10 +378,13 @@ object Inliner {
       case _ if exp.eff != Type.Pure =>
         // Don't touch impure values.
         Expr.Match(exp, rules, tpe, eff, loc)
-      case MonoAst.MatchRule(pat, None, ruleExp) :: rest =>
+      case MonoAst.MatchRule(pat, guard, ruleExp) :: rest =>
         matchPat(exp, pat) match {
           case StaticMatchResult.Unknown =>
             // Match is unknown - maintain the rules.
+            Expr.Match(exp, rules, tpe, eff, loc)
+          case StaticMatchResult.Match(binders) if guard.isDefined =>
+            // Pattern matches but a guard is defined - maintain the rules.
             Expr.Match(exp, rules, tpe, eff, loc)
           case StaticMatchResult.Match(binders) =>
             // This rule always match - change it to regular let-bindings.
@@ -394,7 +397,7 @@ object Inliner {
             sctx.changed.putIfAbsent(sym0, ())
             reduceMatch(exp, rest, tpe, eff, loc)
         }
-      case MonoAst.MatchRule(_, Some(_), _) :: _ =>
+      case _ :: _ =>
         // Do nothing.
         Expr.Match(exp, rules, tpe, eff, loc)
       case Nil =>
