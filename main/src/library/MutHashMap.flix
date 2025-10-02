@@ -744,19 +744,14 @@ mod MutHashMap {
     pub def toArray(rc: Region[r2], m: MutHashMap[k, v, r]): Array[(k, v), r2] \ {r, r2} =
         let len = size(m);
         let arr = Array.empty(rc, len);
-        let idx = Ref.fresh(rc, 0);
-        forEach((k, v) -> {
-            let i = Ref.get(idx);
-            Array.put((k, v), i, arr);
-            Ref.put(i + 1, idx)
-        }, m);
+        forEachWithIndex((i, k, v) -> Array.put((k, v), i, arr), m);
         arr
 
     ///
     /// Returns a list of all key-value pairs in `m` in insertion order.
     ///
     pub def toList(m: MutHashMap[k, v, r]): List[(k, v)] \ r =
-        foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m) |> List.reverse
+        foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
     /// Returns an immutable map containing all key-value pairs from `m`.
