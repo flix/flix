@@ -187,7 +187,7 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 ///
 pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
     match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
-        case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
+        case Reflect.Purity.Pure   => Purity.Pure(unchecked_cast (f as a -> b \ {}))
         case Reflect.Purity.Impure => Purity.Impure(f)
     }
 
