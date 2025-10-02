@@ -211,6 +211,7 @@ class Flix {
     "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
+    "Diffable.flix" -> LocalResource.get("/src/library/Diffable.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
     "ForEach.flix" -> LocalResource.get("/src/library/ForEach.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
