@@ -1203,7 +1203,7 @@ object Weeder2 {
     private def visitLambdaMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LambdaMatch)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) => Expr.LambdaMatch(pat, expr, tree.loc)
+        (pat, expr) => Expr.LambdaMatch(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
@@ -1549,14 +1549,14 @@ object Weeder2 {
     private def visitForFragmentGenerator(tree: Tree)(implicit sctx: SharedContext): Validation[ForFragment.Generator, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ForFragmentGenerator)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) => ForFragment.Generator(pat, expr, tree.loc)
+        (pat, expr) => ForFragment.Generator(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
     private def visitForFragmentLet(tree: Tree)(implicit sctx: SharedContext): Validation[ForFragment.Let, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ForFragmentLet)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) => ForFragment.Let(pat, expr, tree.loc)
+        (pat, expr) => ForFragment.Let(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
@@ -1574,7 +1574,7 @@ object Weeder2 {
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), loc)
               Validation.Success((e, Expr.Error(error)))
           }
-          mapN(exprs)(exprs => Expr.LetMatch(pattern, tpe, exprs._1, exprs._2, tree.loc))
+          mapN(exprs)(exprs => Expr.LetMatch(Patterns.restrictToNonConstant(pattern), tpe, exprs._1, exprs._2, tree.loc))
       }
     }
 
@@ -2094,7 +2094,7 @@ object Weeder2 {
     private def visitParYieldFragment(tree: Tree)(implicit sctx: SharedContext): Validation[ParYieldFragment, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ParYieldFragment)
       mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
-        (pat, expr) => ParYieldFragment(pat, expr, tree.loc)
+        (pat, expr) => ParYieldFragment(Patterns.restrictToNonConstant(pat), expr, tree.loc)
       }
     }
 
@@ -2361,6 +2361,33 @@ object Weeder2 {
         }
         case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
       }
+    }
+
+    /**
+      * Attempts to verify that there are no constants in `pat`.
+      *
+      * Constants are reported as errors to `sctx` and replaced by `Pattern.Error`.
+      */
+    def restrictToNonConstant(pat: Pattern)(implicit sctx: SharedContext): Pattern = pat match {
+      case Pattern.Cst(_, loc) =>
+        sctx.errors.add(IllegalConstantPattern(loc))
+        Pattern.Error(loc)
+      case Pattern.Tag(qname, pats, loc) =>
+        if (pats.isEmpty) {
+          // Disallow `A.A`
+          sctx.errors.add(IllegalConstantPattern(loc))
+          Pattern.Error(loc)
+        } else {
+          Pattern.Tag(qname, pats.map(restrictToNonConstant), loc)
+        }
+      case Pattern.Tuple(pats, loc) =>
+        Pattern.Tuple(pats.map(restrictToNonConstant), loc)
+      case Pattern.Record(pats, rowPat, loc) =>
+        val newPats = pats.map {
+          innerPat => innerPat.copy(pat = innerPat.pat.map(restrictToNonConstant))
+        }
+        Pattern.Record(newPats, rowPat, loc)
+      case _ => pat
     }
 
     private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
