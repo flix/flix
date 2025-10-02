@@ -375,22 +375,20 @@ object Inliner {
   @tailrec
   private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
     rules match {
-      case _ if exp.eff != Type.Pure =>
-        // Don't touch impure values.
-        Expr.Match(exp, rules, tpe, eff, loc)
       case MonoAst.MatchRule(pat, guard, ruleExp) :: rest =>
         matchPat(exp, pat) match {
           case StaticMatchResult.Unknown =>
             // Match is unknown - maintain the rules.
             Expr.Match(exp, rules, tpe, eff, loc)
-          case StaticMatchResult.Match(binders) if guard.isDefined =>
+          case StaticMatchResult.Match(_) if guard.isDefined =>
             // Pattern matches but a guard is defined - maintain the rules.
             Expr.Match(exp, rules, tpe, eff, loc)
           case StaticMatchResult.Match(binders) =>
             // This rule always match - change it to regular let-bindings.
             sctx.changed.putIfAbsent(sym0, ())
             binders.foldRight(ruleExp) {
-              case ((v, binderExp), acc) => Expr.Let(v.sym, binderExp, acc, tpe, eff, v.occur, loc.asSynthetic)
+              case ((Some(v), binderExp), acc) => Expr.Let(v.sym, binderExp, acc, tpe, eff, v.occur, loc.asSynthetic)
+              case ((None, binderExp), acc) => Expr.Stm(binderExp, acc, tpe, eff, loc.asSynthetic)
             }
           case StaticMatchResult.NoMatch =>
             // This rule can never match - delete it and continue.
@@ -411,7 +409,7 @@ object Inliner {
 
     case object Unknown extends StaticMatchResult
 
-    case class Match(binders: List[(Pattern.Var, MonoAst.Expr)]) extends StaticMatchResult
+    case class Match(binders: List[(Option[Pattern.Var], MonoAst.Expr)]) extends StaticMatchResult
 
     case object NoMatch extends StaticMatchResult
 
@@ -425,8 +423,10 @@ object Inliner {
   }
 
   private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): StaticMatchResult = pat match {
-    case Pattern.Wild(_, _) => StaticMatchResult.Match(Nil)
-    case v@Pattern.Var(_, _, _, _) => StaticMatchResult.Match(List((v, exp)))
+    case Pattern.Wild(_, _) =>
+      if (exp.eff == Type.Pure) StaticMatchResult.Match(Nil)
+      else StaticMatchResult.Match(List((None, exp)))
+    case v@Pattern.Var(_, _, _, _) => StaticMatchResult.Match(List((Some(v), exp)))
     case Pattern.Cst(cst, _, _) =>
       exp match {
         case Expr.Cst(expCst, _, _) => matchConstant(cst, expCst)
@@ -436,7 +436,8 @@ object Inliner {
       exp match {
         case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
           if (symUse.sym == caseSym && pats.lengthCompare(exps) == 0) {
-            val binders = pats.zip(exps).foldLeft(List(List.empty[(Pattern.Var, MonoAst.Expr)])){
+            val z = List(List.empty[(Option[Pattern.Var], Expr)])
+            val binders = pats.zip(exps).foldLeft(z){
               case (acc, (innerPat, innerExp)) => matchPat(innerExp, innerPat) match {
                 case StaticMatchResult.Unknown =>
                   return StaticMatchResult.Unknown
@@ -455,7 +456,8 @@ object Inliner {
       exp match {
         case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
           if (exps.lengthCompare(pats) == 0) {
-            val binders = pats.zip(exps).foldLeft(List(List.empty[(Pattern.Var, MonoAst.Expr)])){
+            val z = List(List.empty[(Option[Pattern.Var], Expr)])
+            val binders = pats.zip(exps).foldLeft(z){
               case (acc, (innerPat, innerExp)) => matchPat(innerExp, innerPat) match {
                 case StaticMatchResult.Unknown =>
                   return StaticMatchResult.Unknown
