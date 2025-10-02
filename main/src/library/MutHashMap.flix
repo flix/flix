@@ -796,32 +796,32 @@ mod MutHashMap {
         result
 
     ///
-    /// Returns a string representation of `m`.
-    ///
-    pub def toString(m: MutHashMap[k, v, r]): String \ r with ToString[k], ToString[v] =
-        let kvs = foldLeftWithKey((acc, k, v) -> "${k} -> ${v}" :: acc, Nil, m);
-        let inner = String.intercalate(", ", List.reverse(kvs));
-        "MutHashMap#{${inner}}"
-
-    ///
     /// Returns a string formed by joining all keys in `m` with `sep`.
     ///
     pub def joinKeys(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[k] =
-        let strs = foldLeftWithKey((acc, k, _v) -> "${k}" :: acc, Nil, m);
-        String.intercalate(sep, List.reverse(strs))
+        let strs = foldRightWithKey((k, _v, acc) -> "${k}" :: acc, Nil, m);
+        String.intercalate(sep, strs)
 
     ///
     /// Returns a string formed by joining all values in `m` with `sep`.
     ///
     pub def joinValues(sep: String, m: MutHashMap[k, v, r]): String \ r with ToString[v] =
-        let strs = foldLeft((acc, v) -> "${v}" :: acc, Nil, m);
-        String.intercalate(sep, List.reverse(strs))
+        let strs = foldRight((v, acc) -> "${v}" :: acc, Nil, m);
+        String.intercalate(sep, strs)
 
     ///
     /// Returns a string formed by applying `f` to each key-value pair and joining with `sep`.
     ///
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: MutHashMap[k, v, r]): String \ {ef, r} =
-        let strs = foldLeftWithKey((acc, k, v) -> f(k, v) :: acc, Nil, m);
-        String.intercalate(sep, List.reverse(strs))
+        let strs = foldRightWithKey((k, v, acc) -> f(k, v) :: acc, Nil, m);
+        String.intercalate(sep, strs)
+
+    ///
+    /// Returns a string representation of `m`.
+    ///
+    pub def toString(m: MutHashMap[k, v, r]): String \ r with ToString[k], ToString[v] =
+        let kvs = foldRightWithKey((k, v, acc) -> "${k} -> ${v}" :: acc, Nil, m);
+        let inner = String.intercalate(", ", kvs);
+        "MutHashMap#{${inner}}"
 
 }
