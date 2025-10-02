@@ -502,7 +502,7 @@ mod MutHashMap {
     ///
     pub def iterator(rc: Region[r2], m: MutHashMap[k, v, r]): Iterator[(k, v), r2 + r, r2] \ {r, r2} =
         let curr = Ref.fresh(rc, m->head);
-        let next = () -> match Ref.get(curr) {
+        def next() = match Ref.get(curr) {
             case None => None
             case Some(entry) =>
                 Ref.put(Entry.getOrderNext(entry), curr);
@@ -546,13 +546,7 @@ mod MutHashMap {
     /// Transforms all values in `m` in-place using function `f`.
     ///
     pub def transform(f: v -> v \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} =
-        def loop(curr) = match curr {
-            case None => ()
-            case Some(entry) =>
-                Entry.setValue(f(Entry.getValue(entry)), entry);
-                loop(Entry.getOrderNext(entry))
-        };
-        loop(m->head)
+        transformWithKey((_, v) -> f(v), m)
 
     ///
     /// Transforms all values in `m` in-place using function `f` with access to keys.
@@ -570,17 +564,7 @@ mod MutHashMap {
     /// Removes all entries from `m` where `f(value)` returns false.
     ///
     pub def refine(f: v -> Bool \ ef, m: MutHashMap[k, v, r]): Unit \ {ef, r} with Eq[k], Hash[k] =
-        // Two-pass: collect keys to remove, then remove them
-        def collectKeys(curr, acc) = match curr {
-            case None => acc
-            case Some(entry) =>
-                let k = Entry.getKey(entry);
-                let v = Entry.getValue(entry);
-                let newAcc = if (f(v)) acc else k :: acc;
-                collectKeys(Entry.getOrderNext(entry), newAcc)
-        };
-        let keysToRemove = collectKeys(m->head, Nil);
-        List.forEach(k -> remove(k, m), keysToRemove)
+        refineWithKey((_, v) -> f(v), m)
 
     ///
     /// Removes all entries from `m` where `f(key, value)` returns false.
