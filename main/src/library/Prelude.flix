@@ -13,7 +13,14 @@ type alias Heap[h: Eff] = h
 ///
 /// An enum that holds type information where a witness is not available.
 ///
-pub enum Proxy[_] {
+pub enum Proxy[_: Type] {
+    case Proxy
+}
+
+///
+/// An enum that holds effect information where a witness is not available.
+///
+pub enum ProxyEff[_: Eff] {
     case Proxy
 }
 
@@ -178,10 +185,11 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
-    case g: a -> b \ {} => Purity.Pure(g)
-    case _: _           => Purity.Impure(f)
-}
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
+    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
+        case Reflect.Purity.Impure => Purity.Impure(f)
+    }
 
 ///
 /// Returns `Purity2.Pure(g)` if `f` has no effects.
@@ -189,10 +197,11 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
-    case g: a -> b -> c \ {} => Purity2.Pure(g)
-    case _: _                => Purity2.Impure(f)
-}
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
+    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast (f as a -> b -> c \ {}))
+        case Reflect.Purity.Impure => Purity2.Impure(f)
+    }
 
 ///
 /// Returns `Purity3.Pure(g)` if `f` has no effects.
@@ -200,7 +209,8 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
-    case g: a -> b -> c -> d \ {} => Purity3.Pure(g)
-    case _: _                     => Purity3.Impure(f)
-}
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
+    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast (f as a -> b -> c -> d \ {}))
+        case Reflect.Purity.Impure => Purity3.Impure(f)
+    }

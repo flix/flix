@@ -17,4 +17,17 @@ mod Reflect {
         case _: _                   => unchecked_cast(null as a)
     }
 
+    /// Returns the purity of `ef`.
+    pub def reflectEffect(p: ProxyEff[ef]): Purity =
+        typematch p {
+            case _: ProxyEff[{}] => Purity.Pure
+            case _: _            => Purity.Impure
+        }
+
+    /// A reflected effect, either Pure (no effects) or Impure (some effects).
+    pub enum Purity {
+        case Pure
+        case Impure
+    }
+
 }
