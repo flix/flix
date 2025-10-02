@@ -1054,35 +1054,21 @@ object Lexer {
         (line - 1, prevLineMaxColumn + 1)
       }
 
-    /** Returns `true` if the cursor has moved past the end. */
-    def isEof: Boolean = index >= chars.length
-
-    /** Returns `true` if the cursor has not reached end of file. */
-    def isInBounds: Boolean = index < chars.length
-
-    /**
-      * Returns the character of the cursor if inbounds.
+    /** Advances cursor one character forward
       *
-      * Returns [[StringCursor.EOF]] if the cursor out of bounds.
+      * Returns the character it was previously pointing to.
+      *
+      * Returns [[StringCursor.EOF]] and does not advance if the cursor is out of bounds.
       */
-    def peek: Char =
+    def peekAndAdvance(): Char = {
       if (this.isInBounds) {
-        chars(index)
+        val c = chars(index)
+        advance()
+        c
       } else {
         StringCursor.EOF
       }
-
-    /**
-      * Returns `p(this.peek)` if the cursor is inbounds.
-      *
-      * Returns `outOfBounds` if the cursor is out of bounds.
-      */
-    def peekIs(p: Char => Boolean, outOfBounds: Boolean): Boolean =
-      if (this.isInBounds) {
-        p(chars(index))
-      } else {
-        outOfBounds
-      }
+    }
 
     /**
       * Advances the cursor one character forward.
@@ -1112,6 +1098,50 @@ object Lexer {
         advance()
         advanceN(n - 1)
       }
+
+    /**
+      * Returns the character that is `n` characters ahead of the cursor if available.
+      *
+      * If `n` is negative then its the character that is `-n` characters behind (if available).
+      */
+    def nth(n: Int): Option[Char] = {
+      val offset = index + n
+      if (0 <= offset && offset < chars.length) {
+        Some(chars(offset))
+      } else {
+        None
+      }
+    }
+
+    /**
+      * Returns the character of the cursor if inbounds.
+      *
+      * Returns [[StringCursor.EOF]] if the cursor out of bounds.
+      */
+    def peek: Char =
+      if (this.isInBounds) {
+        chars(index)
+      } else {
+        StringCursor.EOF
+      }
+
+    /**
+      * Returns `p(this.peek)` if the cursor is inbounds.
+      *
+      * Returns `outOfBounds` if the cursor is out of bounds.
+      */
+    def peekIs(p: Char => Boolean, outOfBounds: Boolean): Boolean =
+      if (this.isInBounds) {
+        p(chars(index))
+      } else {
+        outOfBounds
+      }
+
+    /** Returns `true` if the cursor has moved past the end. */
+    def isEof: Boolean = index >= chars.length
+
+    /** Returns `true` if the cursor has not reached end of file. */
+    def isInBounds: Boolean = index < chars.length
 
     /**
       * Advance the cursor past `s` if it matches the current content.
@@ -1165,20 +1195,6 @@ object Lexer {
     }
 
     /**
-      * Returns the character that is `n` characters ahead of the cursor if available.
-      *
-      * If `n` is negative then its the character that is `-n` characters behind (if available).
-      */
-    def nth(n: Int): Option[Char] = {
-      val offset = index + n
-      if (0 <= offset && offset < chars.length) {
-        Some(chars(offset))
-      } else {
-        None
-      }
-    }
-
-    /**
       * Returns `p(this.nth(n).get)` if the cursor is inbounds.
       *
       * Returns `outOfBounds` if the cursor is out of bounds.
@@ -1189,22 +1205,6 @@ object Lexer {
         p(chars(offset))
       } else {
         outOfBounds
-      }
-    }
-
-    /** Advances cursor one character forward
-      *
-      * Returns the character it was previously pointing to.
-      *
-      * Returns [[StringCursor.EOF]] and does not advance if the cursor is out of bounds.
-      */
-    def peekAndAdvance(): Char = {
-      if (this.isInBounds) {
-        val c = chars(index)
-        advance()
-        c
-      } else {
-        StringCursor.EOF
       }
     }
 
