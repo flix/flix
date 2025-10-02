@@ -312,7 +312,7 @@ object Lexer {
     }
 
     s.sc.peekAndAdvance() match {
-      case 'd' if s.sc.peekIs(_ == '"') => TokenKind.DebugInterpolator
+      case 'd' if s.sc.peekIs(_ == '"', outOfBounds = false) => TokenKind.DebugInterpolator
       case 'r' if s.sc.advanceIfMatch("egex\"") => acceptRegex()
       case c if isFirstNameChar(c) => acceptName(c.isUpper)
       case '.' =>
@@ -321,7 +321,7 @@ object Lexer {
         } else if (s.sc.nth(-2).exists(_.isWhitespace)) {
           // If the dot is prefixed with whitespace we treat that as an error.
           mkErrorKind(LexerError.FreeDot(sourceLocationAtStart()))
-        } else if (s.sc.peekIs(_.isWhitespace)) {
+        } else if (s.sc.peekIs(_.isWhitespace, outOfBounds = false)) {
           // A dot with trailing whitespace is it's own TokenKind.
           // That way we can use that as a terminator for fixpoint constraints,
           // without clashing with qualified names.
@@ -332,9 +332,9 @@ object Lexer {
         }
       case '%' if s.sc.advanceIfMatch('%') => acceptBuiltIn()
       case '$' =>
-        if (s.sc.peekIs(isFirstNameChar)) {
+        if (s.sc.peekIs(isFirstNameChar, outOfBounds = false)) {
           acceptEscapedName()
-        } else if (s.sc.peekIs(isUserOp)) {
+        } else if (s.sc.peekIs(isUserOp, outOfBounds = false)) {
           acceptUserDefinedOp()
         } else {
           TokenKind.Dollar
@@ -349,13 +349,13 @@ object Lexer {
           acceptBlockComment()
         } else TokenKind.Slash
       case '@' =>
-        if (s.sc.peekIs(isAnnotationChar)) {
+        if (s.sc.peekIs(isAnnotationChar, outOfBounds = false)) {
           acceptAnnotation()
         } else {
           TokenKind.At
         }
-      case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
-      case '-' if s.sc.peekIs(_ == '>') && !s.sc.nthIs(1, isUserOp) =>
+      case '?' if s.sc.peekIs(isFirstNameChar, outOfBounds = false) => acceptNamedHole()
+      case '-' if s.sc.peekIs(_ == '>', outOfBounds = false) && s.sc.nthIs(1, c => !isUserOp(c), outOfBounds = true) =>
         s.sc.advance() // Consume '>'
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
         // Examples:
@@ -363,7 +363,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (!s.sc.nthIs(-3, c => !c.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
+        if (s.sc.nthIs(-3, _.isWhitespace, outOfBounds = true) || s.sc.peekIs(_.isWhitespace, outOfBounds = true)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
@@ -764,7 +764,7 @@ object Lexer {
     // Now the main number is parsed. Next is the suffix.
 
     def acceptOrSuffixError(token: TokenKind, intSuffix: Boolean, suffixStart: SourcePosition): TokenKind = {
-      if (s.sc.peekIs(isNumberLikeChar)) {
+      if (s.sc.peekIs(isNumberLikeChar, outOfBounds = false)) {
         s.sc.advanceWhile(isNumberLikeChar)
         mkErrorKind(LexerError.IncorrectNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
       } else if (mustBeFloat && intSuffix) {
@@ -850,7 +850,7 @@ object Lexer {
       val suffixStart = sourcePositionAtCurrent()
 
       def acceptOrSuffixError(token: TokenKind): TokenKind = {
-        if (s.sc.peekIs(isNumberLikeChar)) {
+        if (s.sc.peekIs(isNumberLikeChar, outOfBounds = false)) {
           s.sc.advanceWhile(isNumberLikeChar)
           mkErrorKind(LexerError.IncorrectHexNumberSuffix(mkSourceLocation(suffixStart, sourcePositionAtCurrent())))
         } else token
@@ -997,7 +997,7 @@ object Lexer {
     copy
   }
 
-  object StringCursor {
+  private object StringCursor {
 
     /** The end-of-file character (`'\u0000'`) used methods like [[StringCursor.peek]] to avoid option types. */
     val EOF = '\u0000'
@@ -1010,7 +1010,7 @@ object Lexer {
     *
     * This class is string specific since it tracks the current line and column of the cursor.
     */
-  final class StringCursor(val chars: Array[Char]) {
+  private final class StringCursor(val chars: Array[Char]) {
 
     /** The index pointing into [[chars]] (zero-indexed). */
     private var index: Int = 0
@@ -1075,13 +1075,13 @@ object Lexer {
     /**
       * Returns `p(this.peek)` if the cursor is inbounds.
       *
-      * Returns `false` if the cursor is out of bounds.
+      * Returns `outOfBounds` if the cursor is out of bounds.
       */
-    def peekIs(p: Char => Boolean): Boolean =
+    def peekIs(p: Char => Boolean, outOfBounds: Boolean): Boolean =
       if (this.isInBounds) {
         p(chars(index))
       } else {
-        false
+        outOfBounds
       }
 
     /**
@@ -1181,14 +1181,14 @@ object Lexer {
     /**
       * Returns `p(this.nth(n).get)` if the cursor is inbounds.
       *
-      * Returns `false` if the cursor is out of bounds.
+      * Returns `outOfBounds` if the cursor is out of bounds.
       */
-    def nthIs(n: Int, p: Char => Boolean): Boolean = {
+    def nthIs(n: Int, p: Char => Boolean, outOfBounds: Boolean): Boolean = {
       val offset = index + n
       if (0 <= offset && offset < chars.length) {
         p(chars(offset))
       } else {
-        false
+        outOfBounds
       }
     }
 
