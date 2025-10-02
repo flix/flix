@@ -77,7 +77,7 @@ object SimpleRunner {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
-      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
+      implicit val defaultSctx: SecurityContext = SecurityContext.Unrestricted
       val ext = file.getName.split('.').last
       ext match {
         case "flix" => flix.addFlix(file.toPath)

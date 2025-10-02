@@ -391,7 +391,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.NoPermissions))
+    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -508,7 +508,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.NoPermissions)
+      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -908,7 +908,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.Unrestricted) :: xs
   }
 
   /**
