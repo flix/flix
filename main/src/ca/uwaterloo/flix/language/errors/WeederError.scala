@@ -701,13 +701,13 @@ object WeederError {
     * @param loc the location where the constant pattern occurs.
     */
   case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal constant pattern"
+    def summary: String = "Unexpected constant pattern"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal constant pattern.
+      s""">> Unexpected constant pattern.
          |
-         |${code(loc, "Constants not allowed in destructuring pattern.")}
+         |${code(loc, "Constants are not allowed in let or lambda matches.")}
          |""".stripMargin
     }
   }

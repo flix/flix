@@ -2495,6 +2495,11 @@ object Weeder2 {
         ExtTagPattern.Error(pat.loc)
     }
 
+    /**
+      * Attempts to verify that there are no constants in `pat`.
+      *
+      * Constants are reported as errors to `sctx` and replaced by `Pattern.Error`.
+      */
     def restrictToNonConstant(pat: Pattern)(implicit sctx: SharedContext): Pattern = pat match {
       case Pattern.Cst(_, loc) =>
         sctx.errors.add(IllegalConstantPattern(loc))
@@ -2503,18 +2508,17 @@ object Weeder2 {
         if (pats.isEmpty) {
           // Disallow `A.A`
           sctx.errors.add(IllegalConstantPattern(loc))
-          return Pattern.Error(loc)
+          Pattern.Error(loc)
+        } else {
+          Pattern.Tag(qname, pats.map(restrictToNonConstant), loc)
         }
-        Pattern.Tag(qname, pats.map(restrictToNonConstant), loc)
       case Pattern.Tuple(pats, loc) =>
         Pattern.Tuple(pats.map(restrictToNonConstant), loc)
-      case Pattern.Record(pats, restPat, loc) =>
-        val newPats = pats.map(innerPat => Pattern.Record.RecordLabelPattern(
-            label = innerPat.label,
-            pat = innerPat.pat.map(restrictToNonConstant),
-            loc = innerPat.loc
-          ))
-        Pattern.Record(newPats, restPat, loc)
+      case Pattern.Record(pats, rowPat, loc) =>
+        val newPats = pats.map {
+          innerPat => innerPat.copy(pat = innerPat.pat.map(restrictToNonConstant))
+        }
+        Pattern.Record(newPats, rowPat, loc)
       case _ => pat
     }
 
