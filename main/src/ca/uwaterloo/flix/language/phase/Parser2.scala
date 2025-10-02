@@ -1252,9 +1252,8 @@ object Parser2 {
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
-      if (eat(TokenKind.Equal)) {
-        Type.ttype()
-      }
+      expect(TokenKind.Equal)
+      Type.ttype()
       close(mark, TreeKind.Decl.TypeAlias)
     }
 
