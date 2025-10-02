@@ -2363,6 +2363,33 @@ object Weeder2 {
       }
     }
 
+    /**
+      * Attempts to verify that there are no constants in `pat`.
+      *
+      * Constants are reported as errors to `sctx` and replaced by `Pattern.Error`.
+      */
+    def restrictToNonConstant(pat: Pattern)(implicit sctx: SharedContext): Pattern = pat match {
+      case Pattern.Cst(_, loc) =>
+        sctx.errors.add(IllegalConstantPattern(loc))
+        Pattern.Error(loc)
+      case Pattern.Tag(qname, pats, loc) =>
+        if (pats.isEmpty) {
+          // Disallow `A.A`
+          sctx.errors.add(IllegalConstantPattern(loc))
+          Pattern.Error(loc)
+        } else {
+          Pattern.Tag(qname, pats.map(restrictToNonConstant), loc)
+        }
+      case Pattern.Tuple(pats, loc) =>
+        Pattern.Tuple(pats.map(restrictToNonConstant), loc)
+      case Pattern.Record(pats, rowPat, loc) =>
+        val newPats = pats.map {
+          innerPat => innerPat.copy(pat = innerPat.pat.map(restrictToNonConstant))
+        }
+        Pattern.Record(newPats, rowPat, loc)
+      case _ => pat
+    }
+
     private def visitExtPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit sctx: SharedContext): Validation[ExtPattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
       tree.children.headOption match {
@@ -2493,33 +2520,6 @@ object Weeder2 {
         val error = WeederError.IllegalExtPattern(pat.loc)
         sctx.errors.add(error)
         ExtTagPattern.Error(pat.loc)
-    }
-
-    /**
-      * Attempts to verify that there are no constants in `pat`.
-      *
-      * Constants are reported as errors to `sctx` and replaced by `Pattern.Error`.
-      */
-    def restrictToNonConstant(pat: Pattern)(implicit sctx: SharedContext): Pattern = pat match {
-      case Pattern.Cst(_, loc) =>
-        sctx.errors.add(IllegalConstantPattern(loc))
-        Pattern.Error(loc)
-      case Pattern.Tag(qname, pats, loc) =>
-        if (pats.isEmpty) {
-          // Disallow `A.A`
-          sctx.errors.add(IllegalConstantPattern(loc))
-          Pattern.Error(loc)
-        } else {
-          Pattern.Tag(qname, pats.map(restrictToNonConstant), loc)
-        }
-      case Pattern.Tuple(pats, loc) =>
-        Pattern.Tuple(pats.map(restrictToNonConstant), loc)
-      case Pattern.Record(pats, rowPat, loc) =>
-        val newPats = pats.map {
-          innerPat => innerPat.copy(pat = innerPat.pat.map(restrictToNonConstant))
-        }
-        Pattern.Record(newPats, rowPat, loc)
-      case _ => pat
     }
 
     private def visitTuplePat(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit sctx: SharedContext): Validation[Pattern, CompilationMessage] = {
