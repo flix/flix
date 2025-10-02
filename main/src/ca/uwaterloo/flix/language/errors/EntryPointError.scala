@@ -31,6 +31,28 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
+    * An error raised to indicate that a default handler is not in the
+    * companion module of an effect.
+    *
+    * @param sym the symbol of the module containing the default handler.
+    * @param loc the location of the default handler.
+    */
+  case class DefaultHandlerNotInEffectModule(sym: Symbol.ModuleSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Default handler's module '$sym' is not an effect's companion module."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Default handler's module '$sym' is not an effect's companion module.
+         |
+         | Default handlers must be in the companion module of the effect they handle.
+         |
+         |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Error indicating an illegal effect of an entry point function.
     *
     * @param eff the effect.
@@ -206,6 +228,55 @@ object EntryPointError {
   }
 
   /**
+    * An error raised to indicate that there are duplicated default handlers for the same effect.
+    *
+    * @param sym the symbol of the effect associated with this default handler
+    * @param loc1 the location of the first default handler definition.
+    * @param loc2 the location of the second default handler definition.
+    */
+  case class DuplicatedDefaultHandlers(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends EntryPointError {
+    def summary: String = s"Duplicated default handlers for '$sym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Duplicated default handlers for '$sym'.
+         |
+         |${code(loc1, "the first default handler is here.")}
+         |
+         |${code(loc2, "the second default handler is here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def loc: SourceLocation = loc1
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Remove one of the default handlers."
+    })
+  }
+
+  /**
+    * An error raised to indicate that a default handler has non-primitive effects.
+    *
+    * @param sym the symbol of the effect associated with this default handler
+    * @param wrongSym the symbol of the non-primitive effect produced
+    * @param loc the location of the default handler.
+    */
+  case class NonPrimitiveEffectForDefaultHandler(sym: Symbol.EffSym, wrongSym: Symbol.EffSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Illegal signature for '$sym's default handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal signature for '$sym's default handler. Handler has non primitive effect '$wrongSym'.
+         |
+         |${code(loc, "illegal handler signature.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that an exported function is not public.
     *
     * @param loc the location of the defn.
@@ -222,4 +293,28 @@ object EntryPointError {
          |""".stripMargin
     }
   }
+
+  /**
+    * An error raised to indicate that the signature of a default handler is wrong.
+    *
+    * @param sym the symbol of the effect associated with this default handler
+    * @param loc the location of the default handler.
+    */
+  case class WrongSignatureForDefaultHandler(sym: Symbol.EffSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Illegal signature for '$sym's default handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal signature for '$sym's default handler.
+         |
+         | The default handler must have this exact signature (names can be chosen arbitrarily):
+         |
+         | 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${sym.name}) + PrimEf1 + ...'
+         |
+         |${code(loc, "illegal handler signature.")}
+         |
+         |""".stripMargin
+    }
+  }
+
 }
