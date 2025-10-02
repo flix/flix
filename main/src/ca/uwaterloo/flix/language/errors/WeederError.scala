@@ -662,6 +662,23 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate more than one trait parameters was declared.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal number of trait parameters."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal number of trait parameters. Exactly one trait parameter must be declared.
+         |
+         |${code(loc, "exactly one trait parameter required.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal BigDecimal pattern.
     *
     * @param loc the location where the illegal BigDecimal pattern occurs.

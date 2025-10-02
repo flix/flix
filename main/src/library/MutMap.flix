@@ -501,29 +501,6 @@ mod MutMap {
         Map.count(f, Ref.get(mm))
 
     ///
-    /// Returns the sum of all keys in the map `m`.
-    ///
-    pub def sumKeys(m: MutMap[Int32, v, r]): Int32 \ r =
-        let MutMap(_, mm) = m;
-        Map.sumKeys(Ref.get(mm))
-
-    ///
-    /// Returns the sum of all values in the map `m`.
-    ///
-    pub def sumValues(m: MutMap[k, Int32, r]): Int32 \ r =
-        let MutMap(_, mm) = m;
-        Map.sumValues(Ref.get(mm))
-
-    ///
-    /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MutMap[k, v, r]): Int32 \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.sumWith(f, Ref.get(mm))
-
-    ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
     ///
     /// Returns `false` if `m` is the empty map.

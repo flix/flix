@@ -211,7 +211,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.03") {
     val input =
       """
-        |def main(): Int64 \ Exec = checked_ecast(42i64)
+        |def main(): Int64 \ NonDet = checked_ecast(42i64)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
@@ -220,52 +220,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.Main.04") {
     val input =
       """
-        |def main(): Int64 \ FsRead = checked_ecast(42i64)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectSuccess(result)
-  }
-
-  test("Test.ValidEntryPoint.Main.05") {
-    val input =
-      """
-        |def main(): Int64 \ FsWrite = checked_ecast(42i64)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectSuccess(result)
-  }
-
-  test("Test.ValidEntryPoint.Main.06") {
-    val input =
-      """
-        |def main(): Int64 \ Net = checked_ecast(42i64)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectSuccess(result)
-  }
-
-  test("Test.ValidEntryPoint.Main.07") {
-    val input =
-      """
-        |def main(): Int64 \ NonDet = checked_ecast(42i64)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectSuccess(result)
-  }
-
-  test("Test.ValidEntryPoint.Main.08") {
-    val input =
-      """
-        |def main(): Int64 \ Sys = checked_ecast(42i64)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectSuccess(result)
-  }
-
-  test("Test.ValidEntryPoint.Main.09") {
-    val input =
-      """
-        |def main(): Int64 \ Sys + Exec + NonDet = checked_ecast(42i64)
+        |def main(): Int64 \ {NonDet, IO} = checked_ecast(42i64)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)

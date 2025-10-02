@@ -611,18 +611,6 @@ mod Map {
         }
 
     ///
-    /// Returns the sum of all keys in the map `m`.
-    ///
-    pub def sumKeys(m: Map[Int32, v]): Int32 =
-        sumWith((k, _) -> k, m)
-
-    ///
-    /// Returns the sum of all values in the map `m`.
-    ///
-    pub def sumValues(m: Map[k, Int32]): Int32 =
-        sumWith((_, v) -> v, m)
-
-    ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.

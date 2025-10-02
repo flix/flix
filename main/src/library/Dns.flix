@@ -34,9 +34,9 @@ mod Dns {
     ///
     /// Handles the `Dns` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Dns` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `Dns` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Dns) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Dns) + IO = x ->
         run {
             Ok(f(x))
         } with handler Dns {
@@ -73,9 +73,9 @@ mod Dns {
     ///
     /// Handles the `Dns` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Dns` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `Dns` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Dns + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - Dns + IO = handle(f)()
 
 }
 

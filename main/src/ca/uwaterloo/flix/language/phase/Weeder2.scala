@@ -252,6 +252,15 @@ object Weeder2 {
       val laws = pickAll(TreeKind.Decl.Law, tree)
       val ann = pickAnnotations(tree)
       val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed))
+      mapN(pick(TreeKind.TypeParameterList, tree)) {
+        tparamsList => {
+          val tparams = pickAll(TreeKind.Parameter, tparamsList)
+          if (tparams.length != 1) {
+            sctx.errors.add(IllegalNumberOfTraitParameters(tparamsList.loc))
+          }
+        }
+      }
+
       flatMapN(
         pickDocumentation(tree),
         pickNameIdent(tree),

@@ -32,9 +32,9 @@ mod TcpAcceptWithResult {
     ///
     /// Handles the `TcpAcceptWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpAcceptWithResult + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpAcceptWithResult + IO = x ->
         run {
             f(x)
         } with handler TcpAcceptWithResult {
@@ -55,8 +55,8 @@ mod TcpAcceptWithResult {
     ///
     /// Runs the `TcpAcceptWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpAcceptWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpAcceptWithResult + {IO, Net} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpAcceptWithResult + IO = handle(f)()
 
 }
