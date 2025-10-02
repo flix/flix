@@ -753,16 +753,16 @@ mod MutHashMap {
         arr
 
     ///
-    /// Returns an immutable map containing all key-value pairs from `m`.
-    ///
-    pub def toMap(m: MutHashMap[k, v, r]): Map[k, v] \ r with Order[k] =
-        foldLeftWithKey((acc, k, v) -> Map.insert(k, v, acc), Map.empty(), m)
-
-    ///
     /// Returns a list of all key-value pairs in `m` in insertion order.
     ///
     pub def toList(m: MutHashMap[k, v, r]): List[(k, v)] \ r =
         foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, m) |> List.reverse
+
+    ///
+    /// Returns an immutable map containing all key-value pairs from `m`.
+    ///
+    pub def toMap(m: MutHashMap[k, v, r]): Map[k, v] \ r with Order[k] =
+        foldLeftWithKey((acc, k, v) -> Map.insert(k, v, acc), Map.empty(), m)
 
     ///
     /// Returns a set containing all key-value pairs from `m`.
@@ -779,20 +779,20 @@ mod MutHashMap {
     }
 
     ///
-    /// Returns a new mutable hash map containing all key-value pairs from immutable map `m`.
-    ///
-    pub def fromMap(rc: Region[r], m: Map[k, v]): MutHashMap[k, v, r] \ r with Order[k], Hash[k] =
-        let result = empty(rc);
-        Map.forEach((k, v) -> put(k, v, result), m);
-        result
-
-    ///
     /// Returns a new mutable hash map containing all key-value pairs from list `l`.
     /// If the list contains duplicate keys, the last occurrence wins.
     ///
     pub def fromList(rc: Region[r], l: List[(k, v)]): MutHashMap[k, v, r] \ r with Eq[k], Hash[k] =
         let result = empty(rc);
         List.forEach(match (k, v) -> put(k, v, result), l);
+        result
+
+    ///
+    /// Returns a new mutable hash map containing all key-value pairs from immutable map `m`.
+    ///
+    pub def fromMap(rc: Region[r], m: Map[k, v]): MutHashMap[k, v, r] \ r with Order[k], Hash[k] =
+        let result = empty(rc);
+        Map.forEach((k, v) -> put(k, v, result), m);
         result
 
     ///
