@@ -332,7 +332,7 @@ object Inliner {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map(visitMatchRule(_, ctx0))
-      Expr.Match(e, rs, tpe, eff, loc)
+      reduceMatch(e, rs, tpe, eff, loc)
 
     case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
@@ -370,6 +370,172 @@ object Inliner {
       val methods = methods0.map(visitJvmMethod(_, ctx0))
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
+
+  /** Evaluate match if possible */
+  @tailrec
+  private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
+    rules match {
+      case _ if exp.eff != Type.Pure =>
+        // Don't touch impure values.
+        Expr.Match(exp, rules, tpe, eff, loc)
+      case MonoAst.MatchRule(pat, None, ruleExp) :: rest =>
+        matchPat(exp, pat) match {
+          case StaticMatchResult.Unknown =>
+            // Match is unknown - maintain the rules.
+            Expr.Match(exp, rules, tpe, eff, loc)
+          case StaticMatchResult.Match(binders) =>
+            // This rule always match - change it to regular let-bindings.
+            sctx.changed.putIfAbsent(sym0, ())
+            binders.foldRight(ruleExp) {
+              case ((v, binderExp), acc) => Expr.Let(v.sym, binderExp, acc, tpe, eff, v.occur, loc.asSynthetic)
+            }
+          case StaticMatchResult.NoMatch =>
+            // This rule can never match - delete it and continue.
+            sctx.changed.putIfAbsent(sym0, ())
+            reduceMatch(exp, rest, tpe, eff, loc)
+        }
+      case MonoAst.MatchRule(_, Some(_), _) :: _ =>
+        // Do nothing.
+        Expr.Match(exp, rules, tpe, eff, loc)
+      case Nil =>
+        throw InternalCompilerException("Impossible I hope", exp.loc)
+    }
+  }
+
+  private sealed trait StaticMatchResult
+
+  private object StaticMatchResult {
+
+    case object Unknown extends StaticMatchResult
+
+    case class Match(binders: List[(Pattern.Var, MonoAst.Expr)]) extends StaticMatchResult
+
+    case object NoMatch extends StaticMatchResult
+
+    def matchFromBool(b: Boolean): StaticMatchResult =
+      if (b) {
+        StaticMatchResult.Match(Nil)
+      } else {
+        StaticMatchResult.NoMatch
+      }
+
+  }
+
+  private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): StaticMatchResult = pat match {
+    case Pattern.Wild(_, _) => StaticMatchResult.Match(Nil)
+    case v@Pattern.Var(_, _, _, _) => StaticMatchResult.Match(List((v, exp)))
+    case Pattern.Cst(cst, _, _) =>
+      exp match {
+        case Expr.Cst(expCst, _, _) => matchConstant(cst, expCst)
+        case _ => StaticMatchResult.Unknown
+      }
+    case Pattern.Tag(symUse, pats, _, _) =>
+      exp match {
+        case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
+          if (symUse.sym == caseSym && pats.lengthCompare(exps) == 0) {
+            val binders = pats.zip(exps).foldLeft(List(List.empty[(Pattern.Var, MonoAst.Expr)])){
+              case (acc, (innerPat, innerExp)) => matchPat(innerExp, innerPat) match {
+                case StaticMatchResult.Unknown =>
+                  return StaticMatchResult.Unknown
+                case StaticMatchResult.Match(innerBinders) =>
+                  innerBinders :: acc
+                case StaticMatchResult.NoMatch =>
+                  return StaticMatchResult.Unknown
+              }
+            }
+            StaticMatchResult.Match(binders.reverse.flatten)
+          } else StaticMatchResult.NoMatch
+        case _ =>
+          StaticMatchResult.Unknown
+      }
+    case Pattern.Tuple(pats, _, _) =>
+      exp match {
+        case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
+          if (exps.lengthCompare(pats) == 0) {
+            val binders = pats.zip(exps).foldLeft(List(List.empty[(Pattern.Var, MonoAst.Expr)])){
+              case (acc, (innerPat, innerExp)) => matchPat(innerExp, innerPat) match {
+                case StaticMatchResult.Unknown =>
+                  return StaticMatchResult.Unknown
+                case StaticMatchResult.Match(innerBinders) =>
+                  innerBinders :: acc
+                case StaticMatchResult.NoMatch =>
+                  return StaticMatchResult.Unknown
+              }
+            }
+            StaticMatchResult.Match(binders.reverse.flatten)
+          } else {
+            StaticMatchResult.NoMatch
+          }
+        case _ =>
+          StaticMatchResult.Unknown
+      }
+    case Pattern.Record(_, _, _, _) =>
+      StaticMatchResult.Unknown
+  }
+
+  private def matchConstant(cst1: Constant, cst2: Constant): StaticMatchResult =
+    cst1 match {
+      case Constant.Unit => cst2 match {
+        case Constant.Unit => StaticMatchResult.Match(Nil)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Null => cst2 match {
+        case Constant.Null => StaticMatchResult.Match(Nil)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Bool(v1) => cst2 match {
+        case Constant.Bool(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Char(v1) => cst2 match {
+        case Constant.Char(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Float32(v1) => cst2 match {
+        case Constant.Float32(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Float64(v1) => cst2 match {
+        case Constant.Float64(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.BigDecimal(_) => cst2 match {
+        case Constant.BigDecimal(_) => StaticMatchResult.Unknown
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Int8(v1) => cst2 match {
+        case Constant.Int8(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Int16(v1) => cst2 match {
+        case Constant.Int16(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Int32(v1) => cst2 match {
+        case Constant.Int32(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Int64(v1) => cst2 match {
+        case Constant.Int64(v2) => StaticMatchResult.matchFromBool(v1 == v2)
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.BigInt(_) => cst2 match {
+        case Constant.BigInt(_) => StaticMatchResult.Unknown
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Str(_) => cst2 match {
+        case Constant.Str(_) => StaticMatchResult.Unknown
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.Regex(_) => cst2 match {
+        case Constant.Str(_) => StaticMatchResult.Unknown
+        case _ => StaticMatchResult.NoMatch
+      }
+      case Constant.RecordEmpty => cst2 match {
+        case Constant.RecordEmpty => StaticMatchResult.Match(Nil)
+        case _ => StaticMatchResult.NoMatch
+      }
+    }
 
   /**
     * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
