@@ -1033,12 +1033,6 @@ object Lexer {
     /** Returns the current array index (zero-indexed). */
     def getIndex: Int = index
 
-    /** Returns `true` if the cursor has moved past the end. */
-    def isEof: Boolean = index >= chars.length
-
-    /** Returns `true` if the cursor has not reached end of file. */
-    def isInBounds: Boolean = index < chars.length
-
     /**
       * Returns the current `(line, column)` intended for an exclusive end of a range.
       *
@@ -1059,6 +1053,12 @@ object Lexer {
       } else {
         (line - 1, prevLineMaxColumn + 1)
       }
+
+    /** Returns `true` if the cursor has moved past the end. */
+    def isEof: Boolean = index >= chars.length
+
+    /** Returns `true` if the cursor has not reached end of file. */
+    def isInBounds: Boolean = index < chars.length
 
     /**
       * Returns the character of the cursor if inbounds.
