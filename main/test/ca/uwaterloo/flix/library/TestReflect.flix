@@ -24,7 +24,7 @@ mod TestReflect {
 
     @Test
     def defaultBigDecimal01(): Unit \ Assert =
-        assertEq(expected = 0.0ff, (Reflect.default(): BigDecimal))
+        assertTrue(Object.isNull((Reflect.default(): BigDecimal)))
 
     @Test
     def defaultInt801(): Unit \ Assert =
@@ -44,7 +44,7 @@ mod TestReflect {
 
     @Test
     def defaultBigInt01(): Unit \ Assert =
-        assertEq(expected = 0ii, (Reflect.default(): BigInt))
+        assertTrue(Object.isNull((Reflect.default(): BigInt)))
 
     @Test
     def defaultList01(): Unit \ Assert =
