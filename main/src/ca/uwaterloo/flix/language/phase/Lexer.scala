@@ -355,7 +355,7 @@ object Lexer {
           TokenKind.At
         }
       case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
-      case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIs(1, c => !isUserOp(c)) =>
+      case '-' if s.sc.peekIs(_ == '>') && !s.sc.nthIs(1, isUserOp) =>
         s.sc.advance() // Consume '>'
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
         // Examples:
@@ -363,7 +363,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (s.sc.nthIs(-3, _.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
+        if (!s.sc.nthIs(-3, c => !c.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow

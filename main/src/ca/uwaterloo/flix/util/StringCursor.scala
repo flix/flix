@@ -209,7 +209,7 @@ final class StringCursor(val chars: Array[Char]) {
     if (0 <= offset && offset < chars.length) {
       p(chars(offset))
     } else {
-      true
+      false
     }
   }
 
