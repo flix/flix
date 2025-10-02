@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTokens
 import ca.uwaterloo.flix.language.errors.LexerError
-import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.PrefixTree
+import ca.uwaterloo.flix.util.{ParOps, StringCursor}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -44,9 +44,6 @@ object Lexer {
     // As of September 2025 the standard library has a median of 6.9.
     8
   }
-
-  /** The end-of-file character (`'\u0000'`). */
-  private val EOF = '\u0000'
 
   /** Keywords - tokens consumed as long as no name-like char follows. */
   private val Keywords: PrefixTree.Node[TokenKind] = {
@@ -206,12 +203,12 @@ object Lexer {
     var startPos: SourcePosition = SourcePosition.mkFromZeroIndexed(sc.getLine, sc.getColumn.toShort)
 
     /** The first offset of the token that is currently being lexed. */
-    var startOffset: Int = sc.getOffset
+    var startOffset: Int = sc.getIndex
 
     /** Set `start` to the current position. */
     def resetStart(): Unit = {
       startPos = SourcePosition.mkFromZeroIndexed(sc.getLine, sc.getColumn.toShort)
-      startOffset = sc.getOffset
+      startOffset = sc.getIndex
     }
 
     /** The sequence of tokens produced by the lexer. */
@@ -269,7 +266,7 @@ object Lexer {
 
   /** Checks if the current position has landed on end-of-file. */
   private def eof()(implicit s: State): Boolean =
-    s.sc.eof
+    s.sc.isEof
 
   /**
     * Consumes the text between `s.start` and `s.offset` to produce a token.
@@ -277,7 +274,7 @@ object Lexer {
     */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
     val (b, e) = getRangeFromStart()
-    s.tokens.append(Token(kind, s.src, s.startOffset, s.sc.getOffset, b, e))
+    s.tokens.append(Token(kind, s.src, s.startOffset, s.sc.getIndex, b, e))
     s.resetStart()
   }
 
@@ -358,7 +355,7 @@ object Lexer {
           TokenKind.At
         }
       case '?' if s.sc.peekIs(isFirstNameChar) => acceptNamedHole()
-      case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIsPOrOutOfBounds(1, c => !isUserOp(c)) =>
+      case '-' if s.sc.peekIs(_ == '>') && s.sc.nthIs(1, c => !isUserOp(c)) =>
         s.sc.advance() // Consume '>'
         // If any whitespace exists around the `->`, it is `ArrowThinR`. Otherwise it is `StructArrow`.
         // Examples:
@@ -366,7 +363,7 @@ object Lexer {
         // a ->b:  ArrowThinR
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
-        if (s.sc.nthIsPOrOutOfBounds(-3, _.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
+        if (s.sc.nthIs(-3, _.isWhitespace) || s.sc.peekIs(_.isWhitespace)) {
           TokenKind.ArrowThinR
         } else {
           TokenKind.StructArrow
@@ -904,7 +901,7 @@ object Lexer {
     */
   private def acceptBlockComment()(implicit s: State): TokenKind = {
     var level = 1
-    while (s.sc.inBounds) {
+    while (s.sc.isInBounds) {
       s.sc.advanceWhile(c => c != '/' && c != '*')
       if (s.sc.advanceIfMatch("/*")) {
         level += 1
@@ -957,7 +954,7 @@ object Lexer {
   /** Returns the position of [[State.startPos]] and the exclusive endpoint of the current position. */
   private def getRangeFromStart()(implicit s: State): (SourcePosition, SourcePosition) = {
     val b = sourcePositionAtStart()
-    val e = if (s.startOffset != s.sc.getOffset) exclusiveSourcePositionAtCurrent() else sourcePositionAtCurrent()
+    val e = if (s.startOffset != s.sc.getIndex) exclusiveSourcePositionAtCurrent() else sourcePositionAtCurrent()
     (b, e)
   }
 
@@ -998,195 +995,6 @@ object Lexer {
     copy(j) = tmp
 
     copy
-  }
-
-  /**
-    * A class to iterate through an array of characters while maintaining the line and column index
-    * of the cursor.
-    */
-  private final class StringCursor(val data: Array[Char]) {
-
-    /** The cursor pointing into `data`. */
-    private var offset: Int = 0
-
-    /** The line index of `offset`. */
-    private var line: Int = 0
-
-    /** The column index of `offset`. */
-    private var column: Int = 0
-
-    /** The max column index of the previous line or `0` if there is no previous line. */
-    private var prevLineMaxColumn = 0
-
-    /** Returns the current line index. */
-    def getLine: Int = line
-
-    /** Returns the current column index. */
-    def getColumn: Int = column
-
-    /** Returns the current source offset. */
-    def getOffset: Int = offset
-
-    /**
-      * Returns `(line, column)` where non-existent positions are preferred instead of the first
-      * position of the next line.
-      *
-      * In this example, the current position is on 'v' (1,0) but this function will then return
-      * the position just after 'Example' (0, 7). This is sometimes preferable for exclusive
-      * end positions of ranges.
-      *
-      * {{{
-      *   Example
-      *   v
-      * }}}
-      */
-    def getExclusiveEndPosition: (Int, Int) =
-      if (line <= 0 || column > 0) {
-        (line, column)
-      } else {
-        (line - 1, prevLineMaxColumn + 1)
-      }
-
-    /**
-      * Advances cursor one char forward, returning the char it was previously sitting on.
-      *
-      * A faster alternative to
-      * {{{
-      * {val c = this.peek; this.advance(); c}
-      * }}}
-      */
-    def peekAndAdvance(): Char = {
-      if (this.inBounds) {
-        val c = data(offset)
-        advance()
-        c
-      } else {
-        EOF
-      }
-    }
-
-    /** Advances cursor one char forward, unless out of bounds. */
-    def advance(): Unit = {
-      if (!this.eof) {
-        if (data(offset) == '\n') {
-          prevLineMaxColumn = column
-          line += 1
-          column = 0
-        } else {
-          column += 1
-        }
-        offset += 1
-      }
-    }
-
-    /** Advances cursor `n` chars forward, or until out of bounds. */
-    @tailrec
-    def advanceN(n: Int): Unit = {
-      if (0 < n) {
-        advance()
-        advanceN(n - 1)
-      }
-    }
-
-    /** Peeks the character that is `n` characters ahead of the cursor if available. */
-    def nth(n: Int): Option[Char] = {
-      val index = offset + n
-      if (0 <= index && index < data.length) {
-        Some(data(index))
-      } else {
-        None
-      }
-    }
-
-    /**
-      * Peeks the character that cursor is currently sitting on without advancing.
-      *
-      * If the cursor has advanced past the content, [[EOF]] is returned.
-      */
-    def peek: Char =
-      if (this.inBounds) {
-        data(offset)
-      } else {
-        EOF
-      }
-
-    /** Returns `p(this.peek)` if peek is available, otherwise `false`. */
-    def peekIs(p: Char => Boolean): Boolean =
-      if (this.inBounds) {
-        p(data(offset))
-      } else {
-        false
-      }
-
-    /** Returns true if the cursor has moved past the end. */
-    def eof: Boolean = offset >= data.length
-
-    /** Returns true if the cursor has not reached end of file. */
-    def inBounds: Boolean = offset < data.length
-
-    /**
-      * Advance the cursor past `s` if it matches the current content.
-      *
-      * Returns true if the cursor was advanced.
-      */
-    def advanceIfMatch(s: String): Boolean = {
-      if (this.offset + s.length > data.length) {
-        return false
-      }
-
-      var sIndex = 0
-      while (sIndex < s.length) {
-        if (data(this.offset + sIndex) != s(sIndex)) {
-          return false
-        }
-        sIndex += 1
-      }
-
-      for (_ <- 0 until s.length) {
-        advance()
-      }
-
-      true
-    }
-
-    /**
-      * Advance the cursor past `c` if it matches the current char.
-      *
-      * Returns true if the cursor was advanced.
-      */
-    def advanceIfMatch(c: Char): Boolean =
-      if (this.inBounds && data(offset) == c) {
-        advance()
-        true
-      } else {
-        false
-      }
-
-    /** Continuously advance the cursor while `p` returns true. */
-    def advanceWhile(p: Char => Boolean): Unit =
-      while (this.inBounds && p(data(offset))) {
-        advance()
-      }
-
-    /** Continuously advance the cursor while `p` returns true. Returns the number of advances. */
-    def advanceWhileWithCount(p: Char => Boolean): Int = {
-      val startingOffset = offset
-      while (this.inBounds && p(data(offset))) {
-        advance()
-      }
-      offset - startingOffset
-    }
-
-    /** Faster equivalent of `nth(n).map(p).getOrElse(true)`. */
-    def nthIsPOrOutOfBounds(n: Int, p: Char => Boolean): Boolean = {
-      val index = offset + n
-      if (0 <= index && index < data.length) {
-        p(data(index))
-      } else {
-        true
-      }
-    }
-
   }
 
 }
