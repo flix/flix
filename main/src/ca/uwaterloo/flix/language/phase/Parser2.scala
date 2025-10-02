@@ -428,7 +428,8 @@ object Parser2 {
 
   /**
     * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
-    * Optionally returns the error mark
+    * Returns true if it successfully advances.
+    * Returns false otherwise.
     */
   private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Boolean = {
     if (eatAny(kinds)) {
