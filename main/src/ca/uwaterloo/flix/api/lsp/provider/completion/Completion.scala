@@ -124,6 +124,31 @@ sealed trait Completion {
         kind = CompletionItemKind.Snippet
       )
 
+    case Completion.MagicDefCompletion(label, decl, range, priority, ap, qualified, inScope, ectx) =>
+      val qualifiedName = decl.sym.toString
+      //val label = if (qualified) qualifiedName else decl.sym.name
+      val snippet = LspUtil.mkSpecSnippet(label, decl.spec, ectx)
+      val description = if (!qualified) {
+        Some(if (inScope) qualifiedName else s"use $qualifiedName")
+      } else None
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), description)
+      //      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
+      println(label)
+      println(range)
+      println(snippet)
+      println("--")
+      CompletionItem(
+        label = label,
+        labelDetails = Some(labelDetails),
+        sortText = Priority.toSortText(priority, qualifiedName),
+        //filterText = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        textEdit = TextEdit(range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet
+      )
+
     case Completion.MagicMatchCompletion(name, range, priority, snippet, documentation) =>
       CompletionItem(
         label = name,
@@ -623,6 +648,21 @@ object Completion {
     * @param documentation a human-readable string that represents a doc-comment.
     */
   case class SnippetCompletion(name: String, range: Range, priority: Priority, snippet: String, documentation: String) extends Completion
+
+  /**
+    * Represents a Magic Def completion
+    *
+    * @param decl      the def decl.
+    * @param range     the range of the completion.
+    * @param priority  the priority of the completion.
+    * @param ap        the anchor position for the use statement.
+    * @param qualified indicate whether to use a qualified label.
+    * @param inScope   indicate whether to the def is inScope.
+    * @param ectx      the expression context.
+    */
+  case class MagicDefCompletion(label: String, decl: TypedAst.Def, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+    override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
+  }
 
   /**
     * Represents a Snippet completion
