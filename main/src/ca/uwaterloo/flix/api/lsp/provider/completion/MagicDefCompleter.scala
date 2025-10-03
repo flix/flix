@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.api.lsp.provider.completion.CompletionUtils.isUnitFunction
-import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 
 object MagicDefCompleter {
 
@@ -27,35 +26,36 @@ object MagicDefCompleter {
     val baseExp = loc.text.getOrElse("")
 
     tpe.typeConstructor match {
-      case Some(TypeConstructor.Enum(sym, _)) =>
-        val candidates = root.defs.values.collect {
-          case defn if sym.namespace ::: sym.name :: Nil == defn.sym.namespace => defn
-        }.filter {
-          case defn => defn.spec.fparams.nonEmpty
-        }.filter {
-          case defn => CompletionUtils.isAvailable(defn.spec) //&& CompletionUtils.matchesName(decl.sym, qn, qualified = false)
-        }.filter {
-          case defn => defn.sym.text.startsWith(prefix)
-        }
-
-        candidates.map {
-          case defn =>
-            val label = baseExp + "." + defn.sym.text
-            val snippet = getSnippet(defn.sym.toString, defn.spec.fparams.init, baseExp)
-            Completion.MagicDefCompletion(label, snippet, defn, range, Priority.Medium(0), AnchorPosition(0, 0, 0), qualified = false, inScope = false, ExprContext.Unknown)
-        }
+      case Some(TypeConstructor.Enum(sym, _)) => getComp(sym, prefix, baseExp, range, root)
+      case Some(TypeConstructor.Struct(sym, _)) => getComp(sym, prefix, baseExp, range, root)
       case _ => Nil
     }
   }
 
+  private def getComp(sym: QualifiedSym, prefix: String, baseExp: String, range: Range, root: TypedAst.Root): Iterable[Completion] = {
+    val candidates = root.defs.values.collect {
+      case defn if sym.namespace ::: sym.name :: Nil == defn.sym.namespace => defn
+    }.filter {
+      case defn => defn.spec.fparams.nonEmpty
+    }.filter {
+      case defn => CompletionUtils.isAvailable(defn.spec) //&& CompletionUtils.matchesName(decl.sym, qn, qualified = false)
+    }.filter {
+      case defn => defn.sym.text.startsWith(prefix)
+    }
+
+    candidates.map {
+      case defn =>
+        val label = baseExp + "." + defn.sym.text
+        val snippet = getSnippet(defn.sym.toString, defn.spec.fparams.init, baseExp)
+        Completion.MagicDefCompletion(label, snippet, defn, range, Priority.Lower(0), AnchorPosition(0, 0, 0), qualified = false, inScope = false, ExprContext.Unknown)
+    }
+  }
+
   private def getSnippet(name: String, fparams: List[TypedAst.FormalParam], lastArg: String): String = {
-    val args = fparams.zipWithIndex.map {
+    val argsWithHoles = fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
-    if (args.nonEmpty)
-      s"$name(${args.mkString(", ")}, $lastArg)"
-    else
-      name
+    s"$name(${argsWithHoles.mkString(", ")}, $lastArg)"
   }
 
 }
