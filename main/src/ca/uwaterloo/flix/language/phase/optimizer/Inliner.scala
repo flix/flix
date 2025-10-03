@@ -373,7 +373,14 @@ object Inliner {
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
   }
 
-  /** Evaluate match if possible */
+  /**
+    * Evaluate match if possible.
+    *
+    * The match rules are iterated top to bottom, at each step either:
+    *   - Removing the rule if it can never match (either the patten cannot match or the guard is guaranteed false)
+    *   - Removing the match if a rule is known to match (either `Some(12)` matching `Some(x)` or a lenient pattern like `_`)
+    *   - Returning the rules as is if the rule cannot be determined statically.
+    */
   @tailrec
   private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
     rules match {
