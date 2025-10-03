@@ -655,12 +655,10 @@ object Completion {
     * @param decl      the def decl.
     * @param range     the range of the completion.
     * @param priority  the priority of the completion.
-    * @param ap        the anchor position for the use statement.
     * @param qualified indicate whether to use a qualified label.
     * @param inScope   indicate whether to the def is inScope.
-    * @param ectx      the expression context.
     */
-  case class MagicDefCompletion(label: String, snippet: String, decl: TypedAst.Def, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+  case class MagicDefCompletion(label: String, snippet: String, decl: TypedAst.Def, range: Range, priority: Priority,  qualified: Boolean, inScope: Boolean) extends Completion {
     override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
   }
 

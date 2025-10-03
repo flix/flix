@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Range
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object MagicDefCompleter {
 
@@ -46,16 +46,23 @@ object MagicDefCompleter {
     candidates.map {
       case defn =>
         val label = baseExp + "." + defn.sym.text
-        val snippet = getSnippet(defn.sym.toString, defn.spec.fparams.init, baseExp)
-        Completion.MagicDefCompletion(label, snippet, defn, range, Priority.Lower(0), AnchorPosition(0, 0, 0), qualified = false, inScope = false, ExprContext.Unknown)
+        val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
+        Completion.MagicDefCompletion(label, snippet, defn, range, Priority.Lower(0), qualified = false, inScope = false)
     }
   }
 
-  private def getSnippet(name: String, fparams: List[TypedAst.FormalParam], lastArg: String): String = {
+  /**
+    * Returns a string of the form:
+    *
+    * {{{
+    *   A.B.C.f({1:?arg1}, {2:?arg2}, lastArg)
+    * }}}
+    */
+  private def getSnippet(sym: QualifiedSym, fparams: List[TypedAst.FormalParam], lastArg: String): String = {
     val argsWithHoles = fparams.zipWithIndex.map {
       case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
     }
-    s"$name(${argsWithHoles.mkString(", ")}, $lastArg)"
+    s"$sym(${argsWithHoles.mkString(", ")}, $lastArg)"
   }
 
 }
