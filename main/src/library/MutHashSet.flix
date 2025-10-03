@@ -76,6 +76,12 @@ mod MutHashSet {
         MutHashMap.size(s->inner)
 
     ///
+    /// Returns a shallow copy of the mutable set `s`.
+    ///
+    pub def copy(rc: Region[r1], s: MutHashSet[t, r]): MutHashSet[t, r1] \ {r, r1} with Eq[t], Hash[t] =
+        new MutHashSet @ rc { inner = MutHashMap.copy(rc, s->inner) }
+
+    ///
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r1], s: MutHashSet[t, r]): Iterator[t, r + r1, r1] \ {r, r1} =
@@ -225,22 +231,19 @@ mod MutHashSet {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
+    /// Returns the mutable set `s` as an array.
+    ///
+    pub def toArray(rc: Region[r1], s: MutHashSet[t, r]): Array[t, r1] \ {r, r1} =
+        let len = size(s);
+        let arr = Array.empty(rc, len);
+        forEachWithIndex((i, x) -> Array.put(x, i, arr), s);
+        arr
+
+    ///
     /// Returns the mutable set `s` as a list.
     ///
     pub def toList(s: MutHashSet[t, r]): List[t] \ r =
         MutHashMap.foldRightWithKey((k, _, acc) -> k :: acc, Nil, s->inner)
-
-    ///
-    /// Returns a shallow copy of the mutable set `s`.
-    ///
-    pub def copy(rc: Region[r1], s: MutHashSet[t, r]): MutHashSet[t, r1] \ {r, r1} with Eq[t], Hash[t] =
-        new MutHashSet @ rc { inner = MutHashMap.copy(rc, s->inner) }
-
-    ///
-    /// Returns the mutable set `s` as an immutable set.
-    ///
-    pub def toSet(s: MutHashSet[t, r]): Set[t] \ r with Order[t] =
-        MutHashMap.keysOf(s->inner)
 
     ///
     /// Returns the association set `s` as a map.
@@ -254,13 +257,10 @@ mod MutHashSet {
         }, Map.empty(), s)
 
     ///
-    /// Returns the mutable set `s` as an array.
+    /// Returns the mutable set `s` as an immutable set.
     ///
-    pub def toArray(rc: Region[r1], s: MutHashSet[t, r]): Array[t, r1] \ {r, r1} =
-        let len = size(s);
-        let arr = Array.empty(rc, len);
-        forEachWithIndex((i, x) -> Array.put(x, i, arr), s);
-        arr
+    pub def toSet(s: MutHashSet[t, r]): Set[t] \ r with Order[t] =
+        MutHashMap.keysOf(s->inner)
 
     ///
     /// Returns the mutable set `s` as a vector.
