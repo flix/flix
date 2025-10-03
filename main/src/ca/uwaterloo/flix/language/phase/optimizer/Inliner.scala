@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -375,172 +376,189 @@ object Inliner {
   @tailrec
   private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
     rules match {
-      case MonoAst.MatchRule(pat, guard, ruleExp) :: rest =>
-        matchPat(exp, pat) match {
-          case StaticMatchResult.Unknown =>
-            // Match is unknown - maintain the rules.
-            Expr.Match(exp, rules, tpe, eff, loc)
-          case StaticMatchResult.Match(_) if guard.isDefined =>
-            // Pattern matches but a guard is defined - maintain the rules.
-            Expr.Match(exp, rules, tpe, eff, loc)
-          case StaticMatchResult.Match(binders) =>
-            // This rule always match - change it to regular let-bindings.
-            sctx.changed.putIfAbsent(sym0, ())
-            binders.foldRight(ruleExp) {
-              case ((Some(v), binderExp), acc) => Expr.Let(v.sym, binderExp, acc, tpe, eff, v.occur, loc.asSynthetic)
-              case ((None, binderExp), acc) => Expr.Stm(binderExp, acc, tpe, eff, loc.asSynthetic)
-            }
-          case StaticMatchResult.NoMatch =>
-            // This rule can never match - delete it and continue.
+      case MonoAst.MatchRule(pat, guardOpt, ruleExp) :: rest =>
+        matchRule(exp, pat, guardOpt) match {
+          case MatchResult.Match(binders) =>
+            // Guaranteed rule - convert to let binders.
+            bindPatterns(binders.toSeq, ruleExp, tpe, eff, loc)
+          case MatchResult.NoMatch =>
+            // Impossible rule - delete and continue.
             sctx.changed.putIfAbsent(sym0, ())
             reduceMatch(exp, rest, tpe, eff, loc)
+          case MatchResult.Unknown =>
+            // Match is unknown - do nothing.
+            Expr.Match(exp, rules, tpe, eff, loc)
         }
-      case _ :: _ =>
-        // Do nothing.
-        Expr.Match(exp, rules, tpe, eff, loc)
       case Nil =>
-        throw InternalCompilerException("Impossible I hope", exp.loc)
+        Expr.Match(exp, rules, tpe, eff, loc)
     }
   }
 
-  private sealed trait StaticMatchResult
+  /** Returns a nested let expression where the leftmost binder is the outermost let. */
+  private def bindPatterns(binders: Iterable[(Option[Pattern.Var], MonoAst.Expr)], exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
+    binders.foldRight(exp) {
+      case ((Some(v), binderExp), acc) => Expr.Let(v.sym, binderExp, acc, tpe, eff, v.occur, loc.asSynthetic)
+      case ((None, binderExp), acc) => Expr.Stm(binderExp, acc, tpe, eff, loc.asSynthetic)
+    }
+  }
 
-  private object StaticMatchResult {
 
-    case object Unknown extends StaticMatchResult
+  private sealed trait FuzzyBool
 
-    case class Match(binders: List[(Option[Pattern.Var], MonoAst.Expr)]) extends StaticMatchResult
+  private object FuzzyBool {
 
-    case object NoMatch extends StaticMatchResult
+    case object True extends FuzzyBool
 
-    def matchFromBool(b: Boolean): StaticMatchResult =
-      if (b) {
-        StaticMatchResult.Match(Nil)
-      } else {
-        StaticMatchResult.NoMatch
-      }
+    case object False extends FuzzyBool
+
+    case object Unknown extends FuzzyBool
 
   }
 
-  private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): StaticMatchResult = pat match {
+  /** Returns the fuzzy evaluation of `exp` as a boolean. */
+  private def evalBoolExpression(exp: MonoAst.Expr): FuzzyBool = exp match {
+    case Expr.Cst(Constant.Bool(true), _, _) => FuzzyBool.True
+    case Expr.Cst(Constant.Bool(false), _, _) => FuzzyBool.False
+    case _ => FuzzyBool.Unknown
+  }
+
+  private sealed trait MatchResult
+
+  private object MatchResult {
+
+    case class Match(binders: Chain[(Option[Pattern.Var], MonoAst.Expr)]) extends MatchResult
+
+    case object NoMatch extends MatchResult
+
+    case object Unknown extends MatchResult
+
+    def emptyMatch(): MatchResult =
+      Match(Chain.empty)
+
+    def singleMatch(pat: Option[Pattern.Var], exp: MonoAst.Expr): MatchResult =
+      Match(Chain((pat, exp)))
+
+    def matchFromBool(b: Boolean): MatchResult =
+      if (b) emptyMatch() else NoMatch
+
+    /**
+      * Concatenates two match results.
+      *
+      * If either result is [[NoMatch]], the output is [[NoMatch]].
+      *
+      * Then if either result is [[Unknown]], the output is [[Unknown]].
+      *
+      * Then (both results now being [[Match]]) the binders are concatenated in a new [[Match]].
+      */
+    def concat(mr1: MatchResult, mr2: MatchResult): MatchResult = (mr1, mr2) match {
+      case (MatchResult.NoMatch, _) | (_, MatchResult.NoMatch) =>
+        MatchResult.NoMatch
+      case (MatchResult.Unknown, _) | (_, MatchResult.Unknown) =>
+        MatchResult.Unknown
+      case (MatchResult.Match(binders1), MatchResult.Match(binders2)) =>
+        if (binders1.isEmpty) mr2
+        else if (binders2.isEmpty) mr1
+        else MatchResult.Match(binders1 ++ binders2)
+    }
+
+  }
+
+  /** Returns the match result of `exp` against `pat` with the guard `guardOpt`. */
+  private def matchRule(exp: MonoAst.Expr, pat: Pattern, guardOpt: Option[MonoAst.Expr]): MatchResult = {
+    val guardVal = guardOpt.map(evalBoolExpression).getOrElse(FuzzyBool.True)
+    (matchPat(exp, pat), guardVal) match {
+      case (_, FuzzyBool.False) | (MatchResult.NoMatch, _) =>
+        MatchResult.NoMatch
+      case (MatchResult.Unknown, _) | (MatchResult.Match(_), FuzzyBool.Unknown) =>
+        MatchResult.Unknown
+      case (resultMatch@MatchResult.Match(_), FuzzyBool.True) =>
+        resultMatch
+    }
+  }
+
+  /** Returns the match result of `exp` against `pat`. */
+  private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): MatchResult = pat match {
     case Pattern.Wild(_, _) =>
-      if (exp.eff == Type.Pure) StaticMatchResult.Match(Nil)
-      else StaticMatchResult.Match(List((None, exp)))
-    case v@Pattern.Var(_, _, _, _) => StaticMatchResult.Match(List((Some(v), exp)))
+      if (exp.eff == Type.Pure) MatchResult.emptyMatch()
+      else MatchResult.singleMatch(None, exp)
+
+    case v@Pattern.Var(_, _, _, _) =>
+      MatchResult.singleMatch(Some(v), exp)
+
     case Pattern.Cst(cst, _, _) =>
       exp match {
-        case Expr.Cst(expCst, _, _) => matchConstant(cst, expCst)
-        case _ => StaticMatchResult.Unknown
+        case Expr.Cst(expCst, _, _) =>
+          matchConstant(cst, expCst)
+        case _ =>
+          MatchResult.Unknown
       }
+
     case Pattern.Tag(symUse, pats, _, _) =>
       exp match {
         case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
-          if (symUse.sym == caseSym && pats.lengthCompare(exps) == 0) {
-            val z = List(List.empty[(Option[Pattern.Var], Expr)])
-            val binders = pats.zip(exps).foldLeft(z){
-              case (acc, (innerPat, innerExp)) => matchPat(innerExp, innerPat) match {
-                case StaticMatchResult.Unknown =>
-                  return StaticMatchResult.Unknown
-                case StaticMatchResult.Match(innerBinders) =>
-                  innerBinders :: acc
-                case StaticMatchResult.NoMatch =>
-                  return StaticMatchResult.Unknown
-              }
-            }
-            StaticMatchResult.Match(binders.reverse.flatten)
-          } else StaticMatchResult.NoMatch
+          if (symUse.sym != caseSym) MatchResult.NoMatch
+          else matchPatterns(exps, pats)
         case _ =>
-          StaticMatchResult.Unknown
+          MatchResult.Unknown
       }
+
     case Pattern.Tuple(pats, _, _) =>
       exp match {
         case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
-          if (exps.lengthCompare(pats) == 0) {
-            val z = List(List.empty[(Option[Pattern.Var], Expr)])
-            val binders = pats.zip(exps).foldLeft(z){
-              case (acc, (innerPat, innerExp)) => matchPat(innerExp, innerPat) match {
-                case StaticMatchResult.Unknown =>
-                  return StaticMatchResult.Unknown
-                case StaticMatchResult.Match(innerBinders) =>
-                  innerBinders :: acc
-                case StaticMatchResult.NoMatch =>
-                  return StaticMatchResult.Unknown
-              }
-            }
-            StaticMatchResult.Match(binders.reverse.flatten)
-          } else {
-            StaticMatchResult.NoMatch
-          }
+          matchPatterns(exps, pats.toList)
         case _ =>
-          StaticMatchResult.Unknown
+          MatchResult.Unknown
       }
+
     case Pattern.Record(_, _, _, _) =>
-      StaticMatchResult.Unknown
+      MatchResult.Unknown
+
   }
 
-  private def matchConstant(cst1: Constant, cst2: Constant): StaticMatchResult =
-    cst1 match {
-      case Constant.Unit => cst2 match {
-        case Constant.Unit => StaticMatchResult.Match(Nil)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Null => cst2 match {
-        case Constant.Null => StaticMatchResult.Match(Nil)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Bool(v1) => cst2 match {
-        case Constant.Bool(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Char(v1) => cst2 match {
-        case Constant.Char(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Float32(v1) => cst2 match {
-        case Constant.Float32(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Float64(v1) => cst2 match {
-        case Constant.Float64(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.BigDecimal(_) => cst2 match {
-        case Constant.BigDecimal(_) => StaticMatchResult.Unknown
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Int8(v1) => cst2 match {
-        case Constant.Int8(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Int16(v1) => cst2 match {
-        case Constant.Int16(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Int32(v1) => cst2 match {
-        case Constant.Int32(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Int64(v1) => cst2 match {
-        case Constant.Int64(v2) => StaticMatchResult.matchFromBool(v1 == v2)
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.BigInt(_) => cst2 match {
-        case Constant.BigInt(_) => StaticMatchResult.Unknown
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Str(_) => cst2 match {
-        case Constant.Str(_) => StaticMatchResult.Unknown
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.Regex(_) => cst2 match {
-        case Constant.Str(_) => StaticMatchResult.Unknown
-        case _ => StaticMatchResult.NoMatch
-      }
-      case Constant.RecordEmpty => cst2 match {
-        case Constant.RecordEmpty => StaticMatchResult.Match(Nil)
-        case _ => StaticMatchResult.NoMatch
-      }
+  /**
+    * Returns the match result for matching `exps` to the patterns of `pats`.
+    *
+    * If the two lists are of different lengths, [[MatchResult.Unknown]] is returned.
+    */
+  private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
+    if (exps.lengthCompare(pats) != 0) return MatchResult.Unknown
+    val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
+      case (acc, (innerPat, innerExp)) =>
+        MatchResult.concat(acc, matchPat(innerExp, innerPat))
     }
+    res
+  }
+
+  /**
+    * Returns the match result for two constants.
+    *
+    * Constants contain no binders so the function is symmetric.
+    */
+  private def matchConstant(cst1: Constant, cst2: Constant): MatchResult = {
+    import Constant.*
+    import MatchResult.*
+    (cst1, cst2) match {
+      case (Unit, Unit) => emptyMatch()
+      case (Null, Null) => emptyMatch()
+      case (Bool(v1), Bool(v2)) => matchFromBool(v1 == v2)
+      case (Char(v1), Char(v2)) => matchFromBool(v1 == v2)
+      case (Float32(v1), Float32(v2)) => matchFromBool(v1 == v2)
+      case (Float64(v1), Float64(v2)) => matchFromBool(v1 == v2)
+      case (BigDecimal(_), BigDecimal(_)) => Unknown // Avoiding static checking of object types.
+      case (Int8(v1), Int8(v2)) => matchFromBool(v1 == v2)
+      case (Int16(v1), Int16(v2)) => matchFromBool(v1 == v2)
+      case (Int32(v1), Int32(v2)) => matchFromBool(v1 == v2)
+      case (Int64(v1), Int64(v2)) => matchFromBool(v1 == v2)
+      case (BigInt(_), BigInt(_)) => Unknown // Avoiding static checking of object types.
+      case (Str(_), Str(_)) => Unknown // Avoiding static checking of object types.
+      case (Regex(_), Regex(_)) => Unknown // Equality of regex patterns is not well-defined.
+      case (RecordEmpty, RecordEmpty) => emptyMatch()
+      case _ =>
+        // Unrelated constants should be impossible for well-typed programs.
+        // Returning unknown is the safe "do nothing" choice.
+        Unknown
+    }
+  }
 
   /**
     * Returns a pattern with fresh variables and a substitution mapping the old variables the fresh variables.
