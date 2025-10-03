@@ -450,7 +450,7 @@ object Inliner {
       *
       * Then if either result is [[Unknown]], the output is [[Unknown]].
       *
-      * Then (both results now being [[Match]]) the binders are concatenated in a new [[Match]].
+      * Then (both results now being [[Match]]) the binders are concatenated.
       */
     def concat(mr1: MatchResult, mr2: MatchResult): MatchResult = (mr1, mr2) match {
       case (MatchResult.NoMatch, _) | (_, MatchResult.NoMatch) =>
