@@ -611,6 +611,7 @@ object Type {
     case object GetAlloc extends AbstractRegionOp
     case object GetRead extends AbstractRegionOp
     case object GetWrite extends AbstractRegionOp
+    case object XWrite extends AbstractRegionOp
   }
 
   case class RegionToEff(op: RegionOp, tpe: Type, loc: SourceLocation) extends Type with BaseType {
