@@ -382,7 +382,7 @@ object Inliner {
           case MatchResult.Match(binders) =>
             // Guaranteed rule - convert to let binders.
             sctx.changed.putIfAbsent(sym0, ())
-            bindPatterns(binders.toSeq, ruleExp, tpe, eff, loc)
+            bindPatterns(binders.toSeq, ruleExp, loc)
           case MatchResult.NoMatch =>
             // Impossible rule - delete and continue.
             sctx.changed.putIfAbsent(sym0, ())
@@ -396,15 +396,6 @@ object Inliner {
         Expr.Match(exp, rules, tpe, eff, loc)
     }
   }
-
-  /** Returns a nested let expression where the leftmost binder is the outermost let. */
-  private def bindPatterns(binders: Iterable[(Option[Pattern.Var], MonoAst.Expr)], exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): MonoAst.Expr = {
-    binders.foldRight(exp) {
-      case ((Some(v), binderExp), acc) => Expr.Let(v.sym, binderExp, acc, tpe, eff, v.occur, loc.asSynthetic)
-      case ((None, binderExp), acc) => Expr.Stm(binderExp, acc, tpe, eff, loc.asSynthetic)
-    }
-  }
-
 
   private sealed trait FuzzyBool
 
@@ -716,6 +707,18 @@ object Inliner {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
+    }
+  }
+
+  /** Returns a nested let expression where the leftmost binder is the outermost let. */
+  private def bindPatterns(binders: Iterable[(Option[Pattern.Var], MonoAst.Expr)], exp: MonoAst.Expr, loc: SourceLocation): MonoAst.Expr = {
+    binders.foldRight(exp) {
+      case ((Some(v), binderExp), acc) =>
+        val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
+        Expr.Let(v.sym, binderExp, acc, acc.tpe, eff, v.occur, loc)
+      case ((None, binderExp), acc) =>
+        val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
+        Expr.Stm(binderExp, acc, acc.tpe, eff, loc)
     }
   }
 
