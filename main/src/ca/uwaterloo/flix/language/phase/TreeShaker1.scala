@@ -17,9 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.*
+import ca.uwaterloo.flix.language.ast.LoweredAst2.*
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst2
 import ca.uwaterloo.flix.util.ParOps
 
 /**
