@@ -554,10 +554,10 @@ object Inliner {
       case (Int64(v1), Int64(v2)) => matchFromBool(v1 == v2)
       case (BigInt(_), BigInt(_)) => Unknown // Avoiding static checking of object types.
       case (Str(_), Str(_)) => Unknown // Avoiding static checking of object types.
-      case (Regex(_), Regex(_)) => Unknown // Equality of regex patterns is not well-defined.
+      case (Regex(_), Regex(_)) => Unknown // Avoiding static checking of object types.
       case (RecordEmpty, RecordEmpty) => emptyMatch()
       case _ =>
-        // Unrelated constants should be impossible for well-typed programs.
+        // Unrelated constants are impossible for well-typed programs.
         // Returning unknown is the safe "do nothing" choice.
         Unknown
     }
