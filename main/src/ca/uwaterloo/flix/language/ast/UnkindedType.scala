@@ -41,6 +41,8 @@ sealed trait UnkindedType {
     case t: UnkindedType.RestrictableEnum => t
     case t: UnkindedType.UnappliedAlias => t
     case t: UnkindedType.UnappliedAssocType => t
+    case t: UnkindedType.UnappliedAbstractRegionToEff => t
+    case t: UnkindedType.UnappliedRegionToEff => t
     case t: UnkindedType.CaseSet => t
     case UnkindedType.Apply(tpe1, tpe2, loc) => UnkindedType.Apply(tpe1.map(f), tpe2.map(f), loc)
     case UnkindedType.Arrow(eff, arity, loc) => UnkindedType.Arrow(eff.map(_.map(f)), arity, loc)
@@ -90,6 +92,8 @@ sealed trait UnkindedType {
     case UnkindedType.RestrictableEnum(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAlias(_, _) => SortedSet.empty
     case UnkindedType.UnappliedAssocType(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedAbstractRegionToEff(_, _) => SortedSet.empty
+    case UnkindedType.UnappliedRegionToEff(_, _) => SortedSet.empty
     case UnkindedType.Apply(tpe1, tpe2, _) => tpe1.definiteTypeVars ++ tpe2.definiteTypeVars
     case UnkindedType.Arrow(eff, _, _) => eff.iterator.flatMap(_.definiteTypeVars).to(SortedSet)
     case UnkindedType.CaseSet(_, _) => SortedSet.empty
@@ -207,6 +211,34 @@ object UnkindedType {
     }
 
     override def hashCode(): Int = Objects.hash(sym)
+  }
+
+  /**
+    * An unapplied abstract region to effect conversion.
+    * Only exists temporarily in the Resolver until it's converted to an [[AbstractRegionToEff]].
+    */
+  @EliminatedBy(Resolver.getClass)
+  case class UnappliedAbstractRegionToEff(op: Type.AbstractRegionOp, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case UnappliedAbstractRegionToEff(op2, _) => op == op2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(op)
+  }
+
+  /**
+    * An unapplied region to effect conversion.
+    * Only exists temporarily in the Resolver until it's converted to a [[Cst]] with [[TypeConstructor.RegionToEffect]].
+    */
+  @EliminatedBy(Resolver.getClass)
+  case class UnappliedRegionToEff(op: TypeConstructor.RegionOp, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case UnappliedRegionToEff(op2, _) => op == op2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(op)
   }
 
   /**
@@ -554,5 +586,7 @@ object UnkindedType {
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
+    case UnappliedAbstractRegionToEff(_, loc) => throw InternalCompilerException("unexpected unapplied abstract region to effect", loc)
+    case UnappliedRegionToEff(_, loc) => throw InternalCompilerException("unexpected unapplied region to effect", loc)
   }
 }
