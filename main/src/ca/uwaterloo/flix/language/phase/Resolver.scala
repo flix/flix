@@ -67,7 +67,8 @@ object Resolver {
     "Region" -> Kind.Eff,
     "RecordRow" -> Kind.RecordRow,
     "SchemaRow" -> Kind.SchemaRow,
-    "Predicate" -> Kind.Predicate
+    "Predicate" -> Kind.Predicate,
+    "Flavor" -> Kind.Flavor
   )
 
   /**
