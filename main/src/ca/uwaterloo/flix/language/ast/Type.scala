@@ -1258,7 +1258,7 @@ object Type {
     * Returns a region type with the given symbol.
     */
   def mkRegion(sym: Symbol.RegionSym, loc: SourceLocation): Type = {
-    Type.Cst(TypeConstructor.Region(sym), loc)
+    Type.Cst(TypeConstructor.FlavorToRegion(sym), loc)
   }
 
   /**
@@ -1443,7 +1443,7 @@ object Type {
     * Replaces the given region in the type with the Pure effect.
     */
   def purifyRegion(tpe0: Type, sym: Symbol.RegionSym): Type = tpe0 match {
-    case Cst(TypeConstructor.Region(sym1), _) if sym == sym1 => Type.Pure
+    case Cst(TypeConstructor.FlavorToRegion(sym1), _) if sym == sym1 => Type.Pure
     case t: Cst => t
     case t: Var => t
     case Apply(tpe1, tpe2, loc) =>

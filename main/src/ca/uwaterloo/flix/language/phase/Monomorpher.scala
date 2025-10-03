@@ -87,7 +87,7 @@ import scala.collection.mutable
   */
 object Monomorpher {
 
-  /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
+  /** The effect that all [[TypeConstructor.FlavorToRegion]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
     TypeConstructor.Effect(Symbol.IO, Kind.Eff)
 
@@ -139,7 +139,7 @@ object Monomorpher {
           t
       }
 
-      case Type.Cst(TypeConstructor.Region(_), loc) =>
+      case Type.Cst(TypeConstructor.FlavorToRegion(_), loc) =>
         Type.Cst(RegionInstantiation, loc)
 
       case cst@Type.Cst(_, _) =>
@@ -993,7 +993,7 @@ object Monomorpher {
     case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       CofiniteSet.mkSet(sym)
-    case Type.Cst(TypeConstructor.Region(_), _) =>
+    case Type.Cst(TypeConstructor.FlavorToRegion(_), _) =>
       CofiniteSet.mkSet(RegionInstantiation.sym)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteSet.complement(eval(y))
