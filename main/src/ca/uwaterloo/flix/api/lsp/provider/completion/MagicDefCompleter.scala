@@ -27,18 +27,19 @@ object MagicDefCompleter {
 
     // Lookup defs for types (i.e. enums and structs) that have companion modules.
     tpe.typeConstructor match {
-      case Some(TypeConstructor.Enum(sym, _)) => getComp(sym, prefix, baseExp, range, root)
-      case Some(TypeConstructor.Struct(sym, _)) => getComp(sym, prefix, baseExp, range, root)
+      case Some(TypeConstructor.Enum(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, range, root)
+      case Some(TypeConstructor.Struct(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, range, root)
       case _ => Nil
     }
   }
 
-  private def getComp(sym: QualifiedSym, prefix: String, baseExp: String, range: Range, root: TypedAst.Root): Iterable[Completion] = {
+  private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, range: Range, root: TypedAst.Root): Iterable[Completion] = {
     val matchedDefs = root.defs.values.filter {
-      case defn => inCompanionMod(sym, defn) &&
-        defn.spec.fparams.nonEmpty &&
-        CompletionUtils.isAvailable(defn.spec) && // CompletionUtils.matchesName(decl.sym, qn, qualified = false)
-        defn.sym.text.startsWith(prefix)
+      case defn =>
+        inCompanionMod(sym, defn) &&                        // Include only defs in the companion module.
+          defn.spec.fparams.nonEmpty &&                     // Include only defs that take at least one argument. (Ideally the last argument would unify with tpe- but we don't yet check that).
+          CompletionUtils.isAvailable(defn.spec) &&         // Include only defs that are public.
+          CompletionUtils.fuzzyMatch(prefix, defn.sym.text) // Include only defs that fuzzy match what the user has written.
     }
 
     matchedDefs.map {
