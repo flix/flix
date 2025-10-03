@@ -480,22 +480,6 @@ object TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 
-  // TODO docs
-  case class RegionToEffect(op: RegionOp) extends TypeConstructor {
-    def kind: Kind = Kind.Region ->: Kind.Eff
-  }
-
-  // TODO docs
-  sealed trait RegionOp
-
-  // TODO docs
-  object RegionOp {
-    case class Heap extends RegionOp
-    case class Alloc extends RegionOp
-    case class Read extends RegionOp
-    case class Write extends RegionOp
-  }
-
   /**
     * A type constructor that converts a region to a Star type.
     */

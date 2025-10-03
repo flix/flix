@@ -595,6 +595,26 @@ object Type {
     case object GetWrite extends AbstractRegionOp
   }
 
+  case class RegionToEff(op: RegionOp, tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def equals(obj: Any): Boolean = obj match {
+      case that: RegionToEff => this.op == that.op && this.tpe == that.tpe
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(op, tpe)
+
+    override def kind: Kind = Kind.Eff
+  }
+
+  sealed trait RegionOp
+
+  object RegionOp {
+    case object Heap extends RegionOp
+    case object Alloc extends RegionOp
+    case object Read extends RegionOp
+    case object Write extends RegionOp
+  }
+
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.
     */

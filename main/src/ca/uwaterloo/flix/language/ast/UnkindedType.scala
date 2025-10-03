@@ -229,10 +229,10 @@ object UnkindedType {
 
   /**
     * An unapplied region to effect conversion.
-    * Only exists temporarily in the Resolver until it's converted to a [[Cst]] with [[TypeConstructor.RegionToEffect]].
+    * Only exists temporarily in the Resolver until it's converted to a [[RegionToEff]].
     */
   @EliminatedBy(Resolver.getClass)
-  case class UnappliedRegionToEff(op: TypeConstructor.RegionOp, loc: SourceLocation) extends UnkindedType {
+  case class UnappliedRegionToEff(op: Type.RegionOp, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case UnappliedRegionToEff(op2, _) => op == op2
       case _ => false
