@@ -381,6 +381,7 @@ object Inliner {
         matchRule(exp, pat, guardOpt) match {
           case MatchResult.Match(binders) =>
             // Guaranteed rule - convert to let binders.
+            sctx.changed.putIfAbsent(sym0, ())
             bindPatterns(binders.toSeq, ruleExp, tpe, eff, loc)
           case MatchResult.NoMatch =>
             // Impossible rule - delete and continue.
