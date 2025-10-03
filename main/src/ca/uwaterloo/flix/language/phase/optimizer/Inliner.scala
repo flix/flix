@@ -479,8 +479,8 @@ object Inliner {
   /** Returns the match result of `exp` against `pat`. */
   private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): MatchResult = pat match {
     case Pattern.Wild(_, _) =>
-      if (exp.eff == Type.Pure) MatchResult.emptyMatch()
-      else MatchResult.singleMatch(None, exp)
+      // Preserve the expression in case it is impure.
+      MatchResult.singleMatch(None, exp)
 
     case v@Pattern.Var(_, _, _, _) =>
       MatchResult.singleMatch(Some(v), exp)
@@ -521,12 +521,15 @@ object Inliner {
     * If the two lists are of different lengths, [[MatchResult.Unknown]] is returned.
     */
   private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
-    if (exps.lengthCompare(pats) != 0) return MatchResult.Unknown
-    val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
-      case (acc, (innerPat, innerExp)) =>
-        MatchResult.concat(acc, matchPat(innerExp, innerPat))
+    if (exps.lengthCompare(pats) != 0) {
+      MatchResult.Unknown
+    } else {
+      val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
+        case (acc, (innerPat, innerExp)) =>
+          MatchResult.concat(acc, matchPat(innerExp, innerPat))
+      }
+      res
     }
-    res
   }
 
   /**
