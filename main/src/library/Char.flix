@@ -30,7 +30,7 @@ mod Char {
     /// Returns `true` if the given char `c` is an ascii character.
     ///
     pub def isAscii(c: Char): Bool =
-        c <= '\u0080'
+        c < '\u0080'
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
