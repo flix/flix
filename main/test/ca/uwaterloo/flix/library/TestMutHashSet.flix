@@ -749,54 +749,6 @@ mod TestMutHashSet {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // reduceLeft                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def reduceLeft01(): Unit \ Assert = region rc {
-        let s: MutHashSet[Int32, rc] = MutHashSet.empty(rc);
-        assertEq(expected = None, MutHashSet.reduceLeft((x, y) -> x + y, s))
-    }
-
-    @Test
-    def reduceLeft02(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.addAll(1 :: 2 :: 3 :: Nil, s);
-        assertEq(expected = Some(6), MutHashSet.reduceLeft((x, y) -> x + y, s))
-    }
-
-    @Test
-    def reduceLeft03(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.add(42, s);
-        assertEq(expected = Some(42), MutHashSet.reduceLeft((x, y) -> x + y, s))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // reduceRight                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def reduceRight01(): Unit \ Assert = region rc {
-        let s: MutHashSet[Int32, rc] = MutHashSet.empty(rc);
-        assertEq(expected = None, MutHashSet.reduceRight((x, y) -> x + y, s))
-    }
-
-    @Test
-    def reduceRight02(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.addAll(1 :: 2 :: 3 :: Nil, s);
-        assertEq(expected = Some(6), MutHashSet.reduceRight((x, y) -> x + y, s))
-    }
-
-    @Test
-    def reduceRight03(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.add(42, s);
-        assertEq(expected = Some(42), MutHashSet.reduceRight((x, y) -> x + y, s))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // forEach / forEachWithIndex                                              //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -225,26 +225,6 @@ mod MutHashSet {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
-    /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
-    ///
-    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-    ///
-    /// Returns `None` if `s` is the empty set.
-    ///
-    pub def reduceLeft(f: (t, t) -> t \ ef, s: MutHashSet[t, r]): Option[t] \ {ef, r} =
-        toList(s) |> List.reduceLeft(f)
-
-    ///
-    /// Applies `f` to all elements in the mutable set `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
-    ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    ///
-    /// Returns `None` if `s` is the empty set.
-    ///
-    pub def reduceRight(f: (t, t) -> t \ ef, s: MutHashSet[t, r]): Option[t] \ {ef, r} =
-        toList(s) |> List.reduceRight(f)
-
-    ///
     /// Returns the mutable set `s` as a list.
     ///
     pub def toList(s: MutHashSet[t, r]): List[t] \ r =
