@@ -905,6 +905,7 @@ object Parser2 {
         return moduleDecl(mark, nestingLevel)
       }
       // Handle declarations
+      val wasAtEofBeforeAnnotations = at(TokenKind.Eof)
       annotations()
       modifiers()
       // If a new declaration is added to this then add it to FIRST_DECL too.
@@ -916,7 +917,7 @@ object Parser2 {
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
-        case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
+        case TokenKind.Eof if wasAtEofBeforeAnnotations => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
         case at =>
           val loc = currentSourceLocation()
           val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
