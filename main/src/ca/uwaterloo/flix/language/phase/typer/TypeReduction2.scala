@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.ast.TypeConstructor.RegionFlavor
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
@@ -88,6 +89,12 @@ object TypeReduction2 {
         case Some(newTpe) =>
           progress.markProgress()
           newTpe
+      }
+
+    case Type.AbstractRegionToEff(op, tpe, loc) =>
+      reduce(tpe, scope, renv) match {
+        case Type.Apply(reg@Type.Cst(TypeConstructor.FlavorToRegion(_), _), Type.Cst(TypeConstructor.Flavor(f), _), _) =>
+
       }
 
     case Type.JvmToType(tpe, loc) =>
@@ -322,6 +329,10 @@ object TypeReduction2 {
     case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
+  }
+
+  private def reduceRegionOp(op: Type.AbstractRegionOp, f: TypeConstructor.RegionFlavor): Type.RegionOp = {
+    // TODO
   }
 
   /** A lookup result of a Java field. */

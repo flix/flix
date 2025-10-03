@@ -438,6 +438,18 @@ object TypeConstructor {
   @IntroducedBy(Kinder.getClass)
   case class Effect(sym: Symbol.EffSym, kind: Kind) extends TypeConstructor
 
+  case class Flavor(f: RegionFlavor) extends TypeConstructor {
+    def kind: Kind = Kind.Flavor
+  }
+
+  sealed trait RegionFlavor
+
+  object RegionFlavor {
+    case object LowFidelity extends RegionFlavor
+    case object HighFidelity extends RegionFlavor
+    case object Exclusive extends RegionFlavor
+  }
+
   /**
     * A type constructor that represents the complement of a case set.
     */
@@ -476,8 +488,8 @@ object TypeConstructor {
   /**
     * A type constructor that represents a region.
     */
-  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
-    def kind: Kind = Kind.Region
+  case class FlavorToRegion(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Flavor ->: Kind.Region
   }
 
   /**

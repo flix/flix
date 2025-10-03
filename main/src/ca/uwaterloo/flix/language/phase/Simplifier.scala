@@ -432,7 +432,7 @@ object Simplifier {
             val consTypes = predType.typeArguments
             SimpleType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
-          case TypeConstructor.Region(_) => SimpleType.Unit
+          case TypeConstructor.FlavorToRegion(_) => SimpleType.Unit
 
           case TypeConstructor.True => SimpleType.Unit
           case TypeConstructor.False => SimpleType.Unit
@@ -595,7 +595,7 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             Type.Apply(Type.Cst(TypeConstructor.Extensible, loc), visitPolyType(elm), loc)
 
-          case TypeConstructor.Region(_) => Type.mkUnit(loc)
+          case TypeConstructor.FlavorToRegion(_) => Type.mkUnit(loc)
 
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)
