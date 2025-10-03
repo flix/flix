@@ -124,7 +124,7 @@ sealed trait Completion {
         kind = CompletionItemKind.Snippet
       )
 
-    case Completion.MagicDefCompletion(label, snippet, decl, range, priority, ap, qualified, inScope, ectx) =>
+    case Completion.MagicDefCompletion(label, snippet, decl, range, priority, qualified, inScope) =>
       val qualifiedName = decl.sym.toString
       //val label = if (qualified) qualifiedName else decl.sym.name
       //val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams.init)

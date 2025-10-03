@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, QualifiedSym}
+import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
 
 object MagicDefCompleter {
@@ -25,6 +25,7 @@ object MagicDefCompleter {
     val prefix = ident.name
     val baseExp = loc.text.getOrElse("")
 
+    // Lookup defs for types (i.e. enums and structs) that have companion modules.
     tpe.typeConstructor match {
       case Some(TypeConstructor.Enum(sym, _)) => getComp(sym, prefix, baseExp, range, root)
       case Some(TypeConstructor.Struct(sym, _)) => getComp(sym, prefix, baseExp, range, root)
@@ -33,23 +34,25 @@ object MagicDefCompleter {
   }
 
   private def getComp(sym: QualifiedSym, prefix: String, baseExp: String, range: Range, root: TypedAst.Root): Iterable[Completion] = {
-    val candidates = root.defs.values.collect {
-      case defn if sym.namespace ::: sym.name :: Nil == defn.sym.namespace => defn
-    }.filter {
-      case defn => defn.spec.fparams.nonEmpty
-    }.filter {
-      case defn => CompletionUtils.isAvailable(defn.spec) //&& CompletionUtils.matchesName(decl.sym, qn, qualified = false)
-    }.filter {
-      case defn => defn.sym.text.startsWith(prefix)
+    val matchedDefs = root.defs.values.filter {
+      case defn => inCompanionMod(sym, defn) &&
+        defn.spec.fparams.nonEmpty &&
+        CompletionUtils.isAvailable(defn.spec) && // CompletionUtils.matchesName(decl.sym, qn, qualified = false)
+        defn.sym.text.startsWith(prefix)
     }
 
-    candidates.map {
+    matchedDefs.map {
       case defn =>
         val label = baseExp + "." + defn.sym.text
         val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
         Completion.MagicDefCompletion(label, snippet, defn, range, Priority.Lower(0), qualified = false, inScope = false)
     }
   }
+
+  /**
+    * Returns `true` if the given `defn` is in the companion module of `sym`.
+    */
+  private def inCompanionMod(sym: QualifiedSym, defn: TypedAst.Def): Boolean = sym.namespace ::: sym.name :: Nil == defn.sym.namespace
 
   /**
     * Returns a string of the form:
