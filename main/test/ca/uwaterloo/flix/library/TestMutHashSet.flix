@@ -382,29 +382,41 @@ mod TestMutHashSet {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // toString                                                                //
+    // copy                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toString01(): Unit \ Assert = region rc {
+    def copy01(): Unit \ Assert = region rc {
+        let s = MutHashSet.empty(rc);
+        MutHashSet.addAll(1 :: 2 :: 3 :: Nil, s);
+        region rc2 {
+            let s2 = MutHashSet.copy(rc2, s);
+            assertEq(expected = 3, MutHashSet.size(s2));
+            assertTrue(MutHashSet.memberOf(1, s2));
+            assertTrue(MutHashSet.memberOf(2, s2));
+            assertTrue(MutHashSet.memberOf(3, s2))
+        }
+    }
+
+    @Test
+    def copy02(): Unit \ Assert = region rc {
         let s: MutHashSet[Int32, _] = MutHashSet.empty(rc);
-        assertEq(expected = "MutHashSet#{}", MutHashSet.toString(s))
+        region rc2 {
+            let s2 = MutHashSet.copy(rc2, s);
+            assertTrue(MutHashSet.isEmpty(s2))
+        }
     }
 
     @Test
-    def toString02(): Unit \ Assert = region rc {
+    def copy03(): Unit \ Assert = region rc {
         let s = MutHashSet.empty(rc);
-        MutHashSet.add(1, s);
-        assertEq(expected = "MutHashSet#{1}", MutHashSet.toString(s))
-    }
-
-    @Test
-    def toString03(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.add(1, s);
-        MutHashSet.add(2, s);
-        MutHashSet.add(3, s);
-        assertEq(expected = "MutHashSet#{1, 2, 3}", MutHashSet.toString(s))
+        MutHashSet.addAll(1 :: 2 :: 3 :: Nil, s);
+        region rc2 {
+            let s2 = MutHashSet.copy(rc2, s);
+            MutHashSet.add(4, s);
+            assertEq(expected = 3, MutHashSet.size(s2));
+            assertEq(expected = 4, MutHashSet.size(s))
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -839,44 +851,6 @@ mod TestMutHashSet {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // copy                                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def copy01(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.addAll(1 :: 2 :: 3 :: Nil, s);
-        region rc2 {
-            let s2 = MutHashSet.copy(rc2, s);
-            assertEq(expected = 3, MutHashSet.size(s2));
-            assertTrue(MutHashSet.memberOf(1, s2));
-            assertTrue(MutHashSet.memberOf(2, s2));
-            assertTrue(MutHashSet.memberOf(3, s2))
-        }
-    }
-
-    @Test
-    def copy02(): Unit \ Assert = region rc {
-        let s: MutHashSet[Int32, _] = MutHashSet.empty(rc);
-        region rc2 {
-            let s2 = MutHashSet.copy(rc2, s);
-            assertTrue(MutHashSet.isEmpty(s2))
-        }
-    }
-
-    @Test
-    def copy03(): Unit \ Assert = region rc {
-        let s = MutHashSet.empty(rc);
-        MutHashSet.addAll(1 :: 2 :: 3 :: Nil, s);
-        region rc2 {
-            let s2 = MutHashSet.copy(rc2, s);
-            MutHashSet.add(4, s);
-            assertEq(expected = 3, MutHashSet.size(s2));
-            assertEq(expected = 4, MutHashSet.size(s))
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1057,6 +1031,32 @@ mod TestMutHashSet {
         let s = MutHashSet.empty(rc);
         MutHashSet.add(42, s);
         assertEq(expected = "[42]", MutHashSet.joinWith(x -> "[${x}]", ", ", s))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toString                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toString01(): Unit \ Assert = region rc {
+        let s: MutHashSet[Int32, _] = MutHashSet.empty(rc);
+        assertEq(expected = "MutHashSet#{}", MutHashSet.toString(s))
+    }
+
+    @Test
+    def toString02(): Unit \ Assert = region rc {
+        let s = MutHashSet.empty(rc);
+        MutHashSet.add(1, s);
+        assertEq(expected = "MutHashSet#{1}", MutHashSet.toString(s))
+    }
+
+    @Test
+    def toString03(): Unit \ Assert = region rc {
+        let s = MutHashSet.empty(rc);
+        MutHashSet.add(1, s);
+        MutHashSet.add(2, s);
+        MutHashSet.add(3, s);
+        assertEq(expected = "MutHashSet#{1, 2, 3}", MutHashSet.toString(s))
     }
 
     /////////////////////////////////////////////////////////////////////////////
