@@ -124,10 +124,10 @@ sealed trait Completion {
         kind = CompletionItemKind.Snippet
       )
 
-    case Completion.MagicDefCompletion(label, decl, range, priority, ap, qualified, inScope, ectx) =>
+    case Completion.MagicDefCompletion(label, snippet, decl, range, priority, ap, qualified, inScope, ectx) =>
       val qualifiedName = decl.sym.toString
       //val label = if (qualified) qualifiedName else decl.sym.name
-      val snippet = LspUtil.mkSpecSnippet(label, decl.spec, ectx)
+      //val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams.init)
       val description = if (!qualified) {
         Some(if (inScope) qualifiedName else s"use $qualifiedName")
       } else None
@@ -660,7 +660,7 @@ object Completion {
     * @param inScope   indicate whether to the def is inScope.
     * @param ectx      the expression context.
     */
-  case class MagicDefCompletion(label: String, decl: TypedAst.Def, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
+  case class MagicDefCompletion(label: String, snippet: String, decl: TypedAst.Def, range: Range, priority: Priority, ap: AnchorPosition, qualified: Boolean, inScope: Boolean, ectx: ExprContext) extends Completion {
     override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
   }
 
