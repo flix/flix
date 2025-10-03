@@ -373,7 +373,7 @@ object Inliner {
 
   /** Evaluate match if possible */
   @tailrec
-  private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): Expr = {
+  private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
     rules match {
       case MonoAst.MatchRule(pat, guard, ruleExp) :: rest =>
         matchPat(exp, pat) match {
