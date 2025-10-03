@@ -620,7 +620,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val scp = scp0 ++ mkTypeParamScp(tparams)
-          val opsVal = traverse(ops0)(resolveOp(_, scp0, taenv, ns0, root))
+          val opsVal = traverse(ops0)(resolveOp(_, scp, taenv, ns0, root))
           mapN(opsVal) {
             case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
           }
@@ -2989,7 +2989,7 @@ object Resolver {
           // ALERT!
           // Here we mutate the RecordWild list because we are visiting a wildcard type!
           val sym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
-          syms.append((ident -> sym))
+          syms.append(ident -> sym)
           Result.Ok(LowerType.Var(sym))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
