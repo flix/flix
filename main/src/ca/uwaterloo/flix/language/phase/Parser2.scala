@@ -1254,6 +1254,8 @@ object Parser2 {
       }
       if (eat(TokenKind.Equal)) {
         Type.ttype()
+      } else {
+        expect(TokenKind.Equal)
       }
       close(mark, TreeKind.Decl.TypeAlias)
     }
