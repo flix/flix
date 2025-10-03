@@ -391,6 +391,7 @@ object Inliner {
             Expr.Match(exp, rules, tpe, eff, loc)
         }
       case Nil =>
+        // Do nothing.
         Expr.Match(exp, rules, tpe, eff, loc)
     }
   }
