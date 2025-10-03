@@ -301,14 +301,15 @@ object Inliner {
       Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      visitExp(exp1, ctx0) match {
-        case Expr.Cst(Constant.Bool(true), _, _) =>
+      val e1 = visitExp(exp1, ctx0)
+      evalBoolExpression(e1) match {
+        case FuzzyBool.True =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp2, ctx0)
-        case Expr.Cst(Constant.Bool(false), _, _) =>
+        case FuzzyBool.False =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp3, ctx0)
-        case e1 =>
+        case FuzzyBool.Unknown =>
           val e2 = visitExp(exp2, ctx0)
           val e3 = visitExp(exp3, ctx0)
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
