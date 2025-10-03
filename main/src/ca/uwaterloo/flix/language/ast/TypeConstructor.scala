@@ -477,7 +477,7 @@ object TypeConstructor {
     * A type constructor that represents a region.
     */
   case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
-    def kind: Kind = Kind.Eff
+    def kind: Kind = Kind.Region
   }
 
   /**
@@ -487,7 +487,7 @@ object TypeConstructor {
     /**
       * The shape of a star-kind region is Region[l].
       */
-    def kind: Kind = Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Region ->: Kind.Star
   }
 
   /**
