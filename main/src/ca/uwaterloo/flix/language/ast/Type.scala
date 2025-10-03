@@ -576,6 +576,25 @@ object Type {
     override def hashCode(): Int = Objects.hash(symUse, arg)
   }
 
+  case class AbstractRegionToEff(op: AbstractRegionOp, tpe: Type, loc: SourceLocation) extends Type with BaseType {
+    override def equals(obj: Any): Boolean = obj match {
+      case that: AbstractRegionToEff => this.op == that.op && this.tpe == that.tpe
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(op, tpe)
+
+    override def kind: Kind = Kind.Eff
+  }
+
+  sealed trait AbstractRegionOp
+
+  object AbstractRegionOp {
+    case object GetAlloc extends AbstractRegionOp
+    case object GetRead extends AbstractRegionOp
+    case object GetWrite extends AbstractRegionOp
+  }
+
   /**
     * A type which must be reduced by finding the correct JVM constructor, method, or field.
     */
