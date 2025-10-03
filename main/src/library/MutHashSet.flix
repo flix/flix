@@ -17,8 +17,6 @@
 ///
 /// Represents a mutable hash set that preserves insertion order.
 ///
-/// Uses a MutHashMap internally, storing elements as keys with Unit values.
-///
 pub struct MutHashSet[t: Type, r: Region] {
     inner: MutHashMap[t, Unit, r]
 }
@@ -40,13 +38,13 @@ instance Iterable[MutHashSet[a, r]] {
 mod MutHashSet {
 
     ///
-    /// Returns a fresh empty set.
+    /// Returns a new empty set.
     ///
     pub def empty(rc: Region[r]): MutHashSet[t, r] \ r =
         new MutHashSet @ rc { inner = MutHashMap.empty(rc) }
 
     ///
-    /// Returns an empty mutable hash set with the given capacity.
+    /// Returns a new empty set with the given capacity.
     ///
     /// The capacity is rounded up to the minimum capacity.
     ///
@@ -54,7 +52,7 @@ mod MutHashSet {
         new MutHashSet @ rc { inner = MutHashMap.emptyWithCapacity(rc, capacity) }
 
     ///
-    /// Returns the singleton set containing `x`.
+    /// Returns a new set with the element `x`.
     ///
     pub def singleton(rc: Region[r], x: t): MutHashSet[t, r] \ r with Eq[t], Hash[t] =
         new MutHashSet @ rc { inner = MutHashMap.singleton(rc, x, ()) }
@@ -94,13 +92,6 @@ mod MutHashSet {
     ///
     pub def forEachWithIndex(f: (Int32, t) -> Unit \ ef, s: MutHashSet[t, r]): Unit \ {ef, r} =
         MutHashMap.forEachWithIndex((i, k, _) -> f(i, k), s->inner)
-
-    ///
-    /// Returns a string representation of the given mutable hash set `s`.
-    ///
-    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] = region rc {
-        "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
-    }
 
     ///
     /// Adds the element `x` to the mutable set `s`.
@@ -313,5 +304,12 @@ mod MutHashSet {
     pub def joinWith(f: t -> String \ ef, sep: String, s: MutHashSet[t, r]): String \ {ef, r} =
         let strs = foldRight((x, acc) -> f(x) :: acc, Nil, s);
         String.intercalate(sep, strs)
+
+    ///
+    /// Returns a string representation of the given mutable hash set `s`.
+    ///
+    pub def toString(s: MutHashSet[a, r]): String \ r with ToString[a] = region rc {
+        "MutHashSet#{" + (MutHashSet.iterator(rc, s) |> Iterator.join(", ")) + "}"
+    }
 
 }
