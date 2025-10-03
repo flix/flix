@@ -106,6 +106,11 @@ object Kind {
   case class CaseSet(sym: Symbol.RestrictableEnumSym) extends Kind
 
   /**
+    * Represents the kind of regions
+    */
+  case object Region extends Kind
+
+  /**
     * Represents the kind of region flavors.
     */
   case object Flavor extends Kind
