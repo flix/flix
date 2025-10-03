@@ -58,6 +58,8 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
+    case Type.AbstractRegionToEff(_, tpe, _) => tpe.typeVars
+    case Type.RegionToEff(_, tpe, _) => tpe.typeVars
 
     case Type.JvmToType(tpe, _) => tpe.typeVars
     case Type.JvmToEff(tpe, _) => tpe.typeVars
@@ -77,6 +79,8 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
     case Type.AssocType(_, arg, _, _) => arg.effects // TODO ASSOC-TYPES throw error?
+    case Type.AbstractRegionToEff(_, tpe, _) => tpe.effects
+    case Type.RegionToEff(_, tpe, _) => tpe.effects
 
     case Type.JvmToType(tpe, _) => tpe.effects
     case Type.JvmToEff(tpe, _) => tpe.effects
@@ -96,6 +100,8 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
+    case Type.AbstractRegionToEff(_, tpe, _) => tpe.cases
+    case Type.RegionToEff(_, tpe, _) => tpe.cases
 
     case Type.JvmToType(tpe, _) => tpe.cases
     case Type.JvmToEff(tpe, _) => tpe.cases
@@ -128,6 +134,8 @@ sealed trait Type {
     case Type.Apply(t1, _, _) => t1.typeConstructor
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructor
     case Type.AssocType(_, _, _, _) => None // TODO ASSOC-TYPE danger!
+    case Type.AbstractRegionToEff(_, _, _) => None
+    case Type.RegionToEff(_, _, _) => None
     case Type.JvmToType(_, _) => None
     case Type.JvmToEff(_, _) => None
     case Type.UnresolvedJvmType(_, _) => None
@@ -158,6 +166,8 @@ sealed trait Type {
     case Type.Apply(t1, t2, _) => t1.typeConstructors ::: t2.typeConstructors
     case Type.Alias(_, _, tpe, _) => tpe.typeConstructors
     case Type.AssocType(_, _, _, _) => Nil // TODO ASSOC-TYPE danger!
+    case Type.AbstractRegionToEff(_, tpe, _) => tpe.typeConstructors
+    case Type.RegionToEff(_, tpe, _) => tpe.typeConstructors
     case Type.JvmToType(_, _) => Nil
     case Type.JvmToEff(_, _) => Nil
     case Type.UnresolvedJvmType(_, _) => Nil
@@ -206,6 +216,12 @@ sealed trait Type {
     case Type.AssocType(sym, args, kind, loc) =>
       // Performance: Few associated types, not worth optimizing.
       Type.AssocType(sym, args.map(_.map(f)), kind, loc)
+
+    case Type.AbstractRegionToEff(op, tpe, loc) =>
+      Type.AbstractRegionToEff(op, tpe.map(f), loc)
+
+    case Type.RegionToEff(op, tpe, loc) =>
+      Type.RegionToEff(op, tpe.map(f), loc)
 
     case Type.JvmToType(tpe, loc) =>
       Type.JvmToType(tpe.map(f), loc)
@@ -256,6 +272,8 @@ sealed trait Type {
     case Type.Apply(tpe1, tpe2, _) => tpe1.size + tpe2.size + 1
     case Type.Alias(_, _, tpe, _) => tpe.size
     case Type.AssocType(_, arg, _, _) => arg.size + 1
+    case Type.AbstractRegionToEff(_, tpe, _) => tpe.size + 1
+    case Type.RegionToEff(_, tpe, _) => tpe.size + 1
     case Type.JvmToType(tpe, _) => tpe.size + 1
     case Type.JvmToEff(tpe, _) => tpe.size + 1
     case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.map(_.size).sum + 1
@@ -1254,6 +1272,8 @@ object Type {
     case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAliases(tpe1), eraseAliases(tpe2), loc)
     case Type.Alias(_, _, tpe, _) => eraseAliases(tpe)
     case Type.AssocType(cst, args, kind, loc) => Type.AssocType(cst, args.map(eraseAliases), kind, loc)
+    case Type.AbstractRegionToEff(op, tpe, loc) => Type.AbstractRegionToEff(op, eraseAliases(tpe), loc)
+    case Type.RegionToEff(op, tpe, loc) => Type.RegionToEff(op, eraseAliases(tpe), loc)
     case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAliases(tpe), loc)
     case Type.JvmToEff(tpe, loc) => Type.JvmToEff(eraseAliases(tpe), loc)
     case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(eraseAliases), loc)
@@ -1293,6 +1313,8 @@ object Type {
     case Type.Apply(tpe1, tpe2, _) => hasJvmType(tpe1) || hasJvmType(tpe2)
     case Type.Alias(_, _, t, _) => hasJvmType(t)
     case Type.AssocType(_, arg, _, _) => hasJvmType(arg)
+    case Type.AbstractRegionToEff(_, t, _) => hasJvmType(t)
+    case Type.RegionToEff(_, t, _) => hasJvmType(t)
     case Type.JvmToType(_, _) => true
     case Type.JvmToEff(_, _) => true
     case Type.UnresolvedJvmType(_, _) => true
@@ -1310,6 +1332,8 @@ object Type {
     case Type.Apply(tpe1, tpe2, _) => hasError(tpe1) || hasError(tpe2)
     case Type.Alias(_, _, t, _) => hasError(t)
     case Type.AssocType(_, arg, _, _) => hasError(arg)
+    case Type.AbstractRegionToEff(_, t, _) => hasError(t)
+    case Type.RegionToEff(_, t, _) => hasError(t)
     case Type.JvmToType(_, _) => false
     case Type.JvmToEff(_, _) => false
     case Type.UnresolvedJvmType(_, _) => false
