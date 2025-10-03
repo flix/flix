@@ -91,11 +91,19 @@ object TypeReduction2 {
           newTpe
       }
 
-    case Type.AbstractRegionToEff(op, tpe, loc) =>
+    case Type.AbstractRegionToEff(op0, tpe, loc) =>
       reduce(tpe, scope, renv) match {
-        case Type.Apply(reg@Type.Cst(TypeConstructor.FlavorToRegion(_), _), Type.Cst(TypeConstructor.Flavor(f), _), _) =>
-
+        case reg@Type.Apply(Type.Cst(TypeConstructor.FlavorToRegion(_), _), Type.Cst(TypeConstructor.Flavor(f), _), _) =>
+          reduceRegionOp(op0, f) match {
+            case None => Type.mkPure(loc)
+            case Some(op) => Type.RegionToEff(op, reg, loc)
+          }
+        case t => Type.AbstractRegionToEff(op0, t, loc)
       }
+
+    case Type.RegionToEff(op, tpe, loc) =>
+      val t = reduce(tpe, scope, renv)
+      Type.RegionToEff(op, t, loc)
 
     case Type.JvmToType(tpe, loc) =>
       reduce(tpe, scope, renv) match {
@@ -331,8 +339,25 @@ object TypeReduction2 {
     case Type.AssocType(_, _, _, _) => false
   }
 
-  private def reduceRegionOp(op: Type.AbstractRegionOp, f: TypeConstructor.RegionFlavor): Type.RegionOp = {
-    // TODO
+  private def reduceRegionOp(op: Type.AbstractRegionOp, f: TypeConstructor.RegionFlavor): Option[Type.RegionOp] = (op, f) match {
+    // Low-fidelity: all operations map to Heap
+    case (Type.AbstractRegionOp.GetAlloc, TypeConstructor.RegionFlavor.LowFidelity) => Some(Type.RegionOp.Heap)
+    case (Type.AbstractRegionOp.GetRead, TypeConstructor.RegionFlavor.LowFidelity) => Some(Type.RegionOp.Heap)
+    case (Type.AbstractRegionOp.GetWrite, TypeConstructor.RegionFlavor.LowFidelity) => Some(Type.RegionOp.Heap)
+
+    // High-fidelity: operations map to their corresponding operations
+    case (Type.AbstractRegionOp.GetAlloc, TypeConstructor.RegionFlavor.HighFidelity) => Some(Type.RegionOp.Alloc)
+    case (Type.AbstractRegionOp.GetRead, TypeConstructor.RegionFlavor.HighFidelity) => Some(Type.RegionOp.Read)
+    case (Type.AbstractRegionOp.GetWrite, TypeConstructor.RegionFlavor.HighFidelity) => Some(Type.RegionOp.Write)
+
+    // Exclusive: operations map to their corresponding operations
+    case (Type.AbstractRegionOp.GetAlloc, TypeConstructor.RegionFlavor.Exclusive) => Some(Type.RegionOp.Alloc)
+    case (Type.AbstractRegionOp.GetRead, TypeConstructor.RegionFlavor.Exclusive) => Some(Type.RegionOp.Read)
+    case (Type.AbstractRegionOp.GetWrite, TypeConstructor.RegionFlavor.Exclusive) => Some(Type.RegionOp.Write)
+
+    // XWrite: only valid for Exclusive, otherwise None
+    case (Type.AbstractRegionOp.XWrite, TypeConstructor.RegionFlavor.Exclusive) => Some(Type.RegionOp.Write)
+    case (Type.AbstractRegionOp.XWrite, _) => None
   }
 
   /** A lookup result of a Java field. */
