@@ -1386,7 +1386,7 @@ object Type {
       val t1 = purifyRegion(tpe1, sym)
       val t2 = purifyRegion(tpe2, sym)
       Type.Apply(t1, t2, loc)
-    case Alias(_, _, tpe, loc) =>
+    case Alias(_, _, tpe, _) =>
       purifyRegion(tpe, sym)
     case AssocType(symUse, arg, kind, loc) =>
       val a = purifyRegion(arg, sym)

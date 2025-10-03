@@ -154,6 +154,28 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("DanglingAnnotation.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |@Internal
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingModifier.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |pub
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("DanglingDocComment.01") {
     val input =
       """
@@ -314,6 +336,28 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |type alias M[k] = Map[k, Result[String, ]
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("TypeAlias.03") {
+    val input =
+      """
+        |type alias Magic
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("TypeAlias.04") {
+    val input =
+      """
+        |type alias Magic =
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
