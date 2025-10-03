@@ -458,9 +458,7 @@ object Inliner {
       case (MatchResult.Unknown, _) | (_, MatchResult.Unknown) =>
         MatchResult.Unknown
       case (MatchResult.Match(binders1), MatchResult.Match(binders2)) =>
-        if (binders1.isEmpty) mr2
-        else if (binders2.isEmpty) mr1
-        else MatchResult.Match(binders1 ++ binders2)
+        MatchResult.Match(binders1 ++ binders2)
     }
 
   }
