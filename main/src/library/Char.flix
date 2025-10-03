@@ -159,7 +159,7 @@ mod Char {
     /// Returns the code point representation of Char `c`.
     ///
     pub def toBmpCodePoint(c: Char): Int32 =
-        unchecked_cast(c as Int32)
+        unchecked_cast(c as Int16) |> Int16.toInt32
 
     ///
     /// Returns the supplementary code point value of the surrogate pair `high` and `low`.
