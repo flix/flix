@@ -52,6 +52,8 @@ sealed trait UnkindedType {
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
     case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
+    case UnkindedType.AbstractRegionToEff(op, tpe, loc) => UnkindedType.AbstractRegionToEff(op, tpe.map(f), loc)
+    case UnkindedType.RegionToEff(op, tpe, loc) => UnkindedType.RegionToEff(op, tpe.map(f), loc)
     case t: UnkindedType.Error => t
   }
 
@@ -106,6 +108,9 @@ sealed trait UnkindedType {
     case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
     // For associated types we cannot yet reduce, so we are conservative and say none.
     case UnkindedType.AssocType(_, _, _) => SortedSet.empty
+    // For region to effect conversions we return the type vars from the region type.
+    case UnkindedType.AbstractRegionToEff(_, tpe, _) => tpe.definiteTypeVars
+    case UnkindedType.RegionToEff(_, tpe, _) => tpe.definiteTypeVars
 
     case UnkindedType.Error(_) => SortedSet.empty
   }
@@ -350,6 +355,30 @@ object UnkindedType {
   }
 
   /**
+    * A fully resolved abstract region to effect conversion.
+    */
+  case class AbstractRegionToEff(op: Type.AbstractRegionOp, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case AbstractRegionToEff(op2, tpe2, _) => op == op2 && tpe == tpe2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(op, tpe)
+  }
+
+  /**
+    * A fully resolved region to effect conversion.
+    */
+  case class RegionToEff(op: Type.RegionOp, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case RegionToEff(op2, tpe2, _) => op == op2 && tpe == tpe2
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(op, tpe)
+  }
+
+  /**
     * A fully resolved error type.
     */
   case class Error(loc: SourceLocation) extends UnkindedType {
@@ -583,6 +612,8 @@ object UnkindedType {
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
     case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
+    case AbstractRegionToEff(op, tpe, loc) => AbstractRegionToEff(op, eraseAliases(tpe), loc)
+    case RegionToEff(op, tpe, loc) => RegionToEff(op, eraseAliases(tpe), loc)
     case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)

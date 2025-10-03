@@ -258,6 +258,8 @@ object Resolver {
     case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
     case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
     case _: UnkindedType.UnappliedAssocType => Nil
+    case _: UnkindedType.UnappliedAbstractRegionToEff => Nil
+    case _: UnkindedType.UnappliedRegionToEff => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
@@ -272,6 +274,8 @@ object Resolver {
     case _: UnkindedType.Error => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
     case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
+    case abstractRegionToEff: UnkindedType.AbstractRegionToEff => throw InternalCompilerException("unexpected applied abstract region to effect", abstractRegionToEff.loc)
+    case regionToEff: UnkindedType.RegionToEff => throw InternalCompilerException("unexpected applied region to effect", regionToEff.loc)
   }
 
   /**
@@ -2760,6 +2764,46 @@ object Resolver {
                 val error = ResolutionError.IllegalAssocTypeApplication(tpe0.loc)
                 sctx.errors.add(error)
                 Validation.Success(UnkindedType.Error(loc))
+            }
+        }
+
+      case UnkindedType.UnappliedAbstractRegionToEff(op, loc) =>
+        targs match {
+          // Case 1: The abstract region to effect is under-applied.
+          case Nil =>
+            val error = ResolutionError.UnderAppliedAbstractRegionToEff(op, loc)
+            sctx.errors.add(error)
+            Validation.Success(UnkindedType.Error(loc))
+
+          // Case 2: The abstract region to effect is fully applied.
+          // Apply the first type inside the abstract region to effect, then apply any leftover types.
+          case targHead :: targTail =>
+            val targHeadVal = finishResolveType(targHead, taenv)
+            val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
+            mapN(targHeadVal, targTailVal) {
+              case (targHd, targTl) =>
+                val abstractRegionToEff = UnkindedType.AbstractRegionToEff(op, targHd, tpe0.loc)
+                UnkindedType.mkApply(abstractRegionToEff, targTl, tpe0.loc)
+            }
+        }
+
+      case UnkindedType.UnappliedRegionToEff(op, loc) =>
+        targs match {
+          // Case 1: The region to effect is under-applied.
+          case Nil =>
+            val error = ResolutionError.UnderAppliedRegionToEff(op, loc)
+            sctx.errors.add(error)
+            Validation.Success(UnkindedType.Error(loc))
+
+          // Case 2: The region to effect is fully applied.
+          // Apply the first type inside the region to effect, then apply any leftover types.
+          case targHead :: targTail =>
+            val targHeadVal = finishResolveType(targHead, taenv)
+            val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
+            mapN(targHeadVal, targTailVal) {
+              case (targHd, targTl) =>
+                val regionToEff = UnkindedType.RegionToEff(op, targHd, tpe0.loc)
+                UnkindedType.mkApply(regionToEff, targTl, tpe0.loc)
             }
         }
 

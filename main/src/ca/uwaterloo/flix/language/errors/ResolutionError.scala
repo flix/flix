@@ -1060,6 +1060,54 @@ object ResolutionError {
   }
 
   /**
+    * An error raised to indicate an under-applied abstract region to effect conversion.
+    *
+    * @param op the abstract region operation.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedAbstractRegionToEff(op: Type.AbstractRegionOp, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied abstract region to effect conversion: ${op}"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Under-applied abstract region to effect conversion '${red(op.toString)}'.
+         |
+         |${code(loc, "Under-applied abstract region to effect conversion.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Abstract region to effect conversions must be fully applied."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate an under-applied region to effect conversion.
+    *
+    * @param op the region operation.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedRegionToEff(op: Type.RegionOp, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied region to effect conversion: ${op}"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Under-applied region to effect conversion '${red(op.toString)}'.
+         |
+         |${code(loc, "Under-applied region to effect conversion.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Region to effect conversions must be fully applied."
+    })
+
+  }
+
+  /**
     * An error raised to indicate an under-applied type alias.
     *
     * @param sym the type alias.
