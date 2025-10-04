@@ -124,24 +124,12 @@ sealed trait Completion {
         kind = CompletionItemKind.Snippet
       )
 
-    case Completion.MagicDefCompletion(label, snippet, decl, range, priority, qualified, inScope) =>
-      val qualifiedName = decl.sym.toString
-      //val label = if (qualified) qualifiedName else decl.sym.name
-      //val snippet = CompletionUtils.getApplySnippet(label, decl.spec.fparams.init)
-      val description = if (!qualified) {
-        Some(if (inScope) qualifiedName else s"use $qualifiedName")
-      } else None
-      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), description)
-      //      val additionalTextEdit = if (inScope) Nil else List(Completion.mkTextEdit(ap, s"use $qualifiedName"))
-      println(label)
-      println(range)
-      println(snippet)
-      println("--")
+    case Completion.MagicDefCompletion(decl, label, snippet, range, priority) =>
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), None)
       CompletionItem(
         label = label,
         labelDetails = Some(labelDetails),
-        sortText = Priority.toSortText(priority, qualifiedName),
-        //filterText = Some(CompletionUtils.getFilterTextForName(qualifiedName)),
+        sortText = Priority.toSortText(priority, decl.sym.toString),
         textEdit = TextEdit(range, snippet),
         detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
         documentation = Some(decl.spec.doc.text),
@@ -652,13 +640,13 @@ object Completion {
   /**
     * Represents a Magic Def completion
     *
-    * @param decl      the def decl.
-    * @param range     the range of the completion.
-    * @param priority  the priority of the completion.
-    * @param qualified indicate whether to use a qualified label.
-    * @param inScope   indicate whether to the def is inScope.
+    * @param decl     the declaration.
+    * @param label    the label.
+    * @param snippet  the snippet.
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
     */
-  case class MagicDefCompletion(label: String, snippet: String, decl: TypedAst.Def, range: Range, priority: Priority,  qualified: Boolean, inScope: Boolean) extends Completion {
+  case class MagicDefCompletion(decl: TypedAst.Def, label: String, snippet: String, range: Range, priority: Priority) extends Completion {
     override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
   }
 

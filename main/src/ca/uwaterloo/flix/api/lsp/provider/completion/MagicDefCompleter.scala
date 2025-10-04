@@ -37,7 +37,7 @@ object MagicDefCompleter {
     val matchedDefs = root.defs.values.filter {
       case defn =>
         inCompanionMod(sym, defn) &&                        // Include only defs in the companion module.
-          defn.spec.fparams.nonEmpty &&                     // Include only defs that take at least one argument. (Ideally the last argument would unify with tpe- but we don't yet check that).
+          defn.spec.fparams.nonEmpty &&                     // Include only defs that take at least one argument.
           CompletionUtils.isAvailable(defn.spec) &&         // Include only defs that are public.
           CompletionUtils.fuzzyMatch(prefix, defn.sym.text) // Include only defs that fuzzy match what the user has written.
     }
@@ -46,7 +46,7 @@ object MagicDefCompleter {
       case defn =>
         val label = baseExp + "." + defn.sym.text
         val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
-        Completion.MagicDefCompletion(label, snippet, defn, range, Priority.Lower(0), qualified = false, inScope = false)
+        Completion.MagicDefCompletion(defn, label, snippet, range, Priority.Lower(0))
     }
   }
 
