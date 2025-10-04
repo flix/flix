@@ -16,7 +16,17 @@
 package ca.uwaterloo.flix.language.ast
 
 // MATT docs
-sealed trait RegionFlavor
+sealed trait RegionFlavor extends Ordered[RegionFlavor] {
+  override def compare(that: RegionFlavor): Int = {
+    def ordinal(f: RegionFlavor): Int = f match {
+      case RegionFlavor.Lofi => 0
+      case RegionFlavor.Hifi => 1
+      case RegionFlavor.XHifi => 2
+    }
+
+    ordinal(this) - ordinal(that)
+  }
+}
 
 // MATT docs
 object RegionFlavor {
