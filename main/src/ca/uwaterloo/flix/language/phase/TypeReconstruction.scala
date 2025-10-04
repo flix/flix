@@ -193,9 +193,6 @@ object TypeReconstruction {
       val bnd = TypedAst.Binder(sym, boundType)
       TypedAst.Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.Region(tpe, loc) =>
-      TypedAst.Expr.Region(tpe, loc)
-
     case KindedAst.Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
       val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty))

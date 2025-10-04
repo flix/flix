@@ -162,8 +162,6 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
 
-    case Expr.Region(_, _) => exp0
-
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       Expr.Scope(sym, regionVar, e, tpe, eff, loc)

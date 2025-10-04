@@ -982,9 +982,6 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.Region(tpe, loc) =>
-      Validation.Success(ResolvedAst.Expr.Region(tpe, loc))
-
     case NamedAst.Expr.Scope(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope

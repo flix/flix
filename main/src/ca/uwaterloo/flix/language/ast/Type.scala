@@ -1373,6 +1373,7 @@ object Type {
     case Constant.Str(_) => Type.Str
     case Constant.Regex(_) => Type.Regex
     case Constant.RecordEmpty => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
+    case Constant.Static => Type.Apply(Type.Cst(TypeConstructor.RegionToStar, SourceLocation.Unknown), Type.IO, SourceLocation.Unknown)
   }
 
   /**

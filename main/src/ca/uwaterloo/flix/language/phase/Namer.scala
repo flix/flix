@@ -677,9 +677,6 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
-    case DesugaredAst.Expr.Region(tpe, loc) =>
-      NamedAst.Expr.Region(tpe, loc)
-
     case DesugaredAst.Expr.Scope(ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
       val regSym = Symbol.freshRegionSym(ident)

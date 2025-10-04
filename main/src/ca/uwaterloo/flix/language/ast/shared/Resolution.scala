@@ -32,6 +32,4 @@ object Resolution {
   case class LocalDef(sym: Symbol.VarSym, fparams: List[ResolvedAst.FormalParam]) extends Resolution
 
   case class TypeVar(sym: Symbol.UnkindedTypeVarSym) extends Resolution
-
-  case class Region(sym: Symbol.RegionSym) extends Resolution
 }

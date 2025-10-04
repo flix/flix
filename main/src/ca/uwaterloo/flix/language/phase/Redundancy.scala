@@ -455,9 +455,6 @@ object Redundancy {
         case (acc, (s, shadow)) => (acc ++ shadow) - s
       }
 
-    case Expr.Region(_, _) =>
-      Used.empty
-
     case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym

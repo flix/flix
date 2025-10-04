@@ -119,9 +119,6 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _) =>
-      ()
-
     case Expr.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 

@@ -403,6 +403,8 @@ object SemanticTokensProvider {
       case Constant.Regex(_) => Iterator(SemanticToken(SemanticTokenType.Regexp, Nil, loc))
 
       case Constant.RecordEmpty => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
+
+      case Constant.Static => Iterator(SemanticToken(SemanticTokenType.Type, Nil, loc))
     }
 
     case Expr.Lambda(fparam, exp, _, _) =>
@@ -453,9 +455,6 @@ object SemanticTokensProvider {
         visitExp(exp1),
         visitExp(exp2)
       )
-
-    case Expr.Region(_, _) =>
-      Iterator.empty
 
     case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)

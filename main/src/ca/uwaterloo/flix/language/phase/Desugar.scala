@@ -753,8 +753,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegionToStar(Type.IO, loc)
-      DesugaredAst.Expr.Region(tpe, loc)
+      DesugaredAst.Expr.Cst(Constant.Static, loc)
 
     case WeededAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
