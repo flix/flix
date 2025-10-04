@@ -372,38 +372,6 @@ mod TestFoldable {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = (Nil: List[Unit]);
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let l = 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let l = 3 :: 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // toMutSet                                                                //
     /////////////////////////////////////////////////////////////////////////////

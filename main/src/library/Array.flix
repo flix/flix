@@ -221,15 +221,6 @@ mod Array {
             let i = length(arr) - 1;
             Some(loop(i, Nec.singleton(get(i, arr))))
         }
-
-    ///
-    /// Returns `a` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), a);
-        d
-
     ///
     /// Returns `a` as a Vector.
     ///

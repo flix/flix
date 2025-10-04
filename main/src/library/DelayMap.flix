@@ -807,14 +807,6 @@ mod DelayMap {
         RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
 
     ///
-    /// Returns the map `m` as a MutDeque of key-value pairs.
-    ///
-    @Experimental
-    pub def toMutDeque(rc: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ r =
-        let m1 = DelayMap.toMap(m);
-        Map.toMutDeque(rc, m1)
-
-    ///
     /// Applies `f` to every `(key, value)` of `m`.
     ///
     @Experimental
