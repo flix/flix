@@ -782,7 +782,7 @@ mod DelayMap {
     ///
     @Experimental @Parallel
     pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, Ref.fresh(rc, toMap(m)))
+        new MutMap @ rc { rc = rc, inner = toMap(m) }
 
     ///
     /// Returns the map `m` as a set of key-value pairs.

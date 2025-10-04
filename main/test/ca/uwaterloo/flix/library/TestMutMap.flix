@@ -1,5 +1,5 @@
 mod TestMutMap {
-    use MutMap.MutMap;
+
     use Assert.{assertEq, assertTrue, assertFalse};
 
     /////////////////////////////////////////////////////////////////////////////
