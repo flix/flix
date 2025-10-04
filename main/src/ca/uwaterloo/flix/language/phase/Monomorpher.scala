@@ -160,6 +160,14 @@ object Monomorpher {
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, isGround = true)
 
+      case Type.RegionToEff(op, arg0, loc) =>
+        val arg = apply(arg0)
+        Type.RegionToEff(op, arg, loc)
+
+      case Type.AbstractRegionToEff(op, arg0, loc) =>
+        val arg = apply(arg0)
+        Type.AbstractRegionToEff(op, arg, loc)
+
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
       case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)

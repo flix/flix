@@ -1155,6 +1155,26 @@ object Kinder {
           }
       }
 
+    case UnkindedType.RegionToEff(op, arg0, loc) =>
+      unify(Kind.Eff, expectedKind) match {
+        case Some(kind) =>
+          val arg = visitType(arg0, Kind.Region, kenv, root)
+          Type.RegionToEff(op, arg, loc)
+        case None =>
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc))
+          Type.freshError(Kind.Error, loc)
+      }
+
+    case UnkindedType.AbstractRegionToEff(op, arg0, loc) =>
+      unify(Kind.Eff, expectedKind) match {
+        case Some(kind) =>
+          val arg = visitType(arg0, Kind.Region, kenv, root)
+          Type.AbstractRegionToEff(op, arg, loc)
+        case None =>
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc))
+          Type.freshError(Kind.Error, loc)
+      }
+
     case UnkindedType.Arrow(eff0, arity, loc) =>
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
@@ -1490,6 +1510,12 @@ object Kinder {
       val trt = root.traits(cst.sym.trt)
       val kind = getTraitKind(trt)
       inferType(arg, kind, kenv0, root)
+
+    case UnkindedType.RegionToEff(_, arg, _) =>
+      inferType(arg, Kind.Region, kenv0, root)
+
+    case UnkindedType.AbstractRegionToEff(_, arg, _) =>
+      inferType(arg, Kind.Region, kenv0, root)
 
     case UnkindedType.Arrow(eff, _, _) =>
       val effKenvs = eff.map(inferType(_, Kind.Eff, kenv0, root)).toList
