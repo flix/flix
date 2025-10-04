@@ -677,12 +677,14 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
-    case DesugaredAst.Expr.Region(ident, exp, loc) =>
+    case DesugaredAst.Expr.Region(ident, flav, exp, loc) =>
       // Introduce a rigid region variable for the region.
       val regSym = Symbol.freshRegionSym(ident)
 
       // Create a new scope for the region.
       val newScope = scope.enter(regSym)
+
+      val f = visitType(flav)
 
       // Introduce a fresh variable symbol for the region.
       // The fresh variable is considered to be in the region.
@@ -690,7 +692,7 @@ object Namer {
 
       // Visit the body in the inner scope
       val e = visitExp(exp)(newScope, sctx, flix)
-      NamedAst.Expr.Region(sym, regSym, e, loc)
+      NamedAst.Expr.Region(sym, regSym, f, e, loc)
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)

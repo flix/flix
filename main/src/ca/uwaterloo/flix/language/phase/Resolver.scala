@@ -987,12 +987,16 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
+    case NamedAst.Expr.Region(sym, regSym, flav, exp, loc) =>
+      val fVal = mapN(resolveType(flav, None, Wildness.ForbidWild, scp0, taenv, ns0, root)) {
+        case UnkindedType.Cst(TypeConstructor.Flavor(rf), _) => rf
+        case _ => RegionFlavor.Lofi // MATT should throw error
+      }
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
       val eVal = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Region(sym, regSym, e, loc)
+      mapN(fVal, eVal) {
+        case (f, e) => ResolvedAst.Expr.Region(sym, regSym, f, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>

@@ -2118,6 +2118,8 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordRegion)
       nameUnqualified(NAME_VARIABLE)
+      expect(TokenKind.KeywordOf)
+      nameUnqualified(NAME_MODULE)
       if (at(TokenKind.CurlyL)) {
         block()
       }
