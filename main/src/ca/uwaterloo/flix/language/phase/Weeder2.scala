@@ -888,7 +888,7 @@ object Weeder2 {
         case TreeKind.Expr.IfThenElse => visitIfThenElseExpr(tree)
         case TreeKind.Expr.Statement => visitStatementExpr(tree)
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
-        case TreeKind.Expr.Scope => visitScopeExpr(tree)
+        case TreeKind.Expr.Region => visitScopeExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
         case TreeKind.Expr.TypeMatch => visitTypeMatchExpr(tree)
         case TreeKind.Expr.RestrictableChoose
@@ -1376,10 +1376,10 @@ object Weeder2 {
     }
 
     private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Scope)
+      expect(tree, TreeKind.Expr.Region)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
       mapN(pickNameIdent(tree), block) {
-        (ident, block) => Expr.Scope(ident, block, tree.loc)
+        (ident, block) => Expr.Region(ident, block, tree.loc)
       }
     }
 

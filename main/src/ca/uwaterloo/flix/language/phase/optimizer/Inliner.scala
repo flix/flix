@@ -293,11 +293,11 @@ object Inliner {
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
     }
 
-    case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, rvar, exp, tpe, eff, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
       val e = visitExp(exp, ctx)
-      Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
+      Expr.Region(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       visitExp(exp1, ctx0) match {

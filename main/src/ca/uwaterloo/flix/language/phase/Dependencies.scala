@@ -197,7 +197,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Scope(bnd, _, exp, tpe, eff, _) =>
+    case Expr.Region(bnd, _, exp, tpe, eff, _) =>
       visitBinder(bnd)
       visitExp(exp)
       visitType(tpe)
