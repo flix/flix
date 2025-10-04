@@ -1993,31 +1993,39 @@ mod TestChain {
 
     @Test
     def shuffle01(): Unit \ Assert + NonDet =
-        let l: List[Int32] = Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 0, Chain.length(c));
-        assertEq(expected = Set#{}, Chain.toSet(c))
+        run {
+            let l: List[Int32] = Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 0, Chain.length(c));
+            assertEq(expected = Set#{}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
-        let l = 1 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 1, Chain.length(c));
-        assertEq(expected = Set#{1}, Chain.toSet(c))
+        run {
+            let l = 1 :: Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 1, Chain.length(c));
+            assertEq(expected = Set#{1}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
-        let l = 1 :: 2 :: 3 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 3, Chain.length(c));
-        assertEq(expected = Set#{1, 2, 3}, Chain.toSet(c))
+        run {
+            let l = 1 :: 2 :: 3 :: Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 3, Chain.length(c));
+            assertEq(expected = Set#{1, 2, 3}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle04(): Unit \ Assert + NonDet =
-        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 10, Chain.length(c));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, Chain.toSet(c))
+        run {
+            let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 10, Chain.length(c));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
 }
 

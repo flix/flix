@@ -2893,35 +2893,43 @@ mod TestList {
 
     @Test
     def shuffle01(): Unit \ {Assert, NonDet} =
-        let l1: List[Int32] = Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1: List[Int32] = Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 0, List.length(l2));
-        assertEq(expected = Set#{}, List.toSet(l2))
+            assertEq(expected = 0, List.length(l2));
+            assertEq(expected = Set#{}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ {Assert, NonDet} =
-        let l1 = 1 :: Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1 = 1 :: Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 1, List.length(l2));
-        assertEq(expected = Set#{1}, List.toSet(l2))
+            assertEq(expected = 1, List.length(l2));
+            assertEq(expected = Set#{1}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ {Assert, NonDet} =
-        let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1 = 1 :: 2 :: 3 :: Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 3, List.length(l2));
-        assertEq(expected = Set#{1, 2, 3}, List.toSet(l2))
+            assertEq(expected = 3, List.length(l2));
+            assertEq(expected = Set#{1, 2, 3}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle04(): Unit \ {Assert, NonDet} =
-        let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 10, List.length(l2));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, List.toSet(l2))
+            assertEq(expected = 10, List.length(l2));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     /////////////////////////////////////////////////////////////////////////////
     // Literals                                                                //

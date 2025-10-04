@@ -1234,42 +1234,50 @@ mod TestMutDeque {
 
     @Test
     def shuffle01(): Unit \ {Assert, NonDet} = region rc {
-        let l: List[Int32] = Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l: List[Int32] = Nil;
+            let d1 = List.toMutDeque(rc, l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 0, MutDeque.size(d2));
-        assertEq(expected = Set#{}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 0, MutDeque.size(d2));
+            assertEq(expected = Set#{}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle02(): Unit \ {Assert, NonDet} = region rc {
-        let l = 1 :: Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l = 1 :: Nil;
+            let d1 = List.toMutDeque(rc, l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 1, MutDeque.size(d2));
-        assertEq(expected = Set#{1}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 1, MutDeque.size(d2));
+            assertEq(expected = Set#{1}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle03(): Unit \ {Assert, NonDet} = region rc {
-        let l = 1 :: 2 :: 3 :: Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l = 1 :: 2 :: 3 :: Nil;
+            let d1 = List.toMutDeque(rc, l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 3, MutDeque.size(d2));
-        assertEq(expected = Set#{1, 2, 3}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 3, MutDeque.size(d2));
+            assertEq(expected = Set#{1, 2, 3}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle04(): Unit \ {Assert, NonDet} = region rc {
-        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let d1 = List.toMutDeque(rc, l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 10, MutDeque.size(d2));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 10, MutDeque.size(d2));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
 }

@@ -301,6 +301,7 @@ class Flix {
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "Shuffle.flix" -> LocalResource.get("/src/library/Shuffle.flix"),
     "SocketAddr.flix" -> LocalResource.get("/src/library/SocketAddr.flix"),
     "SocketAddrV4.flix" -> LocalResource.get("/src/library/SocketAddrV4.flix"),
     "SocketAddrV6.flix" -> LocalResource.get("/src/library/SocketAddrV6.flix"),
