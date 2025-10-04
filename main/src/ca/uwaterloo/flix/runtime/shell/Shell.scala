@@ -288,7 +288,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
+        flix.addSourceCode(name, s)(SecurityContext.Unrestricted)
 
         // And try to compile!
         compile(progress = false).toResult match {
@@ -316,7 +316,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
              |  Assert.runWithIO(_ -> println($s))
              |)
              |""".stripMargin
-        flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
+        flix.addSourceCode("<shell>", src)(SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
         flix.remSourceCode("<shell>")

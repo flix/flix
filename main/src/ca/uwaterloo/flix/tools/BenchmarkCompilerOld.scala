@@ -248,7 +248,7 @@ object BenchmarkCompilerOld {
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     flix.addSourceCode("Test.Exp.Fixpoint.PQuery.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
     flix.addSourceCode("Test.Exp.Fixpoint.PSolve.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
   }

@@ -882,7 +882,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def updateStaleSources(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
-      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
+      implicit val defaultSctx: SecurityContext = SecurityContext.Unrestricted
 
       for (path <- sourcePaths if hasChanged(path)) {
         flix.addFlix(path)
