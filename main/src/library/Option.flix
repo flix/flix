@@ -581,10 +581,4 @@ mod Option {
         case Some(x) => Iterator.singleton(rc, x)
     }
 
-    ///
-    /// Returns an iterator over `o` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], o: Option[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, o) |> Iterator.zipWithIndex
-
 }

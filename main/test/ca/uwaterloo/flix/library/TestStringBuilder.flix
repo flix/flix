@@ -521,24 +521,6 @@ mod TestStringBuilder {
         StringBuilder.appendString("abc", sb);
         assertEq(expected = 'a' :: 'b' :: 'c' :: Nil, StringBuilder.iterator(rc, sb) |> Iterator.toList)
     }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        let sb = StringBuilder.empty(rc);
-        assertEq(expected = Nil, StringBuilder.enumerator(rc, sb) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        let sb = StringBuilder.empty(rc);
-        StringBuilder.appendString("abc", sb);
-        assertEq(expected = (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil, StringBuilder.enumerator(rc, sb) |> Iterator.toList)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////

@@ -593,12 +593,6 @@ mod Set {
         RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
 
     ///
-    /// Returns an iterator over `s` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, s) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///

@@ -1624,26 +1624,6 @@ mod TestChain {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        assertEq(expected = (Nil: List[(Int32, Int32)]), Chain.empty() |> Chain.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator03(): Unit \ Assert = region rc {
-        assertEq(expected = List.range(-100, 100) |> List.zipWithIndex, Chain.range(-100, 100) |> Chain.enumerator(rc) |> Iterator.toList)
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // toNel.Nel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

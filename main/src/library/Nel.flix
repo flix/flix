@@ -648,12 +648,6 @@ mod Nel {
        List.iterator(rc, x :: xs)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// non-empty list `l`.
     ///

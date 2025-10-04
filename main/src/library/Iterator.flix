@@ -400,12 +400,6 @@ mod Iterator {
         map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
-    /// Alias for `zipWithIndex`.
-    ///
-    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
-        zipWithIndex(iter)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.

@@ -831,12 +831,6 @@ mod Nec {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `c` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, c) |> Iterator.zipWithIndex
-
-    ///
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ r =

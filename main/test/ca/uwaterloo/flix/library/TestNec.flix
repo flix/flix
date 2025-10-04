@@ -1215,23 +1215,6 @@ mod TestNec {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, necOf3(1, 2, 3) |> Nec.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        match Nec.range(-100, 100) {
-            case Some(nec) => assertEq(expected = List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100))), nec |> Nec.enumerator(rc) |> Iterator.toList)
-            case None      => unreachable!()
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // The following tests for sort functions correspond to those in TestList  //
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //

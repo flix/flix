@@ -1401,12 +1401,6 @@ mod List {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the association list `l` as a `DelayMap`.
     ///
     /// If `l` contains multiple mappings with the same key, `toDelayMap` does not
