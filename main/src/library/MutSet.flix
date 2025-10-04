@@ -110,12 +110,6 @@ mod MutSet {
         s->inner = Set.replace(src = src#src, dst = dst#dst, s->inner)
 
     ///
-    /// Applies the function `f` to every element in the mutable set `s`.
-    ///
-    pub def transform(f: a -> a \ ef, s: MutSet[a, r]): Unit \ { ef, r } with Order[a] =
-        s->inner = Set.map(f, s->inner)
-
-    ///
     /// Returns true if and only if `s` is the empty set.
     ///
     pub def isEmpty(s: MutSet[a, r]): Bool \ r =
@@ -175,18 +169,6 @@ mod MutSet {
         Set.size(s->inner)
 
     ///
-    /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2`.
-    ///
-    pub def isSubsetOf(s1: MutSet[a, r1], s2: MutSet[a, r2]): Bool \ { r1, r2 } with Order[a] =
-        Set.isSubsetOf(s1->inner, s2->inner)
-
-    ///
-    /// Returns true if and only if every element in the mutable set `s1` appears in the mutable set `s2` and `s1 != s2`.
-    ///
-    pub def isProperSubsetOf(s1: MutSet[a, r1], s2: MutSet[a, r2]): Bool \ { r1, r2 } with Order[a] =
-        Set.isProperSubsetOf(s1->inner, s2->inner)
-
-    ///
     /// Alias for `findLeft`.
     ///
     /// The function `f` must be pure.
@@ -242,26 +224,6 @@ mod MutSet {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
-    /// Applies `f` to all elements in the mutable set `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
-    ///
-    /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
-    ///
-    /// Returns `None` if `s` is the empty set.
-    ///
-    pub def reduceLeft(f: (a, a) -> a \ ef, s: MutSet[a, r]): Option[a] \ { ef, r } =
-        Set.reduceLeft(f, s->inner)
-
-    ///
-    /// Applies `f` to all elements in the mutable set `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
-    ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
-    ///
-    /// Returns `None` if `s` is the empty set.
-    ///
-    pub def reduceRight(f: (a, a) -> a \ ef, s: MutSet[a, r]): Option[a] \ { ef, r } =
-        Set.reduceRight(f, s->inner)
-
-    ///
     /// Returns the number of elements in the mutable set `s` that satisfy the predicate function `f`.
     ///
     /// Purity reflective: Runs in parallel when given a pure function `f`.
@@ -292,18 +254,6 @@ mod MutSet {
         new MutSet @ rc1 { rc = rc1, inner = s->inner }
 
     ///
-    /// Returns a pair of mutable sets `(s1, s2)` such that:
-    //
-    /// `s1` contains all elements of the mutable set `s` that satisfy the predicate function `f`.
-    /// `s2` contains all elements of the mutable set `s` that do not satisfy the predicate function `f`.
-    ///
-    /// The function `f` must be pure.
-    ///
-    pub def partition(rc1: Region[r1], rc2: Region[r2], f: a -> Bool, s: MutSet[a, r]): (MutSet[a, r1], MutSet[a, r2]) \ { r, r1, r2 } with Order[a] =
-        let (ys, zs) = Set.partition(f, s->inner);
-        (new MutSet @ rc1 { rc = rc1, inner = ys }, new MutSet @ rc2 { rc = rc2, inner = zs })
-
-    ///
     /// Returns the mutable set `s` as an immutable set.
     ///
     pub def toSet(s: MutSet[a, r]): Set[a] \ r =
@@ -325,10 +275,16 @@ mod MutSet {
         Set.toMap(s->inner)
 
     ///
-    /// Returns the mutable set `s` as a MutDeque.
+    /// Returns the mutable set `s` as an array.
     ///
-    pub def toMutDeque(rc1: Region[r1], s: MutSet[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        Set.toMutDeque(rc1, s->inner)
+    pub def toArray(rc: Region[r1], s: MutSet[a, r2]): Array[a, r1] \ { r1, r2 } =
+        Set.toArray(rc, s->inner)
+
+    ///
+    /// Returns the mutable set `s` as a vector.
+    ///
+    pub def toVector(s: MutSet[a, r]): Vector[a] \ r =
+        Set.toVector(s->inner)
 
     ///
     /// Applies `f` to every element of the mutable set `s`.
@@ -360,7 +316,7 @@ mod MutSet {
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(a: MutSet[a, r], b: MutSet[a, r]): Bool \ r with Order[a] =
-        MutSet.isSubsetOf(a, b) and MutSet.isSubsetOf(b, a)
+        Set.isSubsetOf(a->inner, b->inner) and Set.isSubsetOf(b->inner, a->inner)
 
     ///
     /// Returns the concatenation of the string representation
