@@ -73,6 +73,11 @@ instance MonadZip[Nel] {
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
+    redef head(l: Nel[a]): Option[a] = Some(Nel.head(l))
+    redef isEmpty(_: Nel[a]): Bool = false
+    redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
 }
 
 instance UnorderedFoldable[Nel] {

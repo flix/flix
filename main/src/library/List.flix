@@ -87,6 +87,11 @@ instance MonadZip[List] {
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
+    redef head(l: List[a]): Option[a] = List.head(l)
+    redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
 }
 
 instance UnorderedFoldable[List] {
