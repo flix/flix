@@ -15,9 +15,11 @@
  */
 package ca.uwaterloo.flix.api.lsp.provider.completion
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Range
-import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{QualifiedSym, Scope}
+import ca.uwaterloo.flix.language.ast.{Name, RigidityEnv, SourceLocation, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 
 object MagicDefCompleter {
 
@@ -45,30 +47,30 @@ object MagicDefCompleter {
     *
     * and so on.
     */
-  def getCompletions(ident: Name.Ident, tpe: Type, range: Range, loc: SourceLocation, root: TypedAst.Root): Iterable[Completion] = {
+  def getCompletions(ident: Name.Ident, tpe: Type, range: Range, loc: SourceLocation, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val prefix = ident.name               // the incomplete def name, i.e. the "bar" part.
     val baseExp = loc.text.getOrElse("")  // the expression, but as a string, i.e. the "foo" part.
 
     // Lookup defs for types (i.e. enums and structs) that have companion modules.
     tpe.typeConstructor match {
-      case Some(TypeConstructor.Enum(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, range, root)
-      case Some(TypeConstructor.Struct(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, range, root)
+      case Some(TypeConstructor.Enum(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, tpe, range, root)
+      case Some(TypeConstructor.Struct(sym, _)) => getCompletionsForSym(sym, prefix, baseExp, tpe, range, root)
       case _ => Nil
     }
   }
 
-  private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, range: Range, root: TypedAst.Root): Iterable[Completion] = {
+  private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, tpe: Type, range: Range, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val matchedDefs = root.defs.values.filter {
       case defn =>
-        inCompanionMod(sym, defn) &&                        // Include only defs in the companion module.
-          defn.spec.fparams.nonEmpty &&                     // Include only defs that take at least one argument.
-          CompletionUtils.isAvailable(defn.spec) &&         // Include only defs that are public.
-          CompletionUtils.fuzzyMatch(prefix, defn.sym.text) // Include only defs that fuzzy match what the user has written.
+        inCompanionMod(sym, defn) &&                           // Include only defs in the companion module.
+          CompletionUtils.isAvailable(defn.spec) &&            // Include only defs that are public.
+          CompletionUtils.fuzzyMatch(prefix, defn.sym.text) && // Include only defs that fuzzy match what the user has written.
+          expMatchesLastArgType(tpe, defn.spec, root)          // Include only defs whose last parameter type unifies with the expression type.
     }
 
     matchedDefs.map {
       case defn =>
-        val label = baseExp + "." + defn.sym.text           // VSCode requires the code to be a prefix of the label.
+        val label = baseExp + "." + defn.sym.text             // VSCode requires the code to be a prefix of the label.
         val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
         Completion.MagicDefCompletion(defn, label, snippet, range, Priority.Lower(0))
     }
@@ -78,6 +80,17 @@ object MagicDefCompleter {
     * Returns `true` if the given `defn` is in the companion module of `sym`.
     */
   private def inCompanionMod(sym: QualifiedSym, defn: TypedAst.Def): Boolean = sym.namespace ::: sym.name :: Nil == defn.sym.namespace
+
+  /**
+    * Returns `true` if the given expression type `tpe` unifies with the last parameter type of the given `spec`.
+    */
+  private def expMatchesLastArgType(tpe: Type, spec: TypedAst.Spec, root: TypedAst.Root)(implicit flix: Flix): Boolean = {
+    spec.fparams.lastOption match {
+      case Some(lastParam) =>
+        ConstraintSolver2.fullyUnify(tpe, lastParam.tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).isDefined
+      case None => false
+    }
+  }
 
   /**
     * Returns a string of the form:
