@@ -61,5 +61,5 @@ mod Test.Exp.Instanceof {
     def testInstanceOf14(): Bool \ IO = (123 instanceof String) == false
 
     @test
-    def testInstanceOf14(): Bool \ IO = (true instanceof Object) == false
+    def testInstanceOf15(): Bool \ IO = (true instanceof Object) == false
 }
