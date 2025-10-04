@@ -156,6 +156,7 @@ object Lexer {
       ("[", TokenKind.BracketL),
       ("\\", TokenKind.Backslash),
       ("]", TokenKind.BracketR),
+      ("`", TokenKind.Tick),
       ("{", TokenKind.CurlyL),
       ("|#", TokenKind.BarHash),
       ("}", TokenKind.CurlyR),
@@ -342,7 +343,6 @@ object Lexer {
         }
       case '\"' => acceptString()
       case '\'' => acceptChar()
-      case '`' => acceptInfixFunction()
       case '/' =>
         if (s.sc.advanceIfMatch('/')) {
           acceptLineOrDocComment()
@@ -520,18 +520,6 @@ object Lexer {
   private def acceptNamedHole()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(isNameChar)
     TokenKind.HoleNamed
-  }
-
-  /** Moves current position past an infix function. */
-  private def acceptInfixFunction()(implicit s: State): TokenKind = {
-    s.sc.advanceWhile(
-      c => isNameChar(c) || c == '.' || isMathNameChar(c)
-    )
-    if (s.sc.advanceIfMatch('`')) {
-      TokenKind.InfixFunction
-    } else {
-      mkErrorKind(LexerError.UnterminatedInfixFunction(sourceLocationFromStart()))
-    }
   }
 
   /** Moves current position past an escaped name (e.g. `$run`). */

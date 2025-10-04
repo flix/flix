@@ -1255,69 +1255,63 @@ object Weeder2 {
       val op0 = pick(TreeKind.Operator, tree)
       flatMapN(op0, traverse(exprs)(visitExpr)) {
         case (op, e1 :: e2 :: Nil) =>
-          val isInfix = op.children.head match {
-            case Token(kind, _, _, _, _, _) => kind == TokenKind.InfixFunction
-            case _ => false
-          }
-
-          if (isInfix) {
-            val infixName = text(op).head.stripPrefix("`").stripSuffix("`")
-            val infixNameParts = infixName.split('.').toList
-            val lastName = infixNameParts.lastOption.getOrElse("")
-            val qname = Name.mkQName(infixNameParts.init, lastName, op.loc)
-            val opExpr = Expr.Ambiguous(qname, op.loc)
-            return Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
-          }
-
           def mkApply(name: String): Expr.Apply = Expr.Apply(
             Expr.Ambiguous(Name.mkQName(name, op.loc), op.loc), List(e1, e2),
             tree.loc
           )
 
-          text(op).head match {
-            // BUILTINS
-            case "+" => Validation.Success(mkApply("Add.add"))
-            case "-" => Validation.Success(mkApply("Sub.sub"))
-            case "*" => Validation.Success(mkApply("Mul.mul"))
-            case "/" => Validation.Success(mkApply("Div.div"))
-            case "<" => Validation.Success(mkApply("Order.less"))
-            case "<=" => Validation.Success(mkApply("Order.lessEqual"))
-            case ">" => Validation.Success(mkApply("Order.greater"))
-            case ">=" => Validation.Success(mkApply("Order.greaterEqual"))
-            case "==" => Validation.Success(mkApply("Eq.eq"))
-            case "!=" => Validation.Success(mkApply("Eq.neq"))
-            case "<=>" => Validation.Success(mkApply("Order.compare"))
-            // SEMANTIC OPS
-            case "and" => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-            case "or" => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-            // SPECIAL
-            case "::" => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-            case ":::" => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
-            case "<+>" => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" =>
-              tryPickQName(exprs(1)) match {
-                case Some(qname) =>
-                  if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
-                  else {
-                    val error = IllegalQualifiedName(exprs(1).loc)
-                    sctx.errors.add(error)
-                    Validation.Success(Expr.Error(error))
-                  }
-                case None =>
-                  val error = UnexpectedToken(
-                    NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
-                    None,
-                    SyntacticContext.Expr.OtherExpr,
-                    hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
-                    loc = exprs(1).loc
-                  )
-                  sctx.errors.add(error)
-                  Validation.Success(Expr.Error(error))
+          tryPickQName(op) match {
+            case Some(name) =>
+              // Infix Operator.
+              val opExpr = Expr.Ambiguous(name, op.loc)
+              Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
+            case None =>
+              // Single Token Operator.
+              op.children.head match {
+                case token: Token => token.kind match {
+                  case TokenKind.Plus => Validation.Success(mkApply("Add.add"))
+                  case TokenKind.Minus => Validation.Success(mkApply("Sub.sub"))
+                  case TokenKind.Star => Validation.Success(mkApply("Mul.mul"))
+                  case TokenKind.Slash => Validation.Success(mkApply("Div.div"))
+                  case TokenKind.AngleL => Validation.Success(mkApply("Order.less"))
+                  case TokenKind.AngleLEqual => Validation.Success(mkApply("Order.lessEqual"))
+                  case TokenKind.AngleR => Validation.Success(mkApply("Order.greater"))
+                  case TokenKind.AngleREqual => Validation.Success(mkApply("Order.greaterEqual"))
+                  case TokenKind.EqualEqual => Validation.Success(mkApply("Eq.eq"))
+                  case TokenKind.BangEqual => Validation.Success(mkApply("Eq.neq"))
+                  case TokenKind.AngledEqual => Validation.Success(mkApply("Order.compare"))
+                  case TokenKind.KeywordAnd => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+                  case TokenKind.KeywordOr => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+                  case TokenKind.ColonColon => Validation.Success(Expr.FCons(e1, e2, tree.loc))
+                  case TokenKind.TripleColon => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
+                  case TokenKind.AngledPlus => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
+                  case TokenKind.KeywordInstanceOf =>
+                    tryPickQName(exprs(1)) match {
+                      case Some(qname) =>
+                        if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                        else {
+                          val error = IllegalQualifiedName(exprs(1).loc)
+                          sctx.errors.add(error)
+                          Validation.Success(Expr.Error(error))
+                        }
+                      case None =>
+                        val error = UnexpectedToken(
+                          NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
+                          None,
+                          SyntacticContext.Expr.OtherExpr,
+                          hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
+                          loc = exprs(1).loc
+                        )
+                        sctx.errors.add(error)
+                        Validation.Success(Expr.Error(error))
+                    }
+                  case TokenKind.UserDefinedOperator =>
+                    val ident = Name.Ident(token.text, op.loc)
+                    Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
+                  case other =>
+                    ???
+                }
               }
-            // UNRECOGNIZED
-            case id =>
-              val ident = Name.Ident(id, op.loc)
-              Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
