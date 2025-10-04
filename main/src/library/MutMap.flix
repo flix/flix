@@ -17,8 +17,9 @@
 ///
 /// The Mutable Map type.
 ///
-pub enum MutMap[k: Type, v: Type, r: Region] {
-    case MutMap(Region[r], Ref[Map[k, v], r])
+pub struct MutMap[k: Type, v: Type, r: Region] {
+    rc: Region[r],
+    mut inner: Map[k, v]
 }
 
 instance Indexable[MutMap[k, v, r]] with Order[k] {
@@ -66,27 +67,25 @@ mod MutMap {
     /// Returns a fresh empty mutable map.
     ///
     pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
-        MutMap(rc, Ref.fresh(rc, Map.empty()))
+        new MutMap @ rc { rc = rc, inner = Map.empty() }
 
     ///
     /// Returns the singleton map where key `k` is mapped to value `v`.
     ///
     pub def singleton(rc: Region[r], k: k, v: v): MutMap[k, v, r] \ r with Order[k] =
-        MutMap(rc, Ref.fresh(rc, Map.singleton(k, v)))
+        new MutMap @ rc { rc = rc, inner = Map.singleton(k, v) }
 
     ///
     /// Returns `true` if and only if the mutable map `m` contains the key `k`.
     ///
     pub def memberOf(k: k, m: MutMap[k, v, r]): Bool \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Map.memberOf(k, Ref.get(mm))
+        Map.memberOf(k, m->inner)
 
     ///
     /// Returns `true` if and only if `m` is the empty map.
     ///
     pub def isEmpty(m: MutMap[k, v, r]): Bool \ r =
-        let MutMap(_, mm) = m;
-        Map.isEmpty(Ref.get(mm))
+        Map.isEmpty(m->inner)
 
     ///
     /// Returns `true` if and only if `m` is a non-empty map.
@@ -99,8 +98,7 @@ mod MutMap {
     /// Returns `None` if `m` is empty.
     ///
     pub def minimumKey(m: MutMap[k, v, r]): Option[(k, v)] \ r =
-        let MutMap(_, mm) = m;
-        Map.minimumKey(Ref.get(mm))
+        Map.minimumKey(m->inner)
 
     ///
     /// Optionally finds `k => v` where `k` is the smallest key according to the given comparator `cmp`.
@@ -110,8 +108,7 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.minimumKeyBy(cmp, Ref.get(mm))
+        Map.minimumKeyBy(cmp, m->inner)
 
     ///
     /// Optionally finds `k => v` where `v` is the smallest value.
@@ -120,8 +117,7 @@ mod MutMap {
     ///
     @Parallel
     pub def minimumValue(m: MutMap[k, v, r]): Option[(k, v)] \ r with Order[v] =
-        let MutMap(_, mm) = m;
-        Map.minimumValue(Ref.get(mm))
+        Map.minimumValue(m->inner)
 
     ///
     /// Optionally finds `k => v` where `v` is the smallest value according to the given comparator `cmp`.
@@ -131,8 +127,7 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.minimumValueBy(cmp, Ref.get(mm))
+        Map.minimumValueBy(cmp, m->inner)
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the `Order` instance of `k`.
@@ -140,8 +135,7 @@ mod MutMap {
     /// Returns `None` if `m` is empty.
     ///
     pub def maximumKey(m: MutMap[k, v, r]): Option[(k, v)] \ r =
-        let MutMap(_, mm) = m;
-        Map.maximumKey(Ref.get(mm))
+        Map.maximumKey(m->inner)
 
     ///
     /// Optionally finds `k => v` where `k` is the largest key according to the given comparator `cmp`.
@@ -151,8 +145,7 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.maximumKeyBy(cmp, Ref.get(mm))
+        Map.maximumKeyBy(cmp, m->inner)
 
     ///
     /// Optionally finds `k => v` where `v` is the largest value.
@@ -161,8 +154,7 @@ mod MutMap {
     ///
     @Parallel
     pub def maximumValue(m: MutMap[k, v, r]): Option[(k, v)] \ r with Order[v] =
-        let MutMap(_, mm) = m;
-        Map.maximumValue(Ref.get(mm))
+        Map.maximumValue(m->inner)
 
     ///
     /// Optionally finds `k => v` where `v` is the largest value according to the given comparator `cmp`.
@@ -172,29 +164,25 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `cmp`.
     ///
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.maximumValueBy(cmp, Ref.get(mm))
+        Map.maximumValueBy(cmp, m->inner)
 
     ///
     /// Returns the keys of the mutable map `m`.
     ///
     pub def keysOf(m: MutMap[k, v, r]): Set[k] \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Map.keysOf(Ref.get(mm))
+        Map.keysOf(m->inner)
 
     ///
     /// Returns the values of the mutable map `m`.
     ///
     pub def valuesOf(m: MutMap[k, v, r]): List[v] \ r =
-        let MutMap(_, mm) = m;
-        Map.valuesOf(Ref.get(mm))
+        Map.valuesOf(m->inner)
 
     ///
     /// Returns the number of keys in the mutable map `m`.
     ///
     pub def size(m: MutMap[k, v, r]): Int32 \ r =
-        let MutMap(_, mm) = m;
-        Map.size(Ref.get(mm))
+        Map.size(m->inner)
 
     ///
     /// Returns `Some(v)` if `k -> v` is in the mutable map `m`.
@@ -202,8 +190,7 @@ mod MutMap {
     /// Otherwise returns `None`.
     ///
     pub def get(k: k, m: MutMap[k, v, r]): Option[v] \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Map.get(k, Ref.get(mm))
+        Map.get(k, m->inner)
 
     ///
     /// Returns `v` if `k -> v` is in the mutable map `m`.
@@ -211,15 +198,13 @@ mod MutMap {
     /// Otherwise returns `d`.
     ///
     pub def getWithDefault(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Map.getWithDefault(k, d, Ref.get(mm))
+        Map.getWithDefault(k, d, m->inner)
 
     ///
     /// Updates the mutable map `m` with the binding `k -> v`. Replaces any existing binding.
     ///
     pub def put(k: k, v: v, m: MutMap[k, v, r]): Unit \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.insert(k, v, Ref.get(mm)), mm)
+        m->inner = Map.insert(k, v, m->inner)
 
     ///
     /// Updates the mutable map `m` with the binding `k -> f(v, v1)` if `k -> v1` is in `m`.
@@ -227,8 +212,7 @@ mod MutMap {
     /// Otherwise updates the mutable map `m` with the binding `k -> v`.
     ///
     pub def putWith(f: (v, v) -> v \ ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.insertWith(f, k, v, Ref.get(mm)), mm)
+        m->inner = Map.insertWith(f, k, v, m->inner)
 
     ///
     /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
@@ -244,15 +228,13 @@ mod MutMap {
     /// Otherwise leaves the map is unchanged.
     ///
     pub def adjustWithKey(f: (k, v) -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.adjustWithKey(f, k, Ref.get(mm)), mm)
+        m->inner = Map.adjustWithKey(f, k, m->inner)
 
     ///
     /// Removes all mappings from the mutable map `m`.
     ///
     pub def clear(m: MutMap[k, v, r]): Unit \ r =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.empty(), mm)
+        m->inner = Map.empty()
 
     ///
     /// Returns `v` if `k -> v` is in the mutable map `m`.
@@ -260,9 +242,8 @@ mod MutMap {
     /// Otherwise updates the mutable map `m` with a new mapping `k -> d` and returns d.
     ///
     pub def getOrElsePut(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        match Map.get(k, Ref.get(mm)) {
-            case None    => Ref.put(Map.insert(k, d, Ref.get(mm)), mm); d
+        match Map.get(k, m->inner) {
+            case None    => m->inner = Map.insert(k, d, m->inner); d
             case Some(v) => v
         }
 
@@ -284,9 +265,7 @@ mod MutMap {
     /// Merges the mutable map `m1` into the mutable map `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
     pub def mergeWithKey(f: (k, v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, r1, r2 } with Order[k] =
-        let MutMap(_, mm1) = m1;
-        let MutMap(_, mm2) = m2;
-        Ref.put(Map.unionWithKey(f, Ref.get(mm1), Ref.get(mm2)), mm2)
+        m2->inner = Map.unionWithKey(f, m1->inner, m2->inner)
 
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
@@ -302,8 +281,7 @@ mod MutMap {
     /// The function `f` must be pure.
     ///
     pub def refineWithKey(f: (k, v) -> Bool, m: MutMap[k, v, r]): Unit \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.filterWithKey(f, Ref.get(mm)), mm)
+        m->inner = Map.filterWithKey(f, m->inner)
 
     ///
     /// Removes the mapping `k` from the mutable map `m`.
@@ -311,38 +289,31 @@ mod MutMap {
     /// Leaves the map unchanged if the mutable map `m` does not contain any mapping for `k`.
     ///
     pub def remove(k: k, m: MutMap[k, v, r]): Unit \ r with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.remove(k, Ref.get(mm)), mm)
+        m->inner = Map.remove(k, m->inner)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
     pub def transform(f: v -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.map(f, Ref.get(mm)), mm)
+        m->inner = Map.map(f, m->inner)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
     pub def transformWithKey(f: (k, v) -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
-        let MutMap(_, mm) = m;
-        Ref.put(Map.mapWithKey(f, Ref.get(mm)), mm)
+        m->inner = Map.mapWithKey(f, m->inner)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
     ///
     pub def isSubmapOf(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Bool \ { r1, r2 } with Order[k], Eq[v] =
-        let MutMap(_, mm1) = m1;
-        let MutMap(_, mm2) = m2;
-        Map.isSubmapOf(Ref.get(mm1), Ref.get(mm2))
+        Map.isSubmapOf(m1->inner, m2->inner)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2` and `m1 != m2`.
     ///
     pub def isProperSubmapOf(m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Bool \ { r1, r2 } with Order[k], Eq[v] =
-        let MutMap(_, mm1) = m1;
-        let MutMap(_, mm2) = m2;
-        Map.isProperSubmapOf(Ref.get(mm1), Ref.get(mm2))
+        Map.isProperSubmapOf(m1->inner, m2->inner)
 
     ///
     /// Alias for `findLeft`.
@@ -358,8 +329,7 @@ mod MutMap {
     /// The function `f` must be pure.
     ///
     pub def findLeft(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] \ r =
-        let MutMap(_, mm) = m;
-        Map.findLeft(f, Ref.get(mm))
+        Map.findLeft(f, m->inner)
 
     ///
     /// Optionally returns the first mapping of the mutable map `m` that satisfies the predicate function `f` when searching from right to left.
@@ -367,8 +337,7 @@ mod MutMap {
     /// The function `f` must be pure.
     ///
     pub def findRight(f: (k, v) -> Bool, m: MutMap[k, v, r]): Option[(k, v)] \ r =
-        let MutMap(_, mm) = m;
-        Map.findRight(f, Ref.get(mm))
+        Map.findRight(f, m->inner)
 
     ///
     /// Returns a map with mappings `k => f(v)` for every `k => v` in `m`.
@@ -384,8 +353,7 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     pub def mapWithKey(rc: Region[r1], f: (k, v1) -> v2 \ ef, m: MutMap[k, v1, r]): MutMap[k, v2, r1] \ { ef, r, r1 } =
-        let MutMap(_, mm) = m;
-        MutMap(rc, Ref.fresh(rc, Map.mapWithKey(f, Ref.get(mm))))
+        new MutMap @ rc { rc = rc, inner = Map.mapWithKey(f, m->inner) }
 
     ///
     /// Alias for `foldLeftWithKey`.
@@ -399,8 +367,7 @@ mod MutMap {
     /// That is, the result is of the form: `f(...f(f(i, v1), v2)..., vn)`.
     ///
     pub def foldLeft(f: (b, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.foldLeft(f, i, Ref.get(mm))
+        Map.foldLeft(f, i, m->inner)
 
     ///
     /// Applies `f` to a start value `i` and all key-value pairs in the mutable map `m` going from left to right.
@@ -408,8 +375,7 @@ mod MutMap {
     /// That is, the result is of the form: `f(...f(k2, f(k1, i, v1), v2)..., vn)`.
     ///
     pub def foldLeftWithKey(f: (b, k, v) -> b \ ef, i: b, m: MutMap[k, v, r]): b \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.foldLeftWithKey(f, i, Ref.get(mm))
+        Map.foldLeftWithKey(f, i, m->inner)
 
     ///
     /// Applies `f` to a start value `s` and all values in the mutable map `m` going from right to left.
@@ -425,8 +391,7 @@ mod MutMap {
     /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
     ///
     pub def foldRightWithKey(f: (k, v, b) -> b \ ef, s: b, m: MutMap[k, v, r]): b \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.foldRightWithKey(f, s, Ref.get(mm))
+        Map.foldRightWithKey(f, s, m->inner)
 
     ///
     /// Applies `f` to a start value `z` and all values in the mutable map `m` going from right to left.
@@ -444,8 +409,7 @@ mod MutMap {
     /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
     ///
     pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: MutMap[k, v, r]): b \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.foldRightWithKeyCont(f, z, Ref.get(mm))
+        Map.foldRightWithKeyCont(f, z, m->inner)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
@@ -455,8 +419,7 @@ mod MutMap {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeft(f: (v, v) -> v \ ef, m: MutMap[k, v, r]): Option[v] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.reduceLeft(f, Ref.get(mm))
+        Map.reduceLeft(f, m->inner)
 
     ///
     /// Applies `f` to all mappings in the mutable map `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
@@ -466,8 +429,7 @@ mod MutMap {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceLeftWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.reduceLeftWithKey(f, Ref.get(mm))
+        Map.reduceLeftWithKey(f, m->inner)
 
     ///
     /// Applies `f` to all values in the mutable map `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
@@ -477,8 +439,7 @@ mod MutMap {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRight(f: (v, v) -> v \ ef, m: MutMap[k, v, r]): Option[v] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.reduceRight(f, Ref.get(mm))
+        Map.reduceRight(f, m->inner)
 
     ///
     /// Applies `f` to all mappings in the mutable map `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
@@ -488,8 +449,7 @@ mod MutMap {
     /// Returns `None` if `m` is the empty map.
     ///
     pub def reduceRightWithKey(f: (k, v, k, v) -> (k, v) \ ef, m: MutMap[k, v, r]): Option[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.reduceRightWithKey(f, Ref.get(mm))
+        Map.reduceRightWithKey(f, m->inner)
 
     ///
     /// Returns the number of mappings in the mutable map `m` that satisfy the predicate function `f`.
@@ -497,8 +457,7 @@ mod MutMap {
     /// Purity reflective: Runs in parallel when given a pure function `f`.
     ///
     pub def count(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Int32 \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.count(f, Ref.get(mm))
+        Map.count(f, m->inner)
 
     ///
     /// Returns `true` if and only if at least one mapping in the mutable map `m` satisfies the predicate function `f`.
@@ -506,8 +465,7 @@ mod MutMap {
     /// Returns `false` if `m` is the empty map.
     ///
     pub def exists(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Bool \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.exists(f, Ref.get(mm))
+        Map.exists(f, m->inner)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m` satisfy the predicate function `f`.
@@ -515,64 +473,55 @@ mod MutMap {
     /// Returns `true` if `m` is the empty map.
     ///
     pub def forAll(f: (k, v) -> Bool \ ef, m: MutMap[k, v, r]): Bool \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.forAll(f, Ref.get(mm))
+        Map.forAll(f, m->inner)
 
     ///
     /// Returns a shallow copy of the mutable map `m`.
     ///
     pub def copy(rc: Region[r1], m: MutMap[k, v, r]): MutMap[k, v, r1] \ { r, r1 } =
-        let MutMap(_, mm) = m;
-        MutMap(rc, Ref.fresh(rc, Ref.get(mm)))
+        new MutMap @ rc { rc = rc, inner = m->inner }
 
     ///
     /// Returns the mutable map `m` as an immutable map.
     ///
     pub def toMap(m: MutMap[k, v, r]): Map[k, v] \ r =
-        let MutMap(_, mm) = m;
-        Ref.get(mm)
+        m->inner
 
     ///
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(rc1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r1] \ { r2, r1 } =
-        let MutMap(_, mm) = m;
-        Map.toMutDeque(rc1, Ref.get(mm))
+        Map.toMutDeque(rc1, m->inner)
 
     ///
     /// Returns the mutable map `m` as a list of key-value pairs.
     ///
     pub def toList(m: MutMap[k, v, r]): List[(k, v)] \ r =
-        let MutMap(_, mm) = m;
-        Map.toList(Ref.get(mm))
+        Map.toList(m->inner)
 
     ///
     /// Returns the mutable map `m` as a vector of key-value pairs.
     ///
     pub def toVector(m: MutMap[k, v, r]): Vector[(k, v)] \ r =
-        let MutMap(_, mm) = m;
-        Map.toVector(Ref.get(mm))
+        Map.toVector(m->inner)
 
     ///
     /// Returns the mutable map `m` as an array of key-value pairs.
     ///
     pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ {r, r1} =
-        let MutMap(_, mm) = m;
-        Map.toArray(rc1, Ref.get(mm))
+        Map.toArray(rc1, m->inner)
 
     ///
     /// Returns the mutable map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: MutMap[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =
-        let MutMap(_, mm) = m;
-        Map.toSet(Ref.get(mm))
+        Map.toSet(m->inner)
 
     ///
     /// Applies `f` to all the `(key, value)` pairs in the mutable map `m`.
     ///
     pub def forEach(f: (k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.forEach(f, Ref.get(mm))
+        Map.forEach(f, m->inner)
 
     ///
     /// Apply the effectful function `f` to all the `(key, value)` pairs in the mutable map `m`
@@ -587,22 +536,19 @@ mod MutMap {
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
-        let MutMap(_, mm) = m;
-        Map.iterator(rc, Ref.get(mm)) |> Iterator.map(x -> checked_ecast(x))
+        Map.iterator(rc, m->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
-        let MutMap(_, mm) = m;
-        Map.iteratorKeys(rc, Ref.get(mm)) |> Iterator.map(x -> checked_ecast(x))
+        Map.iteratorKeys(rc, m->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
-        let MutMap(_, mm) = m;
-        Map.iteratorValues(rc, Ref.get(mm)) |> Iterator.map(x -> checked_ecast(x))
+        Map.iteratorValues(rc, m->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.
@@ -610,15 +556,13 @@ mod MutMap {
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
     pub def rangeQuery(p: k -> Comparison \ ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.rangeQuery(p, Ref.get(mm))
+        Map.rangeQuery(p, m->inner)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
     ///
     pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: MutMap[k, v, r]): Unit \ { ef1, ef2, r } =
-        let MutMap(_, mm) = m;
-        Map.rangeQueryWith(p, f, Ref.get(mm))
+        Map.rangeQueryWith(p, f, m->inner)
 
     ///
     /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
@@ -631,23 +575,20 @@ mod MutMap {
     /// in `m` with `sep` inserted between each element.
     ///
     pub def joinKeys(sep: String, m: MutMap[k, v, r]): String \ r with ToString[k] =
-        let MutMap(_, mm) = m;
-        Map.joinKeys(sep, Ref.get(mm))
+        Map.joinKeys(sep, m->inner)
 
     ///
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` with `sep` inserted between each element.
     ///
     pub def joinValues(sep: String, m: MutMap[k, v, r]): String \ r with ToString[v] =
-        let MutMap(_, mm) = m;
-        Map.joinValues(sep, Ref.get(mm))
+        Map.joinValues(sep, m->inner)
 
     ///
     /// Returns the concatenation of the string representation of each key-value pair
     /// `k => v` in `m` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, m: MutMap[k, v, r]): String \ { ef, r } =
-        let MutMap(_, mm) = m;
-        Map.joinWith(f, sep, Ref.get(mm))
+        Map.joinWith(f, sep, m->inner)
 
 }
