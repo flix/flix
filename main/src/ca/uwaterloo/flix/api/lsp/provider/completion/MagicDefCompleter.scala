@@ -59,6 +59,9 @@ object MagicDefCompleter {
     }
   }
 
+  /**
+    * Returns the relevant defs completions for the given qualified symbol (an enum or struct).
+    */
   private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, tpe: Type, range: Range, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val matchedDefs = root.defs.values.filter {
       case defn =>
