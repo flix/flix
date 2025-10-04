@@ -62,7 +62,7 @@ instance Indexable[MultiMap[k, v]] with Order[k] {
 instance Foldable[MultiMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRightWithCont(f, s, m)
+    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
 }
 
 instance UnorderedFoldable[MultiMap[k]] {

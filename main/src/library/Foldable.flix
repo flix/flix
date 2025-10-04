@@ -36,14 +36,6 @@ pub trait Foldable[t : Type -> Type] {
     pub def foldRight(f: (a, b) -> b \ ef, s: b, t: t[a]): b \ (ef + Foldable.Aef[t])
 
     ///
-    /// Right-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, t: t[a]): b \ (ef + Foldable.Aef[t])
-
-    ///
     /// Returns the number of elements in `t`.
     ///
     pub def length(t: t[a]): Int32 \ Foldable.Aef[t] =
@@ -73,7 +65,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `false` if `t` is empty.
     ///
     pub def exists(f: a -> Bool \ ef, t: t[a]): Bool \ (ef + Foldable.Aef[t]) =
-        Foldable.foldRightWithCont((x, k) -> f(x) or k(), false, t)
+        Foldable.foldLeft((acc, x) -> acc or f(x), false, t)
 
     ///
     /// Returns `true` if and only if all elements in `t` satisfy the predicate `f`.
@@ -81,7 +73,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `true` if `t` is empty.
     ///
     pub def forAll(f: a -> Bool \ ef, t: t[a]): Bool \ (ef + Foldable.Aef[t]) =
-        Foldable.foldRightWithCont((x, k) -> f(x) and k(), true, t)
+        Foldable.foldLeft((acc, x) -> acc and f(x), true, t)
 
     ///
     /// Optionally returns the first element of `t`.
@@ -89,7 +81,10 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def head(t: t[a]): Option[a] \ Foldable.Aef[t] =
-        Foldable.foldRightWithCont((x, _) -> Some(x), None, t)
+        Foldable.foldLeft((acc, x) -> match acc {
+            case Some(_) => acc
+            case None    => Some(x)
+        }, None, t)
 
     ///
     /// Optionally returns the last element of `t`.
@@ -97,7 +92,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def last(t: t[a]): Option[a] \ Foldable.Aef[t] =
-        Foldable.foldRightWithCont((x, k) -> Option.withDefault(default = Some(x), k()), None, t)
+        Foldable.foldLeft((_, x) -> Some(x), None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from left to right.
@@ -105,7 +100,10 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `None` if `t` is empty.
     ///
     pub def findLeft(f: a -> Bool \ ef, t: t[a]): Option[a] \ (ef + Foldable.Aef[t]) =
-        Foldable.foldRightWithCont((x, k) -> if (f(x)) Some(x) else k(), None, t)
+        Foldable.foldLeft((acc, x) -> match acc {
+            case Some(_) => acc
+            case None    => if (f(x)) Some(x) else None
+        }, None, t)
 
     ///
     /// Optionally returns the first element of `t` that satisfies the predicate `f` when searching from right to left.
@@ -125,7 +123,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns true if and only if `t` is empty.
     ///
     pub def isEmpty(t: t[a]): Bool \ Foldable.Aef[t] =
-      Foldable.foldRightWithCont((_, _) -> false, true, t)
+      Foldable.foldLeft((_, _) -> false, true, t)
 
     ///
     /// Returns true if and only if `t` is non-empty.
@@ -136,7 +134,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `true` if and only if the element `x` is in `t`.
     ///
     pub def memberOf(x: a, t: t[a]): Bool \ Foldable.Aef[t] with Eq[a] =
-        Foldable.foldRightWithCont((y, k) -> x == y or k(), false, t)
+        Foldable.foldLeft((acc, y) -> acc or x == y, false, t)
 
     ///
     /// Optionally finds the smallest element of `t` according to the `Order` on `a`.

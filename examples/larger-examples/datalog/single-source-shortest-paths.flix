@@ -78,11 +78,6 @@ mod ShortestPath {
             case Bot     => s
             case Path(p) => Foldable.foldRight(f, s, p)
         }
-
-        pub def foldRightWithCont(f: a -> ((Unit -> b \ ef) -> b \ ef), s: b, t: Path[a]): b \ ef = match t {
-            case Bot     => s
-            case Path(p) => Foldable.foldRightWithCont(f, s, p)
-        }
     }
 
     ///
