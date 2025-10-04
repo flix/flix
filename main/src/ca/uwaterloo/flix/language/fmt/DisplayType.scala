@@ -323,6 +323,11 @@ object DisplayType {
   case class Tuple(tpes: List[DisplayType]) extends DisplayType
 
   /**
+    * A region.
+    */
+  case class Region(name: String) extends DisplayType
+
+  /**
     * An error type.
     */
   case object Error extends DisplayType
