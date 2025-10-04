@@ -845,12 +845,6 @@ mod Seq {
         };
         Iterator.iterate(rc, next)
 
-    //
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: Seq[s][a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
     ///
     /// Returns the association list `l` as a `DelayMap`.
     ///

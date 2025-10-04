@@ -1396,14 +1396,6 @@ mod Array {
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
-    /// Returns an iterator over `a` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
-        iterator(rc, a) |> Iterator.zipWithIndex
-
-    ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, r } =

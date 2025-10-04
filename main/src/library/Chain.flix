@@ -831,12 +831,6 @@ mod Chain {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `c` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, c) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the chain `c` as a Nel.
     ///
     pub def toNel(c: Chain[a]): Option[Nel[a]] =

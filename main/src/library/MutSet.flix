@@ -307,12 +307,6 @@ mod MutSet {
         Set.iterator(rc, s->inner) |> Iterator.map(x -> checked_ecast(x))
 
     ///
-    /// Returns an enumerator over `s`.
-    ///
-    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { r1, r2 } =
-        iterator(rc, s) |> Iterator.zipWithIndex
-
-    ///
     /// Returns `true` if MutSets `a` and `b` have the same elements, i.e. are structurally equal.
     ///
     pub def sameElements(a: MutSet[a, r], b: MutSet[a, r]): Bool \ r with Order[a] =

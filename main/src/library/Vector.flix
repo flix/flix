@@ -1471,15 +1471,6 @@ mod Vector {
         Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
 
     ///
-    /// Returns an iterator over `v` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r], v: Vector[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, v) |> Iterator.zipWithIndex
-
-
-    ///
     /// Apply the effectful function `f` to all the elements in the vector `v`.
     ///
     pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef =

@@ -1213,12 +1213,6 @@ mod DelayList {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.

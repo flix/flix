@@ -1033,20 +1033,6 @@ mod TestNel {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, Nel(1, 2 :: 3 :: Nil) |> Nel.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        assertEq(expected = List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100))), Nel(-100, List.range(-99, 100)) |> Nel.enumerator(rc) |> Iterator.toList)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

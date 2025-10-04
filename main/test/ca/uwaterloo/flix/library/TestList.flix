@@ -2783,34 +2783,6 @@ mod TestList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // enumerate                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerate01(): Unit \ Assert = region rc {
-        let z = Ref.fresh(rc, Nil);
-        let l = Nil;
-        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
-        assertEq(expected = (Nil: List[(Int32, Int32)]), List.reverse(Ref.get(z)))
-    }
-
-    @Test
-    def enumerate02(): Unit \ Assert = region rc {
-        let z = Ref.fresh(rc, Nil);
-        let l = 1 :: 2 :: 3 :: Nil;
-        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, List.reverse(Ref.get(z)))
-    }
-
-    @Test
-    def enumerate03(): Unit \ Assert = region rc {
-        let z = Ref.fresh(rc, Nil);
-        let l = List.range(100, 200);
-        Iterator.forEach(match (i, x) -> Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
-        assertEq(expected = List.zip(List.range(0, 100), l), List.reverse(Ref.get(z)))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
