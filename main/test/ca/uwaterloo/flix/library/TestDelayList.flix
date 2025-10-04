@@ -3046,35 +3046,43 @@ mod TestDelayList {
 
     @Test
     def shuffle01(): Unit \ Assert + NonDet =
-        let l1: List[Int32] = Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
+        run {
+            let l1: List[Int32] = Nil;
+            let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        assertEq(expected = 0, DelayList.length(l2));
-        assertEq(expected = Set#{}, DelayList.toSet(l2))
+            assertEq(expected = 0, DelayList.length(l2));
+            assertEq(expected = Set#{}, DelayList.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
-        let l1 = 1 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
+        run {
+            let l1 = 1 :: Nil;
+            let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        assertEq(expected = 1, DelayList.length(l2));
-        assertEq(expected = Set#{1}, DelayList.toSet(l2))
+            assertEq(expected = 1, DelayList.length(l2));
+            assertEq(expected = Set#{1}, DelayList.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
-        let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
+        run {
+            let l1 = 1 :: 2 :: 3 :: Nil;
+            let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        assertEq(expected = 3, DelayList.length(l2));
-        assertEq(expected = Set#{1, 2, 3}, DelayList.toSet(l2))
+            assertEq(expected = 3, DelayList.length(l2));
+            assertEq(expected = Set#{1, 2, 3}, DelayList.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle04(): Unit \ Assert + NonDet =
-        let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle;
+        run {
+            let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let l2 = List.toDelayList(l1) |> DelayList.shuffle;
 
-        assertEq(expected = 10, DelayList.length(l2));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, DelayList.toSet(l2))
+            assertEq(expected = 10, DelayList.length(l2));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, DelayList.toSet(l2))
+        } with Shuffle.runWithIO
 
 
     /////////////////////////////////////////////////////////////////////////////

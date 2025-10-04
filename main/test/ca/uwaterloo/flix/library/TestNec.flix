@@ -1634,26 +1634,32 @@ mod TestNec {
 
     @Test
     def shuffle01(): Unit \ Assert + NonDet =
-        let c = Nec.singleton(1) |> Nec.shuffle;
-        match c {
-            case Some(cc) => assertEq(expected = 1, Nec.length(cc)); assertEq(expected = Set#{1}, Nec.toSet(cc))
-            case _       => fail("shuffle returned None")
-        }
+        run {
+            let c = Nec.singleton(1) |> Nec.shuffle;
+            match c {
+                case Some(cc) => assertEq(expected = 1, Nec.length(cc)); assertEq(expected = Set#{1}, Nec.toSet(cc))
+                case _       => fail("shuffle returned None")
+            }
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
-        let c = necOf3(1, 2, 3) |> Nec.shuffle;
-        match c {
-            case Some(cc) => assertEq(expected = 3, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3}, Nec.toSet(cc))
-            case _       => fail("shuffle returned None")
-        }
+        run {
+            let c = necOf3(1, 2, 3) |> Nec.shuffle;
+            match c {
+                case Some(cc) => assertEq(expected = 3, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3}, Nec.toSet(cc))
+                case _       => fail("shuffle returned None")
+            }
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
-        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle;
-        match c {
-            case Some(cc) => assertEq(expected = 8, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3, 4, 5, 6, 7, 8}, Nec.toSet(cc))
-            case _       => fail("shuffle returned None")
-        }
+        run {
+            let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle;
+            match c {
+                case Some(cc) => assertEq(expected = 8, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3, 4, 5, 6, 7, 8}, Nec.toSet(cc))
+                case _       => fail("shuffle returned None")
+            }
+        } with Shuffle.runWithIO
 
 }

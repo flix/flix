@@ -2512,42 +2512,50 @@ mod TestMutList {
 
     @Test
     def shuffle01(): Unit \ {Assert, NonDet} = region rc {
-        let l: List[Int32] = Nil;
-        let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort(v);
+        run {
+            let l: List[Int32] = Nil;
+            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            MutList.sort(v);
 
-        assertEq(expected = 0, MutList.length(v));
-        assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertEq(expected = 0, MutList.length(v));
+            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle02(): Unit \ {Assert, NonDet} = region rc {
-        let l = 1 :: Nil;
-        let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort(v);
+        run {
+            let l = 1 :: Nil;
+            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            MutList.sort(v);
 
-        assertEq(expected = 1, MutList.length(v));
-        assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertEq(expected = 1, MutList.length(v));
+            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle03(): Unit \ {Assert, NonDet} = region rc {
-        let l = 1 :: 2 :: 3 :: Nil;
-        let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort(v);
+        run {
+            let l = 1 :: 2 :: 3 :: Nil;
+            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            MutList.sort(v);
 
-        assertEq(expected = 3, MutList.length(v));
-        assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertEq(expected = 3, MutList.length(v));
+            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle04(): Unit \ {Assert, NonDet} = region rc {
-        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let v = MutList.shuffle(rc, List.toMutList(rc, l));
-        MutList.sort(v);
+        run {
+            let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            MutList.sort(v);
 
-        assertEq(expected = 10, MutList.length(v));
-        assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertEq(expected = 10, MutList.length(v));
+            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+        } with Shuffle.runWithIO
     }
 
 }

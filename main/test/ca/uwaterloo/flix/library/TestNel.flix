@@ -1156,35 +1156,41 @@ mod TestNel {
 
     @Test
     def shuffle01(): Unit \ {Assert, NonDet} =
-        let l = Nel.singleton(1);
-        match Nel.shuffle(l) {
-            case Some(ll) => {
-                assertEq(expected = 1, Nel.length(ll));
-                assertEq(expected = Set#{1}, ll |> Nel.toList |> List.toSet)
+        run {
+            let l = Nel.singleton(1);
+            match Nel.shuffle(l) {
+                case Some(ll) => {
+                    assertEq(expected = 1, Nel.length(ll));
+                    assertEq(expected = Set#{1}, ll |> Nel.toList |> List.toSet)
+                }
+                case _        => assertEq(expected = (), unreachable!())
             }
-            case _        => assertEq(expected = (), unreachable!())
-        }
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ {Assert, NonDet} =
-        let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
-        match Nel.shuffle(l) {
-            case Some(ll) => {
-                assertEq(expected = 3, Nel.length(ll));
-                assertEq(expected = Set#{1, 2, 3}, ll |> Nel.toList |> List.toSet)
+        run {
+            let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
+            match Nel.shuffle(l) {
+                case Some(ll) => {
+                    assertEq(expected = 3, Nel.length(ll));
+                    assertEq(expected = Set#{1, 2, 3}, ll |> Nel.toList |> List.toSet)
+                }
+                case _        => assertEq(expected = (), unreachable!())
             }
-            case _        => assertEq(expected = (), unreachable!())
-        }
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ {Assert, NonDet} =
-        let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
-        match Nel.shuffle(l) {
-            case Some(ll) => {
-                assertEq(expected = 8, Nel.length(ll));
-                assertEq(expected = Set#{1, 2, 3, 4, 5, 6, 7, 8}, ll |> Nel.toList |> List.toSet)
+        run {
+            let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
+            match Nel.shuffle(l) {
+                case Some(ll) => {
+                    assertEq(expected = 8, Nel.length(ll));
+                    assertEq(expected = Set#{1, 2, 3, 4, 5, 6, 7, 8}, ll |> Nel.toList |> List.toSet)
+                }
+                case _        => assertEq(expected = (), unreachable!())
             }
-            case _        => assertEq(expected = (), unreachable!())
-        }
+        } with Shuffle.runWithIO
 
 }
