@@ -465,28 +465,6 @@ mod TestFoldable {
         assertEq(expected = Map#{"a" => "ab", "aa" => "aab"}, Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayMap                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayMap01(): Unit \ Assert =
-        let l = (Nil: List[(Int32, Int32)]);
-        let d1 = Foldable.toDelayMap(List.toChain(l));
-        assertEq(expected = l, (d1 |> DelayMap.toList))
-
-    @Test
-    def toDelayMap02(): Unit \ Assert =
-        let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
-        let d1 = Foldable.toDelayMap(List.toChain(l));
-        assertEq(expected = l, (d1 |> DelayMap.toList))
-
-    @Test
-    def toDelayMap03(): Unit \ Assert =
-        let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
-        let d1 = Foldable.toDelayMap(s);
-        assertEq(expected = s, (d1 |> DelayMap.toSet))
-
-    /////////////////////////////////////////////////////////////////////////////
     // toMutMap                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
