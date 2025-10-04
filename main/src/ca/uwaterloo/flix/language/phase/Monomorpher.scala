@@ -291,6 +291,8 @@ object Monomorpher {
       Type.mkRecordRowExtend(label, tpe, rest, loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException("Unexpected abstract region to eff '$rest'", rest.loc)
+    case Type.RegionToEff(_, _, _) => throw InternalCompilerException("Unexpected region to eff '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
