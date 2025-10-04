@@ -158,8 +158,8 @@ mod Char {
     ///
     /// Returns the code point representation of Char `c`.
     ///
-    pub def toBmpCodePoint(c: Char): Int32 =
-        unchecked_cast(c as Int16) |> Int16.toInt32
+    pub def toBmpCodePoint(c: Char): Int16 =
+        unchecked_cast(c as Int16)
 
     ///
     /// Returns the `Char` representation of `i`.
