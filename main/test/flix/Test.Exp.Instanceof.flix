@@ -57,4 +57,9 @@ mod Test.Exp.Instanceof {
         Array.get(0, arr) instanceof JString
     }
 
+    @test
+    def testInstanceOf14(): Bool  = (123 instanceof Number) == false
+
+    @test
+    def testInstanceOf15(): Bool = (true instanceof Object) == false
 }
