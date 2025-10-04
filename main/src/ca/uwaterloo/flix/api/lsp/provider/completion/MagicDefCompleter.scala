@@ -65,10 +65,10 @@ object MagicDefCompleter {
   private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, tpe: Type, range: Range, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val matchedDefs = root.defs.values.filter {
       case defn =>
-        inCompanionMod(sym, defn) && // Include only defs in the companion module.
-          CompletionUtils.isAvailable(defn.spec) && // Include only defs that are public.
-          CompletionUtils.fuzzyMatch(prefix, defn.sym.text) && // Include only defs that fuzzy match what the user has written.
-          expMatchesLastArgType(tpe, defn.spec, root) // Include only defs whose last parameter type unifies with the expression type.
+        inCompanionMod(sym, defn) &&                            // Include only defs in the companion module.
+          CompletionUtils.isAvailable(defn.spec) &&             // Include only defs that are public.
+          CompletionUtils.fuzzyMatch(prefix, defn.sym.text) &&  // Include only defs that fuzzy match what the user has written.
+          expMatchesLastArgType(tpe, defn.spec, root)           // Include only defs whose last parameter type unifies with the expression type.
     }
 
     matchedDefs.map {
