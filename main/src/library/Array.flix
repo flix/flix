@@ -176,18 +176,6 @@ mod Array {
         }
 
     ///
-    /// Returns the array `a` as a `DelayList`.
-    ///
-    pub def toDelayList(a: Array[a, r]): DelayList[a] \ r =
-        def loop(i, acc) = {
-            if (i < 0)
-                acc
-            else
-                loop(i - 1, DelayList.ECons(get(i, a), acc))
-        };
-        loop(length(a) - 1, DelayList.ENil)
-
-    ///
     /// Returns the array `arr` as a chain.
     ///
     pub def toChain(arr: Array[a, r]): Chain[a] \ r =

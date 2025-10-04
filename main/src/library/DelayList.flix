@@ -71,7 +71,6 @@ instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
-    redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
 instance UnorderedFoldable[DelayList] {
@@ -1339,7 +1338,11 @@ mod DelayList {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(l: DelayList[a]): DelayList[a] \ Shuffle = region rc {
-        toArray(rc, l) !> Array.shuffle |> Array.toDelayList
+        def fromList(xs) = match xs {
+            case Nil     => ENil
+            case y :: ys => ECons(y, fromList(ys))
+        };
+        toArray(rc, l) !> Array.shuffle |> Array.toList |> fromList
     }
 
 }

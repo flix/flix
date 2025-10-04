@@ -297,12 +297,6 @@ mod Vector {
         foldRight(step, None, v)
 
     ///
-    /// Returns the vector `v` as a `DelayList`.
-    ///
-    pub def toDelayList(v: Vector[a]): DelayList[a] =
-        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, v)
-
-    ///
     /// Returns the vector `v` as a chain.
     ///
     pub def toChain(v: Vector[a]): Chain[a] =
