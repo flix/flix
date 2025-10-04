@@ -223,7 +223,7 @@ object UnkindedType {
     * Only exists temporarily in the Resolver until it's converted to an [[AbstractRegionToEff]].
     */
   @EliminatedBy(Resolver.getClass)
-  case class UnappliedAbstractRegionToEff(op: Type.AbstractRegionOp, loc: SourceLocation) extends UnkindedType {
+  case class UnappliedAbstractRegionToEff(op: AbstractRegionOp, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case UnappliedAbstractRegionToEff(op2, _) => op == op2
       case _ => false
@@ -237,7 +237,7 @@ object UnkindedType {
     * Only exists temporarily in the Resolver until it's converted to a [[RegionToEff]].
     */
   @EliminatedBy(Resolver.getClass)
-  case class UnappliedRegionToEff(op: Type.RegionOp, loc: SourceLocation) extends UnkindedType {
+  case class UnappliedRegionToEff(op: RegionOp, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case UnappliedRegionToEff(op2, _) => op == op2
       case _ => false
@@ -357,7 +357,7 @@ object UnkindedType {
   /**
     * A fully resolved abstract region to effect conversion.
     */
-  case class AbstractRegionToEff(op: Type.AbstractRegionOp, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class AbstractRegionToEff(op: AbstractRegionOp, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case AbstractRegionToEff(op2, tpe2, _) => op == op2 && tpe == tpe2
       case _ => false
@@ -369,7 +369,7 @@ object UnkindedType {
   /**
     * A fully resolved region to effect conversion.
     */
-  case class RegionToEff(op: Type.RegionOp, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
+  case class RegionToEff(op: RegionOp, tpe: UnkindedType, loc: SourceLocation) extends UnkindedType {
     override def equals(that: Any): Boolean = that match {
       case RegionToEff(op2, tpe2, _) => op == op2 && tpe == tpe2
       case _ => false
