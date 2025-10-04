@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RegionFlavor, RegionOp, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
@@ -334,7 +334,16 @@ object EffUnification3 {
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
     /** Represents a region. */
-    case class Region(sym: Symbol.RegionSym) extends Atom
+    case class FlavorToRegion(sym: Symbol.RegionSym, arg: Atom) extends Atom
+
+    // MATT docs
+    case class RegionToEff(op: RegionOp, arg: Atom) extends Atom
+
+    // MATT docs
+    case class AbstractRegionToEff(op: RegionOp, arg: Atom) extends Atom
+
+    // MATT docs
+    case class Flavor(f: RegionFlavor) extends Atom
 
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
