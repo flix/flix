@@ -1989,42 +1989,6 @@ mod TestList {
     def findMap08(): Unit \ Assert = assertEq(expected = Some(0), List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = (Nil: List[Unit]);
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let l = 1 :: 2 :: Nil;
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let l = 3 :: 1 :: 2 :: Nil;
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
     @Test

@@ -1196,62 +1196,6 @@ mod TestMultiMap {
         assertEq(expected = Map#{1 => Set#{1, 4}, 2 => Set#{4}, 3 => Set#{3}}, MultiMap.toMap(singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let d1 = MultiMap.toMutDeque(rc, (empty(): MultiMap[Int32, Int32]));
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let d1 = MultiMap.toMutDeque(rc, singleton(1, 4));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, Set#{4}), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, Set#{4}), d2);
-        MutDeque.pushBack((2, Set#{4}), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4) |> insert(1, 1));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, Set#{1, 4}), d2);
-        MutDeque.pushBack((2, Set#{4}), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque05(): Unit \ Assert = region rc {
-        let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, Set#{1, 4}), d2);
-        MutDeque.pushBack((2, Set#{4}), d2);
-        MutDeque.pushBack((3, Set#{3}), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

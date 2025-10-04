@@ -740,9 +740,10 @@ mod Seq {
     ///
     /// Returns `l` as a mutable list.
     ///
-    pub def toMutList(rc: Region[r], l: Seq[s][a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
-    }
+    pub def toMutList(rc: Region[r], l: Seq[s][a]): MutList[a, r] \ r =
+        let ml = MutList.empty(rc);
+        forEach(x -> MutList.push(x, ml), l);
+        ml
 
     ///
     /// Returns the list `l` as a set.

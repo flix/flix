@@ -523,14 +523,6 @@ mod Set {
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
-    /// Returns `s` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), s);
-        d
-
-    ///
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =

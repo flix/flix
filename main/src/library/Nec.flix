@@ -754,21 +754,6 @@ mod Nec {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
-
-    ///
-    /// Returns `c` as a mutable list.
-    ///
-    pub def toMutList(rc1: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc1, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
-    }
-
-    ///
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)

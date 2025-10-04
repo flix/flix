@@ -376,57 +376,6 @@ mod TestVector {
         assertEq(expected = List.toNel(1 :: 2 :: 3 :: Nil), Vector.toNel(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let v = (Vector#{}: Vector[Int32]);
-        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let v = Vector#{1};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let v = Vector#{1, 2, 3};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
-        MutDeque.pushBack(3, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let v = Vector#{1, 2, 3, 4, 5};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d);
-        MutDeque.pushBack(4, d);
-        MutDeque.pushBack(5, d);
-        MutDeque.pushFront(2, d);
-        MutDeque.pushFront(1, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque05(): Unit \ Assert = region rc {
-        let v = Vector#{'a', 'b', 'c'};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushFront('c', d);
-        MutDeque.pushFront('b', d);
-        MutDeque.pushFront('a', d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -4446,55 +4395,6 @@ mod TestVector {
         let v = Vector#{1, 2, 3};
         let s = Vector.joinWith(Int32.toString, "..", v);
         assertEq(expected = "1..2..3", s)
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        MutList.push(2, l);
-        MutList.push(3, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4}))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{}))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

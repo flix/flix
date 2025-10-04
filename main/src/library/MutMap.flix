@@ -488,12 +488,6 @@ mod MutMap {
         m->inner
 
     ///
-    /// Returns `m` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], m: MutMap[k, v, r2]): MutDeque[(k, v), r1] \ { r2, r1 } =
-        Map.toMutDeque(rc1, m->inner)
-
-    ///
     /// Returns the mutable map `m` as a list of key-value pairs.
     ///
     pub def toList(m: MutMap[k, v, r]): List[(k, v)] \ r =

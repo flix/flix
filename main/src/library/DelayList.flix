@@ -1232,19 +1232,6 @@ mod DelayList {
     ///
     /// Forces the entire list `l`.
     ///
-    @Experimental
-    pub def toMutList(rc: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
-    }
-
-    ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
-
     ///
     /// Returns the association list `l` as a map.
     ///

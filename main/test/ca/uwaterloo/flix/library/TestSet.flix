@@ -1465,58 +1465,6 @@ mod TestSet {
         assertEq(expected = Map#{1 => 11, 3 => 13, 6 => 16, 7 => 17}, Set.toMapWith(x -> x + 10, Set#{7, 1, 3, 6}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let s: Set[Int32] = Set#{};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let s = Set#{1};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let s = Set#{1, 3, 6};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d2);
-        MutDeque.pushBack(6, d2);
-        MutDeque.pushFront(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let s = Set#{7, 1, 3, 6};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront(7, d2);
-        MutDeque.pushFront(6, d2);
-        MutDeque.pushFront(3, d2);
-        MutDeque.pushFront(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // eq                                                                      //
     /////////////////////////////////////////////////////////////////////////////
 

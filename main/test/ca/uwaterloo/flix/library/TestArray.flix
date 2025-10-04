@@ -417,65 +417,6 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let a = (Array#{} @ rc: Array[Int32, _]);
-        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        assertTrue(Array.toMutDeque(rc, a) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let a = (Array#{1} @ rc);
-
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-
-        assertTrue(Array.toMutDeque(rc, a) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let a = (Array#{1, 2, 3} @ rc);
-
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
-        MutDeque.pushBack(3, d);
-
-        assertTrue(Array.toMutDeque(rc, a) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let a = (Array#{1, 2, 3, 4, 5} @ rc);
-
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d);
-        MutDeque.pushBack(4, d);
-        MutDeque.pushBack(5, d);
-        MutDeque.pushFront(2, d);
-        MutDeque.pushFront(1, d);
-
-        assertTrue(Array.toMutDeque(rc, a) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque05(): Unit \ Assert = region rc {
-        let a = (Array#{'a', 'b', 'c'} @ rc);
-
-        let d = MutDeque.empty(rc);
-        MutDeque.pushFront('c', d);
-        MutDeque.pushFront('b', d);
-        MutDeque.pushFront('a', d);
-
-        assertTrue(Array.toMutDeque(rc, a) `MutDeque.sameElements` d)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -5663,55 +5604,6 @@ mod TestArray {
         let a = Array#{1,2,3} @ rc;
         let s = Array.joinWith(Int32.toString, "..", a);
         assertEq(expected = "1..2..3", s)
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let v = MutList.empty(rc);
-        MutList.push(1, v);
-        assertTrue(MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let v = MutList.empty(rc);
-        MutList.push(1, v);
-        MutList.push(2, v);
-        MutList.push(3, v);
-        assertTrue(MutList.sameElements(Array.toMutList(rc, Array#{1, 2, 3} @ rc), v))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Array.range(rc, 0, 100) |> Array.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push(4, v);
-        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{1, 2, 3, 4} @ rc))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push(4, v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -321,14 +321,6 @@ mod Vector {
         foldRight(step, None, v)
 
     ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
-
-    ///
     /// Returns `Some(x)` if `x` is the first element of `v`.
     ///
     /// Returns `None` if `v` is empty.
@@ -1371,12 +1363,6 @@ mod Vector {
     ///
     pub def toMap(v: Vector[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), v)
-
-    ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ r =
-        toArray(rc, v) |> Array.toMutList(rc)
 
     ///
     /// Alias for `findIndexOfLeft`.

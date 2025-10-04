@@ -223,14 +223,6 @@ mod Array {
         }
 
     ///
-    /// Returns `a` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), a);
-        d
-
-    ///
     /// Returns `a` as a Vector.
     ///
     pub def toVector(a: Array[a, r]): Vector[a] \ r = region rc {
@@ -1276,16 +1268,6 @@ mod Array {
     ///
     pub def toMap(a: Array[(a, b), r]): Map[a, b] \ r with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
-
-    ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
-        let minCap = MutList.minCapacity();
-        let len = length(a);
-        let c = Order.max(len, minCap);
-        let copy = copyOfRange(rc1, 0, c, a);
-        new MutList @ rc1 {r = rc1, values = copy, length = len}
 
     ///
     /// Alias for `findIndexOfLeft`.

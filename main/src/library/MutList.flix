@@ -58,7 +58,9 @@ instance MutCollectable[MutList[a, r]] {
     type Aef = r
     type Reg = r
     pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
-        Iterator.toMutList(rc, iter)
+        let l = MutList.empty(rc);
+        Iterator.forEach(x -> MutList.push(x, l), iter);
+        l
 
 }
 
@@ -756,14 +758,6 @@ mod MutList {
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
 
     ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
-
-    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ { r1, r2 } with Eq[a] =
@@ -902,7 +896,10 @@ mod MutList {
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = region rc2 {
-        toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
+        let arr = toArray(rc2, v) !> Array.shuffle;
+        let result = MutList.empty(rc1);
+        Array.forEach(x -> MutList.push(x, result), arr);
+        result
     }
 
 }

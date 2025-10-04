@@ -513,13 +513,6 @@ mod MultiMap {
         let MultiMap(m1) = m;
         m1
 
-    ///
-    /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
-    ///
-    pub def toMutDeque(rc: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ r =
-        let MultiMap(m1) = m;
-        Map.toMutDeque(rc, m1)
-
     // No traversable functions due to Order constraint that is outside the `Traversable` trait.
 
     ///
