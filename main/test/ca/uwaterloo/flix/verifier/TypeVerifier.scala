@@ -391,9 +391,6 @@ object TypeVerifier {
         case AtomicOp.Cast =>
           tpe
 
-        case AtomicOp.Region =>
-          check(expected = SimpleType.Region)(actual = tpe, loc)
-
         case AtomicOp.Spawn =>
           val List(t1, t2) = ts
           t1 match {

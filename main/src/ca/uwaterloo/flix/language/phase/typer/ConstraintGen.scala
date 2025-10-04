@@ -432,11 +432,6 @@ object ConstraintGen {
         val resEff = eff2
         (resTpe, resEff)
 
-      case Expr.Region(tpe, _) =>
-        val resTpe = tpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
       case Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)

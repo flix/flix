@@ -38,6 +38,7 @@ object FormatConstant {
     case Constant.Str(lit) => "\"" + lit + "\""
     case Constant.Regex(lit) => "regex\"" + lit.pattern() + "\""
     case Constant.RecordEmpty => "{}"
+    case Constant.Static => "Static"
   }
 
 }
