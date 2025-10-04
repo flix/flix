@@ -186,6 +186,7 @@ object Kind {
     case Predicate => false
     case Jvm => false
     case CaseSet(_) => false
+    case Region => false
     case Flavor => false
     case Arrow(k1, k2) => hasError(k1) || hasError(k2)
     case Error => true

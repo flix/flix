@@ -337,6 +337,8 @@ object TypeReduction2 {
     case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
+    case Type.RegionToEff(_, arg, _) => isKnown(arg)
+    case Type.AbstractRegionToEff(_, arg, _) => isKnown(arg)
   }
 
   private def reduceRegionOp(op: Type.AbstractRegionOp, f: TypeConstructor.RegionFlavor): Option[Type.RegionOp] = (op, f) match {
