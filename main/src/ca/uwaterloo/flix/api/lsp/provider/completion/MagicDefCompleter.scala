@@ -103,7 +103,7 @@ object MagicDefCompleter {
     * }}}
     */
   private def getSnippet(sym: QualifiedSym, fparamsExceptLast: List[TypedAst.FormalParam], lastArg: String): String = {
-    if (fparamsExceptLast.size == 1) {
+    if (fparamsExceptLast.isEmpty) {
       s"$sym($lastArg)"
     } else {
       val argsWithHoles = fparamsExceptLast.zipWithIndex.map {
