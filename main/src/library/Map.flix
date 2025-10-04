@@ -61,7 +61,6 @@ instance Functor[Map[k]] {
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
 }
 
 instance UnorderedFoldable[Map[k]] {

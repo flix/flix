@@ -70,7 +70,6 @@ instance ToString[DelayList[a]] with ToString[a] {
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
