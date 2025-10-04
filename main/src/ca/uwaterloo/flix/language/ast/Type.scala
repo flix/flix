@@ -605,15 +605,6 @@ object Type {
     override def kind: Kind = Kind.Eff
   }
 
-  sealed trait AbstractRegionOp
-
-  object AbstractRegionOp {
-    case object GetAlloc extends AbstractRegionOp
-    case object GetRead extends AbstractRegionOp
-    case object GetWrite extends AbstractRegionOp
-    case object XWrite extends AbstractRegionOp
-  }
-
   case class RegionToEff(op: RegionOp, tpe: Type, loc: SourceLocation) extends Type with BaseType {
     override def equals(obj: Any): Boolean = obj match {
       case that: RegionToEff => this.op == that.op && this.tpe == that.tpe
@@ -623,15 +614,6 @@ object Type {
     override def hashCode(): Int = Objects.hash(op, tpe)
 
     override def kind: Kind = Kind.Eff
-  }
-
-  sealed trait RegionOp
-
-  object RegionOp {
-    case object Heap extends RegionOp
-    case object Alloc extends RegionOp
-    case object Read extends RegionOp
-    case object Write extends RegionOp
   }
 
   /**

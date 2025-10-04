@@ -341,25 +341,25 @@ object TypeReduction2 {
     case Type.AbstractRegionToEff(_, arg, _) => isKnown(arg)
   }
 
-  private def reduceRegionOp(op: Type.AbstractRegionOp, f: RegionFlavor): Option[Type.RegionOp] = (op, f) match {
+  private def reduceRegionOp(op: AbstractRegionOp, f: RegionFlavor): Option[RegionOp] = (op, f) match {
     // Low-fidelity: all operations map to Heap
-    case (Type.AbstractRegionOp.GetAlloc, RegionFlavor.Lofi) => Some(Type.RegionOp.Heap)
-    case (Type.AbstractRegionOp.GetRead, RegionFlavor.Lofi) => Some(Type.RegionOp.Heap)
-    case (Type.AbstractRegionOp.GetWrite, RegionFlavor.Lofi) => Some(Type.RegionOp.Heap)
+    case (AbstractRegionOp.GetAlloc, RegionFlavor.Lofi) => Some(RegionOp.Heap)
+    case (AbstractRegionOp.GetRead, RegionFlavor.Lofi) => Some(RegionOp.Heap)
+    case (AbstractRegionOp.GetWrite, RegionFlavor.Lofi) => Some(RegionOp.Heap)
 
     // High-fidelity: operations map to their corresponding operations
-    case (Type.AbstractRegionOp.GetAlloc, RegionFlavor.Hifi) => Some(Type.RegionOp.Alloc)
-    case (Type.AbstractRegionOp.GetRead, RegionFlavor.Hifi) => Some(Type.RegionOp.Read)
-    case (Type.AbstractRegionOp.GetWrite, RegionFlavor.Hifi) => Some(Type.RegionOp.Write)
+    case (AbstractRegionOp.GetAlloc, RegionFlavor.Hifi) => Some(RegionOp.Alloc)
+    case (AbstractRegionOp.GetRead, RegionFlavor.Hifi) => Some(RegionOp.Read)
+    case (AbstractRegionOp.GetWrite, RegionFlavor.Hifi) => Some(RegionOp.Write)
 
     // Exclusive: operations map to their corresponding operations
-    case (Type.AbstractRegionOp.GetAlloc, RegionFlavor.XHifi) => Some(Type.RegionOp.Alloc)
-    case (Type.AbstractRegionOp.GetRead, RegionFlavor.XHifi) => Some(Type.RegionOp.Read)
-    case (Type.AbstractRegionOp.GetWrite, RegionFlavor.XHifi) => Some(Type.RegionOp.Write)
+    case (AbstractRegionOp.GetAlloc, RegionFlavor.XHifi) => Some(RegionOp.Alloc)
+    case (AbstractRegionOp.GetRead, RegionFlavor.XHifi) => Some(RegionOp.Read)
+    case (AbstractRegionOp.GetWrite, RegionFlavor.XHifi) => Some(RegionOp.Write)
 
     // XWrite: only valid for Exclusive, otherwise None
-    case (Type.AbstractRegionOp.XWrite, RegionFlavor.XHifi) => Some(Type.RegionOp.Write)
-    case (Type.AbstractRegionOp.XWrite, _) => None
+    case (AbstractRegionOp.XWrite, RegionFlavor.XHifi) => Some(RegionOp.Write)
+    case (AbstractRegionOp.XWrite, _) => None
   }
 
   /** A lookup result of a Java field. */
