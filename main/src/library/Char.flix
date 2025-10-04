@@ -162,6 +162,18 @@ mod Char {
         unchecked_cast(c as Int16) |> Int16.toInt32
 
     ///
+    /// Returns the `Char` representation of `i`.
+    ///
+    /// Returns `None` if `0 <= i`.
+    ///
+    pub def fromBmpCodePoint(i: Int16): Option[Char] =
+        if (0 <= i) {
+            Some(unchecked_cast(i as Char))
+        } else {
+            None
+        }
+
+    ///
     /// Returns the supplementary code point value of the surrogate pair `high` and `low`.
     ///
     /// Caution - this function does no validation, use `isSurrogatePair` to check `high` and `low` are valid.
