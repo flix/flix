@@ -193,16 +193,6 @@ mod Iterator {
     }
 
     ///
-    /// Returns the contents of `iter` as a MutDeque.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), iter);
-        d
-
-    ///
     /// Returns the contents of `iter` as a MutList.
     ///
     /// Consumes the entire iterator.

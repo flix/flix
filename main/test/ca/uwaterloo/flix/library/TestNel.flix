@@ -762,44 +762,6 @@ mod TestNel {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = Nel(1, 2 :: Nil);
-        let d1 = Nel.toMutDeque(rc, l);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-        MutDeque.pushBack(2, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let l = Nel(3, 1 :: 2 :: Nil);
-        let d1 = Nel.toMutDeque(rc, l);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-        MutDeque.pushBack(2, d2);
-        MutDeque.pushFront(3, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let l = Nel('a', 'b' :: 'c' :: Nil);
-        let d1 = Nel.toMutDeque(rc, l);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront('c', d2);
-        MutDeque.pushFront('b', d2);
-        MutDeque.pushFront('a', d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////

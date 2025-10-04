@@ -321,14 +321,6 @@ mod Vector {
         foldRight(step, None, v)
 
     ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
-
-    ///
     /// Returns `Some(x)` if `x` is the first element of `v`.
     ///
     /// Returns `None` if `v` is empty.

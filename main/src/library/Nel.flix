@@ -571,14 +571,6 @@ mod Nel {
     }
 
     ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
-
-    ///
     /// Applies `f` to every element of `l`.
     ///
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {

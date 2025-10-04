@@ -819,14 +819,6 @@ mod Map {
         MultiMap.MultiMap(Map.map(Set.singleton, m))
 
     ///
-    /// Returns `m` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
-
-    ///
     /// Applies `f` to every `(key, value)` of `m`.
     ///
     pub def forEach(f: (k, v) -> Unit \ ef, m: Map[k, v]): Unit \ ef =
