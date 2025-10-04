@@ -694,6 +694,8 @@ object EntryPoints {
     case Type.Var(_, _) => Result.Err(ErrorOrMalformed)
     case Type.Apply(_, _, _) => Result.Err(ErrorOrMalformed)
     case Type.AssocType(_, _, _, _) => Result.Err(ErrorOrMalformed)
+    case Type.RegionToEff(_, _, _) => Result.Err(ErrorOrMalformed)
+    case Type.AbstractRegionToEff(_, _, _) => Result.Err(ErrorOrMalformed)
     case Type.JvmToType(_, _) => Result.Err(ErrorOrMalformed)
     case Type.JvmToEff(_, _) => Result.Err(ErrorOrMalformed)
     case Type.UnresolvedJvmType(_, _) => Result.Err(ErrorOrMalformed)
