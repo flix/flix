@@ -17,9 +17,11 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst2.*
+import ca.uwaterloo.flix.language.ast.LoweredAst.*
+import ca.uwaterloo.flix.language.ast.LoweredAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst2
+import ca.uwaterloo.flix.language.ast.shared.DatalogDefs
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -143,7 +145,57 @@ object TreeShaker1 {
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+    // The following can be made more precise, but it would cost a tighter coupling with the lowered Datalog.
+    case Expr.FixpointConstraintSet(cs, _, _) =>
+      allDatalogDefs ++ visitDatalogConstraints(cs)
+
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
+      visitExp(exp) ++ allDatalogDefs
+
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      allDatalogDefs ++ visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      allDatalogDefs ++ visitExps(exps) ++ visitDatalogHead(select)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      allDatalogDefs ++
+        visitExps(exps) ++
+        visitExp(queryExp) ++
+        visitExps(selects) ++
+        visitDatalogBodies(from) ++
+        visitExps(where)
+
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      allDatalogDefs ++ visitExps(exps)
+
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      allDatalogDefs ++ visitExps(exps)
   }
+
+  private def visitDatalogConstraints(cs: List[Constraint]): Set[ReachableSym] =
+    cs.map(visitDatalogConstraint).fold(Set())(_ ++ _)
+
+
+  private def visitDatalogConstraint(c: Constraint): Set[ReachableSym] = c match {
+    case Constraint(_, head, body, _) => visitDatalogHead(head) ++ visitDatalogBodies(body)
+  }
+
+  private def visitDatalogHead(h: Predicate.Head): Set[ReachableSym] = h match {
+    case Head.Atom(_, _, terms, _, _) => visitExps(terms)
+  }
+
+  private def visitDatalogBodies(bodies: List[Predicate.Body]): Set[ReachableSym] =
+    bodies.map(visitDatalogBody).fold(Set())(_ ++ _)
+
+  private def visitDatalogBody(b: Predicate.Body): Set[ReachableSym] = b match {
+    case Body.Atom(_, _, _, _, _, _, _) => Set()
+    case Body.Functional(_, exp, _) => visitExp(exp)
+    case Body.Guard(exp, _) => visitExp(exp)
+  }
+
+  private lazy val allDatalogDefs: Set[ReachableSym] = DatalogDefs.allDatalogDefs.map(ReachableSym.DefnSym.apply).toSet
 
   /** Returns the symbols reachable from `exps`. */
   private def visitExps(exps: List[Expr]): Set[ReachableSym] =

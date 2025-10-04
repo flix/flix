@@ -717,13 +717,14 @@ class Flix {
     var loweringAst = Lowering.run(typedAst)
     // Note: Do not null typedAst. It is used later.
 
-    var loweringAst2 = Lowering2.run(loweringAst)
-
-    var treeShaker1Ast = TreeShaker1.run(loweringAst2)
+    var treeShaker1Ast = TreeShaker1.run(loweringAst)
     loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    var monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    var loweringAst2 = Lowering2.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var monomorpherAst = Monomorpher.run(loweringAst2)
+    loweringAst2 = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     var lambdaDropAst = LambdaDrop.run(monomorpherAst)
     monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.

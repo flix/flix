@@ -43,52 +43,34 @@ import scala.annotation.unused
 
 object Lowering2 {
 
-  private object Defs {
-    val version: String = "3"
-    lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.box")
-    lazy val Unbox: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Boxable.unbox")
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolver")
-    lazy val SolveWithProvenance: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.runSolverWithProvenance")
-    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.union")
-    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.projectSym")
-    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.rename")
-    lazy val ProvenanceOf: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint3.Solver.provenanceOf")
-
-    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.injectInto$arity")
-
-    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.facts$arity")
-
-    /**
-      * Returns the definition associated with the given symbol `sym`.
-      */
-    def lookup(sym: Symbol.DefnSym)(implicit root: LoweredAst.Root): LoweredAst.Def = root.defs.get(sym) match {
-      case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?", sym.loc)
-      case Some(d) => d
-    }
+  /**
+    * Returns the definition associated with the given symbol `sym`.
+    */
+  private def lookup(sym: Symbol.DefnSym)(implicit root: LoweredAst.Root): LoweredAst.Def = root.defs.get(sym) match {
+    case None => throw InternalCompilerException(s"Symbol '$sym' not found. Missing library?", sym.loc)
+    case Some(d) => d
   }
 
   private object Enums {
-    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Datalog")
-    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Constraint")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.Datalog")
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.Constraint")
 
-    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.HeadPredicate")
-    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.BodyPredicate")
+    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.HeadPredicate")
+    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.BodyPredicate")
 
-    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.HeadTerm")
-    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.BodyTerm")
+    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.HeadTerm")
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.BodyTerm")
 
-    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.PredSym")
-    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.VarSym")
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Shared.PredSym")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.VarSym")
 
-    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Shared.Denotation")
-    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Polarity")
-    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Ast.Datalog.Fixity")
+    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Shared.Denotation")
+    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.Polarity")
+    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Ast.Datalog.Fixity")
 
-    lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${Defs.version}.Boxed")
+    lazy val Boxed: Symbol.EnumSym = Symbol.mkEnumSym(s"Fixpoint${DatalogDefs.version}.Boxed")
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
-
-    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
   }
 
   private object Types {
@@ -112,8 +94,6 @@ object Lowering2 {
     lazy val Fixity: Type = Type.mkEnum(Enums.Fixity, Nil, SourceLocation.Unknown)
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
-
-    lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
 
@@ -198,7 +178,7 @@ object Lowering2 {
       val fields = fields0.map {
         case LoweredAst.StructField(fieldSym, tpe, loc2) => LoweredAst2.StructField(fieldSym, visitType(tpe), loc2)
       }
-      LoweredAst2.Struct(doc, ann, mod, sym, tparams, fields.toList, loc)
+      LoweredAst2.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
 
 
@@ -439,14 +419,14 @@ object Lowering2 {
       mkDatalog(cs, loc)
 
     case LoweredAst.Expr.FixpointLambda(pparams, exp, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Rename)
+      val defn = lookup(DatalogDefs.Rename)
       val predExps = mkList(pparams.map(pparam => mkPredSym(pparam.pred)), Types.PredSym, loc)
       val argExps = predExps :: visitExp(exp) :: Nil
       val resultType = Types.Datalog
       LoweredAst2.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.RenameType, resultType, eff, loc)
 
     case LoweredAst.Expr.FixpointMerge(exp1, exp2, _, eff, loc) =>
-      val defn = Defs.lookup(Defs.Merge)
+      val defn = lookup(DatalogDefs.Merge)
       val argExps = visitExp(exp1) :: visitExp(exp2) :: Nil
       val resultType = Types.Datalog
       LoweredAst2.Expr.ApplyDef(defn.sym, argExps, List.empty, Types.MergeType, resultType, eff, loc)
@@ -454,7 +434,7 @@ object Lowering2 {
     case LoweredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tpe, eff, loc) =>
       // Create appropriate call to Fixpoint.Solver.provenanceOf. This requires creating a mapping, mkExtVar, from
       // PredSym and terms to an extensible variant.
-      val defn = Defs.lookup(Defs.ProvenanceOf)
+      val defn = lookup(DatalogDefs.ProvenanceOf)
       val mergedExp = mergeExps(exps.map(visitExp), loc)
       val (goalPredSym, goalTerms) = select match {
         case LoweredAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
@@ -487,12 +467,12 @@ object Lowering2 {
       val predArity = selects.length
 
       // Define the name and type of the appropriate factsX function in Solver.flix
-      val sym = Defs.Facts(predArity)
+      val sym = DatalogDefs.Facts(predArity)
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), tpe, loc)
 
       // Merge and solve exps
       val mergedExp = mergeExps(loweredQueryExp :: loweredExps, loc)
-      val solvedExp = LoweredAst2.Expr.ApplyDef(Defs.Solve, mergedExp :: Nil, List.empty, Types.SolveType, Types.Datalog, eff, loc)
+      val solvedExp = LoweredAst2.Expr.ApplyDef(DatalogDefs.Solve, mergedExp :: Nil, List.empty, Types.SolveType, Types.Datalog, eff, loc)
 
       // Put everything together
       val argExps = mkPredSym(pred) :: solvedExp :: Nil
@@ -506,8 +486,8 @@ object Lowering2 {
       //     merge (project P₁ tmp%, project P₂ tmp%, project P₃ tmp%)
       //
       val defn = mode match {
-        case SolveMode.Default => Defs.lookup(Defs.Solve)
-        case SolveMode.WithProvenance => Defs.lookup(Defs.SolveWithProvenance)
+        case SolveMode.Default => lookup(DatalogDefs.Solve)
+        case SolveMode.WithProvenance => lookup(DatalogDefs.SolveWithProvenance)
       }
       val exps = exps0.map(visitExp)
       val mergedExp = mergeExps(exps, loc)
@@ -538,7 +518,7 @@ object Lowering2 {
           }
 
           // Compute the symbol of the function.
-          val sym = Defs.ProjectInto(targs.length)
+          val sym = DatalogDefs.ProjectInto(targs.length)
 
           // The type of the function.
           val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, exp.tpe), Types.Datalog, loc)
@@ -915,10 +895,10 @@ object Lowering2 {
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
 
-          val latticeSym: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Ast.Shared.lattice")
+          val latticeSym: Symbol.DefnSym = DatalogDefs.lattice
           val latticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, loc)
 
-          val boxSym: Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Ast.Shared.box")
+          val boxSym: Symbol.DefnSym = DatalogDefs.box
           val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
           val innerApply = LoweredAst2.Expr.ApplyDef(latticeSym, List(LoweredAst2.Expr.Cst(Constant.Unit, Type.Unit, loc)), List(innerType), latticeType, unboxedDenotationType, Type.Pure, loc)
@@ -973,7 +953,7 @@ object Lowering2 {
   private def box(exp: LoweredAst2.Expr): LoweredAst2.Expr = {
     val loc = exp.loc
     val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
-    LoweredAst2.Expr.ApplyDef(Defs.Box, List(exp), List(exp.tpe), tpe, Types.Boxed, Type.Pure, loc)
+    LoweredAst2.Expr.ApplyDef(DatalogDefs.Box, List(exp), List(exp.tpe), tpe, Types.Boxed, Type.Pure, loc)
   }
 
   /**
@@ -1114,7 +1094,7 @@ object Lowering2 {
     */
   private def liftX(exp0: LoweredAst2.Expr, argTypes: List[Type], resultType: Type): LoweredAst2.Expr = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}")
+    val sym = DatalogDefs.liftX(argTypes.length)
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> `resultType` and
@@ -1140,7 +1120,7 @@ object Lowering2 {
     */
   private def liftXb(exp0: LoweredAst2.Expr, argTypes: List[Type]): LoweredAst2.Expr = {
     // Compute the liftXb symbol.
-    val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${argTypes.length}b")
+    val sym = DatalogDefs.liftXb(argTypes.length)
 
     //
     // The liftX family of functions are of the form: a -> b -> c -> Bool and
@@ -1172,7 +1152,7 @@ object Lowering2 {
 
     // Compute the liftXY symbol.
     // For example, lift3X2 is a function from three arguments to a Vector of pairs.
-    val sym = Symbol.mkDefnSym(s"Fixpoint${Defs.version}.Boxable.lift${numberOfInVars}X$numberOfOutVars")
+    val sym = DatalogDefs.liftXY(numberOfInVars, numberOfOutVars)
 
     //
     // The liftXY family of functions are of the form: i1 -> i2 -> i3 -> Vector[(o1, o2, o3, ...)] and
@@ -1240,7 +1220,7 @@ object Lowering2 {
   private def mergeExps(exps: List[LoweredAst2.Expr], loc: SourceLocation)(implicit root: LoweredAst.Root): LoweredAst2.Expr =
     exps.reduceRight {
       (exp, acc) =>
-        val defn = Defs.lookup(Defs.Merge)
+        val defn = lookup(DatalogDefs.Merge)
         val argExps = exp :: acc :: Nil
         val resultType = Types.Datalog
         val itpe = Types.MergeType
@@ -1252,7 +1232,7 @@ object Lowering2 {
     * using `Defs.Filter`.
     */
   private def projectSym(predSymExp: LoweredAst2.Expr, datalogExp: LoweredAst2.Expr, loc: SourceLocation)(implicit root: LoweredAst.Root): LoweredAst2.Expr = {
-    val defn = Defs.lookup(Defs.Filter)
+    val defn = lookup(DatalogDefs.Filter)
     val argExps = predSymExp :: datalogExp :: Nil
     val resultType = Types.Datalog
     val itpe = Types.FilterType
@@ -1420,7 +1400,7 @@ object Lowering2 {
     */
   private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation): LoweredAst.Expr = {
     LoweredAst.Expr.ApplyDef(
-      sym = Defs.Unbox,
+      sym = DatalogDefs.Unbox,
       exps = List(
         LoweredAst.Expr.ApplyDef(
           sym = Symbol.mkDefnSym(s"Vector.get"),
