@@ -141,6 +141,12 @@ object Instances {
       case Type.AssocType(assoc, _, _, loc) =>
         sctx.errors.add(InstanceError.IllegalAssocTypeInstance(assoc.sym, trt.sym, loc))
         false
+      case Type.RegionToEff(_, _, _) =>
+        sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+        false
+      case Type.AbstractRegionToEff(_, _, _) =>
+        sctx.errors.add(InstanceError.ComplexInstance(tpe, trt.sym, trt.loc))
+        false
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type in instance declaration", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff in instance declaration", loc)

@@ -2512,6 +2512,17 @@ object Resolver {
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
+        case "Alloc" => Validation.Success(UnkindedType.UnappliedRegionToEff(Type.RegionOp.Alloc, loc))
+        case "Read" => Validation.Success(UnkindedType.UnappliedRegionToEff(Type.RegionOp.Read, loc))
+        case "Write" => Validation.Success(UnkindedType.UnappliedRegionToEff(Type.RegionOp.Write, loc))
+        case "Heap" => Validation.Success(UnkindedType.UnappliedRegionToEff(Type.RegionOp.Heap, loc))
+        case "GetAlloc" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.GetAlloc, loc))
+        case "GetRead" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.GetRead, loc))
+        case "GetWrite" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.GetWrite, loc))
+        case "XWrite" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.XWrite, loc))
+        case "Lofi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(TypeConstructor.RegionFlavor.LowFidelity), loc))
+        case "Hifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(TypeConstructor.RegionFlavor.HighFidelity), loc))
+        case "XHifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(TypeConstructor.RegionFlavor.Exclusive), loc))
 
         // Disambiguate type.
         case _ => // typeName
@@ -2887,6 +2898,8 @@ object Resolver {
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
       case _: UnkindedType.AssocType => throw InternalCompilerException("unexpected resolved associated type", baseType.loc)
+      case _: UnkindedType.RegionToEff => throw InternalCompilerException("unexpected resolved region to effect", baseType.loc)
+      case _: UnkindedType.AbstractRegionToEff => throw InternalCompilerException("unexpected resolved abstract region to effect", baseType.loc)
     }
   }
 

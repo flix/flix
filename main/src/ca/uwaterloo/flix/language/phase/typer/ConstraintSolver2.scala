@@ -654,6 +654,8 @@ object ConstraintSolver2 {
     case Kind.SchemaRow => false
     case Kind.Jvm => false
     case Kind.CaseSet(_) => false
+    case Kind.Region => false
+    case Kind.Flavor => false
     case Kind.Error => false
   }
 }

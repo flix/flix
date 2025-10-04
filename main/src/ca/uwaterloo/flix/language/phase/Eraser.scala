@@ -274,6 +274,8 @@ object Eraser {
 
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.RegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)

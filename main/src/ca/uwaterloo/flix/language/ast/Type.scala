@@ -1300,6 +1300,8 @@ object Type {
     case Apply(tpe1, tpe2, _) => hasAssocType(tpe1) || hasAssocType(tpe2)
     case Alias(_, _, tpe, _) => hasAssocType(tpe)
     case AssocType(_, _, _, _) => true
+    case RegionToEff(_, arg, _) => hasAssocType(arg)
+    case AbstractRegionToEff(_, arg, _) => hasAssocType(arg)
     case JvmToType(tpe, _) => hasAssocType(tpe)
     case JvmToEff(tpe, _) => hasAssocType(tpe)
     case UnresolvedJvmType(member, _) => member.getTypeArguments.exists(hasAssocType)
@@ -1456,6 +1458,12 @@ object Type {
     case AssocType(symUse, arg, kind, loc) =>
       val a = purifyRegion(arg, sym)
       AssocType(symUse, a, kind, loc)
+    case RegionToEff(op, arg, loc) => // MATT must fix here
+      val a = purifyRegion(arg, sym)
+      RegionToEff(op, a, loc)
+    case AbstractRegionToEff(op, arg, loc) =>
+      val a = purifyRegion(arg, sym)
+      AbstractRegionToEff(op, a, loc)
     case JvmToType(tpe, loc) =>
       val t = purifyRegion(tpe, sym)
       JvmToType(t, loc)
@@ -1499,6 +1507,12 @@ object Type {
     case AssocType(symUse, arg, kind, loc) =>
       val a = simplifyEffects(arg)
       AssocType(symUse, a, kind, loc)
+    case RegionToEff(op, arg, loc) =>
+      val a = simplifyEffects(arg)
+      RegionToEff(op, a, loc)
+    case AbstractRegionToEff(op, arg, loc) =>
+      val a = simplifyEffects(arg)
+      AbstractRegionToEff(op, a, loc)
     case JvmToType(tpe, loc) =>
       val t = simplifyEffects(tpe)
       JvmToType(t, loc)

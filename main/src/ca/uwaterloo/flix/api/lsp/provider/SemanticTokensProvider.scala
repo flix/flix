@@ -824,6 +824,12 @@ object SemanticTokensProvider {
         val t = SemanticToken(SemanticTokenType.Type, Nil, cst.loc)
         Iterator(t) ++ visitType(arg)
 
+      case Type.RegionToEff(_, arg, _) =>
+        visitType(arg)
+
+      case Type.AbstractRegionToEff(_, arg, _) =>
+        visitType(arg)
+
       // Jvm types should not be exposed to the user.
       case _: Type.JvmToType => Iterator.empty
       case _: Type.JvmToEff => Iterator.empty
@@ -866,6 +872,7 @@ object SemanticTokensProvider {
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_, _) => true
+    case TypeConstructor.Flavor(_) => true
     case TypeConstructor.FlavorToRegion(_) => true
     case TypeConstructor.RegionToStar => true
 
