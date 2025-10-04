@@ -517,7 +517,7 @@ object TypeVerifier {
       visitExpr(exp1)
       visitExpr(exp2)
 
-    case Expr.Scope(sym, exp, tpe, _, loc) =>
+    case Expr.Region(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Region), lenv), loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>

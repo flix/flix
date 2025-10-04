@@ -180,8 +180,8 @@ object Eraser {
       Let(sym, visitExp(exp1), visitExp(exp2), loc)
     case Stmt(exp1, exp2, loc) =>
       Stmt(visitExp(exp1), visitExp(exp2), loc)
-    case Scope(sym, exp, tpe, purity, loc) =>
-      Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
+    case Region(sym, exp, tpe, purity, loc) =>
+      Region(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
     case RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>

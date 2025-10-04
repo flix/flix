@@ -151,12 +151,12 @@ object OccurrenceAnalyzer {
           (Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
         }
 
-      case Expr.Scope(sym, rsym, exp, tpe, eff, loc) =>
+      case Expr.Region(sym, rsym, exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.Scope(sym, rsym, e, tpe, eff, loc), ctx)
+          (Expr.Region(sym, rsym, e, tpe, eff, loc), ctx)
         }
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
