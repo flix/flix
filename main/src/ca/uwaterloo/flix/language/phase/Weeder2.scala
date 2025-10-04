@@ -1378,7 +1378,7 @@ object Weeder2 {
     private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Scope)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
-      val tpe = pick(TreeKind.Type, tree)
+      val tpe = pick(TreeKind.Type.Type, tree)
       mapN(pickNameIdent(tree), block) {
         (ident, block) => Expr.Scope(ident, tpe, block, tree.loc)
       }
