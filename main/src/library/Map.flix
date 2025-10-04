@@ -801,12 +801,6 @@ mod Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `DelayList` of key-value pairs.
-    ///
-    pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
-
-    ///
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =

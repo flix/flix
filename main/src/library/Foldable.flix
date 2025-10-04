@@ -193,12 +193,6 @@ pub trait Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> Chain.cons(x, acc), Chain.empty(), t)
 
     ///
-    /// Returns `t` as a `DelayList`.
-    ///
-    pub def toDelayList(t: t[a]): DelayList[a] \ Foldable.Aef[t] =
-        Foldable.foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, t)
-
-    ///
     /// Returns `t` as an immutable list.
     ///
     pub def toList(t: t[a]): List[a] \ Foldable.Aef[t] =
