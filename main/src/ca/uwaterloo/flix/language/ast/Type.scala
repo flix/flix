@@ -1446,7 +1446,7 @@ object Type {
     * Replaces the given region in the type with the Pure effect.
     */
   def purifyRegion(tpe0: Type, sym: Symbol.RegionSym): Type = tpe0 match {
-    case Cst(TypeConstructor.FlavorToRegion(sym1), _) if sym == sym1 => Type.Pure
+    case RegionToEff(_, Cst(TypeConstructor.FlavorToRegion(sym1), _), _) if sym == sym1 => Type.Pure
     case t: Cst => t
     case t: Var => t
     case Apply(tpe1, tpe2, loc) =>
@@ -1458,7 +1458,7 @@ object Type {
     case AssocType(symUse, arg, kind, loc) =>
       val a = purifyRegion(arg, sym)
       AssocType(symUse, a, kind, loc)
-    case RegionToEff(op, arg, loc) => // MATT must fix here
+    case RegionToEff(op, arg, loc) =>
       val a = purifyRegion(arg, sym)
       RegionToEff(op, a, loc)
     case AbstractRegionToEff(op, arg, loc) =>
