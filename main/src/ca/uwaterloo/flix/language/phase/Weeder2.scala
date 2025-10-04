@@ -1377,10 +1377,10 @@ object Weeder2 {
 
     private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Scope)
+      val tpe = Types.pickType(tree)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
-      val tpe = Types.pickType(TreeKind.Type.Type, tree)
-      mapN(pickNameIdent(tree), block) {
-        (ident, block) => Expr.Scope(ident, tpe, block, tree.loc)
+      mapN(pickNameIdent(tree), tpe, block) {
+        (ident, tpe, block) => Expr.Scope(ident, tpe, block, tree.loc)
       }
     }
 
