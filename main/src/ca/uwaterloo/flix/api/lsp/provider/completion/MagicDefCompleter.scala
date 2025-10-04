@@ -48,8 +48,8 @@ object MagicDefCompleter {
     * and so on.
     */
   def getCompletions(ident: Name.Ident, tpe: Type, range: Range, loc: SourceLocation, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
-    val prefix = ident.name               // the incomplete def name, i.e. the "bar" part.
-    val baseExp = loc.text.getOrElse("")  // the expression, but as a string, i.e. the "foo" part.
+    val prefix = ident.name // the incomplete def name, i.e. the "bar" part.
+    val baseExp = loc.text.getOrElse("") // the expression, but as a string, i.e. the "foo" part.
 
     // Lookup defs for types (i.e. enums and structs) that have companion modules.
     tpe.typeConstructor match {
@@ -60,20 +60,20 @@ object MagicDefCompleter {
   }
 
   /**
-    * Returns the relevant defs completions for the given qualified symbol (an enum or struct).
+    * Returns the relevant def completions for the given qualified symbol (an enum or struct).
     */
   private def getCompletionsForSym(sym: QualifiedSym, prefix: String, baseExp: String, tpe: Type, range: Range, root: TypedAst.Root)(implicit flix: Flix): Iterable[Completion] = {
     val matchedDefs = root.defs.values.filter {
       case defn =>
-        inCompanionMod(sym, defn) &&                           // Include only defs in the companion module.
-          CompletionUtils.isAvailable(defn.spec) &&            // Include only defs that are public.
+        inCompanionMod(sym, defn) && // Include only defs in the companion module.
+          CompletionUtils.isAvailable(defn.spec) && // Include only defs that are public.
           CompletionUtils.fuzzyMatch(prefix, defn.sym.text) && // Include only defs that fuzzy match what the user has written.
-          expMatchesLastArgType(tpe, defn.spec, root)          // Include only defs whose last parameter type unifies with the expression type.
+          expMatchesLastArgType(tpe, defn.spec, root) // Include only defs whose last parameter type unifies with the expression type.
     }
 
     matchedDefs.map {
       case defn =>
-        val label = baseExp + "." + defn.sym.text             // VSCode requires the code to be a prefix of the label.
+        val label = baseExp + "." + defn.sym.text // VSCode requires the code to be a prefix of the label.
         val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
         Completion.MagicDefCompletion(defn, label, snippet, range, Priority.Lower(0))
     }
@@ -102,12 +102,15 @@ object MagicDefCompleter {
     *   A.B.C.f({1:?arg1}, {2:?arg2}, lastArg)
     * }}}
     */
-  private def getSnippet(sym: QualifiedSym, fparams: List[TypedAst.FormalParam], lastArg: String): String = {
-    val argsWithHoles = fparams.zipWithIndex.map {
-      case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+  private def getSnippet(sym: QualifiedSym, fparamsExceptLast: List[TypedAst.FormalParam], lastArg: String): String = {
+    if (fparamsExceptLast.size == 1) {
+      s"$sym($lastArg)"
+    } else {
+      val argsWithHoles = fparamsExceptLast.zipWithIndex.map {
+        case (fparam, idx) => "$" + s"{${idx + 1}:?${fparam.bnd.sym.text}}"
+      }
+      s"$sym(${argsWithHoles.mkString(", ")}, $lastArg)"
     }
-    s"$sym(${argsWithHoles.mkString(", ")}, $lastArg)"
   }
 
 }
-
