@@ -307,6 +307,8 @@ object EffUnification3 {
         (op1, arg1).compare((op2, arg2))
       case (Atom.AbstractRegionToEff(op1, arg1), Atom.AbstractRegionToEff(op2, arg2)) =>
         (op1, arg1).compare((op2, arg2))
+      case (Atom.Flavor(f1), Atom.Flavor(f2)) =>
+        f1.compare(f2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         (sym1, arg1).compare((sym2, arg2))
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
@@ -317,9 +319,10 @@ object EffUnification3 {
           case Atom.FlavorToRegion(_, _) => 2
           case Atom.RegionToEff(_, _) => 3
           case Atom.AbstractRegionToEff(_, _) => 4
-          case Atom.Eff(_) => 5
-          case Atom.Assoc(_, _) => 6
-          case Atom.Error(_) => 7
+          case Atom.Flavor(_) => 5
+          case Atom.Eff(_) => 6
+          case Atom.Assoc(_, _) => 7
+          case Atom.Error(_) => 8
         }
 
         ordinal(this) - ordinal(that)
@@ -362,6 +365,7 @@ object EffUnification3 {
       case Type.Apply(Type.Cst(TypeConstructor.FlavorToRegion(sym), _), arg, _) => Atom.FlavorToRegion(sym, fromType(arg))
       case Type.RegionToEff(op, tpe, _) => Atom.RegionToEff(op, fromType(tpe))
       case Type.AbstractRegionToEff(op, tpe, _) => Atom.AbstractRegionToEff(op, fromType(tpe))
+      case Type.Cst(TypeConstructor.Flavor(f), _) => Atom.Flavor(f)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
@@ -425,6 +429,7 @@ object EffUnification3 {
       case Atom.FlavorToRegion(sym, arg) => Type.Apply(Type.Cst(TypeConstructor.FlavorToRegion(sym), loc), toType(arg, loc), loc)
       case Atom.RegionToEff(op, arg) => Type.RegionToEff(op, toType(arg, loc), loc)
       case Atom.AbstractRegionToEff(op, arg) => Type.AbstractRegionToEff(op, toType(arg, loc), loc)
+      case Atom.Flavor(f) => Type.Cst(TypeConstructor.Flavor(f), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
