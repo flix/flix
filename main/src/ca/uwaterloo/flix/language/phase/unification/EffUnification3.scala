@@ -301,19 +301,25 @@ object EffUnification3 {
       case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
-      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
+      case (Atom.FlavorToRegion(sym1, arg1), Atom.FlavorToRegion(sym2, arg2)) =>
+        (sym1, arg1).compare((sym2, arg2))
+      case (Atom.RegionToEff(op1, arg1), Atom.RegionToEff(op2, arg2)) =>
+        (op1, arg1).compare((op2, arg2))
+      case (Atom.AbstractRegionToEff(op1, arg1), Atom.AbstractRegionToEff(op2, arg2)) =>
+        (op1, arg1).compare((op2, arg2))
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
-        val symCmp = sym1.compare(sym2)
-        if (symCmp != 0) symCmp else arg1.compare(arg2)
+        (sym1, arg1).compare((sym2, arg2))
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
           case Atom.VarFlex(_) => 0
           case Atom.VarRigid(_) => 1
-          case Atom.Region(_) => 2
-          case Atom.Eff(_) => 3
-          case Atom.Assoc(_, _) => 4
-          case Atom.Error(_) => 5
+          case Atom.FlavorToRegion(_, _) => 2
+          case Atom.RegionToEff(_, _) => 3
+          case Atom.AbstractRegionToEff(_, _) => 4
+          case Atom.Eff(_) => 5
+          case Atom.Assoc(_, _) => 6
+          case Atom.Error(_) => 7
         }
 
         ordinal(this) - ordinal(that)

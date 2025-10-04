@@ -16,12 +16,26 @@
 package ca.uwaterloo.flix.language.ast
 
 // MATT docs
-sealed trait RegionOp
+sealed trait RegionOp extends Ordered[RegionOp] {
+  override def compare(that: RegionOp): Int = {
+    def ordinal(op: RegionOp): Int = op match {
+      case RegionOp.Heap => 0
+      case RegionOp.Alloc => 1
+      case RegionOp.Read => 2
+      case RegionOp.Write => 3
+    }
+
+    ordinal(this) - ordinal(that)
+  }
+}
 
 // MATT docs
 object RegionOp {
   case object Heap extends RegionOp
+
   case object Alloc extends RegionOp
+
   case object Read extends RegionOp
+
   case object Write extends RegionOp
 }
