@@ -96,6 +96,7 @@ object Lexer {
       ("new", TokenKind.KeywordNew),
       ("not", TokenKind.KeywordNot),
       ("null", TokenKind.KeywordNull),
+      ("of", TokenKind.KeywordOf),
       ("open_variant", TokenKind.KeywordOpenVariant),
       ("open_variant_as", TokenKind.KeywordOpenVariantAs),
       ("or", TokenKind.KeywordOr),
