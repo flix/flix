@@ -21,9 +21,33 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstruct
 
 object MagicDefCompleter {
 
+  /**
+    * A completer for expressions like:
+    *
+    * {{{
+    *   foo.bar
+    * }}}
+    *
+    * where foo is an expression that has an enum or struct type and bar is a prefix of a def
+    * in the companion module of the enum or struct.
+    *
+    * For example:
+    *
+    * {{{
+    *   let l = List.range(1, 100);
+    *   l.f
+    * }}}
+    *
+    * would propose:
+    *
+    * - List.filter(...)
+    * - List.fold(...)
+    *
+    * and so on.
+    */
   def getCompletions(ident: Name.Ident, tpe: Type, range: Range, loc: SourceLocation, root: TypedAst.Root): Iterable[Completion] = {
-    val prefix = ident.name
-    val baseExp = loc.text.getOrElse("")
+    val prefix = ident.name               // the incomplete def name, i.e. the "bar" part.
+    val baseExp = loc.text.getOrElse("")  // the expression, but as a string, i.e. the "foo" part.
 
     // Lookup defs for types (i.e. enums and structs) that have companion modules.
     tpe.typeConstructor match {
@@ -44,7 +68,7 @@ object MagicDefCompleter {
 
     matchedDefs.map {
       case defn =>
-        val label = baseExp + "." + defn.sym.text
+        val label = baseExp + "." + defn.sym.text           // VSCode requires the code to be a prefix of the label.
         val snippet = getSnippet(defn.sym, defn.spec.fparams.init, baseExp)
         Completion.MagicDefCompletion(defn, label, snippet, range, Priority.Lower(0))
     }
