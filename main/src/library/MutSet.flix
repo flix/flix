@@ -275,6 +275,18 @@ mod MutSet {
         Set.toMap(s->inner)
 
     ///
+    /// Returns the mutable set `s` as an array.
+    ///
+    pub def toArray(rc: Region[r1], s: MutSet[a, r2]): Array[a, r1] \ { r1, r2 } =
+        Set.toArray(rc, s->inner)
+
+    ///
+    /// Returns the mutable set `s` as a vector.
+    ///
+    pub def toVector(s: MutSet[a, r]): Vector[a] \ r =
+        Set.toVector(s->inner)
+
+    ///
     /// Applies `f` to every element of the mutable set `s`.
     ///
     pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, r } =

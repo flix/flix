@@ -331,6 +331,92 @@ mod TestMutSet {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // toArray                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
+        let s: MutSet[Int32, _] = MutSet.empty(rc);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 0, Array.length(arr))
+    }
+
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 1, Array.length(arr));
+        assertEq(expected = 1, arr[0])
+    }
+
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 3, Array.length(arr));
+        assertEq(expected = Set#{1, 2, 3}, Array.toSet(arr))
+    }
+
+    @Test
+    def toArray04(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add("a", s);
+        MutSet.add("b", s);
+        MutSet.add("c", s);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 3, Array.length(arr));
+        assertEq(expected = Set#{"a", "b", "c"}, Array.toSet(arr))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
+        let s: MutSet[Int32, _] = MutSet.empty(rc);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 0, Vector.length(vec))
+    }
+
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 1, Vector.length(vec));
+        assertEq(expected = 1, vec[0])
+    }
+
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 3, Vector.length(vec));
+        assertEq(expected = Set#{1, 2, 3}, Vector.toSet(vec))
+    }
+
+    @Test
+    def toVector04(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add("a", s);
+        MutSet.add("b", s);
+        MutSet.add("c", s);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 3, Vector.length(vec));
+        assertEq(expected = Set#{"a", "b", "c"}, Vector.toSet(vec))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
