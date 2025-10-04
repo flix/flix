@@ -196,7 +196,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Region(tpe, loc) =>
       TypedAst.Expr.Region(tpe, loc)
 
-    case KindedAst.Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
+    case KindedAst.Expr.Scope(sym, regSym, flav, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
       val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty))
       val tpe = subst(tvar)

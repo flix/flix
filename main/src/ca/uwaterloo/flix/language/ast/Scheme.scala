@@ -88,6 +88,12 @@ object Scheme {
         // // Performance: Few associated types, not worth optimizing.
         Type.AssocType(sym, args.map(visitType), kind, loc)
 
+      case Type.RegionToEff(op, arg, _) =>
+        Type.RegionToEff(op, visitType(arg), loc)
+
+      case Type.AbstractRegionToEff(op, arg, _) =>
+        Type.AbstractRegionToEff(op, visitType(arg), loc)
+
       case Type.JvmToType(tpe, _) =>
         Type.JvmToType(visitType(tpe), loc)
 

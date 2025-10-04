@@ -17,6 +17,8 @@ object KindPrinter {
     case Kind.Predicate => Type.AsIs("Predicate")
     case Kind.Jvm => Type.AsIs("Jvm")
     case Kind.CaseSet(sym) => Type.AsIs(s"CaseSet[${sym.name}]")
+    case Kind.Region => Type.AsIs("Region")
+    case Kind.Flavor => Type.AsIs("Flavor")
     case Kind.Arrow(k1, k2) => Type.Arrow(List(print(k1)), print(k2))
     case Kind.Error => Type.AsIs("Error")
   }
