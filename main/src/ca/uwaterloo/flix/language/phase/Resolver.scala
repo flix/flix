@@ -2520,9 +2520,9 @@ object Resolver {
         case "GetRead" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.GetRead, loc))
         case "GetWrite" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.GetWrite, loc))
         case "XWrite" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(Type.AbstractRegionOp.XWrite, loc))
-        case "Lofi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(TypeConstructor.RegionFlavor.LowFidelity), loc))
-        case "Hifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(TypeConstructor.RegionFlavor.HighFidelity), loc))
-        case "XHifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(TypeConstructor.RegionFlavor.Exclusive), loc))
+        case "Lofi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(RegionFlavor.Lofi), loc))
+        case "Hifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(RegionFlavor.Hifi), loc))
+        case "XHifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(RegionFlavor.XHifi), loc))
 
         // Disambiguate type.
         case _ => // typeName

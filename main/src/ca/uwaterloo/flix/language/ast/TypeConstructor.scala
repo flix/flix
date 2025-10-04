@@ -438,16 +438,9 @@ object TypeConstructor {
   @IntroducedBy(Kinder.getClass)
   case class Effect(sym: Symbol.EffSym, kind: Kind) extends TypeConstructor
 
+  // TODO docs
   case class Flavor(f: RegionFlavor) extends TypeConstructor {
     def kind: Kind = Kind.Flavor
-  }
-
-  sealed trait RegionFlavor
-
-  object RegionFlavor {
-    case object LowFidelity extends RegionFlavor
-    case object HighFidelity extends RegionFlavor
-    case object Exclusive extends RegionFlavor
   }
 
   /**
