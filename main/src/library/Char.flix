@@ -158,8 +158,20 @@ mod Char {
     ///
     /// Returns the code point representation of Char `c`.
     ///
-    pub def toBmpCodePoint(c: Char): Int32 =
-        unchecked_cast(c as Int16) |> Int16.toInt32
+    pub def toBmpCodePoint(c: Char): Int16 =
+        unchecked_cast(c as Int16)
+
+    ///
+    /// Returns the `Char` representation of `i`.
+    ///
+    /// Returns `None` if `0 <= i`.
+    ///
+    pub def fromBmpCodePoint(i: Int16): Option[Char] =
+        if (0 <= i) {
+            Some(unchecked_cast(i as Char))
+        } else {
+            None
+        }
 
     ///
     /// Returns the supplementary code point value of the surrogate pair `high` and `low`.
