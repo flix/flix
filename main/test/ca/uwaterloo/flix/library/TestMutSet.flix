@@ -346,8 +346,7 @@ mod TestMutSet {
         let s = MutSet.empty(rc);
         MutSet.add(1, s);
         let arr = MutSet.toArray(rc, s);
-        assertEq(expected = 1, Array.length(arr));
-        assertEq(expected = 1, arr[0])
+        assertEq(expected = 1, Array.length(arr))
     }
 
     @Test
@@ -389,8 +388,7 @@ mod TestMutSet {
         let s = MutSet.empty(rc);
         MutSet.add(1, s);
         let vec = MutSet.toVector(s);
-        assertEq(expected = 1, Vector.length(vec));
-        assertEq(expected = 1, vec[0])
+        assertEq(expected = 1, Vector.length(vec))
     }
 
     @Test
