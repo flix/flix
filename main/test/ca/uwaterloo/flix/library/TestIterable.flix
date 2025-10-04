@@ -43,7 +43,11 @@ mod TestIterable {
 
     @Test
     def iterableDelayMap02(): Unit \ Assert = region rc {
-        let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toDelayMap;
+        let m = {
+            let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
+            let f = (_, v) -> lazy v;
+            DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
+        };
         assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, m) |> Iterator.toList)
     }
 
