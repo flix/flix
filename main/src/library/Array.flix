@@ -1637,9 +1637,13 @@ mod Array {
     ///
     pub def shuffle(a: Array[a, r]): Unit \ {r, Shuffle} = {
         let len = Array.length(a);
+
+        // Compute a random permutation.
         let perm = Shuffle.permutation(len);
-        // Apply the permutation: result[i] = a[perm[i]]
+
+        // Apply the permutation: result[i] = a[perm[i]].
         let result = Vector.init(i -> Array.get(Vector.get(i, perm), a), len);
+
         // Write the result back into a.
         Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
     }
