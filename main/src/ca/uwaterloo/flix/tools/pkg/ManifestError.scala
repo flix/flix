@@ -75,7 +75,7 @@ object ManifestError {
     }
   }
 
-  case class FlixDependencyTrustTypeError(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
+  case class FlixDependencyTrustType(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
     override def message(f: Formatter): String = {
       val pStr = path.map(_.toString).getOrElse("\"unknown\"")
       val typ = perm.getClass
@@ -85,7 +85,7 @@ object ManifestError {
     }
   }
 
-  case class FlixUnknownTrustError(path: Path, lib: String, perm: String) extends ManifestError {
+  case class FlixUnknownTrustValue(path: Path, lib: String, perm: String) extends ManifestError {
     override def message(f: Formatter): String = {
       s"Unknown trust in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}."
     }

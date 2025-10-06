@@ -407,12 +407,12 @@ object ManifestParser {
     }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyTrustTypeError(Option.apply(path), key, perms))
+      Err(ManifestError.FlixDependencyTrustType(Option.apply(path), key, perms))
     } else {
       val value = depTbl.getString(key)
       Trust.fromString(value) match {
         case Some(trust) => Ok(trust)
-        case None => Err(ManifestError.FlixUnknownTrustError(path, key, value))
+        case None => Err(ManifestError.FlixUnknownTrustValue(path, key, value))
       }
     }
   }
