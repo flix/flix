@@ -373,8 +373,9 @@ object Safety {
   /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
   private def checkAllPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
-      case SecurityContext.Unrestricted => ()
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.TrustJavaClassLibrary => ()
+      case SecurityContext.Unrestricted => ()
     }
   }
 
