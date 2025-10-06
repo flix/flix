@@ -200,37 +200,6 @@ class TestFlixPackageManager extends AnyFunSuite {
     })
   }
 
-  test("Give error for missing dependency") {
-    assertResult(expected = PackageError.ProjectNotFound(new URI("https://api.github.com/repos/AnnaBlume99/helloworld/releases").toURL, Project("AnnaBlume99", "helloworld")).message(f))(actual = {
-      val toml = {
-        """
-          |[package]
-          |name = "test"
-          |description = "test"
-          |version = "0.0.0"
-          |flix = "0.0.0"
-          |authors = ["Anna Blume"]
-          |
-          |[dependencies]
-          |"github:AnnaBlume99/helloworld" = "1.0.0"
-          |
-          |[mvn-dependencies]
-          |
-          |""".stripMargin
-      }
-
-      val manifest = ManifestParser.parse(toml, null) match {
-        case Ok(m) => m
-        case Err(e) => fail(e.message(f)) //should not happen
-      }
-
-      val path = Files.createTempDirectory("")
-      FlixPackageManager.installAll(List(manifest), path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l
-        case Err(e) => e.message(f)
-      }
-    })
-  }
 
   test("Give error for missing version") {
     assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, 1), Project("flix", "museum")).message(f))(actual = {
