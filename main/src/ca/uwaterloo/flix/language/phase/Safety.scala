@@ -374,7 +374,6 @@ object Safety {
   private def checkAllPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.TrustJavaClassLibrary => ()
       case SecurityContext.Unrestricted => ()
     }
   }
