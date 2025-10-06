@@ -5092,30 +5092,6 @@ mod TestArray {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert = region rc {
-        assertEq(expected = DelayList.empty(), ((Array#{} @ rc: Array[Unit, _])) |> Array.toDelayList)
-    }
-
-    @Test
-    def toDelayList02(): Unit \ Assert = region rc {
-        assertEq(expected = DelayList.empty(), (Array.empty(rc, 0): Array[String, rc]) |> Array.toDelayList)
-    }
-
-    @Test
-    def toDelayList03(): Unit \ Assert = region rc {
-        assertEq(expected = DelayList.range(-1000, 1000), Array.range(rc, -1000, 1000) |> Array.toDelayList)
-    }
-
-    @Test
-    def toDelayList04(): Unit \ Assert = region rc {
-        assertTrue(Array.range(rc, -1000, 1000) |> Array.toDelayList |> DelayList.toArray(rc) `sameElements` Array.range(rc, -1000, 1000))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
