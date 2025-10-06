@@ -402,6 +402,9 @@ object ManifestParser {
     */
   private def getTrust(depTbl: TomlTable, key: String, path: Path): Result[Trust, ManifestError] = {
     // Ensure the trust value is a string.
+    if (!depTbl.contains(key)) {
+      return Ok(Trust.Plain)
+    }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
       Err(ManifestError.FlixDependencyTrustTypeError(Option.apply(path), key, perms))
