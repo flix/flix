@@ -49,7 +49,7 @@ instance Functor[DelayMap[k]] {
 instance Foldable[DelayMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
+    redef isEmpty(m: DelayMap[k, v]): Bool = DelayMap.isEmpty(m)
 
 }
 
@@ -798,14 +798,6 @@ mod DelayMap {
     pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ r =
         let DMap(t) = m;
         RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
-
-    ///
-    /// Returns the map `m` as a MutDeque of key-value pairs.
-    ///
-    @Experimental
-    pub def toMutDeque(rc: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ r =
-        let m1 = DelayMap.toMap(m);
-        Map.toMutDeque(rc, m1)
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.

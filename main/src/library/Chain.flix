@@ -75,7 +75,11 @@ instance MonadZip[Chain] {
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
+    redef head(c: Chain[a]): Option[a] = Chain.head(c)
+    redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+    redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+    redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -766,14 +770,6 @@ mod Chain {
     ///
     pub def toList(c: Chain[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, c)
-
-    ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
 
     ///
     /// Returns `c` as a mutable list.

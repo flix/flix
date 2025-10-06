@@ -916,34 +916,6 @@ mod TestDelayList {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = (ENil: DelayList[Int32]);
-        let d1 = DelayList.toMutDeque(rc, l);
-        let d2 = MutDeque.empty(rc);
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let l = (LList(lazy ENil): DelayList[Int32]);
-        let d1 = DelayList.toMutDeque(rc, l);
-        let d2 = MutDeque.empty(rc);
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
-        let d1 = DelayList.toMutDeque(rc, l);
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-        MutDeque.pushBack(2, d2);
-        MutDeque.pushBack(3, d2);
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // toMap                                                                   //
     /////////////////////////////////////////////////////////////////////////////

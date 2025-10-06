@@ -64,7 +64,9 @@ instance MeetLattice[Set[a]] with Order[a] {
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
+    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
 }
 
 instance UnorderedFoldable[Set] {
@@ -521,14 +523,6 @@ mod Set {
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
-
-    ///
-    /// Returns `s` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), s);
-        d
 
     ///
     /// Returns the set `s` as a `MutSet`.

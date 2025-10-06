@@ -453,10 +453,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.LocalDef(sym, fps, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.Scope(TypedAst.Binder(sym, _), regionVar, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Region(TypedAst.Binder(sym, _), regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.Scope(sym, regionVar, e, t, eff, loc)
+      LoweredAst.Expr.Region(sym, regionVar, e, t, eff, loc)
 
     case TypedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -2166,10 +2166,10 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       LoweredAst.Expr.LocalDef(s, fps, e1, e2, tpe, eff, loc)
 
-    case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
-      LoweredAst.Expr.Scope(s, regionVar, e, tpe, eff, loc)
+      LoweredAst.Expr.Region(s, regionVar, e, tpe, eff, loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

@@ -2031,54 +2031,6 @@ mod TestMutList {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = (MutList.empty(rc): MutList[Int32, _]);
-        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-
-        assertTrue(MutList.toMutDeque(rc, l) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let xs = 1 :: Nil;
-
-        let l = MutList.empty(rc);
-        List.forEach(x -> MutList.push(x, l), xs);
-
-        let d = MutDeque.empty(rc);
-        List.forEach(x -> MutDeque.pushBack(x, d), xs);
-
-        assertTrue(MutList.toMutDeque(rc, l) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let xs = 1 :: 2 :: Nil;
-
-        let l = MutList.empty(rc);
-        List.forEach(x -> MutList.push(x, l), xs);
-
-        let d = MutDeque.empty(rc);
-        List.forEach(x -> MutDeque.pushBack(x, d), xs);
-
-        assertTrue(MutList.toMutDeque(rc, l) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let xs = 1 :: 2 :: 3 :: Nil;
-
-        let l = MutList.empty(rc);
-        List.forEach(x -> MutList.push(x, l), xs);
-
-        let d = MutDeque.empty(rc);
-        List.forEach(x -> MutDeque.pushBack(x, d), xs);
-
-        assertTrue(MutList.toMutDeque(rc, l) `MutDeque.sameElements` d)
-    }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // sortWith                                                                //
     /////////////////////////////////////////////////////////////////////////////

@@ -379,53 +379,6 @@ mod TestVector {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let v = (Vector#{}: Vector[Int32]);
-        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let v = Vector#{1};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let v = Vector#{1, 2, 3};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
-        MutDeque.pushBack(3, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let v = Vector#{1, 2, 3, 4, 5};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d);
-        MutDeque.pushBack(4, d);
-        MutDeque.pushBack(5, d);
-        MutDeque.pushFront(2, d);
-        MutDeque.pushFront(1, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque05(): Unit \ Assert = region rc {
-        let v = Vector#{'a', 'b', 'c'};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushFront('c', d);
-        MutDeque.pushFront('b', d);
-        MutDeque.pushFront('a', d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////

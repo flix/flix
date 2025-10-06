@@ -87,7 +87,11 @@ instance MonadZip[Nec] {
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
+    redef head(c: Nec[a]): Option[a] = Some(Nec.head(c))
+    redef isEmpty(_: Nec[a]): Bool = false
+    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
 }
 
 instance UnorderedFoldable[Nec] {
@@ -752,14 +756,6 @@ mod Nec {
     ///
     pub def toList(c: Nec[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, c)
-
-    ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
 
     ///
     /// Returns `c` as a mutable list.
