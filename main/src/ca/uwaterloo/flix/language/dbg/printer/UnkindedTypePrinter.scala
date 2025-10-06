@@ -68,6 +68,8 @@ object UnkindedTypePrinter {
       case (UnkindedType.RestrictableEnum(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAlias(sym, _), _) => Type.AsIs(sym.toString)
       case (UnkindedType.UnappliedAssocType(sym, _), _) => Type.AsIs(sym.toString)
+      case (UnkindedType.UnappliedRegionToEff(op, _), _) => Type.AsIs(op.toString)
+      case (UnkindedType.UnappliedAbstractRegionToEff(op, _), _) => Type.AsIs(op.toString)
       case (UnkindedType.Arrow(eff0, arity, _), _) if args.lengthIs == arity && arity >= 2 =>
         // `(a1, a2, ..) -> b \ ef` is represented as `List(a1, a2, .., b)`
         // safe match because of the case guard
@@ -84,6 +86,8 @@ object UnkindedTypePrinter {
       case (UnkindedType.Ascribe(tpe, kind, _), _) => mkApp(Type.Ascribe(print(tpe), KindPrinter.print(kind)), args.map(print))
       case (UnkindedType.Alias(cst, aliasArgs, _, _), _) => mkApp(Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
       case (UnkindedType.AssocType(cst, arg, _), _) => mkApp(Type.AssocType(cst.sym, print(arg)), args.map(print))
+      case (UnkindedType.RegionToEff(op, arg, _), _) => mkApp(mkApp(Type.AsIs(op.toString), List(print(arg))), args.map(print))
+      case (UnkindedType.AbstractRegionToEff(op, arg, _), _) => mkApp(mkApp(Type.AsIs(op.toString), List(print(arg))), args.map(print))
       case (UnkindedType.Error(_), _) => Type.Error
       case (UnkindedType.Apply(_, _, _), _) =>
         // `collectApp` does not return Apply as base.

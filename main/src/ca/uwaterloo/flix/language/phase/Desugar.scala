@@ -558,9 +558,10 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LocalDef(ident, fps, e1, e2, loc)
 
-    case WeededAst.Expr.Region(ident, exp, loc) =>
+    case WeededAst.Expr.Region(ident, flav, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Region(ident, e, loc)
+      val f = visitType(flav)
+      Expr.Region(ident, f, e, loc)
 
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)

@@ -494,13 +494,13 @@ object Kinder {
         val exp2 = visitExp(exp20, kenv0, root)
         KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
 
-      case ResolvedAst.Expr.Region(sym, regSym, exp0, loc) =>
+      case ResolvedAst.Expr.Region(sym, regSym, flav, exp0, loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         // Record that we enter the new scope.
         val newScope = scope.enter(regSym)
         val exp = visitExp(exp0, kenv0, root)(newScope, renv, sctx, flix)
-        KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc)
+        KindedAst.Expr.Region(sym, regSym, flav, exp, tvar, evar, loc)
 
       case ResolvedAst.Expr.Match(exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -1155,6 +1155,26 @@ object Kinder {
           }
       }
 
+    case UnkindedType.RegionToEff(op, arg0, loc) =>
+      unify(Kind.Eff, expectedKind) match {
+        case Some(kind) =>
+          val arg = visitType(arg0, Kind.Region, kenv, root)
+          Type.RegionToEff(op, arg, loc)
+        case None =>
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc))
+          Type.freshError(Kind.Error, loc)
+      }
+
+    case UnkindedType.AbstractRegionToEff(op, arg0, loc) =>
+      unify(Kind.Eff, expectedKind) match {
+        case Some(kind) =>
+          val arg = visitType(arg0, Kind.Region, kenv, root)
+          Type.AbstractRegionToEff(op, arg, loc)
+        case None =>
+          sctx.errors.add(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc))
+          Type.freshError(Kind.Error, loc)
+      }
+
     case UnkindedType.Arrow(eff0, arity, loc) =>
       val kind = Kind.mkArrow(arity)
       unify(kind, expectedKind) match {
@@ -1298,6 +1318,8 @@ object Kinder {
 
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
+    case _: UnkindedType.UnappliedRegionToEff => throw InternalCompilerException("unexpected unapplied region to effect", tpe0.loc)
+    case _: UnkindedType.UnappliedAbstractRegionToEff => throw InternalCompilerException("unexpected unapplied abstract region to effect", tpe0.loc)
 
 
   }
@@ -1489,6 +1511,12 @@ object Kinder {
       val kind = getTraitKind(trt)
       inferType(arg, kind, kenv0, root)
 
+    case UnkindedType.RegionToEff(_, arg, _) =>
+      inferType(arg, Kind.Region, kenv0, root)
+
+    case UnkindedType.AbstractRegionToEff(_, arg, _) =>
+      inferType(arg, Kind.Region, kenv0, root)
+
     case UnkindedType.Arrow(eff, _, _) =>
       val effKenvs = eff.map(inferType(_, Kind.Eff, kenv0, root)).toList
       val argKenv = tpe.typeArguments.foldLeft(KindEnv.empty) {
@@ -1563,6 +1591,8 @@ object Kinder {
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe.loc)
+    case _: UnkindedType.UnappliedRegionToEff => throw InternalCompilerException("unexpected unapplied region to effect", tpe.loc)
+    case _: UnkindedType.UnappliedAbstractRegionToEff => throw InternalCompilerException("unexpected unapplied abstract region to effect", tpe.loc)
   }
 
   /**
@@ -1596,8 +1626,8 @@ object Kinder {
     */
   private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, sym, kind, _) => KindEnv.singleton(sym -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
-    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
+    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Region)
+    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Region)
   }
 
   /**

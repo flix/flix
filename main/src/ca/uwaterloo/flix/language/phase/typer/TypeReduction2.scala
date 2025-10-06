@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
+import ca.uwaterloo.flix.language.ast.RegionFlavor
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.{AssocTypeDef, Scope}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution}
@@ -89,6 +90,20 @@ object TypeReduction2 {
           progress.markProgress()
           newTpe
       }
+
+    case Type.AbstractRegionToEff(op0, tpe, loc) =>
+      reduce(tpe, scope, renv) match {
+        case reg@Type.Apply(Type.Cst(TypeConstructor.FlavorToRegion(_), _), Type.Cst(TypeConstructor.Flavor(f), _), _) =>
+          reduceRegionOp(op0, f) match {
+            case None => Type.mkPure(loc)
+            case Some(op) => Type.RegionToEff(op, reg, loc)
+          }
+        case t => Type.AbstractRegionToEff(op0, t, loc)
+      }
+
+    case Type.RegionToEff(op, tpe, loc) =>
+      val t = reduce(tpe, scope, renv)
+      Type.RegionToEff(op, t, loc)
 
     case Type.JvmToType(tpe, loc) =>
       reduce(tpe, scope, renv) match {
@@ -322,6 +337,29 @@ object TypeReduction2 {
     case Type.Apply(t1, t2, _) => isKnown(t1) && isKnown(t2)
     case Type.Alias(_, _, t, _) => isKnown(t)
     case Type.AssocType(_, _, _, _) => false
+    case Type.RegionToEff(_, arg, _) => isKnown(arg)
+    case Type.AbstractRegionToEff(_, arg, _) => isKnown(arg)
+  }
+
+  private def reduceRegionOp(op: AbstractRegionOp, f: RegionFlavor): Option[RegionOp] = (op, f) match {
+    // Low-fidelity: all operations map to Heap
+    case (AbstractRegionOp.GetAlloc, RegionFlavor.Lofi) => Some(RegionOp.Heap)
+    case (AbstractRegionOp.GetRead, RegionFlavor.Lofi) => Some(RegionOp.Heap)
+    case (AbstractRegionOp.GetWrite, RegionFlavor.Lofi) => Some(RegionOp.Heap)
+
+    // High-fidelity: operations map to their corresponding operations
+    case (AbstractRegionOp.GetAlloc, RegionFlavor.Hifi) => Some(RegionOp.Alloc)
+    case (AbstractRegionOp.GetRead, RegionFlavor.Hifi) => Some(RegionOp.Read)
+    case (AbstractRegionOp.GetWrite, RegionFlavor.Hifi) => Some(RegionOp.Write)
+
+    // Exclusive: operations map to their corresponding operations
+    case (AbstractRegionOp.GetAlloc, RegionFlavor.XHifi) => Some(RegionOp.Alloc)
+    case (AbstractRegionOp.GetRead, RegionFlavor.XHifi) => Some(RegionOp.Read)
+    case (AbstractRegionOp.GetWrite, RegionFlavor.XHifi) => Some(RegionOp.Write)
+
+    // XWrite: only valid for Exclusive, otherwise None
+    case (AbstractRegionOp.XWrite, RegionFlavor.XHifi) => Some(RegionOp.Write)
+    case (AbstractRegionOp.XWrite, _) => None
   }
 
   /** A lookup result of a Java field. */

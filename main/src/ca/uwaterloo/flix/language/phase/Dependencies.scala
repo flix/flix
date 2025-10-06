@@ -542,6 +542,8 @@ object Dependencies {
       addDependency(cst.loc, loc)
       args.foreach(visitType)
     case Type.AssocType(_, arg, _, _) => visitType(arg)
+    case Type.RegionToEff(_, arg, _) => visitType(arg)
+    case Type.AbstractRegionToEff(_, arg, _) => visitType(arg)
     case Type.JvmToType(t, _) => visitType(t)
     case Type.JvmToEff(t, _) => visitType(t)
     case Type.UnresolvedJvmType(_, _) => ()

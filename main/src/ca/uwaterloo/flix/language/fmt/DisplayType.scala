@@ -375,6 +375,10 @@ object DisplayType {
         mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
+      case Type.RegionToEff(op, arg, _) =>
+        mkApply(Name(op.toString), (arg :: t.typeArguments).map(visit))
+      case Type.AbstractRegionToEff(op, arg, _) =>
+        mkApply(Name(op.toString), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
         mkApply(DisplayType.JvmToType(visit(tpe)), t.typeArguments.map(visit))
       case Type.JvmToEff(tpe, _) =>
@@ -664,7 +668,8 @@ object DisplayType {
           }
 
         case TypeConstructor.Effect(sym, _) => mkApply(DisplayType.Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Region(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
+        case TypeConstructor.Flavor(f) => mkApply(DisplayType.Name(f.toString), t.typeArguments.map(visit))
+        case TypeConstructor.FlavorToRegion(sym) => mkApply(DisplayType.Region(sym.text), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(RegionToStar, t.typeArguments.map(visit))
         case TypeConstructor.RegionWithoutRegion => mkApply(RegionWithoutRegion, t.typeArguments.map(visit))
 

@@ -1377,9 +1377,10 @@ object Weeder2 {
 
     private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Region)
+      val tpe = Types.pickType(tree)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
-      mapN(pickNameIdent(tree), block) {
-        (ident, block) => Expr.Region(ident, block, tree.loc)
+      mapN(pickNameIdent(tree), tpe, block) {
+        (ident, tpe, block) => Expr.Region(ident, tpe, block, tree.loc)
       }
     }
 

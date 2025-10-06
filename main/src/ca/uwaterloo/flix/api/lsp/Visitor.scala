@@ -791,6 +791,8 @@ object Visitor {
         visitType(t2)
       case Type.Alias(_, args, _, _) => args.foreach(visitType)
       case Type.AssocType(_, t, _, _) => visitType(t)
+      case Type.RegionToEff(_, t, _) => visitType(t)
+      case Type.AbstractRegionToEff(_, t, _) => visitType(t)
       case Type.JvmToType(t, _) => visitType(t)
       case Type.JvmToEff(t, _) => visitType(t)
       case Type.UnresolvedJvmType(_, _) => ()

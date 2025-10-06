@@ -1008,6 +1008,14 @@ object Lowering {
     case Type.AssocType(cst, args, kind, loc) =>
       Type.AssocType(cst, args.map(visitType), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
 
+    case Type.RegionToEff(op, arg0, loc) =>
+      val arg = visitType(arg0)
+      Type.RegionToEff(op, arg, loc)
+
+    case Type.AbstractRegionToEff(op, arg0, loc) =>
+      val arg = visitType(arg0)
+      Type.AbstractRegionToEff(op, arg, loc)
+
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
 
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)

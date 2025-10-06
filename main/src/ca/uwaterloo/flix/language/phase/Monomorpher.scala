@@ -87,7 +87,7 @@ import scala.collection.mutable
   */
 object Monomorpher {
 
-  /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
+  /** The effect that all [[TypeConstructor.FlavorToRegion]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
     TypeConstructor.Effect(Symbol.IO, Kind.Eff)
 
@@ -139,7 +139,7 @@ object Monomorpher {
           t
       }
 
-      case Type.Cst(TypeConstructor.Region(_), loc) =>
+      case Type.Cst(TypeConstructor.FlavorToRegion(_), loc) =>
         Type.Cst(RegionInstantiation, loc)
 
       case cst@Type.Cst(_, _) =>
@@ -159,6 +159,14 @@ object Monomorpher {
         val reducedType = reduceAssocType(assoc)
         // `reducedType` is ground, but might need normalization.
         simplify(reducedType, isGround = true)
+
+      case Type.RegionToEff(op, arg0, loc) =>
+        val arg = apply(arg0)
+        Type.RegionToEff(op, arg, loc)
+
+      case Type.AbstractRegionToEff(op, arg0, loc) =>
+        val arg = apply(arg0)
+        Type.AbstractRegionToEff(op, arg, loc)
 
       case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
       case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
@@ -283,6 +291,8 @@ object Monomorpher {
       Type.mkRecordRowExtend(label, tpe, rest, loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException("Unexpected abstract region to eff '$rest'", rest.loc)
+    case Type.RegionToEff(_, _, _) => throw InternalCompilerException("Unexpected region to eff '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -305,6 +315,8 @@ object Monomorpher {
       Type.mkSchemaRowExtend(label, tpe, rest, loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+    case Type.RegionToEff(_, _, _) => throw InternalCompilerException("Unexpected region to eff '$rest'", rest.loc)
+    case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException("Unexpected abstract region to eff '$rest'", rest.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected JVM eff '$rest'", rest.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected JVM type '$rest'", rest.loc)
@@ -682,6 +694,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.RegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
@@ -706,6 +720,8 @@ object Monomorpher {
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.RegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
@@ -936,6 +952,8 @@ object Monomorpher {
       val assoc = Type.AssocType(symUse, arg, kind, loc)
       val t = reduceAssocType(assoc)
       simplify(t, isGround)
+    case Type.RegionToEff(_, _, loc) => throw InternalCompilerException("unexpected RegionToEff type", loc)
+    case Type.AbstractRegionToEff(_, _, loc) => throw InternalCompilerException("unexpected AbstractRegionToEff type", loc)
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
@@ -993,7 +1011,7 @@ object Monomorpher {
     case Type.Pure => CofiniteSet.empty
     case Type.Cst(TypeConstructor.Effect(sym, _), _) =>
       CofiniteSet.mkSet(sym)
-    case Type.Cst(TypeConstructor.Region(_), _) =>
+    case Type.Cst(TypeConstructor.FlavorToRegion(_), _) =>
       CofiniteSet.mkSet(RegionInstantiation.sym)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), y, _) =>
       CofiniteSet.complement(eval(y))
@@ -1032,6 +1050,8 @@ object Monomorpher {
     case Kind.SchemaRow => Type.SchemaRowEmpty
     case Kind.Predicate => Type.mkAnyType(tpe0.loc)
     case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
+    case Kind.Region => Type.mkAnyType(tpe0.loc)
+    case Kind.Flavor => Type.mkAnyType(tpe0.loc)
     case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
     case Kind.Jvm => throw InternalCompilerException(s"Unexpected type: '$tpe0'.", tpe0.loc)
     case Kind.Error => throw InternalCompilerException(s"Unexpected type '$tpe0'.", tpe0.loc)

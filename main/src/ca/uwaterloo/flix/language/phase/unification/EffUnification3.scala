@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AbstractRegionOp, Kind, RegionFlavor, RegionOp, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.set.Equation.Status
@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.language.phase.unification.zhegalkin.{Zhegalkin, Zhegal
 import ca.uwaterloo.flix.util.collection.SortedBimap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, Result}
 
-import scala.annotation.tailrec
 import scala.collection.immutable.SortedSet
 
 object EffUnification3 {
@@ -170,7 +169,12 @@ object EffUnification3 {
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
-    case tpe@Type.Cst(TypeConstructor.Region(_), _) => m.getForward(Atom.fromType(tpe)) match {
+    case tpe@Type.AbstractRegionToEff(_, _, _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.mkElemSet(x)
+    }
+
+    case tpe@Type.RegionToEff(_, _, _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
@@ -301,19 +305,30 @@ object EffUnification3 {
       case (Atom.VarFlex(sym1), Atom.VarFlex(sym2)) => sym1.id - sym2.id
       case (Atom.VarRigid(sym1), Atom.VarRigid(sym2)) => sym1.id - sym2.id
       case (Atom.Eff(sym1), Atom.Eff(sym2)) => sym1.compare(sym2)
-      case (Atom.Region(sym1), Atom.Region(sym2)) => sym1.compare(sym2)
+      case (Atom.FlavorToRegion(sym1), Atom.FlavorToRegion(sym2)) => sym1.compare(sym2)
+      case (Atom.RegionToEff(op1, arg1), Atom.RegionToEff(op2, arg2)) =>
+        (op1, arg1).compare((op2, arg2))
+      case (Atom.AbstractRegionToEff(op1, arg1), Atom.AbstractRegionToEff(op2, arg2)) =>
+        (op1, arg1).compare((op2, arg2))
+      case (Atom.Flavor(f1), Atom.Flavor(f2)) =>
+        f1.compare(f2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
-        val symCmp = sym1.compare(sym2)
-        if (symCmp != 0) symCmp else arg1.compare(arg2)
+        (sym1, arg1).compare((sym2, arg2))
+      case (Atom.Region(a11, a12), Atom.Region(a21, a22)) =>
+        (a11, a12).compare((a21, a22))
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
           case Atom.VarFlex(_) => 0
           case Atom.VarRigid(_) => 1
-          case Atom.Region(_) => 2
-          case Atom.Eff(_) => 3
-          case Atom.Assoc(_, _) => 4
-          case Atom.Error(_) => 5
+          case Atom.FlavorToRegion(_) => 2
+          case Atom.RegionToEff(_, _) => 3
+          case Atom.AbstractRegionToEff(_, _) => 4
+          case Atom.Flavor(_) => 5
+          case Atom.Eff(_) => 6
+          case Atom.Assoc(_, _) => 7
+          case Atom.Region(_, _) => 8
+          case Atom.Error(_) => 9
         }
 
         ordinal(this) - ordinal(that)
@@ -334,21 +349,36 @@ object EffUnification3 {
     case class Assoc(sym: Symbol.AssocTypeSym, arg: Atom) extends Atom
 
     /** Represents a region. */
-    case class Region(sym: Symbol.RegionSym) extends Atom
+    case class FlavorToRegion(sym: Symbol.RegionSym) extends Atom
+
+    // MATT docs
+    case class RegionToEff(op: RegionOp, arg: Atom) extends Atom
+
+    // MATT docs
+    case class AbstractRegionToEff(op: AbstractRegionOp, arg: Atom) extends Atom
+
+    // MATT docs
+    case class Flavor(f: RegionFlavor) extends Atom
+
+    case class Region(cst: Atom, flav: Atom) extends Atom
 
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
     /** Returns the [[Atom]] representation of `t` or throws [[InvalidType]]. */
-    @tailrec
     def fromType(t: Type)(implicit scope: Scope, renv: RigidityEnv): Atom = t match {
       case Type.Var(sym, _) if renv.isRigid(sym) => Atom.VarRigid(sym)
       case Type.Var(sym, _) => Atom.VarFlex(sym)
       case Type.Cst(TypeConstructor.Effect(sym, _), _) => Atom.Eff(sym)
-      case Type.Cst(TypeConstructor.Region(sym), _) => Atom.Region(sym)
+      case Type.Cst(TypeConstructor.FlavorToRegion(sym), _) => Atom.FlavorToRegion(sym)
+      case Type.RegionToEff(op, tpe, _) => Atom.RegionToEff(op, fromType(tpe))
+      case Type.AbstractRegionToEff(op, tpe, _) => Atom.AbstractRegionToEff(op, fromType(tpe))
+      case Type.Cst(TypeConstructor.Flavor(f), _) => Atom.Flavor(f)
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
+      case Type.Apply(tpe1, tpe2, _) if tpe1.kind == Kind.Flavor ->: Kind.Region =>
+        Atom.Region(fromType(tpe1), fromType(tpe2))
       case _ => throw InvalidType(t)
     }
 
@@ -378,8 +408,12 @@ object EffUnification3 {
       case Type.Var(sym, _) if renv.isRigid(sym) => SortedSet(Atom.VarRigid(sym))
       case Type.Var(sym, _) => SortedSet(Atom.VarFlex(sym))
       case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(Atom.Eff(sym))
-      case Type.Cst(TypeConstructor.Region(sym), _) => SortedSet(Atom.Region(sym))
+      case Type.Cst(TypeConstructor.FlavorToRegion(sym), _) => SortedSet(Atom.FlavorToRegion(sym))
+      case Type.RegionToEff(op, tpe, _) => SortedSet(Atom.RegionToEff(op, fromType(tpe)))
+      case Type.AbstractRegionToEff(op, tpe, _) => SortedSet(Atom.AbstractRegionToEff(op, fromType(tpe)))
+      case Type.Cst(TypeConstructor.Flavor(f), _) => SortedSet(Atom.Flavor(f))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
+      case Type.Apply(tpe1, tpe2, _) if tpe1.kind == Kind.Flavor ->: Kind.Region => SortedSet(Atom.Region(fromType(tpe1), fromType(tpe2)))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
       case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
@@ -404,11 +438,15 @@ object EffUnification3 {
       */
     def toType(atom: Atom, loc: SourceLocation)(implicit m: SortedBimap[Atom, Int]): Type = atom match {
       case Atom.Eff(sym) => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), loc)
-      case Atom.Region(sym) => Type.Cst(TypeConstructor.Region(sym), loc)
+      case Atom.FlavorToRegion(sym) => Type.Cst(TypeConstructor.FlavorToRegion(sym), loc)
+      case Atom.RegionToEff(op, arg) => Type.RegionToEff(op, toType(arg, loc), loc)
+      case Atom.AbstractRegionToEff(op, arg) => Type.AbstractRegionToEff(op, toType(arg, loc), loc)
+      case Atom.Flavor(f) => Type.Cst(TypeConstructor.Flavor(f), loc)
       case Atom.VarRigid(sym) => Type.Var(sym, loc)
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
         Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+      case Atom.Region(a1, a2) => Type.Apply(toType(a1, loc), toType(a2, loc), loc)
       case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
   }
