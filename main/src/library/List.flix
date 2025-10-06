@@ -87,7 +87,11 @@ instance MonadZip[List] {
 instance Foldable[List] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
+    redef head(l: List[a]): Option[a] = List.head(l)
+    redef isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    redef memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
 }
 
 instance UnorderedFoldable[List] {
@@ -1160,14 +1164,6 @@ mod List {
         List.foldLeft(Chain.snoc, Chain.empty(), l)
 
     ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: List[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
-
-    ///
     /// Returns `l` as a mutable list.
     ///
     pub def toMutList(rc: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
@@ -1401,21 +1397,6 @@ mod List {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: List[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
-    /// Returns the association list `l` as a `DelayMap`.
-    ///
-    /// If `l` contains multiple mappings with the same key, `toDelayMap` does not
-    /// make any guarantees about which mapping will be in the resulting map.
-    ///
-    pub def toDelayMap(l: List[(a, b)]): DelayMap[a, b] with Order[a] =
-        List.foldRight((x, acc) -> DelayMap.insert(fst(x), snd(x), acc), DelayMap.empty(), l)
-
-    ///
     /// Helper function for `sequence` and `traverse`.
     ///
     /// Builds an "applicative list" from a head of one applicative action and an
@@ -1467,7 +1448,7 @@ mod List {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: List[a]): List[a] \ NonDet = region rc {
+    pub def shuffle(l: List[a]): List[a] \ Shuffle = region rc {
         toArray(rc, l) !> Array.shuffle |> Array.toList
     }
 

@@ -381,9 +381,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Region(_, _) => ()
-
-      case Expr.Scope(bnd, _, exp, _, _, _) =>
+      case Expr.Region(bnd, _, exp, _, _, _) =>
         visitBinder(bnd)
         visitExpr(exp)
 

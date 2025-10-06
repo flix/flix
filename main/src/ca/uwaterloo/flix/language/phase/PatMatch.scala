@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
@@ -158,9 +159,7 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.Region(_, _) => ()
-
-      case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
+      case Expr.Region(_, _, exp, _, _, _) => visitExp(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visitExp(exp1)
@@ -377,7 +376,7 @@ object PatMatch {
     */
   private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // Call findNonMatchingPat for each pattern individually
-    frags.foreach(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
+    frags.foreach(f => findNonMatchingPatWrapper(List(List(f.pat)), 1, root) match {
       case Exhaustive => ()
       case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc))
     })
@@ -395,13 +394,39 @@ object PatMatch {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
-    findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
+    findNonMatchingPatWrapper(unguardedRules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => ()
       case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
   }
 
   /**
+    * Given a list of patterns, computes a pattern vector of size n such
+    * that p doesn't match any rule in rules.
+    *
+    * Wraps `findNonMatchingPat` with a simple bail out fast check for catch all cases.
+    *
+    * @param rules The rules to check for exhaustion
+    * @param n     The size of resulting pattern vector
+    * @param root  The AST root of the expression
+    * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
+    */
+  private def findNonMatchingPatWrapper(rules: List[List[Pattern]], n: Int, root: TypedAst.Root)(implicit sctx: SharedContext): Exhaustiveness = {
+    val hasMatchAll = rules.exists {
+      case head :: Nil => patToCtor(head) match {
+        case TyCon.Wild => true
+        case _ => false
+      }
+      case _ => false
+    }
+    if (hasMatchAll) {
+      Exhaustive
+    } else {
+      findNonMatchingPat(rules, n, root)
+    }
+  }
+
+    /**
     * Given a list of patterns, computes a pattern vector of size n such
     * that p doesn't match any rule in rules
     *
@@ -626,6 +651,9 @@ object PatMatch {
     * @return
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
+    // Keep track of which enums we have added to `expCtors` to avoid adding them again.
+    val addedEnums = mutable.Set[Symbol.EnumSym]()
+
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon): List[TyCon] = x match {
       // Structural types have just one constructor
@@ -634,11 +662,15 @@ object PatMatch {
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other cases
-      case TyCon.Enum(sym, _) => {
-        root.enums(sym.enumSym).cases.map {
-          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
+      case TyCon.Enum(sym, _) =>
+        if (addedEnums.contains(sym.enumSym)) {
+          Nil
+        } else {
+          addedEnums.add(sym.enumSym)
+          root.enums(sym.enumSym).cases.map {
+            case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
+          }.toList
         }
-      }.toList
 
       // For Unit and Bool constants are enumerable
       case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))

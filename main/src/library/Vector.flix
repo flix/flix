@@ -78,7 +78,11 @@ instance MonadZip[Vector] {
 instance Foldable[Vector] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldLeft(f, s, v)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRight(f, s, v)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRightWithCont(f, s, v)
+    redef head(v: Vector[a]): Option[a] = Vector.head(v)
+    redef isEmpty(v: Vector[a]): Bool = Vector.isEmpty(v)
+    redef memberOf(x: a, v: Vector[a]): Bool with Eq[a] = Vector.memberOf(x, v)
+    redef forAll(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.forAll(f, v)
+    redef exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.exists(f, v)
 }
 
 instance UnorderedFoldable[Vector] {
@@ -319,14 +323,6 @@ mod Vector {
             case Some(c) => Some(Nec.cons(x, c))
         };
         foldRight(step, None, v)
-
-    ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `v`.
@@ -1471,15 +1467,6 @@ mod Vector {
         Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
 
     ///
-    /// Returns an iterator over `v` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r], v: Vector[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, v) |> Iterator.zipWithIndex
-
-
-    ///
     /// Apply the effectful function `f` to all the elements in the vector `v`.
     ///
     pub def forEach(f: a -> Unit \ ef, v: Vector[a]): Unit \ ef =
@@ -1573,7 +1560,7 @@ mod Vector {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(v: Vector[a]): Vector[a] \ NonDet = region rc {
+    pub def shuffle(v: Vector[a]): Vector[a] \ Shuffle = region rc {
         let arr = toArray(rc, v);
         Array.shuffle(arr);
         Array.toVector(arr)

@@ -558,9 +558,9 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LocalDef(ident, fps, e1, e2, loc)
 
-    case WeededAst.Expr.Scope(ident, exp, loc) =>
+    case WeededAst.Expr.Region(ident, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Scope(ident, e, loc)
+      Expr.Region(ident, e, loc)
 
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -753,8 +753,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegionToStar(Type.IO, loc)
-      DesugaredAst.Expr.Region(tpe, loc)
+      DesugaredAst.Expr.Cst(Constant.Static, loc)
 
     case WeededAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)

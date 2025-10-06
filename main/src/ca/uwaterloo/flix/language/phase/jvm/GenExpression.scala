@@ -170,6 +170,12 @@ object GenExpression {
       case Constant.RecordEmpty =>
         BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
 
+      case Constant.Static =>
+        import BytecodeInstructions.*
+        //!TODO: For now, just emit null
+        ACONST_NULL()
+        CHECKCAST(BackendObjType.Region.jvmName)
+
     }
 
     case Expr.Var(sym, tpe, _) =>
@@ -579,12 +585,6 @@ object GenExpression {
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
         }
 
-      case AtomicOp.Region =>
-        import BytecodeInstructions.*
-        //!TODO: For now, just emit null
-        ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.jvmName)
-
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
         val SimpleType.Enum(_, targs) = exp.tpe
@@ -930,7 +930,7 @@ object GenExpression {
         val List(exp1, exp2) = exps
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
+          case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
@@ -1305,7 +1305,7 @@ object GenExpression {
       xPop(BackendType.toBackendType(exp1.tpe))
       compileExpr(exp2)
 
-    case Expr.Scope(sym, exp, _, _, loc) =>
+    case Expr.Region(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
       BytecodeInstructions.addLoc(loc)
 

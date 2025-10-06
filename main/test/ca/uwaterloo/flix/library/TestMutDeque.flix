@@ -433,13 +433,15 @@ mod TestMutDeque {
 
     @Test
     def peekFront02(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         assertEq(expected = Some(1), MutDeque.peekFront(d))
     }
 
     @Test
     def peekFront03(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         assertEq(expected = Some(1), MutDeque.peekFront(d));
         assertEq(expected = Some(1), MutDeque.peekFront(d));
         assertEq(expected = Some(1), MutDeque.peekFront(d))
@@ -447,7 +449,8 @@ mod TestMutDeque {
 
     @Test
     def peekFront04(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
         assertEq(expected = Some(3), MutDeque.peekFront(d))
@@ -455,7 +458,8 @@ mod TestMutDeque {
 
     @Test
     def peekFront05(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popBack(d);
         assertEq(expected = Some(2), MutDeque.peekFront(d))
@@ -463,7 +467,8 @@ mod TestMutDeque {
 
     @Test
     def peekFront06(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
         discard MutDeque.popFront(d);
@@ -483,13 +488,15 @@ mod TestMutDeque {
 
     @Test
     def peekBack02(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         assertEq(expected = Some(3), MutDeque.peekBack(d))
     }
 
     @Test
     def peekBack03(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         assertEq(expected = Some(3), MutDeque.peekBack(d));
         assertEq(expected = Some(3), MutDeque.peekBack(d));
         assertEq(expected = Some(3), MutDeque.peekBack(d))
@@ -497,7 +504,8 @@ mod TestMutDeque {
 
     @Test
     def peekBack04(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         assertEq(expected = Some(1), MutDeque.peekBack(d))
@@ -505,7 +513,8 @@ mod TestMutDeque {
 
     @Test
     def peekBack05(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popFront(d);
         assertEq(expected = Some(2), MutDeque.peekBack(d))
@@ -513,7 +522,8 @@ mod TestMutDeque {
 
     @Test
     def peekBack06(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
@@ -1099,7 +1109,8 @@ mod TestMutDeque {
 
     @Test
     def iterator02(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         let iter = MutDeque.iterator(rc, d);
         match Iterator.next(iter) {
             case Some(_) => ()
@@ -1109,7 +1120,8 @@ mod TestMutDeque {
 
     @Test
     def iterator03(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
         discard MutDeque.popBack(d);
@@ -1122,22 +1134,27 @@ mod TestMutDeque {
 
     @Test
     def iterator04(): Unit \ Assert = region rc {
-        let d = List.toMutDeque(rc, 1 :: 2 :: 3 :: Nil);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         assertEq(expected = 1 :: 2 :: 3 :: Nil, MutDeque.iterator(rc, d) |> Iterator.toList)
     }
 
     @Test
     def iterator05(): Unit \ Assert = region rc {
-        let d = List.range(0, 100) |> List.toMutDeque(rc);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(0, 100));
         assertEq(expected = List.range(0, 100), MutDeque.iterator(rc, d) |> Iterator.toList);
         assertEq(expected = List.range(0, 100), MutDeque.toList(d))
     }
 
     @Test
     def iterator06(): Unit \ Assert = region rc {
-        let d = List.range(0, 100) |> List.toMutDeque(rc);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List.range(0, 100));
         let iter = MutDeque.iterator(rc, d);
-        MutDeque.forEach(_ -> discard Iterator.next(iter), MutList.range(rc, 0, 50) |> MutList.toMutDeque(rc));
+        let d2 = MutDeque.empty(rc);
+        MutList.forEach(x -> MutDeque.pushBack(x, d2), MutList.range(rc, 0, 50));
+        MutDeque.forEach(_ -> discard Iterator.next(iter), d2);
         assertEq(expected = List.range(50, 100), iter |> Iterator.toList);
         assertEq(expected = List.range(0, 100), MutDeque.toList(d))
     }
@@ -1234,42 +1251,54 @@ mod TestMutDeque {
 
     @Test
     def shuffle01(): Unit \ {Assert, NonDet} = region rc {
-        let l: List[Int32] = Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l: List[Int32] = Nil;
+            let d1 = MutDeque.empty(rc);
+            List.forEach(x -> MutDeque.pushBack(x, d1), l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 0, MutDeque.size(d2));
-        assertEq(expected = Set#{}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 0, MutDeque.size(d2));
+            assertEq(expected = Set#{}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle02(): Unit \ {Assert, NonDet} = region rc {
-        let l = 1 :: Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l = 1 :: Nil;
+            let d1 = MutDeque.empty(rc);
+            List.forEach(x -> MutDeque.pushBack(x, d1), l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 1, MutDeque.size(d2));
-        assertEq(expected = Set#{1}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 1, MutDeque.size(d2));
+            assertEq(expected = Set#{1}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle03(): Unit \ {Assert, NonDet} = region rc {
-        let l = 1 :: 2 :: 3 :: Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l = 1 :: 2 :: 3 :: Nil;
+            let d1 = MutDeque.empty(rc);
+            List.forEach(x -> MutDeque.pushBack(x, d1), l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 3, MutDeque.size(d2));
-        assertEq(expected = Set#{1, 2, 3}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 3, MutDeque.size(d2));
+            assertEq(expected = Set#{1, 2, 3}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
     @Test
     def shuffle04(): Unit \ {Assert, NonDet} = region rc {
-        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let d1 = List.toMutDeque(rc, l);
-        let d2 = MutDeque.shuffle(rc, d1);
+        run {
+            let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let d1 = MutDeque.empty(rc);
+            List.forEach(x -> MutDeque.pushBack(x, d1), l);
+            let d2 = MutDeque.shuffle(rc, d1);
 
-        assertEq(expected = 10, MutDeque.size(d2));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, d2 |> MutDeque.toList |> List.toSet)
+            assertEq(expected = 10, MutDeque.size(d2));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, d2 |> MutDeque.toList |> List.toSet)
+        } with Shuffle.runWithIO
     }
 
 }

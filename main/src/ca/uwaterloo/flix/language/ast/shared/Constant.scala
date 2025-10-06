@@ -37,6 +37,7 @@ sealed trait Constant {
     case Constant.Str(_) => SimpleType.String
     case Constant.Regex(_) => SimpleType.Regex
     case Constant.RecordEmpty => SimpleType.RecordEmpty
+    case Constant.Static => SimpleType.Region
   }
 }
 
@@ -70,4 +71,6 @@ object Constant {
   case class Regex(lit: java.util.regex.Pattern) extends Constant
 
   case object RecordEmpty extends Constant
+
+  case object Static extends Constant
 }

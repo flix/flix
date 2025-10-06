@@ -57,7 +57,6 @@ mod Array {
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays
-    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -222,15 +221,6 @@ mod Array {
             let i = length(arr) - 1;
             Some(loop(i, Nec.singleton(get(i, arr))))
         }
-
-    ///
-    /// Returns `a` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), a);
-        d
-
     ///
     /// Returns `a` as a Vector.
     ///
@@ -1396,14 +1386,6 @@ mod Array {
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
-    /// Returns an iterator over `a` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
-        iterator(rc, a) |> Iterator.zipWithIndex
-
-    ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, r } =
@@ -1634,21 +1616,19 @@ mod Array {
         }
 
     ///
-    /// Shuffles `a` using the Fisher–Yates shuffle.
+    /// Shuffles `a` using a random permutation.
     ///
-    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
-        let rnd = new JRandom();
+    pub def shuffle(a: Array[a, r]): Unit \ {r, Shuffle} = {
         let len = Array.length(a);
-        def loop(i) = {
-            if (i > 0) {
-                let j = rnd.nextInt(i + 1);
-                Array.swap(i, j, a);
-                loop(i - 1)
-            }
-            else
-                ()
-        };
-        loop(len - 1)
-    } as _ \ {r, NonDet})
+
+        // Compute a random permutation.
+        let perm = Shuffle.permutation(len);
+
+        // Apply the permutation: result[i] = a[perm[i]].
+        let result = Vector.init(i -> Array.get(Vector.get(i, perm), a), len);
+
+        // Write the result back into a.
+        Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
+    }
 
 }

@@ -426,10 +426,14 @@ object Parser2 {
     closeWithError(mark, error)
   }
 
-  /** Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error. */
-  private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Unit = {
+  /**
+    * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
+    * Returns true if it successfully advances.
+    * Returns false otherwise.
+    */
+  private def expectAny(kinds: Set[TokenKind], hint: Option[String] = None)(implicit sctx: SyntacticContext, s: State): Boolean = {
     if (eatAny(kinds)) {
-      return
+      return true
     }
     val mark = open()
     val error = nth(0) match {
@@ -439,6 +443,7 @@ object Parser2 {
       case at => UnexpectedToken(expected = NamedTokenSet.FromKinds(kinds), actual = Some(at), sctx, hint = hint, loc = currentSourceLocation())
     }
     closeWithError(mark, error)
+    false
   }
 
   /**
@@ -634,6 +639,7 @@ object Parser2 {
     *
     * Use these together with [[nameUnqualified]] and [[nameAllowQualified]].
     */
+  private val NAME_LIKE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.Underscore)
@@ -671,7 +677,10 @@ object Parser2 {
       ))
     }
 
-    expectAny(kinds)
+    if (!expectAny(kinds)) {
+      // Not the expected name kind. Eat it anyway if it looks like a name.
+      eatAny(NAME_LIKE)
+    }
     close(mark, TreeKind.Ident)
   }
 
@@ -896,6 +905,7 @@ object Parser2 {
         return moduleDecl(mark, nestingLevel)
       }
       // Handle declarations
+      val wasAtEofBeforeAnnotations = at(TokenKind.Eof)
       annotations()
       modifiers()
       // If a new declaration is added to this then add it to FIRST_DECL too.
@@ -907,7 +917,7 @@ object Parser2 {
         case TokenKind.KeywordStruct => structDecl(mark)
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
-        case TokenKind.Eof => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
+        case TokenKind.Eof if wasAtEofBeforeAnnotations => close(mark, TreeKind.CommentList) // Last tokens in the file were comments.
         case at =>
           val loc = currentSourceLocation()
           val error = UnexpectedToken(expected = NamedTokenSet.Declaration, actual = Some(at), sctx, loc = loc)
@@ -1245,6 +1255,8 @@ object Parser2 {
       }
       if (eat(TokenKind.Equal)) {
         Type.ttype()
+      } else {
+        expect(TokenKind.Equal)
       }
       close(mark, TreeKind.Decl.TypeAlias)
     }
@@ -1775,7 +1787,7 @@ object Parser2 {
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
-        case TokenKind.KeywordRegion => scopeExpr()
+        case TokenKind.KeywordRegion => regionExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
         case TokenKind.KeywordTypeMatch => typematchExpr()
         case TokenKind.KeywordChoose
@@ -2100,7 +2112,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.LocalDef)
     }
 
-    private def scopeExpr()(implicit s: State): Mark.Closed = {
+    private def regionExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
@@ -2109,7 +2121,7 @@ object Parser2 {
       if (at(TokenKind.CurlyL)) {
         block()
       }
-      close(mark, TreeKind.Expr.Scope)
+      close(mark, TreeKind.Expr.Region)
     }
 
     private def block()(implicit s: State): Mark.Closed = {

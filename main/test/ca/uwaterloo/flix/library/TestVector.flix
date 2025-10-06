@@ -379,53 +379,6 @@ mod TestVector {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let v = (Vector#{}: Vector[Int32]);
-        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let v = Vector#{1};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let v = Vector#{1, 2, 3};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        MutDeque.pushBack(2, d);
-        MutDeque.pushBack(3, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let v = Vector#{1, 2, 3, 4, 5};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d);
-        MutDeque.pushBack(4, d);
-        MutDeque.pushBack(5, d);
-        MutDeque.pushFront(2, d);
-        MutDeque.pushFront(1, d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque05(): Unit \ Assert = region rc {
-        let v = Vector#{'a', 'b', 'c'};
-        let d = MutDeque.empty(rc);
-        MutDeque.pushFront('c', d);
-        MutDeque.pushFront('b', d);
-        MutDeque.pushFront('a', d);
-        assertTrue(Vector.toMutDeque(rc, v) `MutDeque.sameElements` d)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -4502,30 +4455,38 @@ mod TestVector {
 
     @Test
     def shuffle01(): Unit \ Assert + NonDet =
-        let v = (Vector#{}: Vector[Int32]);
-        let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 0);
-        assertTrue(Vector.toSet(v1) == Set#{})
+        run {
+            let v = (Vector#{}: Vector[Int32]);
+            let v1 = Vector.shuffle(v);
+            assertTrue(Vector.length(v1) == 0);
+            assertTrue(Vector.toSet(v1) == Set#{})
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
-        let v = Vector#{0};
-        let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 1);
-        assertTrue(Vector.toSet(v1) == Set#{0})
+        run {
+            let v = Vector#{0};
+            let v1 = Vector.shuffle(v);
+            assertTrue(Vector.length(v1) == 1);
+            assertTrue(Vector.toSet(v1) == Set#{0})
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
-        let v = Vector#{0, 1, 2, 3};
-        let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 4);
-        assertTrue(Vector.toSet(v1) == Set#{0, 1, 2, 3})
+        run {
+            let v = Vector#{0, 1, 2, 3};
+            let v1 = Vector.shuffle(v);
+            assertTrue(Vector.length(v1) == 4);
+            assertTrue(Vector.toSet(v1) == Set#{0, 1, 2, 3})
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle04(): Unit \ Assert + NonDet =
-        let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        let v1 = Vector.shuffle(v);
-        assertTrue(Vector.length(v1) == 10);
-        assertTrue(Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+        run {
+            let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+            let v1 = Vector.shuffle(v);
+            assertTrue(Vector.length(v1) == 10);
+            assertTrue(Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+        } with Shuffle.runWithIO
 
 }

@@ -70,7 +70,11 @@ instance ToString[DelayList[a]] with ToString[a] {
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
+    redef head(l: DelayList[a]): Option[a] = DelayList.head(l)
+    redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+    redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
     redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
@@ -1213,12 +1217,6 @@ mod DelayList {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: DelayList[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
     /// Returns `l` as a `List`.
     ///
     /// Forces the entire list `l`.
@@ -1242,14 +1240,6 @@ mod DelayList {
     pub def toMutList(rc: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
         Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
     }
-
-    ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
 
     ///
     /// Returns the association list `l` as a map.
@@ -1344,7 +1334,7 @@ mod DelayList {
     ///
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: DelayList[a]): DelayList[a] \ NonDet = region rc {
+    pub def shuffle(l: DelayList[a]): DelayList[a] \ Shuffle = region rc {
         toArray(rc, l) !> Array.shuffle |> Array.toDelayList
     }
 

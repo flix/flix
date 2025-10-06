@@ -61,7 +61,7 @@ instance Functor[Map[k]] {
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
+    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -766,7 +766,7 @@ mod Map {
     /// Returns `m` as a mutable map.
     ///
     pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, Ref.fresh(rc, m))
+        new MutMap @ rc { rc = rc, inner = m }
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -817,14 +817,6 @@ mod Map {
     ///
     pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         MultiMap.MultiMap(Map.map(Set.singleton, m))
-
-    ///
-    /// Returns `m` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.
@@ -910,14 +902,6 @@ mod Map {
     ///
     pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
         iterator(rc, m) |> Iterator.map(snd)
-
-    ///
-    /// Returns `m` as a `DelayMap`.
-    ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
-        let Map(t) = m;
-        let f = (_, v) -> lazy v;
-        DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Returns the result of running all the actions in the map `m`.

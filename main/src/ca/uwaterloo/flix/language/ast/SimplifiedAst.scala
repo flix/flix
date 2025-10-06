@@ -94,7 +94,7 @@ object SimplifiedAst {
 
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
