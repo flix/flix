@@ -15,35 +15,35 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait Permission
+sealed trait Trust
 
 /**
  * Permissions for dependencies.
  */
-object Permission {
+object Trust {
 
   /**
    * Permission to have an effect.
    */
-  case object Effect extends Permission {
+  case object Effect extends Trust {
     override def toString: String = "effect"
   }
 
   /**
    * Permission to call Java libraries.
    */
-  case object JavaInterop extends Permission {
+  case object JavaInterop extends Trust {
     override def toString: String = "java-interop"
   }
 
   /**
    * Permission to use unchecked casts.
    */
-  case object UncheckedCast extends Permission {
+  case object UncheckedCast extends Trust {
     override def toString: String = "unchecked-cast"
   }
 
-  def mkPermission(s: String): Option[Permission] = s match {
+  def mkPermission(s: String): Option[Trust] = s match {
     case "java-interop" => Some(JavaInterop)
     case "unchecked-cast" => Some(UncheckedCast)
     case "effect" => Some(Effect)

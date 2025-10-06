@@ -1,12 +1,12 @@
 package ca.uwaterloo.flix.tools
 
 import org.scalatest.funsuite.AnyFunSuite
-import ca.uwaterloo.flix.tools.pkg.Permission
+import ca.uwaterloo.flix.tools.pkg.Trust
 
-class TestPermission extends AnyFunSuite{
+class TestTrust extends AnyFunSuite {
   test("toString-ofString-java-interop") {
-    val perm = Permission.JavaInterop
-    val res = Permission.mkPermission(perm.toString) match {
+    val perm = Trust.JavaInterop
+    val res = Trust.mkPermission(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
@@ -14,8 +14,8 @@ class TestPermission extends AnyFunSuite{
   }
 
   test("toString-ofString-unsafe-cast") {
-    val perm = Permission.UncheckedCast
-    val res = Permission.mkPermission(perm.toString) match {
+    val perm = Trust.UncheckedCast
+    val res = Trust.mkPermission(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
@@ -23,8 +23,8 @@ class TestPermission extends AnyFunSuite{
   }
 
   test("toString-ofString-effect") {
-    val perm = Permission.Effect
-    val res = Permission.mkPermission((perm.toString)) match {
+    val perm = Trust.Effect
+    val res = Trust.mkPermission((perm.toString)) match {
       case Some(r) => r
       case None => fail()
     }

@@ -400,7 +400,7 @@ object ManifestParser {
   /**
     * Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getPermissions(depTbl: TomlTable, key: String, path: Path): Result[List[Permission], ManifestError] = {
+  private def getPermissions(depTbl: TomlTable, key: String, path: Path): Result[List[Trust], ManifestError] = {
     // Ensure the permissions are an Array.
     if (!depTbl.isArray(key)) {
       val perms = depTbl.get(key)
@@ -409,7 +409,7 @@ object ManifestParser {
       val permArray = depTbl.getArray(key)
       val permissions = permArray.toList.asScala.toList.map({
         // Ensure the contents of the array are strings.
-        case s: String => Permission.mkPermission(s) match {
+        case s: String => Trust.mkPermission(s) match {
           case Some(permission) => permission
           case None => return Err(ManifestError.FlixUnknownPermissionError(path, key, s))
         }

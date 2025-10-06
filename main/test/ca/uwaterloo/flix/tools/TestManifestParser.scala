@@ -7,7 +7,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Manifest
-import ca.uwaterloo.flix.tools.pkg.Permission
+import ca.uwaterloo.flix.tools.pkg.Trust
 
 import java.io.File
 import java.net.URI
@@ -334,7 +334,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = ["java-interop", "unchecked-cast", "effect"] }
         |""".stripMargin
     }
-    assertResult(expected = Set(Permission.JavaInterop, Permission.UncheckedCast, Permission.Effect))(actual =
+    assertResult(expected = Set(Trust.JavaInterop, Trust.UncheckedCast, Trust.Effect))(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
