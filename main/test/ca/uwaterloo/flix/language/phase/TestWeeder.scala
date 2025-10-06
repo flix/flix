@@ -1850,4 +1850,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
+  test("EmptyTypeParamList.01") {
+    val input =
+      """
+        |def foo[](): Bool = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyTypeParamList](result)
+  }
+
 }

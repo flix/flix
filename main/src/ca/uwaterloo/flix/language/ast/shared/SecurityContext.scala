@@ -16,21 +16,21 @@
 package ca.uwaterloo.flix.language.ast.shared
 
 /**
- * A common super-type for security contexts.
- */
+  * A common super-type for security contexts.
+  */
 sealed trait SecurityContext
 
 object SecurityContext {
 
   /**
-   * A security context where everything is permitted.
-   */
-  case object AllPermissions extends SecurityContext
+    * A security context where no unsafe features are permitted.
+    */
+  case object Plain extends SecurityContext
 
   /**
-   * A security context where no unsafe features are permitted.
-   */
-  case object NoPermissions extends SecurityContext
+    * A security context where everything is permitted.
+    */
+  case object Unrestricted extends SecurityContext
 
   /**
     * Converts a `Trust` type to a `SecurityContext`
