@@ -110,19 +110,22 @@ mod TestIterable {
 
     @Test
     def iterableMutDeque02(): Unit \ Assert = region rc {
-        let d = List#{2, 5, 11, 8} |> List.toMutDeque(rc);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List#{2, 5, 11, 8});
         assertEq(expected = List#{2, 5, 11, 8}, Iterable.iterator(rc, d) |> Iterator.toList)
     }
 
     @Test
     def iterableMutDeque03(): Unit \ Assert = region rc {
-        let d = List#{'A', 'B', 'D', 'C'} |> List.toMutDeque(rc);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List#{'A', 'B', 'D', 'C'});
         assertEq(expected = List#{'A', 'B', 'D', 'C'}, Iterable.iterator(rc, d) |> Iterator.toList)
     }
 
     @Test
     def iterableMutDeque04(): Unit \ Assert = region rc {
-        let d = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutDeque(rc);
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')});
         assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, d) |> Iterator.toList)
     }
 

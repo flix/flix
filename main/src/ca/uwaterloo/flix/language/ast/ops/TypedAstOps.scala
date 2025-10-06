@@ -54,7 +54,7 @@ object TypedAstOps {
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.Region(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
@@ -182,7 +182,7 @@ object TypedAstOps {
       val bound = sym :: fparams.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
-    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
+    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
       freeVars(exp) - sym
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>

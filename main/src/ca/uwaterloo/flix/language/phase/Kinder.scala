@@ -494,13 +494,13 @@ object Kinder {
         val exp2 = visitExp(exp20, kenv0, root)
         KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
 
-      case ResolvedAst.Expr.Scope(sym, regSym, exp0, loc) =>
+      case ResolvedAst.Expr.Region(sym, regSym, exp0, loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         // Record that we enter the new scope.
         val newScope = scope.enter(regSym)
         val exp = visitExp(exp0, kenv0, root)(newScope, renv, sctx, flix)
-        KindedAst.Expr.Scope(sym, regSym, exp, tvar, evar, loc)
+        KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc)
 
       case ResolvedAst.Expr.Match(exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)

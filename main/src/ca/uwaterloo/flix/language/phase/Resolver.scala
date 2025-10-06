@@ -982,12 +982,12 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.Scope(sym, regSym, exp, loc) =>
+    case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
       val eVal = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
       mapN(eVal) {
-        e => ResolvedAst.Expr.Scope(sym, regSym, e, loc)
+        e => ResolvedAst.Expr.Region(sym, regSym, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>

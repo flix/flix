@@ -432,7 +432,7 @@ object ConstraintGen {
         val resEff = eff2
         (resTpe, resEff)
 
-      case Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
+      case Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints

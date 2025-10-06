@@ -839,14 +839,6 @@ mod RedBlackTree {
         RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
 
     ///
-    /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
-    ///
-    pub def toMutDeque(rc: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
-        d
-
-    ///
     /// Build a node applicatively.
     ///
     /// This is a helper function for `mapAWithKey`.

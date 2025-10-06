@@ -1465,52 +1465,6 @@ mod TestChain {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let c = (Chain.empty(): Chain[Int32]);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let c = Chain.singleton(1);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let c = List.toChain(1 :: 2 :: Nil);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront(1, d2);
-        MutDeque.pushBack(2, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront('b', d2);
-        MutDeque.pushBack('c', d2);
-        MutDeque.pushFront('a', d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////

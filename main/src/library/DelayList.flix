@@ -1238,14 +1238,6 @@ mod DelayList {
     }
 
     ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
-
-    ///
     /// Returns the association list `l` as a map.
     ///
     /// If `l` contains multiple mappings with the same key, `toMap` does not

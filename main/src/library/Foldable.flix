@@ -223,14 +223,6 @@ pub trait Foldable[t : Type -> Type] {
     }
 
     ///
-    /// Returns `t` as a `MutDeque`.
-    ///
-    pub def toMutDeque(rc: Region[r], t: t[a]): MutDeque[a, r] \ (r + Foldable.Aef[t]) =
-        let d = MutDeque.empty(rc);
-        Foldable.forEach(x -> MutDeque.pushBack(x, d), t);
-        d
-
-    ///
     /// Returns `t` as a mutable list.
     ///
     pub def toMutList(rc: Region[r], t: t[a]): MutList[a, r] \ (r + Foldable.Aef[t]) = region rc2 {

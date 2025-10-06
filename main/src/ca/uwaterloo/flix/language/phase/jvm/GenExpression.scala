@@ -1305,7 +1305,7 @@ object GenExpression {
       xPop(BackendType.toBackendType(exp1.tpe))
       compileExpr(exp2)
 
-    case Expr.Scope(sym, exp, _, _, loc) =>
+    case Expr.Region(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
       BytecodeInstructions.addLoc(loc)
 
