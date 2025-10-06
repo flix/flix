@@ -45,7 +45,7 @@ object Trust {
     override def toString: String = "unrestricted"
   }
 
-  def mkPermission(s: String): Option[Trust] = s match {
+  def fromString(s: String): Option[Trust] = s match {
     case "plain" => Some(Plain)
     case "trust-javaclass" => Some(TrustJavaClass)
     case "unrestricted" => Some(Unrestricted)

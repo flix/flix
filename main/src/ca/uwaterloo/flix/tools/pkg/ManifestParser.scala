@@ -407,7 +407,7 @@ object ManifestParser {
       Err(ManifestError.FlixDependencyTrustTypeError(Option.apply(path), key, perms))
     } else {
       val value = depTbl.getString(key)
-      Trust.mkPermission(value) match {
+      Trust.fromString(value) match {
         case Some(trust) => Ok(trust)
         case None => Err(ManifestError.FlixUnknownTrustError(path, key, value))
       }

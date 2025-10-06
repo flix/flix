@@ -6,7 +6,7 @@ import ca.uwaterloo.flix.tools.pkg.Trust
 class TestTrust extends AnyFunSuite {
   test("toString-ofString-plain") {
     val perm = Trust.Plain
-    val res = Trust.mkPermission(perm.toString) match {
+    val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
@@ -15,7 +15,7 @@ class TestTrust extends AnyFunSuite {
 
   test("toString-ofString-trust-javaclass") {
     val perm = Trust.TrustJavaClass
-    val res = Trust.mkPermission(perm.toString) match {
+    val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
@@ -24,7 +24,7 @@ class TestTrust extends AnyFunSuite {
 
   test("toString-ofString-unrestricted") {
     val perm = Trust.Unrestricted
-    val res = Trust.mkPermission(perm.toString) match {
+    val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }
