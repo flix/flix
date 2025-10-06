@@ -25,8 +25,8 @@ object Trust {
 
   /**
     * Plain Flix must not have any unsafe features.
-    * 1. No unsafe casts
-    * 1. No Java interop
+    *   1. No unsafe casts
+    *   1. No Java interop
     */
   case object Plain extends Trust {
     override def toString: String = "plain"
