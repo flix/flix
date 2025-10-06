@@ -64,7 +64,7 @@ object Resolver {
     "Bool" -> Kind.Bool,
     "Eff" -> Kind.Eff,
     "Type" -> Kind.Star,
-    "Region" -> Kind.Eff,
+    "Region" -> Kind.Region,
     "RecordRow" -> Kind.RecordRow,
     "SchemaRow" -> Kind.SchemaRow,
     "Predicate" -> Kind.Predicate,
