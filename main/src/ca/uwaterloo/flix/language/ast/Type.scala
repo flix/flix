@@ -1241,7 +1241,7 @@ object Type {
     * Returns a region type with the given symbol.
     */
   def mkFlavorToRegion(sym: Symbol.RegionSym, flav: RegionFlavor, loc: SourceLocation): Type = {
-    Type.Cst(TypeConstructor.FlavorToRegion(sym), loc)
+    Type.Apply(Type.Cst(TypeConstructor.FlavorToRegion(sym), loc), Type.Cst(TypeConstructor.Flavor, loc), loc)
   }
 
   /**
