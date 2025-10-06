@@ -311,6 +311,8 @@ object EffUnification3 {
         f1.compare(f2)
       case (Atom.Assoc(sym1, arg1), Atom.Assoc(sym2, arg2)) =>
         (sym1, arg1).compare((sym2, arg2))
+      case (Atom.Apply(a11, a12), Atom.Apply(a21, a22)) =>
+        (a11, a12).compare((a21, a22))
       case (Atom.Error(id1), Atom.Error(id2)) => id1 - id2
       case _ =>
         def ordinal(a: Atom): Int = a match {
@@ -322,7 +324,8 @@ object EffUnification3 {
           case Atom.Flavor(_) => 5
           case Atom.Eff(_) => 6
           case Atom.Assoc(_, _) => 7
-          case Atom.Error(_) => 8
+          case Atom.Apply(_, _) => 8
+          case Atom.Error(_) => 9
         }
 
         ordinal(this) - ordinal(that)
@@ -354,6 +357,10 @@ object EffUnification3 {
     // MATT docs
     case class Flavor(f: RegionFlavor) extends Atom
 
+    // MATT docs
+    // MATT awful hack :(
+    case class Apply(a1: Atom, a2: Atom) extends Atom
+
     /** Represents an error type. */
     case class Error(id: Int) extends Atom
 
@@ -369,6 +376,7 @@ object EffUnification3 {
       case assoc@Type.AssocType(_, _, _, _) => assocFromType(assoc)
       case Type.Cst(TypeConstructor.Error(id, _), _) => Atom.Error(id)
       case Type.Alias(_, _, tpe, _) => fromType(tpe)
+      case Type.Apply(tpe1, tpe2, _) => Atom.Apply(fromType(tpe1), fromType(tpe2))
       case _ => throw InvalidType(t)
     }
 
@@ -401,9 +409,11 @@ object EffUnification3 {
       case Type.Apply(Type.Cst(TypeConstructor.FlavorToRegion(sym), _), arg, _) => SortedSet(Atom.FlavorToRegion(sym, fromType(arg)))
       case Type.RegionToEff(op, tpe, _) => SortedSet(Atom.RegionToEff(op, fromType(tpe)))
       case Type.AbstractRegionToEff(op, tpe, _) => SortedSet(Atom.AbstractRegionToEff(op, fromType(tpe)))
+      case Type.Cst(TypeConstructor.Flavor(f), _) => SortedSet(Atom.Flavor(f))
       case Type.Cst(TypeConstructor.Error(id, _), _) => SortedSet(Atom.Error(id))
       case Type.Apply(tpe1, tpe2, _) => getAtoms(tpe1) ++ getAtoms(tpe2)
       case Type.Alias(_, _, tpe, _) => getAtoms(tpe)
+      case Type.Apply(tpe1, tpe2, _) => SortedSet(Atom.Apply(fromType(tpe1), fromType(tpe2)))
       case assoc@Type.AssocType(_, _, _, _) => SortedSet.from(getAssocAtoms(assoc))
       case _ => SortedSet.empty
     }
@@ -434,6 +444,7 @@ object EffUnification3 {
       case Atom.VarFlex(sym) => Type.Var(sym, loc)
       case Atom.Assoc(sym, arg0) =>
         Type.AssocType(AssocTypeSymUse(sym, loc), toType(arg0, loc), Kind.Eff, loc)
+      case Atom.Apply(a1, a2) => Type.Apply(toType(a1, loc), toType(a2, loc), loc)
       case Atom.Error(id) => Type.Cst(TypeConstructor.Error(id, Kind.Eff), loc)
     }
   }
