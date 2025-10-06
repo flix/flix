@@ -574,12 +574,6 @@ mod Set {
         loop(empty())
 
     ///
-    /// Returns the set `s` as a `DelayList`.
-    ///
-    pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, s)
-
-    ///
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =

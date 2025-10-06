@@ -75,7 +75,6 @@ instance Foldable[DelayList] {
     redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
     redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
     redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
-    redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
 instance UnorderedFoldable[DelayList] {
@@ -1335,7 +1334,11 @@ mod DelayList {
     /// Shuffles `l` using the Fisher–Yates shuffle.
     ///
     pub def shuffle(l: DelayList[a]): DelayList[a] \ Shuffle = region rc {
-        toArray(rc, l) !> Array.shuffle |> Array.toDelayList
+        def fromList(xs) = match xs {
+            case Nil     => ENil
+            case y :: ys => ECons(y, fromList(ys))
+        };
+        toArray(rc, l) !> Array.shuffle |> Array.toList |> fromList
     }
 
 }

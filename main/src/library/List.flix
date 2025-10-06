@@ -1149,15 +1149,6 @@ mod List {
         Foldable.joinWith(f, sep, l)
 
     ///
-    /// Returns the elements of `l` as a `DelayList`.
-    ///
-    @Lazy
-    pub def toDelayList(l: List[a]): DelayList[a] = match l {
-        case Nil     => DelayList.ENil
-        case x :: xs => DelayList.LCons(x, lazy toDelayList(xs))
-    }
-
-    ///
     /// Returns the list `l` as a chain.
     ///
     pub def toChain(l: List[a]): Chain[a] =
