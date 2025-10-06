@@ -340,7 +340,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .permissions
+            .trust
             .toSet
         case Err(e) => e.message(f)
       }
@@ -364,7 +364,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .permissions
+            .trust
             .toSet
       }
     )
