@@ -662,7 +662,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   private def compile(program: String): (Root, List[CompilationMessage]) = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     Flix.addSourceCode(Uri, program)
     Flix.check() match {
       case (Some(root), errors) => (root, errors)
@@ -678,7 +678,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * @throws RuntimeException if the program cannot be compiled without errors.
     */
   private def compileWithSuccess(program: String): Root = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     Flix.addSourceCode(Uri, program)
     Flix.check() match {
       case (Some(root), Nil) => root
@@ -753,7 +753,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * Creates a source object from the given string `content`.
     */
   private def mkSource(content: String): Source = {
-    val sctx = SecurityContext.AllPermissions
+    val sctx = SecurityContext.Unrestricted
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
