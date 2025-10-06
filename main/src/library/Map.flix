@@ -904,14 +904,6 @@ mod Map {
         iterator(rc, m) |> Iterator.map(snd)
 
     ///
-    /// Returns `m` as a `DelayMap`.
-    ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
-        let Map(t) = m;
-        let f = (_, v) -> lazy v;
-        DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
-
-    ///
     /// Returns the result of running all the actions in the map `m`.
     ///
     pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
