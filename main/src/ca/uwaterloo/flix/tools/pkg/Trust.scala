@@ -18,35 +18,37 @@ package ca.uwaterloo.flix.tools.pkg
 sealed trait Trust
 
 /**
- * Permissions for dependencies.
- */
+  * Trust for dependencies.
+  */
 object Trust {
 
   /**
-   * Permission to have an effect.
-   */
-  case object Effect extends Trust {
-    override def toString: String = "effect"
+    * Plain Flix must not have any unsafe features.
+    * 1. No unsafe casts
+    * 1. No Java interop
+    */
+  case object Plain extends Trust {
+    override def toString: String = "plain"
   }
 
   /**
-   * Permission to call Java libraries.
-   */
-  case object JavaInterop extends Trust {
-    override def toString: String = "java-interop"
+    * `Trust-javaclass` may not have unchecked casts but perform Java interop.
+    */
+  case object TrustJavaClass extends Trust {
+    override def toString: String = "trust-javaclass"
   }
 
   /**
-   * Permission to use unchecked casts.
-   */
-  case object UncheckedCast extends Trust {
-    override def toString: String = "unchecked-cast"
+    * May use unchecked casts and Java interop.
+    */
+  case object Unrestricted extends Trust {
+    override def toString: String = "unrestricted"
   }
 
   def mkPermission(s: String): Option[Trust] = s match {
-    case "java-interop" => Some(JavaInterop)
-    case "unchecked-cast" => Some(UncheckedCast)
-    case "effect" => Some(Effect)
+    case "plain" => Some(Plain)
+    case "trust-javaclass" => Some(TrustJavaClass)
+    case "unrestricted" => Some(Unrestricted)
     case _ => None
   }
 }

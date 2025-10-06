@@ -21,7 +21,7 @@ sealed trait Dependency
 
 object Dependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, trust: List[Trust]) extends Dependency
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, trust: Trust) extends Dependency
 
   case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency
 

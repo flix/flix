@@ -4,8 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import ca.uwaterloo.flix.tools.pkg.Trust
 
 class TestTrust extends AnyFunSuite {
-  test("toString-ofString-java-interop") {
-    val perm = Trust.JavaInterop
+  test("toString-ofString-plain") {
+    val perm = Trust.Plain
     val res = Trust.mkPermission(perm.toString) match {
       case Some(r) => r
       case None => fail()
@@ -13,8 +13,8 @@ class TestTrust extends AnyFunSuite {
     assertResult(perm)(res)
   }
 
-  test("toString-ofString-unsafe-cast") {
-    val perm = Trust.UncheckedCast
+  test("toString-ofString-trust-javaclass") {
+    val perm = Trust.TrustJavaClass
     val res = Trust.mkPermission(perm.toString) match {
       case Some(r) => r
       case None => fail()
@@ -22,9 +22,9 @@ class TestTrust extends AnyFunSuite {
     assertResult(perm)(res)
   }
 
-  test("toString-ofString-effect") {
-    val perm = Trust.Effect
-    val res = Trust.mkPermission((perm.toString)) match {
+  test("toString-ofString-unrestricted") {
+    val perm = Trust.Unrestricted
+    val res = Trust.mkPermission(perm.toString) match {
       case Some(r) => r
       case None => fail()
     }

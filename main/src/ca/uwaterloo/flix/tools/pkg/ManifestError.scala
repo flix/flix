@@ -85,9 +85,9 @@ object ManifestError {
     }
   }
 
-  case class FlixUnknownPermissionError(path: Path, lib: String, perm: String) extends ManifestError {
+  case class FlixUnknownTrustError(path: Path, lib: String, perm: String) extends ManifestError {
     override def message(f: Formatter): String = {
-      s"Unknown permission in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}."
+      s"Unknown trust in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}."
     }
   }
 
