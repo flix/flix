@@ -293,6 +293,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private var mavenPackagePaths: List[Path] = List.empty
   private var jarPackagePaths: List[Path] = List.empty
 
+  private var trustLevels: Map[Path, Trust] = Map.empty
+
   /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
     * Then makes a list of all flix source files, flix packages
@@ -815,9 +817,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
-        case Ok(paths: List[Path]) =>
-          flixPackagePaths = paths
-          Ok(paths)
+        case Ok(result: List[(Path, Trust)]) =>
+          trustLevels = result.toMap
+          flixPackagePaths = result.map { case (path, _) => path }
+          Ok(flixPackagePaths)
         case Err(e) =>
           Err(BootstrapError.FlixPackageError(e))
       }
@@ -889,7 +892,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
-        flix.addPkg(path)
+        flix.addPkg(path)(SecurityContext.fromTrust(trustLevels.getOrElse(path, Trust.Plain)))
       }
 
       for (path <- mavenPackagePaths if hasChanged(path)) {

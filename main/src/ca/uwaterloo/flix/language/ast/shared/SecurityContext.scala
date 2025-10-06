@@ -32,4 +32,12 @@ object SecurityContext {
    */
   case object NoPermissions extends SecurityContext
 
+  /**
+    * Converts a `Trust` type to a `SecurityContext`
+    */
+  def fromTrust(t: Trust): SecurityContext = t match {
+    case Trust.Plain => NoPermissions
+    case Trust.TrustJavaClass => NoPermissions
+    case Trust.Unrestricted => AllPermissions
+  }
 }
