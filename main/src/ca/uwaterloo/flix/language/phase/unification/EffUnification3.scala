@@ -169,7 +169,12 @@ object EffUnification3 {
       case Some(x) => SetFormula.mkElemSet(x)
     }
 
-    case tpe@Type.Cst(TypeConstructor.FlavorToRegion(_), _) => m.getForward(Atom.fromType(tpe)) match {
+    case tpe@Type.AbstractRegionToEff(_, _, _) => m.getForward(Atom.fromType(tpe)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
+      case Some(x) => SetFormula.mkElemSet(x)
+    }
+
+    case tpe@Type.RegionToEff(_, _, _) => m.getForward(Atom.fromType(tpe)) match {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$tpe'.", tpe.loc)
       case Some(x) => SetFormula.mkElemSet(x)
     }
