@@ -3258,8 +3258,10 @@ object Weeder2 {
                 case (_, _ :: _) =>
                   unkinded.foreach(t => sctx.errors.add(MissingTypeParamKind(t.ident.loc)))
                   tparams
+                // Empty list. Syntax error, but recover with an empty list.
                 case (Nil, Nil) =>
-                  throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
+                  sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
+                  tparams
               }
           }
       }
