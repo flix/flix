@@ -70,7 +70,11 @@ instance ToString[DelayList[a]] with ToString[a] {
 instance Foldable[DelayList] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
+    redef head(l: DelayList[a]): Option[a] = DelayList.head(l)
+    redef isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
+    redef memberOf(x: a, l: DelayList[a]): Bool with Eq[a] = DelayList.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
     redef toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
