@@ -404,7 +404,7 @@ object ManifestParser {
     // Ensure the trust value is a string.
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(path), key, perms))
+      Err(ManifestError.FlixDependencyTrustTypeError(Option.apply(path), key, perms))
     } else {
       val value = depTbl.getString(key)
       Trust.mkPermission(value) match {

@@ -1663,7 +1663,7 @@ class TestManifestParser extends AnyFunSuite {
                  |"github:jls/tic-tac-toe" = { version = "1.2.3", permissions = "effect" }
                  |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyPermissionTypeError](result)
+    expectError[ManifestError.FlixDependencyTrustTypeError](result)
   }
 
   test("ManifestError.UnsupportedRepository.01") {
