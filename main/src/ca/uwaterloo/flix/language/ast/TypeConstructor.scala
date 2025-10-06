@@ -297,7 +297,7 @@ object TypeConstructor {
     /**
       * The shape of an array is `Array[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Region ->: Kind.Star
   }
 
   /**

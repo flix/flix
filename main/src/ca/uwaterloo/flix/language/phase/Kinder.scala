@@ -1626,8 +1626,8 @@ object Kinder {
     */
   private def getKindEnvFromRegion(tparam0: ResolvedAst.TypeParam): KindEnv = tparam0 match {
     case ResolvedAst.TypeParam.Kinded(_, sym, kind, _) => KindEnv.singleton(sym -> kind)
-    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
-    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Eff)
+    case ResolvedAst.TypeParam.Unkinded(_, sym, _) => KindEnv.singleton(sym -> Kind.Region)
+    case ResolvedAst.TypeParam.Implicit(_, sym, _) => KindEnv.singleton(sym -> Kind.Region)
   }
 
   /**
