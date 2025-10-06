@@ -2482,16 +2482,16 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      scopeName()
+      regionName()
       close(mark, TreeKind.Expr.LiteralArray)
     }
 
-    private def scopeName()(implicit s: State): Mark.Closed = {
+    private def regionName()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expect(TokenKind.At)
       expression()
-      close(mark, TreeKind.Expr.ScopeName)
+      close(mark, TreeKind.Expr.RegionName)
     }
 
     private def vectorLiteralExpr()(implicit s: State): Mark.Closed = {
@@ -2892,7 +2892,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSpawn)
       expression()
-      scopeName()
+      regionName()
       close(mark, TreeKind.Expr.Spawn)
     }
 

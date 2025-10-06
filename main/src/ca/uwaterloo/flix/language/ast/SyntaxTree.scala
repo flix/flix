@@ -332,7 +332,7 @@ object SyntaxTree {
 
       case object Region extends Expr
 
-      case object ScopeName extends Expr
+      case object RegionName extends Expr
 
       case object Select extends Expr
 
