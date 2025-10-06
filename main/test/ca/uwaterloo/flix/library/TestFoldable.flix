@@ -318,22 +318,6 @@ mod TestFoldable {
         assertEq(expected = List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toChain(Set#{0, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = (DelayList.empty(): DelayList[Int32]), Foldable.toDelayList((Nil: List[Int32])))
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = List.toDelayList(1 :: 2 :: Nil), Foldable.toDelayList(1 :: 2 :: Nil))
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = List.toDelayList(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toDelayList(Set#{0, 1, 2, 3, 4}))
-
-    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

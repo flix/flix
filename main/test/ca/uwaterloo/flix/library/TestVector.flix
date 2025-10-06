@@ -4288,26 +4288,6 @@ mod TestVector {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = DelayList.empty(), (Vector#{}: Vector[Unit]) |> Vector.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = DelayList.empty(), (Vector.empty(): Vector[String]) |> Vector.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = DelayList.range(-1000, 1000), Vector.range(-1000, 1000) |> Vector.toDelayList)
-
-    @Test
-    def toDelayList04(): Unit \ Assert =
-        assertEq(expected = Vector.range(-1000, 1000), Vector.range(-1000, 1000) |> Vector.toDelayList |> DelayList.toVector)
-
-    /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

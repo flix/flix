@@ -2667,19 +2667,6 @@ mod TestList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert = assertEq(expected = DelayList.empty(), (Nil: List[Unit]) |> List.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert = assertEq(expected = DelayList.range(-1000, 1000), List.range(-1000, 1000) |> List.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert = assertEq(expected = List.range(-1000, 1000), List.range(-1000, 1000) |> List.toDelayList |> DelayList.toList)
-
-    /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

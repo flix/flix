@@ -2833,22 +2833,6 @@ mod TestMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = DelayList.empty(), (Map.empty(): Map[Unit, Unit]) |> Map.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000)), Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0), Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap)
-
-    /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

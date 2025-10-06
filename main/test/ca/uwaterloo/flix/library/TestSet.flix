@@ -1887,23 +1887,6 @@ mod TestSet {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = DelayList.empty(), (Set.empty(): Set[Unit]) |> Set.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = DelayList.range(-1000, 1000), Set.range(-1000, 1000) |> Set.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = Set.range(-1000, 1000), Set.range(-1000, 1000) |> Set.toDelayList |> DelayList.toSet)
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // iterator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
