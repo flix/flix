@@ -79,8 +79,8 @@ object ManifestError {
     override def message(f: Formatter): String = {
       val pStr = path.map(_.toString).getOrElse("\"unknown\"")
       val typ = perm.getClass
-      s"""Unexpected permissions format of Flix dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
-         |Expected an Array of Strings but got: ${f.bold(f.red(typ.toString))}.
+      s"""Unexpected trust format of Flix dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
+         |Expected one of the following strings: "plain", "trust-javaclass", or "unrestricted" but got: ${f.bold(f.red(typ.toString))}.
          |""".stripMargin
     }
   }
