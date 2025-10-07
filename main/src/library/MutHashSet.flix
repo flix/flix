@@ -136,6 +136,22 @@ mod MutHashSet {
         MutHashMap.clear(s->inner)
 
     ///
+    /// Returns the first element that was inserted into the mutable set `s`.
+    ///
+    /// Returns `None` if the set is empty.
+    ///
+    pub def first(s: MutHashSet[t, r]): Option[t] \ r =
+        MutHashMap.firstKey(s->inner)
+
+    ///
+    /// Returns the last element that was inserted into the mutable set `s`.
+    ///
+    /// Returns `None` if the set is empty.
+    ///
+    pub def last(s: MutHashSet[t, r]): Option[t] \ r =
+        MutHashMap.lastKey(s->inner)
+
+    ///
     /// Returns `true` if and only if `x` is a member of the mutable set `s`.
     ///
     pub def memberOf(x: t, s: MutHashSet[t, r]): Bool \ r with Eq[t], Hash[t] =
