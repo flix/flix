@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    implementation('org.scala-lang:scala-library:2.13.16!!')
+    implementation('org.scala-lang:scala-library:2.13.17!!')
 
     implementation('org.java-websocket:Java-WebSocket:1.6.0')
     implementation('org.jline:jline:3.30.6')
@@ -52,8 +52,6 @@ tasks.withType(ScalaCompile).configureEach {
             "-Xsource:3",                       // Scala 3 migration flag
             "-Ytasty-reader"                    // Scala 3 migration flag
     ]
-    compileScala.sourceCompatibility = 21
-    compileScala.targetCompatibility = 21
 }
 
 sourceSets {
