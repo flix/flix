@@ -172,7 +172,7 @@ object LoweredAstOps {
 
     case Expr.Cast(exp, _, _, _, _, _) => freeVars(exp)
 
-    case Expr.Scope(_, _, exp, _, _, _) => freeVars(exp)
+    case Expr.Region(_, _, exp, _, _, _) => freeVars(exp)
   }
 
   /**
