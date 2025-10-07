@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, DefSymUse,
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -1127,7 +1128,7 @@ object Kinder {
     case UnkindedType.Alias(cst, args0, t0, loc) =>
       taenv.aliases(cst.sym) match {
         case KindedAst.TypeAlias(_, _, _, _, tparams, tpe, _) =>
-          val args = tparams.zip(args0).map { case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, root) }
+          val args = ListOps.zip(tparams, args0).map { case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, root) }
           val t = visitType(t0, tpe.kind, kenv, root)
           unify(t.kind, expectedKind) match {
             case Some(_) => Type.Alias(cst, args, t, loc)
@@ -1465,13 +1466,13 @@ object Kinder {
         case Some(k) => k
       }
       val args = Kind.kindArgs(tyconKind)
-      tpe.typeArguments.zip(args).foldLeft(KindEnv.singleton(tvar.sym -> tyconKind)) {
+      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.singleton(tvar.sym -> tyconKind)) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
     case UnkindedType.Cst(cst, _) =>
       val args = Kind.kindArgs(cst.kind)
-      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
+      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
@@ -1480,7 +1481,7 @@ object Kinder {
     case UnkindedType.Alias(cst, args, _, _) =>
       val alias = taenv.aliases(cst.sym)
       val tparamKinds = alias.tparams.map(_.sym.kind)
-      args.zip(tparamKinds).foldLeft(KindEnv.empty) {
+      ListOps.zip(args, tparamKinds).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
@@ -1499,7 +1500,7 @@ object Kinder {
     case UnkindedType.Enum(sym, _) =>
       val tyconKind = getEnumKind(root.enums(sym))
       val args = Kind.kindArgs(tyconKind)
-      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
+      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
@@ -1513,14 +1514,14 @@ object Kinder {
     case UnkindedType.Struct(sym, _) =>
       val tyconKind = getStructKind(root.structs(sym))
       val args = Kind.kindArgs(tyconKind)
-      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
+      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
     case UnkindedType.RestrictableEnum(sym, _) =>
       val tyconKind = getRestrictableEnumKind(root.restrictableEnums(sym))
       val args = Kind.kindArgs(tyconKind)
-      tpe.typeArguments.zip(args).foldLeft(KindEnv.empty) {
+      ListOps.zip(tpe.typeArguments, args).foldLeft(KindEnv.empty) {
         case (acc, (targ, kind)) => acc ++ inferType(targ, kind, kenv0, root)
       }
 
