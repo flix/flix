@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -69,7 +69,10 @@ object Simplifier {
   private def visitStruct(struct: MonoAst.Struct): SimplifiedAst.Struct = struct match {
     case MonoAst.Struct(_, ann, mod, sym, tparams0, fields0, loc) =>
       val tparams = tparams0.map(param => SimplifiedAst.TypeParam(param.name, param.sym, param.loc))
-      val fields = fields0.map(visitStructField)
+
+      // We remove fields of type `Unit`-- they have no runtime representation.
+      // Note: We also have to generate specialized code for [[StructNew]], [[StructGet]], and [[StructPut]].
+      val fields = getNonUnitStructFields(fields0).map(visitStructField)
       SimplifiedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
@@ -165,20 +168,20 @@ object Simplifier {
           //
           // Example:
           //
-          // struct MyStruct[r: Region] { x: Int32, y: Int32 }
+          // struct MyStruct[r: Region] { x: Int32, y: Unit, z: Int32 }
           //
-          // new MyStruct @ rc { y = 21, x = 42 }
+          // new MyStruct @ rc { z = 21, y = (), x = 42 }
           //
           // This becomes:
           //
           // let rc$tmp = rc;
-          // let y$tmp = 21;
+          // let z$tmp = 21;
+          // let y$tmp = (); // Note: We retain the let-binding because it could have effects.
           // let x$tmp = 42;
           // new MyStruct @ rc$tmp { x = x$tmp, y = y$tmp }
           //
           val regExp :: fieldExps = es
           val synthLoc = loc.asSynthetic
-          val fieldsDeclaredOrder = root.structs(sym).fields
           val fieldInitializations = givenFields.zip(fieldExps)
 
           // Find types and new names.
@@ -196,8 +199,18 @@ object Simplifier {
 
           // Construct var expressions.
           val regVar = SimplifiedAst.Expr.Var(freshRegName, regType, synthLoc)
+          val fieldsDeclaredOrder = getNonUnitStructFields(root.structs(sym).fields)
           val fieldVars = fieldsDeclaredOrder.map {
             field => SimplifiedAst.Expr.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
+          }.filter {
+            case v => v.tpe != SimpleType.Unit // We ignore let-bound initializers of type Unit.
+          }
+
+          if(fieldsDeclaredOrder.length != fieldVars.length) {
+            fieldsDeclaredOrder.foreach(println)
+            println("--")
+            fieldVars.foreach(println)
+            println(" Boom")
           }
 
           // Construct the full expression.
@@ -212,6 +225,32 @@ object Simplifier {
             case ((varSym, e), acc) => SimplifiedAst.Expr.Let(varSym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
           }
           SimplifiedAst.Expr.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
+
+        case AtomicOp.StructGet(fieldSym) =>
+          // Getting a Unit field is a no-op (the field has been omitted)
+
+          // Find the struct field (which must exist) and check its type.
+          val struct = root.structs(fieldSym.structSym)
+          val field = struct.fields.find(_.sym == fieldSym).get
+          field.tpe match {
+            case Type.Unit => SimplifiedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc)
+            case _ =>
+              val t = visitType(tpe)
+              SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+          }
+
+        case AtomicOp.StructPut(fieldSym) =>
+          // Writing a Unit field is a no-op (the field has been omitted)
+          val struct = root.structs(fieldSym.structSym)
+          val field = struct.fields.find(_.sym == fieldSym).get
+
+          // Find the struct field (which must exist) and check its type.
+          field.tpe match {
+            case Type.Unit => SimplifiedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc)
+            case _ =>
+              val t = visitType(tpe)
+              SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+          }
 
         case _ =>
           val t = visitType(tpe)
@@ -1075,4 +1114,11 @@ object Simplifier {
 
     visit(tpe, t => t)
   }
+
+  /**
+    * Returns all non-Unit fields in `l`. We use this function to ensure that structs do not have Unit fields at runtime.
+    */
+  private def getNonUnitStructFields(l: List[MonoAst.StructField]): List[MonoAst.StructField] =
+    l.filter(_.tpe != Type.Unit)
+
 }
