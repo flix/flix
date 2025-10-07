@@ -1064,17 +1064,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  ignore("IllegalExtTag.02") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A (1) {
-        |    case A(x) => x
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("IllegalOperationWithOutReturnType.01") {
     val input =
       """
