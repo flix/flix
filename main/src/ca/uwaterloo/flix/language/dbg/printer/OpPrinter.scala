@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.util.collection.ListOps
 
 object OpPrinter {
 
@@ -183,7 +184,7 @@ object OpPrinter {
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
-    case (AtomicOp.StructNew(sym, fields), d :: rs) => Expr.StructNew(sym, fields.zip(rs), d)
+    case (AtomicOp.StructNew(sym, fields), d :: rs) => Expr.StructNew(sym, ListOps.zip(fields, rs), d)
     case (AtomicOp.StructGet(field), List(d)) => Expr.StructGet(d, field)
     case (AtomicOp.StructPut(field), List(d1, d2)) => Expr.StructPut(d1, field, d2)
     case (AtomicOp.Lazy, List(d)) => Lazy(d)
