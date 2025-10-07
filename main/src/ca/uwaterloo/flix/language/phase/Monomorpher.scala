@@ -868,7 +868,7 @@ object Monomorpher {
     */
   private def specializeDefCallsite(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    // TODO: Move visitType to a once over done at tge start,
+    // TODO: Move visitType to a once over done at the start. Safe for everywhere it can be done.
     val subst = infallibleUnify(DatalogCodeGen.visitType(defn.spec.declaredScheme.base), tpe, defn.sym)
 
     // Check whether the function definition has already been specialized.
@@ -1203,16 +1203,6 @@ object Monomorpher {
       val loweredQueryExp = specializeExp(queryExp, env0, subst)
 
       // Compute the arity of the predicate symbol.
-      // The type is either of the form `Vector[(a, b, c)]` or `Vector[a]`.
-//      val (_, targs) = Type.eraseAliases(tpe) match {
-//        case Type.Apply(tycon, innerType, _) => innerType.typeConstructor match {
-//          case Some(TypeConstructor.Tuple(_)) => (tycon, innerType.typeArguments)
-//          case Some(TypeConstructor.Unit) => (tycon, Nil)
-//          case _ => (innerType, List(innerType))
-//        }
-//        case t => throw InternalCompilerException(s"Unexpected non-foldable type: '${t}'.", loc)
-//      }
-
       val predArity = selects.length
 
       // Define the name and type of the appropriate factsX function in Solver.flix
@@ -1540,7 +1530,6 @@ object Monomorpher {
       }
 
       // Substitute every symbol in `exp` for its fresh equivalent.
-//      val freshExp = substExp(exp, freshVars)
       val freshExp = exp
 
       // Curry `freshExp` in a lambda expression for each free variable.
@@ -1578,15 +1567,6 @@ object Monomorpher {
       if (numberOfOutVars > 5) {
         throw InternalCompilerException("Does not support more than 5 out variables.", loc)
       }
-
-      // Introduce a fresh variable for each in variable.
-//      val freshVars = inVars.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym]) {
-//        case (acc, (oldSym, _)) => acc + (oldSym -> Symbol.freshVarSym(oldSym))
-//      }
-
-      // Substitute every symbol in `exp` for its fresh equivalent.
-//      val freshExp = substExp(exp, freshVars)
-//      val freshExp = exp
 
       // Curry `freshExp` in a lambda expression for each free variable.
       val lambdaExp = inVars.foldRight(exp) {
@@ -1626,7 +1606,6 @@ object Monomorpher {
 
       // Substitute every symbol in `exp` for its fresh equivalent.
       val freshExp = specializeExp(exp, env0 ++ freshVars, subst)
-//      val freshExp = exp
 
       // Curry `freshExp` in a lambda expression for each free variable.
       val lambdaExp = fvs.foldRight(freshExp) {
@@ -1843,6 +1822,10 @@ object Monomorpher {
       def f(rel0: Type, loc0: SourceLocation): List[Type] = rel0 match {
         case Type.Cst(TypeConstructor.Relation(_), _) => Nil
         case Type.Apply(rest, t, loc1) => t :: f(rest, loc1)
+        // The type has not been assigned. This is either due to an error in the compiler, or because it is free.
+        // We assume the last and let it be of type Unit.
+        // TODO: Didn't write this originally. Should this be Nil or Unit :: Nil?
+        case _ if rel0.typeConstructor.contains(TypeConstructor.AnyType) => Nil
         case t => throw InternalCompilerException(s"Expected Type.Apply(_, _, _), but got ${t}", loc0)
       }
 
@@ -2052,43 +2035,6 @@ object Monomorpher {
 
       case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
     }
-
-//    /**
-//      * Applies the given substitution `subst` to the given pattern `pattern0`.
-//      */
-//    private def substPattern(pattern0: MonoAst.Pattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.Pattern = pattern0 match {
-//      case MonoAst.Pattern.Wild(tpe, loc) =>
-//        MonoAst.Pattern.Wild(tpe, loc)
-//
-//      case MonoAst.Pattern.Var(sym, tpe, occur, loc) =>
-//        val s = subst.getOrElse(sym, sym)
-//        MonoAst.Pattern.Var(s, tpe, occur, loc)
-//
-//      case MonoAst.Pattern.Cst(cst, tpe, loc) =>
-//        MonoAst.Pattern.Cst(cst, tpe, loc)
-//
-//      case MonoAst.Pattern.Tag(symUse, pats, tpe, loc) =>
-//        val ps = pats.map(substPattern(_, subst))
-//        MonoAst.Pattern.Tag(symUse, ps, tpe, loc)
-//
-//      case MonoAst.Pattern.Tuple(pats, tpe, loc) =>
-//        val ps = pats.map(substPattern(_, subst))
-//        MonoAst.Pattern.Tuple(ps, tpe, loc)
-//
-//      case MonoAst.Pattern.Record(pats, pat, tpe, loc) =>
-//        val ps = pats.map(substRecordLabelPattern(_, subst))
-//        val p = substPattern(pat, subst)
-//        MonoAst.Pattern.Record(ps, p, tpe, loc)
-//    }
-//
-//    /**
-//      * Applies the given substitution `subst` to the given record label pattern `pattern0`.
-//      */
-//    private def substRecordLabelPattern(pattern0: MonoAst.Pattern.Record.RecordLabelPattern, subst: Map[Symbol.VarSym, Symbol.VarSym]): MonoAst.Pattern.Record.RecordLabelPattern = pattern0 match {
-//      case MonoAst.Pattern.Record.RecordLabelPattern(label, pat, tpe, loc) =>
-//        val p = substPattern(pat, subst)
-//        MonoAst.Pattern.Record.RecordLabelPattern(label, p, tpe, loc)
-//    }
 
   }
 
