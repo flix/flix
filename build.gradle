@@ -103,6 +103,10 @@ test {
     testLogging {
         events("passed", "skipped", "failed", "standard_error")
     }
+    filter {
+        // We only want to run the TestAll suite. Otherwise ALL tests are run.
+        includeTestsMatching "ca.uwaterloo.flix.TestAll"
+    }
     maxParallelForks = 1
     maxHeapSize = '3g'
 }
