@@ -126,7 +126,7 @@ tasks.register('testIDECompletion', JavaExec) {
 }
 
 tasks.register('vscode', Copy) {
-    dependsOn(['build', 'jar'])
+    dependsOn(['classes', 'jar'])
     from 'build/libs/flix.jar'
     into providers.gradleProperty('dev.flix.vscode.project')
 }
