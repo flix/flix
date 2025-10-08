@@ -165,7 +165,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Praise => execPraise()
       case Command.Eval(s) => execEval(s)
       case Command.ReloadAndEval(s) => execReloadAndEval(s)
-      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
+      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath).toValidation)
       case Command.Build => execBootstrap(bootstrap.build(flix))
       case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
       case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))

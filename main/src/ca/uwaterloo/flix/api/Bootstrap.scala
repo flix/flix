@@ -42,12 +42,12 @@ object Bootstrap {
     *
     * The project must not already exist.
     */
-  def init(p: Path)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def init(p: Path)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
     //
     // Check that the current working directory is usable.
     //
     if (!Files.isDirectory(p) || !Files.isReadable(p) || !Files.isWritable(p)) {
-      return Validation.Failure(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
+      return Result.Err(BootstrapError.FileError(s"The directory: '$p' is not accessible. Aborting."))
     }
 
     //
@@ -120,7 +120,7 @@ object Bootstrap {
         |def test01(): Bool = 1 + 1 == 2
         |""".stripMargin
     }
-    Validation.Success(())
+    Result.Ok(())
   }
 
   /** The class file extension. Does not contain leading '.' */

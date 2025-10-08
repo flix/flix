@@ -134,11 +134,11 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd).toResult match {
+          Bootstrap.init(cwd) match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
