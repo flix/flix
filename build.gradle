@@ -39,6 +39,7 @@ dependencies {
     testImplementation "org.junit.platform:junit-platform-launcher:1.13.1"
     testImplementation "org.scalatest:scalatest_2.13:3.2.19"
     testRuntimeOnly "org.scala-lang.modules:scala-xml_2.13:2.1.0"
+    testRuntimeOnly "org.junit.platform:junit-platform-engine:1.13.1"
     testRuntimeOnly "org.scalatestplus:junit-5-10_2.13:3.2.19.0"
 }
 
