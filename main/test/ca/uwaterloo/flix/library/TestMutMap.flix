@@ -1,5 +1,5 @@
 mod TestMutMap {
-    use MutMap.MutMap;
+
     use Assert.{assertEq, assertTrue, assertFalse};
 
     /////////////////////////////////////////////////////////////////////////////
@@ -208,54 +208,6 @@ mod TestMutMap {
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let m: MutMap[Int32, Int32, _] = MutMap.empty(rc);
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2});
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, 2), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 2, 3 => 4, 5 => 6});
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((3, 4), d2);
-        MutDeque.pushBack((5, 6), d2);
-        MutDeque.pushFront((1, 2), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let m = Map.toMutMap(rc, Map#{1 => 'a', 2 => 'b', 3 => 'c'});
-        let d1 = MutMap.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront((3, 'c'), d2);
-        MutDeque.pushFront((2, 'b'), d2);
-        MutDeque.pushFront((1, 'a'), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //

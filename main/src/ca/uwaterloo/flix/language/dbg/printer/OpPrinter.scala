@@ -166,7 +166,6 @@ object OpPrinter {
     * Returns the [[DocAst.Expr]] representation of `op`.
     */
   def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type, eff: DocAst.Type): Expr = (op, ds) match {
-    case (AtomicOp.Region, Nil) => Region
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError

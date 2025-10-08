@@ -1062,6 +1062,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an empty type parameter list.
+    *
+    * @param loc the location of the list.
+    */
+  case class EmptyTypeParamList(loc: SourceLocation) extends WeederError {
+    def summary: String = "Empty type parameter list."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Empty type parameter list.
+         |
+         |${code(loc, "empty list.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.
