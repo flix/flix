@@ -199,7 +199,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
-  
+
   test("Give error for missing dependency") {
     assertResult(expected = PackageError.ProjectNotFound(new URI("https://api.github.com/repos/flix/does-not-exist/releases").toURL, Project("flix", "does-not-exist")).message(f))(actual = {
       val toml = {
