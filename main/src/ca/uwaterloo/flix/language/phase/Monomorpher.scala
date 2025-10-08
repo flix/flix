@@ -131,44 +131,41 @@ object Monomorpher {
       *
       * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
-    def apply(tpe0: Type)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe0.typeConstructor match {
-      case Some(TypeConstructor.Schema) => DatalogCodeGen.Types.Datalog
-      case _ => tpe0 match {
-        case v@Type.Var(sym, _) => s.m.get(sym) match {
-          case None =>
-            // Variable unbound. Use the default type.
-            default(v)
-          case Some(t) =>
-            // Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
-            t
-        }
-
-        case Type.Cst(TypeConstructor.Region(_), loc) =>
-          Type.Cst(RegionInstantiation, loc)
-
-        case cst@Type.Cst(_, _) =>
-          // Maintain and exploit reference equality for performance.
-          cst
-
-        case app@Type.Apply(_, _, _) =>
-          normalizeApply(apply, app, isGround = true)
-
-        case Type.Alias(_, _, t, _) =>
-          // Remove the Alias and continue.
-          apply(t)
-
-        case Type.AssocType(symUse, arg0, kind, loc) =>
-          val arg = apply(arg0)
-          val assoc = Type.AssocType(symUse, arg, kind, loc)
-          val reducedType = reduceAssocType(assoc)
-          // `reducedType` is ground, but might need normalization.
-          simplify(reducedType, isGround = true)
-
-        case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
-        case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
-        case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
-
+    def apply(tpe0: Type)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe0 match {
+      case v@Type.Var(sym, _) => s.m.get(sym) match {
+        case None =>
+          // Variable unbound. Use the default type.
+          default(v)
+        case Some(t) =>
+          // Variable in subst. Note: All types in the *StrictSubstitution* are already normalized.
+          t
       }
+
+      case Type.Cst(TypeConstructor.Region(_), loc) =>
+        Type.Cst(RegionInstantiation, loc)
+
+      case cst@Type.Cst(_, _) =>
+        // Maintain and exploit reference equality for performance.
+        cst
+
+      case app@Type.Apply(_, _, _) =>
+        normalizeApply(apply, app, isGround = true)
+
+      case Type.Alias(_, _, t, _) =>
+        // Remove the Alias and continue.
+        apply(t)
+
+      case Type.AssocType(symUse, arg0, kind, loc) =>
+        val arg = apply(arg0)
+        val assoc = Type.AssocType(symUse, arg, kind, loc)
+        val reducedType = reduceAssocType(assoc)
+        // `reducedType` is ground, but might need normalization.
+        simplify(reducedType, isGround = true)
+
+      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+      case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
+      case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+
     }
 
     /**
@@ -436,8 +433,8 @@ object Monomorpher {
       spec0.ann,
       spec0.mod,
       specializedFparams,
-      subst(defn.spec.declaredScheme.base),
-      subst(spec0.retTpe),
+      DatalogCodeGen.visitType(subst(defn.spec.declaredScheme.base)),
+      DatalogCodeGen.visitType(subst(spec0.retTpe)),
       subst(spec0.eff),
       DefContext.Unknown
     )
@@ -455,7 +452,7 @@ object Monomorpher {
     */
   private def specializeExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Instances, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
-      MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
+      MonoAst.Expr.Var(env0(sym), DatalogCodeGen.visitType(subst(tpe)), loc)
 
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, subst(tpe), loc)
@@ -463,7 +460,7 @@ object Monomorpher {
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
       val e = specializeExp(exp, env0 ++ env1, subst)
-      MonoAst.Expr.Lambda(p, e, subst(tpe), loc)
+      MonoAst.Expr.Lambda(p, e, DatalogCodeGen.visitType(subst(tpe)), loc)
 
     case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
       // In bytecode, instanceof can only be called on reference types
@@ -474,47 +471,47 @@ object Monomorpher {
         MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
         // If it's a reference type, then do the instanceof check
-        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, subst(tpe), subst(eff), loc)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
       }
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyAtomic(op, es, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      MonoAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyClo(e1, e2, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyDef(newSym, es, it, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(specializeExp(_, env0, subst))
-      val t = subst(tpe)
+      val t = DatalogCodeGen.visitType(subst(tpe))
       val ef = subst(eff)
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
     case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyOp(sym, es, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplySig(sym, exps, _, _, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyDef(newSym, es, DatalogCodeGen.visitType(it), DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), Occur.Unknown, loc)
+      MonoAst.Expr.Let(freshSym, e1, e2, DatalogCodeGen.visitType(subst(tpe)), subst(eff), Occur.Unknown, loc)
 
     case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -522,25 +519,25 @@ object Monomorpher {
       val (fps, env2) = specializeFormalParams(fparams, subst)
       val e1 = specializeExp(exp1, env1 ++ env2, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      val t = subst(tpe)
+      val t = DatalogCodeGen.visitType(subst(tpe))
       val ef = subst(eff)
       MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, Occur.Unknown, loc)
 
     case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      MonoAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val e3 = specializeExp(exp3, env0, subst)
-      MonoAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      MonoAst.Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Stm(e1, e2, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -555,7 +552,7 @@ object Monomorpher {
           val b = specializeExp(body, extendedEnv, subst)
           MonoAst.MatchRule(p, g, b)
       }
-      MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -566,7 +563,7 @@ object Monomorpher {
           val e1 = specializeExp(exp1, extendedEnv, subst)
           MonoAst.ExtMatchRule(p, e1, loc1)
       }
-      MonoAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ExtMatch(e, rs, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
@@ -591,18 +588,18 @@ object Monomorpher {
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), Occur.Unknown, loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, DatalogCodeGen.visitType(subst1(tpe)), subst1(eff), Occur.Unknown, loc))
           }
       }.get // This is safe since the last case can always match.
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.VectorLit(es, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      MonoAst.Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.VectorLoad(e1, e2, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.VectorLength(exp, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -614,7 +611,7 @@ object Monomorpher {
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
-      mkCast(e, subst(tpe), subst(eff), loc)
+      mkCast(e, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -625,7 +622,7 @@ object Monomorpher {
           val b = specializeExp(body, env1, subst)
           MonoAst.CatchRule(freshSym, clazz, b)
       }
-      MonoAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.TryCatch(e, rs, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -636,11 +633,11 @@ object Monomorpher {
           val body = specializeExp(body0, env1, subst)
           MonoAst.HandlerRule(opSymUse, fparams, body)
       }
-      MonoAst.Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.RunWith(e, effSymUse, rs, DatalogCodeGen.visitType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      MonoAst.Expr.NewObject(name, clazz, DatalogCodeGen.visitType(subst(tpe)), subst(eff), methods, loc)
 
     case LoweredAst.Expr.FixpointConstraintSet(cs, _, loc) =>
       DatalogCodeGen.mkDatalog(cs, loc, env0, subst)
@@ -839,7 +836,7 @@ object Monomorpher {
     val trt = root.traits(sym.trt)
 
     // Find out what instance to use by unifying with the sig type.
-    val subst = ConstraintSolver2.fullyUnify(DatalogCodeGen.visitType(sig.spec.declaredScheme.base), tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
+    val subst = ConstraintSolver2.fullyUnify(sig.spec.declaredScheme.base, tpe, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix).get
     val traitType = subst.m(trt.tparam.sym)
     val tyCon = traitType.typeConstructor.get
 
@@ -868,8 +865,7 @@ object Monomorpher {
     */
   private def specializeDefCallsite(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    // TODO: Move visitType to a once over done at the start. Safe for everywhere it can be done.
-    val subst = infallibleUnify(DatalogCodeGen.visitType(defn.spec.declaredScheme.base), tpe, defn.sym)
+    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
     // Check whether the function definition has already been specialized.
     ctx synchronized {
@@ -921,7 +917,7 @@ object Monomorpher {
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, tpe, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (MonoAst.FormalParam(freshSym, subst0(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
+    (MonoAst.FormalParam(freshSym, DatalogCodeGen.visitType(subst0(tpe)), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */
@@ -1070,6 +1066,8 @@ object Monomorpher {
     import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, DatalogDefs, Denotation, Fixity, Polarity, PredicateAndArity, SolveMode, SymUse}
     /**
       * Returns the definition associated with the given symbol `sym`.
+      *
+      * @param tpe must be subst. Can be visited, if the underlying function can handle that
       */
     private def lookup(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym =
       specializeDefnSym(sym, tpe)
@@ -1096,7 +1094,7 @@ object Monomorpher {
       lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
     }
 
-    object Types {
+    private object Types {
       //
       // Data Types
       //
@@ -1149,6 +1147,16 @@ object Monomorpher {
 
     }
 
+//    /** Unifies `tpe1` and `tpe2` which must be unifiable. */
+//    private def infallibleUnifyDatalog(tpe1: Type, tpe2: Type)(implicit root: LoweredAst.Root, flix: Flix): Substitution = {
+//      ConstraintSolver2.fullyUnify(tpe1, tpe2, Scope.Top, RigidityEnv.empty)(root.eqEnv, flix) match {
+//        case Some(subst) =>
+//          subst
+//        case None =>
+//          throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
+//      }
+//    }
+
 
     /**
       * Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the given list of Datalog constraints `cs`.
@@ -1185,20 +1193,28 @@ object Monomorpher {
       val mergedExp = mergeExps(exps.map(specializeExp(_, env0, subst)), loc)
       val (goalPredSym, goalTerms) = select match {
         case LoweredAst.Predicate.Head.Atom(pred, _, terms, _, loc1) =>
-          val boxedTerms = terms.map(t => box(specializeExp(t, env0, subst)))
+          val boxedTerms = terms.map(t => box(specializeExp(t, env0, subst), subst(t.tpe)))
           (mkPredSym(pred), mkVector(boxedTerms, Types.Boxed, loc1))
       }
       val withPredSyms = mkVector(withh.map(mkPredSym), Types.PredSym, loc)
       val extVarType = subst(unwrapVectorType(tpe, loc))
       val preds = predicatesOfExtVar(extVarType, loc)
-      val lambdaExp = mkExtVarLambda(preds, extVarType, loc)
+      val lambdaExp = mkExtVarLambda(preds, visitType(extVarType), loc)
       val argExps = goalPredSym :: goalTerms :: withPredSyms :: lambdaExp :: mergedExp :: Nil
       val itpe = Types.mkProvenanceOf(extVarType, loc)
+      // Note that `DatalogDefs.ProvenanceOf` is apparently fine with visited types
       val defnSym = lookup(DatalogDefs.ProvenanceOf, itpe)
-      MonoAst.Expr.ApplyDef(defnSym, argExps, itpe, subst(tpe), eff, loc)
+      MonoAst.Expr.ApplyDef(defnSym, argExps, itpe, visitType(subst(tpe)), eff, loc)
     }
 
     def mkFixpointQueryWithSelect(exps: List[LoweredAst.Expr], queryExp: LoweredAst.Expr, selects: List[LoweredAst.Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Instances, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+//      val substForExps = exps match {
+//        case Nil => subst
+//        case x :: xs => StrictSubstitution.mk(xs.foldLeft((x.tpe, subst.s)){
+//          case ((tpe0, acc), exp) => (exp.tpe, acc ++ infallibleUnifyDatalog(exp.tpe, tpe0))
+//        }._2)
+//      }
+//      println(s"${exps}")
       val loweredExps = exps.map(specializeExp(_, env0, subst))
       val loweredQueryExp = specializeExp(queryExp, env0, subst)
 
@@ -1207,6 +1223,7 @@ object Monomorpher {
 
       // Define the name and type of the appropriate factsX function in Solver.flix
       val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, Types.Datalog), subst(tpe), loc)
+      // Note that `DatalogDefs.Facts` is *not* necessarily fine with a visited return type
       val sym = lookup(DatalogDefs.Facts(predArity), defTpe)
 
       // Merge and solve exps
@@ -1216,7 +1233,7 @@ object Monomorpher {
 
       // Put everything together
       val argExps = mkPredSym(pred) :: solvedExp :: Nil
-      MonoAst.Expr.ApplyDef(sym, argExps, defTpe, subst(tpe), eff, loc)
+      MonoAst.Expr.ApplyDef(sym, argExps, visitType(defTpe), visitType(subst(tpe)), eff, loc)
     }
 
     def mkFixpointSolveWithProject(exps0: List[LoweredAst.Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, eff: Type, loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Instances, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
@@ -1263,13 +1280,14 @@ object Monomorpher {
 
           // Compute the symbol of the function.
           // The type of the function.
-          val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, specialExp.tpe), Types.Datalog, loc)
+          val defTpe = Type.mkPureUncurriedArrow(List(Types.PredSym, subst(exp.tpe)), Types.Datalog, loc)
+          // Note that `DatalogDefs.ProjectInto` is *not* necessarily fine with a visited parameter, though the return type is fine.
           val sym = lookup(DatalogDefs.ProjectInto(targs.length), defTpe)
 
 
           // Put everything together.
           val argExps = mkPredSym(pred) :: specialExp :: Nil
-          MonoAst.Expr.ApplyDef(sym, argExps, defTpe, Types.Datalog, specialExp.eff, loc)
+          MonoAst.Expr.ApplyDef(sym, argExps, visitType(defTpe), Types.Datalog, specialExp.eff, loc)
       }
       mergeExps(loweredExps, loc)
     }
@@ -1318,7 +1336,7 @@ object Monomorpher {
 
       case LoweredAst.Predicate.Body.Guard(exp0, loc) =>
         // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
-        val quantifiedFreeVars = quantifiedVars(cparams0, exp0).map {case (s, tpe) => (s, subst(tpe))}
+        val quantifiedFreeVars = quantifiedVars(cparams0, exp0).map {case (s, tpe) => (s, visitType(subst(tpe)))}
         val newMappings = quantifiedFreeVars.map {case (sym, _) => (sym, Symbol.freshVarSym(sym))}.toMap
         val exp = specializeExp(exp0, env0 ++ newMappings, subst)
         mkGuard(quantifiedFreeVars, newMappings, exp, loc)
@@ -1345,16 +1363,16 @@ object Monomorpher {
             mkHeadTermVar(sym)
           } else {
             // Case 1.2: Lexically bound variable.
-            mkHeadTermLit(box(specializeExp(exp0, env0, subst)))
+            mkHeadTermLit(box(specializeExp(exp0, env0, subst), subst(exp0.tpe)))
 
           }
         case _ =>
           // Compute the universally quantified variables (i.e. the variables not bound by the local scope).
-          val quantifiedFreeVars = quantifiedVars(cparams0, exp0)
+          val quantifiedFreeVars = quantifiedVars(cparams0, exp0).map { case (sym, tpe0) => (sym, subst(tpe0))}
 
           if (quantifiedFreeVars.isEmpty) {
             // Case 2: No quantified variables. The expression can be reduced to a value.
-            mkHeadTermLit(box(specializeExp(exp0, env0, subst)))
+            mkHeadTermLit(box(specializeExp(exp0, env0, subst), subst(exp0.tpe)))
           } else {
             // Case 3: Quantified variables. The expression is translated to an application term.
             mkAppTerm(quantifiedFreeVars, exp0, exp0.loc, env0, subst)
@@ -1375,11 +1393,11 @@ object Monomorpher {
           mkBodyTermVar(sym)
         } else {
           // Case 2: Lexically bound variable *expression*.
-          mkBodyTermLit(box(MonoAst.Expr.Var(env0(sym), subst(tpe), loc)))
+          mkBodyTermLit(box(MonoAst.Expr.Var(env0(sym), subst(tpe), loc), subst(tpe)))
         }
 
       case LoweredAst.Pattern.Cst(cst, tpe, loc) =>
-        mkBodyTermLit(box(MonoAst.Expr.Cst(cst, subst(tpe), loc)))
+        mkBodyTermLit(box(MonoAst.Expr.Cst(cst, subst(tpe), loc), subst(tpe)))
 
       case LoweredAst.Pattern.Tag(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
@@ -1451,8 +1469,8 @@ object Monomorpher {
             val boxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
             val boxSym: Symbol.DefnSym = lookup(DatalogDefs.box, boxType)
 
-            val innerApply = MonoAst.Expr.ApplyDef(latticeSym, List(MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), latticeType, unboxedDenotationType, Type.Pure, loc)
-            MonoAst.Expr.ApplyDef(boxSym, List(innerApply), boxType, boxedDenotationType, Type.Pure, loc)
+            val innerApply = MonoAst.Expr.ApplyDef(latticeSym, List(MonoAst.Expr.Cst(Constant.Unit, Type.Unit, loc)), visitType(latticeType), unboxedDenotationType, Type.Pure, loc)
+            MonoAst.Expr.ApplyDef(boxSym, List(innerApply), visitType(boxType), boxedDenotationType, Type.Pure, loc)
         }
     }
 
@@ -1500,15 +1518,28 @@ object Monomorpher {
     /**
       * Returns the given expression `exp` in a box.
       */
-    private def box(exp: MonoAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+
+    /**
+      * Returns the given expression `exp` in a box.
+      *
+      * @param exp: The expression to be boxed
+      * @param tpe0: The substituted, unvisited type of `exp`
+      * @return Expression boxing `exp`
+      */
+    private def box(exp: MonoAst.Expr, tpe0: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       val loc = exp.loc
-      val tpe = Type.mkPureArrow(exp.tpe, Types.Boxed, loc)
+      val tpe = Type.mkPureArrow(tpe0, Types.Boxed, loc)
       val defnSym = lookup(DatalogDefs.Box, tpe)
-      MonoAst.Expr.ApplyDef(defnSym, List(exp), tpe, Types.Boxed, Type.Pure, loc)
+      MonoAst.Expr.ApplyDef(defnSym, List(exp), visitType(tpe), Types.Boxed, Type.Pure, loc)
     }
 
     /**
       * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.GuardX`.
+      */
+
+    /**
+      *
+      * @param fvs: The types are expected to be substituted, but not visited.
       */
     private def mkGuard(fvs: List[(Symbol.VarSym, Type)], freshVars: Map[Symbol.VarSym, Symbol.VarSym], exp: MonoAst.Expr, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       // Compute the number of free variables.
@@ -1524,20 +1555,19 @@ object Monomorpher {
         val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)(Scope.Top, flix)
         // Construct a lambda that takes the unit argument.
         val fparam = MonoAst.FormalParam(sym, Type.Unit, Occur.Unknown, loc)
+        // Here it is okay to use the `monoExp.tpe` as it is only used to generate the `MonoAst.Expr`.
         val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
         val lambdaExp = MonoAst.Expr.Lambda(fparam, exp, tpe, loc)
         return mkTag(Enums.BodyPredicate, s"Guard0", List(lambdaExp), Types.BodyPredicate, loc)
       }
 
-      // Substitute every symbol in `exp` for its fresh equivalent.
-      val freshExp = exp
-
-      // Curry `freshExp` in a lambda expression for each free variable.
-      val lambdaExp = fvs.foldRight(freshExp) {
+      // Curry `exp` in a lambda expression for each free variable.
+      val lambdaExp = fvs.foldRight(exp) {
         case ((oldSym, tpe), acc) =>
           val freshSym = freshVars(oldSym)
-          val fparam = MonoAst.FormalParam(freshSym, tpe, Occur.Unknown, loc)
-          val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
+          val fparam = MonoAst.FormalParam(freshSym, visitType(tpe), Occur.Unknown, loc)
+          // Here it is okay to use the `monoExp.tpe` as it is only used to generate the `MonoAst.Expr`.
+          val lambdaType = Type.mkPureArrow(visitType(tpe), acc.tpe, loc)
           MonoAst.Expr.Lambda(fparam, acc, lambdaType, loc)
       }
 
@@ -1552,6 +1582,10 @@ object Monomorpher {
 
     /**
       * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.Functional`.
+      */
+
+    /**
+      * @param inVars: Types must be subst, but not visited
       */
     private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: MonoAst.Expr, freshVars: Map[Symbol.VarSym, Symbol.VarSym], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       // Compute the number of in and out variables.
@@ -1572,13 +1606,14 @@ object Monomorpher {
       val lambdaExp = inVars.foldRight(exp) {
         case ((oldSym, tpe), acc) =>
           val freshSym = freshVars(oldSym)
-          val fparam = MonoAst.FormalParam(freshSym, tpe, Occur.Unknown, loc)
-          val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
+          val fparam = MonoAst.FormalParam(freshSym, visitType(tpe), Occur.Unknown, loc)
+          // Here it is okay to use the `monoExp.tpe` as it is only used to generate the `MonoAst.Expr`.
+          val lambdaType = Type.mkPureArrow(visitType(tpe), acc.tpe, loc)
           MonoAst.Expr.Lambda(fparam, acc, lambdaType, loc)
       }
 
       // Lift the lambda expression to operate on boxed values.
-      val liftedExp = liftXY(outVars, lambdaExp, inVars.map(_._2), exp.tpe, exp.loc)
+      val liftedExp = liftXY(outVars, lambdaExp, inVars.map(t => visitType(t._2)), exp.tpe, exp.loc)
 
       // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
       val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
@@ -1589,6 +1624,11 @@ object Monomorpher {
 
     /**
       * Returns a `Fixpoint/Ast/Datalog.HeadTerm.AppX`.
+      */
+
+    /**
+      *
+      * @param fvs the types in this must be subst, but not visited
       */
     private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Instances, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       // Compute the number of free variables.
@@ -1611,13 +1651,13 @@ object Monomorpher {
       val lambdaExp = fvs.foldRight(freshExp) {
         case ((oldSym, tpe), acc) =>
           val freshSym = freshVars(oldSym)
-          val fparam =  MonoAst.FormalParam(freshSym, subst(tpe), Occur.Unknown, loc)
-          val lambdaType = Type.mkPureArrow(subst(tpe), acc.tpe, loc)
+          val fparam =  MonoAst.FormalParam(freshSym, tpe, Occur.Unknown, loc)
+          val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
           MonoAst.Expr.Lambda(fparam, acc, lambdaType, loc)
       }
 
       // Lift the lambda expression to operate on boxed values.
-      val liftedExp = liftX(lambdaExp, fvs.map(v => subst(v._2)), subst(exp.tpe))
+      val liftedExp = liftX(lambdaExp, fvs.map(_._2), subst(exp.tpe))
 
       // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
       val varExps = fvs.map(kv => mkVarSym(kv._1))
@@ -1629,6 +1669,9 @@ object Monomorpher {
       * Lifts the given lambda expression `exp0` with the given argument types `argTypes`.
       *
       * Note: liftX and liftXb are similar and should probably be maintained together.
+      *
+      * @param argTypes must be subst, but not visited
+      * @param resultType must be subst, but not visited
       */
     private def liftX(exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
 
@@ -1648,14 +1691,16 @@ object Monomorpher {
       val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
       // Compute the liftXb symbol.
+      // Note that `DatalogDefs.liftX` is not necessarily fine with a visited parameter.
       val sym = lookup(DatalogDefs.liftX(argTypes.length), liftType)
 
       // Construct a call to the liftX function.
-      MonoAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+      MonoAst.Expr.ApplyDef(sym, List(exp0), visitType(liftType), visitType(returnType), Type.Pure, exp0.loc)
     }
 
     /**
       * Lifts the given Boolean-valued lambda expression `exp0` with the given argument types `argTypes`.
+      * @param argTypes must be subst, but not visited
       */
     private def liftXb(exp0: MonoAst.Expr, argTypes: List[Type])(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       // Compute the liftXb symbol.
@@ -1675,15 +1720,19 @@ object Monomorpher {
       // The type of the overall liftXb function, i.e. (a -> b -> c -> Bool) -> (Boxed -> Boxed -> Boxed -> Bool).
       val liftType = Type.mkPureArrow(argType, returnType, exp0.loc)
 
+      // Note that `DatalogDefs.liftXb` is *not* necessarily fine with a visited parameter, though the return type is fine
       val sym = lookup(DatalogDefs.liftXb(argTypes.length), liftType)
 
       // Construct a call to the liftXb function.
-      MonoAst.Expr.ApplyDef(sym, List(exp0), liftType, returnType, Type.Pure, exp0.loc)
+      MonoAst.Expr.ApplyDef(sym, List(exp0), visitType(liftType), returnType, Type.Pure, exp0.loc)
     }
 
 
     /**
       * Lifts the given lambda expression `exp0` with the given argument types `argTypes` and `resultType`.
+      *
+      * @param argTypes: Must be subst and visited.
+      * @param resultType: Must be subst and visited.
       */
     private def liftXY(outVars: List[Symbol.VarSym], exp0: MonoAst.Expr, argTypes: List[Type], resultType: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
 
@@ -1710,6 +1759,7 @@ object Monomorpher {
       // Compute the number of bound ("output") and free ("input") variables.
       val numberOfInVars = argTypes.length
       val numberOfOutVars = outVars.length
+      // Note that `DatalogDefs.liftXY` is fine with Datalog types.
       val sym = lookup(DatalogDefs.liftXY(numberOfInVars, numberOfOutVars), liftType)
 
       // Construct a call to the liftXY function.
@@ -1762,6 +1812,7 @@ object Monomorpher {
       exps.reduceRight {
         (exp, acc) =>
           val itpe = Types.MergeType
+          // Note that `DatalogDefs.Merge` is fine with Datalog types.
           val defnSym = lookup(DatalogDefs.Merge, itpe)
           val argExps = exp :: acc :: Nil
           val resultType = Types.Datalog
@@ -1776,6 +1827,7 @@ object Monomorpher {
       val argExps = predSymExp :: datalogExp :: Nil
       val resultType = Types.Datalog
       val itpe = Types.FilterType
+      // Note that `DatalogDefs.Filter` is fine with Datalog types.
       val defnSym = lookup(DatalogDefs.Filter, itpe)
       MonoAst.Expr.ApplyDef(defnSym, argExps, itpe, resultType, datalogExp.eff, loc)
     }
@@ -1845,7 +1897,7 @@ object Monomorpher {
       * }}}
       * where `P1, P2, ...` are in `preds` with their respective term types.
       */
-    // `tpe` must be subst. Types in `preds` must be subst.
+    // `tpe` must be subst and visited. Types in `preds` must be subst, but not visited.
     private def mkExtVarLambda(preds: List[(Name.Pred, List[Type])], tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       val predSymVar = Symbol.freshVarSym("predSym", BoundBy.FormalParam, loc)(Scope.Top, flix)
       val termsVar = Symbol.freshVarSym("terms", BoundBy.FormalParam, loc)(Scope.Top, flix)
@@ -1887,7 +1939,7 @@ object Monomorpher {
       * where `P1, P2, ...` are in `preds` with their respective term types, `"predSym" == predSymVar.text`
       * and `"terms" == termsVar.text`.
       */
-    // `tpe` must be subst. Typed in `pred` must be susbt.
+    // `tpe` must be subst and visited. Typed in `pred` must be subst, but not visited.
     private def mkExtVarBody(preds: List[(Name.Pred, List[Type])], predSymVar: Symbol.VarSym, termsVar: Symbol.VarSym, tpe: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       val nameVar = Symbol.freshVarSym(Name.Ident("name", loc), BoundBy.Pattern)(Scope.Top, flix)
       MonoAst.Expr.Match(
@@ -1925,7 +1977,7 @@ object Monomorpher {
       */
     /**
       * @param tpe must be subst
-      * @param types must be subst
+      * @param types must be subst, but not visited
       * @return subst type
       */
     private def mkProvenanceMatchRule(termsVar: Symbol.VarSym, tpe: Type, p: Name.Pred, types: List[Type], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.MatchRule = {
@@ -1953,7 +2005,7 @@ object Monomorpher {
 
     /**
       * @param tpe must be subst
-      * @return subst type
+      * @return subst type, but not visited
       */
     private def mkUnboxedTerm(termsVar: Symbol.VarSym, tpe: Type, i: Int, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
       val outerItpe = Type.mkPureUncurriedArrow(List(Types.Boxed), tpe, loc)
@@ -1971,8 +2023,8 @@ object Monomorpher {
             tpe = Types.Boxed, eff = Type.Pure, loc = loc
           )
         ),
-        itpe = outerItpe,
-        tpe = tpe, eff = Type.Pure, loc = loc
+        itpe = visitType(outerItpe),
+        tpe = visitType(tpe), eff = Type.Pure, loc = loc
       )
     }
 

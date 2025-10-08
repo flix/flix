@@ -720,9 +720,6 @@ class Flix {
     var treeShaker1Ast = TreeShaker1.run(loweringAst)
     loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-//    var loweringAst2 = Lowering2.run(treeShaker1Ast)
-//    treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
-
     var monomorpherAst = Monomorpher.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
