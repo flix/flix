@@ -159,9 +159,7 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.Region(_, _) => ()
-
-      case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
+      case Expr.Region(_, _, exp, _, _, _) => visitExp(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visitExp(exp1)
@@ -800,7 +798,6 @@ object PatMatch {
       }.zip(all.take(labels.length))
       val t = all.takeRight(1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
-    case TyCon.Cst(Constant.RecordEmpty) => lst
     case a => a :: lst
   }
 

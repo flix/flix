@@ -193,16 +193,6 @@ mod Iterator {
     }
 
     ///
-    /// Returns the contents of `iter` as a MutDeque.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), iter);
-        d
-
-    ///
     /// Returns the contents of `iter` as a MutList.
     ///
     /// Consumes the entire iterator.
@@ -398,12 +388,6 @@ mod Iterator {
         let Iterator(rc, _) = iter;
         let ix = Ref.fresh(rc, 0);
         map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
-
-    ///
-    /// Alias for `zipWithIndex`.
-    ///
-    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
-        zipWithIndex(iter)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.

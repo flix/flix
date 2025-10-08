@@ -119,10 +119,7 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _) =>
-      ()
-
-    case Expr.Scope(_, _, exp, _, _, _) =>
+    case Expr.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -373,11 +370,11 @@ object Safety {
 
   }
 
-  /** Checks that `ctx` is [[SecurityContext.AllPermissions]]. */
+  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
   private def checkAllPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
-      case SecurityContext.AllPermissions => ()
-      case SecurityContext.NoPermissions => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.Unrestricted => ()
     }
   }
 

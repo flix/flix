@@ -156,7 +156,7 @@ object LambdaDrop {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Scope(_, _, exp, _, _, _) =>
+    case Expr.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -280,9 +280,9 @@ object LambdaDrop {
       val e2 = rewriteExp(exp2)
       Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, occur, loc)
 
-    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
-      Expr.Scope(sym, regSym, e, tpe, eff, loc)
+      Expr.Region(sym, regSym, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)

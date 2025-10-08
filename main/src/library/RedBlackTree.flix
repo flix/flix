@@ -61,7 +61,7 @@ instance Functor[RedBlackTree[k]] {
 instance Foldable[RedBlackTree[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
+    redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
 }
 
 instance UnorderedFoldable[RedBlackTree[k]] {
@@ -837,14 +837,6 @@ mod RedBlackTree {
     ///
     pub def toList(t: RedBlackTree[k, v]): List[(k, v)] =
         RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
-
-    ///
-    /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
-    ///
-    pub def toMutDeque(rc: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
-        d
 
     ///
     /// Build a node applicatively.

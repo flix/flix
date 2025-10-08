@@ -344,6 +344,58 @@ mod TestMutHashSet {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // first                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def first01(): Unit \ Assert = region rc {
+        let s: MutHashSet[Int32, rc] = MutHashSet.empty(rc);
+        assertEq(expected = None, MutHashSet.first(s))
+    }
+
+    @Test
+    def first02(): Unit \ Assert = region rc {
+        let s = MutHashSet.singleton(rc, 42);
+        assertEq(expected = Some(42), MutHashSet.first(s))
+    }
+
+    @Test
+    def first03(): Unit \ Assert = region rc {
+        let s = MutHashSet.empty(rc);
+        MutHashSet.add(5, s);
+        MutHashSet.add(3, s);
+        MutHashSet.add(7, s);
+        MutHashSet.add(1, s);
+        assertEq(expected = Some(5), MutHashSet.first(s))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def last01(): Unit \ Assert = region rc {
+        let s: MutHashSet[Int32, rc] = MutHashSet.empty(rc);
+        assertEq(expected = None, MutHashSet.last(s))
+    }
+
+    @Test
+    def last02(): Unit \ Assert = region rc {
+        let s = MutHashSet.singleton(rc, 42);
+        assertEq(expected = Some(42), MutHashSet.last(s))
+    }
+
+    @Test
+    def last03(): Unit \ Assert = region rc {
+        let s = MutHashSet.empty(rc);
+        MutHashSet.add(5, s);
+        MutHashSet.add(3, s);
+        MutHashSet.add(7, s);
+        MutHashSet.add(1, s);
+        assertEq(expected = Some(1), MutHashSet.last(s))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // Insertion order preservation                                            //
     /////////////////////////////////////////////////////////////////////////////
 

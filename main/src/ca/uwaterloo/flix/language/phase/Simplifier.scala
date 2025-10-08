@@ -243,9 +243,9 @@ object Simplifier {
       val ef = simplifyEffect(eff)
       SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
 
-    case MonoAst.Expr.Scope(sym, _, exp, tpe, eff, loc) =>
+    case MonoAst.Expr.Region(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Scope(sym, visitExp(exp), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Region(sym, visitExp(exp), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Match(exp, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp, rules, tpe, loc)

@@ -453,14 +453,10 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.LocalDef(sym, fps, e1, e2, t, eff, loc)
 
-    case TypedAst.Expr.Region(tpe, loc) =>
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, t, Type.Pure, loc)
-
-    case TypedAst.Expr.Scope(TypedAst.Binder(sym, _), regionVar, exp, tpe, eff, loc) =>
+    case TypedAst.Expr.Region(TypedAst.Binder(sym, _), regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      LoweredAst.Expr.Scope(sym, regionVar, e, t, eff, loc)
+      LoweredAst.Expr.Region(sym, regionVar, e, t, eff, loc)
 
     case TypedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -2008,7 +2004,7 @@ object Lowering {
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
-        val e3 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, Type.mkRegionToStar(Type.IO, loc), Type.Pure, loc)
+        val e3 = LoweredAst.Expr.Cst(Constant.Static, Type.mkRegionToStar(Type.IO, loc), loc)
         val e4 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
@@ -2170,10 +2166,10 @@ object Lowering {
       val e2 = substExp(exp2, subst)
       LoweredAst.Expr.LocalDef(s, fps, e1, e2, tpe, eff, loc)
 
-    case LoweredAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val s = subst.getOrElse(sym, sym)
       val e = substExp(exp, subst)
-      LoweredAst.Expr.Scope(s, regionVar, e, tpe, eff, loc)
+      LoweredAst.Expr.Region(s, regionVar, e, tpe, eff, loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = substExp(exp1, subst)

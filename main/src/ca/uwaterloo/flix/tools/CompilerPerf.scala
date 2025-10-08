@@ -499,7 +499,7 @@ object CompilerPerf {
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))

@@ -3821,20 +3821,5 @@ mod TestString {
         assertEq(expected = 'a' :: 'b' :: 'c' :: Nil, String.iterator(rc, "abc") |> Iterator.toList)
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        assertEq(expected = Nil, String.enumerator(rc, "") |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        assertEq(expected = (0, 'a') :: (1, 'b') :: (2, 'c') :: Nil, String.enumerator(rc, "abc") |> Iterator.toList)
-    }
-
 }
 
