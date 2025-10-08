@@ -205,7 +205,7 @@ class TestFlixPackageManager extends AnyFunSuite {
   }
 
   test("Give error for missing dependency") {
-    assertResult(expected = PackageError.ProjectNotFound(new URI("https://api.github.com/repos/AnnaBlume99/helloworld/releases").toURL, Project("AnnaBlume99", "helloworld")).message(f))(actual = {
+    assertResult(expected = PackageError.ProjectNotFound(new URI("https://api.github.com/repos/flix/does-not-exist/releases").toURL, Project("flix", "does-not-exist")).message(f))(actual = {
       val toml = {
         """
           |[package]
@@ -216,7 +216,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |"github:AnnaBlume99/helloworld" = "1.0.0"
+          |"github:flix/does-not-exist" = "1.0.0"
           |
           |[mvn-dependencies]
           |
