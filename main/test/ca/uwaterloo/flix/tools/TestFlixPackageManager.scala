@@ -62,8 +62,6 @@ class TestFlixPackageManager extends AnyFunSuite {
           |
           |[mvn-dependencies]
           |
-          |[dev-mvn-dependencies]
-          |
           |""".stripMargin
       }
 
