@@ -136,7 +136,6 @@ tasks.register('testFlixPackageManager', JavaExec) {
     dependsOn['testClasses']
     mainClass = 'org.scalatest.tools.Runner'
     args = ['-s', 'ca.uwaterloo.flix.tools.TestFlixPackageManager', '-o']
-    // We also enforce that all tests can complete with 4GB of memory:
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }
