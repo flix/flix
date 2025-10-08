@@ -374,12 +374,15 @@ object Inliner {
   }
 
   /**
-    * Evaluate match if possible.
+    * Evaluate match if possible. The logic is rule based, for example `case _ => ` is always chosen no matter how
+    * complicated the scrutinee is. If the pattern says `case Some(..) => ..` then the scrutinee is inspected to see if
+    * it matches, does not match, or may match.
     *
     * The match rules are iterated top to bottom, at each step either:
-    *   - Removing the rule if it can never match (either the patten cannot match or the guard is guaranteed false)
-    *   - Removing the match if a rule is known to match (either `Some(12)` matching `Some(x)` or a lenient pattern like `_`)
-    *   - Returning the rules as is if the rule cannot be determined statically.
+    *   - Remove the rule if it can never match (either the patten cannot match or the guard is guaranteed false)
+    *     and continue the rule iteration.
+    *   - Remove the rule if it is known to match (either `Some(12)` matching `Some(x)` or a lenient pattern like `_`)
+    *   - Otherwise, leave the rules as is.
     */
   @tailrec
   private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
@@ -387,15 +390,15 @@ object Inliner {
       case MonoAst.MatchRule(pat, guardOpt, ruleExp) :: rest =>
         matchRule(exp, pat, guardOpt) match {
           case MatchResult.Match(binders) =>
-            // Guaranteed rule - convert to let binders.
+            // Guaranteed match - convert to let binders.
             sctx.changed.putIfAbsent(sym0, ())
             bindPatterns(binders.toSeq, ruleExp, loc)
           case MatchResult.NoMatch =>
-            // Impossible rule - delete and continue.
+            // Impossible match - delete and continue.
             sctx.changed.putIfAbsent(sym0, ())
             reduceMatch(exp, rest, tpe, eff, loc)
           case MatchResult.Unknown =>
-            // Match is unknown - do nothing.
+            // Unknown match - do nothing.
             Expr.Match(exp, rules, tpe, eff, loc)
         }
       case Nil =>
@@ -427,18 +430,54 @@ object Inliner {
 
   private object MatchResult {
 
+    /**
+      * An expression matches a pattern, corresponding to the given binders.
+      *
+      * {{{
+      *   match Cons(12, tail) {
+      *     case Cons(x, _) => ..
+      *   }
+      * }}}
+      *
+      * This would return `Match(Chain(Some(x) => 12), None => tail)`
+      */
     case class Match(binders: Chain[(Option[Pattern.Var], MonoAst.Expr)]) extends MatchResult
 
+    /** An expression does not match a pattern. */
     case object NoMatch extends MatchResult
 
+    /** An expression might match a pattern - it cannot be determined at compile time. */
     case object Unknown extends MatchResult
 
+    /**
+      * A match without any binders. E.g.:
+      *
+      * {{{
+      *   match 12 {
+      *     case 12 => ..
+      *   }
+      * }}}
+      */
     def emptyMatch(): MatchResult =
       Match(Chain.empty)
 
+    /**
+      * A match of a single binder. E.g.:
+      *
+      * {{{
+      *   match 12 {
+      *     case x => ..
+      *   }
+      * }}}
+      */
     def singleMatch(pat: Option[Pattern.Var], exp: MonoAst.Expr): MatchResult =
       Match(Chain((pat, exp)))
 
+    /**
+      * Returns a match with no binder if `b` is true (see [[emptyMatch]]).
+      *
+      * Returns [[NoMatch]] if `b` is false.
+      */
     def matchFromBool(b: Boolean): MatchResult =
       if (b) emptyMatch() else NoMatch
 
@@ -523,6 +562,7 @@ object Inliner {
     if (exps.lengthCompare(pats) != 0) {
       MatchResult.Unknown
     } else {
+      // Keep the order of `exps` to maintain evaluation order.
       val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
         case (acc, (innerPat, innerExp)) =>
           MatchResult.concat(acc, matchPat(innerExp, innerPat))
