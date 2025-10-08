@@ -470,8 +470,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def test(flix: Flix): Result[Unit, BootstrapError] = {
     for {
       compilationResult <- build(flix)
+      res <- Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError(List("Tester Error")))
     } yield {
-      Tester.run(Nil, compilationResult)(flix).mapErr(_ => BootstrapError.GeneralError(List("Tester Error")))
+      res
     }
   }
 
