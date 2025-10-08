@@ -340,7 +340,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.MalformedNumber](result)
   }
 
-  ignore("LexerError.UnexpectedChar.01") {
+  test("LexerError.UnexpectedChar.01") {
     val input = "€"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)

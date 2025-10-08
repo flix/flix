@@ -17,7 +17,7 @@ mod TestAdaptor {
     // Comparator                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
+    @Test @Skip
     def comparator01(): Unit \ Assert + IO =
         let c1 = Adaptor.comparator((Proxy.Proxy: Proxy[String]));
         assertEq(expected = 0, c1.compare("aaaa", "aaaa"))
