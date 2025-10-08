@@ -91,7 +91,7 @@ object Main {
       progress = true,
       installDeps = cmdOpts.installDeps,
       outputJvm = false,
-      outputPath =  Options.Default.outputPath,
+      outputPath = Options.Default.outputPath,
       target = Options.Default.target,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
@@ -210,7 +210,15 @@ object Main {
           }
 
         case Command.Clean =>
-          ???
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap => bootstrap.clean().toValidation
+          }.toResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.Doc =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
