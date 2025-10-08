@@ -798,7 +798,6 @@ object PatMatch {
       }.zip(all.take(labels.length))
       val t = all.takeRight(1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
-    case TyCon.Cst(Constant.RecordEmpty) => lst
     case a => a :: lst
   }
 
