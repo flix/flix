@@ -71,12 +71,12 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      val allDeps = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
+      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
         case Ok(ms) => ms
         case Err(e) => fail(e.message(f))
       }
 
-      FlixPackageManager.installAll(manifest :: allDeps, path, None)(Formatter.getDefault, System.out) match {
+      FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) => l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
           l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
         case Err(e) => e
