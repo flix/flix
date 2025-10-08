@@ -426,6 +426,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  def clean(): Result[Unit, BootstrapError] = {
+    ???
+  }
+
   /**
     * Type checks the source files for the project.
     */
