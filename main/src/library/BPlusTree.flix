@@ -372,6 +372,18 @@ mod BPlusTree {
     }
 
     ///
+    /// Applies `f` to a start value `i` and all values in `t` going from left to right.
+    ///
+    pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] = 
+        List.foldLeft(f, i, valuesOf(t))
+
+    ///
+    /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
+    ///
+    pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
+        List.foldLeft(b -> match (k, v) -> f(b, k, v), i, toList(t))
+
+    ///
     /// Applies `f` to all mappings `k => v` in `t`.
     ///
     /// Not thread-safe.
@@ -417,6 +429,25 @@ mod BPlusTree {
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.getWithDefault(k, stamp, d, leaf, t)
+
+
+    ///
+    /// Returns the set of keys in `t`.
+    ///
+    pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] = region rc {
+        let set = MutSet.empty(rc);
+        forEach(k -> _ -> MutSet.add(k, set), t);
+        MutSet.toSet(set)
+    }
+
+    ///
+    /// Returns the list of values in `t`.
+    ///
+    pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] = region rc {
+        let list = MutList.empty(rc);
+        forEach(_ -> v -> MutList.push(v, list), t);
+        MutList.toList(list)
+    }
 
     ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
@@ -469,7 +500,6 @@ mod BPlusTree {
         else
             parForEach(f2, t)
 
-
     ///
     /// Updates the tree `t` with the mapping `k => v`. Replaces any
     /// existing mapping.
@@ -489,7 +519,6 @@ mod BPlusTree {
     ///
     pub def putIf(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
         fixRoot(putIfInternal(decider, k, v, t), t)
-
 
     ///
     /// Internal method for `putIf`.
