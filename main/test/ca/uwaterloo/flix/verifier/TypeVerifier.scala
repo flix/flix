@@ -584,9 +584,10 @@ object TypeVerifier {
     * Asserts that the list of types `ts` matches the list of java classes `cs`
     */
   private def checkJavaParameters(ts: List[SimpleType], cs: List[Class[?]], loc: SourceLocation): Unit = {
-    if (ts.length != cs.length)
-      throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
-    ListOps.zip(ts, cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+    ListOps.zipOption(ts, cs) match {
+      case None => throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
+      case Some(zipped) => zipped.foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+    }
   }
 
   /**
