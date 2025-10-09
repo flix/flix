@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Expr, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -77,7 +78,7 @@ object OccurrenceAnalyzer {
       case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
           (Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
@@ -97,7 +98,7 @@ object OccurrenceAnalyzer {
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
-        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
         } else {
           (Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
@@ -106,7 +107,7 @@ object OccurrenceAnalyzer {
       case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq).addVar(sym, Occur.Once)
-        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
           (Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
@@ -145,7 +146,7 @@ object OccurrenceAnalyzer {
         val ctx5 = combineSeq(ctx3, ctx4)
         val occur = ctx5.get(sym)
         val ctx6 = ctx5.removeVar(sym)
-        if ((e1 eq exp1) && (e2 eq exp2) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
+        if ((e1 eq exp1) && (e2 eq exp2) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
           (exp0, ctx6) // Reuse exp0.
         } else {
           (Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
@@ -193,7 +194,7 @@ object OccurrenceAnalyzer {
         val (rs, ctxs) = rules.map(visitMatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+        if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
           (Expr.Match(e, rs, tpe, eff, loc), ctx3)
@@ -213,7 +214,7 @@ object OccurrenceAnalyzer {
       case Expr.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
-        if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
+        if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
           (Expr.VectorLit(es, tpe, eff, loc), ctx)
@@ -250,7 +251,7 @@ object OccurrenceAnalyzer {
         val (rs, ctxs) = rules.map(visitCatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+        if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
           (Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
@@ -261,7 +262,7 @@ object OccurrenceAnalyzer {
         val (rs, ctxs) = rules.map(visitHandlerRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         val ctx3 = combineSeq(ctx1, ctx2)
-        if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
+        if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
           (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
@@ -270,7 +271,7 @@ object OccurrenceAnalyzer {
       case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val (ms, ctxs) = methods.map(visitJvmMethod).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
-        if (methods.zip(ms).forall { case (m1, m2) => m1 eq m2 }) {
+        if (ListOps.zip(methods, ms).forall { case (m1, m2) => m1 eq m2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
           (Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
@@ -320,7 +321,7 @@ object OccurrenceAnalyzer {
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+      if ((e eq exp) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
         (rule, ctx2) // Reuse rule.
       } else {
         (MonoAst.HandlerRule(op, fps, e), ctx2)
@@ -332,7 +333,7 @@ object OccurrenceAnalyzer {
       val (e, ctx1) = visitExp(exp)
       val fps = fparams.map(visitFormalParam(_, ctx1))
       val ctx2 = ctx1.removeVars(fps.map(_.sym))
-      if ((e eq exp) && fparams.zip(fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
+      if ((e eq exp) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 }) {
         (method, ctx2) // Reuse method.
       } else {
         (MonoAst.JvmMethod(ident, fparams, e, retTpe, eff, loc), ctx2)
@@ -357,7 +358,7 @@ object OccurrenceAnalyzer {
     case MonoAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, listOfSyms) = pats.map(visitPattern(_, ctx)).unzip
       val syms = listOfSyms.flatten.toSet
-      if (pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
+      if (ListOps.zip(pats, ps).forall { case (p1, p2) => p1 eq p2 }) {
         (pat0, syms) // Reuse pat0.
       } else {
         (MonoAst.Pattern.Tag(symUse, ps, tpe, loc), syms)
@@ -376,7 +377,7 @@ object OccurrenceAnalyzer {
       val (ps, listOfSyms) = pats.map(visitRecordLabelPattern(_, ctx)).unzip
       val (p, syms0) = visitPattern(pat, ctx)
       val syms = listOfSyms.flatten.toSet ++ syms0
-      if ((p eq pat) && pats.zip(ps).forall { case (p1, p2) => p1 eq p2 }) {
+      if ((p eq pat) && ListOps.zip(pats, ps).forall { case (p1, p2) => p1 eq p2 }) {
         (pat0, syms) // Reuse pat0.
       } else {
         (MonoAst.Pattern.Record(ps, p, tpe, loc), syms)
