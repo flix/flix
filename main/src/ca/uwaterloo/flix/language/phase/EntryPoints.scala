@@ -93,6 +93,10 @@ object EntryPoints {
             (root.copy(mainEntryPoint = Some(entryPoint.sym)), Nil)
         }
       case Some(sym) => root.defs.get(sym) match {
+        case Some(shell) if shell.sym.name == "shell1" =>
+          // A main is given and it is shell - transform it.
+          val newShell = mkShell(shell)
+          (root.copy(defs = root.defs + (shell.sym -> newShell)), Nil)
         case Some(_) =>
           // A main is given and it exists - use it.
           (root, Nil)
@@ -102,6 +106,25 @@ object EntryPoints {
       }
     }
   }
+  /**
+    * Returns a new shell function that swaps the unit value for a call to f
+    *
+    * {{{
+    *   def mainFunc(): tpe \ ef = exp
+    *
+    *   def main$(): Unit \ ef + IO = println(main())
+    * }}}
+    */
+  private def mkShell(oldShell: TypedAst.Def): TypedAst.Def = {
+    val exp = oldShell.exp.asInstanceOf[TypedAst.Expr.LocalDef]
+    val tpe = exp.bnd.tpe.asInstanceOf[Type.Apply]
+    val spec = oldShell.spec.copy(
+      eff = tpe.tpe2,
+    )
+    val newExp = exp.copy(exp2=exp.exp1)
+    oldShell.copy(spec = spec, exp = newExp)
+  }
+
 
   /**
     * A function is an entry point if:

@@ -312,9 +312,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         // Cast to allow any subset of the primitive effects
         val src =
           s"""def ${main.name}(): Unit \\ $effString =
-             |checked_ecast(
-             |  println($s)
-             |)
+             |def _f() = { println($s) };
+             |checked_ecast(())
              |""".stripMargin
         flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
         run(main)
