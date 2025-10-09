@@ -383,6 +383,9 @@ object Inliner {
     *     and continue the rule iteration.
     *   - Remove the rule if it is known to match (either `Some(12)` matching `Some(x)` or a lenient pattern like `_`)
     *   - Otherwise, leave the rules as is.
+    *
+    * It is assumed that patterns do not contain duplicate variables (e.g. `case (x, x) => x`)
+    * and that tuples and enums do not have mismatched arity (e.g. `case Some(x, y) => x + y`).
     */
   @tailrec
   private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
@@ -535,7 +538,10 @@ object Inliner {
       exp match {
         case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
           if (symUse.sym != caseSym) MatchResult.NoMatch
-          else matchPatterns(exps, pats)
+          else {
+            // `exps` and `pats` have same length for well-typed programs.
+            matchPatterns(exps, pats)
+          }
         case _ =>
           MatchResult.Unknown
       }
@@ -543,6 +549,7 @@ object Inliner {
     case Pattern.Tuple(pats, _, _) =>
       exp match {
         case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
+          // `exps` and `pats` have same length for well-typed programs.
           matchPatterns(exps, pats.toList)
         case _ =>
           MatchResult.Unknown
@@ -557,10 +564,15 @@ object Inliner {
     * Returns the match result for matching `exps` to the patterns of `pats`.
     *
     * If the two lists are of different lengths, [[MatchResult.Unknown]] is returned.
+    *
+    * N.B.: `exps` and `pats` must have the same length, otherwise [[InternalCompilerException]] is thrown.
     */
   private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
     if (exps.lengthCompare(pats) != 0) {
-      MatchResult.Unknown
+      throw InternalCompilerException(
+        s"Match rule has arity ${pats.size} against ${exps.size} expressions.",
+        exps.headOption.map(_.loc).getOrElse(SourceLocation.Unknown)
+      )
     } else {
       // Keep the order of `exps` to maintain evaluation order.
       val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
