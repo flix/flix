@@ -157,7 +157,6 @@ object JvmOps {
     */
   def instantiateStruct(sym: Symbol.StructSym, targs: List[SimpleType])(implicit root: ReducedAst.Root): List[BackendType] = {
     val struct = root.structs(sym)
-    assert(struct.tparams.length == targs.length)
     val map = ListOps.zip(struct.tparams.map(_.sym), targs).toMap
     struct.fields.map(field => instantiateType(map, field.tpe))
   }
@@ -185,7 +184,6 @@ object JvmOps {
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
   def instantiateEnum(enm: ReducedAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
-    assert(enm.tparams.length == targs.length)
     val map = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
     enm.cases.map {
       case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))
