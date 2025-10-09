@@ -144,6 +144,7 @@ object Main {
 
         case Command.Check =>
           val flix = new Flix().setFormatter(formatter)
+          flix.setOptions(options)
           val result = for {
             bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
             res <- bootstrap.check(flix)
