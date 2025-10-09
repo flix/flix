@@ -526,34 +526,31 @@ object Inliner {
     case v@Pattern.Var(_, _, _, _) =>
       MatchResult.singleMatch(Some(v), exp)
 
-    case Pattern.Cst(cst, _, _) =>
-      exp match {
-        case Expr.Cst(expCst, _, _) =>
-          matchConstant(cst, expCst)
-        case _ =>
-          MatchResult.Unknown
-      }
+    case Pattern.Cst(cst, _, _) => exp match {
+      case Expr.Cst(expCst, _, _) =>
+        matchConstant(cst, expCst)
+      case _ =>
+        MatchResult.Unknown
+    }
 
-    case Pattern.Tag(symUse, pats, _, _) =>
-      exp match {
-        case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
-          if (symUse.sym != caseSym) MatchResult.NoMatch
-          else {
-            // `exps` and `pats` have same length for well-typed programs.
-            matchPatterns(exps, pats)
-          }
-        case _ =>
-          MatchResult.Unknown
-      }
-
-    case Pattern.Tuple(pats, _, _) =>
-      exp match {
-        case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
+    case Pattern.Tag(symUse, pats, _, _) => exp match {
+      case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
+        if (symUse.sym != caseSym) MatchResult.NoMatch
+        else {
           // `exps` and `pats` have same length for well-typed programs.
-          matchPatterns(exps, pats.toList)
-        case _ =>
-          MatchResult.Unknown
-      }
+          matchPatterns(exps, pats)
+        }
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Tuple(pats, _, _) => exp match {
+      case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
+        // `exps` and `pats` have same length for well-typed programs.
+        matchPatterns(exps, pats.toList)
+      case _ =>
+        MatchResult.Unknown
+    }
 
     case Pattern.Record(_, _, _, _) =>
       MatchResult.Unknown
