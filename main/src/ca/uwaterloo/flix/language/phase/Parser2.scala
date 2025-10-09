@@ -1787,7 +1787,7 @@ object Parser2 {
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
         case TokenKind.Annotation | TokenKind.KeywordDef => localDefExpr()
-        case TokenKind.KeywordRegion => scopeExpr()
+        case TokenKind.KeywordRegion => regionExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
         case TokenKind.KeywordTypeMatch => typematchExpr()
         case TokenKind.KeywordChoose
@@ -2112,7 +2112,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.LocalDef)
     }
 
-    private def scopeExpr()(implicit s: State): Mark.Closed = {
+    private def regionExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
@@ -2121,7 +2121,7 @@ object Parser2 {
       if (at(TokenKind.CurlyL)) {
         block()
       }
-      close(mark, TreeKind.Expr.Scope)
+      close(mark, TreeKind.Expr.Region)
     }
 
     private def block()(implicit s: State): Mark.Closed = {
@@ -2482,16 +2482,16 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      scopeName()
+      regionName()
       close(mark, TreeKind.Expr.LiteralArray)
     }
 
-    private def scopeName()(implicit s: State): Mark.Closed = {
+    private def regionName()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       val mark = open()
       expect(TokenKind.At)
       expression()
-      close(mark, TreeKind.Expr.ScopeName)
+      close(mark, TreeKind.Expr.RegionName)
     }
 
     private def vectorLiteralExpr()(implicit s: State): Mark.Closed = {
@@ -2892,7 +2892,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordSpawn)
       expression()
-      scopeName()
+      regionName()
       close(mark, TreeKind.Expr.Spawn)
     }
 

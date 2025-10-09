@@ -301,6 +301,7 @@ class Flix {
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "Shuffle.flix" -> LocalResource.get("/src/library/Shuffle.flix"),
     "SocketAddr.flix" -> LocalResource.get("/src/library/SocketAddr.flix"),
     "SocketAddrV4.flix" -> LocalResource.get("/src/library/SocketAddrV4.flix"),
     "SocketAddrV6.flix" -> LocalResource.get("/src/library/SocketAddrV6.flix"),
@@ -393,7 +394,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.NoPermissions))
+    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -510,7 +511,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.NoPermissions)
+      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -910,7 +911,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.Unrestricted) :: xs
   }
 
   /**

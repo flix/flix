@@ -197,7 +197,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
+    flix.addSourceCode(uri, src)(SecurityContext.Unrestricted) // TODO
     sources += (uri -> src)
   }
 

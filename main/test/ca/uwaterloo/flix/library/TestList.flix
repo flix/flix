@@ -1992,38 +1992,6 @@ mod TestList {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = (Nil: List[Unit]);
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let l = 1 :: 2 :: Nil;
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let l = 3 :: 1 :: 2 :: Nil;
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = List.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -2667,19 +2635,6 @@ mod TestList {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert = assertEq(expected = DelayList.empty(), (Nil: List[Unit]) |> List.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert = assertEq(expected = DelayList.range(-1000, 1000), List.range(-1000, 1000) |> List.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert = assertEq(expected = List.range(-1000, 1000), List.range(-1000, 1000) |> List.toDelayList |> DelayList.toList)
-
-    /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -2781,34 +2736,6 @@ mod TestList {
         assertEq(expected = List.range(-100, 100), List.range(-100, 100) |> List.iterator(rc) |> Iterator.toList)
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerate                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerate01(): Unit \ Assert = region rc {
-        let z = Ref.fresh(rc, Nil);
-        let l = Nil;
-        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
-        assertEq(expected = (Nil: List[(Int32, Int32)]), List.reverse(Ref.get(z)))
-    }
-
-    @Test
-    def enumerate02(): Unit \ Assert = region rc {
-        let z = Ref.fresh(rc, Nil);
-        let l = 1 :: 2 :: 3 :: Nil;
-        Iterator.forEach(match (i, x) ->  Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, List.reverse(Ref.get(z)))
-    }
-
-    @Test
-    def enumerate03(): Unit \ Assert = region rc {
-        let z = Ref.fresh(rc, Nil);
-        let l = List.range(100, 200);
-        Iterator.forEach(match (i, x) -> Ref.put((i, x) :: Ref.get(z), z), List.enumerator(rc, l));
-        assertEq(expected = List.zip(List.range(0, 100), l), List.reverse(Ref.get(z)))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
@@ -2921,35 +2848,43 @@ mod TestList {
 
     @Test
     def shuffle01(): Unit \ {Assert, NonDet} =
-        let l1: List[Int32] = Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1: List[Int32] = Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 0, List.length(l2));
-        assertEq(expected = Set#{}, List.toSet(l2))
+            assertEq(expected = 0, List.length(l2));
+            assertEq(expected = Set#{}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ {Assert, NonDet} =
-        let l1 = 1 :: Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1 = 1 :: Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 1, List.length(l2));
-        assertEq(expected = Set#{1}, List.toSet(l2))
+            assertEq(expected = 1, List.length(l2));
+            assertEq(expected = Set#{1}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ {Assert, NonDet} =
-        let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1 = 1 :: 2 :: 3 :: Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 3, List.length(l2));
-        assertEq(expected = Set#{1, 2, 3}, List.toSet(l2))
+            assertEq(expected = 3, List.length(l2));
+            assertEq(expected = Set#{1, 2, 3}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle04(): Unit \ {Assert, NonDet} =
-        let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.shuffle(l1);
+        run {
+            let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let l2 = List.shuffle(l1);
 
-        assertEq(expected = 10, List.length(l2));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, List.toSet(l2))
+            assertEq(expected = 10, List.length(l2));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, List.toSet(l2))
+        } with Shuffle.runWithIO
 
     /////////////////////////////////////////////////////////////////////////////
     // Literals                                                                //

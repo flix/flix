@@ -888,7 +888,7 @@ object Weeder2 {
         case TreeKind.Expr.IfThenElse => visitIfThenElseExpr(tree)
         case TreeKind.Expr.Statement => visitStatementExpr(tree)
         case TreeKind.Expr.LocalDef => visitLocalDefExpr(tree)
-        case TreeKind.Expr.Scope => visitScopeExpr(tree)
+        case TreeKind.Expr.Region => visitRegionExpr(tree)
         case TreeKind.Expr.Match => visitMatchExpr(tree)
         case TreeKind.Expr.TypeMatch => visitTypeMatchExpr(tree)
         case TreeKind.Expr.RestrictableChoose
@@ -1373,11 +1373,11 @@ object Weeder2 {
       }
     }
 
-    private def visitScopeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.Scope)
+    private def visitRegionExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Region)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlockExpr)
       mapN(pickNameIdent(tree), block) {
-        (ident, block) => Expr.Scope(ident, block, tree.loc)
+        (ident, block) => Expr.Region(ident, block, tree.loc)
       }
     }
 
@@ -1708,18 +1708,18 @@ object Weeder2 {
     private def visitLiteralArrayExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LiteralArray)
       val exprs0 = pickAll(TreeKind.Expr.Expr, tree)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      mapN(traverse(exprs0)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
-        case (exprs, Some(scope)) => Expr.ArrayLit(exprs, scope, tree.loc)
+      val regionName = tryPick(TreeKind.Expr.RegionName, tree)
+      mapN(traverse(exprs0)(visitExpr), traverseOpt(regionName)(visitRegionName)) {
+        case (exprs, Some(region)) => Expr.ArrayLit(exprs, region, tree.loc)
         case (exprs, None) =>
-          val error = MissingScope(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
+          val error = MissingRegion(TokenKind.ArrayHash, SyntacticContext.Expr.OtherExpr, tree.loc)
           sctx.errors.add(error)
           Expr.ArrayLit(exprs, Expr.Error(error), tree.loc)
       }
     }
 
-    private def visitScopeName(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.ScopeName)
+    private def visitRegionName(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.RegionName)
       pickExpr(tree)
     }
 
@@ -2070,12 +2070,12 @@ object Weeder2 {
 
     private def visitSpawnExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Spawn)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      mapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
+      val regionName = tryPick(TreeKind.Expr.RegionName, tree)
+      mapN(pickExpr(tree), traverseOpt(regionName)(visitRegionName)) {
         case (expr1, Some(expr2)) =>
           Expr.Spawn(expr1, expr2, tree.loc)
         case (expr1, None) =>
-          val error = MissingScope(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          val error = MissingRegion(TokenKind.KeywordSpawn, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
           sctx.errors.add(error)
           Expr.Spawn(expr1, Expr.Error(error), tree.loc)
       }
@@ -3256,8 +3256,10 @@ object Weeder2 {
                 case (_, _ :: _) =>
                   unkinded.foreach(t => sctx.errors.add(MissingTypeParamKind(t.ident.loc)))
                   tparams
+                // Empty list. Syntax error, but recover with an empty list.
                 case (Nil, Nil) =>
-                  throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
+                  sctx.errors.add(EmptyTypeParamList(tparamsTree.loc))
+                  tparams
               }
           }
       }

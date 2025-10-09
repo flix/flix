@@ -35,7 +35,7 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     new Flix().setOptions(o).addSourceCode("<test>", s).check()
   }
 
@@ -43,7 +43,7 @@ trait TestUtils {
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
   }
 

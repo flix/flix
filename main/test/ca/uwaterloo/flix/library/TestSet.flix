@@ -1468,54 +1468,6 @@ mod TestSet {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let s: Set[Int32] = Set#{};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let s = Set#{1};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let s = Set#{1, 3, 6};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d2);
-        MutDeque.pushBack(6, d2);
-        MutDeque.pushFront(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let s = Set#{7, 1, 3, 6};
-        let d1 = Set.toMutDeque(rc, s);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront(7, d2);
-        MutDeque.pushFront(6, d2);
-        MutDeque.pushFront(3, d2);
-        MutDeque.pushFront(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // eq                                                                      //
     /////////////////////////////////////////////////////////////////////////////
@@ -1884,23 +1836,6 @@ mod TestSet {
     @Test
     def maximumBy04(): Unit \ Assert =
         assertEq(expected = Some(54), Set.maximumBy((x, y) -> x <=> y, Set.range(5, 55)))
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = DelayList.empty(), (Set.empty(): Set[Unit]) |> Set.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = DelayList.range(-1000, 1000), Set.range(-1000, 1000) |> Set.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = Set.range(-1000, 1000), Set.range(-1000, 1000) |> Set.toDelayList |> DelayList.toSet)
 
 
     /////////////////////////////////////////////////////////////////////////////
