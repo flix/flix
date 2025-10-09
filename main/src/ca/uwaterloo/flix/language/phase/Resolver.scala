@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -2708,7 +2708,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.Declaration.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
-      val map = alias.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
+      val map = ListOps.zip(alias.tparams.map(_.sym), args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val symUse = TypeAliasSymUse(alias.sym, cstLoc)
       UnkindedType.Alias(symUse, args, tpe, tpe0.loc)
