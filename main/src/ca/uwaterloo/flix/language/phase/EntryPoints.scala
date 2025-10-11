@@ -16,10 +16,12 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Name.{Ident, mkUnlocatedNName}
+import ca.uwaterloo.flix.language.ast.Symbol.mkEffSym
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
@@ -63,15 +65,17 @@ object EntryPoints {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
-
-    val (root2, errs2) = CheckEntryPoints.run(root1)
+    // Wrap entry points to handle non-primitive effects with defaultHandlers
+    // Wrap entry points to handle non-primitive effects with defaultHandlers
+    val (rootWithWrappedEntryPoints, errsDefaultHandlers) = WrapInDefaultHandlers.run(root1)
+    val (root2, errs2) = CheckEntryPoints.run(rootWithWrappedEntryPoints)
     // WrapTest and WrapMain assumes sensible tests, so CheckEntryPoints must run first.
     // Notice that a main function with test annotation will be wrapped twice.
     val root3 = WrapTest.run(root2)
     val root4 = WrapMain.run(root3)
     // WrapMain might change main, so findEntryPoints must be after.
     val root5 = findEntryPoints(root4)
-    (root5, errs1 ++ errs2)
+    (root5, errs1 ++ errs2 ++ errsDefaultHandlers)
   }
 
   /**
@@ -470,6 +474,152 @@ object EntryPoints {
       * @param invalidMain marks the main entrypoint as invalid.
       */
     private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError], invalidMain: AtomicBoolean)
+
+  }
+
+  private object WrapInDefaultHandlers {
+    private case class HandlerInfo(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, handlerDefSymUse: SymUse.DefSymUse, handledEff: Type, handledSym: Symbol.EffSym, generatedPrimitiveEffs: List[Type])
+
+    /**
+      * WrapInDefaultHandlers takes a root and returns a new root where the entry points' definitions
+      * have been wrapped in a default handler for any extra non-primitive effects
+      * (eg. Assert)
+      *
+      * From previous phases we know that each entry point function:
+      *   - Takes Unit as an argument
+      *   - Has a valid signature (without type variables, etc.)
+      *
+      */
+    def run(root: TypedAst.Root): (TypedAst.Root, List[EntryPointError]) = {
+      val defaultHandlers = root.defs.filter {
+        case (_, defn) => defn.spec.ann.isDefaultHandler
+      }
+      val (validHandlers, errs) = defaultHandlers.partitionMap {
+        case (sym, defn) => checkHandler(sym, defn, root)
+      }
+      val duplicateHandlersErrs = validHandlers.groupBy(_.handledSym).flatMap {
+        case (eff, handlers) =>
+          handlers.toList.combinations(2).collect {
+            case List(handler1, handler2) => EntryPointError.DuplicatedDefaultHandlers(eff, handler1.handlerDef.loc, handler2.handlerDef.loc)
+          }
+      }
+      // This is what will follow in the next PR to give some context
+
+      //val defsWithDefaultHandlers = ParOps.parMapValues(root.defs)(
+      //defn =>
+      //if (isEntryPoint(defn)(root)) wrapDefWithDefaultHandlers(defn, validHandlers, root) else defn
+      //)
+      //(root.copy(defs = defsWithDefaultHandlers), errs.toList.flatten ++ duplicateHandlersErrs)
+
+      (root, errs.toList.flatten ++ duplicateHandlersErrs)
+    }
+
+    /**
+      * Validates that a function marked with @DefaultHandler has the correct signature and structure.
+      *
+      * A valid default handler must:
+      * - Be in the companion module of an existing effect
+      * - Take exactly one argument of function type: Unit -> a \ ef
+      * - Return the same type variable 'a' as the function argument
+      * - Have an effect signature of the form: (ef - HandledEffect) + PrimitiveEffect1 + ...
+      *
+      * @param handlerSym The symbol of the handler function
+      * @param handlerDef The definition of the handler function
+      * @param root       The typed AST root
+      * @return Either a valid HandlerInfo or a list of entry point errors
+      */
+    private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root): Either[HandlerInfo, List[EntryPointError]] = {
+      // First we obtain the effect corresponding to the handler
+      val (effNamespace, effName) = handlerSym.namespace.splitAt(handlerSym.namespace.length - 1)
+      val effSymbol = Symbol.mkEffSym(mkUnlocatedNName(effNamespace), Ident(effName.lastOption.getOrElse("Error"), SourceLocation.Unknown))
+      val companionEffect = root.effects.get(effSymbol)
+      companionEffect match {
+        // There is a valid effect to wrap
+        case Some(_) =>
+          // Check if function takes one argument
+          val args = handlerDef.spec.declaredScheme.base.arrowArgTypes
+          if (args.length != 1) {
+            return Right(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc) :: Nil)
+          }
+          val handlerRetType = handlerDef.spec.retTpe
+          val handlerEffects = handlerDef.spec.eff
+          // Check that argument is a function
+          val argType = args.last match {
+            case t@Type.Apply(_, _, _) => t
+            case _ => return Right(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc) :: Nil)
+          }
+          // Check that the argument is a function which returns the same type as the handler
+          argType.arrowResultType match {
+            case t@Type.Var(_, _) if t == handlerRetType => ()
+            case _ => return Right(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc) :: Nil)
+          }
+          // Check that the argument is effect polymorphic
+          val argFnEffType = argType.arrowEffectType match {
+            case t@Type.Var(_, _) => t
+            case _ => return Right(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc) :: Nil)
+          }
+          // Check that the argument takes only one argument itself of type Unit
+          if (argType.arrowArgTypes.length != 1 || argType.arrowArgTypes.last != Type.Unit) {
+            Right(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc) :: Nil)
+          } else checkHandlerEffects(handlerEffects, argFnEffType.toString, effSymbol) match {
+            // The effect signature is correct and produces the following primitive effects
+            case Result.Ok(primEffectsSymsGenerated) =>
+              val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), handlerEffects.loc)
+              val primEffectsGenerated = primEffectsSymsGenerated.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown))
+              val handlerDefSymUse = DefSymUse(handlerDef.sym, handlerDef.loc)
+              Left(HandlerInfo(handlerSym, handlerDef, handlerDefSymUse, handledEff, effSymbol, primEffectsGenerated))
+            // The effect signature is incorrect
+            case Result.Err(errs) => Right(errs)
+          }
+        // The default handler is not in the companion module of an effect
+        case None => Right(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc) :: Nil)
+      }
+    }
+
+    /**
+      * Validates the effect signature of a default handler function.
+      *
+      * The handler's effect must follow the pattern: (ef - handledEffect) + primitiveEff1 + ...
+      * where:
+      * - ef is the effect variable from the function argument type
+      * - handledEffect is the effect being handled by this handler
+      * - All additional effects must be primitive effects (IO, Chan, etc.)
+      *
+      * @param eff              The effect type of the handler function
+      * @param effTypeVarString String representation of the effect type variable
+      * @param effSym           The symbol of the effect being handled
+      * @return Either a list of primitive effect symbols generated, or a list of entry point errors
+      */
+    private def checkHandlerEffects(eff: Type, effTypeVarString: String, effSym: Symbol.EffSym): Result[List[Symbol.EffSym], List[EntryPointError]] = {
+      // The check is done syntactically for now
+      val effects = eff.toString.split('+').map(_.trim).toList
+      effects match {
+        // Check it is an effect difference followed by a sum of primitive effects
+        case difOfEffects :: addedEffects =>
+          // Check that the first element is handling the desired effect
+          if (difOfEffects != s"($effTypeVarString - ${effSym.name})") {
+            Result.Err(EntryPointError.WrongSignatureForDefaultHandler(effSym, eff.loc) :: Nil)
+          } else {
+            val addedEffectsSymbols = addedEffects.map(effName => mkEffSym(Name.RootNS, Ident(effName, SourceLocation.Unknown)))
+            var errs: List[EntryPointError] = Nil
+            // Check that all generated effects are primitive
+            for (addedEff <- addedEffectsSymbols) {
+              if (!Symbol.isPrimitiveEff(addedEff)) {
+                errs = EntryPointError.NonPrimitiveEffectForDefaultHandler(effSym, addedEff, eff.loc) :: errs
+              }
+            }
+
+            if (errs.isEmpty) {
+              Result.Ok(addedEffectsSymbols)
+            } else {
+              Result.Err(errs)
+            }
+
+          }
+        // Unexpected effect signature
+        case Nil => Result.Err(EntryPointError.WrongSignatureForDefaultHandler(effSym, eff.loc) :: Nil)
+      }
+    }
 
   }
 
