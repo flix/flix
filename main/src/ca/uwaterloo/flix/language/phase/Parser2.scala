@@ -873,7 +873,7 @@ object Parser2 {
     if (eat(TokenKind.Dot)) {
       if (at(TokenKind.CurlyL)) {
         val mark = open()
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.Name,
           getItem = () => aliasedName(NAME_JAVA),
           checkForItem = NAME_JAVA.contains,
