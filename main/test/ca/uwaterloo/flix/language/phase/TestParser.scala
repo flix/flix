@@ -1040,22 +1040,13 @@ class TestParserSad extends AnyFunSuite with TestUtils {
   test("ParseError.ParYield.01") {
     val input =
       """
-        |def f(): Int32 = par () yield 1
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.ParYield.02") {
-    val input =
-      """
         |def f(): Int32 = par a <- 1 yield a
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
 
-  test("ParseError.ParYield.03") {
+  test("ParseError.ParYield.02") {
     val input =
       """
         |def f(): (Int32, Int32) = par (a <- let b = 1; b; c <- 2) yield (a, c)
