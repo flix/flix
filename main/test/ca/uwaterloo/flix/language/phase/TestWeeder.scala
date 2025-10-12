@@ -1117,37 +1117,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.InlineAndDontInline](result)
   }
 
-  // This is supposed to check that the identifier does not include '$'.
-  // But since a user defined operation like '<$>' is perfectly valid,
-  // checking the identifier becomes tricky,
-  // which is why the next 3 tests are ignored.
-  ignore("MalformedIdentifier.01") {
-    val input =
-      """
-        |import java.util.Locale$Builder
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedIdentifier](result)
-  }
-
-  ignore("MalformedIdentifier.02") {
-    val input =
-      """
-        |import java.util.{Locale$Builder}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedIdentifier](result)
-  }
-
-  ignore("MalformedIdentifier.03") {
-    val input =
-      """
-        |import java.util.{LocaleBuilder, Locale$Builder}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedIdentifier](result)
-  }
-
   test("MalformedInt16.01") {
     val input = "def f(): Int16 = -100000i16"
     val result = compile(input, Options.TestWithLibNix)
