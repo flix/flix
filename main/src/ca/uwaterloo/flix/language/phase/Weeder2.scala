@@ -1414,10 +1414,12 @@ object Weeder2 {
     private def visitTypeMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TypeMatch)
       val rules0 = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      flatMapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
+      mapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
         case (_, Nil) =>
-          Validation.Failure(NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc))
-        case (expr, rules) => Validation.Success(Expr.TypeMatch(expr, rules, tree.loc))
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          sctx.errors.add(error)
+          Expr.Error(error)
+        case (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
       }
     }
 
@@ -2090,7 +2092,8 @@ object Weeder2 {
       val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
       if (fragments.isEmpty) {
         val error = NeedAtleastOne(NamedTokenSet.Pattern, SyntacticContext.Expr.OtherExpr, Some("Valid par-yield syntax looks like `par (x <- e) yield x` "), loc = tree.loc)
-        Validation.Failure(Chain(error))
+        sctx.errors.add(error)
+        Validation.Success(Expr.Error(error))
       } else {
         mapN(traverse(fragments)(visitParYieldFragment), pickExpr(tree)) {
           (fragments, expr) => Expr.ParYield(fragments, expr, tree.loc)
