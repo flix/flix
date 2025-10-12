@@ -2273,7 +2273,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordTypeMatch)
       expression()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.MatchRule,
         checkForItem = _ == TokenKind.KeywordCase,
         getItem = typematchRule,
