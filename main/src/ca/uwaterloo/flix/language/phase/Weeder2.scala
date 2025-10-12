@@ -1860,13 +1860,9 @@ object Weeder2 {
         traverse(maybeCatch)(visitTryCatchBody),
       ) {
         // Bad case: try expr
-        case (_, Nil) =>
+        case (_, Nil) | (_, Nil :: Nil) =>
           // Fall back on Expr.Error
-          val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
-            actual = None,
-            SyntacticContext.Expr.OtherExpr,
-            loc = tree.loc)
+          val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
         // Case: try expr catch { rules... }
@@ -1877,12 +1873,7 @@ object Weeder2 {
     private def visitTryCatchBody(tree: Tree)(implicit sctx: SharedContext): Validation[List[CatchRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchBodyFragment)
       val rules = pickAll(TreeKind.Expr.TryCatchRuleFragment, tree)
-      if (rules.isEmpty) {
-        val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
-        Validation.Failure(error)
-      } else {
-        traverse(rules)(visitTryCatchRule)
-      }
+      traverse(rules)(visitTryCatchRule)
     }
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
