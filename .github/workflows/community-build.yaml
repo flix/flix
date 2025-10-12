@@ -46,6 +46,7 @@ jobs:
           - "mlutze/flix-json"
           - "mlutze/flixball"
           - "rywiese/scope-graphs"
+          - "magnus-madsen/bibblitz"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
     runs-on: ubuntu-latest
