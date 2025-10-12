@@ -1877,7 +1877,12 @@ object Weeder2 {
     private def visitTryCatchBody(tree: Tree)(implicit sctx: SharedContext): Validation[List[CatchRule], CompilationMessage] = {
       expect(tree, TreeKind.Expr.TryCatchBodyFragment)
       val rules = pickAll(TreeKind.Expr.TryCatchRuleFragment, tree)
-      traverse(rules)(visitTryCatchRule)
+      if (rules.isEmpty) {
+        val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
+        Validation.Failure(error)
+      } else {
+        traverse(rules)(visitTryCatchRule)
+      }
     }
 
     private def visitTryCatchRule(tree: Tree)(implicit sctx: SharedContext): Validation[CatchRule, CompilationMessage] = {
