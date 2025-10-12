@@ -2902,16 +2902,13 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordPar)
       if (at(TokenKind.ParenL)) {
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.Pattern,
           getItem = parYieldFragment,
           checkForItem = _.isFirstPattern,
           separation = Separation.Required(TokenKind.Semi),
           breakWhen = kind => kind == TokenKind.KeywordYield || kind.isRecoverExpr
-        ) match {
-          case Some(error) => closeWithError(open(), error)
-          case None =>
-        }
+        )
       }
       expect(TokenKind.KeywordYield)
       expression()
