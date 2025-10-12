@@ -143,15 +143,12 @@ object Main {
           }
 
         case Command.Check =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options)
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.check(flix)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.check(flix)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -160,15 +157,12 @@ object Main {
           }
 
         case Command.Build =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options.copy(loadClassFiles = false))
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.build(flix)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.build(flix)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -177,15 +171,12 @@ object Main {
           }
 
         case Command.BuildJar =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options.copy(loadClassFiles = false))
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.buildJar(flix)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildJar(flix)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -194,15 +185,12 @@ object Main {
           }
 
         case Command.BuildFatJar =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options.copy(loadClassFiles = false))
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.buildFatJar(flix)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.buildFatJar(flix)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -211,13 +199,9 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.buildPkg()
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap => bootstrap.buildPkg()
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -226,15 +210,12 @@ object Main {
           }
 
         case Command.Doc =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options)
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.doc(flix)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.doc(flix)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -243,19 +224,16 @@ object Main {
           }
 
         case Command.Run =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options)
-          val args: Array[String] = cmdOpts.args match {
-            case None => Array.empty
-            case Some(a) => a.split(" ")
-          }
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.run(flix, args)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              val args: Array[String] = cmdOpts.args match {
+                case None => Array.empty
+                case Some(a) => a.split(" ")
+              }
+              bootstrap.run(flix, args)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -264,15 +242,12 @@ object Main {
           }
 
         case Command.Test =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options.copy(progress = false))
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.test(flix)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.test(flix)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -311,15 +286,12 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options.copy(progress = false))
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.release(flix)(System.err)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.release(flix)(System.err)
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(error) =>
@@ -328,15 +300,12 @@ object Main {
           }
 
         case Command.Outdated =>
-          val flix = new Flix().setFormatter(formatter)
-          flix.setOptions(options.copy(progress = false))
-          val result = for {
-            bootstrap <- Bootstrap.bootstrap(cwd, options.githubToken)
-            res <- bootstrap.outdated(flix)(System.err)
-          } yield {
-            res
-          }
-          result match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.outdated(flix)(System.err)
+          } match {
             case Result.Ok(false) =>
               // Up to date
               System.exit(0)
