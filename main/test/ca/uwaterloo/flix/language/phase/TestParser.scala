@@ -122,6 +122,67 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("StructNoTParams.01") {
+    val input =
+      """
+        |struct S { }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.01") {
+    val input =
+      """
+        |def main: Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.02") {
+    val input =
+      """
+        |trait A[a] {
+        |def someSig: Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.03") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    def localFunc = ();
+        |    localFunc()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("NoLiteralBody.01") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    let _ = List#;
+        |    ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+
   test("NoDefBody.01") {
     val input =
       """
@@ -1198,15 +1259,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Unit \ IO = throw
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("StructNoTParams.01") {
-    val input =
-      """
-        |struct S { }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

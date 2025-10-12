@@ -734,6 +734,97 @@ mod TestBPlusTree {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // adjust                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def plusOne(v: Int32): Int32 = v + 1
+
+    @Test
+    def adjust01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 2, t);
+        BPlusTree.adjust(plusOne, 1, t);
+        Assert.assertEq(expected = Some(3), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 2, t);
+        BPlusTree.adjust(identity, 1, t);
+        Assert.assertEq(expected = Some(2), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, "foo", t);
+        BPlusTree.adjust(String.toUpperCase, 1, t);
+        Assert.assertEq(expected = Some("FOO"), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.adjust(plusOne, 1, t);
+        Assert.assertNone(BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(2, 2, t);
+        BPlusTree.put(5, 2, t);
+        BPlusTree.put(6, 2, t);
+        BPlusTree.put(-1, 2, t);
+        BPlusTree.put(-5, 2, t);
+        BPlusTree.put(20, 2, t);
+        BPlusTree.adjust(plusOne, 6, t);
+        Assert.assertEq(expected = Some(3), BPlusTree.get(6, t))
+    }
+
+    @Test
+    def adjust06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 300)) 
+            BPlusTree.put(k, k * 100, t);
+        BPlusTree.adjust(plusOne, 150, t);
+        Assert.assertEq(expected = Some(15001), BPlusTree.get(150, t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // adjustWithKey                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def addKeyToValue(k: Int32, v: Int32): Int32 = k + v
+
+    @Test
+    def adjustWithKey01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(5, 12, t);
+        BPlusTree.adjustWithKey(addKeyToValue, 5, t);
+        Assert.assertEq(expected = Some(17), BPlusTree.get(5, t))
+    }
+
+    @Test
+    def adjustWithKey02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(5, 12, t);
+        BPlusTree.adjustWithKey(addKeyToValue, -3, t);
+        Assert.assertEq(expected = Some(12), BPlusTree.get(5, t));
+        Assert.assertNone(BPlusTree.get(-3, t))
+    }
+    
+    @Test
+    def adjustWithKey03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 300)) 
+            BPlusTree.put(k, k * 100, t);
+        BPlusTree.adjustWithKey(addKeyToValue, 150, t);
+        Assert.assertEq(expected = Some(15150), BPlusTree.get(150, t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // computeIfAbsent                                                         //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -252,6 +252,27 @@ mod BPlusTree {
     }
 
     ///
+    /// Updates `t` with `k => f(v)` if `k => v` is in `t`.
+    ///
+    /// Otherwise, `t` is unchanged.
+    ///
+    /// Thread-safe.
+    ///
+    pub def adjust(f: v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] = 
+        adjustWithKey(_ -> v -> f(v), k, t)
+
+    ///
+    /// Updates `t` with `k => f(k, v)` if `k => v` is in `t`.
+    ///
+    /// Otherwise, `t` is unchanged.
+    ///
+    /// Thread-safe.
+    ///
+    pub def adjustWithKey(f: k -> v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] = 
+        let (node, stamp) = findLeaf(k, t);
+        Node.adjustWithKey(f, k, stamp, t, node)
+
+    ///
     /// Returns true if and only if `t` is a structurally correct tree.
     ///
     /// Only used for internal testing.
@@ -783,6 +804,35 @@ mod BPlusTree {
             arrayInsert(val, insertionPoint, size, node->values);
             arrayInsert(key, insertionPoint, size, node->keys);
             node->size = size + 1
+
+        ///
+        /// Internal method to update the leaf `node` with `key => f(key, val)` if `key => val` is in `node`.
+        ///
+        /// Otherwise, `node` is unchanged.
+        ///
+        /// Thread-safe.
+        ///
+        /// Lock invariant:
+        ///
+        /// - On invocation, the thread has a lock on `node`.
+        ///
+        @Internal
+        pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
+            let index = binarySearch(key, BPlusTree.search(t), node);
+            if (index >= 0) {
+                let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+                if (not Lock.valid(writeStamp, node->lock)) {
+                    Lock.yieldBasedOn(node->lock);
+                    BPlusTree.adjustWithKey(f, key, t)
+                } else {
+                    let val = Array.get(index, node->values);
+                    Array.put(f(key, val), index, node->values);
+                    Lock.unlockWrite(writeStamp, node->lock)
+                }
+            } else if (not Lock.valid(stamp, node->lock))
+                BPlusTree.adjustWithKey(f, key, t)
+            else ()
+        }
 
         ///
         /// Applies the predicate `f` to all pairs of direcly subsequent elements of `v` and returns the and.
