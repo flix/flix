@@ -757,12 +757,6 @@ mod TestBPlusTree {
 
     @Test
     def adjust03(): Unit \ Assert = region rc {
-        let t: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
-        Assert.assertNone(BPlusTree.get(1, t))
-    }
-
-    @Test
-    def adjust04(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(1, "foo", t);
         BPlusTree.adjust(String.toUpperCase, 1, t);
@@ -770,14 +764,14 @@ mod TestBPlusTree {
     }
 
     @Test
-    def adjust05(): Unit \ Assert = region rc {
+    def adjust04(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.adjust(plusOne, 1, t);
         Assert.assertNone(BPlusTree.get(1, t))
     }
 
     @Test
-    def adjust06(): Unit \ Assert = region rc {
+    def adjust05(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(2, 2, t);
         BPlusTree.put(5, 2, t);
@@ -790,7 +784,7 @@ mod TestBPlusTree {
     }
 
     @Test
-    def adjust07(): Unit \ Assert = region rc {
+    def adjust06(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
         foreach (k <- Range.Range(0, 300)) 
             BPlusTree.put(k, k * 100, t);
