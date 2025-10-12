@@ -829,7 +829,9 @@ mod BPlusTree {
                     Array.put(f(key, val), index, node->values);
                     Lock.unlockWrite(writeStamp, node->lock)
                 }
-            } else ()
+            } else if (not Lock.valid(stamp, node->lock))
+                BPlusTree.adjustWithKey(f, key, t)
+            else ()
         }
 
         ///
