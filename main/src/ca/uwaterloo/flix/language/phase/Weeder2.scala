@@ -1413,9 +1413,11 @@ object Weeder2 {
 
     private def visitTypeMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TypeMatch)
-      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(visitTypeMatchRule)) {
-        (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
+      val rules0 = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
+      flatMapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
+        case (_, Nil) =>
+          Validation.Failure(NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc))
+        case (expr, rules) => Validation.Success(Expr.TypeMatch(expr, rules, tree.loc))
       }
     }
 
