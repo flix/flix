@@ -49,6 +49,15 @@ object ListOps {
     loop(list1, list2, Nil)
   }
 
+  /**
+    * Zips the given lists, truncating the longer one so that the lengths match.
+    *
+    * This is the same as [[List.zip]], but with a clearer name to express intent.
+    */
+  def zipTruncate[T1, T2](list1: List[T1], list2: List[T2]): List[(T1, T2)] = {
+    list1.zip(list2)
+  }
+
 
   /**
     * Unzips the given list of 4-tuples into 4 lists.
