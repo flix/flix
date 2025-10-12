@@ -1,4 +1,4 @@
-name: Flix Package Manager
+name: Package Manager
 
 on: [ pull_request, merge_group ]
 
