@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.ListOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
@@ -705,10 +704,7 @@ object PatMatch {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, args) => args.length
-    case TyCon.Record(labels, tail) => tail match {
-      case TyCon.Cst(Constant.RecordEmpty) => labels.length
-      case _ => labels.length + 1
-    }
+    case TyCon.Record(labels, _) => labels.length + 1
   }
 
   /**
