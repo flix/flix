@@ -122,6 +122,67 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("StructNoTParams.01") {
+    val input =
+      """
+        |struct S { }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.01") {
+    val input =
+      """
+        |def main: Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.02") {
+    val input =
+      """
+        |trait A[a] {
+        |def someSig: Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.03") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    def localFunc = ();
+        |    localFunc()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("NoLiteralBody.01") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    let _ = List#;
+        |    ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+
   test("NoDefBody.01") {
     val input =
       """
@@ -979,22 +1040,13 @@ class TestParserSad extends AnyFunSuite with TestUtils {
   test("ParseError.ParYield.01") {
     val input =
       """
-        |def f(): Int32 = par () yield 1
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.ParYield.02") {
-    val input =
-      """
         |def f(): Int32 = par a <- 1 yield a
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
   }
 
-  test("ParseError.ParYield.03") {
+  test("ParseError.ParYield.02") {
     val input =
       """
         |def f(): (Int32, Int32) = par (a <- let b = 1; b; c <- 2) yield (a, c)
@@ -1057,17 +1109,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = ematch xvar A() -> 123 {
-        |    case A(x) => x
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  ignore("IllegalExtTag.02") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A (1) {
         |    case A(x) => x
         |}
         |""".stripMargin
@@ -1218,15 +1259,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Unit \ IO = throw
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("StructNoTParams.01") {
-    val input =
-      """
-        |struct S { }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

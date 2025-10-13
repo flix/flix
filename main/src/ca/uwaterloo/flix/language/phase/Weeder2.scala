@@ -1413,9 +1413,13 @@ object Weeder2 {
 
     private def visitTypeMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TypeMatch)
-      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(visitTypeMatchRule)) {
-        (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
+      val rules0 = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
+        case (_, Nil) =>
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          sctx.errors.add(error)
+          Expr.Error(error)
+        case (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
       }
     }
 
@@ -1860,13 +1864,9 @@ object Weeder2 {
         traverse(maybeCatch)(visitTryCatchBody),
       ) {
         // Bad case: try expr
-        case (_, Nil) =>
+        case (_, Nil) | (_, Nil :: Nil) =>
           // Fall back on Expr.Error
-          val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
-            actual = None,
-            SyntacticContext.Expr.OtherExpr,
-            loc = tree.loc)
+          val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
         // Case: try expr catch { rules... }
@@ -2086,8 +2086,14 @@ object Weeder2 {
     private def visitParYieldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ParYield)
       val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
-      mapN(traverse(fragments)(visitParYieldFragment), pickExpr(tree)) {
-        (fragments, expr) => Expr.ParYield(fragments, expr, tree.loc)
+      if (fragments.isEmpty) {
+        val error = NeedAtleastOne(NamedTokenSet.Pattern, SyntacticContext.Expr.OtherExpr, Some("Valid par-yield syntax looks like `par (x <- e) yield x` "), loc = tree.loc)
+        sctx.errors.add(error)
+        Validation.Success(Expr.Error(error))
+      } else {
+        mapN(traverse(fragments)(visitParYieldFragment), pickExpr(tree)) {
+          (fragments, expr) => Expr.ParYield(fragments, expr, tree.loc)
+        }
       }
     }
 

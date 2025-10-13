@@ -118,7 +118,7 @@ object ManifestParser {
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
-    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies", "jar-dependencies")
+    val allowedKeys = Set("package", "dependencies", "mvn-dependencies", "jar-dependencies")
     val illegalKeys = keySet.diff(allowedKeys)
 
     if (illegalKeys.nonEmpty) {
