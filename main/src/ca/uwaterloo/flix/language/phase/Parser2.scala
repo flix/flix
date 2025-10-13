@@ -521,6 +521,8 @@ object Parser2 {
     *
     * and many many more...
     *
+    * The function will emit an error if `delimiterL` is not present.
+    *
     * @param namedTokenSet  The named token set to be used in an error message. ie. "Expected
     *                       $namedTokenSet before xyz".
     * @param getItem        Function for parsing a single item.
@@ -550,6 +552,7 @@ object Parser2 {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
     if (!at(delimiterL)) {
+      expect(delimiterL)
       return 0
     }
     expect(delimiterL)
@@ -603,7 +606,7 @@ object Parser2 {
   }
 
   /**
-    * Parses one ore more items surrounded by delimiters and separated by some token.
+    * Parses one or more items surrounded by delimiters and separated by some token.
     *
     * Works by forwarding parameters to [[zeroOrMore]] and then checking that there was at least one
     * item parsed. Otherwise an error is produced.
@@ -870,7 +873,7 @@ object Parser2 {
     if (eat(TokenKind.Dot)) {
       if (at(TokenKind.CurlyL)) {
         val mark = open()
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.Name,
           getItem = () => aliasedName(NAME_JAVA),
           checkForItem = NAME_JAVA.contains,
@@ -2270,7 +2273,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordTypeMatch)
       expression()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.MatchRule,
         checkForItem = _ == TokenKind.KeywordCase,
         getItem = typematchRule,
@@ -2711,7 +2714,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordCatch))
       val mark = open()
       expect(TokenKind.KeywordCatch)
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.CatchRule,
         getItem = catchRule,
         checkForItem = _ == TokenKind.KeywordCase,
@@ -2719,10 +2722,8 @@ object Parser2 {
         separation = Separation.Optional(TokenKind.Comma),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
-      ) match {
-        case Some(error) => closeWithError(mark, error)
-        case None => close(mark, TreeKind.Expr.TryCatchBodyFragment)
-      }
+      )
+      close(mark, TreeKind.Expr.TryCatchBodyFragment)
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
@@ -2782,8 +2783,7 @@ object Parser2 {
         expression()
         if (!at(TokenKind.CurlyL)) {
           expect(TokenKind.CurlyL)
-        }
-        else {
+        } else {
           zeroOrMore(
             namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
             checkForItem = NAME_FIELD.contains,
@@ -2902,16 +2902,13 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordPar)
       if (at(TokenKind.ParenL)) {
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.Pattern,
           getItem = parYieldFragment,
           checkForItem = _.isFirstPattern,
           separation = Separation.Required(TokenKind.Semi),
           breakWhen = kind => kind == TokenKind.KeywordYield || kind.isRecoverExpr
-        ) match {
-          case Some(error) => closeWithError(open(), error)
-          case None =>
-        }
+        )
       }
       expect(TokenKind.KeywordYield)
       expression()
@@ -3672,17 +3669,19 @@ object Parser2 {
         arguments()
         close(mark, TreeKind.Type.PredicateWithAlias)
       } else {
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.Type,
-          getItem = () => ttype(),
-          checkForItem = _.isFirstType,
-          breakWhen = _.isRecoverType,
-          optionallyWith = Some((TokenKind.Semi, () => {
-            val mark = open()
-            ttype()
-            close(mark, TreeKind.Predicate.LatticeTerm)
-          }))
-        )
+        if (at(TokenKind.ParenL)) {
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.Type,
+            getItem = () => ttype(),
+            checkForItem = _.isFirstType,
+            breakWhen = _.isRecoverType,
+            optionallyWith = Some((TokenKind.Semi, () => {
+              val mark = open()
+              ttype()
+              close(mark, TreeKind.Predicate.LatticeTerm)
+            }))
+          )
+        }
         close(mark, TreeKind.Type.PredicateWithTypes)
       }
     }
@@ -3880,17 +3879,19 @@ object Parser2 {
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
       kind = TreeKind.Predicate.Param
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.Type,
-        getItem = () => Type.ttype(),
-        checkForItem = _.isFirstType,
-        breakWhen = _.isRecoverType,
-        optionallyWith = Some((TokenKind.Semi, () => {
-          val mark = open()
-          Type.ttype()
-          close(mark, TreeKind.Predicate.LatticeTerm)
-        }))
-      )
+      if (at(TokenKind.ParenL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.Type,
+          getItem = () => Type.ttype(),
+          checkForItem = _.isFirstType,
+          breakWhen = _.isRecoverType,
+          optionallyWith = Some((TokenKind.Semi, () => {
+            val mark = open()
+            Type.ttype()
+            close(mark, TreeKind.Predicate.LatticeTerm)
+          }))
+        )
+      }
       close(mark, kind)
     }
   }

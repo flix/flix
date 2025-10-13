@@ -91,7 +91,7 @@ object Main {
       progress = true,
       installDeps = cmdOpts.installDeps,
       outputJvm = false,
-      outputPath =  Options.Default.outputPath,
+      outputPath = Options.Default.outputPath,
       target = Options.Default.target,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
@@ -134,97 +134,97 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd).toResult match {
+          Bootstrap.init(cwd) match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.Check =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.check(flix)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.Build =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.BuildJar =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.buildJar(flix)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.BuildFatJar =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.buildFatJar(flix)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.BuildPkg =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap => bootstrap.buildPkg()
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.Doc =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.doc(flix)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.Run =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -233,25 +233,25 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.Test =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
@@ -260,13 +260,13 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubToken).toResult match {
+          Bootstrap.bootstrap(cwd, options.githubToken) match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
@@ -286,34 +286,34 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.release(flix)(System.err)
-          }.toResult match {
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
         case Command.Outdated =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.outdated(flix)(System.err)
-          }.toResult match {
+          } match {
             case Result.Ok(false) =>
               // Up to date
               System.exit(0)
             case Result.Ok(true) =>
               // Contains outdated dependencies
               System.exit(1)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(error) =>
+              println(error.message(formatter))
               System.exit(1)
           }
 
