@@ -551,11 +551,7 @@ object PatMatch {
       case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
           val ps = pats.map(_.pat)
-          val p = tail match {
-            case TypedAst.Pattern.Cst(Constant.RecordEmpty, _, _) => Nil
-            case _ => List(tail)
-          }
-          Some(ps ::: p ::: pat.tail)
+          Some(ps ::: List(tail) ::: pat.tail)
         case _ => None
       }
       // Also handle the non tag constructors
@@ -673,9 +669,10 @@ object PatMatch {
           }.toList
         }
 
-      // For Unit and Bool constants are enumerable
+      // For Unit, Bool and empty record, constants are enumerable
       case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
       case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
+      case TyCon.Cst(Constant.RecordEmpty) => List(TyCon.Cst(Constant.RecordEmpty))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -708,10 +705,7 @@ object PatMatch {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, args) => args.length
-    case TyCon.Record(labels, tail) => tail match {
-      case TyCon.Cst(Constant.RecordEmpty) => labels.length
-      case _ => labels.length + 1
-    }
+    case TyCon.Record(labels, _) => labels.length + 1
   }
 
   /**
@@ -752,7 +746,7 @@ object PatMatch {
     // Everything else is the same constructor if they are the same type
     case (_: TyCon.Tuple, _: TyCon.Tuple) => true
     case (_: TyCon.Record, _: TyCon.Record) => true
-    case (a, b) => a == b;
+    case (a, b) => a == b
   }
 
   /**
