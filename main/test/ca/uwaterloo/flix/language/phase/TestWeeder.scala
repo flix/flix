@@ -1750,6 +1750,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  test("MissingCatchRules.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true } catch {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("MissingTypeParameter.Enum.01") {
     val input =
       """
