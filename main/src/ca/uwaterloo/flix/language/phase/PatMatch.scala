@@ -749,7 +749,7 @@ object PatMatch {
     // Everything else is the same constructor if they are the same type
     case (_: TyCon.Tuple, _: TyCon.Tuple) => true
     case (_: TyCon.Record, _: TyCon.Record) => true
-    case (a, b) => a == b;
+    case (a, b) => a == b
   }
 
   /**
