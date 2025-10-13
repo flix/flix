@@ -3,7 +3,7 @@
 
 def f(): Bool = ???
 
-enum E0
+enum E0(Unit)
 
 enum E2 {
     case C1

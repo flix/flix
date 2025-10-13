@@ -334,6 +334,43 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an enum using neither singleton nor multiton syntaxes.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEmptyEnum(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected empty enum."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected empty enum.
+         |
+         |${code(loc, "Unexpected empty enum")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""This enum uses neither the singleton syntax nor the case syntax.
+         |
+         |One of the enum forms must be used.
+         |If you only need one case for the enum, use the singleton syntax:
+         |
+         |    enum E(Int32)
+         |
+         |If you need multiple cases, use the case syntax:
+         |
+         |    enum E {
+         |        case C1(Int32)
+         |        case C2(Bool)
+         |    }
+         |
+         |""".stripMargin
+    })
+  }
+
+
+  /**
     * An error raised to indicate an ill-formed equality constraint.
     *
     * @param loc the location where the error occurred.

@@ -1,12 +1,12 @@
 // NB: These tests must be in the root module.
 pub type alias T = Int32
 mod N {
-    pub enum T
+    pub enum T(Unit)
 
     pub def f(): T = ???
 }
 
-pub enum U
+pub enum U(Unit)
 mod M {
     pub type alias U = Int32
 

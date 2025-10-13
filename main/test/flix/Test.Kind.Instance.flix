@@ -1,8 +1,8 @@
 mod Test.Kind.Instance {
 
     mod TypeConstraint {
-        pub enum EStar[_a: Type]
-        pub enum EStarToStar[_a: Type -> Type]
+        pub enum EStar[_a: Type](Unit)
+        pub enum EStarToStar[_a: Type -> Type](Unit)
         trait CStar[a: Type]
         trait CStar1[a: Type]
         trait CStarToStar[a: Type -> Type]
