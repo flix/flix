@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
@@ -550,11 +551,7 @@ object PatMatch {
       case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
           val ps = pats.map(_.pat)
-          val p = tail match {
-            case TypedAst.Pattern.Cst(Constant.RecordEmpty, _, _) => Nil
-            case _ => List(tail)
-          }
-          Some(ps ::: p ::: pat.tail)
+          Some(ps ::: List(tail) ::: pat.tail)
         case _ => None
       }
       // Also handle the non tag constructors
@@ -672,9 +669,10 @@ object PatMatch {
           }.toList
         }
 
-      // For Unit and Bool constants are enumerable
+      // For Unit, Bool and empty record, constants are enumerable
       case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
       case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
+      case TyCon.Cst(Constant.RecordEmpty) => List(TyCon.Cst(Constant.RecordEmpty))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
