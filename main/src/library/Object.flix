@@ -21,6 +21,7 @@ mod Object {
     ///
     /// Returns `true` if the given value `x` is `null`.
     ///
+    @Inline
     pub def isNull(x: a): Bool =
         match Reflect.reflect(x) {
             case Reflect.JvmValue.JvmObject(obj) => unsafe Objects.isNull(obj)

@@ -23,6 +23,7 @@ mod Fixpoint3.Boxable {
     /// Boxes the given `x`.
     ///
     @Internal
+    @Inline
     pub def box(x: a): Boxed with Order[a] = {
         use Reflect.JvmValue;
         match Reflect.reflect(x) {
