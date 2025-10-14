@@ -781,58 +781,6 @@ mod TestRedBlackTree {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let t = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]);
-        let d1 = RedBlackTree.toMutDeque(rc, t);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1);
-        let d1 = RedBlackTree.toMutDeque(rc, t);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, 1), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 1) |> RedBlackTree.insert(2, 2)
-                                     |> RedBlackTree.insert(3, 3) |> RedBlackTree.insert(4, 4);
-        let d1 = RedBlackTree.toMutDeque(rc, t);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((2, 2), d2);
-        MutDeque.pushBack((3, 3), d2);
-        MutDeque.pushBack((4, 4), d2);
-        MutDeque.pushFront((1, 1), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')
-                                     |> RedBlackTree.insert(3, 'c') |> RedBlackTree.insert(4, 'd');
-        let d1 = RedBlackTree.toMutDeque(rc, t);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront((4, 'd'), d2);
-        MutDeque.pushFront((3, 'c'), d2);
-        MutDeque.pushFront((2, 'b'), d2);
-        MutDeque.pushFront((1, 'a'), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // mapAWithKey (aka traverseWithKey)                                       //
     /////////////////////////////////////////////////////////////////////////////

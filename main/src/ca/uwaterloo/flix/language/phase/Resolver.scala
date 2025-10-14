@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -620,7 +620,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val scp = scp0 ++ mkTypeParamScp(tparams)
-          val opsVal = traverse(ops0)(resolveOp(_, scp0, taenv, ns0, root))
+          val opsVal = traverse(ops0)(resolveOp(_, scp, taenv, ns0, root))
           mapN(opsVal) {
             case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
           }
@@ -982,15 +982,12 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.Region(tpe, loc) =>
-      Validation.Success(ResolvedAst.Expr.Region(tpe, loc))
-
-    case NamedAst.Expr.Scope(sym, regSym, exp, loc) =>
+    case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
       val eVal = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
       mapN(eVal) {
-        e => ResolvedAst.Expr.Scope(sym, regSym, e, loc)
+        e => ResolvedAst.Expr.Region(sym, regSym, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
@@ -2711,7 +2708,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.Declaration.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
-      val map = alias.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
+      val map = ListOps.zip(alias.tparams.map(_.sym), args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val symUse = TypeAliasSymUse(alias.sym, cstLoc)
       UnkindedType.Alias(symUse, args, tpe, tpe0.loc)
@@ -2989,7 +2986,7 @@ object Resolver {
           // ALERT!
           // Here we mutate the RecordWild list because we are visiting a wildcard type!
           val sym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
-          syms.append((ident -> sym))
+          syms.append(ident -> sym)
           Result.Ok(LowerType.Var(sym))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))

@@ -1373,6 +1373,7 @@ object Type {
     case Constant.Str(_) => Type.Str
     case Constant.Regex(_) => Type.Regex
     case Constant.RecordEmpty => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
+    case Constant.Static => Type.Apply(Type.Cst(TypeConstructor.RegionToStar, SourceLocation.Unknown), Type.IO, SourceLocation.Unknown)
   }
 
   /**
@@ -1386,7 +1387,7 @@ object Type {
       val t1 = purifyRegion(tpe1, sym)
       val t2 = purifyRegion(tpe2, sym)
       Type.Apply(t1, t2, loc)
-    case Alias(_, _, tpe, loc) =>
+    case Alias(_, _, tpe, _) =>
       purifyRegion(tpe, sym)
     case AssocType(symUse, arg, kind, loc) =>
       val a = purifyRegion(arg, sym)

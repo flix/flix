@@ -422,12 +422,6 @@ mod Result {
     }
 
     ///
-    /// Returns an iterator over `r` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], r: Result[e, t]): Iterator[(Int32, t), r, r] \ r =
-        iterator(rc, r) |> Iterator.zipWithIndex
-
-    ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
     ///
     /// If `f` throws a Java `Exception`, `Err(e)` is returned

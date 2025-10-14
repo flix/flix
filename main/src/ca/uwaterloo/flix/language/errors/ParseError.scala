@@ -202,23 +202,23 @@ object ParseError {
   }
 
   /**
-    * An error raised to indicate that a scoped expression is missing a scope.
+    * An error raised to indicate that a regioned expression is missing a region.
     *
-    * @param token Name of the expression missing a scope. See [[TokenKind.display]].
+    * @param token Name of the expression missing a region. See [[TokenKind.display]].
     * @param sctx  The syntactic context.
     * @param loc   The source location.
     */
-  case class MissingScope(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
+  case class MissingRegion(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
     override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
 
-    def summary: String = s"Expected scope on ${token.display}."
+    def summary: String = s"Expected region on ${token.display}."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Expected ${red("scope")} on ${cyan(token.display)}.
+      s""">> Expected ${red("region")} on ${cyan(token.display)}.
          |
          |${code(loc, s"Here")}
-         |Hint: Add a scope using `@ <scope>`
+         |Hint: Add a region using `@ <region>`
          |""".stripMargin
     }
   }

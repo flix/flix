@@ -18,7 +18,6 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.ApiSuite
 import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import flix.CompilerSuite
 import flix.resiliency.ResiliencySuite
@@ -33,7 +32,6 @@ class TestAll extends Suites(
   new ResiliencySuite,
   new TestMain,
   new RunVerifiers,
-  new ToolsSuite,
   new UtilSuite,
   new StandardLibrarySuite,
 )

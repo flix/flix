@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugKindedAst
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.Nel
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
@@ -214,7 +214,7 @@ object Deriver {
 
       // call eq on each variable pair
       // `x0 == y0`, `x1 == y1`
-      val eqs = varSyms1.zip(varSyms2).map {
+      val eqs = ListOps.zip(varSyms1, varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expr.ApplySig(SigSymUse(eqSym, loc),
             List(
@@ -437,7 +437,7 @@ object Deriver {
 
       // Call compare on each variable pair
       // `compare(x0, y0)`, `compare(x1, y1)`
-      val compares = varSyms1.zip(varSyms2).map {
+      val compares = ListOps.zip(varSyms1, varSyms2).map {
         case (varSym1, varSym2) =>
           KindedAst.Expr.ApplySig(
             SigSymUse(compareSigSym, loc),
