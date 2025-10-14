@@ -1,8 +1,3 @@
-/// A type that allows reflection on a type-level Boolean.
-enum BoolProxy[_: Bool] {
-    case BoolProxy
-}
-
 /// A lazy-eager list. The type-level Bool determines if it is eager.
 enum LEList[a: Type, e: Bool] {
     case Nil
@@ -35,7 +30,7 @@ def zipL(l1: LEList[a, e1], l2: LEList[b, e2]): LEList[(a, b), LazyEval] =
 /// A hybrid zip function which is eager if both arguments are eager.
 /// If either argument (or both) is lazy then the list is lazy.
 def zip(l1: LEList[a, e1], l2: LEList[b, e2]): LEList[(a, b), e1 and e2] =
-    match Reflect.reflectBool((BoolProxy.BoolProxy : BoolProxy[e1 and e2])) {
+    match Reflect.reflectBool((ProxyBool.Proxy : ProxyBool[e1 and e2])) {
         case true =>
             unchecked_cast(zipE(l1, l2) as LEList[(a, b), e1 and e2])
         case false =>
