@@ -63,6 +63,11 @@ object Parser2 {
     case object Advance extends Event
   }
 
+  private object State {
+    /** The reset value of [[State.fuel]]. */
+    val FuelReset = 2048
+  }
+
   private class State(val tokens: Array[Token], val src: Source) {
     /** The current token being considered by the parser. */
     var position: Int = 0
@@ -73,7 +78,7 @@ object Parser2 {
       * parser is stuck. Whenever progress is made with [[advance]] fuel is reset to its original
       * amount.
       */
-    var fuel: Int = 2048
+    var fuel: Int = State.FuelReset
 
     /**
       * The Parsing events emitted during parsing. Note that this is a flat collection that later
@@ -277,7 +282,7 @@ object Parser2 {
     if (eof()) {
       return
     }
-    s.fuel = 2048
+    s.fuel = State.FuelReset
     s.events.append(Event.Advance)
     s.position += 1
   }
