@@ -6,6 +6,4 @@ class PackageManagerSuite extends Suites(
   new TestBootstrap,
   new TestTrust,
   new TestManifestParser
-) {
-  /* left empty */
-}
+)
