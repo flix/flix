@@ -19,17 +19,17 @@ mod Reflect {
     }
 
     /// A reflected value, reflecting its erased runtime representation.
-        pub enum JvmValue {
-            case JvmBool(Bool)
-            case JvmChar(Char)
-            case JvmInt8(Int8)
-            case JvmInt16(Int16)
-            case JvmInt32(Int32)
-            case JvmInt64(Int64)
-            case JvmFloat32(Float32)
-            case JvmFloat64(Float64)
-            case JvmObject(JObject)
-        }
+    pub enum JvmValue {
+        case JvmBool(Bool)
+        case JvmChar(Char)
+        case JvmInt8(Int8)
+        case JvmInt16(Int16)
+        case JvmInt32(Int32)
+        case JvmInt64(Int64)
+        case JvmFloat32(Float32)
+        case JvmFloat64(Float64)
+        case JvmObject(JObject)
+    }
 
     /// Returns the erased runtime representation of `x`.
     pub def reflect(x: t): JvmValue =
