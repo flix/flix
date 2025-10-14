@@ -1,8 +1,8 @@
-package ca.uwaterloo.flix.tools
+package ca.uwaterloo.flix.tools.pkg
 
 import org.scalatest.Suites
 
-class ToolsSuite extends Suites(
+class PackageManagerSuite extends Suites(
   new TestBootstrap,
   new TestTrust,
   new TestManifestParser
