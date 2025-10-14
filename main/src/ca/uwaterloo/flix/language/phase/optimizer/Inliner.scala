@@ -873,12 +873,14 @@ object Inliner {
     *
     * A trivial expression is one of the following:
     *   - [[Expr.Var]]
+    *   - Is a [[Expr.Cast]] of a trivial expression.
     *   - Any expression where [[isCst]] holds.
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Var(_, _, _) => true
+    case Expr.Cast(exp, _, _, _) => isTrivial(exp)
     case exp => isCst(exp)
   }
 
