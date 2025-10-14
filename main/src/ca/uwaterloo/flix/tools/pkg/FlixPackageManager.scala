@@ -32,7 +32,7 @@ object FlixPackageManager {
     * returns their manifests. The toml files for the manifests
     * will be put at `path`/lib.
     */
-  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, repository: Repository, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
 
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
@@ -48,7 +48,7 @@ object FlixPackageManager {
   /**
     * Finds the most relevant available updates for the given dependency.
     */
-  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] =
+  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String])(implicit repository: Repository): Result[AvailableUpdates, PackageError] =
     for (
       githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}");
       releases <- GitHub.getReleases(githubProject, apiKey);
@@ -64,7 +64,7 @@ object FlixPackageManager {
     * Installs all the Flix dependencies for a list of Manifests at the /lib folder
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifests: List[Manifest], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path, apiKey: Option[String])(implicit formatter: Formatter, repository: Repository, out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
     val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ::: findFlixDependencies(m))
@@ -91,7 +91,7 @@ object FlixPackageManager {
     *
     * Returns the path to the downloaded file.
     */
-  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Path, PackageError] = {
+  private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, repository: Repository, out: PrintStream): Result[Path, PackageError] = {
     GitHub.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
@@ -141,7 +141,10 @@ object FlixPackageManager {
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit formatter: Formatter, repository: Repository, out: PrintStream
+
+  ):
+  Result[List[Manifest], PackageError] = {
     //find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
