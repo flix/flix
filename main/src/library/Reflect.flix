@@ -85,4 +85,11 @@ mod Reflect {
             case _: _            => Purity.Impure
         }
 
+    /// Returns the bool of `b`.
+    pub def reflectBool(p: ProxyBool[b]): Bool =
+        typematch p {
+            case _: ProxyBool[true] => true
+            case _: _               => false
+        }
+
 }
