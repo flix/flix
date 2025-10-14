@@ -65,7 +65,7 @@ object Parser2 {
 
   private object State {
     /** The reset value of [[State.fuel]]. */
-    val FuelReset = 2048
+    val FuelReset: Int = 2048
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
