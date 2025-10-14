@@ -45,7 +45,7 @@ mod Reflect {
             case _: _ => JvmValue.JvmObject(unchecked_cast(x as JObject))
         }
 
-    /// A reflected value, reflecting its erased runtime representation.
+    /// A reflected type, reflecting its erased runtime representation.
     pub enum JvmType {
         case JvmBool
         case JvmChar
@@ -58,7 +58,7 @@ mod Reflect {
         case JvmObject
     }
 
-    /// Returns the erased runtime representation of `x`.
+    /// Returns the erased runtime representation of `t`.
     pub def reflectType(x: Proxy[t]): JvmType =
         typematch x {
             case _: Proxy[Bool] => JvmType.JvmBool
