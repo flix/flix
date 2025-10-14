@@ -35,9 +35,14 @@ import javax.net.ssl.HttpsURLConnection
 object GitHub extends Repository {
 
   /**
+    * Returns the name of the GitHub repository in lowercase.
+    */
+  override def name: String = "github"
+
+  /**
     * Lists the project's releases.
     */
-  def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
+  override def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
     val json = try {
       val conn = url.openConnection()
@@ -60,7 +65,7 @@ object GitHub extends Repository {
   /**
     * Publish a new release the given project.
     */
-  def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError] = {
+  override def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError] = {
     for (
       _ <- verifyRelease(project, version, apiKey);
       id <- createDraftRelease(project, version, apiKey);
@@ -218,7 +223,7 @@ object GitHub extends Repository {
   /**
     * Parses a GitHub project from an `<owner>/<repo>` string.
     */
-  def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
+  override def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
     case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty => Ok(Project(owner, repo))
     case _ => Err(PackageError.InvalidProjectName(string))
   }
@@ -226,7 +231,7 @@ object GitHub extends Repository {
   /**
     * Gets the project release with the relevant semantic version.
     */
-  def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
+  override def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError] = {
     getReleases(project, apiKey).flatMap {
       releases =>
         releases.find(r => r.version == version) match {
@@ -239,7 +244,7 @@ object GitHub extends Repository {
   /**
     * Downloads the given asset.
     */
-  def downloadAsset(asset: Asset): InputStream =
+  override def downloadAsset(asset: Asset): InputStream =
     asset.url.openStream()
 
   /**

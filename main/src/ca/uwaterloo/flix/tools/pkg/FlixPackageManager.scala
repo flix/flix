@@ -94,7 +94,7 @@ object FlixPackageManager {
     repository.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
-      val folderPath = lib.resolve(repository.toString.toLowerCase).resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
+      val folderPath = lib.resolve(repository.name).resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
       //create the folder if it does not exist
       Files.createDirectories(folderPath)
       val assetPath = folderPath.resolve(assetName)

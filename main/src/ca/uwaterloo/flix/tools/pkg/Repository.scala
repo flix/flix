@@ -25,33 +25,55 @@ import java.net.URL
 import java.nio.file.Path
 
 trait Repository {
+
+  /**
+    * Returns the name of the repository
+    */
+  def name: String
+
+  /**
+    * Lists the project's releases.
+    */
   def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError]
 
+  /**
+    * Publish a new release the given project.
+    */
   def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError]
 
+  /**
+    * Parses a project from a string.
+    */
   def parseProject(string: String): Result[Project, PackageError]
 
+  /**
+    * Gets the project release with the relevant semantic version.
+    */
   def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError]
 
+  /**
+    * Downloads the given asset.
+    */
   def downloadAsset(asset: Asset): InputStream
+
 }
 
 object Repository {
 
   /**
-    * A GitHub project.
+    * A project.
     */
   case class Project(owner: String, repo: String) {
     override def toString: String = s"$owner/$repo"
   }
 
   /**
-    * A release of a GitHub project.
+    * A release of a project.
     */
   case class Release(version: SemVer, assets: List[Asset])
 
   /**
-    * An asset from a GitHub project release.
+    * An asset from a project release.
     *
     * `url` is the link to download the asset.
     */
