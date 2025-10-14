@@ -18,7 +18,6 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.ApiSuite
 import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.tools.pkg.PackageManagerSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import flix.CompilerSuite
 import flix.resiliency.ResiliencySuite
