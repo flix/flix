@@ -73,7 +73,7 @@ object Parser2 {
       * parser is stuck. Whenever progress is made with [[advance]] fuel is reset to its original
       * amount.
       */
-    var fuel: Int = 256
+    var fuel: Int = 2048
 
     /**
       * The Parsing events emitted during parsing. Note that this is a flat collection that later
@@ -277,7 +277,7 @@ object Parser2 {
     if (eof()) {
       return
     }
-    s.fuel = 256
+    s.fuel = 2048
     s.events.append(Event.Advance)
     s.position += 1
   }
