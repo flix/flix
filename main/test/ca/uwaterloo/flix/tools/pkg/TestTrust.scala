@@ -1,7 +1,6 @@
-package ca.uwaterloo.flix.tools
+package ca.uwaterloo.flix.tools.pkg
 
 import org.scalatest.funsuite.AnyFunSuite
-import ca.uwaterloo.flix.tools.pkg.Trust
 
 class TestTrust extends AnyFunSuite {
   test("toString-ofString-plain") {

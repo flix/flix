@@ -1,13 +1,12 @@
-package ca.uwaterloo.flix.tools
+package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, PackageError, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
-import java.net.{URI, URL}
+import java.net.URI
 import java.nio.file.Files
 
 class TestFlixPackageManager extends AnyFunSuite {
