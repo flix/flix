@@ -11,6 +11,7 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
 import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
 
+import java.lang.reflect
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -273,36 +274,44 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.InvokeConstructor(_, args, _, _, loc) =>
+    case Expr.InvokeConstructor(constructor, args, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Constructor(constructor, loc))
       checkAllPermissions(loc.security, loc)
       args.foreach(visitExp)
 
-    case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+    case Expr.InvokeMethod(method, exp, args, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Method(method, loc))
       checkAllPermissions(loc.security, loc)
       visitExp(exp)
       args.foreach(visitExp)
 
-    case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+    case Expr.InvokeStaticMethod(method, args, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Method(method, loc))
       checkAllPermissions(loc.security, loc)
       args.foreach(visitExp)
 
-    case Expr.GetField(_, exp, _, _, loc) =>
+    case Expr.GetField(field, exp, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
       checkAllPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.PutField(_, exp1, exp2, _, _, loc) =>
+    case Expr.PutField(field, exp1, exp2, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
       checkAllPermissions(loc.security, loc)
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.GetStaticField(_, _, _, loc) =>
+    case Expr.GetStaticField(field, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
       checkAllPermissions(loc.security, loc)
 
-    case Expr.PutStaticField(_, exp, _, _, loc) =>
+    case Expr.PutStaticField(field, exp, _, _, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
       checkAllPermissions(loc.security, loc)
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
+    case newObject@Expr.NewObject(_, clazz, _, _, methods, loc) =>
+      sctx.suspiciousExprs.add(SuspiciousExpr.Class(clazz, loc))
       checkAllPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
@@ -792,11 +801,32 @@ object Safety {
     !eff.effects.forall(Symbol.isPrimitiveEff)
   }
 
+  private sealed trait SuspiciousExpr {
+    def isJavaClassLib: Boolean = this match {
+      case SuspiciousExpr.Class(clazz, loc) => false
+      case SuspiciousExpr.Constructor(constructor, loc) => false
+      case SuspiciousExpr.Field(field, loc) => false
+      case SuspiciousExpr.Method(method, loc) => false
+    }
+  }
+
+  private object SuspiciousExpr {
+
+    case class Class(clazz: Predef.Class[?], loc: SourceLocation) extends SuspiciousExpr
+
+    case class Constructor(constructor: reflect.Constructor[?], loc: SourceLocation) extends SuspiciousExpr
+
+    case class Field(field: reflect.Field, loc: SourceLocation) extends SuspiciousExpr
+
+    case class Method(method: reflect.Method, loc: SourceLocation) extends SuspiciousExpr
+
+  }
+
   /** Companion object for [[SharedContext]] */
   private object SharedContext {
 
     /** Returns a fresh shared context. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
   }
 
   /**
@@ -804,6 +834,6 @@ object Safety {
     *
     * @param errors the [[SafetyError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[SafetyError])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[SafetyError], suspiciousExprs: ConcurrentLinkedQueue[SuspiciousExpr])
 
 }
