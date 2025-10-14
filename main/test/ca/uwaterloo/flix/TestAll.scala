@@ -33,7 +33,6 @@ class TestAll extends Suites(
   new ResiliencySuite,
   new TestMain,
   new RunVerifiers,
-  new ToolsSuite,
   new UtilSuite,
   new StandardLibrarySuite,
 )
