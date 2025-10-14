@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 
@@ -50,8 +49,8 @@ object FlixPackageManager {
     */
   def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String])(implicit repository: Repository): Result[AvailableUpdates, PackageError] =
     for (
-      githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}");
-      releases <- GitHub.getReleases(githubProject, apiKey);
+      githubProject <- repository.parseProject(s"${dep.username}/${dep.projectName}");
+      releases <- repository.getReleases(githubProject, apiKey);
       availableVersions = releases.map(r => r.version);
 
       ver = dep.version;
@@ -92,10 +91,10 @@ object FlixPackageManager {
     * Returns the path to the downloaded file.
     */
   private def install(project: String, version: SemVer, extension: String, p: Path, apiKey: Option[String])(implicit formatter: Formatter, repository: Repository, out: PrintStream): Result[Path, PackageError] = {
-    GitHub.parseProject(project).flatMap { proj =>
+    repository.parseProject(project).flatMap { proj =>
       val lib = Bootstrap.getLibraryDirectory(p)
       val assetName = s"${proj.repo}-$version.$extension"
-      val folderPath = lib.resolve("github").resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
+      val folderPath = lib.resolve(repository.toString.toLowerCase).resolve(proj.owner).resolve(proj.repo).resolve(version.toString)
       //create the folder if it does not exist
       Files.createDirectories(folderPath)
       val assetPath = folderPath.resolve(assetName)
@@ -104,7 +103,7 @@ object FlixPackageManager {
         out.println(s"  Cached `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")}).")
         Ok(assetPath)
       } else {
-        GitHub.getSpecificRelease(proj, version, apiKey).flatMap { release =>
+        repository.getSpecificRelease(proj, version, apiKey).flatMap { release =>
           val assets = release.assets.filter(_.name.endsWith(s".$extension"))
           if (assets.isEmpty) {
             Err(PackageError.NoSuchFile(project, extension))
@@ -116,7 +115,7 @@ object FlixPackageManager {
             out.print(s"  Downloading `${formatter.blue(s"${proj.owner}/${proj.repo}.$extension")}` (${formatter.cyan(s"v$version")})... ")
             out.flush()
             try {
-              Using(GitHub.downloadAsset(asset)) {
+              Using(repository.downloadAsset(asset)) {
                 stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
               }
             } catch {

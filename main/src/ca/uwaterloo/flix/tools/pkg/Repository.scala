@@ -15,23 +15,54 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.tools.pkg.Repository.{Asset, Project, Release}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 
-sealed trait Repository
+import java.io.InputStream
+import java.net.URL
+import java.nio.file.Path
+
+trait Repository {
+  def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError]
+
+  def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError]
+
+  def parseProject(string: String): Result[Project, PackageError]
+
+  def getSpecificRelease(project: Project, version: SemVer, apiKey: Option[String]): Result[Release, PackageError]
+
+  def downloadAsset(asset: Asset): InputStream
+}
 
 object Repository {
 
   /**
-   * Convert a [[String]] into a [[Repository]].
-   */
-  def mkRepository(s: String): Result[Repository, RepositoryError] = s match {
-    case "github" => Ok(Repository.GitHub)
-    case _ => Err(RepositoryError.UnsupportedRepositoryError(s))
+    * A GitHub project.
+    */
+  case class Project(owner: String, repo: String) {
+    override def toString: String = s"$owner/$repo"
   }
 
   /**
-   * A GitHub repository.
-   */
-  case object GitHub extends Repository
+    * A release of a GitHub project.
+    */
+  case class Release(version: SemVer, assets: List[Asset])
+
+  /**
+    * An asset from a GitHub project release.
+    *
+    * `url` is the link to download the asset.
+    */
+  case class Asset(name: String, url: URL)
+
+  /**
+    * Convert a [[String]] into a [[Repository]].
+    */
+  def mkRepository(s: String): Result[Repository, RepositoryError] = s match {
+    case "github" => Ok(GitHub)
+    case _ => Err(RepositoryError.UnsupportedRepositoryError(s))
+  }
+
 }

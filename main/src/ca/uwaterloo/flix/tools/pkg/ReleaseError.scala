@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Formatter
 
 sealed trait ReleaseError {
@@ -72,14 +71,14 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case class ReleaseAlreadyExists(project: GitHub.Project, version: SemVer) extends ReleaseError {
+  case class ReleaseAlreadyExists(project: Repository.Project, version: SemVer) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          |Release with version $version already exists.
          |""".stripMargin
   }
 
-  case class RepositoryNotFound(project: GitHub.Project) extends ReleaseError {
+  case class RepositoryNotFound(project: Repository.Project) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          |The GitHub repository does not exist:

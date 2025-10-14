@@ -15,12 +15,10 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
-
 case class Manifest(name: String,
                     description: String,
                     version: SemVer,
-                    repository: Option[GitHub.Project],
+                    repository: Option[Repository.Project],
                     modules: PackageModules,
                     flix: SemVer,
                     license: Option[String],

@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.Repository.Project
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
@@ -237,7 +238,7 @@ object ManifestParser {
     * Returns an error if the string is not in the correct format.
     * The only allowed format is "github:<username>/<repository>".
     */
-  private def toGithubProject(s: String, p: Path): Result[GitHub.Project, ManifestError] = {
+  private def toGithubProject(s: String, p: Path): Result[Project, ManifestError] = {
     s.split(':') match {
       case Array("github", repo) =>
         GitHub.parseProject(repo)

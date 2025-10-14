@@ -15,7 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
-import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, Repository, SemVer}
+import ca.uwaterloo.flix.tools.pkg.Repository.{Project, Release, Asset}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
 import org.json4s.*
@@ -31,26 +32,7 @@ import javax.net.ssl.HttpsURLConnection
 /**
   * An interface for the GitHub API.
   */
-object GitHub {
-
-  /**
-    * A GitHub project.
-    */
-  case class Project(owner: String, repo: String) {
-    override def toString: String = s"$owner/$repo"
-  }
-
-  /**
-    * A release of a GitHub project.
-    */
-  case class Release(version: SemVer, assets: List[Asset])
-
-  /**
-    * An asset from a GitHub project release.
-    *
-    * `url` is the link to download the asset.
-    */
-  case class Asset(name: String, url: URL)
+object GitHub extends Repository {
 
   /**
     * Lists the project's releases.

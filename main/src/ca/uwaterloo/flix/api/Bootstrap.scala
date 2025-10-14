@@ -548,7 +548,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
 
     val rows = flixDeps.flatMap { dep =>
-      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
+      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken)(GitHub) match {
         case Ok(u) => u
         case Err(e) => return Result.Err(BootstrapError.FlixPackageError(e))
       }
@@ -811,7 +811,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns the paths to the installed dependencies.
       */
     private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
-      FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
+      FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey)(formatter, GitHub, out) match {
         case Ok(paths: List[Path]) =>
           flixPackagePaths = paths
           Ok(paths)
@@ -868,7 +868,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       */
     def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], BootstrapError] = {
-      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).mapErr(BootstrapError.FlixPackageError(_))
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey)(formatter, GitHub, out).mapErr(BootstrapError.FlixPackageError(_))
     }
 
     /**
