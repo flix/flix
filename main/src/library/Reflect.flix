@@ -18,6 +18,19 @@ mod Reflect {
         case _: _                   => unchecked_cast(null as a)
     }
 
+    /// A reflected value, reflecting its erased runtime representation.
+        pub enum JvmValue {
+            case JvmBool(Bool)
+            case JvmChar(Char)
+            case JvmInt8(Int8)
+            case JvmInt16(Int16)
+            case JvmInt32(Int32)
+            case JvmInt64(Int64)
+            case JvmFloat32(Float32)
+            case JvmFloat64(Float64)
+            case JvmObject(JObject)
+        }
+
     /// Returns the erased runtime representation of `x`.
     pub def reflect(x: t): JvmValue =
         typematch x {
@@ -32,17 +45,10 @@ mod Reflect {
             case _: _ => JvmValue.JvmObject(unchecked_cast(x as JObject))
         }
 
-    /// A reflected value, reflecting its erased runtime representation.
-    pub enum JvmValue {
-        case JvmBool(Bool)
-        case JvmChar(Char)
-        case JvmInt8(Int8)
-        case JvmInt16(Int16)
-        case JvmInt32(Int32)
-        case JvmInt64(Int64)
-        case JvmFloat32(Float32)
-        case JvmFloat64(Float64)
-        case JvmObject(JObject)
+    /// A reflected effect, either Pure (no effects) or Impure (some effects).
+    pub enum Purity {
+        case Pure
+        case Impure
     }
 
     /// Returns the purity of `ef`.
@@ -51,11 +57,5 @@ mod Reflect {
             case _: ProxyEff[{}] => Purity.Pure
             case _: _            => Purity.Impure
         }
-
-    /// A reflected effect, either Pure (no effects) or Impure (some effects).
-    pub enum Purity {
-        case Pure
-        case Impure
-    }
 
 }
