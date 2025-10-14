@@ -6,16 +6,16 @@ mod Reflect {
     /// The value returned should not be depended on;
     /// it acts as a placeholder to be replaced by a proper value.
     ///
-    pub def default(): a = typematch (Proxy.Proxy: Proxy[a]) {
-        case _: Proxy[Bool]         => unchecked_cast(false as a)
-        case _: Proxy[Char]         => unchecked_cast('0' as a)
-        case _: Proxy[Float32]      => unchecked_cast(0.0f32 as a)
-        case _: Proxy[Float64]      => unchecked_cast(0.0f64 as a)
-        case _: Proxy[Int8]         => unchecked_cast(0i8 as a)
-        case _: Proxy[Int16]        => unchecked_cast(0i16 as a)
-        case _: Proxy[Int32]        => unchecked_cast(0i32 as a)
-        case _: Proxy[Int64]        => unchecked_cast(0i64 as a)
-        case _: _                   => unchecked_cast(null as a)
+    pub def default(): a = match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
+        case JvmType.JvmBool    => unchecked_cast(false as a)
+        case JvmType.JvmChar    => unchecked_cast('0' as a)
+        case JvmType.JvmFloat32 => unchecked_cast(0.0f32 as a)
+        case JvmType.JvmFloat64 => unchecked_cast(0.0f64 as a)
+        case JvmType.JvmInt8    => unchecked_cast(0i8 as a)
+        case JvmType.JvmInt16   => unchecked_cast(0i16 as a)
+        case JvmType.JvmInt32   => unchecked_cast(0i32 as a)
+        case JvmType.JvmInt64   => unchecked_cast(0i64 as a)
+        case JvmType.JvmObject  => unchecked_cast(null as a)
     }
 
     /// A reflected value, reflecting its erased runtime representation.
@@ -45,6 +45,33 @@ mod Reflect {
             case _: _ => JvmValue.JvmObject(unchecked_cast(x as JObject))
         }
 
+    /// A reflected type, reflecting its erased runtime representation.
+    pub enum JvmType {
+        case JvmBool
+        case JvmChar
+        case JvmInt8
+        case JvmInt16
+        case JvmInt32
+        case JvmInt64
+        case JvmFloat32
+        case JvmFloat64
+        case JvmObject
+    }
+
+    /// Returns the erased runtime representation of `t`.
+    pub def reflectType(x: Proxy[t]): JvmType =
+        typematch x {
+            case _: Proxy[Bool] => JvmType.JvmBool
+            case _: Proxy[Char] => JvmType.JvmChar
+            case _: Proxy[Int8] => JvmType.JvmInt8
+            case _: Proxy[Int16] => JvmType.JvmInt16
+            case _: Proxy[Int32] => JvmType.JvmInt32
+            case _: Proxy[Int64] => JvmType.JvmInt64
+            case _: Proxy[Float32] => JvmType.JvmFloat32
+            case _: Proxy[Float64] => JvmType.JvmFloat64
+            case _: _ => JvmType.JvmObject
+        }
+
     /// A reflected effect, either Pure (no effects) or Impure (some effects).
     pub enum Purity {
         case Pure
@@ -56,6 +83,13 @@ mod Reflect {
         typematch p {
             case _: ProxyEff[{}] => Purity.Pure
             case _: _            => Purity.Impure
+        }
+
+    /// Returns the bool of `b`.
+    pub def reflectBool(p: ProxyBool[b]): Bool =
+        typematch p {
+            case _: ProxyBool[true] => true
+            case _: _               => false
         }
 
 }
