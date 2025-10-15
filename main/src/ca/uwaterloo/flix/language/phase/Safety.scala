@@ -241,11 +241,15 @@ object Safety {
 
     case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
       verifyUncheckedCast(cast)
-      checkCastPermissions(loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkCastPermissions(loc.security, loc)
+      }
       visitExp(exp)
 
     case Expr.Unsafe(exp, _, _, _, loc) =>
-      checkCastPermissions(loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkCastPermissions(loc.security, loc)
+      }
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
@@ -253,13 +257,18 @@ object Safety {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case CatchRule(bnd, clazz, e, _) =>
+      rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
+        if (flix.options.checkTrust) {
+          checkClassPermissions(clazz, loc.security, loc)
+        }
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }
 
     case Expr.Throw(exp, _, _, loc) =>
-      checkCastPermissions(loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkCastPermissions(loc.security, loc)
+      }
       visitExp(exp)
       checkThrow(exp)
 
@@ -275,36 +284,52 @@ object Safety {
       visitExp(exp2)
 
     case Expr.InvokeConstructor(constructor, args, _, _, loc) =>
-      checkConstructorPermissions(constructor, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkConstructorPermissions(constructor, loc.security, loc)
+      }
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(method, exp, args, _, _, loc) =>
-      checkMethodPermissions(method, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkMethodPermissions(method, loc.security, loc)
+      }
       visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(method, args, _, _, loc) =>
-      checkMethodPermissions(method, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkMethodPermissions(method, loc.security, loc)
+      }
       args.foreach(visitExp)
 
     case Expr.GetField(field, exp, _, _, loc) =>
-      checkFieldPermissions(field, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkFieldPermissions(field, loc.security, loc)
+      }
       visitExp(exp)
 
     case Expr.PutField(field, exp1, exp2, _, _, loc) =>
-      checkFieldPermissions(field, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkFieldPermissions(field, loc.security, loc)
+      }
       visitExp(exp1)
       visitExp(exp2)
 
     case Expr.GetStaticField(field, _, _, loc) =>
-      checkFieldPermissions(field, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkFieldPermissions(field, loc.security, loc)
+      }
 
     case Expr.PutStaticField(field, exp, _, _, loc) =>
-      checkFieldPermissions(field, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkFieldPermissions(field, loc.security, loc)
+      }
       visitExp(exp)
 
     case newObject@Expr.NewObject(_, clazz, _, _, methods, loc) =>
-      checkClassPermissions(clazz, loc.security, loc)
+      if (flix.options.checkTrust) {
+        checkClassPermissions(clazz, loc.security, loc)
+      }
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
 

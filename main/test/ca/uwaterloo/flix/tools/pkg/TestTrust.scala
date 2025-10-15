@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{Formatter, Options}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.PrintStream
@@ -260,7 +260,7 @@ class TestTrust extends AnyFunSuite {
         |    TestPkgTrust.entry()
         |""".stripMargin
 
-    val flix = new Flix()
+    val flix = new Flix().setOptions(Options.Default.copy(checkTrust = true))
     flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
 
     for ((path, trust) <- pkgs) {
