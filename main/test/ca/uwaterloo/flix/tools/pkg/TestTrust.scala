@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
@@ -107,18 +108,37 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val manifest = ManifestParser.parse(toml, null) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) => fail("expected failure with trust 'plain' and dependency using Java")
-      case Result.Err(_) =>
-        // TODO: Check that error is forbidden / safety error
-        succeed
+    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
+      case Ok(ms) => ms
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val pkgs = FlixPackageManager.installAll(allManifests, path, None) match {
+      case Ok(ps) => ps
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val flix = new Flix()
+    flix.addSourceCode("Main.flix", Main)(SecurityContext.Unrestricted)
+
+    for ((path, trust) <- pkgs) {
+      flix.addPkg(path)(SecurityContext.fromTrust(trust))
+    }
+
+    val (_, errors) = flix.check()
+    val forbidden = errors.exists {
+      case _: SafetyError.Forbidden => false
+      case _ => false
+    }
+    if (forbidden) {
+      succeed
+    } else {
+      fail("expected failure with trust 'plain' and dependency using Java")
     }
   }
 
