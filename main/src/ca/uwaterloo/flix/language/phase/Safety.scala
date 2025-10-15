@@ -427,9 +427,11 @@ object Safety {
     }
   }
 
+  /**
+    * Returns `true` if `pkg` is a member of `java.lang`.
+    */
   private def isAllowedJavaPackage(pkg: Package): Boolean = {
-    // TODO: Check that pkg is java.X
-    false
+    pkg != null && pkg.getName.startsWith("java.lang")
   }
 
   /** Checks if `cast` is legal. */
