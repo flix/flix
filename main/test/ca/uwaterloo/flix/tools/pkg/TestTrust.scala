@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.util.Formatter
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.PrintStream
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 
 class TestTrust extends AnyFunSuite {
   test("toString-ofString-plain") {
