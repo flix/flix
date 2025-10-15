@@ -32,7 +32,7 @@ object SecurityContext {
   /**
     * A security context where the Java class library is permitted.
     */
-  object TrustJavaClass extends SecurityContext
+  case object TrustJavaClass extends SecurityContext
 
   /**
     * A security context where everything is permitted.
