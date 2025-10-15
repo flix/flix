@@ -260,7 +260,9 @@ class TestTrust extends AnyFunSuite {
         |    TestPkgTrust.entry()
         |""".stripMargin
 
-    val flix = new Flix().setOptions(Options.Default.copy(checkTrust = true))
+    val flix = new Flix()
+    flix.setOptions(flix.options.copy(checkTrust = true))
+
     flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
 
     for ((path, trust) <- pkgs) {
