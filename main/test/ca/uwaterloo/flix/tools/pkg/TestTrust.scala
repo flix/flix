@@ -39,45 +39,27 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:plain-dep:plain") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
-      fail(message)
+      fail(message + System.lineSeparator() + "expected ok with trust 'plain' and dependency plain")
     } else {
       succeed
     }
   }
 
   test("trust:plain-dep:java") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       succeed
@@ -87,21 +69,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:plain-dep:unchecked-cast") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       succeed
@@ -111,21 +84,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:plain-dep:java-unchecked-cast") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       succeed
@@ -135,21 +99,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:trust-javaclass-dep:plain") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'trust-javaclass' and dependency plain")
@@ -159,21 +114,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:trust-javaclass-dep:java") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'trust-javaclass' and dependency using Java")
@@ -183,21 +129,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:trust-javaclass-dep:unchecked-cast") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       succeed
@@ -207,21 +144,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:trust-javaclass-dep:java-unchecked-cast") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       succeed
@@ -231,21 +159,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:unrestricted-dep:plain") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency plain")
@@ -254,22 +173,13 @@ class TestTrust extends AnyFunSuite {
     }
   }
 
-  test("trust:trust-javaclass-dep:java") {
-    val path = Files.createTempDirectory("")
-    val toml =
+  test("trust:unrestricted-dep:java") {
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "trust-javaclass" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using java")
@@ -279,21 +189,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:unrestricted-dep:unchecked-cast") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using unchecked cast")
@@ -303,21 +204,12 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:unrestricted-dep:java-unchecked-cast") {
-    val path = Files.createTempDirectory("")
-    val toml =
+    val deps = List(
       """
-        |[package]
-        |name = "test"
-        |description = "test"
-        |version = "0.1.0"
-        |flix = "0.65.0"
-        |authors = ["flix"]
-        |
-        |[dependencies]
-        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
+        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
-
-    val (forbidden, message) = checkForbidden(toml, path)
+    )
+    val (forbidden, message) = checkForbidden(deps)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using Java and unchecked cast")
@@ -330,9 +222,24 @@ class TestTrust extends AnyFunSuite {
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
     */
-  private def checkForbidden(toml: String, path: Path): (Boolean, String) = {
+  private def checkForbidden(deps: List[String]): (Boolean, String) = {
     implicit val out: PrintStream = System.out
     implicit val formatter: Formatter = Formatter.NoFormatter
+    val path = Files.createTempDirectory("")
+    val toml =
+      s"""
+         |
+         |[package]
+         |name = "test"
+         |description = "test"
+         |version = "0.1.0"
+         |flix = "0.65.0"
+         |authors = ["flix"]
+         |
+         |[dependencies]
+         |${deps.mkString(System.lineSeparator())}
+         |""".stripMargin
+
     val manifest = ManifestParser.parse(toml, null) match {
       case Ok(m) => m
       case Err(e) => fail(e.message(formatter))
