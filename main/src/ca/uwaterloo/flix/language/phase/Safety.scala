@@ -371,7 +371,7 @@ object Safety {
 
   }
 
-  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
   private def checkCastPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain | SecurityContext.TrustJavaClass => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
@@ -379,7 +379,11 @@ object Safety {
     }
   }
 
-  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  /** Emits an error if `ctx` is either
+    *   1. [[SecurityContext.Plain]]
+    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
+    *      for the package that `constructor` is a member of.
+    */
   private def checkConstructorPermissions(constructor: reflect.Constructor[?], ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
@@ -391,7 +395,11 @@ object Safety {
     }
   }
 
-  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  /** Emits an error if `ctx` is either
+    *   1. [[SecurityContext.Plain]]
+    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
+    *      for the package that `method` is a member of.
+    */
   private def checkMethodPermissions(method: reflect.Method, ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
@@ -403,7 +411,11 @@ object Safety {
     }
   }
 
-  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  /** Emits an error if `ctx` is either
+    *   1. [[SecurityContext.Plain]]
+    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
+    *      for the package that `field` is a member of.
+    */
   private def checkFieldPermissions(field: reflect.Field, ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
@@ -415,7 +427,11 @@ object Safety {
     }
   }
 
-  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  /** Emits an error if `ctx` is either
+    *   1. [[SecurityContext.Plain]]
+    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
+    *      for the package that `clazz` is a member of.
+    */
   private def checkClassPermissions(clazz: Class[?], ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
@@ -428,7 +444,7 @@ object Safety {
   }
 
   /**
-    * Returns `true` if `pkg` is a member of `java.lang`.
+    * Returns `true` if `pkg` is not null and a member of `java.lang`.
     */
   private def isAllowedJavaPackage(pkg: Package): Boolean = {
     pkg != null && pkg.getName.startsWith("java.lang")
