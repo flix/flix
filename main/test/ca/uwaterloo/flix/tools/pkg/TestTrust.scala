@@ -230,6 +230,102 @@ class TestTrust extends AnyFunSuite {
     }
   }
 
+  test("trust:unrestricted-dep:plain") {
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
+        |""".stripMargin
+
+    val (forbidden, message) = checkForbidden(toml, path)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency plain")
+    } else {
+      succeed
+    }
+  }
+
+  test("trust:trust-javaclass-dep:java") {
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    val (forbidden, message) = checkForbidden(toml, path)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using java")
+    } else {
+      succeed
+    }
+  }
+
+  test("trust:unrestricted-dep:unchecked-cast") {
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    val (forbidden, message) = checkForbidden(toml, path)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using unchecked cast")
+    } else {
+      succeed
+    }
+  }
+
+  test("trust:unrestricted-dep:java-unchecked-cast") {
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    val (forbidden, message) = checkForbidden(toml, path)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using Java and unchecked cast")
+    } else {
+      succeed
+    }
+  }
+
   /**
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
