@@ -41,7 +41,7 @@ class TestTrust extends AnyFunSuite {
       |    TestPkgTrust.entrypoint()
       |""".stripMargin
 
-  test("trust-plain-plain") {
+  test("trust:plain-dep:plain") {
     implicit val out: PrintStream = System.out
     implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
@@ -67,7 +67,38 @@ class TestTrust extends AnyFunSuite {
         bootstrap.check(flix)
     } match {
       case Result.Ok(_) => succeed
-      case Result.Err(errors) => fail(errors.message(formatter))
+      case Result.Err(error) => fail(error.message(formatter))
+    }
+  }
+  test("trust:plain-dep:java") {
+    implicit val out: PrintStream = System.out
+    implicit val formatter: Formatter = Formatter.NoFormatter
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
+        |""".stripMargin
+
+    FileOps.writeString(path.resolve("flix.toml"), toml)
+    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+
+    Bootstrap.bootstrap(path, None).flatMap {
+      bootstrap =>
+        val flix = new Flix()
+        bootstrap.check(flix)
+    } match {
+      case Result.Ok(_) => fail("expected failure with trust 'plain' and dependency using Java")
+      case Result.Err(_) =>
+        // TODO: Check that error is forbidden / safety error
+        succeed
     }
   }
 }
