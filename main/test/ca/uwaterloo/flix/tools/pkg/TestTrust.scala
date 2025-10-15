@@ -70,6 +70,7 @@ class TestTrust extends AnyFunSuite {
       case Result.Err(error) => fail(error.message(formatter))
     }
   }
+
   test("trust:plain-dep:java") {
     implicit val out: PrintStream = System.out
     implicit val formatter: Formatter = Formatter.NoFormatter
