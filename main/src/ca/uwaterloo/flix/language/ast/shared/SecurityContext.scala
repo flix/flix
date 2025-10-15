@@ -44,7 +44,7 @@ object SecurityContext {
     */
   def fromTrust(t: Trust): SecurityContext = t match {
     case Trust.Plain => Plain
-    case Trust.TrustJavaClass => Plain
+    case Trust.TrustJavaClass => TrustJavaClass
     case Trust.Unrestricted => Unrestricted
   }
 }
