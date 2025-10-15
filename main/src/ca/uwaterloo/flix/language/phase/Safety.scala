@@ -241,11 +241,11 @@ object Safety {
 
     case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
       verifyUncheckedCast(cast)
-      checkAllPermissions(loc.security, loc)
+      checkCastPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.Unsafe(exp, _, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkCastPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
@@ -259,7 +259,7 @@ object Safety {
       }
 
     case Expr.Throw(exp, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkCastPermissions(loc.security, loc)
       visitExp(exp)
       checkThrow(exp)
 
@@ -275,44 +275,36 @@ object Safety {
       visitExp(exp2)
 
     case Expr.InvokeConstructor(constructor, args, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Constructor(constructor, loc))
-      checkAllPermissions(loc.security, loc)
+      checkConstructorPermissions(constructor, loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(method, exp, args, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Method(method, loc))
-      checkAllPermissions(loc.security, loc)
+      checkMethodPermissions(method, loc.security, loc)
       visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(method, args, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Method(method, loc))
-      checkAllPermissions(loc.security, loc)
+      checkMethodPermissions(method, loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.GetField(field, exp, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
-      checkAllPermissions(loc.security, loc)
+      checkFieldPermissions(field, loc.security, loc)
       visitExp(exp)
 
     case Expr.PutField(field, exp1, exp2, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
-      checkAllPermissions(loc.security, loc)
+      checkFieldPermissions(field, loc.security, loc)
       visitExp(exp1)
       visitExp(exp2)
 
     case Expr.GetStaticField(field, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
-      checkAllPermissions(loc.security, loc)
+      checkFieldPermissions(field, loc.security, loc)
 
     case Expr.PutStaticField(field, exp, _, _, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Field(field, loc))
-      checkAllPermissions(loc.security, loc)
+      checkFieldPermissions(field, loc.security, loc)
       visitExp(exp)
 
     case newObject@Expr.NewObject(_, clazz, _, _, methods, loc) =>
-      sctx.suspiciousExprs.add(SuspiciousExpr.Class(clazz, loc))
-      checkAllPermissions(loc.security, loc)
+      checkClassPermissions(clazz, loc.security, loc)
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
 
@@ -380,11 +372,64 @@ object Safety {
   }
 
   /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
-  private def checkAllPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  private def checkCastPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
-      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.Plain | SecurityContext.TrustJavaClass => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
       case SecurityContext.Unrestricted => ()
     }
+  }
+
+  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  private def checkConstructorPermissions(constructor: reflect.Constructor[?], ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    ctx match {
+      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.TrustJavaClass =>
+        if (!isAllowedJavaPackage(constructor.getDeclaringClass.getPackage)) {
+          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+        }
+      case SecurityContext.Unrestricted => ()
+    }
+  }
+
+  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  private def checkMethodPermissions(method: reflect.Method, ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    ctx match {
+      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.TrustJavaClass =>
+        if (!isAllowedJavaPackage(method.getDeclaringClass.getPackage)) {
+          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+        }
+      case SecurityContext.Unrestricted => ()
+    }
+  }
+
+  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  private def checkFieldPermissions(field: reflect.Field, ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    ctx match {
+      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.TrustJavaClass =>
+        if (!isAllowedJavaPackage(field.getDeclaringClass.getPackage)) {
+          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+        }
+      case SecurityContext.Unrestricted => ()
+    }
+  }
+
+  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
+  private def checkClassPermissions(clazz: Class[?], ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+    ctx match {
+      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.TrustJavaClass =>
+        if (!isAllowedJavaPackage(clazz.getPackage)) {
+          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+        }
+      case SecurityContext.Unrestricted => ()
+    }
+  }
+
+  private def isAllowedJavaPackage(pkg: Package): Boolean = {
+    // TODO: Check that pkg is java.X
+    false
   }
 
   /** Checks if `cast` is legal. */
@@ -801,32 +846,11 @@ object Safety {
     !eff.effects.forall(Symbol.isPrimitiveEff)
   }
 
-  private sealed trait SuspiciousExpr {
-    def isJavaClassLib: Boolean = this match {
-      case SuspiciousExpr.Class(clazz, loc) => false
-      case SuspiciousExpr.Constructor(constructor, loc) => false
-      case SuspiciousExpr.Field(field, loc) => false
-      case SuspiciousExpr.Method(method, loc) => false
-    }
-  }
-
-  private object SuspiciousExpr {
-
-    case class Class(clazz: Predef.Class[?], loc: SourceLocation) extends SuspiciousExpr
-
-    case class Constructor(constructor: reflect.Constructor[?], loc: SourceLocation) extends SuspiciousExpr
-
-    case class Field(field: reflect.Field, loc: SourceLocation) extends SuspiciousExpr
-
-    case class Method(method: reflect.Method, loc: SourceLocation) extends SuspiciousExpr
-
-  }
-
   /** Companion object for [[SharedContext]] */
   private object SharedContext {
 
     /** Returns a fresh shared context. */
-    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue(), new ConcurrentLinkedQueue())
+    def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
@@ -834,6 +858,6 @@ object Safety {
     *
     * @param errors the [[SafetyError]]s in the AST, if any.
     */
-  private case class SharedContext(errors: ConcurrentLinkedQueue[SafetyError], suspiciousExprs: ConcurrentLinkedQueue[SuspiciousExpr])
+  private case class SharedContext(errors: ConcurrentLinkedQueue[SafetyError])
 
 }

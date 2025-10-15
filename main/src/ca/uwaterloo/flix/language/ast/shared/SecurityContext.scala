@@ -30,6 +30,11 @@ object SecurityContext {
   case object Plain extends SecurityContext
 
   /**
+    * A security context where the Java class library is permitted.
+    */
+  object TrustJavaClass extends SecurityContext
+
+  /**
     * A security context where everything is permitted.
     */
   case object Unrestricted extends SecurityContext
