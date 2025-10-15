@@ -166,4 +166,130 @@ class TestTrust extends AnyFunSuite {
         succeed
     }
   }
+
+  test("trust:trust-javaclass-dep:plain") {
+    implicit val out: PrintStream = System.out
+    implicit val formatter: Formatter = Formatter.NoFormatter
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    FileOps.writeString(path.resolve("flix.toml"), toml)
+    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+
+    Bootstrap.bootstrap(path, None).flatMap {
+      bootstrap =>
+        val flix = new Flix()
+        bootstrap.check(flix)
+    } match {
+      case Result.Ok(_) => succeed
+      case Result.Err(error) => fail(error.message(formatter))
+    }
+  }
+
+  test("trust:trust-javaclass-dep:java") {
+    implicit val out: PrintStream = System.out
+    implicit val formatter: Formatter = Formatter.NoFormatter
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    FileOps.writeString(path.resolve("flix.toml"), toml)
+    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+
+    Bootstrap.bootstrap(path, None).flatMap {
+      bootstrap =>
+        val flix = new Flix()
+        bootstrap.check(flix)
+    } match {
+      case Result.Ok(_) =>
+        succeed
+      case Result.Err(_) =>
+        fail("expected ok with trust 'trust-javaclass' and dependency using Java")
+    }
+  }
+
+  test("trust:trust-javaclass-dep:unchecked-cast") {
+    implicit val out: PrintStream = System.out
+    implicit val formatter: Formatter = Formatter.NoFormatter
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    FileOps.writeString(path.resolve("flix.toml"), toml)
+    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+
+    Bootstrap.bootstrap(path, None).flatMap {
+      bootstrap =>
+        val flix = new Flix()
+        bootstrap.check(flix)
+    } match {
+      case Result.Ok(_) => fail("expected failure with trust 'trust-javaclass' and dependency using unchecked cast")
+      case Result.Err(_) =>
+        // TODO: Check that error is forbidden / safety error
+        succeed
+    }
+  }
+
+  test("trust:trust-javaclass-dep:java-unchecked-cast") {
+    implicit val out: PrintStream = System.out
+    implicit val formatter: Formatter = Formatter.NoFormatter
+    val path = Files.createTempDirectory("")
+    val toml =
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.1.0"
+        |flix = "0.65.0"
+        |authors = ["flix"]
+        |
+        |[dependencies]
+        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
+        |""".stripMargin
+
+    FileOps.writeString(path.resolve("flix.toml"), toml)
+    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+
+    Bootstrap.bootstrap(path, None).flatMap {
+      bootstrap =>
+        val flix = new Flix()
+        bootstrap.check(flix)
+    } match {
+      case Result.Ok(_) => fail("expected failure with trust 'trust-javaclass' and dependency using Java and unchecked cast")
+      case Result.Err(_) =>
+        // TODO: Check that error is forbidden / safety error
+        succeed
+    }
+  }
 }
