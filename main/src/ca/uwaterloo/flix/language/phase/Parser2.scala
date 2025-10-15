@@ -1653,7 +1653,7 @@ object Parser2 {
       val mark = open()
       advance()
       nameAllowQualified(NAME_QNAME)
-      expect(TokenKind.Tick)
+      expect(TokenKind.Tick, Some("Infix function is missing a closing '`'"))
       close(mark, TreeKind.Operator)
     }
 

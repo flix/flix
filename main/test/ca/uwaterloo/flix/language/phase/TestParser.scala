@@ -31,6 +31,24 @@ class TestParser extends Suites(
   */
 class TestParserRecovery extends AnyFunSuite with TestUtils {
 
+  test("UnterminatedInfixFunction.01") {
+    val input = "1 `add 2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("UnterminatedInfixFunction.02") {
+    val input = "1 `add/*this is a block comment*/` 2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("UnterminatedInfixFunction.03") {
+    val input = "1 `add 2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
   test("Use.01") {
     val input =
       """
