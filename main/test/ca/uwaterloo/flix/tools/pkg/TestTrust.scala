@@ -228,7 +228,6 @@ class TestTrust extends AnyFunSuite {
     val path = Files.createTempDirectory("")
     val toml =
       s"""
-         |
          |[package]
          |name = "test"
          |description = "test"
