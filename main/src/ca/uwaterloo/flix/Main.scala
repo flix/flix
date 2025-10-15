@@ -83,6 +83,7 @@ object Main {
     var options = Options(
       lib = cmdOpts.xlib,
       build = Build.Development,
+      checkTrust = false,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubToken = githubToken,

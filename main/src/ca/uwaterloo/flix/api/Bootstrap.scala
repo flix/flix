@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError, Trust}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
@@ -291,6 +291,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private var flixPackagePaths: List[Path] = List.empty
   private var mavenPackagePaths: List[Path] = List.empty
   private var jarPackagePaths: List[Path] = List.empty
+
+  private var trustLevels: Map[Path, Trust] = Map.empty
 
   /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
@@ -812,9 +814,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
       FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
-        case Ok(paths: List[Path]) =>
-          flixPackagePaths = paths
-          Ok(paths)
+        case Ok(result: List[(Path, Trust)]) =>
+          trustLevels = result.toMap
+          flixPackagePaths = result.map { case (path, _) => path }
+          Ok(flixPackagePaths)
         case Err(e) =>
           Err(BootstrapError.FlixPackageError(e))
       }
@@ -879,14 +882,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def updateStaleSources(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
-      implicit val defaultSctx: SecurityContext = SecurityContext.Unrestricted
-
       for (path <- sourcePaths if hasChanged(path)) {
-        flix.addFlix(path)
+        flix.addFlix(path)(SecurityContext.Unrestricted)
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
-        flix.addPkg(path)
+        flix.addPkg(path)(SecurityContext.fromTrust(trustLevels.getOrElse(path, Trust.Plain)))
       }
 
       for (path <- mavenPackagePaths if hasChanged(path)) {

@@ -39,7 +39,9 @@ class TestFlixPackageManager extends AnyFunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l.head.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")
+        case Ok(l) =>
+          val (p, _) = l.head
+          p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -76,8 +78,8 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
-          l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
+        case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
+          l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") }
         case Err(e) => e
       }
     })
@@ -130,8 +132,8 @@ class TestFlixPackageManager extends AnyFunSuite {
 
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest1, manifest2), path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
-          l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg"))
+        case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
+          l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") }
         case Err(e) => e.message(f)
       }
     })
@@ -164,7 +166,9 @@ class TestFlixPackageManager extends AnyFunSuite {
       val path = Files.createTempDirectory("")
       FlixPackageManager.installAll(List(manifest), path, None)(Formatter.getDefault, System.out) //installs the dependency
       FlixPackageManager.installAll(List(manifest), path, None)(Formatter.getDefault, System.out) match { //does nothing
-        case Ok(l) => l.head.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")
+        case Ok(l) =>
+          val (p, _) = l.head
+          p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")
         case Err(e) => e.message(f)
       }
     })
@@ -295,11 +299,11 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
       FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) =>
-          l.exists(p => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg")) &&
-            l.exists(p => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")) &&
-            l.exists(p => p.endsWith(s"flix${s}museum-entrance${s}1.2.0${s}museum-entrance-1.2.0.fpkg")) &&
-            l.exists(p => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")) &&
-            l.exists(p => p.endsWith(s"flix${s}museum-restaurant${s}1.1.0${s}museum-restaurant-1.1.0.fpkg"))
+          l.exists { case (p, _) => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg") } &&
+            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") } &&
+            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-entrance${s}1.2.0${s}museum-entrance-1.2.0.fpkg") } &&
+            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
+            l.exists { case (p, _) => p.endsWith(s"flix${s}museum-restaurant${s}1.1.0${s}museum-restaurant-1.1.0.fpkg") }
         case Err(e) => e.message(f)
       }
     })

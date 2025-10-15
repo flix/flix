@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.tools.pkg.Trust
+
 /**
   * A common super-type for security contexts.
   */
@@ -28,8 +30,21 @@ object SecurityContext {
   case object Plain extends SecurityContext
 
   /**
+    * A security context where the Java class library is permitted.
+    */
+  case object TrustJavaClass extends SecurityContext
+
+  /**
     * A security context where everything is permitted.
     */
   case object Unrestricted extends SecurityContext
 
+  /**
+    * Converts a `Trust` type to a `SecurityContext`
+    */
+  def fromTrust(t: Trust): SecurityContext = t match {
+    case Trust.Plain => Plain
+    case Trust.TrustJavaClass => TrustJavaClass
+    case Trust.Unrestricted => Unrestricted
+  }
 }
