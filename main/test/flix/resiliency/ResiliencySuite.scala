@@ -1,7 +1,7 @@
 package flix.resiliency
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext.AllPermissions
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext.Unrestricted
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
@@ -29,7 +29,7 @@ class ResiliencySuite extends AnyFunSuite {
     val name = "Test.Resiliency." + p.getFileName
     test(name) {
       val flix = new Flix()
-      flix.addFlix(p)(AllPermissions)
+      flix.addFlix(p)(Unrestricted)
       flix.compile()
     }
   }

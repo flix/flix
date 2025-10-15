@@ -64,15 +64,15 @@ object FlixPackageManager {
     * Installs all the Flix dependencies for a list of Manifests at the /lib folder
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifests: List[Manifest], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ++ findFlixDependencies(m))
+    val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ::: findFlixDependencies(m))
 
     val flixPaths = allFlixDeps.map(dep => {
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, "fpkg", path, apiKey) match {
-        case Ok(p) => p
+        case Ok(p) => (p, dep.trust)
         case Err(e) => out.println(s"ERROR: Installation of `$depName' failed."); return Err(e)
       }
     })

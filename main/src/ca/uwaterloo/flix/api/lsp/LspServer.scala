@@ -165,7 +165,7 @@ object LspServer {
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
           if (FileOps.checkExt(p, "fpkg")) {
-            flix.addPkg(p)(SecurityContext.AllPermissions)
+            flix.addPkg(p)(SecurityContext.Unrestricted)
           }
         }
     }
@@ -220,7 +220,7 @@ object LspServer {
       * Adds the given source code to the Flix instance.
       */
     def addSourceCode(uri: String, src: String): Unit = {
-      flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
+      flix.addSourceCode(uri, src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 
