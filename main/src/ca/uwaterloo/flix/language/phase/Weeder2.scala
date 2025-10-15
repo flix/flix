@@ -1274,27 +1274,24 @@ object Weeder2 {
             tree.loc
           )
 
-          text(op).head match {
-            // BUILTINS
-            case "+" => Validation.Success(mkApply("Add.add"))
-            case "-" => Validation.Success(mkApply("Sub.sub"))
-            case "*" => Validation.Success(mkApply("Mul.mul"))
-            case "/" => Validation.Success(mkApply("Div.div"))
-            case "<" => Validation.Success(mkApply("Order.less"))
-            case "<=" => Validation.Success(mkApply("Order.lessEqual"))
-            case ">" => Validation.Success(mkApply("Order.greater"))
-            case ">=" => Validation.Success(mkApply("Order.greaterEqual"))
-            case "==" => Validation.Success(mkApply("Eq.eq"))
-            case "!=" => Validation.Success(mkApply("Eq.neq"))
-            case "<=>" => Validation.Success(mkApply("Order.compare"))
-            // SEMANTIC OPS
-            case "and" => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-            case "or" => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-            // SPECIAL
-            case "::" => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-            case ":::" => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
-            case "<+>" => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" =>
+          op.children.head match {
+            case Token(TokenKind.Plus, _, _, _, _, _) => Validation.Success(mkApply("Add.add"))
+            case Token(TokenKind.Minus, _, _, _, _, _) => Validation.Success(mkApply("Sub.sub"))
+            case Token(TokenKind.Star, _, _, _, _, _) => Validation.Success(mkApply("Mul.mul"))
+            case Token(TokenKind.Slash, _, _, _, _, _) => Validation.Success(mkApply("Div.div"))
+            case Token(TokenKind.AngleL, _, _, _, _, _) => Validation.Success(mkApply("Order.less"))
+            case Token(TokenKind.AngleLEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.lessEqual"))
+            case Token(TokenKind.AngleR, _, _, _, _, _) => Validation.Success(mkApply("Order.greater"))
+            case Token(TokenKind.AngleREqual, _, _, _, _, _) => Validation.Success(mkApply("Order.greaterEqual"))
+            case Token(TokenKind.EqualEqual, _, _, _, _, _) => Validation.Success(mkApply("Eq.eq"))
+            case Token(TokenKind.BangEqual, _, _, _, _, _) => Validation.Success(mkApply("Eq.neq"))
+            case Token(TokenKind.AngledEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.compare"))
+            case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+            case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+            case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
+            case Token(TokenKind.TripleColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
+            case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
+            case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
               tryPickQName(exprs(1)) match {
                 case Some(qname) =>
                   if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
@@ -1314,10 +1311,11 @@ object Weeder2 {
                   sctx.errors.add(error)
                   Validation.Success(Expr.Error(error))
               }
-            // UNRECOGNIZED
-            case id =>
-              val ident = Name.Ident(id, op.loc)
+            case token@Token(TokenKind.UserDefinedOperator, _, _, _, _, _) =>
+              val ident = Name.Ident(token.text, op.loc)
               Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
+            case _ =>
+              throw InternalCompilerException(s"Expr.Binary operator not recognized", tree.loc)
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }

@@ -23,58 +23,62 @@ mod Fixpoint3.Boxable {
     /// Boxes the given `x`.
     ///
     @Internal
-    pub def box(x: a): Boxed with Order[a] = typematch x {
-        case v: Bool    => Boxed.BoxedBool(v)
-        case v: Char    => Boxed.BoxedChar(v)
-        case v: Int8    => Boxed.BoxedInt8(v)
-        case v: Int16   => Boxed.BoxedInt16(v)
-        case v: Int32   => Boxed.BoxedInt32(v)
-        case v: Int64   => Boxed.BoxedInt64(v)
-        case v: Float32 => Boxed.BoxedFloat32(v)
-        case v: Float64 => Boxed.BoxedFloat64(v)
-        case _: _ =>
-            let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
-            Boxed.BoxedObject(unchecked_cast(x as Object), cmp)
+    @Inline
+    pub def box(x: a): Boxed with Order[a] = {
+        use Reflect.JvmValue;
+        match Reflect.reflect(x) {
+            case JvmValue.JvmBool(v)  => Boxed.BoxedBool(v)
+            case JvmValue.JvmChar(v)  => Boxed.BoxedChar(v)
+            case JvmValue.JvmInt8(v)  => Boxed.BoxedInt8(v)
+            case JvmValue.JvmInt16(v) => Boxed.BoxedInt16(v)
+            case JvmValue.JvmInt32(v) => Boxed.BoxedInt32(v)
+            case JvmValue.JvmInt64(v) => Boxed.BoxedInt64(v)
+            case JvmValue.JvmFloat32(v) => Boxed.BoxedFloat32(v)
+            case JvmValue.JvmFloat64(v) => Boxed.BoxedFloat64(v)
+            case JvmValue.JvmObject(v) =>
+                let cmp = (o1, o2) -> Order.compare(unchecked_cast(o1 as a), unchecked_cast(o2 as a));
+                Boxed.BoxedObject(v, cmp)
+        }
     }
 
     ///
     /// Unboxes the given `x`.
     ///
     @Internal
-    pub def unbox(x: Boxed): a = typematch (Proxy.Proxy: Proxy[a]) {
-        case _: Proxy[Bool] => match x {
-            case Boxed.BoxedBool(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
+    pub def unbox(x: Boxed): a = match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
+        case Reflect.JvmType.JvmBool => match x {
+            case Boxed.BoxedBool(v) => unchecked_cast(v as a)
+            case _                  => unreachable!()
         }
-        case _: Proxy[Char] => match x {
-            case Boxed.BoxedChar(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmChar => match x {
+            case Boxed.BoxedChar(v) => unchecked_cast(v as a)
+            case _                  => unreachable!()
         }
-        case _: Proxy[Int8] => match x {
-            case Boxed.BoxedInt8(v)      => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmInt8 => match x {
+            case Boxed.BoxedInt8(v) => unchecked_cast(v as a)
+            case _                  => unreachable!()
         }
-        case _: Proxy[Int16] => match x {
-            case Boxed.BoxedInt16(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmInt16 => match x {
+            case Boxed.BoxedInt16(v) => unchecked_cast(v as a)
+            case _                   => unreachable!()
         }
-        case _: Proxy[Int32] => match x {
-            case Boxed.BoxedInt32(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmInt32 => match x {
+            case Boxed.BoxedInt32(v) => unchecked_cast(v as a)
+            case _                   => unreachable!()
         }
-        case _: Proxy[Int64] => match x {
-            case Boxed.BoxedInt64(v)     => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmInt64 => match x {
+            case Boxed.BoxedInt64(v) => unchecked_cast(v as a)
+            case _                   => unreachable!()
         }
-        case _: Proxy[Float32] => match x {
-            case Boxed.BoxedFloat32(v)   => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmFloat32 => match x {
+            case Boxed.BoxedFloat32(v) => unchecked_cast(v as a)
+            case _                     => unreachable!()
         }
-        case _: Proxy[Float64] => match x {
-            case Boxed.BoxedFloat64(v)   => unchecked_cast(v as a)
-            case _                       => unreachable!()
+        case Reflect.JvmType.JvmFloat64 => match x {
+            case Boxed.BoxedFloat64(v) => unchecked_cast(v as a)
+            case _                     => unreachable!()
         }
-        case _: _ => match x {
+        case Reflect.JvmType.JvmObject => match x {
             case Boxed.BoxedObject(v, _) => unchecked_cast(v as a)
             case _                       => unreachable!()
         }
