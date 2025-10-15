@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
+import ca.uwaterloo.flix.util.Formatter
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.PrintStream
@@ -53,13 +53,12 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    val flix = setup(toml, path)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    val (_, errors) = flix.check()
-    if (errors.isEmpty) {
-      succeed
+    if (forbidden) {
+      fail(message)
     } else {
-      fail(flix.mkMessages(errors).mkString(System.lineSeparator()))
+      succeed
     }
   }
 
@@ -78,23 +77,16 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    val flix = setup(toml, path)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    val (_, errors) = flix.check()
-    val forbidden = errors.exists {
-      case _: SafetyError.Forbidden => true
-      case _ => false
-    }
     if (forbidden) {
       succeed
     } else {
-      fail("expected failure with trust 'plain' and dependency using Java")
+      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using Java")
     }
   }
 
   test("trust:plain-dep:unchecked-cast") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -109,24 +101,16 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) => fail("expected failure with trust 'plain' and dependency using unchecked cast")
-      case Result.Err(_) =>
-        // TODO: Check that error is forbidden / safety error
-        succeed
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using unchecked cast")
     }
   }
 
   test("trust:plain-dep:java-unchecked-cast") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -141,24 +125,16 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) => fail("expected failure with trust 'plain' and dependency using Java and unchecked cast")
-      case Result.Err(_) =>
-        // TODO: Check that error is forbidden / safety error
-        succeed
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using Java and unchecked cast")
     }
   }
 
   test("trust:trust-javaclass-dep:plain") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -173,22 +149,16 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) => succeed
-      case Result.Err(error) => fail(error.message(formatter))
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'trust-javaclass' and dependency plain")
+    } else {
+      succeed
     }
   }
 
   test("trust:trust-javaclass-dep:java") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -203,24 +173,16 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) =>
-        succeed
-      case Result.Err(_) =>
-        fail("expected ok with trust 'trust-javaclass' and dependency using Java")
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'trust-javaclass' and dependency using Java")
+    } else {
+      succeed
     }
   }
 
   test("trust:trust-javaclass-dep:unchecked-cast") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -235,24 +197,16 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) => fail("expected failure with trust 'trust-javaclass' and dependency using unchecked cast")
-      case Result.Err(_) =>
-        // TODO: Check that error is forbidden / safety error
-        succeed
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'trust-javaclass' and dependency using unchecked cast")
     }
   }
 
   test("trust:trust-javaclass-dep:java-unchecked-cast") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -267,22 +221,20 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
         |""".stripMargin
 
-    FileOps.writeString(path.resolve("flix.toml"), toml)
-    FileOps.writeString(path.resolve("src/").resolve("Main.flix"), Main)
+    val (forbidden, message) = checkForbidden(toml, path)
 
-    Bootstrap.bootstrap(path, None).flatMap {
-      bootstrap =>
-        val flix = new Flix()
-        bootstrap.check(flix)
-    } match {
-      case Result.Ok(_) => fail("expected failure with trust 'trust-javaclass' and dependency using Java and unchecked cast")
-      case Result.Err(_) =>
-        // TODO: Check that error is forbidden / safety error
-        succeed
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'trust-javaclass' and dependency using Java and unchecked cast")
     }
   }
 
-  private def setup(toml: String, path: Path): Flix = {
+  /**
+    * Returns `true` if a [[SafetyError.Forbidden]] error is found.
+    * Always returns all compiler messages in the second entry of the tuple.
+    */
+  private def checkForbidden(toml: String, path: Path): (Boolean, String) = {
     implicit val out: PrintStream = System.out
     implicit val formatter: Formatter = Formatter.NoFormatter
     val manifest = ManifestParser.parse(toml, null) match {
@@ -312,6 +264,13 @@ class TestTrust extends AnyFunSuite {
     for ((path, trust) <- pkgs) {
       flix.addPkg(path)(SecurityContext.fromTrust(trust))
     }
-    flix
+
+    val (_, errors) = flix.check()
+    val forbidden = errors.exists {
+      case _: SafetyError.Forbidden => true
+      case _ => false
+    }
+
+    (forbidden, flix.mkMessages(errors).mkString(System.lineSeparator()))
   }
 }
