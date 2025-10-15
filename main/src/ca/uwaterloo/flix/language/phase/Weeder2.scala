@@ -1433,9 +1433,14 @@ object Weeder2 {
     private def visitRestrictableChooseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expectAny(tree, List(TreeKind.Expr.RestrictableChoose, TreeKind.Expr.RestrictableChooseStar))
       val isStar = tree.kind == TreeKind.Expr.RestrictableChooseStar
-      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(t => visitRestrictableChooseRule(isStar, t))) {
-        (expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
+      val rules0 = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules0)(t => visitRestrictableChooseRule(isStar, t))) {
+        case (expr, Nil) =>
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
+          sctx.errors.add(error)
+          val rules = RestrictableChooseRule(WeededAst.RestrictableChoosePattern.Error(tree.loc.asSynthetic), Expr.Error(error)) :: Nil
+          Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
+        case (expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
       }
     }
 

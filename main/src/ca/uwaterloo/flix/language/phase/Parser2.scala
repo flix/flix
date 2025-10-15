@@ -2310,7 +2310,7 @@ object Parser2 {
         expect(TokenKind.KeywordChoose)
       }
       expression()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.MatchRule,
         checkForItem = _ == TokenKind.KeywordCase,
         getItem = matchRule,
