@@ -35,7 +35,7 @@ class TestTrust extends AnyFunSuite {
     assertResult(perm)(res)
   }
 
-  val Main =
+  private val Main: String =
     """
       |pub def main(): Unit \ IO =
       |    TestPkgTrust.entrypoint()
