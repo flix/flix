@@ -2358,7 +2358,7 @@ object Parser2 {
 
     private def forFragments()(implicit s: State): Unit = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.ForFragment,
         checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
         getItem = () =>
