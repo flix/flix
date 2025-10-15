@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.PrintStream
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
 class TestTrust extends AnyFunSuite {
   test("toString-ofString-plain") {
@@ -38,15 +38,7 @@ class TestTrust extends AnyFunSuite {
     assertResult(perm)(res)
   }
 
-  private val Main: String =
-    """
-      |pub def main(): Unit \ IO =
-      |    TestPkgTrust.entry()
-      |""".stripMargin
-
   test("trust:plain-dep:plain") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -61,27 +53,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    val manifest = ManifestParser.parse(toml, null) match {
-      case Ok(m) => m
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-      case Ok(ms) => ms
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val pkgs = FlixPackageManager.installAll(allManifests, path, None) match {
-      case Ok(ps) => ps
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val flix = new Flix()
-    flix.addSourceCode("Main.flix", Main)(SecurityContext.Unrestricted)
-
-    for ((path, trust) <- pkgs) {
-      flix.addPkg(path)(SecurityContext.fromTrust(trust))
-    }
+    val flix = setup(toml, path)
 
     val (_, errors) = flix.check()
     if (errors.isEmpty) {
@@ -92,8 +64,6 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("trust:plain-dep:java") {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
     val toml =
       """
@@ -108,31 +78,11 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
 
-    val manifest = ManifestParser.parse(toml, null) match {
-      case Ok(m) => m
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-      case Ok(ms) => ms
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val pkgs = FlixPackageManager.installAll(allManifests, path, None) match {
-      case Ok(ps) => ps
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val flix = new Flix()
-    flix.addSourceCode("Main.flix", Main)(SecurityContext.Unrestricted)
-
-    for ((path, trust) <- pkgs) {
-      flix.addPkg(path)(SecurityContext.fromTrust(trust))
-    }
+    val flix = setup(toml, path)
 
     val (_, errors) = flix.check()
     val forbidden = errors.exists {
-      case _: SafetyError.Forbidden => false
+      case _: SafetyError.Forbidden => true
       case _ => false
     }
     if (forbidden) {
@@ -330,5 +280,38 @@ class TestTrust extends AnyFunSuite {
         // TODO: Check that error is forbidden / safety error
         succeed
     }
+  }
+
+  private def setup(toml: String, path: Path): Flix = {
+    implicit val out: PrintStream = System.out
+    implicit val formatter: Formatter = Formatter.NoFormatter
+    val manifest = ManifestParser.parse(toml, null) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
+      case Ok(ms) => ms
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val pkgs = FlixPackageManager.installAll(allManifests, path, None) match {
+      case Ok(ps) => ps
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val main: String =
+      """
+        |pub def main(): Unit \ IO =
+        |    TestPkgTrust.entry()
+        |""".stripMargin
+
+    val flix = new Flix()
+    flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
+
+    for ((path, trust) <- pkgs) {
+      flix.addPkg(path)(SecurityContext.fromTrust(trust))
+    }
+    flix
   }
 }
