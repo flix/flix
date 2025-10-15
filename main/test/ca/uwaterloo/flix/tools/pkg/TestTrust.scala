@@ -38,7 +38,7 @@ class TestTrust extends AnyFunSuite {
   private val Main: String =
     """
       |pub def main(): Unit \ IO =
-      |    TestPkgTrust.entrypoint()
+      |    TestPkgTrust.entry()
       |""".stripMargin
 
   test("trust:plain-dep:plain") {
