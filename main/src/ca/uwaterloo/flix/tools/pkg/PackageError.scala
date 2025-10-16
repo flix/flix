@@ -103,4 +103,11 @@ object PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
 
+  case class TrustError(origDep: Dependency.FlixDependency, trust: Trust) extends PackageError {
+
+    /**
+      * Returns a human-readable and formatted string representation of this error.
+      */
+    override def message(f: Formatter): String = s"WIP: $origDep does not respect trust level $trust"
+  }
 }

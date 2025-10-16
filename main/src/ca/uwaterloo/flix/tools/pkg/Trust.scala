@@ -16,7 +16,64 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait Trust
+sealed trait Trust {
+
+  /**
+    * Combines `this` and `other` according to the following lattice:
+    * {{{
+    *        Plain
+    *          |
+    *   TrustJavaClass
+    *          |
+    *     Unrestricted
+    * }}}
+    */
+  def combine(other: Trust): Trust = (this, other) match {
+    // TODO: Add tests
+    case (Trust.Plain, Trust.Plain) => Trust.Plain
+    case (Trust.Plain, Trust.TrustJavaClass) => Trust.Plain
+    case (Trust.Plain, Trust.Unrestricted) => Trust.Plain
+    case (Trust.TrustJavaClass, Trust.Plain) => Trust.Plain
+    case (Trust.TrustJavaClass, Trust.TrustJavaClass) => Trust.TrustJavaClass
+    case (Trust.TrustJavaClass, Trust.Unrestricted) => Trust.TrustJavaClass
+    case (Trust.Unrestricted, Trust.Plain) => Trust.Plain
+    case (Trust.Unrestricted, Trust.TrustJavaClass) => Trust.TrustJavaClass
+    case (Trust.Unrestricted, Trust.Unrestricted) => Trust.Unrestricted
+  }
+
+  /**
+    * Returns `true` if `this` is greater than or equal to `other` in the lattice
+    * {{{
+    *        Plain
+    *          |
+    *   TrustJavaClass
+    *          |
+    *     Unrestricted
+    * }}}
+    */
+  def greaterThanEq(other: Trust): Boolean = (this, other) match {
+    // TODO: Add tests
+    case (Trust.Plain, Trust.Plain) => true
+    case (Trust.Plain, Trust.TrustJavaClass) => true
+    case (Trust.Plain, Trust.Unrestricted) => true
+    case (Trust.TrustJavaClass, Trust.Plain) => false
+    case (Trust.TrustJavaClass, Trust.TrustJavaClass) => true
+    case (Trust.TrustJavaClass, Trust.Unrestricted) => true
+    case (Trust.Unrestricted, Trust.Plain) => false
+    case (Trust.Unrestricted, Trust.TrustJavaClass) => false
+    case (Trust.Unrestricted, Trust.Unrestricted) => true
+  }
+
+  /**
+    * Returns `true` iff `!this.greaterThanEq(other)` holds.
+    *
+    * @see [[greaterThanEq]]
+    */
+  def lessThan(other: Trust): Boolean = {
+    // TODO: Add tests
+    !this.greaterThanEq(other)
+  }
+}
 
 /**
   * Trust for dependencies.

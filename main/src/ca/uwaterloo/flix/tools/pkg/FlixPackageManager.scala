@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
+import scala.collection.mutable
 import scala.util.Using
 
 object FlixPackageManager {
@@ -34,7 +35,8 @@ object FlixPackageManager {
     */
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
-
+    implicit val depGraph: mutable.Map[Manifest, FlixDependency] = mutable.Map.empty
+    implicit val trust: mutable.Map[FlixDependency, Trust] = mutable.Map.empty
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
   }
 
@@ -141,23 +143,35 @@ object FlixPackageManager {
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit depGraph: mutable.Map[Manifest, FlixDependency], trust: mutable.Map[FlixDependency, Trust], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     //find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
-    for (
+    for {
       //download toml files
-      tomlPaths <- traverse(flixDeps)(dep => {
+      tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, "toml", path, apiKey)
-      });
+        install(depName, dep.version, "toml", path, apiKey).map(p => (p, dep))
+      }
 
       //parse the manifests
-      transManifests <- traverse(tomlPaths)(p => parseManifest(p))
+      transitiveManifests <- traverse(tomlPaths) { case (p, d) => parseManifest(p).map(m => (m, d)) }
 
-    ) yield {
+    } yield {
+      // Enforce that new dependencies respect transitive trust level
+      Result.sequence(transitiveManifests.flatMap {
+        case (tm, origDep) =>
+          val t = trust.getOrElse(origDep, origDep.trust).combine(origDep.trust)
+          trust.put(origDep, t)
+          depGraph.put(tm, origDep)
+          tm.dependencies.map(checkTrust(origDep, t, _))
+      }) match {
+        case Err(e) => return Err(e)
+        case Ok(_) => // Continue
+      }
+
       //remove duplicates
-      val newManifests = transManifests.filter(m => !res.contains(m))
+      val newManifests = transitiveManifests.map(_._1).filter(m => !res.contains(m))
       var newRes = res ++ newManifests
 
       //do recursive calls for all dependencies
@@ -169,6 +183,19 @@ object FlixPackageManager {
       }
       newRes
     }
+  }
+
+  private def checkTrust(origDep: FlixDependency, t: Trust, dep: Dependency): Result[Unit, PackageError] = dep match {
+    case FlixDependency(_, _, _, _, t1) if t1.lessThan(t.combine(t1)) =>
+      Err(PackageError.TrustError(origDep, t))
+
+    case Dependency.MavenDependency(_, _, _) if t.lessThan(Trust.TrustJavaClass) =>
+      Err(PackageError.TrustError(origDep, t))
+
+    case Dependency.JarDependency(_, _) if t.lessThan(Trust.TrustJavaClass) =>
+      Err(PackageError.TrustError(origDep, t))
+
+    case _ => Ok(())
   }
 
   /**
