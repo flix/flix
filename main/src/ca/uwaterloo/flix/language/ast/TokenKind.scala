@@ -35,7 +35,8 @@ sealed trait TokenKind {
       case TokenKind.ArrayHash => "'Array#'"
       case TokenKind.ArrowThickR => "'=>'"
       case TokenKind.ArrowThinL => "'<-'"
-      case TokenKind.ArrowThinR => "'->'"
+      case TokenKind.ArrowThinRTight => "'->'"
+      case TokenKind.ArrowThinRWhitespace => "'->'"
       case TokenKind.At => "'@'"
       case TokenKind.Backslash => "'\\'"
       case TokenKind.Bang => "'!'"
@@ -48,6 +49,7 @@ sealed trait TokenKind {
       case TokenKind.Caret => "'^'"
       case TokenKind.Colon => "':'"
       case TokenKind.ColonColon => "'::'"
+      case TokenKind.ColonColonColon => "':::'"
       case TokenKind.ColonMinus => "':-'"
       case TokenKind.Comma => "','"
       case TokenKind.CommentBlock => "<block comment>"
@@ -62,6 +64,7 @@ sealed trait TokenKind {
       case TokenKind.DotWhiteSpace => "'. '"
       case TokenKind.Equal => "'='"
       case TokenKind.EqualEqual => "'=='"
+      case TokenKind.GenericOperator => "<user-defined operator>"
       case TokenKind.Hash => "'#'"
       case TokenKind.HashBar => "'#|'"
       case TokenKind.HashCurlyL => "'#{'"
@@ -132,7 +135,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordSelect => "'select'"
       case TokenKind.KeywordSolve => "'solve'"
       case TokenKind.KeywordSpawn => "'spawn'"
-      case TokenKind.KeywordStatic => "'static'"
+      case TokenKind.KeywordStaticLowercase => "'static'"
       case TokenKind.KeywordStaticUppercase => "'Static'"
       case TokenKind.KeywordStruct => "'struct'"
       case TokenKind.KeywordThrow => "'throw'"
@@ -170,9 +173,9 @@ sealed trait TokenKind {
       case TokenKind.LiteralStringInterpolationR => "'}\"'"
       case TokenKind.MapHash => "'Map#'"
       case TokenKind.Minus => "'-'"
-      case TokenKind.NameLowerCase => "<name>"
+      case TokenKind.NameLowercase => "<name>"
       case TokenKind.NameMath => "<math name>"
-      case TokenKind.NameUpperCase => "<Name>"
+      case TokenKind.NameUppercase => "<Name>"
       case TokenKind.ParenL => "'('"
       case TokenKind.ParenR => "')'"
       case TokenKind.Plus => "'+'"
@@ -180,27 +183,27 @@ sealed trait TokenKind {
       case TokenKind.SetHash => "'Set#'"
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
-      case TokenKind.StructArrow => "'->'"
       case TokenKind.Tilde => "'~'"
-      case TokenKind.TripleColon => "':::'"
       case TokenKind.Underscore => "'_'"
-      case TokenKind.UserDefinedOperator => "<user-defined operator>"
       case TokenKind.VectorHash => "'Vector#'"
       case TokenKind.Eof => "<end-of-file>"
       case TokenKind.Err(_) => "<error>"
     }
   }
 
-  /** Checks if this token is a line or block comment. */
+  /** Returns `true` if this token is a line or block comment. */
   def isCommentNonDoc: Boolean = this match {
-    case TokenKind.CommentLine => true
     case TokenKind.CommentBlock => true
+    case TokenKind.CommentLine => true
     case _ => false
   }
 
-  /** Checks if this token is a doc, line or block comment. */
-  def isComment: Boolean =
-    this == TokenKind.CommentDoc || this.isCommentNonDoc
+  /** Returns `true` if this token is a doc, line or block comment. */
+  def isComment: Boolean = this match {
+    case TokenKind.CommentDoc => true
+    case _ if this.isCommentNonDoc => true
+    case _ => false
+  }
 
   /** Returns `true` if this token is a keyword. */
   def isKeyword: Boolean = this match {
@@ -264,7 +267,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordSelect => true
     case TokenKind.KeywordSolve => true
     case TokenKind.KeywordSpawn => true
-    case TokenKind.KeywordStatic => true
+    case TokenKind.KeywordStaticLowercase => true
     case TokenKind.KeywordStruct => true
     case TokenKind.KeywordThrow => true
     case TokenKind.KeywordTrait => true
@@ -439,9 +442,9 @@ sealed trait TokenKind {
     case TokenKind.LiteralStringInterpolationL => true
     case TokenKind.MapHash => true
     case TokenKind.Minus => true
-    case TokenKind.NameLowerCase => true
+    case TokenKind.NameLowercase => true
     case TokenKind.NameMath => true
-    case TokenKind.NameUpperCase => true
+    case TokenKind.NameUppercase => true
     case TokenKind.ParenL => true
     case TokenKind.Plus => true
     case TokenKind.SetHash => true
@@ -462,9 +465,9 @@ sealed trait TokenKind {
     case TokenKind.KeywordStaticUppercase => true
     case TokenKind.KeywordTrue => true
     case TokenKind.KeywordUniv => true
-    case TokenKind.NameLowerCase => true
+    case TokenKind.NameLowercase => true
     case TokenKind.NameMath => true
-    case TokenKind.NameUpperCase => true
+    case TokenKind.NameUppercase => true
     case TokenKind.ParenL => true
     case TokenKind.Tilde => true
     case TokenKind.Underscore => true
@@ -492,9 +495,9 @@ sealed trait TokenKind {
     case TokenKind.LiteralRegex => true
     case TokenKind.LiteralString => true
     case TokenKind.Minus => true
-    case TokenKind.NameLowerCase => true
+    case TokenKind.NameLowercase => true
     case TokenKind.NameMath => true
-    case TokenKind.NameUpperCase => true
+    case TokenKind.NameUppercase => true
     case TokenKind.ParenL => true
     case TokenKind.Underscore => true
     case _ => false
@@ -503,7 +506,7 @@ sealed trait TokenKind {
   /** Returns `true` if this token can validly appear as the first token of a record operation. */
   def isFirstInRecordOp: Boolean = this match {
     case TokenKind.Minus => true
-    case TokenKind.NameLowerCase => true
+    case TokenKind.NameLowercase => true
     case TokenKind.Plus => true
     case _ => false
   }
@@ -631,7 +634,9 @@ object TokenKind {
 
   case object ArrowThinL extends TokenKind
 
-  case object ArrowThinR extends TokenKind
+  case object ArrowThinRTight extends TokenKind
+
+  case object ArrowThinRWhitespace extends TokenKind
 
   case object At extends TokenKind
 
@@ -656,6 +661,8 @@ object TokenKind {
   case object Colon extends TokenKind
 
   case object ColonColon extends TokenKind
+
+  case object ColonColonColon extends TokenKind
 
   case object ColonMinus extends TokenKind
 
@@ -684,6 +691,8 @@ object TokenKind {
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
+
+  case object GenericOperator extends TokenKind
 
   case object Hash extends TokenKind
 
@@ -825,7 +834,7 @@ object TokenKind {
 
   case object KeywordSpawn extends TokenKind
 
-  case object KeywordStatic extends TokenKind
+  case object KeywordStaticLowercase extends TokenKind
 
   case object KeywordStaticUppercase extends TokenKind
 
@@ -901,11 +910,11 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
-  case object NameLowerCase extends TokenKind
+  case object NameLowercase extends TokenKind
 
   case object NameMath extends TokenKind
 
-  case object NameUpperCase extends TokenKind
+  case object NameUppercase extends TokenKind
 
   case object ParenL extends TokenKind
 
@@ -921,15 +930,9 @@ object TokenKind {
 
   case object Star extends TokenKind
 
-  case object StructArrow extends TokenKind
-
   case object Tilde extends TokenKind
 
-  case object TripleColon extends TokenKind
-
   case object Underscore extends TokenKind
-
-  case object UserDefinedOperator extends TokenKind
 
   case object VectorHash extends TokenKind
 
