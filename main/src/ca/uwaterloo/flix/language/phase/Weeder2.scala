@@ -1390,7 +1390,8 @@ object Weeder2 {
         // Case: no valid match rule found in match expr
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          // Fall back on Expr.Error. Parser has reported an error here.
+          sctx.errors.add(error)
+          // Fall back on Expr.Error.
           Validation.Success(Expr.Error(error))
         case (expr, rules) => Validation.Success(Expr.Match(expr, rules, tree.loc))
       }

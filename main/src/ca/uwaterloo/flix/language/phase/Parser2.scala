@@ -2152,7 +2152,7 @@ object Parser2 {
             close(mark, TreeKind.Expr.LambdaMatch)
           } else {
             expression()
-            oneOrMore(
+            zeroOrMore(
               namedTokenSet = NamedTokenSet.MatchRule,
               checkForItem = _ == TokenKind.KeywordCase,
               getItem = matchRule,
