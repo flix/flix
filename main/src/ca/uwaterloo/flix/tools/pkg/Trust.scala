@@ -21,14 +21,14 @@ sealed trait Trust {
   /**
     * Combines `this` and `other` according to the following lattice:
     * {{{
-    *        Plain
+    *     Unrestricted
     *          |
     *   TrustJavaClass
     *          |
-    *     Unrestricted
+    *        Plain
     * }}}
     */
-  def combine(other: Trust): Trust = (this, other) match {
+  def glb(other: Trust): Trust = (this, other) match {
     // TODO: Add tests
     case (Trust.Plain, Trust.Plain) => Trust.Plain
     case (Trust.Plain, Trust.TrustJavaClass) => Trust.Plain
@@ -41,17 +41,25 @@ sealed trait Trust {
     case (Trust.Unrestricted, Trust.Unrestricted) => Trust.Unrestricted
   }
 
+  def lub(other: Trust): Trust = {
+    if (this.glb(other) != this) {
+      this
+    } else {
+      other
+    }
+  }
+
   /**
-    * Returns `true` if `this` is greater than or equal to `other` in the lattice
+    * Returns `true` if `this` is less than or equal to `other` in the lattice
     * {{{
-    *        Plain
+    *     Unrestricted
     *          |
     *   TrustJavaClass
     *          |
-    *     Unrestricted
+    *        Plain
     * }}}
     */
-  def greaterThanEq(other: Trust): Boolean = (this, other) match {
+  def lessThanEq(other: Trust): Boolean = (this, other) match {
     // TODO: Add tests
     case (Trust.Plain, Trust.Plain) => true
     case (Trust.Plain, Trust.TrustJavaClass) => true
@@ -65,13 +73,13 @@ sealed trait Trust {
   }
 
   /**
-    * Returns `true` iff `!this.greaterThanEq(other)` holds.
+    * Returns `true` iff `!this.lessThanOrEq(other)` holds.
     *
-    * @see [[greaterThanEq]]
+    * @see [[lessThanEq]]
     */
-  def lessThan(other: Trust): Boolean = {
+  def greaterThan(other: Trust): Boolean = {
     // TODO: Add tests
-    !this.greaterThanEq(other)
+    !this.lessThanEq(other)
   }
 }
 
