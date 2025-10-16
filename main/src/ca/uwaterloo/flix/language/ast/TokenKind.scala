@@ -101,6 +101,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordNew => "'new'"
       case TokenKind.KeywordNot => "'not'"
       case TokenKind.KeywordNull => "'null'"
+      case TokenKind.KeywordOf => "'of'"
       case TokenKind.KeywordOpenVariant => "'open_variant'"
       case TokenKind.KeywordOpenVariantAs => "'open_variant_as'"
       case TokenKind.KeywordOr => "'or'"
@@ -247,6 +248,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordNew => true
     case TokenKind.KeywordNot => true
     case TokenKind.KeywordNull => true
+    case TokenKind.KeywordOf => true
     case TokenKind.KeywordOpenVariant => true
     case TokenKind.KeywordOpenVariantAs => true
     case TokenKind.KeywordOr => true
@@ -588,6 +590,7 @@ sealed trait TokenKind {
          | TokenKind.KeywordLawful
          | TokenKind.KeywordMod
          | TokenKind.KeywordMut
+         | TokenKind.KeywordOf
          | TokenKind.KeywordOpenVariant
          | TokenKind.KeywordOr
          | TokenKind.KeywordOverride
@@ -960,6 +963,8 @@ object TokenKind {
   case object KeywordNot extends TokenKind
 
   case object KeywordNull extends TokenKind
+
+  case object KeywordOf extends TokenKind
 
   case object KeywordOpenVariant extends TokenKind
 

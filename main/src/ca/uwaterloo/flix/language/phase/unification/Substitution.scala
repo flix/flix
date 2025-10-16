@@ -84,6 +84,14 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       val args = args0.map(visitType)
       Type.AssocType(cst, args, kind, loc)
 
+    case Type.RegionToEff(op, arg0, loc) =>
+      val arg = visitType(arg0)
+      Type.RegionToEff(op, arg, loc)
+
+    case Type.AbstractRegionToEff(op, arg0, loc) =>
+      val arg = visitType(arg0)
+      Type.AbstractRegionToEff(op, arg, loc)
+
     case Type.JvmToType(tpe0, loc) =>
       val tpe = visitType(tpe0)
       Type.JvmToType(tpe, loc)

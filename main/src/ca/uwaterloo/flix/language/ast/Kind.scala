@@ -106,6 +106,16 @@ object Kind {
   case class CaseSet(sym: Symbol.RestrictableEnumSym) extends Kind
 
   /**
+    * Represents the kind of regions
+    */
+  case object Region extends Kind
+
+  /**
+    * Represents the kind of region flavors.
+    */
+  case object Flavor extends Kind
+
+  /**
     * Represents the kind of type expressions `k1 -> k2`.
     */
   case class Arrow(k1: Kind, k2: Kind) extends Kind
@@ -176,6 +186,8 @@ object Kind {
     case Predicate => false
     case Jvm => false
     case CaseSet(_) => false
+    case Region => false
+    case Flavor => false
     case Arrow(k1, k2) => hasError(k1) || hasError(k2)
     case Error => true
   }

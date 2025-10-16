@@ -64,10 +64,11 @@ object Resolver {
     "Bool" -> Kind.Bool,
     "Eff" -> Kind.Eff,
     "Type" -> Kind.Star,
-    "Region" -> Kind.Eff,
+    "Region" -> Kind.Region,
     "RecordRow" -> Kind.RecordRow,
     "SchemaRow" -> Kind.SchemaRow,
-    "Predicate" -> Kind.Predicate
+    "Predicate" -> Kind.Predicate,
+    "Flavor" -> Kind.Flavor
   )
 
   /**
@@ -257,6 +258,8 @@ object Resolver {
     case UnkindedType.Ascribe(tpe, _, _) => getAliasUses(tpe)
     case UnkindedType.UnappliedAlias(sym, _) => sym :: Nil
     case _: UnkindedType.UnappliedAssocType => Nil
+    case _: UnkindedType.UnappliedAbstractRegionToEff => Nil
+    case _: UnkindedType.UnappliedRegionToEff => Nil
     case _: UnkindedType.Cst => Nil
     case UnkindedType.Apply(tpe1, tpe2, _) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Arrow => Nil
@@ -271,6 +274,8 @@ object Resolver {
     case _: UnkindedType.Error => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
     case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
+    case abstractRegionToEff: UnkindedType.AbstractRegionToEff => throw InternalCompilerException("unexpected applied abstract region to effect", abstractRegionToEff.loc)
+    case regionToEff: UnkindedType.RegionToEff => throw InternalCompilerException("unexpected applied region to effect", regionToEff.loc)
   }
 
   /**
@@ -982,12 +987,16 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
+    case NamedAst.Expr.Region(sym, regSym, flav, exp, loc) =>
+      val fVal = mapN(resolveType(flav, None, Wildness.ForbidWild, scp0, taenv, ns0, root)) {
+        case UnkindedType.Cst(TypeConstructor.Flavor(rf), _) => rf
+        case _ => RegionFlavor.Lofi // MATT should throw error
+      }
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
       val eVal = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.Region(sym, regSym, e, loc)
+      mapN(fVal, eVal) {
+        case (f, e) => ResolvedAst.Expr.Region(sym, regSym, f, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
@@ -2475,7 +2484,7 @@ object Resolver {
       case NamedAst.Type.Var(ident, loc) =>
         lookupLowerType(ident, wildness, scp0) match {
           case Result.Ok(LowerType.Var(sym)) => Validation.Success(UnkindedType.Var(sym, loc))
-          case Result.Ok(LowerType.Region(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.Region(sym), loc))
+          case Result.Ok(LowerType.Region(sym)) => Validation.Success(UnkindedType.Cst(TypeConstructor.FlavorToRegion(sym), loc))
           case Result.Err(error) =>
             // Note: We assume the default type variable has kind Star.
             sctx.errors.add(error)
@@ -2507,6 +2516,17 @@ object Resolver {
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))
         case "Region" => Validation.Success(UnkindedType.Cst(TypeConstructor.RegionToStar, loc))
+        case "Alloc" => Validation.Success(UnkindedType.UnappliedRegionToEff(RegionOp.Alloc, loc))
+        case "Read" => Validation.Success(UnkindedType.UnappliedRegionToEff(RegionOp.Read, loc))
+        case "Write" => Validation.Success(UnkindedType.UnappliedRegionToEff(RegionOp.Write, loc))
+        case "Heap" => Validation.Success(UnkindedType.UnappliedRegionToEff(RegionOp.Heap, loc))
+        case "GetAlloc" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(AbstractRegionOp.GetAlloc, loc))
+        case "GetRead" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(AbstractRegionOp.GetRead, loc))
+        case "GetWrite" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(AbstractRegionOp.GetWrite, loc))
+        case "XWrite" => Validation.Success(UnkindedType.UnappliedAbstractRegionToEff(AbstractRegionOp.XWrite, loc))
+        case "Lofi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(RegionFlavor.Lofi), loc))
+        case "Hifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(RegionFlavor.Hifi), loc))
+        case "XHifi" => Validation.Success(UnkindedType.Cst(TypeConstructor.Flavor(RegionFlavor.XHifi), loc))
 
         // Disambiguate type.
         case _ => // typeName
@@ -2762,6 +2782,46 @@ object Resolver {
             }
         }
 
+      case UnkindedType.UnappliedAbstractRegionToEff(op, loc) =>
+        targs match {
+          // Case 1: The abstract region to effect is under-applied.
+          case Nil =>
+            val error = ResolutionError.UnderAppliedAbstractRegionToEff(op, loc)
+            sctx.errors.add(error)
+            Validation.Success(UnkindedType.Error(loc))
+
+          // Case 2: The abstract region to effect is fully applied.
+          // Apply the first type inside the abstract region to effect, then apply any leftover types.
+          case targHead :: targTail =>
+            val targHeadVal = finishResolveType(targHead, taenv)
+            val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
+            mapN(targHeadVal, targTailVal) {
+              case (targHd, targTl) =>
+                val abstractRegionToEff = UnkindedType.AbstractRegionToEff(op, targHd, tpe0.loc)
+                UnkindedType.mkApply(abstractRegionToEff, targTl, tpe0.loc)
+            }
+        }
+
+      case UnkindedType.UnappliedRegionToEff(op, loc) =>
+        targs match {
+          // Case 1: The region to effect is under-applied.
+          case Nil =>
+            val error = ResolutionError.UnderAppliedRegionToEff(op, loc)
+            sctx.errors.add(error)
+            Validation.Success(UnkindedType.Error(loc))
+
+          // Case 2: The region to effect is fully applied.
+          // Apply the first type inside the region to effect, then apply any leftover types.
+          case targHead :: targTail =>
+            val targHeadVal = finishResolveType(targHead, taenv)
+            val targTailVal = traverse(targTail)(finishResolveType(_, taenv))
+            mapN(targHeadVal, targTailVal) {
+              case (targHd, targTl) =>
+                val regionToEff = UnkindedType.RegionToEff(op, targHd, tpe0.loc)
+                UnkindedType.mkApply(regionToEff, targTl, tpe0.loc)
+            }
+        }
+
       case _: UnkindedType.Var =>
         mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
@@ -2842,6 +2902,8 @@ object Resolver {
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
       case _: UnkindedType.AssocType => throw InternalCompilerException("unexpected resolved associated type", baseType.loc)
+      case _: UnkindedType.RegionToEff => throw InternalCompilerException("unexpected resolved region to effect", baseType.loc)
+      case _: UnkindedType.AbstractRegionToEff => throw InternalCompilerException("unexpected resolved abstract region to effect", baseType.loc)
     }
   }
 

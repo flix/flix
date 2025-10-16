@@ -274,6 +274,14 @@ object CompletionUtils {
           Type.AssocType(cst, args, kind, loc)
         }
 
+      case Type.RegionToEff(op, arg0, loc) =>
+        val arg = replaceText(oldSym, arg0, newText)
+        Type.RegionToEff(op, arg, loc)
+
+      case Type.AbstractRegionToEff(op, arg0, loc) =>
+        val arg = replaceText(oldSym, arg0, newText)
+        Type.AbstractRegionToEff(op, arg, loc)
+
       // Jvm types should not be exposed to the user.
       case t: Type.JvmToType => t
       case t: Type.JvmToEff => t

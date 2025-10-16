@@ -78,6 +78,8 @@ object TypePrinter {
       case (Type.Cst(tc, _), _) => mkApp(TypeConstructorPrinter.print(tc), args.map(print))
       case (Type.Alias(cst, aliasArgs, _, _), _) => mkApp(DocAst.Type.Alias(cst.sym, aliasArgs.map(print)), args.map(print))
       case (Type.AssocType(cst, arg, _, _), _) => mkApp(DocAst.Type.AssocType(cst.sym, print(arg)), args.map(print))
+      case (Type.RegionToEff(op, arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs(op.toString), List(print(arg))), args.map(print))
+      case (Type.AbstractRegionToEff(op, arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs(op.toString), List(print(arg))), args.map(print))
       case (Type.JvmToType(arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToType"), List(print(arg))), args.map(print))
       case (Type.JvmToEff(arg, _), _) => mkApp(mkApp(DocAst.Type.AsIs("JvmToEff"), List(print(arg))), args.map(print))
       case (Type.UnresolvedJvmType(member, _), _) => mkApp(mkApp(printJvmMember(member), List(print(tpe))), args.map(print))

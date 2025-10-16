@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, TraitUsageKind}
-import ca.uwaterloo.flix.language.ast.{Kind, Name, SourceLocation, Symbol, UnkindedType}
+import ca.uwaterloo.flix.language.ast.{AbstractRegionOp, Kind, Name, RegionOp, SourceLocation, Symbol, Type, UnkindedType}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -1055,6 +1055,54 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
       s"${underline("Tip:")} Associated types must be fully applied."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate an under-applied abstract region to effect conversion.
+    *
+    * @param op the abstract region operation.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedAbstractRegionToEff(op: AbstractRegionOp, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied abstract region to effect conversion: ${op}"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Under-applied abstract region to effect conversion '${red(op.toString)}'.
+         |
+         |${code(loc, "Under-applied abstract region to effect conversion.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Abstract region to effect conversions must be fully applied."
+    })
+
+  }
+
+  /**
+    * An error raised to indicate an under-applied region to effect conversion.
+    *
+    * @param op the region operation.
+    * @param loc the location where the error occurred.
+    */
+  case class UnderAppliedRegionToEff(op: RegionOp, loc: SourceLocation) extends ResolutionError {
+    override def summary: String = s"Under-applied region to effect conversion: ${op}"
+
+    def message(formatter: Formatter): String = messageWithLink {
+      import formatter.*
+      s""">> Under-applied region to effect conversion '${red(op.toString)}'.
+         |
+         |${code(loc, "Under-applied region to effect conversion.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      s"${underline("Tip:")} Region to effect conversions must be fully applied."
     })
 
   }

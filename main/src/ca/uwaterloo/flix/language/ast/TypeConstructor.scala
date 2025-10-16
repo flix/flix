@@ -297,7 +297,7 @@ object TypeConstructor {
     /**
       * The shape of an array is `Array[t, l]`.
       */
-    def kind: Kind = Kind.Star ->: Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Star ->: Kind.Region ->: Kind.Star
   }
 
   /**
@@ -438,6 +438,11 @@ object TypeConstructor {
   @IntroducedBy(Kinder.getClass)
   case class Effect(sym: Symbol.EffSym, kind: Kind) extends TypeConstructor
 
+  // TODO docs
+  case class Flavor(f: RegionFlavor) extends TypeConstructor {
+    def kind: Kind = Kind.Flavor
+  }
+
   /**
     * A type constructor that represents the complement of a case set.
     */
@@ -476,8 +481,8 @@ object TypeConstructor {
   /**
     * A type constructor that represents a region.
     */
-  case class Region(sym: Symbol.RegionSym) extends TypeConstructor {
-    def kind: Kind = Kind.Eff
+  case class FlavorToRegion(sym: Symbol.RegionSym) extends TypeConstructor {
+    def kind: Kind = Kind.Flavor ->: Kind.Region
   }
 
   /**
@@ -487,7 +492,7 @@ object TypeConstructor {
     /**
       * The shape of a star-kind region is Region[l].
       */
-    def kind: Kind = Kind.Eff ->: Kind.Star
+    def kind: Kind = Kind.Region ->: Kind.Star
   }
 
   /**

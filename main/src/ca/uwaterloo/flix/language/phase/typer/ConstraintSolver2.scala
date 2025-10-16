@@ -643,6 +643,8 @@ object ConstraintSolver2 {
   private def isSyntactic(k: Kind): Boolean = k match {
     case Kind.Star => true
     case Kind.Predicate => true
+    case Kind.Region => true
+    case Kind.Flavor => true
 
     case Kind.Arrow(_, k2) => isSyntactic(k2)
 

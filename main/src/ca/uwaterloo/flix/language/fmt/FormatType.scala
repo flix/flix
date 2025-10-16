@@ -371,6 +371,8 @@ object FormatType {
           case Kind.Predicate => "'" + id.toString
           case Kind.Jvm => "j" + id.toString
           case Kind.CaseSet(_) => "c" + id.toString
+          case Kind.Region => "reg" + id.toString
+          case Kind.Flavor => "f" + id.toString
           case Kind.Arrow(_, _) => "'" + id.toString
           case Kind.Error => "err" + id.toString
         }

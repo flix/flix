@@ -432,7 +432,8 @@ object Simplifier {
             val consTypes = predType.typeArguments
             SimpleType.ExtensibleExtend(pred, consTypes.map(visitType), visitType(rest))
 
-          case TypeConstructor.Region(_) => SimpleType.Unit
+          case TypeConstructor.Flavor(_) => SimpleType.Unit
+          case TypeConstructor.FlavorToRegion(_) => SimpleType.Unit
 
           case TypeConstructor.True => SimpleType.Unit
           case TypeConstructor.False => SimpleType.Unit
@@ -595,7 +596,8 @@ object Simplifier {
             val List(elm) = tpe.typeArguments
             Type.Apply(Type.Cst(TypeConstructor.Extensible, loc), visitPolyType(elm), loc)
 
-          case TypeConstructor.Region(_) => Type.mkUnit(loc)
+          case TypeConstructor.Flavor(_) => Type.mkUnit(loc)
+          case TypeConstructor.FlavorToRegion(_) => Type.mkUnit(loc)
 
           case TypeConstructor.True => Type.mkUnit(loc)
           case TypeConstructor.False => Type.mkUnit(loc)
@@ -655,6 +657,8 @@ object Simplifier {
 
       case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.RegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+      case Type.AbstractRegionToEff(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
       case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
