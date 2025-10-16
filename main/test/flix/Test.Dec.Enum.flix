@@ -1,5 +1,5 @@
 mod Test.Dec.Enum {
-    pub enum Empty(Unit)
+    pub enum Empty
 
     pub enum Singleton(Int32)
 

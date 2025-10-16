@@ -28,10 +28,10 @@ mod Test.Kind.Def {
         }
 
         mod Enum {
-            pub enum EStar[_a: Type](Unit)
-            pub enum EBool[_a: Eff](Unit)
-            pub enum ERecordRow[_a: RecordRow](Unit)
-            pub enum ESchemaRow[_a: SchemaRow](Unit)
+            pub enum EStar[_a: Type]
+            pub enum EBool[_a: Eff]
+            pub enum ERecordRow[_a: RecordRow]
+            pub enum ESchemaRow[_a: SchemaRow]
 
             pub def star(x: EStar[a]): Int32 = ???
 
@@ -45,7 +45,7 @@ mod Test.Kind.Def {
         }
 
         mod Effect {
-            pub enum EBool[_a: Eff](Unit)
+            pub enum EBool[_a: Eff]
 
             pub def bool(): Int32 \ ef = ???()
 
@@ -91,10 +91,10 @@ mod Test.Kind.Def {
         }
 
         mod Enum {
-            pub enum EStar[_a: Type](Unit)
-            pub enum EBool[_a: Eff](Unit)
-            pub enum ERecordRow[_a: RecordRow](Unit)
-            pub enum ESchemaRow[_a: SchemaRow](Unit)
+            pub enum EStar[_a: Type]
+            pub enum EBool[_a: Eff]
+            pub enum ERecordRow[_a: RecordRow]
+            pub enum ESchemaRow[_a: SchemaRow]
 
             pub def star[a: Type](x: EStar[a]): Int32 = ???
 
@@ -108,7 +108,7 @@ mod Test.Kind.Def {
         }
 
         mod Effect {
-            pub enum EBool[_a: Eff](Unit)
+            pub enum EBool[_a: Eff]
 
             pub def bool[ef: Eff](): Int32 \ ef = ???()
 
@@ -133,8 +133,8 @@ mod Test.Kind.Def {
         mod Test02 {
             pub def project3(p: PredSym, ts: f[(t1, t2, t3)]): Datalog[v] with Order[t1], Order[t2], Order[t3], Foldable[f] = ???
 
-            pub enum PredSym(Unit)
-            pub enum Datalog[_a](Unit)
+            pub enum PredSym
+            pub enum Datalog[_a]
             pub trait Foldable[a: Type -> Type]
         }
     }

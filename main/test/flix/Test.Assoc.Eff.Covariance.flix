@@ -1,7 +1,7 @@
 mod Test.Assoc.Eff.Covariance {
 
-    pub enum List[_t](Unit)                       // An immutable data type.
-    pub enum MutList[_r: Region, _t: Type](Unit)  // A mutable data type with a region.
+    pub enum List[_t]                       // An immutable data type.
+    pub enum MutList[_r: Region, _t: Type]  // A mutable data type with a region.
 
     ///
     /// A trait for container types that can have their elements mapped.

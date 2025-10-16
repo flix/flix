@@ -338,20 +338,20 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEmptyEnum(loc: SourceLocation) extends WeederError {
-    def summary: String = "Unexpected empty enum."
+  case class IllegalEmptyShorthand(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected empty shorthand enum."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected empty enum.
+      s""">> Unexpected empty shorthand enum.
          |
-         |${code(loc, "Unexpected empty enum")}
+         |${code(loc, "Unexpected empty shorthand enum")}
          |
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      s"""This enum uses neither the singleton syntax nor the case syntax.
+      s"""This enum uses neither the singleton syntax nor the case syntax correctly.
          |
          |One of the enum forms must be used.
          |If you only need one case for the enum, use the singleton syntax:

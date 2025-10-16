@@ -401,9 +401,9 @@ object Weeder2 {
       ) {
         (doc, ident, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Empty singleton enum
-            case (None | Some(List()), Nil) =>
-              val error = IllegalEmptyEnum(loc = tree.loc)
+            // Illegal empty singleton enum (`enum A()`)
+            case (Some(List(Type.Error(loc))), Nil) =>
+              val error = NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = loc)
               sctx.errors.add(error)
               // Fall back on no cases
               Validation.Success(List.empty)
@@ -461,9 +461,9 @@ object Weeder2 {
       ) {
         (doc, ident, rParam, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Empty singleton enum
-            case (None | Some(Nil), Nil) =>
-              val error = IllegalEmptyEnum(loc = tree.loc)
+            // Illegal empty singleton enum (`enum A()`)
+            case (Some(List(Type.Error(loc))), Nil) =>
+              val error = NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = loc)
               sctx.errors.add(error)
               // Fall back on no cases
               Validation.Success(List.empty)

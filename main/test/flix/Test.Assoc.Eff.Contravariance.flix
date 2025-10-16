@@ -1,8 +1,8 @@
 mod Test.Assoc.Eff.Contravariance {
 
-    pub enum ParSet[_a](Unit) // A "parallel set"   data type whose operations must be pure.
-    pub enum SeqSet[_a](Unit) // A "sequential set" data type whose operations may have any effect.
-    pub enum SecSet[_a](Unit) // A "secret set"     data type whose operations must not have the `Network` effect.
+    pub enum ParSet[_a] // A "parallel set"   data type whose operations must be pure.
+    pub enum SeqSet[_a] // A "sequential set" data type whose operations may have any effect.
+    pub enum SecSet[_a] // A "secret set"     data type whose operations must not have the `Network` effect.
 
     pub eff Network
 

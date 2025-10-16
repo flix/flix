@@ -30,7 +30,7 @@ mod Test.Kind.Trait {
             }
 
             mod Enum {
-                pub enum EStar[_a: Type](Unit)
+                pub enum EStar[_a: Type]
 
                 trait CStar1[a] {
                     pub def star(x: EStar[a]): Int32 = ???
@@ -67,7 +67,7 @@ mod Test.Kind.Trait {
             }
 
             mod Enum {
-                pub enum EStar[_a: Type](Unit)
+                pub enum EStar[_a: Type]
 
                 trait CStar1[a] {
                     law star: forall(x: EStar[a]) ???
@@ -132,8 +132,8 @@ mod Test.Kind.Trait {
             }
 
             mod Enum {
-                pub enum EStar[_a: Type](Unit)
-                pub enum EStarToStar[_a: Type -> Type](Unit)
+                pub enum EStar[_a: Type]
+                pub enum EStarToStar[_a: Type -> Type]
 
                 trait CStar1[a: Type] {
                     pub def star(x: EStar[a]): Int32 = ???
@@ -181,8 +181,8 @@ mod Test.Kind.Trait {
             }
 
             mod Enum {
-                pub enum EStar[_a: Type](Unit)
-                pub enum EStarToStar[_a: Type -> Type](Unit)
+                pub enum EStar[_a: Type]
+                pub enum EStarToStar[_a: Type -> Type]
 
                 trait CStar1[a: Type] {
                     law star: forall(x: EStar[a]) ???
