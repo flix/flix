@@ -88,7 +88,7 @@ object TreeShaker2 {
     case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Scope(_, exp, _, _, _) =>
+    case Expr.Region(_, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>

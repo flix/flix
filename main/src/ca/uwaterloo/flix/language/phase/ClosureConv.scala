@@ -108,8 +108,8 @@ object ClosureConv {
 
     case e: Expr.LocalDef => visitLocalDef(e)
 
-    case Expr.Scope(sym, e, tpe, purity, loc) =>
-      Expr.Scope(sym, visitExp(e), tpe, purity, loc)
+    case Expr.Region(sym, e, tpe, purity, loc) =>
+      Expr.Region(sym, visitExp(e), tpe, purity, loc)
 
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -232,7 +232,7 @@ object ClosureConv {
       filterBoundVars(freeVars(exp1), bound) ++
         filterBoundVar(freeVars(exp2), sym)
 
-    case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
+    case Expr.Region(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
     case Expr.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
       case (acc, CatchRule(sym, _, body)) =>
@@ -364,10 +364,10 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
-        Expr.Scope(newSym, e, tpe, purity, loc)
+        Expr.Region(newSym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -588,9 +588,9 @@ object ClosureConv {
         val e2 = visit(exp2)
         Expr.LocalDef(sym, fparams, e1, e2, tpe, purity, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         val e = visit(exp)
-        Expr.Scope(sym, e, tpe, purity, loc)
+        Expr.Region(sym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visit(exp)

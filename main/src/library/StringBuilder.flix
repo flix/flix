@@ -107,12 +107,6 @@ mod StringBuilder {
         Iterator.range(rc, 0, length(sb)) |> Iterator.map(i -> unchecked_cast((msb.charAt(i): _ \ IO) as _ \ r2))
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc1: Region[r1], sb: StringBuilder[r2]): Iterator[(Int32, Char), r1 + r2, r1] \ { r1, r2 } =
-        iterator(rc1, sb) |> Iterator.zipWithIndex
-
-    ///
     /// Return the number of characters in the StringBuilder `sb`.
     ///
     pub def length(sb: StringBuilder[r]): Int32 \ r =

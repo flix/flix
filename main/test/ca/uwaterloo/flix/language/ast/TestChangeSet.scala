@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext.AllPermissions
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext.Unrestricted
 import ca.uwaterloo.flix.language.ast.shared.{DependencyGraph, Input, Source}
 import ca.uwaterloo.flix.util.collection.{ListMap, MultiMap}
 import org.scalatest.funsuite.AnyFunSuite
@@ -10,7 +10,7 @@ class TestChangeSet extends AnyFunSuite {
     override def src: Source = Source(input, Array.emptyCharArray)
   }
 
-  private def mkInput(name: String): Input = Input.Text(name, "", AllPermissions)
+  private def mkInput(name: String): Input = Input.Text(name, "", Unrestricted)
 
   private val input1 = mkInput("input1")
   private val input2 = mkInput("input2")

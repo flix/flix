@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.SeqOps
 
 import java.util.concurrent.ConcurrentHashMap
@@ -450,15 +451,12 @@ object Redundancy {
       val fparamVars = fparams.map(_.bnd.sym)
       val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
 
-      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
+      ListOps.zip(fparamVars, shadowedFparamVars).foldLeft(res1) {
         case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
         case (acc, (s, shadow)) => (acc ++ shadow) - s
       }
 
-    case Expr.Region(_, _) =>
-      Used.empty
-
-    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
+    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -789,7 +787,7 @@ object Redundancy {
           val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)
-          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
+          ListOps.zip(syms, shadowedFparamVars).foldLeft(acc ++ usedBody) {
             case (acc1, (s, shadow)) =>
               if (deadVarSym(s, usedBody)) {
                 acc1 ++ shadow + UnusedVarSym(s)

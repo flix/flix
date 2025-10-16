@@ -222,6 +222,60 @@ mod MutHashMap {
         }
 
     ///
+    /// Returns the first key-value pair that was inserted into the mutable map `m`.
+    ///
+    /// Returns `None` if the map is empty.
+    ///
+    pub def first(m: MutHashMap[k, v, r]): Option[(k, v)] \ r =
+        match m->head {
+            case None => None
+            case Some(entry) => Some((Entry.getKey(entry), Entry.getValue(entry)))
+        }
+
+    ///
+    /// Returns the last key-value pair that was inserted into the mutable map `m`.
+    ///
+    /// Returns `None` if the map is empty.
+    ///
+    pub def last(m: MutHashMap[k, v, r]): Option[(k, v)] \ r =
+        match m->tail {
+            case None => None
+            case Some(entry) => Some((Entry.getKey(entry), Entry.getValue(entry)))
+        }
+
+    ///
+    /// Returns the first key that was inserted into the mutable map `m`.
+    ///
+    /// Returns `None` if the map is empty.
+    ///
+    pub def firstKey(m: MutHashMap[k, v, r]): Option[k] \ r =
+        first(m) |> Option.map(fst)
+
+    ///
+    /// Returns the last key that was inserted into the mutable map `m`.
+    ///
+    /// Returns `None` if the map is empty.
+    ///
+    pub def lastKey(m: MutHashMap[k, v, r]): Option[k] \ r =
+        last(m) |> Option.map(fst)
+
+    ///
+    /// Returns the first value that was inserted into the mutable map `m`.
+    ///
+    /// Returns `None` if the map is empty.
+    ///
+    pub def firstValue(m: MutHashMap[k, v, r]): Option[v] \ r =
+        first(m) |> Option.map(snd)
+
+    ///
+    /// Returns the last value that was inserted into the mutable map `m`.
+    ///
+    /// Returns `None` if the map is empty.
+    ///
+    pub def lastValue(m: MutHashMap[k, v, r]): Option[v] \ r =
+        last(m) |> Option.map(snd)
+
+    ///
     /// Inserts key `k` with value `v` into `m`.
     ///
     /// If the key already exists, updates its value (does not change insertion order).

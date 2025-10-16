@@ -40,6 +40,7 @@ object ConstantPrinter {
     case Constant.Str(lit) => Expr.AsIs("\"\"\"" + lit + "\"\"\"")
     case Constant.Regex(lit) => Expr.Regex(lit)
     case Constant.RecordEmpty => Expr.RecordEmpty
+    case Constant.Static => Expr.AsIs("Static")
   }
 
 }

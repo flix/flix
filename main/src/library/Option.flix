@@ -100,7 +100,9 @@ instance MonadZip[Option] {
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRightWithCont(f, o, s)
+    redef isEmpty(o: Option[a]): Bool = Option.isEmpty(o)
+    redef forAll(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = Option.forAll(f, o)
+    redef exists(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = Option.exists(f, o)
 }
 
 instance UnorderedFoldable[Option] {
@@ -580,11 +582,5 @@ mod Option {
         case None    => Iterator.empty(rc)
         case Some(x) => Iterator.singleton(rc, x)
     }
-
-    ///
-    /// Returns an iterator over `o` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], o: Option[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, o) |> Iterator.zipWithIndex
 
 }

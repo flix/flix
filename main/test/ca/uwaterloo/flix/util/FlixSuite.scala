@@ -101,7 +101,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     Flix.setOptions(options)
 
     // Default security context.
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
     // Add the given path.
     for (p <- paths) {

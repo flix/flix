@@ -1987,4 +1987,156 @@ mod TestMutHashMap {
         assertEq(expected = "ONE" :: "two" :: Nil, MutHashMap.valuesOf(m))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // first                                                                   //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def first01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
+        assertEq(expected = None, MutHashMap.first(m))
+    }
+
+    @Test
+    def first02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some((1, "one")), MutHashMap.first(m))
+    }
+
+    @Test
+    def first03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, "five", m);
+        MutHashMap.put(3, "three", m);
+        MutHashMap.put(7, "seven", m);
+        MutHashMap.put(1, "one", m);
+        assertEq(expected = Some((5, "five")), MutHashMap.first(m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // last                                                                    //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def last01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
+        assertEq(expected = None, MutHashMap.last(m))
+    }
+
+    @Test
+    def last02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some((1, "one")), MutHashMap.last(m))
+    }
+
+    @Test
+    def last03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, "five", m);
+        MutHashMap.put(3, "three", m);
+        MutHashMap.put(7, "seven", m);
+        MutHashMap.put(1, "one", m);
+        assertEq(expected = Some((1, "one")), MutHashMap.last(m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // firstKey                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def firstKey01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
+        assertEq(expected = None, MutHashMap.firstKey(m))
+    }
+
+    @Test
+    def firstKey02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some(1), MutHashMap.firstKey(m))
+    }
+
+    @Test
+    def firstKey03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, "five", m);
+        MutHashMap.put(3, "three", m);
+        MutHashMap.put(7, "seven", m);
+        assertEq(expected = Some(5), MutHashMap.firstKey(m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // lastKey                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def lastKey01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
+        assertEq(expected = None, MutHashMap.lastKey(m))
+    }
+
+    @Test
+    def lastKey02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some(1), MutHashMap.lastKey(m))
+    }
+
+    @Test
+    def lastKey03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, "five", m);
+        MutHashMap.put(3, "three", m);
+        MutHashMap.put(7, "seven", m);
+        assertEq(expected = Some(7), MutHashMap.lastKey(m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // firstValue                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def firstValue01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
+        assertEq(expected = None, MutHashMap.firstValue(m))
+    }
+
+    @Test
+    def firstValue02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some("one"), MutHashMap.firstValue(m))
+    }
+
+    @Test
+    def firstValue03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, "five", m);
+        MutHashMap.put(3, "three", m);
+        MutHashMap.put(7, "seven", m);
+        assertEq(expected = Some("five"), MutHashMap.firstValue(m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // lastValue                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def lastValue01(): Unit \ Assert = region rc {
+        let m: MutHashMap[Int32, String, rc] = MutHashMap.empty(rc);
+        assertEq(expected = None, MutHashMap.lastValue(m))
+    }
+
+    @Test
+    def lastValue02(): Unit \ Assert = region rc {
+        let m = MutHashMap.singleton(rc, 1, "one");
+        assertEq(expected = Some("one"), MutHashMap.lastValue(m))
+    }
+
+    @Test
+    def lastValue03(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(5, "five", m);
+        MutHashMap.put(3, "three", m);
+        MutHashMap.put(7, "seven", m);
+        assertEq(expected = Some("seven"), MutHashMap.lastValue(m))
+    }
+
 }

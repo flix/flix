@@ -204,9 +204,9 @@ object LambdaLift {
       sctx.liftedDefs.add(freshDefnSym -> liftedDef)
       visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
 
-    case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
-      LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
+      LiftedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case SimplifiedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)

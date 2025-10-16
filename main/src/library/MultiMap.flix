@@ -62,7 +62,7 @@ instance Indexable[MultiMap[k, v]] with Order[k] {
 instance Foldable[MultiMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRightWithCont(f, s, m)
+    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
 }
 
 instance UnorderedFoldable[MultiMap[k]] {
@@ -512,13 +512,6 @@ mod MultiMap {
     pub def toMap(m: MultiMap[k, v]): Map[k, Set[v]] =
         let MultiMap(m1) = m;
         m1
-
-    ///
-    /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
-    ///
-    pub def toMutDeque(rc: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ r =
-        let MultiMap(m1) = m;
-        Map.toMutDeque(rc, m1)
 
     // No traversable functions due to Order constraint that is outside the `Traversable` trait.
 

@@ -100,7 +100,7 @@ object VarOffsets {
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)
 
-    case Expr.Scope(sym, exp, _, _, _) =>
+    case Expr.Region(sym, exp, _, _, _) =>
       var offset = offset0
       offset = setStackOffset(sym, SimpleType.Region, offset)
       visitExp(exp, offset)

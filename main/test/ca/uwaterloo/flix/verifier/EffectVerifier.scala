@@ -133,8 +133,7 @@ object EffectVerifier {
       val expected = exp2.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Region(tpe, loc) => ()
-    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = Type.purifyRegion(exp.eff, regSym)
       val actual = eff

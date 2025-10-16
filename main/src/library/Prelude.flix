@@ -25,6 +25,13 @@ pub enum ProxyEff[_: Eff] {
 }
 
 ///
+/// An enum that holds type-level Bool information where a witness is not available.
+///
+pub enum ProxyBool[_: Bool] {
+    case Proxy
+}
+
+///
 /// The uninterpretable Chan effect.
 ///
 /// The `Chan` effect represents the global region of channels.

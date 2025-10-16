@@ -441,8 +441,11 @@ mod MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, NonDet } = region rc3 {
-        toArray(rc3, d) !> Array.shuffle |> Array.toMutDeque(rc1)
+    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, Shuffle } = region rc3 {
+        let arr = toArray(rc3, d) !> Array.shuffle;
+        let result = empty(rc1);
+        Array.forEach(x -> pushBack(x, result), arr);
+        result
     }
 
 }

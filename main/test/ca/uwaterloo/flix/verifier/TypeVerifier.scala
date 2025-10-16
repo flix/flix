@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -358,7 +359,7 @@ object TypeVerifier {
         case AtomicOp.ExtTag(label) =>
           getExtensibleTagType(tpe, label.name, loc) match {
             case Some(ts2) if ts.length == ts2.length =>
-              ts.zip(ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
+              ListOps.zip(ts, ts2).map { case (t1, t2) => checkEq(t1, t2, loc) }
               tpe
             case _ =>
               failMismatchedShape(tpe, label.name, loc)
@@ -390,9 +391,6 @@ object TypeVerifier {
         // cast may result in any type
         case AtomicOp.Cast =>
           tpe
-
-        case AtomicOp.Region =>
-          check(expected = SimpleType.Region)(actual = tpe, loc)
 
         case AtomicOp.Spawn =>
           val List(t1, t2) = ts
@@ -520,7 +518,7 @@ object TypeVerifier {
       visitExpr(exp1)
       visitExpr(exp2)
 
-    case Expr.Scope(sym, exp, tpe, _, loc) =>
+    case Expr.Region(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Region), lenv), loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
@@ -586,9 +584,10 @@ object TypeVerifier {
     * Asserts that the list of types `ts` matches the list of java classes `cs`
     */
   private def checkJavaParameters(ts: List[SimpleType], cs: List[Class[?]], loc: SourceLocation): Unit = {
-    if (ts.length != cs.length)
-      throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
-    ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+    ListOps.zipOption(ts, cs) match {
+      case None => throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
+      case Some(zipped) => zipped.foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+    }
   }
 
   /**

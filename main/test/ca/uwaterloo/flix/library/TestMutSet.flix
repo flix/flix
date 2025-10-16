@@ -180,8 +180,7 @@ mod TestMutSet {
         region rc2 {
             let s2 = MutSet.empty(rc2);
             MutSet.addAll(MutSet.toSet(s1), s2);
-            assertTrue(MutSet.isSubsetOf(s1, s2));
-            assertTrue(MutSet.isSubsetOf(s2, s1))
+            assertEq(expected = MutSet.toSet(s1), MutSet.toSet(s2))
             }
         }
 
@@ -332,56 +331,88 @@ mod TestMutSet {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutDeque                                                              //
+    // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let s: Set[Int32] = Set#{};
-        let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
+    def toArray01(): Unit \ Assert = region rc {
+        let s: MutSet[Int32, _] = MutSet.empty(rc);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 0, Array.length(arr))
     }
 
     @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let s = Set#{1};
-        let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
+    def toArray02(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 1, Array.length(arr))
     }
 
     @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let s = Set#{1, 3, 6};
-        let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(3, d2);
-        MutDeque.pushBack(6, d2);
-        MutDeque.pushFront(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
+    def toArray03(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 3, Array.length(arr));
+        assertEq(expected = Set#{1, 2, 3}, Array.toSet(arr))
     }
 
     @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let s = Set#{7, 1, 3, 6};
-        let d1 = MutSet.toMutDeque(rc, Set.toMutSet(rc, s));
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront(7, d2);
-        MutDeque.pushFront(6, d2);
-        MutDeque.pushFront(3, d2);
-        MutDeque.pushFront(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
+    def toArray04(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add("a", s);
+        MutSet.add("b", s);
+        MutSet.add("c", s);
+        let arr = MutSet.toArray(rc, s);
+        assertEq(expected = 3, Array.length(arr));
+        assertEq(expected = Set#{"a", "b", "c"}, Array.toSet(arr))
     }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // toVector                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def toVector01(): Unit \ Assert = region rc {
+        let s: MutSet[Int32, _] = MutSet.empty(rc);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 0, Vector.length(vec))
+    }
+
+    @Test
+    def toVector02(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 1, Vector.length(vec))
+    }
+
+    @Test
+    def toVector03(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add(1, s);
+        MutSet.add(2, s);
+        MutSet.add(3, s);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 3, Vector.length(vec));
+        assertEq(expected = Set#{1, 2, 3}, Vector.toSet(vec))
+    }
+
+    @Test
+    def toVector04(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add("a", s);
+        MutSet.add("b", s);
+        MutSet.add("c", s);
+        let vec = MutSet.toVector(s);
+        assertEq(expected = 3, Vector.length(vec));
+        assertEq(expected = Set#{"a", "b", "c"}, Vector.toSet(vec))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //

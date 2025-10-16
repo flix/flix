@@ -32,7 +32,7 @@ def main(): Unit \ IO = region rc {
                 Array.put(x, i, xs)
             else
                 ()
-            }, String.enumerator(rc, s));
+            }, String.iterator(rc, s) |> Iterator.zipWithIndex);
         println(Array.toString(xs));
 
         Iterator.forEachWithIndex((i, x) -> {

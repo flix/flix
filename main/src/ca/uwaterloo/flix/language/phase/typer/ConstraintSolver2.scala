@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.EffectProvenance
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.typer.TypeReduction2.reduce
 import ca.uwaterloo.flix.language.phase.unification.*
@@ -561,11 +560,11 @@ object ConstraintSolver2 {
     */
   // (varU)
   private def makeSubstitution(constr: TypeConstraint, progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint], SubstitutionTree) = constr match {
-    case TypeConstraint.Equality(Type.Var(sym, _), tpe2, prov) if canSubstitute(sym, tpe2) =>
+    case TypeConstraint.Equality(Type.Var(sym, _), tpe2, _) if canSubstitute(sym, tpe2) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe2))
 
-    case TypeConstraint.Equality(tpe1, Type.Var(sym, _), prov) if canSubstitute(sym, tpe1) =>
+    case TypeConstraint.Equality(tpe1, Type.Var(sym, _), _) if canSubstitute(sym, tpe1) =>
       progress.markProgress()
       (Nil, SubstitutionTree.singleton(sym, tpe1))
 
@@ -620,18 +619,18 @@ object ConstraintSolver2 {
   /**
     * Converts a syntactic type constraint into a semantic type constraint.
     *
-    * Replaces the the location with the given location.
+    * Replaces the location with the given location.
     */
-  def traitConstraintToTypeConstraint(constr: TraitConstraint, loc: SourceLocation): TypeConstraint = constr match {
+  private def traitConstraintToTypeConstraint(constr: TraitConstraint, loc: SourceLocation): TypeConstraint = constr match {
     case TraitConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
   }
 
   /**
     * Converts a syntactic equality constraint into a semantic type constraint.
     *
-    * Replaces the the location with the given location.
+    * Replaces the location with the given location.
     */
-  def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
+  private def equalityConstraintToTypeConstraint(constr: EqualityConstraint, loc: SourceLocation): TypeConstraint = constr match {
     case EqualityConstraint(cst, tpe1, tpe2, _) =>
       val assoc = Type.AssocType(cst, tpe1, tpe2.kind, tpe1.loc)
       TypeConstraint.Equality(assoc, tpe2, Provenance.Match(tpe1, tpe2, loc))

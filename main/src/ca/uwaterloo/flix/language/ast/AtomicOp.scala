@@ -30,8 +30,6 @@ object AtomicOp {
 
   case class Binary(sop: SemanticOp.BinaryOp) extends AtomicOp
 
-  case object Region extends AtomicOp
-
   case class Is(sym: Symbol.CaseSym) extends AtomicOp
 
   case class Tag(sym: Symbol.CaseSym) extends AtomicOp

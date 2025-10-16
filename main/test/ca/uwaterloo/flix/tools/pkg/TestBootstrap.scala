@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.tools
+package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.util.Formatter

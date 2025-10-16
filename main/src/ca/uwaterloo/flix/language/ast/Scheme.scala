@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.phase.typer.*
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListMap
 
 object Scheme {
 
@@ -75,7 +74,7 @@ object Scheme {
         // Performance: Reuse tpe0.
         tpe0
 
-      case app@Type.Apply(tpe1, tpe2, loc) =>
+      case app@Type.Apply(tpe1, tpe2, _) =>
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
         // Performance: Reuse tpe0, if possible.
@@ -89,26 +88,26 @@ object Scheme {
         // // Performance: Few associated types, not worth optimizing.
         Type.AssocType(sym, args.map(visitType), kind, loc)
 
-      case Type.JvmToType(tpe, loc) =>
+      case Type.JvmToType(tpe, _) =>
         Type.JvmToType(visitType(tpe), loc)
 
-      case Type.JvmToEff(tpe, loc) =>
+      case Type.JvmToEff(tpe, _) =>
         Type.JvmToEff(visitType(tpe), loc)
 
-      case Type.UnresolvedJvmType(member, loc) =>
+      case Type.UnresolvedJvmType(member, _) =>
         Type.UnresolvedJvmType(member.map(visitType), loc)
     }
 
     val newBase = visitType(baseType)
 
     val newTconstrs = sc.tconstrs.map {
-      case TraitConstraint(head, tpe0, loc) =>
+      case TraitConstraint(head, tpe0, _) =>
         val tpe = tpe0.map(visitType)
         TraitConstraint(head, tpe, loc)
     }
 
     val newEconstrs = sc.econstrs.map {
-      case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
+      case EqualityConstraint(symUse, tpe1, tpe2, _) =>
         EqualityConstraint(symUse, visitType(tpe1), visitType(tpe2), loc)
     }
 

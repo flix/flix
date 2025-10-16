@@ -124,6 +124,19 @@ sealed trait Completion {
         kind = CompletionItemKind.Snippet
       )
 
+    case Completion.MagicDefCompletion(decl, label, snippet, range, priority) =>
+      val labelDetails = CompletionItemLabelDetails(Some(CompletionUtils.getLabelForSpec(decl.spec)(flix)), None)
+      CompletionItem(
+        label = label,
+        labelDetails = Some(labelDetails),
+        sortText = Priority.toSortText(priority, decl.sym.toString),
+        textEdit = TextEdit(range, snippet),
+        detail = Some(FormatScheme.formatScheme(decl.spec.declaredScheme)(flix)),
+        documentation = Some(decl.spec.doc.text),
+        insertTextFormat = InsertTextFormat.Snippet,
+        kind = CompletionItemKind.Snippet
+      )
+
     case Completion.MagicMatchCompletion(name, range, priority, snippet, documentation) =>
       CompletionItem(
         label = name,
@@ -623,6 +636,19 @@ object Completion {
     * @param documentation a human-readable string that represents a doc-comment.
     */
   case class SnippetCompletion(name: String, range: Range, priority: Priority, snippet: String, documentation: String) extends Completion
+
+  /**
+    * Represents a Magic Def completion
+    *
+    * @param decl     the declaration.
+    * @param label    the label.
+    * @param snippet  the snippet.
+    * @param range    the range of the completion.
+    * @param priority the priority of the completion.
+    */
+  case class MagicDefCompletion(decl: TypedAst.Def, label: String, snippet: String, range: Range, priority: Priority) extends Completion {
+    override def toString: String = s"MagicDefCompletion(${decl.sym}, $priority, $range)"
+  }
 
   /**
     * Represents a Snippet completion

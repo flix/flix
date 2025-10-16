@@ -118,7 +118,7 @@ object DocAst {
 
     case class LocalDef(sym: Expr, parameters: List[Expr.AscriptionTpe], resType: Option[Type], effect: Option[Type], body: Expr, next: Expr) extends LetBinder
 
-    case class Scope(v: Expr, d: Expr) extends Atom
+    case class Region(v: Expr, d: Expr) extends Atom
 
     case class AppWithTail(f: Expr, args: List[Expr], ct: Option[ExpPosition]) extends Atom
 
@@ -157,10 +157,6 @@ object DocAst {
 
     def HoleError(sym: Symbol.HoleSym): Expr =
       AsIs(sym.toString)
-
-    /** the region value */
-    val Region: Expr =
-      Meta("region")
 
     val MatchError: Expr =
       AsIs("?matchError")

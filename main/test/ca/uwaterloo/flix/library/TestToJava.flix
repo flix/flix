@@ -13,12 +13,12 @@ mod TestToJava {
     @Test
     def toJavaObject01(): Unit \ Assert =
         let x = ToJava.toJavaObject(0);
-        assertTrue(typematch x { case _: Object => true case _: _ => false })
+        assertTrue(match Reflect.reflect(x) { case Reflect.JvmValue.JvmObject(_) => true case _ => false })
 
     @Test
     def toJavaObject02(): Unit \ Assert =
         let x = ToJava.toJavaObject("hello world!");
-        assertTrue(typematch x { case _: Object => true case _: _ => false })
+        assertTrue(match Reflect.reflect(x) { case Reflect.JvmValue.JvmObject(_) => true case _ => false })
 
 
     /////////////////////////////////////////////////////////////////////////////

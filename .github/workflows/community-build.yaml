@@ -43,6 +43,7 @@ jobs:
           - "flix/datalog2"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
+          - "magnus-madsen/bibblitz"
           - "mlutze/flix-json"
           - "mlutze/flixball"
           - "rywiese/scope-graphs"

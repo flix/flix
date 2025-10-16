@@ -2124,53 +2124,6 @@ mod TestMap {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let m: Map[Int32, Int32] = Map#{};
-        let d1 = Map.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let m = Map#{1 => 2};
-        let d1 = Map.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((1, 2), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let m = Map#{1 => 2, 3 => 4, 5 => 6};
-        let d1 = Map.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack((3, 4), d2);
-        MutDeque.pushBack((5, 6), d2);
-        MutDeque.pushFront((1, 2), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let d1 = Map.toMutDeque(rc, m);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront((3, 'c'), d2);
-        MutDeque.pushFront((2, 'b'), d2);
-        MutDeque.pushFront((1, 'a'), d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // eq                                                                      //
     /////////////////////////////////////////////////////////////////////////////
@@ -2831,22 +2784,6 @@ mod TestMap {
         assertEq(expected = List.range(1, 2000), MutList.toList(a)) // The first / left most value is ignored
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = DelayList.empty(), (Map.empty(): Map[Unit, Unit]) |> Map.toDelayList)
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = DelayList.repeat("a") |> DelayList.zip(DelayList.range(0, 1000)), Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList)
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0), Map.unfold(s -> if (s < 1000) Some((s, "a", s + 1)) else None, 0) |> Map.toDelayList |> DelayList.toMap)
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //

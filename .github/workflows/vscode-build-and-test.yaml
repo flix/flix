@@ -39,7 +39,7 @@ jobs:
         run: chmod +x ./gradlew && ./gradlew jar
 
       - name: Copy artifact
-        run: cp ./compiler/build/libs/compiler.jar ./vscode-flix/test/activeWorkspace/flix.jar
+        run: cp ./compiler/build/libs/flix.jar ./vscode-flix/test/activeWorkspace/flix.jar
 
       - name: Install dependencies of VS Code extension
         working-directory: ./vscode-flix

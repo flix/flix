@@ -135,10 +135,10 @@ object Reducer {
         val e2 = visitExpr(exp2)
         Expr.Stmt(e1, e2, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         lctx.lparams.addOne(LocalParam(sym, SimpleType.Region))
         val e = visitExpr(exp)
-        Expr.Scope(sym, e, tpe, purity, loc)
+        Expr.Region(sym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExpr(exp)

@@ -169,7 +169,7 @@ object DocAstFormatter {
         formatLetBlock(l, inBlock)
       case l: LocalDef =>
         formatLetBlock(l, inBlock)
-      case Scope(v, d) =>
+      case Region(v, d) =>
         val bodyf = aux(d, paren = false, inBlock = true)
         val regionf = aux(v)
         text("region") +: regionf +: curly(bodyf)

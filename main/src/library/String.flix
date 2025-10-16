@@ -1368,10 +1368,4 @@ mod String {
     pub def iterator(rc: Region[r], s: String): Iterator[Char, r, r] \ r =
         Iterator.range(rc, 0, length(s)) |> Iterator.map(i -> charAt(i, s))
 
-    ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], s: String): Iterator[(Int32, Char), r, r] \ r =
-        iterator(rc, s) |> Iterator.zipWithIndex
-
 }

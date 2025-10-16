@@ -152,7 +152,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.Text(name, "", SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
+      FileSummary(Source(Input.Text(name, "", SecurityContext.Unrestricted), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -202,8 +202,7 @@ object Summary {
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.Region(_, _) => 0
-    case Expr.Scope(_, _, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Region(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
     case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
@@ -306,7 +305,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
+    Source(Input.Text("generated", "", SecurityContext.Unrestricted), Array.emptyCharArray)
 
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(

@@ -191,9 +191,9 @@ object EffectBinder {
       val e = ReducedAst.Expr.Stmt(e1, e2, loc)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+    case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
-      ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
+      ReducedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case LiftedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
@@ -283,9 +283,9 @@ object EffectBinder {
       binders.addOne(NonBinder(e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
-    case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+    case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
-      ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
+      ReducedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case LiftedAst.Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
       val e = visitExpr(exp)
@@ -345,7 +345,7 @@ object EffectBinder {
       case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
         binders.addOne(NonBinder(exp1, loc))
         bind(exp2)
-      case ReducedAst.Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.Region(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.RunWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)

@@ -1032,43 +1032,6 @@ mod TestNec {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let c = singleton(1);
-        let d1 = Nec.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let c = necOf2(1, 2);
-        let d1 = Nec.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront(1, d2);
-        MutDeque.pushBack(2, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let c = necOf3('a', 'b', 'c');
-        let d1 = Nec.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront('b', d2);
-        MutDeque.pushBack('c', d2);
-        MutDeque.pushFront('a', d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // toMutList                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -1210,23 +1173,6 @@ mod TestNec {
     def iterator02(): Unit \ Assert = region rc {
         match Nec.range(-100, 100) {
             case Some(nec) => assertEq(expected = List.range(-100, 100), nec |> Nec.iterator(rc) |> Iterator.toList)
-            case None      => unreachable!()
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, necOf3(1, 2, 3) |> Nec.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        match Nec.range(-100, 100) {
-            case Some(nec) => assertEq(expected = List.mapWithIndex((ix, i) -> (ix, i), (List.range(-100, 100))), nec |> Nec.enumerator(rc) |> Iterator.toList)
             case None      => unreachable!()
         }
     }
@@ -1634,26 +1580,32 @@ mod TestNec {
 
     @Test
     def shuffle01(): Unit \ Assert + NonDet =
-        let c = Nec.singleton(1) |> Nec.shuffle;
-        match c {
-            case Some(cc) => assertEq(expected = 1, Nec.length(cc)); assertEq(expected = Set#{1}, Nec.toSet(cc))
-            case _       => fail("shuffle returned None")
-        }
+        run {
+            let c = Nec.singleton(1) |> Nec.shuffle;
+            match c {
+                case Some(cc) => assertEq(expected = 1, Nec.length(cc)); assertEq(expected = Set#{1}, Nec.toSet(cc))
+                case _       => fail("shuffle returned None")
+            }
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
-        let c = necOf3(1, 2, 3) |> Nec.shuffle;
-        match c {
-            case Some(cc) => assertEq(expected = 3, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3}, Nec.toSet(cc))
-            case _       => fail("shuffle returned None")
-        }
+        run {
+            let c = necOf3(1, 2, 3) |> Nec.shuffle;
+            match c {
+                case Some(cc) => assertEq(expected = 3, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3}, Nec.toSet(cc))
+                case _       => fail("shuffle returned None")
+            }
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
-        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle;
-        match c {
-            case Some(cc) => assertEq(expected = 8, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3, 4, 5, 6, 7, 8}, Nec.toSet(cc))
-            case _       => fail("shuffle returned None")
-        }
+        run {
+            let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle;
+            match c {
+                case Some(cc) => assertEq(expected = 8, Nec.length(cc)); assertEq(expected = Set#{1, 2, 3, 4, 5, 6, 7, 8}, Nec.toSet(cc))
+                case _       => fail("shuffle returned None")
+            }
+        } with Shuffle.runWithIO
 
 }

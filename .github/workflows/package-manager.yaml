@@ -1,0 +1,30 @@
+name: Package Manager
+
+on: [ pull_request, merge_group ]
+
+# Cancel previous runs if the PR is updated
+concurrency:
+  cancel-in-progress: true
+  group: test-flix-package-manager-${{ github.ref }}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xms128m -Xmx4g"
+
+    steps:
+      - name: Check out master
+        uses: actions/checkout@v5
+      - name: Install JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build with Gradle
+        run: ./gradlew compileTestScala --console=plain
+      - name: Test Package Manager suite with timeout
+        timeout-minutes: 10
+        run: ./gradlew testPackageManager --console=plain

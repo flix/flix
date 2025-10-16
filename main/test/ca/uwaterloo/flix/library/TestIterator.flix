@@ -280,38 +280,6 @@ mod TestIterator {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let iter = (Iterator.empty(rc): Iterator[Int32, rc, rc]);
-        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, 1 :: Nil);
-        let d = MutDeque.empty(rc);
-        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
-        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        let d = MutDeque.empty(rc);
-        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
-        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        let d = MutDeque.empty(rc);
-        List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
-        assertTrue(Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d)
-    }
-
-
     /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////

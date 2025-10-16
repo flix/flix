@@ -318,22 +318,6 @@ mod TestFoldable {
         assertEq(expected = List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toChain(Set#{0, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayList01(): Unit \ Assert =
-        assertEq(expected = (DelayList.empty(): DelayList[Int32]), Foldable.toDelayList((Nil: List[Int32])))
-
-    @Test
-    def toDelayList02(): Unit \ Assert =
-        assertEq(expected = List.toDelayList(1 :: 2 :: Nil), Foldable.toDelayList(1 :: 2 :: Nil))
-
-    @Test
-    def toDelayList03(): Unit \ Assert =
-        assertEq(expected = List.toDelayList(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toDelayList(Set#{0, 1, 2, 3, 4}))
-
-    /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -371,38 +355,6 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let l = (Nil: List[Unit]);
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let l = 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let l = 3 :: 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        assertEq(expected = l, MutDeque.toList(d))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutSet                                                                //
@@ -463,28 +415,6 @@ mod TestFoldable {
     @Test
     def toMapWith05(): Unit \ Assert =
         assertEq(expected = Map#{"a" => "ab", "aa" => "aab"}, Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toDelayMap                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toDelayMap01(): Unit \ Assert =
-        let l = (Nil: List[(Int32, Int32)]);
-        let d1 = Foldable.toDelayMap(List.toChain(l));
-        assertEq(expected = l, (d1 |> DelayMap.toList))
-
-    @Test
-    def toDelayMap02(): Unit \ Assert =
-        let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
-        let d1 = Foldable.toDelayMap(List.toChain(l));
-        assertEq(expected = l, (d1 |> DelayMap.toList))
-
-    @Test
-    def toDelayMap03(): Unit \ Assert =
-        let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
-        let d1 = Foldable.toDelayMap(s);
-        assertEq(expected = s, (d1 |> DelayMap.toSet))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutMap                                                                //

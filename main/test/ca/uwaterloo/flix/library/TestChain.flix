@@ -1465,52 +1465,6 @@ mod TestChain {
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def toMutDeque01(): Unit \ Assert = region rc {
-        let c = (Chain.empty(): Chain[Int32]);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque02(): Unit \ Assert = region rc {
-        let c = Chain.singleton(1);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque03(): Unit \ Assert = region rc {
-        let c = List.toChain(1 :: 2 :: Nil);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront(1, d2);
-        MutDeque.pushBack(2, d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
-    @Test
-    def toMutDeque04(): Unit \ Assert = region rc {
-        let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
-        let d1 = Chain.toMutDeque(rc, c);
-
-        let d2 = MutDeque.empty(rc);
-        MutDeque.pushFront('b', d2);
-        MutDeque.pushBack('c', d2);
-        MutDeque.pushFront('a', d2);
-
-        assertTrue(d1 `MutDeque.sameElements` d2)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
@@ -1620,26 +1574,6 @@ mod TestChain {
     @Test
     def iterator03(): Unit \ Assert = region rc {
         assertEq(expected = List.range(-100, 100), Chain.range(-100, 100) |> Chain.iterator(rc) |> Iterator.toList)
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // enumerator                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def enumerator01(): Unit \ Assert = region rc {
-        assertEq(expected = (Nil: List[(Int32, Int32)]), Chain.empty() |> Chain.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator02(): Unit \ Assert = region rc {
-        assertEq(expected = (0, 1) :: (1, 2) :: (2, 3) :: Nil, List.toChain(1 :: 2 :: 3 :: Nil) |> Chain.enumerator(rc) |> Iterator.toList)
-    }
-
-    @Test
-    def enumerator03(): Unit \ Assert = region rc {
-        assertEq(expected = List.range(-100, 100) |> List.zipWithIndex, Chain.range(-100, 100) |> Chain.enumerator(rc) |> Iterator.toList)
     }
 
 
@@ -2013,31 +1947,39 @@ mod TestChain {
 
     @Test
     def shuffle01(): Unit \ Assert + NonDet =
-        let l: List[Int32] = Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 0, Chain.length(c));
-        assertEq(expected = Set#{}, Chain.toSet(c))
+        run {
+            let l: List[Int32] = Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 0, Chain.length(c));
+            assertEq(expected = Set#{}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle02(): Unit \ Assert + NonDet =
-        let l = 1 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 1, Chain.length(c));
-        assertEq(expected = Set#{1}, Chain.toSet(c))
+        run {
+            let l = 1 :: Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 1, Chain.length(c));
+            assertEq(expected = Set#{1}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle03(): Unit \ Assert + NonDet =
-        let l = 1 :: 2 :: 3 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 3, Chain.length(c));
-        assertEq(expected = Set#{1, 2, 3}, Chain.toSet(c))
+        run {
+            let l = 1 :: 2 :: 3 :: Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 3, Chain.length(c));
+            assertEq(expected = Set#{1, 2, 3}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
     @Test
     def shuffle04(): Unit \ Assert + NonDet =
-        let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle;
-        assertEq(expected = 10, Chain.length(c));
-        assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, Chain.toSet(c))
+        run {
+            let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
+            let c = List.toChain(l) |> Chain.shuffle;
+            assertEq(expected = 10, Chain.length(c));
+            assertEq(expected = Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, Chain.toSet(c))
+        } with Shuffle.runWithIO
 
 }
 
