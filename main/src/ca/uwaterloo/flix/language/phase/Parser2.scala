@@ -2211,7 +2211,7 @@ object Parser2 {
             close(mark, TreeKind.Expr.LambdaMatch)
           } else {
             expression()
-            oneOrMore(
+            zeroOrMore(
               namedTokenSet = NamedTokenSet.MatchRule,
               checkForItem = _ == TokenKind.KeywordCase,
               getItem = matchRule,
@@ -2369,7 +2369,7 @@ object Parser2 {
         expect(TokenKind.KeywordChoose)
       }
       expression()
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.MatchRule,
         checkForItem = _ == TokenKind.KeywordCase,
         getItem = matchRule,
@@ -2417,7 +2417,7 @@ object Parser2 {
 
     private def forFragments()(implicit s: State): Unit = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      oneOrMore(
+      zeroOrMore(
         namedTokenSet = NamedTokenSet.ForFragment,
         checkForItem = t => t.isFirstPattern || t == TokenKind.KeywordIf,
         getItem = () =>
