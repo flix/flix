@@ -34,7 +34,6 @@ object FlixPackageManager {
     */
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
-
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
   }
 
@@ -48,8 +47,8 @@ object FlixPackageManager {
   /**
     * Finds the most relevant available updates for the given dependency.
     */
-  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] =
-    for (
+  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
+    for {
       githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}");
       releases <- GitHub.getReleases(githubProject, apiKey);
       availableVersions = releases.map(r => r.version);
@@ -58,7 +57,8 @@ object FlixPackageManager {
       major = ver.majorUpdate(availableVersions);
       minor = ver.minorUpdate(availableVersions);
       patch = ver.patchUpdate(availableVersions)
-    ) yield AvailableUpdates(major, minor, patch)
+    } yield AvailableUpdates(major, minor, patch)
+  }
 
   /**
     * Installs all the Flix dependencies for a list of Manifests at the /lib folder
@@ -69,13 +69,13 @@ object FlixPackageManager {
 
     val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ::: findFlixDependencies(m))
 
-    val flixPaths = allFlixDeps.map(dep => {
+    val flixPaths = allFlixDeps.map { dep =>
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, "fpkg", path, apiKey) match {
         case Ok(p) => (p, dep.trust)
         case Err(e) => out.println(s"ERROR: Installation of `$depName' failed."); return Err(e)
       }
-    })
+    }
 
     Ok(flixPaths)
   }
@@ -145,17 +145,17 @@ object FlixPackageManager {
     //find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
-    for (
+    for {
       //download toml files
-      tomlPaths <- traverse(flixDeps)(dep => {
+      tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
         install(depName, dep.version, "toml", path, apiKey)
-      });
+      }
 
       //parse the manifests
-      transManifests <- traverse(tomlPaths)(p => parseManifest(p))
+      transManifests <- traverse(tomlPaths)(parseManifest)
 
-    ) yield {
+    } yield {
       //remove duplicates
       val newManifests = transManifests.filter(m => !res.contains(m))
       var newRes = res ++ newManifests
