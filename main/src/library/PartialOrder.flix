@@ -39,19 +39,19 @@ pub lawful trait PartialOrder[a] {
 }
 
 instance PartialOrder[Int8] {
-    pub def lessEqual(x: Int8, y: Int8): Bool = $INT8_LE$(x, y)
+    pub def lessEqual(x: Int8, y: Int8): Bool = %%INT8_LE%%(x, y)
 }
 
 instance PartialOrder[Int16] {
-    pub def lessEqual(x: Int16, y: Int16): Bool = $INT16_LE$(x, y)
+    pub def lessEqual(x: Int16, y: Int16): Bool = %%INT16_LE%%(x, y)
 }
 
 instance PartialOrder[Int32] {
-    pub def lessEqual(x: Int32, y: Int32): Bool = $INT32_LE$(x, y)
+    pub def lessEqual(x: Int32, y: Int32): Bool = %%INT32_LE%%(x, y)
 }
 
 instance PartialOrder[Int64] {
-    pub def lessEqual(x: Int64, y: Int64): Bool = $INT64_LE$(x, y)
+    pub def lessEqual(x: Int64, y: Int64): Bool = %%INT64_LE%%(x, y)
 }
 
 instance PartialOrder[BigInt] {

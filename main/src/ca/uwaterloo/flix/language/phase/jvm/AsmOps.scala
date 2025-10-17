@@ -17,11 +17,9 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
-import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
+import ca.uwaterloo.flix.util.JvmTarget
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.*
-import org.objectweb.asm.{ClassWriter, MethodVisitor}
 
 object AsmOps {
 

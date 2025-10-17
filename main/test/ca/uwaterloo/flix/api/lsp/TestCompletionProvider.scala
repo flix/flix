@@ -59,11 +59,9 @@ class TestCompletionProvider extends AnyFunSuite {
     "examples/effects-and-handlers/using-Logger.flix",
     "examples/effects-and-handlers/running-multiple-effects.flix",
     "examples/effects-and-handlers/using-Clock.flix",
-    "examples/fixpoints/railroad-network.flix",
-    "examples/fixpoints/pipelines-of-fixpoint-computations.flix",
-    "examples/fixpoints/compiler-puzzle.flix",
-    "examples/fixpoints/polymorphic-first-class-constraints.flix",
-    "examples/fixpoints/first-class-constraints-and-fixpoints.flix",
+    "examples/datalog/compiler-puzzle.flix",
+    "examples/datalog/railroad-network.flix",
+    "examples/datalog/train-schedule.flix",
     "examples/functional-style/lists-and-list-processing.flix",
     "examples/functional-style/pure-and-impure-functions.flix",
     "examples/functional-style/mutual-recursion-with-full-tail-call-elimination.flix",
@@ -130,7 +128,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * We use the limit to ensure that property tests terminate within a reasonable time.
     */
-  private val Limit: Int = 500
+  private val Limit: Int = 100
 
   /////////////////////////////////////////////////////////////////////////////
   // General Properties
@@ -225,7 +223,7 @@ class TestCompletionProvider extends AnyFunSuite {
     }
   }
 
-  test("NoCompletions.onEffectSyms") {
+  test("NoCompletions.onEffSyms") {
     forAll(Programs) { prg =>
       val root = compileWithSuccess(prg)
       forAll(effectSymsOf(root)) { sym =>
@@ -631,7 +629,7 @@ class TestCompletionProvider extends AnyFunSuite {
 
     object DefSymUseConsumer extends Consumer {
       override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _) if symUse.loc.isReal =>
+        case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _) if symUse.loc.isReal =>
           occurs += symUse
         case _ =>
       }
@@ -664,7 +662,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   private def compile(program: String): (Root, List[CompilationMessage]) = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     Flix.addSourceCode(Uri, program)
     Flix.check() match {
       case (Some(root), errors) => (root, errors)
@@ -680,7 +678,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * @throws RuntimeException if the program cannot be compiled without errors.
     */
   private def compileWithSuccess(program: String): Root = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     Flix.addSourceCode(Uri, program)
     Flix.check() match {
       case (Some(root), Nil) => root
@@ -755,7 +753,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * Creates a source object from the given string `content`.
     */
   private def mkSource(content: String): Source = {
-    val sctx = SecurityContext.AllPermissions
+    val sctx = SecurityContext.Unrestricted
     val input = Input.Text(Uri, content, sctx)
     Source(input, content.toCharArray)
   }

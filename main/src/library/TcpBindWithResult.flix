@@ -33,18 +33,15 @@ mod TcpBindWithResult {
     ///
     /// Handles the `Tcp` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpBindWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpBindWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpBindWithResult + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ ef - TcpBindWithResult + IO = x ->
         run {
             f(x)
         } with handler TcpBindWithResult {
             def bind(ip, port, resume) = {
                 try {
-                    let inet: InetAddress = region r {
-                        let bytes = IpAddr.toByteArray(r, ip);
-                        InetAddress.getByAddress(bytes)
-                    };
+                    let inet: InetAddress = InetAddress.getByAddress(IpAddr.toBytes(ip));
                     let maxQueueLength = 50;
                     let socket = new ServerSocket(Int16.toInt32(port), maxQueueLength, inet);
                     let server = TcpServer.TcpServer(socket);
@@ -59,8 +56,8 @@ mod TcpBindWithResult {
     ///
     /// Runs the `TcpBindWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpBindWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpBindWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - TcpBindWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - TcpBindWithResult + IO = handle(f)()
 
 }

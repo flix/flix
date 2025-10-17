@@ -33,11 +33,11 @@ mod Exit {
     ///
     /// Handles the `Exit` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Exit` effect using the `Sys` effect.
+    /// In other words, re-interprets the `Exit` effect using the `IO` effect.
     ///
     /// Note: The returned function can still return normally if `exit` is never called by `f`.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + {Sys, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Exit) + IO = x ->
         run {
             f(x)
         } with handler Exit {
@@ -47,10 +47,10 @@ mod Exit {
     ///
     /// Runs the `Exit` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Exit` effect using the `Sys` effect.
+    /// In other words, re-interprets the `Exit` effect using the `IO` effect.
     ///
     /// Note: This function can still return normally if `exit` is never called by `f`.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Exit) + {Sys, IO}  = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Exit) + IO = handle(f)()
 
 }

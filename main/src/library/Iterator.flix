@@ -53,7 +53,7 @@ mod Iterator {
     /// Returns an empty iterator.
     ///
     pub def empty(rc: Region[r]): Iterator[a, r, r] =
-        let f = _ ->  checked_ecast(Done);
+        let f = _ -> checked_ecast(Done);
         Iterator(rc, f)
 
     ///
@@ -191,16 +191,6 @@ mod Iterator {
         case Some(a) => foldLeft((acc, x) -> Nec.snoc(acc, x), Nec.singleton(a), iter) |> Some
         case None    => None
     }
-
-    ///
-    /// Returns the contents of `iter` as a MutDeque.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), iter);
-        d
 
     ///
     /// Returns the contents of `iter` as a MutList.
@@ -400,12 +390,6 @@ mod Iterator {
         map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
-    /// Alias for `zipWithIndex`.
-    ///
-    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
-        zipWithIndex(iter)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
@@ -462,7 +446,7 @@ mod Iterator {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), iter)
 
     ///
-    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `iter` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     ///
@@ -745,7 +729,7 @@ mod Iterator {
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
         let first = Ref.fresh(rc, true);
-        let f = () ->  {
+        let f = () -> {
             if (Ref.get(first)) {
                 Ref.put(false, first);
                 Ans(x)

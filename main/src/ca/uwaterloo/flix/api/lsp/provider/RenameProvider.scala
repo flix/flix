@@ -117,7 +117,7 @@ object RenameProvider {
 
   private def isReal(x: AnyRef): Boolean = x match {
     case TypedAst.Trait(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Sig(_, _, _, loc) => loc.isReal
     case TypedAst.Def(_, _, _, loc) => loc.isReal
     case TypedAst.Enum(_, _, _, _, _, _, _, loc) => loc.isReal
@@ -126,7 +126,7 @@ object RenameProvider {
     case TypedAst.TypeAlias(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeSig(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
-    case TypedAst.Effect(_, _, _, _, _, loc) => loc.isReal
+    case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
     case exp: TypedAst.Expr => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
@@ -141,7 +141,7 @@ object RenameProvider {
     case TypedAst.RestrictableCase(_, _, _, loc) => loc.isReal
     case TypedAst.Constraint(_, _, _, loc) => loc.isReal
     case TypedAst.ConstraintParam(_, _, loc) => loc.isReal
-    case TypedAst.FormalParam(_, _, _, _, loc) => loc.isReal
+    case TypedAst.FormalParam(_, _, _, loc) => loc.isReal
     case TypedAst.PredicateParam(_, _, loc) => loc.isReal
     case TypedAst.JvmMethod(_, _, _, _, _, loc) => loc.isReal
     case TypedAst.CatchRule(_, _, _, _) => true
@@ -154,7 +154,7 @@ object RenameProvider {
     case SymUse.AssocTypeSymUse(_, loc) => loc.isReal
     case SymUse.CaseSymUse(_, loc) => loc.isReal
     case SymUse.DefSymUse(_, loc) => loc.isReal
-    case SymUse.EffectSymUse(_, qname) => qname.loc.isReal
+    case SymUse.EffSymUse(_, qname) => qname.loc.isReal
     case SymUse.LocalDefSymUse(_, loc) => loc.isReal
     case SymUse.OpSymUse(_, loc) => loc.isReal
     case SymUse.RestrictableCaseSymUse(_, loc) => loc.isReal

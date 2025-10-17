@@ -69,7 +69,7 @@ sealed trait Type {
     * Gets all the effects in the given type.
     */
   def effects: SortedSet[Symbol.EffSym] = this match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
+    case Type.Cst(TypeConstructor.Effect(sym, _), _) => SortedSet(sym)
 
     case _: Type.Var => SortedSet.empty
     case _: Type.Cst => SortedSet.empty
@@ -371,33 +371,33 @@ object Type {
     * The union of the primitive effects.
     */
   def PrimitiveEffs: Type = Type.mkUnion(
-    Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)), SourceLocation.Unknown
+    Symbol.PrimitiveEffs.toList.map(sym => Type.Cst(TypeConstructor.Effect(sym, Kind.Eff), SourceLocation.Unknown)), SourceLocation.Unknown
   )
 
   /**
     * Represents the IO effect.
     */
-  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO, Kind.Eff), SourceLocation.Unknown)
+
+  /**
+    * Represents the Assert effect.
+    */
+  val Assert: Type = Type.Cst(TypeConstructor.Effect(Symbol.Assert, Kind.Eff), SourceLocation.Unknown)
+
+  /**
+    * Represents the Debug effect.
+    */
+  val Debug: Type = Type.Cst(TypeConstructor.Effect(Symbol.Debug, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the Chan effect.
     */
-  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan), SourceLocation.Unknown)
-
-  /**
-    * Represents the Net effect.
-    */
-  val Net: Type = Type.Cst(TypeConstructor.Effect(Symbol.Net), SourceLocation.Unknown)
+  val Chan: Type = Type.Cst(TypeConstructor.Effect(Symbol.Chan, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the NonDet effect.
     */
-  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
-
-  /**
-    * Represents the Sys effect.
-    */
-  val Sys: Type = Type.Cst(TypeConstructor.Effect(Symbol.Sys), SourceLocation.Unknown)
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet, Kind.Eff), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.
@@ -899,7 +899,7 @@ object Type {
   /**
     * Construct the enum type `Sym[ts]`.
     */
-  def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.length)), loc), ts, loc)
+  def mkEnum(sym: Symbol.EnumSym, ts: List[Type], loc: SourceLocation): Type = mkApply(Type.Cst(TypeConstructor.Enum(sym, Kind.mkArrow(ts.map(_.kind))), loc), ts, loc)
 
   /**
     * Construct the struct type `Sym[ts]`
@@ -1171,6 +1171,20 @@ object Type {
   }
 
   /**
+    * Returns the type `tpe1 ⊕ tpe2`
+    */
+  def mkCaseXor(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = (tpe1, tpe2) match {
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+      // a ⊕ b = (a ∪ b) - (a ∩ b)
+      val syms = syms1.union(syms2).diff(syms1.intersect(syms2))
+      Type.Cst(TypeConstructor.CaseSet(syms, sym), loc)
+    case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), t) if syms1.isEmpty => t
+    case (t, Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) if syms2.isEmpty => t
+    // TODO RESTR-VARS ALL case: universe
+    case _ => mkApply(Type.Cst(TypeConstructor.CaseSymmetricDiff(sym), loc), List(tpe1, tpe2), loc)
+  }
+
+  /**
     * Returns the difference of the given types.
     */
   def mkCaseDifference(tpe1: Type, tpe2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation): Type = {
@@ -1359,6 +1373,7 @@ object Type {
     case Constant.Str(_) => Type.Str
     case Constant.Regex(_) => Type.Regex
     case Constant.RecordEmpty => Type.mkRecord(Type.RecordRowEmpty, SourceLocation.Unknown)
+    case Constant.Static => Type.Apply(Type.Cst(TypeConstructor.RegionToStar, SourceLocation.Unknown), Type.IO, SourceLocation.Unknown)
   }
 
   /**
@@ -1372,7 +1387,7 @@ object Type {
       val t1 = purifyRegion(tpe1, sym)
       val t2 = purifyRegion(tpe2, sym)
       Type.Apply(t1, t2, loc)
-    case Alias(_, _, tpe, loc) =>
+    case Alias(_, _, tpe, _) =>
       purifyRegion(tpe, sym)
     case AssocType(symUse, arg, kind, loc) =>
       val a = purifyRegion(arg, sym)

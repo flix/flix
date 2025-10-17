@@ -75,7 +75,11 @@ instance MonadZip[Chain] {
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
+    redef head(c: Chain[a]): Option[a] = Chain.head(c)
+    redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+    redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+    redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -112,6 +116,11 @@ instance Collectable[Chain[a]] {
 instance Iterable[Chain[a]] {
     type Elm = a
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
+}
+
+instance ForEach[Chain[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = Chain.forEach(f, c)
 }
 
 instance ToJava[Chain[a]] {
@@ -275,7 +284,7 @@ mod Chain {
         def loop(cc, acc, k) = match cc {
             case Empty       => k(ViewRight.NoneRight)
             case One(x)      => k(ViewRight.SomeRight(acc, x))
-            case Chain(l, r) => loop(r, append(acc, l),  k)
+            case Chain(l, r) => loop(r, append(acc, l), k)
         };
         loop(c, Empty, identity)
 
@@ -356,7 +365,7 @@ mod Chain {
     ///
     /// Accumulates the result of applying `f` to `c` going left to right.
     ///
-    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2)  ...`.
+    /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
         def loop(a, cc, acc) = match viewLeft(cc) {
@@ -763,14 +772,6 @@ mod Chain {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
-
-    ///
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(rc: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
@@ -824,12 +825,6 @@ mod Chain {
                 Some(x)
         };
         Iterator.iterate(rc, next)
-
-    ///
-    /// Returns an iterator over `c` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Returns the chain `c` as a Nel.
@@ -968,7 +963,7 @@ mod Chain {
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(c: Chain[a]): Chain[a] \ NonDet = region rc {
+    pub def shuffle(c: Chain[a]): Chain[a] \ Shuffle = region rc {
         toArray(rc, c) !> Array.shuffle |> Array.toChain
     }
 

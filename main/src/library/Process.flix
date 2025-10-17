@@ -33,7 +33,7 @@ eff Process {
     def exitValue(ph: ProcessHandle): Option[Int32]
 
     ///
-    ///  Returns status of the process, if it alive or not.
+    /// Returns status of the process, if it alive or not.
     ///
     def isAlive(ph: ProcessHandle): Bool
 
@@ -56,11 +56,6 @@ eff Process {
     /// Returns stderr OutputStream of the process.
     ///
     def stderr(ph: ProcessHandle): Process.StdErr
-
-    ///
-    /// Returns Process output as a string.
-    ///
-    def output(ph: ProcessHandle): Result[IoError, String]
 
     ///
     /// Stops the process.
@@ -101,27 +96,30 @@ mod Process {
     use Process.StdOut.StdOut
 
     pub enum StdIn(OutputStream)
-    instance Writer[StdIn] {
+    instance Writable[StdIn] {
+        type Elm = Int8
         type Aef = IO
         pub def write(b: Array[Int8, r], r: StdIn): Result[IoError, Int32] \ r + IO =
             let StdIn(pr) = r;
-            Writer.write(b, pr)
+            Writable.write(b, pr)
     }
 
     pub enum StdOut(InputStream)
-    instance Reader[StdOut] {
+    instance Readable[StdOut] {
+        type Elm = Int8
         type Aef = IO
         pub def read(b: Array[Int8, r], r: StdOut): Result[IoError, Int32] \ r + IO =
             let StdOut(pr) = r;
-            Reader.read(b, pr)
+            Readable.read(b, pr)
     }
 
     pub enum StdErr(InputStream)
-    instance Reader[StdErr] {
+    instance Readable[StdErr] {
+        type Elm
         type Aef = IO
         pub def read(b: Array[Int8, r], r: StdErr): Result[IoError, Int32] \ r + IO =
             let StdErr(pr) = r;
-            Reader.read(b, pr)
+            Readable.read(b, pr)
     }
 
     ///
@@ -145,9 +143,9 @@ mod Process {
     ///
     /// Handles the `Process` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + {Exec, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + IO = x ->
         run {
             Ok(f(x))
         } with handler Process {
@@ -210,9 +208,6 @@ mod Process {
                 let ProcessHandle(jProc) = ph;
                 k(StdErr(jProc.getErrorStream()))
 
-            def output(ph, k) = ???
-
-
             def stop(ph, k) =
                 try {
                     let ProcessHandle(jProc) = ph;
@@ -247,9 +242,9 @@ mod Process {
     ///
     /// Runs the `Process` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + IO = handle(f)()
 
 }
 

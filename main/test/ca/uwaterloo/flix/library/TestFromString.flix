@@ -1,95 +1,106 @@
-/*
- *  Copyright 2020 Matthew Lutze
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestFromString {
-    use FromString.fromString
 
-    @test
-    def testFromStringUnitGood(): Bool = fromString("()") == Some(())
+    use Assert.{assertEq};
+    use FromString.fromString;
 
-    @test
-    def testFromStringUnitBad(): Bool = fromString(")(") == (None: Option[Unit])
+    @Test
+    def fromStringUnit01(): Unit \ Assert =
+        assertEq(expected = Some(()), fromString("()"))
 
-    @test
-    def testFromStringTrueGood(): Bool = fromString("true") == Some(true)
+    @Test
+    def fromStringUnit02(): Unit \ Assert =
+        assertEq(expected = (None: Option[Unit]), fromString(")("))
 
-    @test
-    def testFromStringTrueBad(): Bool = fromString("fue") == (None: Option[Bool])
+    @Test
+    def fromStringTrue01(): Unit \ Assert =
+        assertEq(expected = Some(true), fromString("true"))
 
-    @test
-    def testFromStringFalseGood(): Bool = fromString("false") == Some(false)
+    @Test
+    def fromStringTrue02(): Unit \ Assert =
+        assertEq(expected = (None: Option[Bool]), fromString("fue"))
 
-    @test
-    def testFromStringFalseBad(): Bool = fromString("tralse") == (None: Option[Bool])
+    @Test
+    def fromStringFalse01(): Unit \ Assert =
+        assertEq(expected = Some(false), fromString("false"))
 
-    @test
-    def testFromStringCharGood(): Bool = fromString("Q") == Some('Q')
+    @Test
+    def fromStringFalse02(): Unit \ Assert =
+        assertEq(expected = (None: Option[Bool]), fromString("tralse"))
 
-    @test
-    def testFromStringCharBad(): Bool = fromString("ABC") == (None: Option[Char])
+    @Test
+    def fromStringChar01(): Unit \ Assert =
+        assertEq(expected = Some('Q'), fromString("Q"))
 
-    @test
-    def testFromStringFloat32Good(): Bool = fromString("123.0") == Some(123.0f32)
+    @Test
+    def fromStringChar02(): Unit \ Assert =
+        assertEq(expected = (None: Option[Char]), fromString("ABC"))
 
-    @test
-    def testFromStringFloat32Bad(): Bool = fromString("ABC") == (None: Option[Float32])
+    @Test
+    def fromStringFloat3201(): Unit \ Assert =
+        assertEq(expected = Some(123.0f32), fromString("123.0"))
 
-    @test
-    def testFromStringFloat64Good(): Bool = fromString("123.0") == Some(123.0f64)
+    @Test
+    def fromStringFloat3202(): Unit \ Assert =
+        assertEq(expected = (None: Option[Float32]), fromString("ABC"))
 
-    @test
-    def testFromStringFloat64Bad(): Bool = fromString("ABC") == (None: Option[Float64])
+    @Test
+    def fromStringFloat6401(): Unit \ Assert =
+        assertEq(expected = Some(123.0f64), fromString("123.0"))
 
-    @test
-    def testFromStringBigDecimalGood(): Bool = fromString("123.0") == Some(123.0ff)
+    @Test
+    def fromStringFloat6402(): Unit \ Assert =
+        assertEq(expected = (None: Option[Float64]), fromString("ABC"))
 
-    @test
-    def testFromStringBigDecimalBad(): Bool = fromString("ABC") == (None: Option[BigDecimal])
+    @Test
+    def fromStringBigDecimal01(): Unit \ Assert =
+        assertEq(expected = Some(123.0ff), fromString("123.0"))
 
-    @test
-    def testFromStringInt8Good(): Bool = fromString("123") == Some(123i8)
+    @Test
+    def fromStringBigDecimal02(): Unit \ Assert =
+        assertEq(expected = (None: Option[BigDecimal]), fromString("ABC"))
 
-    @test
-    def testFromStringInt8Bad(): Bool = fromString("ABC") == (None: Option[Int8])
+    @Test
+    def fromStringInt801(): Unit \ Assert =
+        assertEq(expected = Some(123i8), fromString("123"))
 
-    @test
-    def testFromStringInt16Good(): Bool = fromString("123") == Some(123i16)
+    @Test
+    def fromStringInt802(): Unit \ Assert =
+        assertEq(expected = (None: Option[Int8]), fromString("ABC"))
 
-    @test
-    def testFromStringInt16Bad(): Bool = fromString("ABC") == (None: Option[Int16])
+    @Test
+    def fromStringInt1601(): Unit \ Assert =
+        assertEq(expected = Some(123i16), fromString("123"))
 
-    @test
-    def testFromStringInt32Good(): Bool = fromString("123") == Some(123i32)
+    @Test
+    def fromStringInt1602(): Unit \ Assert =
+        assertEq(expected = (None: Option[Int16]), fromString("ABC"))
 
-    @test
-    def testFromStringInt32Bad(): Bool = fromString("ABC") == (None: Option[Int32])
+    @Test
+    def fromStringInt3201(): Unit \ Assert =
+        assertEq(expected = Some(123i32), fromString("123"))
 
-    @test
-    def testFromStringInt64Good(): Bool = fromString("123") == Some(123i64)
+    @Test
+    def fromStringInt3202(): Unit \ Assert =
+        assertEq(expected = (None: Option[Int32]), fromString("ABC"))
 
-    @test
-    def testFromStringInt64Bad(): Bool = fromString("ABC") == (None: Option[Int64])
+    @Test
+    def fromStringInt6401(): Unit \ Assert =
+        assertEq(expected = Some(123i64), fromString("123"))
 
-    @test
-    def testFromStringStringGood(): Bool = fromString("abcd") == Some("abcd")
+    @Test
+    def fromStringInt6402(): Unit \ Assert =
+        assertEq(expected = (None: Option[Int64]), fromString("ABC"))
 
-    @test
-    def testFromStringBigIntGood(): Bool = fromString("123") == Some(123ii)
+    @Test
+    def fromStringString01(): Unit \ Assert =
+        assertEq(expected = Some("abcd"), fromString("abcd"))
 
-    @test
-    def testFromStringBigIntBad(): Bool = fromString("ABC") == (None: Option[BigInt])
+    @Test
+    def fromStringBigInt01(): Unit \ Assert =
+        assertEq(expected = Some(123ii), fromString("123"))
+
+    @Test
+    def fromStringBigInt02(): Unit \ Assert =
+        assertEq(expected = (None: Option[BigInt]), fromString("ABC"))
 
 }

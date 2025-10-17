@@ -26,13 +26,16 @@ object Options {
     */
   val Default: Options = Options(
     lib = LibLevel.All,
+    build = Build.Development,
+    checkTrust = false,
     entryPoint = None,
     explain = false,
     githubToken = None,
     installDeps = false,
     incremental = true,
     json = false,
-    output = None,
+    outputJvm = false,
+    outputPath = Path.of("./build/"),
     progress = false,
     target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
@@ -75,21 +78,25 @@ object Options {
 /**
   * General Flix options.
   *
-  * @param lib                 selects the level of libraries to include.
-  * @param entryPoint          specifies the main entry point.
-  * @param explain             enables additional explanations.
-  * @param githubToken         the API key to use for GitHub dependency resolution.
-  * @param incremental         enables incremental compilation.
-  * @param installDeps         enables automatic installation of dependencies.
-  * @param json                enable json output.
-  * @param output              the optional output directory where to place JVM bytecode.
-  * @param progress            print progress during compilation.
-  * @param target              the target JVM.
-  * @param threads             selects the number of threads to use.
-  * @param loadClassFiles      loads the generated class files into the JVM.
-  * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
+  * @param lib            selects the level of libraries to include.
+  * @param build          selects development or production mode.
+  * @param entryPoint     specifies the main entry point.
+  * @param explain        enables additional explanations.
+  * @param githubToken    the API key to use for GitHub dependency resolution.
+  * @param incremental    enables incremental compilation.
+  * @param installDeps    enables automatic installation of dependencies.
+  * @param json           enable json output.
+  * @param outputJvm      Enable JVM bytecode output.
+  * @param outputPath     The path to the output folder.
+  * @param progress       print progress during compilation.
+  * @param target         the target JVM.
+  * @param threads        selects the number of threads to use.
+  * @param loadClassFiles loads the generated class files into the JVM.
+  * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
   */
 case class Options(lib: LibLevel,
+                   build: Build,
+                   checkTrust: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    githubToken: Option[String],
@@ -97,7 +104,8 @@ case class Options(lib: LibLevel,
                    installDeps: Boolean,
                    json: Boolean,
                    progress: Boolean,
-                   output: Option[Path],
+                   outputJvm: Boolean,
+                   outputPath: Path,
                    target: JvmTarget,
                    threads: Int,
                    loadClassFiles: Boolean,
@@ -114,6 +122,25 @@ case class Options(lib: LibLevel,
                    xchaosMonkey: Boolean,
                    xiterations: Int,
                   )
+
+/**
+  * An option to control whether to run in development or production mode.
+  */
+sealed trait Build
+
+object Build {
+  /**
+    * Run in development mode.
+    */
+  case object Development extends Build
+
+  /**
+    * Run in production mode.
+    *
+    * Running the compiler in production mode disables certain features that are allowed during development.
+    */
+  case object Production extends Build
+}
 
 /**
   * An option to control the version of emitted JVM bytecode.

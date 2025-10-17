@@ -77,7 +77,7 @@ sealed trait ChangeSet {
       (newMap, ListMap.empty)
 
     case ChangeSet.Dirty(dirty) =>
-      newMap.foldLeft((ListMap.empty[K, V], ListMap.empty[K, V])){ case ((stale, fresh), (k, v)) =>
+      newMap.foldLeft((ListMap.empty[K, V], ListMap.empty[K, V])) { case ((stale, fresh), (k, v)) =>
         if (oldMap.get(k).exists(v2 => eq(v, v2)) && !dirty.contains(v.src.input))
           (stale, fresh + (k -> v))
         else

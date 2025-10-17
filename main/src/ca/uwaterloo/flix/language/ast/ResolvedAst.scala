@@ -52,7 +52,7 @@ object ResolvedAst {
 
     case class Trait(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TraitConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, symUse: TraitSymUse, tparams: List[TypeParam], tpe: UnkindedType, tconstrs: List[TraitConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
+    case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, symUse: TraitSymUse, tparams: List[TypeParam], tpe: UnkindedType, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation) extends Declaration
 
@@ -76,7 +76,7 @@ object ResolvedAst {
 
     case class AssocTypeDef(doc: Doc, mod: Modifiers, symUse: AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
+    case class Effect(doc: Doc, ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, tparams: List[TypeParam], ops: List[Declaration.Op], loc: SourceLocation) extends Declaration
 
     case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation) extends Declaration
   }
@@ -107,6 +107,8 @@ object ResolvedAst {
 
     case class ApplyLocalDef(symUse: LocalDefSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class ApplyOp(symUse: OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
+
     case class ApplySig(symUse: SigSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Lambda(fparam: FormalParam, exp: Expr, allowSubeffecting: Boolean, loc: SourceLocation) extends Expr
@@ -125,10 +127,7 @@ object ResolvedAst {
 
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    // MATT why was this a full type
-    case class Region(tpe: Type, loc: SourceLocation) extends Expr
-
-    case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
@@ -184,17 +183,15 @@ object ResolvedAst {
 
     case class Unsafe(exp: Expr, eff: UnkindedType, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Expr, symUse: EffectSymUse, loc: SourceLocation) extends Expr
+    case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
     case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Handler(symUse: EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class Handler(symUse: EffSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
-    case class Do(symUse: OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(clazz: Class[?], exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -234,13 +231,13 @@ object ResolvedAst {
 
     case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, arity: Int, loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
 
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -296,13 +293,29 @@ object ResolvedAst {
 
   object ExtPattern {
 
-    case class Wild(loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
     case class Error(loc: SourceLocation) extends ExtPattern
+
   }
 
+  sealed trait ExtTagPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(loc: SourceLocation) extends ExtTagPattern
+
+  }
 
   sealed trait Predicate
 
@@ -334,7 +347,7 @@ object ResolvedAst {
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Option[UnkindedType], loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, tpe: Option[UnkindedType], loc: SourceLocation)
 
   sealed trait PredicateParam
 
@@ -356,7 +369,7 @@ object ResolvedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: UnkindedType, exp: Expr, loc: SourceLocation)
 

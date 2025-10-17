@@ -13,7 +13,7 @@ mod Stack {
         s->size = s->size - 1
 
     pub def peek(s: Stack[a, r]): Option[a] \ r =
-        if(s->size > 0) {
+        if (s->size > 0) {
             Some(Array.get(s->size - 1, s->arr))
         } else {
             None

@@ -33,6 +33,12 @@ instance Iterable[MutList[a, r]] {
     pub def iterator(rc: Region[r1], l: MutList[a, r]): Iterator[a, r + r1, r1] \ (r + r1) = MutList.iterator(rc, l)
 }
 
+instance ForEach[MutList[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, l: MutList[a, r]): Unit \ ef + r = MutList.forEach(f, l)
+}
+
 instance Indexable[MutList[a, r]] {
     type Idx = Int32
     type Elm = a
@@ -750,14 +756,6 @@ mod MutList {
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
 
     ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
-
-    ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def sameElements(v1: MutList[a, r1], v2: MutList[a, r2]): Bool \ { r1, r2 } with Eq[a] =
@@ -895,7 +893,7 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
+    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = region rc2 {
         toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
     }
 

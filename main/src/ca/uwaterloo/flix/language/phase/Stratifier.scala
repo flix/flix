@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
+import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Head
 import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, LabelledEdge}
 import ca.uwaterloo.flix.language.ast.shared.{Fixity, LabelledPrecedenceGraph, Polarity, Scope}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -126,17 +127,21 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case Expr.ApplyDef(symUse, exps, itpe, tpe, eff, loc) =>
+    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyDef(symUse, es, itpe, tpe, eff, loc)
+      Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, loc)
 
     case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
 
-    case Expr.ApplySig(symUse, exps, itpe, tpe, eff, loc) =>
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplySig(symUse, es, itpe, tpe, eff, loc)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
+
+    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, loc)
 
     case Expr.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -157,11 +162,9 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
 
-    case Expr.Region(_, _) => exp0
-
-    case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Scope(sym, regionVar, e, tpe, eff, loc)
+      Expr.Region(sym, regionVar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -193,23 +196,22 @@ object Stratifier {
       val rs = rules.map(visitRestrictableChooseRule)
       Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, bnd1, exp2, bnd2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expr.ExtensibleMatch(label, e1, bnd1, e2, bnd2, e3, tpe, eff, loc)
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp)
+      val rs = rules.map(visitExtMatchRule)
+      Expr.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.Tag(sym, exps, tpe, eff, loc) =>
+    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.Tag(sym, es, tpe, eff, loc)
+      Expr.Tag(symUse, es, tpe, eff, loc)
 
-    case Expr.RestrictableTag(sym, exps, tpe, eff, loc) =>
+    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.RestrictableTag(sym, es, tpe, eff, loc)
+      Expr.RestrictableTag(symUse, es, tpe, eff, loc)
 
-    case Expr.ExtensibleTag(label, exps, tpe, eff, loc) =>
+    case Expr.ExtTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ExtensibleTag(label, es, tpe, eff, loc)
+      Expr.ExtTag(label, es, tpe, eff, loc)
 
     case Expr.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -303,9 +305,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Unsafe(e, runEff, tpe, eff, loc)
 
-    case Expr.Without(exp, sym, tpe, eff, loc) =>
+    case Expr.Without(exp, symUse, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Without(e, sym, tpe, eff, loc)
+      Expr.Without(e, symUse, tpe, eff, loc)
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -316,18 +318,14 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.Throw(e, tpe, eff, loc)
 
-    case Expr.Handler(sym, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       val rs = rules.map(visitRunWithRule)
-      Expr.Handler(sym, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+      Expr.Handler(symUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
 
     case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       Expr.RunWith(e1, e2, tpe, eff, loc)
-
-    case Expr.Do(sym, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp)
-      Expr.Do(sym, es, tpe, eff, loc)
 
     case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
@@ -416,23 +414,27 @@ object Stratifier {
       val e2 = visitExp(exp2)
       Expr.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(pred, den, terms, tpe2, loc2), withh, tpe1, eff1, loc1) =>
+      val es = exps.map(visitExp)
+      val ts = terms.map(visitExp)
+      Expr.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      val qe = visitExp(queryExp)
+      val ss = selects.map(visitExp)
+      val w = where.map(visitExp)
+      Expr.FixpointQueryWithSelect(es, qe, ss, from, w, pred, tpe, eff, loc)
+
+    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
-      val e = visitExp(exp)
-      Expr.FixpointSolve(e, tpe, eff, loc)
+      val es = exps.map(visitExp)
+      Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointFilter(pred, e, tpe, eff, loc)
-
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointInject(e, pred, tpe, eff, loc)
-
-    case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.FixpointProject(pred, e, tpe, eff, loc)
+    case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+      val es = exps.map(visitExp)
+      Expr.FixpointInjectInto(es, predsAndArities, tpe, eff, loc)
 
     case Expr.Error(m, tpe, eff) =>
       Expr.Error(m, tpe, eff)
@@ -456,6 +458,12 @@ object Stratifier {
     case RestrictableChooseRule(pat, exp1) =>
       val e1 = visitExp(exp1)
       RestrictableChooseRule(pat, e1)
+  }
+
+  private def visitExtMatchRule(rule: ExtMatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): ExtMatchRule = rule match {
+    case ExtMatchRule(pat, exp, loc) =>
+      val e1 = visitExp(exp)
+      ExtMatchRule(pat, e1, loc)
   }
 
   private def visitTryCatchRule(rule: CatchRule)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): CatchRule = rule match {

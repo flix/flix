@@ -27,10 +27,10 @@ mod Char {
     import java.lang.Character
 
     ///
-    ///  Returns `true` if the given char `c` is an ascii character.
+    /// Returns `true` if the given char `c` is an ascii character.
     ///
     pub def isAscii(c: Char): Bool =
-        c <= '\u0080'
+        c < '\u0080'
 
     ///
     /// Returns `true` if the given char `c` is a letter character.
@@ -64,7 +64,7 @@ mod Char {
         '0' <= c and c <= '7'     // '0'..'7'
 
     ///
-    /// Returns `true` if the given char `c` is in the range 0...F.
+    /// Returns `true` if the given char `c` is in the range 0...9, A...F, or a...f.
     ///
     pub def isHexDigit(c: Char): Bool = match c {
         case i if '0' <= i and i <= '9' => true        // '0'..'9'
@@ -159,7 +159,7 @@ mod Char {
     /// Returns the code point representation of Char `c`.
     ///
     pub def toBmpCodePoint(c: Char): Int32 =
-        unchecked_cast(c as Int32)
+        unchecked_cast(c as Int16) |> Int16.toInt32
 
     ///
     /// Returns the supplementary code point value of the surrogate pair `high` and `low`.

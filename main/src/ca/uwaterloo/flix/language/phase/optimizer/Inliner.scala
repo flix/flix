@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -221,6 +223,9 @@ object Inliner {
           Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
       }
 
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(visitExp(_, ctx0))
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
 
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) => (occur, exp1.eff) match {
       case (Occur.Dead, Type.Pure) =>
@@ -246,7 +251,7 @@ object Inliner {
       case _ =>
         // Simplify and maybe do copy-propagation
         val e1 = visitExp(exp1, ctx0)
-        if (isSimple(e1) && exp1.eff == Type.Pure) {
+        if (isSimple(e1) && e1.eff == Type.Pure) {
           // Do copy propagation and drop let-binding
           sctx.changed.putIfAbsent(sym0, ())
           val freshVarSym = Symbol.freshVarSym(sym)
@@ -256,7 +261,7 @@ object Inliner {
           // Keep let-binding, add binding freshVarSym -> e1 to the set of in-scope
           // variables and consider inlining at each occurrence.
           val freshVarSym = Symbol.freshVarSym(sym)
-          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur))
+          val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.LetBound(e1, occur, exp1.eff))
           val e2 = visitExp(exp2, ctx)
           Expr.Let(freshVarSym, e1, e2, tpe, eff, occur, loc)
         }
@@ -290,21 +295,22 @@ object Inliner {
         Expr.LocalDef(freshVarSym, fps, e1, e2, tpe, eff, occur, loc)
     }
 
-    case Expr.Scope(sym, rvar, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, rvar, exp, tpe, eff, loc) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
       val e = visitExp(exp, ctx)
-      Expr.Scope(freshVarSym, rvar, e, tpe, eff, loc)
+      Expr.Region(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      visitExp(exp1, ctx0) match {
-        case Expr.Cst(Constant.Bool(true), _, _) =>
+      val e1 = visitExp(exp1, ctx0)
+      evalBoolExpression(e1) match {
+        case FuzzyBool.True =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp2, ctx0)
-        case Expr.Cst(Constant.Bool(false), _, _) =>
+        case FuzzyBool.False =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp3, ctx0)
-        case e1 =>
+        case FuzzyBool.Unknown =>
           val e2 = visitExp(exp2, ctx0)
           val e3 = visitExp(exp3, ctx0)
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
@@ -329,15 +335,12 @@ object Inliner {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map(visitMatchRule(_, ctx0))
-      Expr.Match(e, rs, tpe, eff, loc)
+      reduceMatch(e, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, sym2, exp2, sym3, exp3, tpe, eff, loc) =>
-      val freshVarSym2 = Symbol.freshVarSym(sym2)
-      val freshVarSym3 = Symbol.freshVarSym(sym3)
-      val e1 = visitExp(exp1, ctx0)
-      val e2 = visitExp(exp2, ctx0.addVarSubst(sym2, freshVarSym2).addInScopeVar(freshVarSym2, BoundKind.ParameterOrPattern))
-      val e3 = visitExp(exp3, ctx0.addVarSubst(sym3, freshVarSym3).addInScopeVar(freshVarSym3, BoundKind.ParameterOrPattern))
-      Expr.ExtensibleMatch(label, e1, freshVarSym2, e2, freshVarSym3, e3, tpe, eff, loc)
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = visitExp(exp, ctx0)
+      val rs = rules.map(visitExtMatchRule(_, ctx0))
+      Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, ctx0))
@@ -366,13 +369,247 @@ object Inliner {
       val rs = rules.map(visitHandlerRule(_, ctx0))
       Expr.RunWith(e, effUse, rs, tpe, eff, loc)
 
-    case Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(visitExp(_, ctx0))
-      Expr.Do(op, es, tpe, eff, loc)
-
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, ctx0))
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+  }
+
+  /**
+    * Evaluate match if possible. The logic is rule based, for example `case _ => ` is always chosen no matter how
+    * complicated the scrutinee is. If the pattern says `case Some(..) => ..` then the scrutinee is inspected to see if
+    * it matches, does not match, or may match.
+    *
+    * The match rules are iterated top to bottom, at each step either:
+    *   - Remove the rule if it can never match (either the patten cannot match or the guard is guaranteed false)
+    *     and continue the rule iteration.
+    *   - Remove the rule if it is known to match (either `Some(12)` matching `Some(x)` or a lenient pattern like `_`)
+    *   - Otherwise, leave the rules as is.
+    *
+    * It is assumed that patterns do not contain duplicate variables (e.g. `case (x, x) => x`)
+    * and that tuples and enums do not have mismatched arity (e.g. `case Some(x, y) => x + y`).
+    */
+  @tailrec
+  private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
+    rules match {
+      case MonoAst.MatchRule(pat, guardOpt, ruleExp) :: rest =>
+        matchRule(exp, pat, guardOpt) match {
+          case MatchResult.Match(binders) =>
+            // Guaranteed match - convert to let binders.
+            sctx.changed.putIfAbsent(sym0, ())
+            bindPatterns(binders.toSeq, ruleExp, loc)
+          case MatchResult.NoMatch =>
+            // Impossible match - delete and continue.
+            sctx.changed.putIfAbsent(sym0, ())
+            reduceMatch(exp, rest, tpe, eff, loc)
+          case MatchResult.Unknown =>
+            // Unknown match - do nothing.
+            Expr.Match(exp, rules, tpe, eff, loc)
+        }
+      case Nil =>
+        // Do nothing.
+        Expr.Match(exp, rules, tpe, eff, loc)
+    }
+  }
+
+  private sealed trait FuzzyBool
+
+  private object FuzzyBool {
+
+    case object True extends FuzzyBool
+
+    case object False extends FuzzyBool
+
+    case object Unknown extends FuzzyBool
+
+  }
+
+  /** Returns the fuzzy evaluation of `exp` as a boolean. */
+  private def evalBoolExpression(exp: MonoAst.Expr): FuzzyBool = exp match {
+    case Expr.Cst(Constant.Bool(true), _, _) => FuzzyBool.True
+    case Expr.Cst(Constant.Bool(false), _, _) => FuzzyBool.False
+    case _ => FuzzyBool.Unknown
+  }
+
+  private sealed trait MatchResult
+
+  private object MatchResult {
+
+    /**
+      * An expression matches a pattern, corresponding to the given binders.
+      *
+      * {{{
+      *   match Cons(12, tail) {
+      *     case Cons(x, _) => ..
+      *   }
+      * }}}
+      *
+      * This would return `Match(Chain(Some(x) => 12), None => tail)`
+      */
+    case class Match(binders: Chain[(Option[Pattern.Var], MonoAst.Expr)]) extends MatchResult
+
+    /** An expression does not match a pattern. */
+    case object NoMatch extends MatchResult
+
+    /** An expression might match a pattern - it cannot be determined at compile time. */
+    case object Unknown extends MatchResult
+
+    /**
+      * A match without any binders. E.g.:
+      *
+      * {{{
+      *   match 12 {
+      *     case 12 => ..
+      *   }
+      * }}}
+      */
+    def emptyMatch(): MatchResult =
+      Match(Chain.empty)
+
+    /**
+      * A match of a single binder. E.g.:
+      *
+      * {{{
+      *   match 12 {
+      *     case x => ..
+      *   }
+      * }}}
+      */
+    def singleMatch(pat: Option[Pattern.Var], exp: MonoAst.Expr): MatchResult =
+      Match(Chain((pat, exp)))
+
+    /**
+      * Returns a match with no binder if `b` is true (see [[emptyMatch]]).
+      *
+      * Returns [[NoMatch]] if `b` is false.
+      */
+    def matchFromBool(b: Boolean): MatchResult =
+      if (b) emptyMatch() else NoMatch
+
+    /**
+      * Concatenates two match results.
+      *
+      * If either result is [[NoMatch]], the output is [[NoMatch]].
+      *
+      * Then if either result is [[Unknown]], the output is [[Unknown]].
+      *
+      * Then (both results now being [[Match]]) the binders are concatenated.
+      */
+    def concat(mr1: MatchResult, mr2: MatchResult): MatchResult = (mr1, mr2) match {
+      case (MatchResult.NoMatch, _) | (_, MatchResult.NoMatch) =>
+        MatchResult.NoMatch
+      case (MatchResult.Unknown, _) | (_, MatchResult.Unknown) =>
+        MatchResult.Unknown
+      case (MatchResult.Match(binders1), MatchResult.Match(binders2)) =>
+        MatchResult.Match(binders1 ++ binders2)
+    }
+
+  }
+
+  /** Returns the match result of `exp` against `pat` with the guard `guardOpt`. */
+  private def matchRule(exp: MonoAst.Expr, pat: Pattern, guardOpt: Option[MonoAst.Expr]): MatchResult = {
+    val guardVal = guardOpt.map(evalBoolExpression).getOrElse(FuzzyBool.True)
+    (matchPat(exp, pat), guardVal) match {
+      case (_, FuzzyBool.False) | (MatchResult.NoMatch, _) =>
+        MatchResult.NoMatch
+      case (MatchResult.Unknown, _) | (MatchResult.Match(_), FuzzyBool.Unknown) =>
+        MatchResult.Unknown
+      case (resultMatch@MatchResult.Match(_), FuzzyBool.True) =>
+        resultMatch
+    }
+  }
+
+  /** Returns the match result of `exp` against `pat`. */
+  private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): MatchResult = pat match {
+    case Pattern.Wild(_, _) =>
+      // Preserve the expression in case it is impure.
+      MatchResult.singleMatch(None, exp)
+
+    case v@Pattern.Var(_, _, _, _) =>
+      MatchResult.singleMatch(Some(v), exp)
+
+    case Pattern.Cst(cst, _, _) => exp match {
+      case Expr.Cst(expCst, _, _) =>
+        matchConstant(cst, expCst)
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Tag(symUse, pats, _, _) => exp match {
+      case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
+        if (symUse.sym != caseSym) MatchResult.NoMatch
+        else {
+          // `exps` and `pats` have same length for well-typed programs.
+          matchPatterns(exps, pats)
+        }
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Tuple(pats, _, _) => exp match {
+      case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
+        // `exps` and `pats` have same length for well-typed programs.
+        matchPatterns(exps, pats.toList)
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Record(_, _, _, _) =>
+      MatchResult.Unknown
+
+  }
+
+  /**
+    * Returns the match result for matching `exps` to the patterns of `pats`.
+    *
+    * If the two lists are of different lengths, [[MatchResult.Unknown]] is returned.
+    *
+    * N.B.: `exps` and `pats` must have the same length, otherwise [[InternalCompilerException]] is thrown.
+    */
+  private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
+    if (exps.lengthCompare(pats) != 0) {
+      throw InternalCompilerException(
+        s"Match rule has arity ${pats.size} against ${exps.size} expressions.",
+        exps.headOption.map(_.loc).getOrElse(SourceLocation.Unknown)
+      )
+    } else {
+      // Keep the order of `exps` to maintain evaluation order.
+      val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
+        case (acc, (innerPat, innerExp)) =>
+          MatchResult.concat(acc, matchPat(innerExp, innerPat))
+      }
+      res
+    }
+  }
+
+  /**
+    * Returns the match result for two constants.
+    *
+    * Constants contain no binders so the function is symmetric.
+    */
+  private def matchConstant(cst1: Constant, cst2: Constant): MatchResult = {
+    import Constant.*
+    import MatchResult.*
+    (cst1, cst2) match {
+      case (Unit, Unit) => emptyMatch()
+      case (Null, Null) => emptyMatch()
+      case (Bool(v1), Bool(v2)) => matchFromBool(v1 == v2)
+      case (Char(v1), Char(v2)) => matchFromBool(v1 == v2)
+      case (Float32(v1), Float32(v2)) => matchFromBool(v1 == v2)
+      case (Float64(v1), Float64(v2)) => matchFromBool(v1 == v2)
+      case (BigDecimal(_), BigDecimal(_)) => Unknown // Avoiding static checking of object types.
+      case (Int8(v1), Int8(v2)) => matchFromBool(v1 == v2)
+      case (Int16(v1), Int16(v2)) => matchFromBool(v1 == v2)
+      case (Int32(v1), Int32(v2)) => matchFromBool(v1 == v2)
+      case (Int64(v1), Int64(v2)) => matchFromBool(v1 == v2)
+      case (BigInt(_), BigInt(_)) => Unknown // Avoiding static checking of object types.
+      case (Str(_), Str(_)) => Unknown // Avoiding static checking of object types.
+      case (Regex(_), Regex(_)) => Unknown // Avoiding static checking of object types.
+      case (RecordEmpty, RecordEmpty) => emptyMatch()
+      case _ =>
+        // Unrelated constants are impossible for well-typed programs.
+        // Returning unknown is the safe "do nothing" choice.
+        Unknown
+    }
   }
 
   /**
@@ -402,10 +639,10 @@ object Inliner {
     case Pattern.Cst(cst, tpe, loc) =>
       (Pattern.Cst(cst, tpe, loc), Map.empty)
 
-    case Pattern.Tag(sym, pats, tpe, loc) =>
+    case Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitPattern).unzip
       val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
-      (Pattern.Tag(sym, ps, tpe, loc), varSubst)
+      (Pattern.Tag(symUse, ps, tpe, loc), varSubst)
 
     case Pattern.Tuple(pats, tpe, loc) =>
       val (ps, varSubsts) = pats.map(visitPattern).unzip
@@ -425,15 +662,48 @@ object Inliner {
       (Pattern.Record.RecordLabelPattern(label, p, tpe, loc), subst)
   }
 
-  /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
-  private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
-    case MonoAst.FormalParam(sym, mod, tpe, src, occur, loc) =>
-      val freshVarSym = Symbol.freshVarSym(sym)
-      val varSubst = Map(sym -> freshVarSym)
-      (MonoAst.FormalParam(freshVarSym, mod, tpe, src, occur, loc), varSubst)
+  private def visitExtPattern(pat0: MonoAst.ExtPattern)(implicit flix: Flix): (MonoAst.ExtPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtPattern.Default(loc) =>
+      (MonoAst.ExtPattern.Default(loc), Map.empty)
+
+    case MonoAst.ExtPattern.Tag(label, pats, loc) =>
+      val (ps, varSubsts) = pats.map(visitExtTagPattern).unzip
+      val varSubst = varSubsts.foldLeft(Map.empty[Symbol.VarSym, Symbol.VarSym])(_ ++ _)
+      (MonoAst.ExtPattern.Tag(label, ps, loc), varSubst)
   }
 
-  def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
+  private def visitExtTagPattern(pat0: MonoAst.ExtTagPattern)(implicit flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
+    case MonoAst.ExtTagPattern.Wild(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
+
+    case MonoAst.ExtTagPattern.Var(sym, tpe, occur, loc) => occur match {
+      case Occur.Unknown => throw InternalCompilerException("unexpected unknown occurrence information", loc)
+
+      case Occur.Dead =>
+        (MonoAst.ExtTagPattern.Wild(tpe, loc), Map.empty)
+
+      case Occur.Once
+           | Occur.OnceInLambda
+           | Occur.OnceInLocalDef
+           | Occur.ManyBranch
+           | Occur.Many =>
+        val freshVarSym = Symbol.freshVarSym(sym)
+        (MonoAst.ExtTagPattern.Var(freshVarSym, tpe, occur, loc), Map(sym -> freshVarSym))
+    }
+
+    case MonoAst.ExtTagPattern.Unit(tpe, loc) =>
+      (MonoAst.ExtTagPattern.Unit(tpe, loc), Map.empty)
+  }
+
+  /** Returns a formal param with a fresh symbol and a substitution mapping the old variable the fresh variable. */
+  private def freshFormalParam(fp0: MonoAst.FormalParam)(implicit flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = fp0 match {
+    case MonoAst.FormalParam(sym, tpe, occur, loc) =>
+      val freshVarSym = Symbol.freshVarSym(sym)
+      val varSubst = Map(sym -> freshVarSym)
+      (MonoAst.FormalParam(freshVarSym, tpe, occur, loc), varSubst)
+  }
+
+  private def visitMatchRule(rule: MonoAst.MatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.MatchRule = rule match {
     case MonoAst.MatchRule(pat, guard, exp1) =>
       val (p, varSubst1) = visitPattern(pat)
       val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
@@ -442,7 +712,15 @@ object Inliner {
       MonoAst.MatchRule(p, g, e1)
   }
 
-  def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
+  private def visitExtMatchRule(rule: MonoAst.ExtMatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.ExtMatchRule = rule match {
+    case MonoAst.ExtMatchRule(pat, exp, loc) =>
+      val (p, varSubst1) = visitExtPattern(pat)
+      val ctx = ctx0.addVarSubsts(varSubst1).addInScopeVars(varSubst1.values.map(sym => sym -> BoundKind.ParameterOrPattern))
+      val e = visitExp(exp, ctx)
+      MonoAst.ExtMatchRule(p, e, loc)
+  }
+
+  private def visitCatchRule(rule: MonoAst.CatchRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.CatchRule = rule match {
     case MonoAst.CatchRule(sym, clazz, exp1) =>
       val freshVarSym = Symbol.freshVarSym(sym)
       val ctx = ctx0.addVarSubst(sym, freshVarSym).addInScopeVar(freshVarSym, BoundKind.ParameterOrPattern)
@@ -450,7 +728,7 @@ object Inliner {
       MonoAst.CatchRule(freshVarSym, clazz, e1)
   }
 
-  def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
+  private def visitHandlerRule(rule: MonoAst.HandlerRule, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.HandlerRule = rule match {
     case MonoAst.HandlerRule(op, fparams, exp1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -458,7 +736,7 @@ object Inliner {
       MonoAst.HandlerRule(op, fps, e1)
   }
 
-  def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
+  private def visitJvmMethod(method: MonoAst.JvmMethod, ctx0: LocalContext)(implicit sym0: Symbol.DefnSym, sctx: SharedContext, root: MonoAst.Root, flix: Flix): MonoAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff1, loc1) =>
       val (fps, varSubsts) = fparams.map(freshFormalParam).unzip
       val ctx = ctx0.addVarSubsts(varSubsts).addInScopeVars(fps.map(fp => fp.sym -> BoundKind.ParameterOrPattern))
@@ -482,10 +760,22 @@ object Inliner {
     *
     */
   private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
-    fparams.zip(exps).foldRight(exp) {
+    ListOps.zip(fparams, exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
+    }
+  }
+
+  /** Returns a nested let expression where the leftmost binder is the outermost let. */
+  private def bindPatterns(binders: Iterable[(Option[Pattern.Var], MonoAst.Expr)], exp: MonoAst.Expr, loc: SourceLocation): MonoAst.Expr = {
+    binders.foldRight(exp) {
+      case ((Some(v), binderExp), acc) =>
+        val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
+        Expr.Let(v.sym, binderExp, acc, acc.tpe, eff, v.occur, loc)
+      case ((None, binderExp), acc) =>
+        val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
+        Expr.Stm(binderExp, acc, acc.tpe, eff, loc)
     }
   }
 
@@ -537,7 +827,7 @@ object Inliner {
     */
   private def useSiteInline(sym: Symbol.VarSym, ctx0: LocalContext): Option[Expr] = {
     ctx0.inScopeVars.get(sym) match {
-      case Some(BoundKind.LetBound(exp, occur)) if shouldInlineVar(sym, exp, occur) =>
+      case Some(BoundKind.LetBound(exp, occur, eff)) if shouldInlineVar(sym, exp, occur, eff) =>
         Some(exp)
 
       case Some(_) =>
@@ -552,8 +842,10 @@ object Inliner {
     * Returns `true` if `exp` is pure and should be inlined at the occurrence of `sym`.
     *
     * A lambda should be inlined if it has occurrence information [[Occur.OnceInLambda]] or [[Occur.OnceInLocalDef]].
+    *
+    * `eff` is the original effect of `exp`. See [[BoundKind.LetBound]] for more information.
     */
-  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur): Boolean = (occur, exp.eff) match {
+  private def shouldInlineVar(sym: Symbol.VarSym, exp: Expr, occur: Occur, eff: Type): Boolean = (occur, eff) match {
     case (Occur.Dead, _) => throw InternalCompilerException(s"unexpected call site inline of dead variable $sym", exp.loc)
     case (Occur.Once, Type.Pure) => throw InternalCompilerException(s"unexpected call site inline of pre-inlined variable $sym", exp.loc)
     case (Occur.OnceInLambda, Type.Pure) => isLambda(exp)
@@ -571,7 +863,7 @@ object Inliner {
   }
 
   /** Returns `true` if `exp` is [[Expr.Lambda]]. */
-  def isLambda(exp: MonoAst.Expr): Boolean = exp match {
+  private def isLambda(exp: MonoAst.Expr): Boolean = exp match {
     case Expr.Lambda(_, _, _, _) => true
     case _ => false
   }
@@ -581,6 +873,7 @@ object Inliner {
     *
     * A trivial expression is one of the following:
     *   - [[Expr.Var]]
+    *   - Is a [[Expr.Cast]] of a trivial expression.
     *   - Any expression where [[isCst]] holds.
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
@@ -640,7 +933,7 @@ object Inliner {
   }
 
   /** Represents the range of a substitution from variables to expressions. */
-  sealed private trait SubstRange
+  private sealed trait SubstRange
 
   private object SubstRange {
 
@@ -665,8 +958,28 @@ object Inliner {
     /** Variable is bound by either a parameter or a pattern. Its value is unknown. */
     object ParameterOrPattern extends BoundKind
 
-    /** The right-hand side of a let-bound variable along with its occurrence information. */
-    case class LetBound(expr: MonoAst.Expr, occur: Occur) extends BoundKind
+    /**
+      * The right-hand side of a let-bound variable along with its occurrence information.
+      *
+      * Due to sub-effecting `eff` is required to store the effect of the non-visited exp.
+      * When sub-effecting is enabled, the purity of an expression may change when inlining
+      * a function. Consider the following example:
+      * {{{
+      *   def f(): Int32 \ IO = { ... non-simple pure body ... }
+      *   def g(): Unit \ IO = {
+      *     let res: Int32 = f();
+      *     println(res)
+      *   }
+      * }}}
+      * The definition of `f` is pure but upcast to `IO` do to sub-effecting. Inlining
+      * `f` makes the right-hand side of `res` pure, but is no longer simple. However,
+      * when the inliner consider `res` in the last line, the inliner will think that
+      * `res` was inlined because it is used once and is pure.
+      * Storing the original effect in `eff` allows the inliner to correctly consider its
+      * previous decisions, since the purity / effect did not change during inlining.
+      * The subsequent round of inlining may then choose to inline the let-bound variable.
+      */
+    case class LetBound(expr: MonoAst.Expr, occur: Occur, eff: Type) extends BoundKind
 
   }
 

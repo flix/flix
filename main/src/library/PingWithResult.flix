@@ -33,9 +33,9 @@ mod PingWithResult {
     ///
     /// Handles the `PingWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `PingWithResult` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - PingWithResult) + {Net, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - PingWithResult) + IO = x ->
         run {
             f(x)
         } with handler PingWithResult {
@@ -43,11 +43,8 @@ mod PingWithResult {
                 try {
                     let ms = TimeUnit.toMilliseconds(u);
                     let timeoutMs = ms * timeout;
-                    region rc {
-                        let ipBytes = IpAddr.toByteArray(rc, host);
-                        let addr = InetAddress.getByAddress(ipBytes);
-                        k(Ok(addr.isReachable(timeoutMs)))
-                    }
+                    let addr = InetAddress.getByAddress(IpAddr.toBytes(host));
+                    k(Ok(addr.isReachable(timeoutMs)))
                 } catch {
                     case ex: UnknownHostException     => k(Err(IoError(ErrorKind.UnknownHost, ex.getMessage())))
                     case ex: IllegalArgumentException => k(Err(IoError(ErrorKind.InvalidInput, ex.getMessage())))
@@ -61,7 +58,7 @@ mod PingWithResult {
     ///
     /// In other words, re-interprets the `PingWithResult` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef):  a \ ef - PingWithResult + {Net, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ ef - PingWithResult + IO = handle(f)()
 
 }
 

@@ -435,9 +435,8 @@ object TypeConstructor {
   /**
     * A type constructor that represents a single effect.
     */
-  case class Effect(sym: Symbol.EffSym) extends TypeConstructor {
-    def kind: Kind = Kind.Eff
-  }
+  @IntroducedBy(Kinder.getClass)
+  case class Effect(sym: Symbol.EffSym, kind: Kind) extends TypeConstructor
 
   /**
     * A type constructor that represents the complement of a case set.
@@ -457,6 +456,13 @@ object TypeConstructor {
     * A type constructor that represents the intersection of two case sets.
     */
   case class CaseIntersection(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
+    def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
+  }
+
+  /**
+    * A type constructor that represents the symmetric difference of two case sets.
+    */
+  case class CaseSymmetricDiff(sym: Symbol.RestrictableEnumSym) extends TypeConstructor {
     def kind: Kind = Kind.CaseSet(sym) ->: Kind.CaseSet(sym) ->: Kind.CaseSet(sym)
   }
 

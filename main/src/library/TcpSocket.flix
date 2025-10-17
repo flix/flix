@@ -23,7 +23,9 @@ import java.net.Socket
 ///
 enum TcpSocket(Socket, InputStream, OutputStream)
 
-instance Reader[TcpSocket] {
+instance Readable[TcpSocket] {
+
+    type Elm = Int8
 
     type Aef = IO
 
@@ -31,7 +33,9 @@ instance Reader[TcpSocket] {
         TcpSocket.read(buffer, socket)
 }
 
-instance Writer[TcpSocket] {
+instance Writable[TcpSocket] {
+
+    type Elm = Int8
 
     type Aef = IO
 
@@ -44,10 +48,10 @@ mod TcpSocket {
 
     pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, inputStream, _) = socket;
-        Reader.read(buffer, inputStream)
+        Readable.read(buffer, inputStream)
 
     pub def write(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, _, outputStream) = socket;
-        Writer.write(buffer, outputStream)
+        Writable.write(buffer, outputStream)
 
 }

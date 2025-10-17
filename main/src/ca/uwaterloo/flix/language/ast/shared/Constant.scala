@@ -15,10 +15,31 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import ca.uwaterloo.flix.language.ast.SimpleType
+
 /**
   * A common supertype for constant values.
   */
-sealed trait Constant
+sealed trait Constant {
+  def tpe: SimpleType = this match {
+    case Constant.Unit => SimpleType.Unit
+    case Constant.Null => SimpleType.Null
+    case Constant.Bool(_) => SimpleType.Bool
+    case Constant.Char(_) => SimpleType.Char
+    case Constant.Float32(_) => SimpleType.Float32
+    case Constant.Float64(_) => SimpleType.Float64
+    case Constant.BigDecimal(_) => SimpleType.BigDecimal
+    case Constant.Int8(_) => SimpleType.Int8
+    case Constant.Int16(_) => SimpleType.Int16
+    case Constant.Int32(_) => SimpleType.Int32
+    case Constant.Int64(_) => SimpleType.Int64
+    case Constant.BigInt(_) => SimpleType.BigInt
+    case Constant.Str(_) => SimpleType.String
+    case Constant.Regex(_) => SimpleType.Regex
+    case Constant.RecordEmpty => SimpleType.RecordEmpty
+    case Constant.Static => SimpleType.Region
+  }
+}
 
 object Constant {
   case object Unit extends Constant
@@ -50,4 +71,6 @@ object Constant {
   case class Regex(lit: java.util.regex.Pattern) extends Constant
 
   case object RecordEmpty extends Constant
+
+  case object Static extends Constant
 }

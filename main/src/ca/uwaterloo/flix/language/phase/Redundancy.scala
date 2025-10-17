@@ -27,6 +27,8 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
+import ca.uwaterloo.flix.util.collection.SeqOps
 
 import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
@@ -66,16 +68,22 @@ object Redundancy {
       case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
     }, _ ++ _).errors.toList
 
+    val errorsFromTraits = root.traits.foldLeft(Used.empty)({
+      case (acc, (_, t)) => acc ++ findShadowedTraitTypeParams(t)
+    }).errors.toList
+
     // Check for unused symbols.
     val errors = errorsFromDefs ++
       errorsFromInst ++
       errorsFromSigs ++
+      errorsFromTraits ++
       checkUnusedDefs()(sctx, root) ++
       checkUnusedEffects()(sctx, root) ++
       checkUnusedEnumsAndTags()(sctx, root) ++
       checkUnusedTypeParamsEnums()(root) ++
       checkUnusedStructsAndFields()(sctx, root) ++
       checkUnusedTypeParamsStructs()(root) ++
+      checkUnusedTypeParamsTypeAliases()(root) ++
       checkRedundantTraitConstraints()(root, flix)
 
     (root, errors)
@@ -101,7 +109,7 @@ object Redundancy {
     val result = new ListBuffer[RedundancyError]
     for ((_, eff) <- root.effects) {
       if (deadEffect(eff)) {
-        result += UnusedEffectSym(eff.sym)
+        result += UnusedEffSym(eff.sym)
       }
     }
     result.toList
@@ -135,6 +143,23 @@ object Redundancy {
       val usedTypeVars = decl.cases.foldLeft(Set.empty[Symbol.KindedTypeVarSym]) {
         case (sacc, (_, Case(_, tpes, _, _))) => sacc ++ tpes.flatMap(_.typeVars.map(_.sym))
       }
+      val unusedTypeParams = decl.tparams.filter {
+        tparam =>
+          !usedTypeVars.contains(tparam.sym) &&
+            !tparam.name.name.startsWith("_")
+      }
+      result ++= unusedTypeParams.map(tparam => UnusedTypeParam(tparam.name, tparam.loc))
+    }
+    result.toList
+  }
+
+  /**
+    * Checks for unused type parameters in enums.
+    */
+  private def checkUnusedTypeParamsTypeAliases()(implicit root: Root): List[RedundancyError] = {
+    val result = new ListBuffer[RedundancyError]
+    for ((_, decl) <- root.typeAliases) {
+      val usedTypeVars = decl.tpe.typeVars.map(_.sym)
       val unusedTypeParams = decl.tparams.filter {
         tparam =>
           !usedTypeVars.contains(tparam.sym) &&
@@ -280,6 +305,17 @@ object Redundancy {
       }
   }
 
+  /**
+    * Finds shadowed type parameters in traits.
+    */
+  private def findShadowedTraitTypeParams(traitt: Trait): Used = {
+    val traitParam = traitt.tparam
+    val traitParamName = traitParam.name.name
+    val env = Env.empty + (traitParamName, traitParam.loc)
+    traitt.sigs.flatMap(_.spec.tparams).foldLeft(Used.empty)({
+      case (acc, tparam) => acc ++ shadowing(tparam.name.name, tparam.name.loc, env)
+    })
+  }
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
@@ -342,7 +378,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
@@ -356,7 +392,11 @@ object Redundancy {
         Used.of(sym) ++ visitExps(exps, env0, rc)
       }
 
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _) =>
+    case Expr.ApplyOp(opUse, exps, _, _, _) =>
+      sctx.effSyms.put(opUse.sym.eff, ())
+      visitExps(exps, env0, rc)
+
+    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
@@ -411,15 +451,12 @@ object Redundancy {
       val fparamVars = fparams.map(_.bnd.sym)
       val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
 
-      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
+      ListOps.zip(fparamVars, shadowedFparamVars).foldLeft(res1) {
         case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
         case (acc, (s, shadow)) => (acc ++ shadow) - s
       }
 
-    case Expr.Region(_, _) =>
-      Used.empty
-
-    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
+    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -556,9 +593,58 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.ExtensibleMatch(_, exp1, bnd1, exp2, bnd2, exp3, _, _, _) =>
-      // TODO: Ext-Variants
-      visitExp(exp1, env0, rc) ++ visitExp(exp2, env0 + bnd1.sym, rc) ++ visitExp(exp3, env0 + bnd2.sym, rc)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      val usedMatch = visitExp(exp, env0, rc)
+
+      // Visit each match rule.
+      val usedRules = rules.map {
+        case ExtMatchRule(pat, exp1, _) =>
+          // Compute the free variables in the pattern.
+          val fvs = freeVars(pat)
+
+          // Extend the environment with the free variables.
+          val extendedEnv = env0 ++ fvs
+
+          // Visit the body.
+          val usedBody = visitExp(exp1, extendedEnv, rc)
+
+          // Check for unused variable symbols.
+          val unusedVarSyms = findUnusedVarSyms(fvs, usedBody)
+
+          // Check for shadowed variable symbols.
+          val shadowedVarSyms = findShadowedVarSyms(fvs, env0)
+
+          // Combine everything together.
+          (usedBody -- fvs) ++ unusedVarSyms ++ shadowedVarSyms
+      }
+      val tagPatterns = rules.collect {
+        case ExtMatchRule(pat: ExtPattern.Tag, _, _) => pat
+      }
+
+      // We drop match rules until we find the first default rule (if it exists).
+      val unreachableCases = rules.dropWhile {
+        case ExtMatchRule(_: ExtPattern.Default, _, _) => false
+        case _ => true
+      } match {
+        case Nil =>
+          // No default case, so nothing unreachable
+          List.empty
+        case _ :: Nil =>
+          // One default case, and it is the last one, so nothing is unreachable
+          List.empty
+
+        case defaultCase :: unreachableRules =>
+          // One default case followed by 0 or more unreachable rules
+          unreachableRules.map(rule => RedundancyError.UnreachableExtMatchCase(defaultCase.loc, rule.loc))
+      }
+
+      val duplicatePatterns: List[RedundancyError] =
+        SeqOps.getDuplicates(tagPatterns, (pat: ExtPattern.Tag) => pat.label).map {
+          case (pat1, pat2) =>
+            RedundancyError.DuplicateExtPattern(pat1.label, pat1.label.loc, pat2.label.loc)
+        }
+
+      Used(Set.empty, duplicatePatterns.toSet ++ unreachableCases) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
     case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
@@ -569,7 +655,7 @@ object Redundancy {
     case Expr.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.ExtensibleTag(_, exps, _, _, _) =>
+    case Expr.ExtTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
     case Expr.Tuple(elms, _, _, _) =>
@@ -674,8 +760,8 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, sym, _, _, _) =>
-      sctx.effSyms.put(sym.sym, ())
+    case Expr.Without(exp, symUse, _, _, _) =>
+      sctx.effSyms.put(symUse.sym, ())
       visitExp(exp, env0, rc)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
@@ -693,30 +779,26 @@ object Redundancy {
     case Expr.Throw(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Handler(sym, rules, _, _, _, _, _) =>
-      sctx.effSyms.put(sym.sym, ())
+    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+      sctx.effSyms.put(symUse.sym, ())
       rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body, _)) =>
           val syms = fparams.map(_.bnd.sym)
           val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)
-          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
-            case (acc, (s, shadow)) =>
+          ListOps.zip(syms, shadowedFparamVars).foldLeft(acc ++ usedBody) {
+            case (acc1, (s, shadow)) =>
               if (deadVarSym(s, usedBody)) {
-                acc ++ shadow + UnusedVarSym(s)
+                acc1 ++ shadow + UnusedVarSym(s)
               } else {
-                acc ++ shadow
+                acc1 ++ shadow
               }
           }
       }
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
-
-    case Expr.Do(opUse, exps, _, _, _) =>
-      sctx.effSyms.put(opUse.sym.eff, ())
-      visitExps(exps, env0, rc)
 
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
@@ -818,17 +900,26 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolve(exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+      val us1 = visitExps(exps, env0, rc)
+      val us2 = visitExps(terms, env0, rc)
+      us1 ++ us2
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      visitExps(exps, env0, rc)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      val us1 = visitExps(exps, env0, rc)
+      val us2 = visitExp(queryExp, env0, rc)
+      val us3 = visitExps(selects, env0, rc)
+      val us4 = from.foldLeft(Used.empty) {
+        case (acc, b) => acc ++ visitBodyPred(b, env0, rc)
+      }
+      val us5 = visitExps(where, env0, rc)
+      us1 ++ us2 ++ us3 ++ us4 ++ us5
 
-    case Expr.FixpointProject(_, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      visitExps(exps, env0, rc)
 
     case Expr.Error(_, _, _) =>
       lctx.errorLocs += e0.loc
@@ -1068,6 +1159,25 @@ object Redundancy {
   }
 
   /**
+    * Returns the free variables in the ext pattern `pat0`.
+    */
+  private def freeVars(pat0: ExtPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtPattern.Default(_) => Set.empty
+    case ExtPattern.Tag(_, pats, _) => pats.toSet.flatMap((v: ExtTagPattern) => freeVars(v))
+    case ExtPattern.Error(_) => Set.empty
+  }
+
+  /**
+    * Returns the free variables in the ext pattern `pat0`.
+    */
+  private def freeVars(pat0: ExtTagPattern): Set[Symbol.VarSym] = pat0 match {
+    case ExtTagPattern.Wild(_, _) => Set.empty
+    case ExtTagPattern.Var(Binder(sym, _), _, _) => Set(sym)
+    case ExtTagPattern.Unit(_, _) => Set.empty
+    case ExtTagPattern.Error(_, _) => Set.empty
+  }
+
+  /**
     * Checks whether the variable symbol `sym` shadows another variable in the environment `env`.
     */
   private def shadowing(name: String, loc: SourceLocation, env: Env): Used =
@@ -1087,6 +1197,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
+    !decl.spec.ann.isCompileTest &&
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !decl.spec.ann.isExport &&

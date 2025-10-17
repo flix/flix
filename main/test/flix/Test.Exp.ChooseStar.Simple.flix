@@ -1,15 +1,15 @@
-restrictable enum Expr[s] {
-    case Cst, Var, Not, And, Or, Xor
-}
-
-//
-// Properties:
-//   P1) Input upper bounded by pattern case set (like normal choose)
-//   P2) Output lower bounded by non-stable case set
-//   P3) Output maintains information on the absence of stable cases
-//
-
 mod Test.Exp.ChooseStar.Simple {
+
+    restrictable enum Expr[s] {
+        case Cst, Var, Not, And, Or, Xor
+    }
+
+    //
+    // Properties:
+    //   P1) Input upper bounded by pattern case set (like normal choose)
+    //   P2) Output lower bounded by non-stable case set
+    //   P3) Output maintains information on the absence of stable cases
+    //
 
     pub def testChooseStar01(): Bool = {
         // P2: check the lower bound by using result in a choose

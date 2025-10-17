@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Occur}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
@@ -145,6 +146,9 @@ object LambdaDrop {
     case Expr.ApplyLocalDef(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      exps.foreach(visitExp)
+
     case Expr.Let(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
@@ -153,7 +157,7 @@ object LambdaDrop {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Scope(_, _, exp, _, _, _) =>
+    case Expr.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -176,10 +180,12 @@ object LambdaDrop {
           visitExp(exp2)
       }
 
-    case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-      visitExp(exp1)
-      visitExp(exp2)
-      visitExp(exp3)
+    case Expr.ExtMatch(exp, rules, _, _, _) =>
+      visitExp(exp)
+      rules.foreach {
+        case MonoAst.ExtMatchRule(_, exp1, _) =>
+          visitExp(exp1)
+      }
 
     case Expr.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
@@ -201,9 +207,6 @@ object LambdaDrop {
     case Expr.RunWith(exp1, _, rules, _, _, _) =>
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
-
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foreach(visitExp)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foreach(m => visitExp(m.exp))
@@ -248,7 +251,7 @@ object LambdaDrop {
     case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       if (sym == oldDefnSym) {
         // Rewrite call to new function symbol and drop constant parameters
-        val es = exps.zip(fparams0).filter {
+        val es = ListOps.zip(exps, fparams0).filter {
           case (_, (_, pkind)) => pkind == ParamKind.NonConst
         }.map {
           case (e, (_, _)) => rewriteExp(e)
@@ -264,6 +267,10 @@ object LambdaDrop {
       val es = exps.map(rewriteExp)
       Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
 
+    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      val es = exps.map(rewriteExp)
+      Expr.ApplyOp(sym, es, tpe, eff, loc)
+
     case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
@@ -274,9 +281,9 @@ object LambdaDrop {
       val e2 = rewriteExp(exp2)
       Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, occur, loc)
 
-    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
-      Expr.Scope(sym, regSym, e, tpe, eff, loc)
+      Expr.Region(sym, regSym, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
@@ -303,11 +310,14 @@ object LambdaDrop {
       }
       Expr.Match(e1, rs, tpe, eff, loc)
 
-    case Expr.ExtensibleMatch(label, exp1, sym1, exp2, sym2, exp3, tpe, eff, loc) =>
-      val e1 = rewriteExp(exp1)
-      val e2 = rewriteExp(exp2)
-      val e3 = rewriteExp(exp3)
-      Expr.ExtensibleMatch(label, e1, sym1, e2, sym2, e3, tpe, eff, loc)
+    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      val e = rewriteExp(exp)
+      val rs = rules.map {
+        case MonoAst.ExtMatchRule(pat, exp1, loc1) =>
+          val e1 = rewriteExp(exp1)
+          MonoAst.ExtMatchRule(pat, e1, loc1)
+      }
+      Expr.ExtMatch(e, rs, tpe, eff, loc)
 
     case Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
@@ -344,10 +354,6 @@ object LambdaDrop {
       }
       Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.Do(op, exps, tpe, eff, loc) =>
-      val es = exps.map(rewriteExp)
-      Expr.Do(op, es, tpe, eff, loc)
-
     case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
       val ms = methods.map {
         case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff2, loc2) =>
@@ -377,7 +383,7 @@ object LambdaDrop {
     * Otherwise, it is marked [[ParamKind.NonConst]]
     */
   private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
-    val matrix = calls.map(call => fparams.zip(call.exps)).transpose
+    val matrix = calls.map(call => ListOps.zip(fparams, call.exps)).transpose
     matrix.map {
       case invocations =>
         val allConstant = invocations.forall {

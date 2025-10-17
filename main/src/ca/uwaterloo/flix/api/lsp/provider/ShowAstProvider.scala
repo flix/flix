@@ -16,13 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.Flix.IrFileExtension
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.language.phase.Typer
-import ca.uwaterloo.flix.util.Similarity
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonDSL.*
 
 import java.nio.file.Path
 

@@ -61,7 +61,7 @@ instance Functor[Map[k]] {
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
+    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -118,6 +118,11 @@ instance Iterable[Map[k, v]] {
     pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
+instance ForEach[Map[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, t: Map[k, v]): Unit \ ef = Map.forEach(k -> v -> f((k, v)), t)
+}
+
 instance ToJava[Map[k, v]] with Order[k] {
     type Out = JMap
     type Aef = IO
@@ -145,7 +150,7 @@ mod Map {
     ///
     def useParallelEvaluation(m: Map[k, v]): Bool =
         let Map(t) = m;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -546,7 +551,7 @@ mod Map {
         foldMapWithKey(_ -> f, m)
 
     ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -556,7 +561,7 @@ mod Map {
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -567,7 +572,7 @@ mod Map {
         RedBlackTree.reduceLeft(f, t)
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -577,7 +582,7 @@ mod Map {
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
@@ -604,18 +609,6 @@ mod Map {
                     c()
             case Purity2.Impure(_) => c()
         }
-
-    ///
-    /// Returns the sum of all keys in the map `m`.
-    ///
-    pub def sumKeys(m: Map[Int32, v]): Int32 =
-        sumWith((k, _) -> k, m)
-
-    ///
-    /// Returns the sum of all values in the map `m`.
-    ///
-    pub def sumValues(m: Map[k, Int32]): Int32 =
-        sumWith((_, v) -> v, m)
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
@@ -773,7 +766,7 @@ mod Map {
     /// Returns `m` as a mutable map.
     ///
     pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, Ref.fresh(rc, m))
+        new MutMap @ rc { rc = rc, inner = m }
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
@@ -808,12 +801,6 @@ mod Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `DelayList` of key-value pairs.
-    ///
-    pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
-
-    ///
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
@@ -824,14 +811,6 @@ mod Map {
     ///
     pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         MultiMap.MultiMap(Map.map(Set.singleton, m))
-
-    ///
-    /// Returns `m` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.
@@ -872,7 +851,7 @@ mod Map {
     ///
     pub def unfoldWithIter(next: Unit -> Option[(k, v)] \ ef): Map[k, v] \ ef with Order[k] =
         def loop(m) = match next() {
-            case None       => m
+            case None         => m
             case Some((k, v)) => loop(insert(k, v, m))
         };
         loop(empty())
@@ -917,14 +896,6 @@ mod Map {
     ///
     pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
         iterator(rc, m) |> Iterator.map(snd)
-
-    ///
-    /// Returns `m` as a `DelayMap`.
-    ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
-        let Map(t) = m;
-        let f = (_, v) -> lazy v;
-        DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Returns the result of running all the actions in the map `m`.

@@ -123,7 +123,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     parseRequest(data) match {
       case Ok(request) =>
         val t = System.nanoTime()
-        val result = processRequest(request)(ws)
+        val result = processRequest(request)(ws, root)
         if (ws.isOpen) {
           val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
           // val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
@@ -197,7 +197,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
+    flix.addSourceCode(uri, src)(SecurityContext.Unrestricted) // TODO
     sources += (uri -> src)
   }
 
@@ -212,7 +212,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * Process the request.
     */
-  private def processRequest(request: Request)(implicit ws: WebSocket): JValue = request match {
+  private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
     case Request.AddUri(id, uri, src) =>
       addSourceCode(uri, src)

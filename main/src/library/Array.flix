@@ -47,11 +47,16 @@ instance Iterable[Array[a, r]] {
         checked_ecast(Array.iterator(rc, a))
 }
 
+instance ForEach[Array[a, r]] {
+    type Elm = a
+    type Aef = r
+    pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ ef + r = Array.forEach(f, a)
+}
+
 mod Array {
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays
-    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -86,19 +91,19 @@ mod Array {
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
     pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
-        $ARRAY_NEW$(rc, Reflect.default(), l)
+        %%ARRAY_NEW%%(rc, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
     ///
     pub def get(i: Int32, a: Array[a, r]): a \ r =
-        $ARRAY_LOAD$(a, i)
+        %%ARRAY_LOAD%%(a, i)
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ r =
-        $ARRAY_STORE$(a, i, x)
+        %%ARRAY_STORE%%(a, i, x)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
@@ -122,7 +127,7 @@ mod Array {
     ///
     /// Returns the number of elements in the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
+    pub def length(a: Array[a, r]): Int32 = %%ARRAY_LENGTH%%(a)
 
     ///
     /// Returns the number of elements in the array `a`.
@@ -171,18 +176,6 @@ mod Array {
         }
 
     ///
-    /// Returns the array `a` as a `DelayList`.
-    ///
-    pub def toDelayList(a: Array[a, r]): DelayList[a] \ r =
-        def loop(i, acc) = {
-            if (i < 0)
-                acc
-            else
-                loop(i - 1, DelayList.ECons(get(i, a), acc))
-        };
-        loop(length(a) - 1, DelayList.ENil)
-
-    ///
     /// Returns the array `arr` as a chain.
     ///
     pub def toChain(arr: Array[a, r]): Chain[a] \ r =
@@ -216,15 +209,6 @@ mod Array {
             let i = length(arr) - 1;
             Some(loop(i, Nec.singleton(get(i, arr))))
         }
-
-    ///
-    /// Returns `a` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), a);
-        d
-
     ///
     /// Returns `a` as a Vector.
     ///
@@ -392,7 +376,7 @@ mod Array {
         if (n <= 0)
             Array#{} @ rc
         else
-            $ARRAY_NEW$(rc, x, n)
+            %%ARRAY_NEW%%(rc, x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -403,7 +387,7 @@ mod Array {
     ///
     /// Accumulates the result of applying `f` to `arr` going left to right.
     ///
-    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
+    /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2), ...]`.
     ///
     pub def scanLeft(rc: Region[r], f: (b, a) -> b \ ef, s: b, arr: Array[a, r]): Array[b, r] \ { ef, r } =
         let len = length(arr) + 1;
@@ -815,7 +799,7 @@ mod Array {
     /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef,  r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
+    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
         def loop(i) = {
             if (i == length(arr))
                 z
@@ -831,11 +815,11 @@ mod Array {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), arr)
 
     ///
-    /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `a` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `a` is empty.
     ///
-    pub def reduceLeft(f: (a, a) ->  a \ ef, a: Array[a, r]): Option[a] \ { ef, r } =
+    pub def reduceLeft(f: (a, a) -> a \ ef, a: Array[a, r]): Option[a] \ { ef, r } =
         let len = length(a);
         def loop(i, acc) = {
             if (i >= len)
@@ -849,7 +833,7 @@ mod Array {
             Some(loop(1, get(0, a)))
 
     ///
-    /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// Returns `None` if `arr` is empty.
     ///
@@ -1204,7 +1188,7 @@ mod Array {
     /// Accumulates the result of applying `f` pairwise to the elements of `a` and `b`
     /// starting with the initial value `c` and going from left to right.
     ///
-    pub def foldLeft2(f: (c, a, b) ->  c \ ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, r1, r2 } =
+    pub def foldLeft2(f: (c, a, b) -> c \ ef, c: c, a: Array[a, r1], b: Array[b, r2]): c \ { ef, r1, r2 } =
         let lena = length(a);
         let lenb = length(b);
         def loop(i, acc) = {
@@ -1390,14 +1374,6 @@ mod Array {
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
 
     ///
-    /// Returns an iterator over `a` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
-        iterator(rc, a) |> Iterator.zipWithIndex
-
-    ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
     ///
     pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ { ef, r } =
@@ -1547,6 +1523,30 @@ mod Array {
         }
 
     ///
+    /// Perform a binary search for `x` on the sorted array `a` and returns the position of `x`.
+    ///
+    /// Returns `None` if `a` does not contain `x`. Otherwise returns `Some(i)`,
+    /// where `Array.get(i, a) == x`.
+    ///
+    /// Assumes `a` is sorted. If this is not the case the result is undefined.
+    ///
+    /// If `a` contains multiple `x`-values then the index of one of them will be returned.
+    ///
+    pub def binarySearch(x: a, a: Array[a, r]): Option[Int32] \ r with Order[a] =
+        def f(lo, hi) = {
+            if (lo <= hi) {
+                let mid = (lo + hi) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
+                match get(mid, a) <=> x {
+                    case Comparison.LessThan => f(mid + 1, hi)
+                    case Comparison.GreaterThan => f(lo, mid - 1)
+                    case Comparison.EqualTo => Some(mid)
+                }
+            } else None
+        };
+        let len = length(a);
+        f(0, len - 1)
+
+    ///
     /// Copies the range between `srcPos` (inclusive) to `srcPos + len` (exclusive) of `src` into `dst` starting from `dstPos` (inclusive).
     /// A valid range has the following properties:
     ///   0 <= len.
@@ -1560,6 +1560,12 @@ mod Array {
         let srcObj: Object = checked_cast(src#src);
         let dstObj: Object = checked_cast(dst);
         unchecked_cast(System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) as _ \ { r1, r2 })
+
+    ///
+    /// Returns a shallow copy of the array `a`.
+    ///
+    pub def copy(rc: Region[r2], a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+        copyOfRange(rc, 0, length(a), a)
 
     ///
     /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into an empty array.
@@ -1598,21 +1604,19 @@ mod Array {
         }
 
     ///
-    /// Shuffles `a` using the Fisher–Yates shuffle.
+    /// Shuffles `a` using a random permutation.
     ///
-    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
-        let rnd = new JRandom();
+    pub def shuffle(a: Array[a, r]): Unit \ {r, Shuffle} = {
         let len = Array.length(a);
-        def loop(i) = {
-            if (i > 0) {
-                let j = rnd.nextInt(i + 1);
-                Array.swap(i, j, a);
-                loop(i - 1)
-            }
-            else
-                ()
-        };
-        loop(len - 1)
-    } as _ \ {r, NonDet})
+
+        // Compute a random permutation.
+        let perm = Shuffle.permutation(len);
+
+        // Apply the permutation: result[i] = a[perm[i]].
+        let result = Vector.init(i -> Array.get(Vector.get(i, perm), a), len);
+
+        // Write the result back into a.
+        Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
+    }
 
 }

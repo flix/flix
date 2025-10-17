@@ -29,7 +29,7 @@ import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
 object ManifestParser {
   /**
-    * Regular expression defining a valid string for user name and project name.
+    * Regular expression defining a valid string for username and project name.
     * Concretely, a valid name is a [[String]] consisting only of alphanumeric characters
     * or the symbols `.`,`:`,`/`,`_` and `-`.
     */
@@ -94,7 +94,7 @@ object ManifestParser {
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
       moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
-      packageModules <- toPackageModules(moduleStrings, p);
+      packageModules <- toPackageModules(moduleStrings);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -118,7 +118,7 @@ object ManifestParser {
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
-    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies", "jar-dependencies")
+    val allowedKeys = Set("package", "dependencies", "mvn-dependencies", "jar-dependencies")
     val illegalKeys = keySet.diff(allowedKeys)
 
     if (illegalKeys.nonEmpty) {
@@ -137,81 +137,81 @@ object ManifestParser {
   }
 
   /**
-    * Parses a String which should be at `propString`
+    * Parses a String which should be at `prop`
     * and returns the String or an error if the result
     * cannot be found.
     */
-  private def getRequiredStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
+  private def getRequiredStringProperty(prop: String, parser: TomlParseResult, p: Path): Result[String, ManifestError] = {
     try {
-      val prop = parser.getString(propString)
-      if (prop == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
+      val result = parser.getString(prop)
+      if (result == null) {
+        return Err(ManifestError.MissingRequiredProperty(p, prop, None))
       }
-      Ok(prop)
+      Ok(result)
     } catch {
-      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, prop, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
     }
   }
 
   /**
-    * Parses a String which might be at `propString`
+    * Parses a String which might be at `prop`
     * and returns the String as an Option.
     */
-  private def getOptionalStringProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[String], ManifestError] = {
+  private def getOptionalStringProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[String], ManifestError] = {
     try {
-      val prop = parser.getString(propString)
-      Ok(Option(prop))
+      val result = parser.getString(prop)
+      Ok(Option(result))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "String", e.getMessage))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "String", e.getMessage))
     }
   }
 
   /**
-    * Parses an Array which should be at `propString`
+    * Parses an Array which should be at `prop`
     * and returns the Array or an error if the result
     * cannot be found.
     */
-  private def getRequiredArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
+  private def getRequiredArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[TomlArray, ManifestError] = {
     try {
-      val array = parser.getArray(propString)
+      val array = parser.getArray(prop)
       if (array == null) {
-        return Err(ManifestError.MissingRequiredProperty(p, propString, None))
+        return Err(ManifestError.MissingRequiredProperty(p, prop, None))
       }
       Ok(array)
     } catch {
-      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
+      case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, prop, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
   /**
-    * Parses an Array which might be at `propString`
+    * Parses an Array which might be at `prop`
     * and returns the Array as an Option.
     */
-  private def getOptionalArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
+  private def getOptionalArrayProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
     try {
-      val array = parser.getArray(propString)
+      val array = parser.getArray(prop)
       Ok(Option(array))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Array", e.getMessage))
     }
   }
 
   /**
-    * Parses a Table which should be at `propString`
+    * Parses a Table which should be at `prop`
     * and returns the Table or an error if the result
     * cannot be found.
     */
-  private def getOptionalTableProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlTable], ManifestError] = {
+  private def getOptionalTableProperty(prop: String, parser: TomlParseResult, p: Path): Result[Option[TomlTable], ManifestError] = {
     try {
-      val table = parser.getTable(propString)
+      val table = parser.getTable(prop)
       Ok(Option(table))
     } catch {
       case _: IllegalArgumentException => Ok(None)
-      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Table", e.getMessage))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, prop, "Table", e.getMessage))
     }
   }
 
@@ -255,8 +255,8 @@ object ManifestParser {
     * overrides `flixDep` and `prodDep`.
     * Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
-    deps match {
+  private def collectDependencies(optDeps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+    optDeps match {
       case None => Ok(List.empty)
       case Some(deps) =>
         val depsEntries = deps.entrySet().asScala
@@ -360,19 +360,19 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, Nil)
+            Dependency.FlixDependency(repo, username, projectName, _, Trust.Plain)
           }
 
 
-          // If the dependency maps to a table, get the version and permissions.
+          // If the dependency maps to a table, get the version and trust.
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
-          val permKey = "permissions"
+          val trustKey = "trust"
 
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
-            perm <- getPermissions(depTbl, permKey, p)
+            perm <- getTrust(depTbl, trustKey, p)
           ) yield FlixDependency(repo, username, projectName, ver, perm)
         } else {
           Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
@@ -398,25 +398,22 @@ object ManifestParser {
   }
 
   /**
-    * Retrieve a list of permissions from a [[TomlTable]] `depTbl` at `key`.
+    * Retrieve the given trust from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getPermissions(depTbl: TomlTable, key: String, p: Path): Result[List[Permission], ManifestError] = {
-    // Ensure the permissions are an Array.
-    if (!depTbl.isArray(key)) {
+  private def getTrust(depTbl: TomlTable, key: String, path: Path): Result[Trust, ManifestError] = {
+    // Ensure the trust value is a string.
+    if (!depTbl.contains(key)) {
+      return Ok(Trust.Plain)
+    }
+    if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, perms))
+      Err(ManifestError.FlixDependencyTrustType(Option.apply(path), key, perms))
     } else {
-      val permArray = depTbl.getArray(key)
-      val permissions = permArray.toList.asScala.toList.map({
-        // Ensure the contents of the array are strings.
-        case s: String => Permission.mkPermission(s) match {
-          case Some(p) => p
-          case None => return Err(ManifestError.FlixUnknownPermissionError(p, key, s))
-        }
-        // If an entry is not a string, return an error.
-        case _ => return Err(ManifestError.FlixDependencyPermissionTypeError(Option.apply(p), key, permArray))
-      })
-      Ok(permissions)
+      val value = depTbl.getString(key)
+      Trust.fromString(value) match {
+        case Some(trust) => Ok(trust)
+        case None => Err(ManifestError.FlixUnknownTrustValue(path, key, value))
+      }
     }
   }
 
@@ -504,7 +501,7 @@ object ManifestParser {
   /**
     * Creates the `PackageModules` object from `optList`.
     */
-  private def toPackageModules(optList: Option[List[String]], p: Path): Result[PackageModules, ManifestError] = {
+  private def toPackageModules(optList: Option[List[String]]): Result[PackageModules, ManifestError] = {
     optList match {
       case None =>
         Ok(PackageModules.All)

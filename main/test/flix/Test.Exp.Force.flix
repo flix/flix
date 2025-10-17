@@ -78,13 +78,13 @@ mod Test.Exp.Force {
     def testArrayOfIntForce01(): Bool \ IO =
         let v = Array#{1, 2} @ Static;
         let x = lazy v;
-        $ARRAY_LOAD$(v, 0) == $ARRAY_LOAD$(force x, 0)
+        %%ARRAY_LOAD%%(v, 0) == %%ARRAY_LOAD%%(force x, 0)
 
     @test
     def testArrayOfStringForce01(): Bool \ IO =
         let v = Array#{"str", "str2"} @ Static;
         let x = lazy v;
-        $ARRAY_LOAD$(v, 0) == $ARRAY_LOAD$(force x, 0)
+        %%ARRAY_LOAD%%(v, 0) == %%ARRAY_LOAD%%(force x, 0)
 
     @test
     def testTupleForce01(): Bool =

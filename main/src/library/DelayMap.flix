@@ -49,7 +49,7 @@ instance Functor[DelayMap[k]] {
 instance Foldable[DelayMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
+    redef isEmpty(m: DelayMap[k, v]): Bool = DelayMap.isEmpty(m)
 
 }
 
@@ -57,6 +57,11 @@ instance Iterable[DelayMap[k, v]] {
     type Elm = (k, v)
     pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
         DelayMap.iterator(rc, m)
+}
+
+instance ForEach[DelayMap[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = DelayMap.forEach(k -> v -> f((k, v)), m)
 }
 
 mod DelayMap {
@@ -92,7 +97,7 @@ mod DelayMap {
     ///
     def useParallelEvaluation(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -627,7 +632,7 @@ mod DelayMap {
         RedBlackTree.foldRightWithCont(f1, s, t)
 
     ///
-    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(v1, v2), v3)..., vn))`
     ///
@@ -638,7 +643,7 @@ mod DelayMap {
         reduceLeftWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from left to right until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`
     ///
@@ -658,7 +663,7 @@ mod DelayMap {
         }
 
     ///
-    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all values in `m` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(v1, ...f(vn-2, f(vn-1, vn))...))`
     ///
@@ -669,7 +674,7 @@ mod DelayMap {
         reduceRightWithKey((k, v1, _, v2) -> (k, f(v1, v2)), m) |> Option.map(snd)
 
     ///
-    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained.  Returns `Some((k, v))`.
+    /// Applies `f` to all mappings in `m` going from right to left until a single mapping `(k, v)` is obtained. Returns `Some((k, v))`.
     ///
     /// That is, the result is of the form: `Some(f(k1, v1, ...f(kn-2, vn-2, f(kn-1, vn-1, kn, vn))...))`
     ///
@@ -777,7 +782,7 @@ mod DelayMap {
     ///
     @Experimental @Parallel
     pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, Ref.fresh(rc, toMap(m)))
+        new MutMap @ rc { rc = rc, inner = toMap(m) }
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
@@ -787,27 +792,12 @@ mod DelayMap {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `DelayList` of key-value pairs.
-    ///
-    @Experimental
-    pub def toDelayList(m: DelayMap[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
-
-    ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
     @Experimental
     pub def iterator(rc: Region[r], m: DelayMap[a, b]): Iterator[(a, b), r, r] \ r =
         let DMap(t) = m;
         RedBlackTree.iterator(rc, t) |> Iterator.map(match (k, v) -> (k, force v))
-
-    ///
-    /// Returns the map `m` as a MutDeque of key-value pairs.
-    ///
-    @Experimental
-    pub def toMutDeque(rc: Region[r], m: DelayMap[k, v]): MutDeque[(k, v), r] \ r =
-        let m1 = DelayMap.toMap(m);
-        Map.toMutDeque(rc, m1)
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.

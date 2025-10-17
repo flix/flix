@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.phase.typer.*
 import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, Substitution, TraitEnv}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListMap
 
 object Scheme {
 
@@ -75,7 +74,7 @@ object Scheme {
         // Performance: Reuse tpe0.
         tpe0
 
-      case app@Type.Apply(tpe1, tpe2, loc) =>
+      case app@Type.Apply(tpe1, tpe2, _) =>
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
         // Performance: Reuse tpe0, if possible.
@@ -89,26 +88,26 @@ object Scheme {
         // // Performance: Few associated types, not worth optimizing.
         Type.AssocType(sym, args.map(visitType), kind, loc)
 
-      case Type.JvmToType(tpe, loc) =>
+      case Type.JvmToType(tpe, _) =>
         Type.JvmToType(visitType(tpe), loc)
 
-      case Type.JvmToEff(tpe, loc) =>
+      case Type.JvmToEff(tpe, _) =>
         Type.JvmToEff(visitType(tpe), loc)
 
-      case Type.UnresolvedJvmType(member, loc) =>
+      case Type.UnresolvedJvmType(member, _) =>
         Type.UnresolvedJvmType(member.map(visitType), loc)
     }
 
     val newBase = visitType(baseType)
 
     val newTconstrs = sc.tconstrs.map {
-      case TraitConstraint(head, tpe0, loc) =>
+      case TraitConstraint(head, tpe0, _) =>
         val tpe = tpe0.map(visitType)
         TraitConstraint(head, tpe, loc)
     }
 
     val newEconstrs = sc.econstrs.map {
-      case EqualityConstraint(symUse, tpe1, tpe2, loc) =>
+      case EqualityConstraint(symUse, tpe1, tpe2, _) =>
         EqualityConstraint(symUse, visitType(tpe1), visitType(tpe2), loc)
     }
 
@@ -126,10 +125,12 @@ object Scheme {
 
   /**
     * Returns `true` if the given schemes are equivalent.
+    *
+    * @param localEconstrs any constraints that, unlike those in `globalEqEnv`, contain free variables that appear bound in `sc1` or `sc2`.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, traitEnv: TraitEnv, eqEnv: EqualityEnv)(implicit scope: Scope, flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, traitEnv, eqEnv) && lessThanEqual(sc2, sc1, traitEnv, eqEnv)
+  def equal(sc1: Scheme, sc2: Scheme, traitEnv: TraitEnv, globalEqEnv: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: Scope, flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, traitEnv, globalEqEnv, localEconstrs) && lessThanEqual(sc2, sc1, traitEnv, globalEqEnv, localEconstrs)
   }
 
   /**
@@ -139,12 +140,19 @@ object Scheme {
     * T new constructors
     * ---------------------------------------
     * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
+    *
+    * @param localEconstrs any constraints that, unlike those in `globalEqEnv`, contain free variables that appear bound in `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: TraitEnv, eenv0: EqualityEnv)(implicit scope: Scope, flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: TraitEnv, globalEqEnv0: EqualityEnv, localEconstrs: List[EqualityConstraint])(implicit scope: Scope, flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     // We use the top scope because this function is only used for comparing schemes, which are at top-level.
-    val (cconstrs2_0, econstrs2_0, tpe2_0, _) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Scope.Top, flix)
+    val (cconstrs2_0, econstrs2_0, tpe2_0, substMap) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Scope.Top, flix)
+
+    // Since constraints in `localEconstrs` have free vars that appear in `sc2`, we must apply the same substitution
+    // before including them in the equality env.
+    val subst0 = Substitution(substMap)
+    val eenv0 = ConstraintSolverInterface.expandEqualityEnv(globalEqEnv0, localEconstrs.map(subst0.apply))
 
     // Resolve what we can from the new econstrs
     val tconstrs2_0 = econstrs2_0.map { case EqualityConstraint(symUse, t1, t2, loc) => TypeConstraint.Equality(Type.AssocType(symUse, t1, t2.kind, loc), t2, Provenance.Match(t1, t2, loc)) }

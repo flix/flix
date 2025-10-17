@@ -30,8 +30,6 @@ object AtomicOp {
 
   case class Binary(sop: SemanticOp.BinaryOp) extends AtomicOp
 
-  case object Region extends AtomicOp
-
   case class Is(sym: Symbol.CaseSym) extends AtomicOp
 
   case class Tag(sym: Symbol.CaseSym) extends AtomicOp
@@ -48,11 +46,11 @@ object AtomicOp {
 
   case class RecordRestrict(label: Name.Label) extends AtomicOp
 
-  case class ExtensibleIs(label: Name.Label) extends AtomicOp
+  case class ExtIs(label: Name.Label) extends AtomicOp
 
-  case class ExtensibleTag(label: Name.Label) extends AtomicOp
+  case class ExtTag(label: Name.Label) extends AtomicOp
 
-  case class ExtensibleUntag(label: Name.Label, idx: Int) extends AtomicOp
+  case class ExtUntag(label: Name.Label, idx: Int) extends AtomicOp
 
   case object ArrayLit extends AtomicOp
 

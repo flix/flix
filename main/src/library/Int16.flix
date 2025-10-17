@@ -72,7 +72,7 @@ mod Int16 {
         if (n == 0i16)
             0i16
         else
-            $INT16_REM$($INT16_REM$(x, n) + n, n)
+            %%INT16_REM%%(%%INT16_REM%%(x, n) + n, n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -84,15 +84,15 @@ mod Int16 {
         if (n == 0i16)
             0i16
         else
-            $INT16_REM$(x, n)
+            %%INT16_REM%%(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int16, y: Int16): Int16 = {
-        if      (x >= 0i16 and y >= 0i16)                abs(x - y)
-        else if (x < 0i16 and y < 0i16)                  abs(x - y)
+        if      (x >= 0i16 and y >= 0i16)               abs(x - y)
+        else if (x < 0i16 and y < 0i16)                 abs(x - y)
         else if (x == minValue() or y == minValue())    -1i16
         else if (minValue() + abs(x) + abs(y) >= 0i16)  -1i16
         else                                            abs(x - y)
@@ -115,9 +115,9 @@ mod Int16 {
     pub def signum(x: Int16): Int32 = compare(x, 0i16)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int16, n: Int16): Int16 = $INT16_EXP$(b, n)
+    pub def pow(base: {base = Int16}, n: Int16): Int16 = %%INT16_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
@@ -294,32 +294,32 @@ mod Int16 {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int16, y: Int32): Int16 = $INT16_SHL$(x, y)
+    pub def leftShift(x: Int16, y: Int32): Int16 = %%INT16_SHL%%(x, y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int16, y: Int32): Int16 = $INT16_SHR$(x, y)
+    pub def rightShift(x: Int16, y: Int32): Int16 = %%INT16_SHR%%(x, y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: Int16, y: Int16): Int16 = $INT16_AND$(x, y)
+    pub def bitwiseAnd(x: Int16, y: Int16): Int16 = %%INT16_AND%%(x, y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: Int16): Int16 = $INT16_NOT$(x)
+    pub def bitwiseNot(x: Int16): Int16 = %%INT16_NOT%%(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int16, y: Int16): Int16 = $INT16_OR$(x, y)
+    pub def bitwiseOr(x: Int16, y: Int16): Int16 = %%INT16_OR%%(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: Int16, y: Int16): Int16 = $INT16_XOR$(x, y)
+    pub def bitwiseXor(x: Int16, y: Int16): Int16 = %%INT16_XOR%%(x, y)
 
     ///
     /// Returns the factorial of `x`.

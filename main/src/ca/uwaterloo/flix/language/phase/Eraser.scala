@@ -1,10 +1,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType.erase
+import ca.uwaterloo.flix.language.ast.SimpleType.erase
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, Purity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -54,8 +54,8 @@ object Eraser {
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
-    case FormalParam(sym, mod, tpe, loc) =>
-      FormalParam(sym, mod, visitType(tpe), loc)
+    case FormalParam(sym, tpe) =>
+      FormalParam(sym, visitType(tpe))
   }
 
   private def visitLocalParam(p: LocalParam): LocalParam = p match {
@@ -107,8 +107,8 @@ object Eraser {
   }
 
   private def visitExp(exp0: Expr): Expr = exp0 match {
-    case Cst(cst, tpe, loc) =>
-      Cst(cst, visitType(tpe), loc)
+    case Cst(cst, loc) =>
+      Cst(cst, loc)
     case Var(sym, tpe, loc) =>
       Var(sym, visitType(tpe), loc)
     case ApplyAtomic(op, exps, tpe, purity, loc) =>
@@ -118,7 +118,6 @@ object Eraser {
         case AtomicOp.Closure(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unary(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Binary(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Region => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_, _) => ApplyAtomic(op, es, t, purity, loc)
@@ -129,9 +128,9 @@ object Eraser {
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtensibleIs(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtensibleTag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtensibleUntag(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtIs(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtTag(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtUntag(_, _) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayNew => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
@@ -167,6 +166,8 @@ object Eraser {
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+    case ApplyOp(sym, exps, tpe, purity, loc) =>
+      ApplyOp(sym, exps.map(visitExp), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -175,28 +176,26 @@ object Eraser {
       Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
     case JumpTo(sym, tpe, purity, loc) =>
       JumpTo(sym, visitType(tpe), purity, loc)
-    case Let(sym, exp1, exp2, tpe, purity, loc) =>
-      Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
-    case Stmt(exp1, exp2, tpe, purity, loc) =>
-      Stmt(visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
-    case Scope(sym, exp, tpe, purity, loc) =>
-      Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
+    case Let(sym, exp1, exp2, loc) =>
+      Let(sym, visitExp(exp1), visitExp(exp2), loc)
+    case Stmt(exp1, exp2, loc) =>
+      Stmt(visitExp(exp1), visitExp(exp2), loc)
+    case Region(sym, exp, tpe, purity, loc) =>
+      Region(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
     case RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case Do(op, exps, tpe, purity, loc) =>
-      Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
       NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
   }
 
-  private def castExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
+  private def castExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
     Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def unboxExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
+  private def unboxExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
     Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
@@ -210,8 +209,8 @@ object Eraser {
       Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
   }
 
-  private def visitType(tpe0: MonoType): MonoType = {
-    import MonoType.*
+  private def visitType(tpe0: SimpleType): SimpleType = {
+    import SimpleType.*
     tpe0 match {
       case Void => Void
       case AnyType => AnyType
@@ -230,12 +229,12 @@ object Eraser {
       case Regex => Regex
       case Region => Region
       case Null => Null
-      case Array(tpe) => Array(visitType(tpe))
+      case Array(tpe) => SimpleType.mkArray(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
-      case Tuple(elms) => Tuple(elms.map(erase))
-      case MonoType.Enum(sym, targs) => MonoType.Enum(sym, targs.map(erase))
-      case MonoType.Struct(sym, tparams) => MonoType.Struct(sym, tparams.map(erase))
-      case Arrow(args, result) => Arrow(args.map(visitType), box(result))
+      case Tuple(elms) => SimpleType.mkTuple(elms.map(erase))
+      case SimpleType.Enum(sym, targs) => SimpleType.mkEnum(sym, targs.map(erase))
+      case SimpleType.Struct(sym, tparams) => SimpleType.Struct(sym, tparams.map(erase))
+      case Arrow(args, result) => SimpleType.mkArrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
       case ExtensibleExtend(cons, tpes, rest) => ExtensibleExtend(cons, tpes.map(erase), visitType(rest))
@@ -280,6 +279,6 @@ object Eraser {
     case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
   }
 
-  private def box(@unused tpe: MonoType): MonoType = MonoType.Object
+  private def box(@unused tpe: SimpleType): SimpleType = SimpleType.Object
 
 }

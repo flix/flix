@@ -30,7 +30,7 @@ eff ProcessWithResult {
     def exitValue(ph: ProcessHandle): Result[IoError, Int32]
 
     ///
-    ///  Returns status of the process, if it alive or not.
+    /// Returns status of the process, if it alive or not.
     ///
     def isAlive(ph: ProcessHandle): Result[IoError, Bool]
 
@@ -93,9 +93,9 @@ mod ProcessWithResult {
     ///
     /// Handles the `ProcessWithResult` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `ProcessWithResult` effect using the `Exec` effect.
+    /// In other words, re-interprets the `ProcessWithResult` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - ProcessWithResult) + {Exec, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - ProcessWithResult) + IO = x ->
         run {
             f(x)
         } with handler ProcessWithResult {
@@ -181,9 +181,9 @@ mod ProcessWithResult {
     ///
     /// Runs the `Process` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - ProcessWithResult) + IO = handle(f)()
 
 }
 

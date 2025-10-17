@@ -72,7 +72,7 @@ mod Int32 {
         if (n == 0i32)
             0i32
         else
-            $INT32_REM$($INT32_REM$(x, n) + n, n)
+            %%INT32_REM%%(%%INT32_REM%%(x, n) + n, n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -84,15 +84,15 @@ mod Int32 {
         if (n == 0i32)
             0i32
         else
-            $INT32_REM$(x, n)
+            %%INT32_REM%%(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
     pub def dist(x: Int32, y: Int32): Int32 = {
-        if      (x >= 0 and y >= 0)                      abs(x - y)
-        else if (x < 0 and y < 0)                        abs(x - y)
+        if      (x >= 0 and y >= 0)                     abs(x - y)
+        else if (x < 0 and y < 0)                       abs(x - y)
         else if (x == minValue() or y == minValue())    -1
         else if (minValue() + abs(x) + abs(y) >= 0)     -1
         else                                            abs(x - y)
@@ -115,9 +115,9 @@ mod Int32 {
     pub def signum(x: Int32): Int32 = compare(x, 0)
 
     ///
-    /// Returns `b` raised to the power of `n`.
+    /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(b: Int32, n: Int32): Int32 = $INT32_EXP$(b, n)
+    pub def pow(base: {base = Int32}, n: Int32): Int32 = %%INT32_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `dist`.
@@ -289,32 +289,32 @@ mod Int32 {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int32, y: Int32): Int32 = $INT32_SHL$(x, y)
+    pub def leftShift(x: Int32, y: Int32): Int32 = %%INT32_SHL%%(x, y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int32, y: Int32): Int32 = $INT32_SHR$(x, y)
+    pub def rightShift(x: Int32, y: Int32): Int32 = %%INT32_SHR%%(x, y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
+    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = %%INT32_AND%%(x, y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: Int32): Int32 = $INT32_NOT$(x)
+    pub def bitwiseNot(x: Int32): Int32 = %%INT32_NOT%%(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
+    pub def bitwiseOr(x: Int32, y: Int32): Int32 = %%INT32_OR%%(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
+    pub def bitwiseXor(x: Int32, y: Int32): Int32 = %%INT32_XOR%%(x, y)
 
     ///
     /// Returns the factorial of `x`.

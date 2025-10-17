@@ -1,4 +1,4 @@
-def main(): Unit \ {Net, IO} =
+def main(): Unit \ IO =
     run {
         match HttpWithResult.get("http://example.com/", Map.empty()) {
             case Result.Ok(response) =>

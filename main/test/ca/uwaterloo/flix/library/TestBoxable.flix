@@ -1,352 +1,337 @@
-/*
- * Copyright 2021 Matthew Lutze
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestBoxable {
 
-    use Fixpoint.Boxable.{box, unbox}
+    use Assert.{assertEq, assertTrue};
+    use Fixpoint3.Boxable.{box, unbox}
 
     /////////////////////////////////////////////////////////////////////////////
     // Unit                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def unitUnbox01(): Bool = unbox(box(())) == ()
+    @Test
+    def unitUnbox01(): Unit \ Assert = assertEq(expected = (), unbox(box(())))
 
-    @test
-    def unitCompare01(): Bool = box(()) == box(())
+    @Test
+    def unitCompare01(): Unit \ Assert = assertEq(expected = box(()), box(()))
 
-    @test
-    def unitToString01(): Bool = "${box(())}" == "()"
+    @Test
+    def unitToString01(): Unit \ Assert = assertEq(expected = "()", "${box(())}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Bool                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def boolUnbox01(): Bool = unbox(box(false)) == false
+    @Test
+    def boolUnbox01(): Unit \ Assert = assertEq(expected = false, unbox(box(false)))
 
-    @test
-    def boolUnbox02(): Bool = unbox(box(true)) == true
+    @Test
+    def boolUnbox02(): Unit \ Assert = assertEq(expected = true, unbox(box(true)))
 
-    @test
-    def boolCompare01(): Bool = box(true) == box(true)
+    @Test
+    def boolCompare01(): Unit \ Assert = assertEq(expected = box(true), box(true))
 
-    @test
-    def boolCompare02(): Bool = box(false) < box(true)
+    @Test
+    def boolCompare02(): Unit \ Assert = assertTrue(box(false) < box(true))
 
-    @test
-    def boolToString01(): Bool = "${box(true)}" == "true"
+    @Test
+    def boolToString01(): Unit \ Assert = assertEq(expected = "true", "${box(true)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def charUnbox01(): Bool = unbox(box('a')) == 'a'
+    @Test
+    def charUnbox01(): Unit \ Assert = assertEq(expected = 'a', unbox(box('a')))
 
-    @test
-    def charUnbox02(): Bool = unbox(box('A')) == 'A'
+    @Test
+    def charUnbox02(): Unit \ Assert = assertEq(expected = 'A', unbox(box('A')))
 
-    @test
-    def charUnbox03(): Bool = unbox(box(' ')) == ' '
+    @Test
+    def charUnbox03(): Unit \ Assert = assertEq(expected = ' ', unbox(box(' ')))
 
-    @test
-    def charUnbox04(): Bool = unbox(box('+')) == '+'
+    @Test
+    def charUnbox04(): Unit \ Assert = assertEq(expected = '+', unbox(box('+')))
 
-    @test
-    def charCompare01(): Bool = box('a') == box('a')
+    @Test
+    def charCompare01(): Unit \ Assert = assertEq(expected = box('a'), box('a'))
 
-    @test
-    def charCompare02(): Bool = box('a') < box('b')
+    @Test
+    def charCompare02(): Unit \ Assert = assertTrue(box('a') < box('b'))
 
-    @test
-    def charToString01(): Bool = "${box('V')}" == "V"
+    @Test
+    def charToString01(): Unit \ Assert = assertEq(expected = "V", "${box('V')}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def float32Unbox01(): Bool = unbox(box(0.0f32)) == 0.0f32
+    @Test
+    def float32Unbox01(): Unit \ Assert = assertEq(expected = 0.0f32, unbox(box(0.0f32)))
 
-    @test
-    def float32Unbox02(): Bool = unbox(box(1.0f32)) == 1.0f32
+    @Test
+    def float32Unbox02(): Unit \ Assert = assertEq(expected = 1.0f32, unbox(box(1.0f32)))
 
-    @test
-    def float32Unbox03(): Bool = unbox(box(-1.0f32)) == -1.0f32
+    @Test
+    def float32Unbox03(): Unit \ Assert = assertEq(expected = -1.0f32, unbox(box(-1.0f32)))
 
-    @test
-    def float32Unbox04(): Bool = unbox(box(3.14f32)) == 3.14f32
+    @Test
+    def float32Unbox04(): Unit \ Assert = assertEq(expected = 3.14f32, unbox(box(3.14f32)))
 
-    @test
-    def float32Compare01(): Bool = box(0.0f32) == box(0.0f32)
+    @Test
+    def float32Compare01(): Unit \ Assert = assertEq(expected = box(0.0f32), box(0.0f32))
 
-    @test
-    def float32Compare02(): Bool = box(0.0f32) < box(1.0f32)
+    @Test
+    def float32Compare02(): Unit \ Assert = assertTrue(box(0.0f32) < box(1.0f32))
 
-    @test
-    def float32ToString01(): Bool = "${box(123.0f32)}" == "123.0"
+    @Test
+    def float32ToString01(): Unit \ Assert = assertEq(expected = "123.0", "${box(123.0f32)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def float64Unbox01(): Bool = unbox(box(0.0f64)) == 0.0f64
+    @Test
+    def float64Unbox01(): Unit \ Assert = assertEq(expected = 0.0f64, unbox(box(0.0f64)))
 
-    @test
-    def float64Unbox02(): Bool = unbox(box(1.0f64)) == 1.0f64
+    @Test
+    def float64Unbox02(): Unit \ Assert = assertEq(expected = 1.0f64, unbox(box(1.0f64)))
 
-    @test
-    def float64Unbox03(): Bool = unbox(box(-1.0f64)) == -1.0f64
+    @Test
+    def float64Unbox03(): Unit \ Assert = assertEq(expected = -1.0f64, unbox(box(-1.0f64)))
 
-    @test
-    def float64Unbox04(): Bool = unbox(box(3.14f64)) == 3.14f64
+    @Test
+    def float64Unbox04(): Unit \ Assert = assertEq(expected = 3.14f64, unbox(box(3.14f64)))
 
-    @test
-    def float64Compare01(): Bool = box(0.0f64) == box(0.0f64)
+    @Test
+    def float64Compare01(): Unit \ Assert = assertEq(expected = box(0.0f64), box(0.0f64))
 
-    @test
-    def float64Compare02(): Bool = box(0.0f64) < box(1.0f64)
+    @Test
+    def float64Compare02(): Unit \ Assert = assertTrue(box(0.0f64) < box(1.0f64))
 
-    @test
-    def float64ToString01(): Bool = "${box(123.0f64)}" == "123.0"
+    @Test
+    def float64ToString01(): Unit \ Assert = assertEq(expected = "123.0", "${box(123.0f64)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // BigDecimal                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bigDecimalUnbox01(): Bool = unbox(box(0.0ff)) == 0.0ff
+    @Test
+    def bigDecimalUnbox01(): Unit \ Assert = assertEq(expected = 0.0ff, unbox(box(0.0ff)))
 
-    @test
-    def bigDecimalUnbox02(): Bool = unbox(box(1.0ff)) == 1.0ff
+    @Test
+    def bigDecimalUnbox02(): Unit \ Assert = assertEq(expected = 1.0ff, unbox(box(1.0ff)))
 
-    @test
-    def bigDecimalUnbox03(): Bool = unbox(box(-1.0ff)) == -1.0ff
+    @Test
+    def bigDecimalUnbox03(): Unit \ Assert = assertEq(expected = -1.0ff, unbox(box(-1.0ff)))
 
-    @test
-    def bigDecimalUnbox04(): Bool = unbox(box(3.14ff)) == 3.14ff
+    @Test
+    def bigDecimalUnbox04(): Unit \ Assert = assertEq(expected = 3.14ff, unbox(box(3.14ff)))
 
-    @test
-    def bigDecimalCompare01(): Bool = box(0.0ff) == box(0.0ff)
+    @Test
+    def bigDecimalCompare01(): Unit \ Assert = assertEq(expected = box(0.0ff), box(0.0ff))
 
-    @test
-    def bigDecimalCompare02(): Bool = box(0.0ff) < box(1.0ff)
+    @Test
+    def bigDecimalCompare02(): Unit \ Assert = assertTrue(box(0.0ff) < box(1.0ff))
 
-    @test
-    def bigDecimalToString01(): Bool = "${box(123.0ff)}" == "123.0"
+    @Test
+    def bigDecimalToString01(): Unit \ Assert = assertEq(expected = "123.0", "${box(123.0ff)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int8Unbox01(): Bool = unbox(box(0i8)) == 0i8
+    @Test
+    def int8Unbox01(): Unit \ Assert = assertEq(expected = 0i8, unbox(box(0i8)))
 
-    @test
-    def int8Unbox02(): Bool = unbox(box(1i8)) == 1i8
+    @Test
+    def int8Unbox02(): Unit \ Assert = assertEq(expected = 1i8, unbox(box(1i8)))
 
-    @test
-    def int8Unbox03(): Bool = unbox(box(-128i8)) == -128i8
+    @Test
+    def int8Unbox03(): Unit \ Assert = assertEq(expected = -128i8, unbox(box(-128i8)))
 
-    @test
-    def int8Unbox04(): Bool = unbox(box(127i8)) == 127i8
+    @Test
+    def int8Unbox04(): Unit \ Assert = assertEq(expected = 127i8, unbox(box(127i8)))
 
-    @test
-    def int8Compare01(): Bool = box(0i8) == box(0i8)
+    @Test
+    def int8Compare01(): Unit \ Assert = assertEq(expected = box(0i8), box(0i8))
 
-    @test
-    def int8Compare02(): Bool = box(0i8) < box(1i8)
+    @Test
+    def int8Compare02(): Unit \ Assert = assertTrue(box(0i8) < box(1i8))
 
-    @test
-    def int8ToString01(): Bool = "${box(123i8)}" == "123"
+    @Test
+    def int8ToString01(): Unit \ Assert = assertEq(expected = "123", "${box(123i8)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int16Unbox01(): Bool = unbox(box(0i16)) == 0i16
+    @Test
+    def int16Unbox01(): Unit \ Assert = assertEq(expected = 0i16, unbox(box(0i16)))
 
-    @test
-    def int16Unbox02(): Bool = unbox(box(1i16)) == 1i16
+    @Test
+    def int16Unbox02(): Unit \ Assert = assertEq(expected = 1i16, unbox(box(1i16)))
 
-    @test
-    def int16Unbox03(): Bool = unbox(box(-32768i16)) == -32768i16
+    @Test
+    def int16Unbox03(): Unit \ Assert = assertEq(expected = -32768i16, unbox(box(-32768i16)))
 
-    @test
-    def int16Unbox04(): Bool = unbox(box(32767i16)) == 32767i16
+    @Test
+    def int16Unbox04(): Unit \ Assert = assertEq(expected = 32767i16, unbox(box(32767i16)))
 
-    @test
-    def int16Compare01(): Bool = box(0i16) == box(0i16)
+    @Test
+    def int16Compare01(): Unit \ Assert = assertEq(expected = box(0i16), box(0i16))
 
-    @test
-    def int16Compare02(): Bool = box(0i16) < box(1i16)
+    @Test
+    def int16Compare02(): Unit \ Assert = assertTrue(box(0i16) < box(1i16))
 
-    @test
-    def int16ToString01(): Bool = "${box(123i16)}" == "123"
+    @Test
+    def int16ToString01(): Unit \ Assert = assertEq(expected = "123", "${box(123i16)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int32Unbox01(): Bool = unbox(box(0)) == 0i32
+    @Test
+    def int32Unbox01(): Unit \ Assert = assertEq(expected = 0i32, unbox(box(0)))
 
-    @test
-    def int32Unbox02(): Bool = unbox(box(1)) == 1i32
+    @Test
+    def int32Unbox02(): Unit \ Assert = assertEq(expected = 1i32, unbox(box(1)))
 
-    @test
-    def int32Unbox03(): Bool = unbox(box(-2147483648)) == -2147483648i32
+    @Test
+    def int32Unbox03(): Unit \ Assert = assertEq(expected = -2147483648i32, unbox(box(-2147483648)))
 
-    @test
-    def int32Unbox04(): Bool = unbox(box(2147483647)) == 2147483647i32
+    @Test
+    def int32Unbox04(): Unit \ Assert = assertEq(expected = 2147483647i32, unbox(box(2147483647)))
 
-    @test
-    def int32Compare01(): Bool = box(0i32) == box(0i32)
+    @Test
+    def int32Compare01(): Unit \ Assert = assertEq(expected = box(0i32), box(0i32))
 
-    @test
-    def int32Compare02(): Bool = box(0i32) < box(1i32)
+    @Test
+    def int32Compare02(): Unit \ Assert = assertTrue(box(0i32) < box(1i32))
 
-    @test
-    def int32ToString01(): Bool = "${box(123i32)}" == "123"
+    @Test
+    def int32ToString01(): Unit \ Assert = assertEq(expected = "123", "${box(123i32)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int64Unbox01(): Bool = unbox(box(0i64)) == 0i64
+    @Test
+    def int64Unbox01(): Unit \ Assert = assertEq(expected = 0i64, unbox(box(0i64)))
 
-    @test
-    def int64Unbox02(): Bool = unbox(box(1i64)) == 1i64
+    @Test
+    def int64Unbox02(): Unit \ Assert = assertEq(expected = 1i64, unbox(box(1i64)))
 
-    @test
-    def int64Unbox03(): Bool = unbox(box(-9223372036854775808i64)) == -9223372036854775808i64
+    @Test
+    def int64Unbox03(): Unit \ Assert = assertEq(expected = -9223372036854775808i64, unbox(box(-9223372036854775808i64)))
 
-    @test
-    def int64Unbox04(): Bool = unbox(box(9223372036854775807i64)) == 9223372036854775807i64
+    @Test
+    def int64Unbox04(): Unit \ Assert = assertEq(expected = 9223372036854775807i64, unbox(box(9223372036854775807i64)))
 
-    @test
-    def int64Compare01(): Bool = box(0i64) == box(0i64)
+    @Test
+    def int64Compare01(): Unit \ Assert = assertEq(expected = box(0i64), box(0i64))
 
-    @test
-    def int64Compare02(): Bool = box(0i64) < box(1i64)
+    @Test
+    def int64Compare02(): Unit \ Assert = assertTrue(box(0i64) < box(1i64))
 
-    @test
-    def int64ToString01(): Bool = "${box(123i64)}" == "123"
+    @Test
+    def int64ToString01(): Unit \ Assert = assertEq(expected = "123", "${box(123i64)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def stringUnbox01(): Bool = unbox(box("")) == ""
+    @Test
+    def stringUnbox01(): Unit \ Assert = assertEq(expected = "", unbox(box("")))
 
-    @test
-    def stringUnbox02(): Bool = unbox(box("a")) == "a"
+    @Test
+    def stringUnbox02(): Unit \ Assert = assertEq(expected = "a", unbox(box("a")))
 
-    @test
-    def stringUnbox03(): Bool = unbox(box(".")) == "."
+    @Test
+    def stringUnbox03(): Unit \ Assert = assertEq(expected = ".", unbox(box(".")))
 
-    @test
-    def stringUnbox04(): Bool = unbox(box(".#)!933")) == ".#)!933"
+    @Test
+    def stringUnbox04(): Unit \ Assert = assertEq(expected = ".#)!933", unbox(box(".#)!933")))
 
-    @test
-    def stringCompare01(): Bool = box("") == box("")
+    @Test
+    def stringCompare01(): Unit \ Assert = assertEq(expected = box(""), box(""))
 
-    @test
-    def stringCompare02(): Bool = box("a") < box("b")
+    @Test
+    def stringCompare02(): Unit \ Assert = assertTrue(box("a") < box("b"))
 
-    @test
-    def stringToString01(): Bool = "${box("abc")}" == "abc"
+    @Test
+    def stringToString01(): Unit \ Assert = assertEq(expected = "abc", "${box("abc")}")
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bigIntUnbox01(): Bool = unbox(box(0ii)) == 0ii
+    @Test
+    def bigIntUnbox01(): Unit \ Assert = assertEq(expected = 0ii, unbox(box(0ii)))
 
-    @test
-    def bigIntUnbox02(): Bool = unbox(box(1ii)) == 1ii
+    @Test
+    def bigIntUnbox02(): Unit \ Assert = assertEq(expected = 1ii, unbox(box(1ii)))
 
-    @test
-    def bigIntUnbox03(): Bool = unbox(box(-3498457932459234592873452983453245ii)) == -3498457932459234592873452983453245ii
+    @Test
+    def bigIntUnbox03(): Unit \ Assert = assertEq(expected = -3498457932459234592873452983453245ii, unbox(box(-3498457932459234592873452983453245ii)))
 
-    @test
-    def bigIntUnbox04(): Bool = unbox(box(3498457932459234592873452983453245ii)) == 3498457932459234592873452983453245ii
+    @Test
+    def bigIntUnbox04(): Unit \ Assert = assertEq(expected = 3498457932459234592873452983453245ii, unbox(box(3498457932459234592873452983453245ii)))
 
-    @test
-    def bigIntCompare01(): Bool = box(0ii) == box(0ii)
+    @Test
+    def bigIntCompare01(): Unit \ Assert = assertEq(expected = box(0ii), box(0ii))
 
-    @test
-    def bigIntCompare02(): Bool = box(0ii) < box(1ii)
+    @Test
+    def bigIntCompare02(): Unit \ Assert = assertTrue(box(0ii) < box(1ii))
 
-    @test
-    def bigIntToString01(): Bool = "${box(123ii)}" == "123"
+    @Test
+    def bigIntToString01(): Unit \ Assert = assertEq(expected = "123", "${box(123ii)}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple2                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple2Unbox01(): Bool = unbox(box((1, 1))) == (1, 1)
+    @Test
+    def tuple2Unbox01(): Unit \ Assert = assertEq(expected = (1, 1), unbox(box((1, 1))))
 
-    @test
-    def tuple2Unbox02(): Bool = unbox(box((1, Some(2)))) == (1, Some(2))
+    @Test
+    def tuple2Unbox02(): Unit \ Assert = assertEq(expected = (1, Some(2)), unbox(box((1, Some(2)))))
 
-    @test
-    def tuple2Unbox03(): Bool = unbox(box((true, 1))) == (true, 1)
+    @Test
+    def tuple2Unbox03(): Unit \ Assert = assertEq(expected = (true, 1), unbox(box((true, 1))))
 
-    @test
-    def tuple2Unbox04(): Bool = unbox(box(((1, 2), 91))) == ((1, 2), 91)
+    @Test
+    def tuple2Unbox04(): Unit \ Assert = assertEq(expected = ((1, 2), 91), unbox(box(((1, 2), 91))))
 
-    @test
-    def tuple2Compare01(): Bool = box((0, 0)) == box((0, 0))
+    @Test
+    def tuple2Compare01(): Unit \ Assert = assertEq(expected = box((0, 0)), box((0, 0)))
 
-    @test
-    def tuple2Compare02(): Bool = box((0, 0)) < box((0, 1))
+    @Test
+    def tuple2Compare02(): Unit \ Assert = assertTrue(box((0, 0)) < box((0, 1)))
 
-    @test
-    def tuple2ToString01(): Bool = "${box((1, 2))}" == "(1, 2)"
+    @Test
+    def tuple2ToString01(): Unit \ Assert = assertEq(expected = "(1, 2)", "${box((1, 2))}")
 
     /////////////////////////////////////////////////////////////////////////////
     // Tuple3                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def tuple3Unbox01(): Bool = unbox(box((1, 1, 82))) == (1, 1, 82)
+    @Test
+    def tuple3Unbox01(): Unit \ Assert = assertEq(expected = (1, 1, 82), unbox(box((1, 1, 82))))
 
-    @test
-    def tuple3Unbox02(): Bool = unbox(box((1, Some(2), 3))) == (1, Some(2), 3)
+    @Test
+    def tuple3Unbox02(): Unit \ Assert = assertEq(expected = (1, Some(2), 3), unbox(box((1, Some(2), 3))))
 
-    @test
-    def tuple3Unbox03(): Bool = unbox(box((true, 1, false))) == (true, 1, false)
+    @Test
+    def tuple3Unbox03(): Unit \ Assert = assertEq(expected = (true, 1, false), unbox(box((true, 1, false))))
 
-    @test
-    def tuple3Unbox04(): Bool = unbox(box(((1, 2), 91, true))) == ((1, 2), 91, true)
+    @Test
+    def tuple3Unbox04(): Unit \ Assert = assertEq(expected = ((1, 2), 91, true), unbox(box(((1, 2), 91, true))))
 
-    @test
-    def tuple3Compare01(): Bool = box((0, 0, 0)) == box((0, 0, 0))
+    @Test
+    def tuple3Compare01(): Unit \ Assert = assertEq(expected = box((0, 0, 0)), box((0, 0, 0)))
 
-    @test
-    def tuple3Compare02(): Bool = box((0, 0, 0)) < box((0, 0, 1))
+    @Test
+    def tuple3Compare02(): Unit \ Assert = assertTrue(box((0, 0, 0)) < box((0, 0, 1)))
 
-    @test
-    def tuple3ToString01(): Bool = "${box((1, 2, 3))}" == "(1, 2, 3)"
+    @Test
+    def tuple3ToString01(): Unit \ Assert = assertEq(expected = "(1, 2, 3)", "${box((1, 2, 3))}")
 }

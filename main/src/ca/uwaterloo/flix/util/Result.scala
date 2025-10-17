@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.util.collection.Chain
 
 import scala.annotation.{tailrec, unused}
 import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
 /**
   * A result either holds a value ([[Result.Ok]]) or holds an error ([[Result.Err]]).
@@ -160,5 +161,13 @@ object Result {
       case Ok(t) => Ok(Some(t))
       case Err(e) => Err(e)
     }
+  }
+
+  /**
+    * Returns `t` try as a [[Result]].
+    */
+  def fromTry[A](t: Try[A]): Result[A, Throwable] = t match {
+    case Success(v) => Result.Ok(v)
+    case Failure(e) => Result.Err(e)
   }
 }

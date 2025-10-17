@@ -56,7 +56,7 @@ trait Consumer {
 
   def consumeCase(cse: Case): Unit = ()
 
-  def consumeCaseSymUse(sym: CaseSymUse): Unit = ()
+  def consumeCaseSymUse(symUse: CaseSymUse): Unit = ()
 
   def consumeCatchRule(rule: CatchRule): Unit = ()
 
@@ -66,7 +66,7 @@ trait Consumer {
 
   def consumeDef(defn: Def): Unit = ()
 
-  def consumeDefSymUse(sym: DefSymUse): Unit = ()
+  def consumeDefSymUse(symUse: DefSymUse): Unit = ()
 
   def consumeDerivation(derive: Derivation): Unit = ()
 
@@ -74,7 +74,7 @@ trait Consumer {
 
   def consumeEff(eff: Effect): Unit = ()
 
-  def consumeEffectSymUse(effUse: EffectSymUse): Unit = ()
+  def consumeEffSymUse(effUse: EffSymUse): Unit = ()
 
   def consumeEnum(enm: Enum): Unit = ()
 
@@ -96,11 +96,15 @@ trait Consumer {
 
   def consumeMatchRule(rule: MatchRule): Unit = ()
 
+  def consumeExtMatchRule(rule: ExtMatchRule): Unit = ()
+
   def consumeOp(op: Op): Unit = ()
 
-  def consumeOpSymUse(sym: OpSymUse): Unit = ()
+  def consumeOpSymUse(symUse: OpSymUse): Unit = ()
 
   def consumePattern(pat: Pattern): Unit = ()
+
+  def consumeExtPattern(pat: ExtPattern): Unit = ()
 
   def consumePredicate(p: Predicate): Unit = ()
 

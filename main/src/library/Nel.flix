@@ -73,7 +73,11 @@ instance MonadZip[Nel] {
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
+    redef head(l: Nel[a]): Option[a] = Some(Nel.head(l))
+    redef isEmpty(_: Nel[a]): Bool = false
+    redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
 }
 
 instance UnorderedFoldable[Nel] {
@@ -116,6 +120,11 @@ instance SemiGroup[Nel[a]] {
 instance Iterable[Nel[a]] {
     type Elm = a
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
+}
+
+instance ForEach[Nel[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = Nel.forEach(f, l)
 }
 
 instance ToJava[Nel[a]] {
@@ -165,7 +174,7 @@ mod Nel {
     ///
     pub def init(l: Nel[a]): List[a] = match l {
         case Nel(_, Nil) => Nil
-        case Nel(x, xs)   => match List.reverse(xs) {
+        case Nel(x, xs)  => match List.reverse(xs) {
             case Nil     => x :: Nil
             case _ :: ys => x :: List.reverse(ys)
         }
@@ -566,14 +575,6 @@ mod Nel {
     }
 
     ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
-
-    ///
     /// Applies `f` to every element of `l`.
     ///
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
@@ -643,12 +644,6 @@ mod Nel {
        List.iterator(rc, x :: xs)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// non-empty list `l`.
     ///
@@ -705,7 +700,7 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ NonDet = region rc {
+    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ Shuffle = region rc {
         toArray(rc, l) !> Array.shuffle |> Array.toNel
     }
 

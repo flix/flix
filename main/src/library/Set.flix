@@ -64,7 +64,9 @@ instance MeetLattice[Set[a]] with Order[a] {
 instance Foldable[Set] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
+    redef isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
+    redef forAll(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.forAll(f, s)
+    redef exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
 }
 
 instance UnorderedFoldable[Set] {
@@ -99,6 +101,11 @@ instance Iterable[Set[a]] {
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
+instance ForEach[Set[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef = Set.forEach(f, s)
+}
+
 instance ToJava[Set[a]] with Order[a] {
     type Out = JSet
     type Aef = IO
@@ -126,7 +133,7 @@ mod Set {
     ///
     def useParallelEvaluation(s: Set[a]): Bool =
         let Set(t) = s;
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -328,7 +335,7 @@ mod Set {
         foldLeft((acc, x) -> Monoid.combine(acc, f(x)), Monoid.empty(), s)
 
     ///
-    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
     /// Returns `None` if `s` is the empty set.
     ///
@@ -337,7 +344,7 @@ mod Set {
         RedBlackTree.reduceLeft((x, _, y, _) -> (f(x, y), ()), t) |> Option.map(fst)
 
     ///
-    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
+    /// Applies `f` to all elements in `s` going from right to left until a single value `v` is obtained. Returns `Some(v)`.
     /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
     /// Returns `None` if `s` is the empty set.
     ///
@@ -361,30 +368,6 @@ mod Set {
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
             case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
-        }
-
-    ///
-    /// Returns the sum of all elements in the set `s`.
-    ///
-    pub def sum(s: Set[Int32]): Int32 =
-        Foldable.sum(s)
-
-    ///
-    /// Returns the sum of all elements in the set `s` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def sumWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
-        let Set(t) = s;
-        def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
-        match purityOf(f) {
-            case Purity.Pure(g) =>
-                if (useParallelEvaluation(s))
-                    RedBlackTree.parSumWith((k, _) -> g(k), t)
-                else
-                    sw()
-            case Purity.Impure(_) => sw()
         }
 
     ///
@@ -542,18 +525,10 @@ mod Set {
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
-    /// Returns `s` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), s);
-        d
-
-    ///
     /// Returns the set `s` as a `MutSet`.
     ///
     pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        MutSet.MutSet(rc, Ref.fresh(rc, s))
+        new MutSet @ rc { rc = rc, inner = s }
 
     ///
     /// Applies `f` to every element of `s`.
@@ -578,7 +553,7 @@ mod Set {
     ///
     pub def unfold(f: s -> Option[(a, s)] \ ef, st: s): Set[a] \ ef with Order[a] =
         def loop(sst, s) = match f(sst) {
-            case None         => s
+            case None           => s
             case Some((a, st1)) => loop(st1, insert(a, s))
         };
         loop(st, empty())
@@ -599,23 +574,11 @@ mod Set {
         loop(empty())
 
     ///
-    /// Returns the set `s` as a `DelayList`.
-    ///
-    pub def toDelayList(s: Set[a]): DelayList[a] =
-        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, s)
-
-    ///
     /// Returns an iterator over `s`.
     ///
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r =
         let Set(t) = s;
         RedBlackTree.iterator(rc, t) |> Iterator.map(fst)
-
-    ///
-    /// Returns an iterator over `s` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], s: Set[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, s) |> Iterator.zipWithIndex
 
     ///
     /// Returns the concatenation of the string representation

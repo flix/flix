@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.ParOps
 
@@ -44,7 +44,7 @@ object VarOffsets {
   /** Assigns stack offsets to `defn`. */
   private def visitDef(defn: Def): Unit = {
     var offset = 0
-    for (FormalParam(sym, _, tpe, _) <- defn.cparams ++ defn.fparams) {
+    for (FormalParam(sym, tpe) <- defn.cparams ++ defn.fparams) {
       offset = setStackOffset(sym, tpe, offset)
     }
     visitExp(defn.expr, offset)
@@ -52,7 +52,7 @@ object VarOffsets {
 
   /** Assigns stack offsets to `exp0` and returns the next available stack offset. */
   private def visitExp(exp0: Expr, offset0: Int): Int = exp0 match {
-    case Expr.Cst(_, _, _) =>
+    case Expr.Cst(_, _) =>
       offset0
 
     case Expr.Var(_, _, _) =>
@@ -68,6 +68,9 @@ object VarOffsets {
 
     case Expr.ApplyDef(_, args, _, _, _, _) =>
       visitExps(args, offset0)
+
+    case Expr.ApplyOp(_, exps, _, _, _) =>
+      visitExps(exps, offset0)
 
     case Expr.ApplySelfTail(_, args, _, _, _) =>
       visitExps(args, offset0)
@@ -86,27 +89,27 @@ object VarOffsets {
     case Expr.JumpTo(_, _, _, _) =>
       offset0
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _) =>
       var offset = offset0
       offset = setStackOffset(sym, exp1.tpe, offset)
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
+    case Expr.Stmt(exp1, exp2, _) =>
       var offset = offset0
       offset = visitExp(exp1, offset)
       visitExp(exp2, offset)
 
-    case Expr.Scope(sym, exp, _, _, _) =>
+    case Expr.Region(sym, exp, _, _, _) =>
       var offset = offset0
-      offset = setStackOffset(sym, MonoType.Region, offset)
+      offset = setStackOffset(sym, SimpleType.Region, offset)
       visitExp(exp, offset)
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       var offset = offset0
       offset = visitExp(exp, offset)
       for (CatchRule(sym, _, body) <- rules) {
-        offset = setStackOffset(sym, MonoType.Object, offset)
+        offset = setStackOffset(sym, SimpleType.Object, offset)
         offset = visitExp(body, offset)
       }
       offset
@@ -115,9 +118,6 @@ object VarOffsets {
       // The formal parameters in rules are not actually bound inside this function, so those are
       // ignored along with their expressions.
       visitExp(exp, offset0)
-
-    case Expr.Do(_, exps, _, _, _) =>
-      visitExps(exps, offset0)
 
     case Expr.NewObject(_, _, _, _, _, _) =>
       // The formal parameters in methods are not actually bound inside this function, so those are
@@ -136,7 +136,7 @@ object VarOffsets {
   }
 
   /** Assigns a stack offset to `sym` and returns the next available stack offset. */
-  private def setStackOffset(sym: Symbol.VarSym, tpe: MonoType, offset: Int): Int = {
+  private def setStackOffset(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(offset)
 
@@ -145,8 +145,8 @@ object VarOffsets {
   }
 
   /** Returns the stack slots used by `tpe`. */
-  private def getStackSize(tpe: MonoType): Int = tpe match {
-    case MonoType.Float64 | MonoType.Int64 => 2
+  private def getStackSize(tpe: SimpleType): Int = tpe match {
+    case SimpleType.Float64 | SimpleType.Int64 => 2
     case _ => 1
   }
 

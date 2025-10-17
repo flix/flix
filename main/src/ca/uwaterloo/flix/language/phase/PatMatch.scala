@@ -25,8 +25,10 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
@@ -136,11 +138,13 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.ApplyDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
+      case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.ApplySig(_, exps, _, _, _, _) => exps.foreach(visitExp)
+      case Expr.ApplyOp(_, exps, _, _, _) => exps.foreach(visitExp)
+
+      case Expr.ApplySig(_, exps, _, _, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Unary(_, exp, _, _, _) => visitExp(exp)
 
@@ -156,9 +160,7 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.Region(_, _) => ()
-
-      case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
+      case Expr.Region(_, _, exp, _, _, _) => visitExp(exp)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visitExp(exp1)
@@ -173,7 +175,7 @@ object PatMatch {
 
       case Expr.Match(exp, rules, _, _, _) =>
         visitExp(exp)
-        rules.foreach{r =>
+        rules.foreach { r =>
           visitExp(r.exp)
           r.guard.foreach(visitExp)
         }
@@ -187,16 +189,16 @@ object PatMatch {
         visitExp(exp)
         rules.foreach(r => visitExp(r.exp))
 
-      case Expr.ExtensibleMatch(_, exp1, _, exp2, _, exp3, _, _, _) =>
-        visitExp(exp1)
-        visitExp(exp2)
-        visitExp(exp3)
+      case Expr.ExtMatch(exp, rules, _, _, _) =>
+        // Exhaustiveness does not make sense for extensible variants.
+        visitExp(exp)
+        rules.foreach(r => visitExp(r.exp))
 
       case Expr.Tag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.RestrictableTag(_, exps, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.ExtensibleTag(_, exps, _, _, _) => exps.foreach(visitExp)
+      case Expr.ExtTag(_, exps, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Tuple(elms, _, _, _) => elms.foreach(visitExp)
 
@@ -271,8 +273,6 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.Do(_, exps, _, _, _) => exps.foreach(visitExp)
-
       case Expr.InvokeConstructor(_, args, _, _, _) => args.foreach(visitExp)
 
       case Expr.InvokeMethod(_, exp, args, _, _, _) =>
@@ -302,7 +302,7 @@ object PatMatch {
         visitExp(exp2)
 
       case Expr.SelectChannel(rules, default, _, _, _) =>
-        rules.foreach{r =>
+        rules.foreach { r =>
           visitExp(r.exp)
           visitExp(r.chan)
         }
@@ -329,13 +329,20 @@ object PatMatch {
         visitExp(exp1)
         visitExp(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+        exps.foreach(visitExp)
+        visitHeadPred(select)
 
-      case Expr.FixpointFilter(_, exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.foreach(visitExp)
 
-      case Expr.FixpointInject(exp, _, _, _, _) => visitExp(exp)
+      case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+        exps.foreach(visitExp)
+        visitExp(queryExp)
+        selects.foreach(visitExp)
+        from.foreach(visitBodyPred)
+        where.foreach(visitExp)
 
-      case Expr.FixpointProject(_, exp, _, _, _) => visitExp(exp)
+      case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.foreach(visitExp)
 
       case Expr.Error(_, _, _) => ()
     }
@@ -370,7 +377,7 @@ object PatMatch {
     */
   private def checkFrags(frags: List[ParYieldFragment], root: TypedAst.Root, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     // Call findNonMatchingPat for each pattern individually
-    frags.foreach(f => findNonMatchingPat(List(List(f.pat)), 1, root) match {
+    frags.foreach(f => findNonMatchingPatWrapper(List(List(f.pat)), 1, root) match {
       case Exhaustive => ()
       case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), loc))
     })
@@ -388,13 +395,39 @@ object PatMatch {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
-    findNonMatchingPat(unguardedRules.map(r => List(r.pat)), 1, root) match {
+    findNonMatchingPatWrapper(unguardedRules.map(r => List(r.pat)), 1, root) match {
       case Exhaustive => ()
       case NonExhaustive(ctors) => sctx.errors.add(NonExhaustiveMatchError(prettyPrintCtor(ctors.head), exp.loc))
     }
   }
 
   /**
+    * Given a list of patterns, computes a pattern vector of size n such
+    * that p doesn't match any rule in rules.
+    *
+    * Wraps `findNonMatchingPat` with a simple bail out fast check for catch all cases.
+    *
+    * @param rules The rules to check for exhaustion
+    * @param n     The size of resulting pattern vector
+    * @param root  The AST root of the expression
+    * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
+    */
+  private def findNonMatchingPatWrapper(rules: List[List[Pattern]], n: Int, root: TypedAst.Root)(implicit sctx: SharedContext): Exhaustiveness = {
+    val hasMatchAll = rules.exists {
+      case head :: Nil => patToCtor(head) match {
+        case TyCon.Wild => true
+        case _ => false
+      }
+      case _ => false
+    }
+    if (hasMatchAll) {
+      Exhaustive
+    } else {
+      findNonMatchingPat(rules, n, root)
+    }
+  }
+
+    /**
     * Given a list of patterns, computes a pattern vector of size n such
     * that p doesn't match any rule in rules
     *
@@ -518,11 +551,7 @@ object PatMatch {
       case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
           val ps = pats.map(_.pat)
-          val p = tail match {
-            case TypedAst.Pattern.Cst(Constant.RecordEmpty, _, _) => Nil
-            case _ => List(tail)
-          }
-          Some(ps ::: p ::: pat.tail)
+          Some(ps ::: List(tail) ::: pat.tail)
         case _ => None
       }
       // Also handle the non tag constructors
@@ -619,6 +648,9 @@ object PatMatch {
     * @return
     */
   private def missingFromSig(ctors: List[TyCon], root: TypedAst.Root): List[TyCon] = {
+    // Keep track of which enums we have added to `expCtors` to avoid adding them again.
+    val addedEnums = mutable.Set[Symbol.EnumSym]()
+
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon): List[TyCon] = x match {
       // Structural types have just one constructor
@@ -627,15 +659,20 @@ object PatMatch {
 
       // For Enums, we have to figure out what base enum is, then look it up in the enum definitions to get the
       // other cases
-      case TyCon.Enum(sym, _) => {
-        root.enums(sym.enumSym).cases.map {
-          case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
+      case TyCon.Enum(sym, _) =>
+        if (addedEnums.contains(sym.enumSym)) {
+          Nil
+        } else {
+          addedEnums.add(sym.enumSym)
+          root.enums(sym.enumSym).cases.map {
+            case (otherSym, caze) => TyCon.Enum(otherSym, List.fill(caze.tpes.length)(TyCon.Wild))
+          }.toList
         }
-      }.toList
 
-      // For Unit and Bool constants are enumerable
+      // For Unit, Bool and empty record, constants are enumerable
       case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
       case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
+      case TyCon.Cst(Constant.RecordEmpty) => List(TyCon.Cst(Constant.RecordEmpty))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -668,10 +705,7 @@ object PatMatch {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, args) => args.length
-    case TyCon.Record(labels, tail) => tail match {
-      case TyCon.Cst(Constant.RecordEmpty) => labels.length
-      case _ => labels.length + 1
-    }
+    case TyCon.Record(labels, _) => labels.length + 1
   }
 
   /**
@@ -712,7 +746,7 @@ object PatMatch {
     // Everything else is the same constructor if they are the same type
     case (_: TyCon.Tuple, _: TyCon.Tuple) => true
     case (_: TyCon.Record, _: TyCon.Record) => true
-    case (a, b) => a == b;
+    case (a, b) => a == b
   }
 
   /**
@@ -753,13 +787,9 @@ object PatMatch {
       val rebuiltArgs = lst.take(args.length)
       TyCon.Enum(sym, rebuiltArgs) :: lst.drop(args.length)
     case TyCon.Record(labels, _) =>
-      val all = lst.take(labels.length + 1)
-      val ls = labels.map {
-        case (l, _) => l
-      }.zip(all.take(labels.length))
-      val t = all.takeRight(1).head
+      val ls = ListOps.zip(labels.map { case (l, _) => l }, lst.take(labels.length))
+      val t = lst.slice(labels.length, labels.length + 1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
-    case TyCon.Cst(Constant.RecordEmpty) => lst
     case a => a :: lst
   }
 
@@ -785,20 +815,20 @@ object PatMatch {
   }
 
   /**
-   * Companion object for [[SharedContext]]
-   */
+    * Companion object for [[SharedContext]]
+    */
   private object SharedContext {
 
     /**
-     * Returns a fresh shared context.
-     */
+      * Returns a fresh shared context.
+      */
     def mk(): SharedContext = new SharedContext(new ConcurrentLinkedQueue())
   }
 
   /**
-   * A global shared context. Must be thread-safe.
-   *
-   * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
-   */
+    * A global shared context. Must be thread-safe.
+    *
+    * @param errors the [[NonExhaustiveMatchError]]s in the AST, if any.
+    */
   private case class SharedContext(errors: ConcurrentLinkedQueue[NonExhaustiveMatchError])
 }

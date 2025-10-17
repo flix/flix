@@ -87,7 +87,11 @@ instance MonadZip[Nec] {
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
+    redef head(c: Nec[a]): Option[a] = Some(Nec.head(c))
+    redef isEmpty(_: Nec[a]): Bool = false
+    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
 }
 
 instance UnorderedFoldable[Nec] {
@@ -132,6 +136,11 @@ instance ToString[Nec[a]] with ToString[a] {
 instance Iterable[Nec[a]] {
     type Elm = a
     pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
+}
+
+instance ForEach[Nec[a]] {
+    type Elm = a
+    pub def forEach(f: a -> Unit \ ef, l: Nec[a]): Unit \ ef = Nec.forEach(f, l)
 }
 
 instance ToJava[Nec[a]] {
@@ -258,7 +267,7 @@ mod Nec {
             case (NecOne(x), None)      => k(ViewLeft.OneLeft(x))
             case (NecOne(x), Some(rs1)) => k(ViewLeft.SomeLeft(x, rs1))
             case (Nec(l, r), None)      => loop(l, Some(r),  k)
-            case (Nec(l, r), Some(rs1)) => loop(l, Some(append(r, rs1)),  k)
+            case (Nec(l, r), Some(rs1)) => loop(l, Some(append(r, rs1)), k)
         };
         loop(c, None, x -> x)
 
@@ -275,8 +284,8 @@ mod Nec {
         def loop(c1: Nec[a], rs: Option[Nec[a]], k: ViewRight[a] -> ViewRight[a]) = match (c1, rs) {
             case (NecOne(x), None)      => k(ViewRight.OneRight(x))
             case (NecOne(x), Some(rs1)) => k(ViewRight.SomeRight(rs1, x))
-            case (Nec(l, r), None)      => loop(r, Some(l),  k)
-            case (Nec(l, r), Some(rs1)) => loop(r, Some(append(rs1, l)),  k)
+            case (Nec(l, r), None)      => loop(r, Some(l), k)
+            case (Nec(l, r), Some(rs1)) => loop(r, Some(append(rs1, l)), k)
         };
         loop(c, None, x -> x)
 
@@ -749,14 +758,6 @@ mod Nec {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
-
-    ///
     /// Returns `c` as a mutable list.
     ///
     pub def toMutList(rc1: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
@@ -824,12 +825,6 @@ mod Nec {
                 Some(x)
         };
         Iterator.iterate(rc, next)
-
-    ///
-    /// Returns an iterator over `c` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.
@@ -1027,7 +1022,7 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ Shuffle = region rc {
         toArray(rc, c) !> Array.shuffle |> Array.toNec
     }
 

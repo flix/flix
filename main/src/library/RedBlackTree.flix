@@ -61,7 +61,7 @@ instance Functor[RedBlackTree[k]] {
 instance Foldable[RedBlackTree[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
+    redef isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
 }
 
 instance UnorderedFoldable[RedBlackTree[k]] {
@@ -90,6 +90,11 @@ instance Iterable[RedBlackTree[k, v]] {
     type Elm = (k, v)
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
             RedBlackTree.iterator(rc, t)
+}
+
+instance ForEach[RedBlackTree[k, v]] {
+    type Elm = (k, v)
+    pub def forEach(f: ((k, v)) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = RedBlackTree.forEach(k -> v -> f((k, v)), t)
 }
 
 mod RedBlackTree {
@@ -131,7 +136,7 @@ mod RedBlackTree {
     /// By default we only enable parallel evaluation if the tree has a certain size.
     ///
     def useParallelEvaluation(t: RedBlackTree[k, v]): Bool =
-        let minSize = Int32.pow(2, RedBlackTree.blackHeight(t));
+        let minSize = Int32.pow(base = 2, RedBlackTree.blackHeight(t));
         minSize >= 1024
 
     ///
@@ -220,26 +225,26 @@ mod RedBlackTree {
     /// Otherwise, returns `t`.
     ///
     pub def remove(k: k, t: RedBlackTree[k, v]): RedBlackTree[k, v] with Order[k] =
-        def loop(tt, sk) = match tt {
-        case Node(Color.Red, Leaf, k1, _, Leaf)   => sk(if ((k <=> k1) == Comparison.EqualTo) Leaf else tt)
-        case Node(Color.Black, Leaf, k1, _, Leaf) => sk(if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt)
-        case Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
-            match k <=> k2 {
-                case Comparison.LessThan    => loop(Node(Color.Red, Leaf, k1, v1, Leaf), ks -> sk(Node(Color.Black, ks, k2, v2, Leaf)))
-                case Comparison.EqualTo     => sk(Node(Color.Black, Leaf, k1, v1, Leaf))
-                case Comparison.GreaterThan => sk(Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf))
-            }
-        case Node(c, a, k1, v1, b) =>
-            match k <=> k1 {
-                case Comparison.LessThan => loop(a, ks -> sk(rotate(Node(c, ks, k1, v1, b))))
-                case Comparison.EqualTo  =>
-                    let (k2, v2, e) = minDelete(b);
-                    sk(rotate(Node(c, a, k2, v2, e)))
-                case Comparison.GreaterThan => loop(b, ks -> sk(rotate(Node(c, a, k1, v1, ks))))
-            }
-            case _ => sk(tt)
+        def loop(tt) = match tt {
+            case Node(Color.Red, Leaf, k1, _, Leaf)   => if ((k <=> k1) == Comparison.EqualTo) Leaf else tt
+            case Node(Color.Black, Leaf, k1, _, Leaf) => if ((k <=> k1) == Comparison.EqualTo) DoubleBlackLeaf else tt
+            case Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf) =>
+                match k <=> k2 {
+                    case Comparison.LessThan    => Node(Color.Black, loop(Node(Color.Red, Leaf, k1, v1, Leaf)), k2, v2, Leaf)
+                    case Comparison.EqualTo     => Node(Color.Black, Leaf, k1, v1, Leaf)
+                    case Comparison.GreaterThan => Node(Color.Black, Node(Color.Red, Leaf, k1, v1, Leaf), k2, v2, Leaf)
+                }
+            case Node(c, a, k1, v1, b) =>
+                match k <=> k1 {
+                    case Comparison.LessThan => rotate(Node(c, loop(a), k1, v1, b))
+                    case Comparison.EqualTo  =>
+                        let (k2, v2, e) = minDelete(b);
+                        rotate(Node(c, a, k2, v2, e))
+                    case Comparison.GreaterThan => rotate(Node(c, a, k1, v1, loop(b)))
+                }
+            case _ => tt
         };
-        redden(loop(t, identity))
+        redden(loop(t))
 
     ///
     /// Returns `Some(v)` if `k => v` is in `t`.
@@ -571,15 +576,17 @@ mod RedBlackTree {
     /// Helper function for `delete`.
     ///
     def minDelete(t: RedBlackTree[k, v]): (k, v, RedBlackTree[k, v]) =
-        def loop(tt, sk) = match tt {
-            case Node(Color.Red, Leaf, k1, v1, Leaf)   => sk((k1, v1, Leaf))
-            case Node(Color.Black, Leaf, k1, v1, Leaf) => sk((k1, v1, DoubleBlackLeaf))
+        def loop(tt) = match tt {
+            case Node(Color.Red, Leaf, k1, v1, Leaf)   => (k1, v1, Leaf)
+            case Node(Color.Black, Leaf, k1, v1, Leaf) => (k1, v1, DoubleBlackLeaf)
             case Node(Color.Black, Leaf, k1, v1, Node(Color.Red, Leaf, k2, v2, Leaf)) =>
-                sk((k1, v1, Node(Color.Black, Leaf, k2, v2, Leaf)))
-            case Node(c, a, k1, v1, b) => loop(a, match (k3, v3, e) -> sk((k3, v3, rotate(Node(c, e, k1, v1, b)))))
+                (k1, v1, Node(Color.Black, Leaf, k2, v2, Leaf))
+            case Node(c, a, k1, v1, b) =>
+                let (k, v, child) = loop(a);
+                (k, v, rotate(Node(c, child, k1, v1, b)))
             case _ => unreachable!()
         };
-        loop(t, identity)
+        loop(t)
 
     ///
     /// Applies `f` to all key-value pairs from `t` where `p(k)` returns `Comparison.EqualTo`.
@@ -832,14 +839,6 @@ mod RedBlackTree {
         RedBlackTree.foldRight((k, v, acc) -> (k, v) :: acc, Nil, t)
 
     ///
-    /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
-    ///
-    pub def toMutDeque(rc: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
-        d
-
-    ///
     /// Build a node applicatively.
     ///
     /// This is a helper function for `mapAWithKey`.
@@ -969,15 +968,6 @@ mod RedBlackTree {
     /// Returns a new copy of tree `t` with just the nodes that satisfy the predicate `f`.
     ///
     pub def filter(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
-        filterImplementation(f, t)
-
-    ///
-    /// Temporary hack!
-    /// A concrete implementation of `filter` that the `Filterable` instance can use.
-    /// If `Filterable.filter` calls `filter` it appears to invoke a cycle and the concrete
-    /// implementation is never called.
-    ///
-    def filterImplementation(f: v -> Bool \ ef, t: RedBlackTree[k, v]): RedBlackTree[k, v] \ ef with Order[k] =
         foldLeft((acc, k, v) -> if (f(v)) insert(k, v, acc) else acc, empty(), t)
 
     ///
@@ -986,13 +976,6 @@ mod RedBlackTree {
     /// produces `Some(_)`.
     ///
     pub def filterMap(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
-        filterMapImplementation(f, t)
-
-    ///
-    /// Temporary hack!
-    /// A concrete implementation of `filterMap` that the `Filterable` instance can use.
-    ///
-    def filterMapImplementation(f: a -> Option[b] \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef with Order[k] =
         let step = (acc, k, a) -> match f(a) {
             case Some(b) => insert(k, b, acc)
             case None    => acc

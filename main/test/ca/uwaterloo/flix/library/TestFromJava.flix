@@ -1,261 +1,246 @@
-/*
- *  Copyright 2024 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestFromJava {
 
-    import java.util.{Map => JMap}
-    import java.util.{Set => JSet}
-    import java.util.{List => JList}
-    import java.lang.{String => JString}
-    import java.math.BigInteger
-    import java.math.BigDecimal
+    use Assert.{assertTrue, assertEq};
+    import java.util.{Map => JMap};
+    import java.util.{Set => JSet};
+    import java.util.{List => JList};
+    import java.lang.{String => JString};
+    import java.math.BigInteger;
+    import java.math.BigDecimal;
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int8FromJava01(): Bool =
+    @Test
+    def int8FromJava01(): Unit \ Assert =
         let i = Int8.valueOf(0i8);
-        ToFlix.toFlix(i) == 0i8
+        assertEq(expected = 0i8, ToFlix.toFlix(i))
 
-    @test
-    def int8FromJava02(): Bool =
+    @Test
+    def int8FromJava02(): Unit \ Assert =
         let i = Int8.valueOf(100i8);
-        ToFlix.toFlix(i) == 100i8
+        assertEq(expected = 100i8, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int16FromJava01(): Bool =
+    @Test
+    def int16FromJava01(): Unit \ Assert =
         let i = Int16.valueOf(0i16);
-        ToFlix.toFlix(i) == 0i16
+        assertEq(expected = 0i16, ToFlix.toFlix(i))
 
-    @test
-    def int16FromJava02(): Bool =
+    @Test
+    def int16FromJava02(): Unit \ Assert =
         let i = Int16.valueOf(100i16);
-        ToFlix.toFlix(i) == 100i16
+        assertEq(expected = 100i16, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int32FromJava01(): Bool =
+    @Test
+    def int32FromJava01(): Unit \ Assert =
         let i = Int32.valueOf(0);
-        ToFlix.toFlix(i) == 0
+        assertEq(expected = 0, ToFlix.toFlix(i))
 
-    @test
-    def int32FromJava02(): Bool =
+    @Test
+    def int32FromJava02(): Unit \ Assert =
         let i = Int32.valueOf(100);
-        ToFlix.toFlix(i) == 100
+        assertEq(expected = 100, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def int64FromJava01(): Bool =
+    @Test
+    def int64FromJava01(): Unit \ Assert =
         let i = Int64.valueOf(0i64);
-        ToFlix.toFlix(i) == 0i64
+        assertEq(expected = 0i64, ToFlix.toFlix(i))
 
-    @test
-    def int64FromJava02(): Bool =
+    @Test
+    def int64FromJava02(): Unit \ Assert =
         let i = Int64.valueOf(100i64);
-        ToFlix.toFlix(i) == 100i64
+        assertEq(expected = 100i64, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float32                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def float32FromJava01(): Bool =
+    @Test
+    def float32FromJava01(): Unit \ Assert =
         let d = Float32.valueOf(0.0f32);
-        ToFlix.toFlix(d) == 0.0f32
+        assertEq(expected = 0.0f32, ToFlix.toFlix(d))
 
-    @test
-    def float32FromJava02(): Bool =
+    @Test
+    def float32FromJava02(): Unit \ Assert =
         let d = Float32.valueOf(100.0f32);
-        ToFlix.toFlix(d) == 100.0f32
+        assertEq(expected = 100.0f32, ToFlix.toFlix(d))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def float64FromJava01(): Bool =
+    @Test
+    def float64FromJava01(): Unit \ Assert =
         let d = Float64.valueOf(0.0f64);
-        ToFlix.toFlix(d) == 0.0f64
+        assertEq(expected = 0.0f64, ToFlix.toFlix(d))
 
-    @test
-    def float64FromJava02(): Bool =
+    @Test
+    def float64FromJava02(): Unit \ Assert =
         let d = Float64.valueOf(100.0f64);
-        ToFlix.toFlix(d) == 100.0f64
+        assertEq(expected = 100.0f64, ToFlix.toFlix(d))
 
     /////////////////////////////////////////////////////////////////////////////
     // BigInt                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bigIntFromJava01(): Bool =
+    @Test
+    def bigIntFromJava01(): Unit \ Assert =
         let i = unsafe BigInteger.valueOf(0i64);
-        ToFlix.toFlix(i) == 0ii
+        assertEq(expected = 0ii, ToFlix.toFlix(i))
 
-    @test
-    def bigIntFromJava02(): Bool =
+    @Test
+    def bigIntFromJava02(): Unit \ Assert =
         let i = unsafe BigInteger.valueOf(100i64);
-        ToFlix.toFlix(i) == 100ii
+        assertEq(expected = 100ii, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
     // BigDecimal                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def bigDecimalFromJava01(): Bool =
+    @Test
+    def bigDecimalFromJava01(): Unit \ Assert =
         let d = unsafe BigDecimal.valueOf(0i64);
-        ToFlix.toFlix(d) == 0.0ff
+        assertEq(expected = 0.0ff, ToFlix.toFlix(d))
 
-    @test
-    def bigDecimalFromJava02(): Bool =
+    @Test
+    def bigDecimalFromJava02(): Unit \ Assert =
         let d = unsafe BigDecimal.valueOf(100i64);
-        ToFlix.toFlix(d) == 100.0ff
+        assertEq(expected = 100.0ff, ToFlix.toFlix(d))
 
     /////////////////////////////////////////////////////////////////////////////
     // Char                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def charFromJava01(): Bool =
+    @Test
+    def charFromJava01(): Unit \ Assert =
         let c = Char.valueOf('0');
-        ToFlix.toFlix(c) == '0'
+        assertEq(expected = '0', ToFlix.toFlix(c))
 
-    @test
-    def charFromJava02(): Bool =
+    @Test
+    def charFromJava02(): Unit \ Assert =
         let c = Char.valueOf('a');
-        ToFlix.toFlix(c) == 'a'
+        assertEq(expected = 'a', ToFlix.toFlix(c))
 
     /////////////////////////////////////////////////////////////////////////////
     // String                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def stringFromJava01(): Bool =
+    @Test
+    def stringFromJava01(): Unit \ Assert =
         let s = unsafe JString.valueOf(true);
-        ToFlix.toFlix(s) == "true"
+        assertEq(expected = "true", ToFlix.toFlix(s))
 
-    @test
-    def stringFromJava02(): Bool =
+    @Test
+    def stringFromJava02(): Unit \ Assert =
         let s = unsafe JString.valueOf(false);
-        ToFlix.toFlix(s) == "false"
+        assertEq(expected = "false", ToFlix.toFlix(s))
 
     /////////////////////////////////////////////////////////////////////////////
     // Chain                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def chainFromJava01(): Bool =
+    @Test
+    def chainFromJava01(): Unit \ Assert =
         let l = unsafe JList.of();
-        (ToFlix.toFlix(l): Chain[String]) == (Chain.empty(): Chain[String])
+        assertEq(expected = (Chain.empty(): Chain[String]), (ToFlix.toFlix(l): Chain[String]))
 
-    @test
-    def chainFromJava02(): Bool =
+    @Test
+    def chainFromJava02(): Unit \ Assert =
         let l = unsafe JList.of("one");
-        (ToFlix.toFlix(l): Chain[String]) == Chain.singleton("one")
+        assertEq(expected = Chain.singleton("one"), (ToFlix.toFlix(l): Chain[String]))
 
-    @test
-    def chainFromJava03(): Bool =
+    @Test
+    def chainFromJava03(): Unit \ Assert =
         let l = unsafe JList.of("one", "two");
-        (ToFlix.toFlix(l): Chain[String]) == List.toChain(List#{"one", "two"})
+        assertEq(expected = List.toChain(List#{"one", "two"}), (ToFlix.toFlix(l): Chain[String]))
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def listFromJava01(): Bool =
+    @Test
+    def listFromJava01(): Unit \ Assert =
         let l = unsafe JList.of();
-        (ToFlix.toFlix(l): List[String]) == (Nil: List[String])
+        assertEq(expected = (Nil: List[String]), (ToFlix.toFlix(l): List[String]))
 
-    @test
-    def listFromJava02(): Bool =
+    @Test
+    def listFromJava02(): Unit \ Assert =
         let l = unsafe JList.of("one");
-        (ToFlix.toFlix(l): List[String]) == List#{"one"}
+        assertEq(expected = List#{"one"}, (ToFlix.toFlix(l): List[String]))
 
-    @test
-    def listFromJava03(): Bool =
+    @Test
+    def listFromJava03(): Unit \ Assert =
         let l = unsafe JList.of("one", "two");
-        (ToFlix.toFlix(l): List[String]) == List#{"one", "two"}
+        assertEq(expected = List#{"one", "two"}, (ToFlix.toFlix(l): List[String]))
 
     /////////////////////////////////////////////////////////////////////////////
     // Map                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def mapFromJava01(): Bool =
+    @Test
+    def mapFromJava01(): Unit \ Assert =
         let m = unsafe JMap.of();
-        (ToFlix.toFlix(m): Map[String, String]) == Map#{}
+        assertEq(expected = Map#{}, (ToFlix.toFlix(m): Map[String, String]))
 
-    @test
-    def mapFromJava02(): Bool =
+    @Test
+    def mapFromJava02(): Unit \ Assert =
         let m = unsafe JMap.of("a", "one");
-        (ToFlix.toFlix(m): Map[String, String]) == Map#{"a" => "one"}
+        assertEq(expected = Map#{"a" => "one"}, (ToFlix.toFlix(m): Map[String, String]))
 
-    @test
-    def mapFromJava03(): Bool =
+    @Test
+    def mapFromJava03(): Unit \ Assert =
         let m = unsafe JMap.of("a", "one", "b", "two");
-        (ToFlix.toFlix(m): Map[String, String]) == Map#{"a" => "one", "b" => "two"}
+        assertEq(expected = Map#{"a" => "one", "b" => "two"}, (ToFlix.toFlix(m): Map[String, String]))
 
     /////////////////////////////////////////////////////////////////////////////
     // Set                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def setFromJava01(): Bool=
+    @Test
+    def setFromJava01(): Unit \ Assert =
         let s = unsafe JSet.of();
-        (ToFlix.toFlix(s): Set[String]) == Set#{}
+        assertEq(expected = Set#{}, (ToFlix.toFlix(s): Set[String]))
 
-    @test
-    def setFromJava02(): Bool =
+    @Test
+    def setFromJava02(): Unit \ Assert =
         let s = unsafe JSet.of("one");
-        (ToFlix.toFlix(s): Set[String]) == Set#{"one"}
+        assertEq(expected = Set#{"one"}, (ToFlix.toFlix(s): Set[String]))
 
-    @test
-    def setFromJava03(): Bool =
+    @Test
+    def setFromJava03(): Unit \ Assert =
         let s = unsafe JSet.of("one", "two");
-        (ToFlix.toFlix(s): Set[String]) == Set#{"one", "two"}
+        assertEq(expected = Set#{"one", "two"}, (ToFlix.toFlix(s): Set[String]))
 
     /////////////////////////////////////////////////////////////////////////////
     // Vector                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def vectorFromJava01(): Bool =
+    @Test
+    def vectorFromJava01(): Unit \ Assert =
         let v = unsafe JList.of();
-        (ToFlix.toFlix(v): Vector[String]) == Vector#{}
+        assertEq(expected = Vector#{}, (ToFlix.toFlix(v): Vector[String]))
 
-    @test
-    def vectorFromJava02(): Bool =
+    @Test
+    def vectorFromJava02(): Unit \ Assert =
         let v = unsafe JList.of("one");
-        (ToFlix.toFlix(v): Vector[String]) == Vector#{"one"}
+        assertEq(expected = Vector#{"one"}, (ToFlix.toFlix(v): Vector[String]))
 
-    @test
-    def vectorFromJava03(): Bool =
+    @Test
+    def vectorFromJava03(): Unit \ Assert =
         let v = unsafe JList.of("one", "two");
-        (ToFlix.toFlix(v): Vector[String]) == Vector#{"one", "two"}
+        assertEq(expected = Vector#{"one", "two"}, (ToFlix.toFlix(v): Vector[String]))
 
 }

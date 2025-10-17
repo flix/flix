@@ -82,7 +82,7 @@ object LspServer {
       * The proxy to the language client.
       * Used to send messages to the client.
       */
-    var flixLanguageClient: LanguageClient = _
+    private var flixLanguageClient: LanguageClient = _
 
     /**
       * The client capabilities.
@@ -145,7 +145,7 @@ object LspServer {
         FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
 
       flixSources.foreach { case p =>
-        if (FileOps.checkExt(p, ".flix")) {
+        if (FileOps.checkExt(p, "flix")) {
           val source = Files.readString(p)
           addSourceCode(p.toUri.toString, source)
         }
@@ -161,11 +161,11 @@ object LspServer {
       FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
         .foreach{ case p =>
           // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-          if (FileOps.checkExt(p, ".jar"))
+          if (FileOps.checkExt(p, "jar"))
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-          if (FileOps.checkExt(p, ".fpkg")) {
-            flix.addPkg(p)(SecurityContext.AllPermissions)
+          if (FileOps.checkExt(p, "fpkg")) {
+            flix.addPkg(p)(SecurityContext.Unrestricted)
           }
         }
     }
@@ -220,7 +220,7 @@ object LspServer {
       * Adds the given source code to the Flix instance.
       */
     def addSourceCode(uri: String, src: String): Unit = {
-      flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
+      flix.addSourceCode(uri, src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 
@@ -410,7 +410,7 @@ object LspServer {
     override def inlayHint(params: InlayHintParams): CompletableFuture[util.List[InlayHint]] = {
       val uri = params.getTextDocument.getUri
       val range = Range.fromLsp4j(params.getRange)
-      val hints = InlayHintProvider.getInlayHints(uri, range)
+      val hints = InlayHintProvider.getInlayHints(uri, range)(flixLanguageServer.root)
       CompletableFuture.completedFuture(hints.map(_.toLsp4j).asJava)
     }
 

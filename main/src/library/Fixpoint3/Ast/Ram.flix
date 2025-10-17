@@ -17,11 +17,12 @@
  */
 
 mod Fixpoint3.Ast.Ram {
-    use Fixpoint.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
-    use Fixpoint.Ast.Shared.Denotation.{Relational}
+    use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
+    use Fixpoint3.Ast.Shared.Denotation.{Relational}
     use Fixpoint3.Boxed
-    use Fixpoint.PredSymsOf
-    use Fixpoint.SubstitutePredSym
+    use Fixpoint3.PredSymsOf
+    use Fixpoint3.SubstitutePredSym
+    use Fixpoint3.TypeInfo.{provType, RelType, Type, TypeInformation}
 
     /////////////////////////////////////////////////////////////////////////////
     // RamProgram                                                              //
@@ -29,24 +30,31 @@ mod Fixpoint3.Ast.Ram {
 
     ///
     /// A `RamProgram` represents a compiled Datalog program.
-    /// 
+    ///
     @Internal
     pub enum RamProgram {
-        case Program(RamStmt, Facts, Predicates, IndexInformation)
+        case Program(RamStmt, FactTuple, Predicates, IndexInformation, TypeInformation)
     }
 
     ///
-    /// Contains a set of `RelSym` representing the names of the relations in the program
-    ///  and 1 + the maximal identifier of the `RelSym`s.
+    /// Contains a list of `RelSym` representing the names of the relations in the program,
+    /// a list of Full `RelSym` and 1 + the maximal identifier of the Full `RelSym`s.
     ///
     @Internal
-    pub type alias Predicates = (Int64, Set[RelSym])
+    pub type alias Predicates = (List[RelSym], List[RelSym], Int64)
 
     ///
-    /// The EDB of a program.
+    /// The extensible database (EDB) of a program.
     ///
     @Internal
-    pub type alias Facts = Map[RelSym, Vector[Vector[Boxed]]]
+    pub type alias Facts = Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]
+
+    ///
+    /// `FactsTuple` consists of `(oldFacts, newFacts)`, where `oldFacts` are given through
+    /// joining a model, while `newFacts` are EDB facts written in the Datalog program.
+    ///
+    @Internal
+    pub type alias FactTuple = (Facts, Facts)
 
     ///
     /// A `Search` describes the order in which entries in a tuple are ordered. These are
@@ -54,7 +62,7 @@ mod Fixpoint3.Ast.Ram {
     /// for efficient retrieval in range queries.
     ///
     /// For example, the Datalog rule
-    /// 
+    ///
     /// A(x) :- B(x), C(_, _, x).
     ///
     /// produces the search `Vector#{2, 0, 1}` for relation `C`. This means the tuples in
@@ -110,10 +118,6 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `Comment(string)` is a comment for debugging.
     ///
-    /// `EstimateJoinSize(relSym, indexUsed, savePosition, search)` estimates the size
-    /// relation `relSym` based on index `indexUsed` as described by `search` and saves
-    /// the result to `savePosition`. For details see JoinOptimizer.
-    ///
     @Internal
     pub enum RamStmt {
         case Insert(RelOp)
@@ -124,54 +128,52 @@ mod Fixpoint3.Ast.Ram {
         case Par(Vector[RamStmt])
         case Until(Vector[BoolExp], RamStmt)
         case Comment(String)
-        case EstimateJoinSize(RelSym, Int32, Int32, Search)
     }
 
     instance ToString[RamStmt] {
         pub def toString(stmt: RamStmt): String =
             let nl = String.lineSeparator();
             match stmt {
-                case RamStmt.Insert(op) => ToString.toString(op)
+                case RamStmt.Insert(op)          => ToString.toString(op)
                 case RamStmt.MergeInto(src, dst) => "Merge ${src} into ${dst}"
-                case RamStmt.Swap(lhs, rhs) => "Swap ${lhs} and ${rhs}"
-                case RamStmt.Purge(relSym) => "Purge ${relSym}"
-                case RamStmt.Seq(xs) => Vector.join(";${nl}", xs)
-                case RamStmt.Until(test, body) =>
+                case RamStmt.Swap(lhs, rhs)      => "Swap ${lhs} and ${rhs}"
+                case RamStmt.Purge(relSym)       => "Purge ${relSym}"
+                case RamStmt.Seq(xs)             => Vector.join(";${nl}", xs)
+                case RamStmt.Par(xs)             => Vector.join("|${nl}", xs)
+                case RamStmt.Until(test, body)   =>
                     let tst = test |> Vector.join(" && ");
                     "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
-                case RamStmt.Comment(comment) => "/* ${comment} */"
-                case RamStmt.Par(xs) => Vector.join("|${nl}", xs)
-                case RamStmt.EstimateJoinSize(relSym, _, _, attr) =>
-                    "EstimateJoinSize(${relSym}, {${Vector.join(", ", attr)}})"
+                case RamStmt.Comment(comment)    => "/* ${comment} */"
             }
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // RelOp                                                                   //
     /////////////////////////////////////////////////////////////////////////////
-    
+
     ///
-    /// `Search(rv, relSym, body)` iterates through the facts in relation `relSym`, saving
-    /// them as RowVar `rv` and executes `body`.
+    /// `Search(rv, relSym, relType, body)` iterates through the facts in relation
+    /// `relSym`, saving them as RowVar `rv` and executes `body`.
     ///
-    /// `Query(rv, relSym, bools, indexPos, body)` iterates through the facts in relation
+    /// `Query(rv, relSym, bools, indexPos, relType, body)` iterates through the facts in relation
     /// `relSym`, saving them as `rv` and executes `body` if `bools` is
     /// true. The index saved at `indexPos` will be used.
     ///
-    /// `Functional(rv, f, input, body, arity)` evaluates `f(input)`, for each result,
+    /// `Functional(rv, f, input, body, arity, relType)` evaluates `f(input)`, for each result,
     /// saves it as `rv` and executes `body`. `arity` is the arity of the output tuples.
     ///
-    /// `Project(terms, relSym)` constructs a tuple from `terms` and inserts it as a fact
-    /// for relation `relSym`. `relSym` should be a new relation.
+    /// `Project(terms, relSym, ruleNum)` constructs a tuple from `terms` and inserts it as a fact
+    /// for relation `relSym`. `relSym` should be a new relation. `ruleNum` is a unique number assigned
+    /// to the rule the project statement is associated with.
     ///
     /// `If(bools, body)` evaluates `body` if `bools` is true.
     ///
     @Internal
     pub enum RelOp {
-        case Search(RowVar, RelSym, RelOp)
-        case Query(RowVar, RelSym, Vector[BoolExp], Int32, RelOp)
-        case Functional(RowVar, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], RelOp, Int32)
-        case Project(Vector[RamTerm], RelSym)
+        case Search(RowVar, RelSym, RelType, RelOp)
+        case Query(RowVar, RelSym, Vector[BoolExp], Int32, RelType, RelOp)
+        case Functional(RowVar, Vector[Boxed] -> Vector[Vector[Boxed]], Vector[RamTerm], RelOp, Int32, RelType)
+        case Project(Vector[RamTerm], RelSym, Int32)
         case If(Vector[BoolExp], RelOp)
     }
 
@@ -179,20 +181,20 @@ mod Fixpoint3.Ast.Ram {
         pub def toString(op: RelOp): String =
             let nl = String.lineSeparator();
             match op {
-                case RelOp.Search(var, relSym, body) =>
+                case RelOp.Search(var, relSym, _, body) =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Query(var, relSym, prefixQuery, _, body) =>
+                case RelOp.Query(var, relSym, prefixQuery, _, _, body) =>
                     let qry = Vector.joinWith(match term -> {
                         ToString.toString(term)
                     }, " ∧ ", prefixQuery);
                     "query {${var} ∈ ${relSym} | ${qry}} do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Functional(RowVar.Named(id), _, terms, body, _) =>
+                case RelOp.Functional(RowVar.Named(id), _, terms, body, _, _) =>
                     "loop(x${id} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, relSym) =>
+                case RelOp.Project(terms, relSym, _) =>
                     "project (${terms |> Vector.join(", ")}) into ${relSym}"
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
-                    "if(${tst}) then${nl}${String.indent(4, "${then}")}end"
+                    "if (${tst}) then${nl}${String.indent(4, "${then}")}end"
             }
     }
 
@@ -212,7 +214,7 @@ mod Fixpoint3.Ast.Ram {
     /// `term` must be a Meet or RowLoad of a lattice var.
     ///
     /// `Leq(const, rv, relSym)`: True if `const` is less than the lattice element of `rv`.
-    /// 
+    ///
     /// `Eq(term1, term2)`: True if `term1 == term2`.
     ///
     /// `Guard1(f, term1)`: True if `f(term1) == true`.
@@ -239,16 +241,16 @@ mod Fixpoint3.Ast.Ram {
     instance ToString[BoolExp] {
         pub def toString(exp: BoolExp): String =
             match exp {
-                case BoolExp.Not(boolExp) => "not (${boolExp})"
-                case BoolExp.IsEmpty(relSym) => "${relSym} = ∅"
-                case BoolExp.NotMemberOf(terms, relSym) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
-                case BoolExp.NotBot(term, _, _) => "(${term}) ≠ ⊥"
-                case BoolExp.Leq(elem, _, term) => "${elem} ≤ (${term})"
-                case BoolExp.Eq(lhs, rhs) => "${lhs} = ${rhs}"
-                case BoolExp.Guard1(_, v) => "<clo>(${v})"
-                case BoolExp.Guard2(_, v1, v2) => "<clo>(${v1}, ${v2})"
-                case BoolExp.Guard3(_, v1, v2, v3) => "<clo>(${v1}, ${v2}, ${v3})"
-                case BoolExp.Guard4(_, v1, v2, v3, v4) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+                case BoolExp.Not(boolExp)                  => "not (${boolExp})"
+                case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
+                case BoolExp.NotMemberOf(terms, relSym)    => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
+                case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
+                case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
+                case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"
+                case BoolExp.Guard1(_, v)                  => "<clo>(${v})"
+                case BoolExp.Guard2(_, v1, v2)             => "<clo>(${v1}, ${v2})"
+                case BoolExp.Guard3(_, v1, v2, v3)         => "<clo>(${v1}, ${v2}, ${v3})"
+                case BoolExp.Guard4(_, v1, v2, v3, v4)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
                 case BoolExp.Guard5(_, v1, v2, v3, v4, v5) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
             }
     }
@@ -258,13 +260,14 @@ mod Fixpoint3.Ast.Ram {
     /////////////////////////////////////////////////////////////////////////////
 
     ///
-    /// Represents a RAM term.
-    ///
-    /// Enums with a `RamId` can be referred to by the `RamId`.
+    /// Represents a Relational Algebra Machine (RAM) term.
     ///
     /// `Lit(val, id)` represents the literal `val`.
     ///
-    /// `RowLoad(x, i, relSym)` represents an index into the tuple
+    /// `ProvMax([(rv1, i1), (rv2, i2), (rv3, i3), ...])` where represents computing
+    /// `max(rv1[i1], rv2[i2], rv3[i3], ...)`.
+    ///
+    /// `RowLoad(x, i, type, relSym)` represents an index into the tuple
     /// bound to the local variable `x`, i.e. `x[i]`. `x` is a tuple
     /// from `relSym`.
     ///
@@ -283,48 +286,29 @@ mod Fixpoint3.Ast.Ram {
     ///
     @Internal
     pub enum RamTerm {
-        case Lit(Boxed, RamId)
-        case RowLoad(RowVar, Int32, RelSym)
-        case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), RamId)
-        case App1(Boxed -> Boxed, RamTerm, RamId)
-        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamId)
-        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamId)
-        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamId)
-        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm, RamId)
+        case Lit(Boxed, Type)
+        case ProvMax(Vector[(RowVar, Int32)])
+        case RowLoad(RowVar, Int32, Type, RelSym)
+        case Meet(Boxed -> Boxed -> Boxed, RamTerm, (RowVar, RelSym), Type)
+        case App1(Boxed -> Boxed, RamTerm, Type)
+        case App2(Boxed -> Boxed -> Boxed, RamTerm, RamTerm, Type)
+        case App3(Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, Type)
+        case App4(Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, Type)
+        case App5(Boxed -> Boxed -> Boxed -> Boxed -> Boxed -> Boxed, RamTerm, RamTerm, RamTerm, RamTerm, RamTerm, Type)
     }
-
-    ///
-    /// Returns the `RamId` of `t`.
-    ///
-    @Internal
-    pub def getTermRamId(t: RamTerm): RamId = match t {
-        case RamTerm.Lit(_, id) => id
-        case RamTerm.RowLoad(rv, index, _) => RamId.TuplePos(rv, index)
-        case RamTerm.Meet(_, _, _, id) => id
-        case RamTerm.App1(_ , _, id) => id
-        case RamTerm.App2(_, _, _, id) => id
-        case RamTerm.App3(_, _, _, _, id) => id
-        case RamTerm.App4(_, _, _, _, _, id) => id
-        case RamTerm.App5(_, _, _, _, _, _, id) => id
-    }
-
-    ///
-    /// Returns the `RamId` of the lattice-element of `rv`.
-    ///
-    @Internal
-    pub def getLatVarRamId(rv: RowVar, relSym: RelSym): RamId =
-        let arity = arityOfNonLat(relSym);
-        RamId.TuplePos(rv, arity)
 
     instance ToString[RamTerm] {
         pub def toString(term: RamTerm): String = match term {
-            case RamTerm.Lit(v, _) => "%{v}"
-            case RamTerm.RowLoad(var, index, _) => "${var}[${index}]"
-            case RamTerm.Meet(_, lhs, rhs, _) => "(${lhs} ⊓ ${rhs})"
-            case RamTerm.App1(_, v, _) => "<clo>(${v})"
-            case RamTerm.App2(_, v1, v2, _) => "<clo>(${v1}, ${v2})"
-            case RamTerm.App3(_, v1, v2, v3, _) => "<clo>(${v1}, ${v2}, ${v3})"
-            case RamTerm.App4(_, v1, v2, v3, v4, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
+            case RamTerm.Lit(v, _)                      => Debug.stringify(v)
+            case RamTerm.ProvMax(loads)                 =>
+                let loadsStr = Vector.joinWith(match (rv, i) -> "${rv}[${i}]", ", ", loads);
+                "max(${loadsStr})"
+            case RamTerm.RowLoad(var, index, _, _)      => "${var}[${index}]"
+            case RamTerm.Meet(_, lhs, rhs, _)           => "(${lhs} ⊓ ${rhs})"
+            case RamTerm.App1(_, v, _)                  => "<clo>(${v})"
+            case RamTerm.App2(_, v1, v2, _)             => "<clo>(${v1}, ${v2})"
+            case RamTerm.App3(_, v1, v2, v3, _)         => "<clo>(${v1}, ${v2}, ${v3})"
+            case RamTerm.App4(_, v1, v2, v3, v4, _)     => "<clo>(${v1}, ${v2}, ${v3}, ${v4})"
             case RamTerm.App5(_, v1, v2, v3, v4, v5, _) => "<clo>(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
         }
     }
@@ -375,6 +359,17 @@ mod Fixpoint3.Ast.Ram {
     }
 
     ///
+    /// Returns a `RelSym` wrapper of the `predSym`.
+    ///
+    /// The returned `RelSym` is equivalent to a 'real' `RelSym` with respect
+    /// to the `Order` on `RelSym`.
+    ///
+    /// Used for accessing values in maps.
+    ///
+    @Internal
+    pub def makeFakeRelSym(predSym: PredSym): RelSym = RelSym.Symbol(predSym, -1, Relational)
+
+    ///
     /// Returns the arity of `relSym`.
     ///
     @Internal
@@ -389,7 +384,7 @@ mod Fixpoint3.Ast.Ram {
     pub def arityOfNonLat(relSym: RelSym): Int32 = match relSym {
         case RelSym.Symbol(_, arity, den) => match den {
             case Relational => arity
-            case _ => arity - 1
+            case _          => arity - 1
         }
     }
 
@@ -440,70 +435,5 @@ mod Fixpoint3.Ast.Ram {
             case (RowVar.Named(i1), RowVar.Named(i2)) => i1 <=> i2
         }
     }
-    
-    /////////////////////////////////////////////////////////////////////////////
-    // RamId                                                                   //
-    /////////////////////////////////////////////////////////////////////////////
 
-    ///
-    /// `RamId` represents a unique identifier for literals, positions in relations,
-    /// positions in tuples or input to a function.
-    ///
-    /// `Id(id)` represents the id `id`. If `Id(id)` exists `RowVar.Named(id)` does not.
-    ///
-    /// `InId(id, i)` represents the `i`'th input of the term represented by `id`.
-    ///
-    /// `TuplePos(rv, i)` represents `rv[i]`.
-    ///
-    /// `RelPos(predId, i)` represents `i`'th index of the `RelSym` with PredSym-id `predId`.
-    ///
-    @Internal
-    pub enum RamId {
-        case Id(Int32)
-        case InId(Int32, Int32)
-        case TuplePos(RowVar, Int32)
-        case RelPos(Int64, Int32)
-    }
-
-    instance ToString[RamId] {
-        pub def toString(x: RamId): String = match x {
-            case (RamId.Id(i1)) => "Id[${i1}]"
-            case (RamId.InId(i0, i1)) => "InId[${i0}, ${i1}]"
-            case (RamId.TuplePos(i0, i1)) => "TuplePos[${i0}, ${i1}]"
-            case (RamId.RelPos(i0, i1)) => "RelPos[${i0}, ${i1}]"
-        }
-    }
-    
-    instance Eq[RamId] {
-        pub def eq(a: RamId, b: RamId): Bool = match (a, b) {
-            case (RamId.Id(i1), RamId.Id(i2)) => i1 == i2
-            case (RamId.InId(id1, index1), RamId.InId(id2, index2)) => id1 == id2 and index1 == index2
-            case (RamId.TuplePos(i0, i1), RamId.TuplePos(j0, j1)) => i0 == j0 and i1 == j1
-            case (RamId.RelPos(i0, i1), RamId.RelPos(j0, j1)) => i0 == j0 and i1 == j1
-            case _ => false
-        }
-    }
-
-    instance Order[RamId] {
-        pub def compare(a: RamId, b: RamId): Comparison = match (a, b) {
-            case (RamId.Id(i1), RamId.Id(i2)) => i1 <=> i2
-            case (RamId.TuplePos(i0, i1), RamId.TuplePos(j0, j1)) =>
-                let firstComp = i0 <=> j0;
-                if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
-            case (RamId.RelPos(i0, i1), RamId.RelPos(j0, j1)) =>
-                let firstComp = i0 <=> j0;
-                if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
-            case (RamId.InId(i0, i1), RamId.InId(j0, j1)) =>
-                let firstComp = i0 <=> j0;
-                if (firstComp != Comparison.EqualTo) firstComp else i1 <=> j1
-            case (RamId.TuplePos(_, _), _) => Comparison.LessThan
-            case (_,  RamId.TuplePos(_, _)) => Comparison.GreaterThan
-            case (RamId.RelPos(_, _), _) => Comparison.LessThan
-            case (_, RamId.RelPos(_, _)) => Comparison.GreaterThan
-            case (RamId.Id(_), _) => Comparison.LessThan
-            case (_, RamId.Id(_)) => Comparison.GreaterThan
-            case (RamId.InId(_, _), _) => Comparison.LessThan
-            case (_, RamId.InId(_, _)) => Comparison.GreaterThan
-        }
-    }
 }
