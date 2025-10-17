@@ -46,7 +46,7 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
 
   /** Returns a list of types to use for testing. */
   private def getSampleTypes: List[Type] = {
-    // To find sample types, check the standard library and pick of the types in the AST.
+    // Find sample types in the standard library.
 
     implicit val flix: Flix = new Flix().setOptions(Options.DefaultTest)
 
