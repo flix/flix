@@ -758,8 +758,11 @@ class Flix {
     var varOffsetsAst = VarOffsets.run(reducerAst)
     reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
+    val codeAst = HowLowCanYouGo.run(varOffsetsAst)
+    varOffsetsAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
     // Generate JVM classes.
-    val bytecodeAst = JvmBackend.run(varOffsetsAst)
+    val bytecodeAst = JvmBackend.run(codeAst)
     val totalTime = flix.getTotalTime
 
     JvmWriter.run(bytecodeAst)

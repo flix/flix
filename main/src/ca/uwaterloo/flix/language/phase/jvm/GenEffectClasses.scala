@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Root}
+import ca.uwaterloo.flix.language.ast.LoweredMoreAst.{Effect, Root}
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.InstanceField

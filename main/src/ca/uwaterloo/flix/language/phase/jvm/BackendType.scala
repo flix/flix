@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{ReducedAst, SimpleType}
+import ca.uwaterloo.flix.language.ast.{LoweredMoreAst, SimpleType}
 
 import scala.annotation.tailrec
 
@@ -129,7 +129,7 @@ object BackendType {
     * Note: Instead of using [[toBackendType]] and then [[BackendType.toErased]]
     * use [[toErasedBackendType]].
     */
-  def toBackendType(tpe0: SimpleType)(implicit root: ReducedAst.Root): BackendType = {
+  def toBackendType(tpe0: SimpleType)(implicit root: LoweredMoreAst.Root): BackendType = {
     tpe0 match {
       case SimpleType.Void => BackendType.Object
       case SimpleType.AnyType => BackendType.Object

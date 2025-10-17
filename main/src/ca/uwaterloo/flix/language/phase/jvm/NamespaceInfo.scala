@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ReducedAst.Def
+import ca.uwaterloo.flix.language.ast.LoweredMoreAst.Def
 import ca.uwaterloo.flix.language.ast.Symbol
 
 /**
