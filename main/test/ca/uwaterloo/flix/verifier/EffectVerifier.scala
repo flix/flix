@@ -409,7 +409,7 @@ object EffectVerifier {
     * Throws an exception if the actual type does not match the expected type.
     */
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = {
-    if (!ConstraintSolver2.equivalent(expected, actual)) {
+    if (!ConstraintSolver2.isEquivalent(expected, actual)) {
       throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }

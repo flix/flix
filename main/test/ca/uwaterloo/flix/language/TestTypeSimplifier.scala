@@ -40,7 +40,7 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
 
     for (tpe <- getSampleTypes) {
       val simplifiedType = TypeSimplifier.simplify(tpe)
-      assert(ConstraintSolver2.equivalent(tpe, simplifiedType)(eqEnv, flix), s"\n$tpe\ndoes not unify with\n$simplifiedType")
+      assert(ConstraintSolver2.isEquivalent(tpe, simplifiedType)(eqEnv, flix), s"\n$tpe\ndoes not unify with\n$simplifiedType")
     }
   }
 
