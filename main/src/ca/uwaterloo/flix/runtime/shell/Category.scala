@@ -50,7 +50,7 @@ object Category {
     val (tokens, errors) = Lexer.lex(source)
     if (errors.isEmpty) {
       val start = tokens(0).kind
-      (start.isFirstDecl, start.isFirstExpr) match {
+      (start.isFirstInDecl, start.isFirstInExp) match {
         case (true, _) => Category.Decl
         case (_, true) => Category.Expr
         case _ => Category.Unknown

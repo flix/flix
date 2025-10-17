@@ -118,7 +118,7 @@ object Lexer {
       ("select", TokenKind.KeywordSelect),
       ("solve", TokenKind.KeywordSolve),
       ("spawn", TokenKind.KeywordSpawn),
-      ("static", TokenKind.KeywordStatic),
+      ("static", TokenKind.KeywordStaticLowercase),
       ("struct", TokenKind.KeywordStruct),
       ("throw", TokenKind.KeywordThrow),
       ("trait", TokenKind.KeywordTrait),
@@ -177,7 +177,7 @@ object Lexer {
       (":", TokenKind.Colon),
       (":-", TokenKind.ColonMinus),
       ("::", TokenKind.ColonColon),
-      (":::", TokenKind.TripleColon),
+      (":::", TokenKind.ColonColonColon),
       ("<", TokenKind.AngleL),
       ("<+>", TokenKind.AngledPlus),
       ("<-", TokenKind.ArrowThinL),
@@ -365,9 +365,9 @@ object Lexer {
         // a-> b:  ArrowThinR
         // a -> b: ArrowThinR
         if (s.sc.nthIs(-3, _.isWhitespace, outOfBounds = true) || s.sc.peekIs(_.isWhitespace, outOfBounds = true)) {
-          TokenKind.ArrowThinR
+          TokenKind.ArrowThinRWhitespace
         } else {
-          TokenKind.StructArrow
+          TokenKind.ArrowThinRTight
         }
       case c if isMathNameChar(c) => acceptMathName()
       case '_' =>
@@ -485,9 +485,9 @@ object Lexer {
     if (s.sc.advanceIfMatch('?')) {
       TokenKind.HoleVariable
     } else if (isUpper) {
-      TokenKind.NameUpperCase
+      TokenKind.NameUppercase
     } else {
-      TokenKind.NameLowerCase
+      TokenKind.NameLowercase
     }
   }
 
@@ -548,7 +548,7 @@ object Lexer {
     */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
     s.sc.advanceWhile(isUserOp)
-    TokenKind.UserDefinedOperator
+    TokenKind.GenericOperator
   }
 
   /** The characters allowed in a user defined operator. */
