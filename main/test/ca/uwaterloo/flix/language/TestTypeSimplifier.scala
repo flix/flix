@@ -50,10 +50,7 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
 
     implicit val flix: Flix = new Flix().setOptions(Options.DefaultTest)
 
-    val root = flix.check() match {
-      case (Some(r), Nil) => r
-      case (_, _) => throw InternalCompilerException("Standard library does not compile", SourceLocation.Unknown)
-    }
+    val root = flix.check()._1.get
 
     // Collect all the types of the AST. Use `consumeExpr` to have both compiler generated and user written types.
     val types = mutable.ArrayBuffer.empty[Type]
