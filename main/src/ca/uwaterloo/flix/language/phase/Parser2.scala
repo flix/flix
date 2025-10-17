@@ -1615,6 +1615,7 @@ object Parser2 {
       TokenKind.AngledEqual,
       TokenKind.AngledPlus,
       TokenKind.BangEqual,
+      TokenKind.ColonColon,
       TokenKind.ColonColonColon,
       TokenKind.EqualEqual,
       TokenKind.GenericOperator,
@@ -1631,7 +1632,7 @@ object Parser2 {
 
     private def binaryOp()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(atAny(FIRST_BINARY_OP))
+      assert(atAny(FIRST_BINARY_OP), nth(0))
       peekBinaryOp() match {
         case Some(BinaryOp.InfixFunction) =>
           infixFunction()
