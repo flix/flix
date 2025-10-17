@@ -512,9 +512,9 @@ object Lexer {
     TokenKind.NameMath
   }
 
-  /** Checks whether `c` lies in unicode range U+2190 to U+22FF. */
+  /** Checks whether `c` lies in unicode range U+2200 to U+22FF. */
   private def isMathNameChar(c: Char): Boolean =
-    0x2190 <= c && c <= 0x22FF
+    0x2200 <= c && c <= 0x22FF
 
   /** Moves current position past a named hole (e.g. "?foo"). */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
