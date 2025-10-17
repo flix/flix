@@ -2012,7 +2012,7 @@ object Parser2 {
             close(mark, TreeKind.Expr.LambdaExtMatch)
           } else {
             expression()
-            oneOrMore(
+            zeroOrMore(
               namedTokenSet = NamedTokenSet.ExtMatchRule,
               checkForItem = _ == TokenKind.KeywordCase,
               getItem = extMatchRule,
