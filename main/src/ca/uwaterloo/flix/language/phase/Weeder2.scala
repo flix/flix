@@ -1593,9 +1593,9 @@ object Weeder2 {
         // Case: no valid match rule found in ematch expr
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          // Parser has reported an error here so do not add to sctx.
-          Validation.Failure(error)
-
+          sctx.errors.add(error)
+          val defaultRule = ExtMatchRule(ExtPattern.Error(expr.loc), Expr.Error(error), tree.loc)
+          Validation.Success(Expr.ExtMatch(expr, defaultRule :: Nil, tree.loc))
         case (expr, rules) =>
           Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
       }
