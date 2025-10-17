@@ -1374,4 +1374,179 @@ mod TestBPlusTree {
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
         assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // find / findLeft                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def find01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertNone(BPlusTree.find(_ -> _ -> false, t))
+    }
+
+    @Test
+    def find02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertNone(BPlusTree.find(_ -> _ -> true, t))
+    }
+
+    @Test
+    def find03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 20);
+        Assert.assertEq(expected = Some((10, 20)), BPlusTree.find(k -> _ -> k == 10, t))
+    }
+
+    @Test
+    def find04(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 20);
+        Assert.assertNone(BPlusTree.find(k -> _ -> k == 0, t))
+    }
+
+    @Test
+    def find05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, k + 1, t);
+        Assert.assertEq(expected = Some((50, 51)), BPlusTree.find(k -> _ -> k == 50, t))
+    }
+
+    @Test
+    def find06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, k + 1, t);
+        Assert.assertNone(BPlusTree.find(k -> v -> k > v, t))
+    }
+
+    @Test
+    def find07(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, k + 1, t);
+        Assert.assertEq(expected = Some((0, 1)), BPlusTree.find(k -> v -> k < v, t))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nonEmpty01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertFalse(BPlusTree.nonEmpty(t))
+    }
+
+    @Test
+    def nonEmpty02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(1, 10);
+        Assert.assertTrue(BPlusTree.nonEmpty(t))
+    }
+
+    @Test
+    def nonEmpty03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        Assert.assertTrue(BPlusTree.nonEmpty(t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forAll01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertTrue(BPlusTree.forAll(_ -> _ -> false, t))
+    }
+
+    @Test
+    def forAll02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertTrue(BPlusTree.forAll(_ -> _ -> true, t))
+    }
+
+    @Test
+    def forAll03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(4, 2);
+        Assert.assertTrue(BPlusTree.forAll(k -> v -> k > v, t))
+    }
+
+    @Test
+    def forAll04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        Assert.assertTrue(BPlusTree.forAll(k -> _ -> k < 100, t))
+    }
+
+    @Test
+    def forAll05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        BPlusTree.put(105, (), t);
+        Assert.assertFalse(BPlusTree.forAll(k -> _ -> k < 105, t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def exists01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertFalse(BPlusTree.exists(_ -> _ -> true, t))
+    }
+
+    @Test
+    def exists02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertFalse(BPlusTree.exists(_ -> _ -> false, t))
+    }
+
+
+    @Test
+    def exists03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5);
+        Assert.assertFalse(BPlusTree.exists(_ -> _ -> false, t))
+    }
+
+    @Test
+    def exists04(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5);
+        Assert.assertTrue(BPlusTree.exists(k -> v -> k + v == 15, t))
+    }
+
+    @Test
+    def exists05(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5);
+        Assert.assertFalse(BPlusTree.exists(k -> v -> k + v == 0, t))
+    }
+
+    @Test
+    def exists06(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5) !> BPlusTree.put(20, 5);
+        Assert.assertTrue(BPlusTree.exists(_ -> v -> v == 5, t))
+    }
+
+    @Test
+    def exists07(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        Assert.assertTrue(BPlusTree.exists(k -> _ -> k == 99, t))
+    }
+
+    @Test
+    def exists08(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        let f = k -> _ -> k == 99;
+        Assert.assertEq(expected = not BPlusTree.forAll(k -> v -> not f(k, v), t), BPlusTree.exists(f, t))
+    }
+
 }
