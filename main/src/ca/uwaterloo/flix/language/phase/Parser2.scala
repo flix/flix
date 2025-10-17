@@ -1632,7 +1632,7 @@ object Parser2 {
 
     private def binaryOp()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(atAny(FIRST_BINARY_OP), nth(0))
+      assert(atAny(FIRST_BINARY_OP))
       peekBinaryOp() match {
         case Some(BinaryOp.InfixFunction) =>
           infixFunction()
