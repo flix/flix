@@ -1678,11 +1678,12 @@ object Weeder2 {
     }
 
     private def visitRecordOperationOrLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      hasToken(TokenKind.Bar, tree) match {
+      if (hasToken(TokenKind.Bar, tree)) {
         // { +x = expr | expr }
-        case true => visitRecordOperationExpr(tree)
+        visitRecordOperationExpr(tree)
+      } else {
         // { x = expr }
-        case false => visitLiteralRecordExpr(tree)
+        visitLiteralRecordExpr(tree)
       }
     }
 
