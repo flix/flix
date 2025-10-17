@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.fmt
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.TypeSimplifier
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 object FormatType {
@@ -34,7 +35,7 @@ object FormatType {
       case Some(env) => alphaRename(tpe, env)
     }
     val minimized = if (minimizeEffs) {
-      Type.simplifyEffects(renamed)
+      TypeSimplifier.simplify(renamed)
     } else {
       renamed
     }
