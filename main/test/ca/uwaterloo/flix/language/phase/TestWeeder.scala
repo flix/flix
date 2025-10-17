@@ -636,6 +636,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  test("IllegalForFragment.13") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] =
+        | foreach () yield 1
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyForFragment](result)
+  }
+
   test("IllegalFormalParamAscription.01") {
     val input =
       """

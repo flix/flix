@@ -1077,8 +1077,8 @@ object Weeder2 {
           case TokenKind.LiteralFloat64 => Validation.Success(Constants.toFloat64(token))
           case TokenKind.LiteralBigDecimal => Validation.Success(Constants.toBigDecimal(token))
           case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
-          case TokenKind.NameLowerCase
-               | TokenKind.NameUpperCase
+          case TokenKind.NameLowercase
+               | TokenKind.NameUppercase
                | TokenKind.NameMath => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
           case _ =>
             val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
@@ -1282,7 +1282,7 @@ object Weeder2 {
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.TripleColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
+                case Token(TokenKind.ColonColonColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
                 case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
                   tryPickQName(exprs(1)) match {
@@ -1304,7 +1304,7 @@ object Weeder2 {
                       sctx.errors.add(error)
                       Validation.Success(Expr.Error(error))
                   }
-                case token@Token(TokenKind.UserDefinedOperator, _, _, _, _, _) =>
+                case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
                 case _ =>
@@ -1687,7 +1687,7 @@ object Weeder2 {
       val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
       val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
       if (ops.isEmpty) {
-        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
       }
       Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
