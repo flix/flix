@@ -324,10 +324,8 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def exists(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r = match find(f, t) {
-        case None => false
-        case _ => true
-    }
+    pub def exists(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r = 
+        Node.exists(f, 0, Node.leftMostChild(t->root))
 
     ///
     /// Alias for `findLeft`.
@@ -344,14 +342,6 @@ mod BPlusTree {
     ///
     pub def findLeft(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r = 
         Node.findLeft(f, 0, Node.leftMostChild(t->root)) 
-
-    ///
-    /// Returns `true` if and only if `t` contains at least one mapping.
-    ///
-    /// Thread-safe.
-    ///
-    pub def nonEmpty(t: BPlusTree[k, v, r]): Bool \ r = 
-        not BPlusTree.isEmpty(t)
 
     ///
     /// Increments the stored size of `t`.
@@ -622,6 +612,14 @@ mod BPlusTree {
             Lock.yieldBasedOn(Node.getLock(root));
             isEmpty(t)
         }
+
+    ///
+    /// Returns `true` if and only if `t` contains at least one mapping.
+    ///
+    /// Thread-safe.
+    ///
+    pub def nonEmpty(t: BPlusTree[k, v, r]): Bool \ r = 
+        not BPlusTree.isEmpty(t)
 
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
@@ -1089,8 +1087,32 @@ mod BPlusTree {
                 else 
                     findLeft(f, index + 1, node)
             } else match node->next {
-                case Some(next) => findLeft(f, 0, next)
                 case None => None
+                case Some(next) => findLeft(f, 0, next)
+            }
+
+        ///
+        /// Returns `true` if and only if there exists mappings in `node` or to the right of `node`
+        /// satisfying `f`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def exists(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Bool \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v)) 
+                    true
+                else 
+                    exists(f, index + 1, node)
+            } else match node->next {
+                case None => false
+                case Some(next) => exists(f, 0, next)
             }
 
         ///
