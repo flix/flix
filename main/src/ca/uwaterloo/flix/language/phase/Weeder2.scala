@@ -1816,8 +1816,15 @@ object Weeder2 {
 
     private def visitWithoutExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Without)
-      val effectSet = pick(TreeKind.Type.EffectSet, tree)
-      val effects = mapN(effectSet)(effectSetTree => pickAll(TreeKind.QName, effectSetTree).map(visitQName))
+      val effects = mapN(pick(TreeKind.Type.EffectSet, tree)) {
+        effectSetTree =>
+          val effects = pickAll(TreeKind.QName, effectSetTree).map(visitQName)
+          // Handle empty here where we have access to `effectSetTree.loc`
+          if (effects.isEmpty) {
+            sctx.errors.add(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, effectSetTree.loc))
+          }
+          effects
+      }
       mapN(pickExpr(tree), effects) {
         case (expr, effect :: effects0) =>
           val base = Expr.Without(expr, effect, tree.loc)
@@ -1825,8 +1832,8 @@ object Weeder2 {
             case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
           }
         case (_, Nil) =>
-          // Fall back on Expr.Error, Parser has already reported this
-          Expr.Error(Malformed(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
+          // Fall back on Expr.Error
+          Expr.Error(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
       }
     }
 
