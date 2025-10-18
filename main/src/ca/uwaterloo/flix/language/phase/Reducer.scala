@@ -266,7 +266,7 @@ object Reducer {
   }
 
   /** Assigns a stack offset to `sym` and returns the next available stack offset. */
-  def setStackOffset(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
+  private def setStackOffset(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(offset)
 
