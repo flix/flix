@@ -611,37 +611,6 @@ object Parser2 {
   }
 
   /**
-    * Parses one or more items surrounded by delimiters and separated by some token.
-    *
-    * Works by forwarding parameters to [[zeroOrMore]] and then checking that there was at least one
-    * item parsed. Otherwise an error is produced.
-    *
-    * See [[zeroOrMore]] for documentation of parameters.
-    *
-    * @return An optional parse error. If one or more item is found, None is returned.
-    */
-  private def oneOrMore(
-                         namedTokenSet: NamedTokenSet,
-                         getItem: () => Mark.Closed,
-                         checkForItem: TokenKind => Boolean,
-                         breakWhen: TokenKind => Boolean,
-                         separation: Separation = Separation.Required(TokenKind.Comma),
-                         delimiterL: TokenKind = TokenKind.ParenL,
-                         delimiterR: TokenKind = TokenKind.ParenR,
-                         optionallyWith: Option[(TokenKind, () => Unit)] = None
-                       )(implicit sctx: SyntacticContext, s: State): Option[ParseError] = {
-    val locBefore = currentSourceLocation()
-    val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, separation, delimiterL, delimiterR, optionallyWith)
-    val locAfter = previousSourceLocation()
-    if (itemCount < 1) {
-      val loc = mkSourceLocation(locBefore.sp1, locAfter.sp1)
-      Some(NeedAtleastOne(namedTokenSet, sctx, loc = loc))
-    } else {
-      None
-    }
-  }
-
-  /**
     * Groups of [[TokenKind]]s that make of the different kinds of names in Flix.
     * So for instance NAME_PARAMETER is all the kinds of tokens that may occur as a parameter identifier.
     *
