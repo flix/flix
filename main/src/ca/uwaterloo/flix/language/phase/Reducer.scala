@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SimpleType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
+import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
@@ -34,6 +34,7 @@ import scala.jdk.CollectionConverters.*
   *   1. Collect a set of all anonymous class / new object expressions
   *   1. Collect a flat set of all types of the program, i.e., if `List[String]` is
   *      in the list, so is `String`.
+  *   1. Assign a local variable stack index to each variable symbol.
   */
 object Reducer {
 
@@ -57,8 +58,15 @@ object Reducer {
     case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
+
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
+
+      var varOffset = 0
+      for (param <- d.cparams ::: d.fparams ::: ls) {
+        varOffset = setStackOffset(param.sym, param.tpe, varOffset)
+      }
+
       val pcPoints = lctx.getPcPoints
 
       // Compute the types in the captured formal parameters.
@@ -255,6 +263,20 @@ object Reducer {
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc
     }
+  }
+
+  /** Assigns a stack offset to `sym` and returns the next available stack offset. */
+  def setStackOffset(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
+    // Set the stack offset for the symbol.
+    sym.setStackOffset(offset)
+
+    // Compute the next free stack offset.
+    val stackSize = tpe match {
+      case SimpleType.Float64 => 2
+      case SimpleType.Int64 => 2
+      case _ => 1
+    }
+    offset + stackSize
   }
 
 }
