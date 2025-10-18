@@ -30,11 +30,11 @@ import scala.jdk.CollectionConverters.*
 
 /**
   * Objectives of this phase:
-  *   1. Collect a list of the local parameters of each def
-  *   1. Collect a set of all anonymous class / new object expressions
-  *   1. Collect a flat set of all types of the program, i.e., if `List[String]` is
+  *   - Collect a list of the local parameters of each def
+  *   - Collect a set of all anonymous class / new object expressions
+  *   - Collect a flat set of all types of the program, i.e., if `List[String]` is
   *      in the list, so is `String`.
-  *   1. Assign a local variable stack index to each variable symbol.
+  *   - Assign a local variable stack index to each variable symbol.
   */
 object Reducer {
 
