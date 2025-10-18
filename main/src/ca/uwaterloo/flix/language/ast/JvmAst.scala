@@ -21,8 +21,6 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
 
 object JvmAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
-
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
