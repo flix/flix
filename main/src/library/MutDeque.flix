@@ -164,22 +164,6 @@ mod MutDeque {
         loop(d->back, d->front, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `d` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, s: b, d: MutDeque[a, r]): b \ { ef, r } =
-        let c = capacity(d) - 1;
-        def loop(i, e) =
-            if (i == e)
-                s
-            else {
-                f(Array.get(i, d->values), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
-            };
-        loop(d->front, d->back)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, d: MutDeque[a, r]): b \ { ef, r } with Monoid[b] =

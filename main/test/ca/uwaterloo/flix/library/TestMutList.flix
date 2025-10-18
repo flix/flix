@@ -1032,36 +1032,6 @@ mod TestMutList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        assertEq(expected = 10, MutList.foldRightWithCont((x, k) -> k() + x, 0, MutList.range(rc, 1, 5)))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        assertEq(expected = "34567", MutList.foldRightWithCont((x, k) -> Int32.toString(x) + k(), "", MutList.range(rc, 3, 8)))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        assertEq(expected = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, MutList.foldRightWithCont((x, k) -> x :: k(), Nil, MutList.range(rc, 0, 6)))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        assertEq(expected = -50, MutList.foldRightWithCont((x, k) -> x - k(), 0, MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert = region rc {
-        assertEq(expected = 42, MutList.foldRightWithCont((x, k) -> x + k(), 42, MutList.empty(rc)))
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

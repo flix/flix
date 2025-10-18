@@ -789,20 +789,6 @@ mod TestNec {
     def foldRight03(): Unit \ Assert = assertEq(expected = -6, Nec.foldRight((x, acc) -> acc - x, 0, necOf3(1, 2, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = -1, Nec.foldRightWithCont((x, k) -> k() - x, 0, singleton(1)))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = -3, Nec.foldRightWithCont((x, k) -> k() - x, 0, necOf2(1, 2)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = -6, Nec.foldRightWithCont((x, k) -> k() - x, 0, necOf3(1, 2, 3)))
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

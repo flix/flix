@@ -530,17 +530,6 @@ mod Chain {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Chain[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft        => z
-        case ViewLeft.SomeLeft(x, xs) => f(x, _ -> foldRightWithCont(f, z, xs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with Monoid[b] =
