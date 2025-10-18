@@ -1155,15 +1155,13 @@ object Parser2 {
       if (isShorthand) {
         val markType = open()
         val mark = open()
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.Type,
           getItem = () => Type.ttype(),
           checkForItem = _.isFirstInType,
           breakWhen = _.isRecoverInType,
-        ) match {
-          case Some(error) => closeWithError(mark, error)
-          case None => close(mark, TreeKind.Type.Tuple)
-        }
+        )
+        close(mark, TreeKind.Type.Tuple)
         close(markType, TreeKind.Type.Type)
       }
       // Derivations.
@@ -1171,16 +1169,12 @@ object Parser2 {
         Type.derivations()
       }
 
-      // Check for illegal enum using both shorthand and body.
-      if (isShorthand && eat(TokenKind.CurlyL)) {
-        val mark = open()
-        enumCases()
-        expect(TokenKind.CurlyR)
-        closeWithError(mark, WeederError.IllegalEnum(nameLoc))
-      }
-
       // Enum body.
       if (eat(TokenKind.CurlyL)) {
+        // Check for illegal enum using both shorthand and body.
+        if (isShorthand) {
+          closeWithError(open(), WeederError.IllegalEnum(nameLoc))
+        }
         enumCases()
         expect(TokenKind.CurlyR)
       }
@@ -1206,19 +1200,14 @@ object Parser2 {
         if (at(TokenKind.ParenL)) {
           val mark = open()
           val markTuple = open()
-          oneOrMore(
+          zeroOrMore(
             namedTokenSet = NamedTokenSet.Type,
             getItem = () => Type.ttype(),
             checkForItem = _.isFirstInType,
             breakWhen = _.isRecoverInDecl
-          ) match {
-            case Some(error) =>
-              close(markTuple, TreeKind.Type.Tuple)
-              closeWithError(mark, error)
-            case None =>
-              close(markTuple, TreeKind.Type.Tuple)
-              close(mark, TreeKind.Type.Type)
-          }
+          )
+          close(markTuple, TreeKind.Type.Tuple)
+          close(mark, TreeKind.Type.Type)
         }
         close(mark, TreeKind.Case)
       }
@@ -1548,17 +1537,14 @@ object Parser2 {
       if (eat(TokenKind.KeywordWithout)) {
         val mark = open()
         if (at(TokenKind.CurlyL)) {
-          oneOrMore(
+          zeroOrMore(
             namedTokenSet = NamedTokenSet.Effect,
             getItem = () => nameAllowQualified(NAME_EFFECT),
             checkForItem = NAME_EFFECT.contains,
             breakWhen = _.isRecoverInExpr,
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR
-          ) match {
-            case Some(error) => closeWithError(open(), error)
-            case _ =>
-          }
+          )
         } else if (NAME_EFFECT.contains(nth(0))) {
           nameAllowQualified(NAME_EFFECT)
         } else {
@@ -2066,7 +2052,7 @@ object Parser2 {
             close(mark, TreeKind.Expr.LambdaExtMatch)
           } else {
             expression()
-            oneOrMore(
+            zeroOrMore(
               namedTokenSet = NamedTokenSet.ExtMatchRule,
               checkForItem = _ == TokenKind.KeywordCase,
               getItem = extMatchRule,

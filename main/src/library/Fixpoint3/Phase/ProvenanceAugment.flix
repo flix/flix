@@ -29,7 +29,7 @@
 /// This module removes `BoolExp.NotMemberOf` as the `ProvProject` introduced by `Lowering`
 /// must ensure this property.
 ///
- mod Fixpoint3.Phase.Provenance {
+ mod Fixpoint3.Phase.ProvenanceAugment {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, BoolExp}
     use Fixpoint3.Boxed

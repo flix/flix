@@ -279,6 +279,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum Foo()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("IllegalEqualityConstraint.01") {
     val input =
       """
@@ -1865,6 +1874,26 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyTypeParamList](result)
+  }
+
+  test("EmptyEffectSet.01") {
+    val input =
+      """
+        |def without01(): Bool = ??? without { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("EmptyEnumCaseType.01") {
+    val input =
+      """
+        |enum E {
+        |    case C()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
   }
 
 }
