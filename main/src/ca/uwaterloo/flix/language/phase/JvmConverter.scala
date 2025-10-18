@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{JvmAst, ReducedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.util.collection.MapOps
 
-object HowLowCanYouGo {
+object JvmConverter {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): JvmAst.Root = flix.phase("HowLowCanYouGo") {
     JvmAst.Root(
