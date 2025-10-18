@@ -37,9 +37,6 @@ object JvmAst {
 
   }
 
-  /**
-    * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
-    */
   case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, exp: Exp, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
