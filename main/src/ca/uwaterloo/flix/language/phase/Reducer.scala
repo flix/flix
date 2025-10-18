@@ -64,7 +64,7 @@ object Reducer {
 
       var varOffset = 0
       for (param <- d.cparams ::: d.fparams ::: ls) {
-        varOffset = setStackOffset(param.sym, param.tpe, varOffset)
+        varOffset = setOffsetAndIncrement(param.sym, param.tpe, varOffset)
       }
 
       val pcPoints = lctx.getPcPoints
@@ -266,7 +266,7 @@ object Reducer {
   }
 
   /** Assigns a stack offset to `sym` and returns the next available stack offset. */
-  private def setStackOffset(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
+  private def setOffsetAndIncrement(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
     // Set the stack offset for the symbol.
     sym.setStackOffset(offset)
 
