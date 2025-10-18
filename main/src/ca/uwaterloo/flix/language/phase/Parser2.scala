@@ -611,37 +611,6 @@ object Parser2 {
   }
 
   /**
-    * Parses one or more items surrounded by delimiters and separated by some token.
-    *
-    * Works by forwarding parameters to [[zeroOrMore]] and then checking that there was at least one
-    * item parsed. Otherwise an error is produced.
-    *
-    * See [[zeroOrMore]] for documentation of parameters.
-    *
-    * @return An optional parse error. If one or more item is found, None is returned.
-    */
-  private def oneOrMore(
-                         namedTokenSet: NamedTokenSet,
-                         getItem: () => Mark.Closed,
-                         checkForItem: TokenKind => Boolean,
-                         breakWhen: TokenKind => Boolean,
-                         separation: Separation = Separation.Required(TokenKind.Comma),
-                         delimiterL: TokenKind = TokenKind.ParenL,
-                         delimiterR: TokenKind = TokenKind.ParenR,
-                         optionallyWith: Option[(TokenKind, () => Unit)] = None
-                       )(implicit sctx: SyntacticContext, s: State): Option[ParseError] = {
-    val locBefore = currentSourceLocation()
-    val itemCount = zeroOrMore(namedTokenSet, getItem, checkForItem, breakWhen, separation, delimiterL, delimiterR, optionallyWith)
-    val locAfter = previousSourceLocation()
-    if (itemCount < 1) {
-      val loc = mkSourceLocation(locBefore.sp1, locAfter.sp1)
-      Some(NeedAtleastOne(namedTokenSet, sctx, loc = loc))
-    } else {
-      None
-    }
-  }
-
-  /**
     * Groups of [[TokenKind]]s that make of the different kinds of names in Flix.
     * So for instance NAME_PARAMETER is all the kinds of tokens that may occur as a parameter identifier.
     *
@@ -1508,7 +1477,7 @@ object Parser2 {
       // Handle binary operators.
       continue = true
       while (continue) {
-        nthToken(0).flatMap(parseBinaryOp) match {
+        peekBinaryOp() match {
           case Some(right) =>
             leftOpt match {
               case Some(left) if !Op.rightBindsTighter(left, right) =>
@@ -1521,9 +1490,7 @@ object Parser2 {
                 continue = false
               case _ =>
                 val mark = openBefore(lhs)
-                val markOp = open()
-                advance()
-                close(markOp, TreeKind.Operator)
+                binaryOp()
                 expression(Some(right))
                 lhs = close(mark, TreeKind.Expr.Binary)
                 lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
@@ -1564,33 +1531,89 @@ object Parser2 {
       lhs
     }
 
-    private def parseBinaryOp(token: Token): Option[BinaryOp] = {
-      token.kind match {
-        case TokenKind.AngleL => Some(BinaryOp.AngleL)
-        case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
-        case TokenKind.AngleR => Some(BinaryOp.AngleR)
-        case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
-        case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
-        case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
-        case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
-        case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
-        case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
-        case TokenKind.InfixFunction => Some(BinaryOp.InfixFunction)
-        case TokenKind.KeywordAnd => Some(BinaryOp.And)
-        case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
-        case TokenKind.KeywordOr => Some(BinaryOp.Or)
-        case TokenKind.Minus => Some(BinaryOp.Minus)
-        case TokenKind.NameMath => Some(BinaryOp.NameMath)
-        case TokenKind.Plus => Some(BinaryOp.Plus)
-        case TokenKind.Slash => Some(BinaryOp.Slash)
-        case TokenKind.Star => Some(BinaryOp.Star)
-        case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
-        case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
-        case _ => None
+    /** Returns the binary operator type of the current token if applicable. */
+    private def peekBinaryOp()(implicit s: State): Option[BinaryOp] = {
+      nthToken(0) match {
+        case None => None
+        case Some(token) =>
+          token.kind match {
+            case TokenKind.AngleL => Some(BinaryOp.AngleL)
+            case TokenKind.AngleLEqual => Some(BinaryOp.AngleLEqual)
+            case TokenKind.AngleR => Some(BinaryOp.AngleR)
+            case TokenKind.AngleREqual => Some(BinaryOp.AngleREqual)
+            case TokenKind.AngledEqual => Some(BinaryOp.AngledEqual)
+            case TokenKind.AngledPlus => Some(BinaryOp.AngledPlus)
+            case TokenKind.BangEqual => Some(BinaryOp.BangEqual)
+            case TokenKind.ColonColon => Some(BinaryOp.ColonColon)
+            case TokenKind.EqualEqual => Some(BinaryOp.EqualEqual)
+            case TokenKind.KeywordAnd => Some(BinaryOp.And)
+            case TokenKind.KeywordInstanceOf => Some(BinaryOp.InstanceOf)
+            case TokenKind.KeywordOr => Some(BinaryOp.Or)
+            case TokenKind.Minus => Some(BinaryOp.Minus)
+            case TokenKind.NameMath => Some(BinaryOp.NameMath)
+            case TokenKind.Plus => Some(BinaryOp.Plus)
+            case TokenKind.Slash => Some(BinaryOp.Slash)
+            case TokenKind.Star => Some(BinaryOp.Star)
+            case TokenKind.Tick => Some(BinaryOp.InfixFunction)
+            case TokenKind.ColonColonColon => Some(BinaryOp.TripleColon)
+            case TokenKind.GenericOperator => Some(BinaryOp.UserDefinedOperator)
+            case _ => None
+          }
       }
     }
 
-    private def parseUnaryOp(token: Token): Option[UnaryOp] = {
+    private val FIRST_BINARY_OP: Set[TokenKind] = Set(
+      TokenKind.AngleL,
+      TokenKind.AngleLEqual,
+      TokenKind.AngleR,
+      TokenKind.AngleREqual,
+      TokenKind.AngledEqual,
+      TokenKind.AngledPlus,
+      TokenKind.BangEqual,
+      TokenKind.ColonColon,
+      TokenKind.ColonColonColon,
+      TokenKind.EqualEqual,
+      TokenKind.GenericOperator,
+      TokenKind.KeywordAnd,
+      TokenKind.KeywordInstanceOf,
+      TokenKind.KeywordOr,
+      TokenKind.Minus,
+      TokenKind.NameMath,
+      TokenKind.Plus,
+      TokenKind.Slash,
+      TokenKind.Star,
+      TokenKind.Tick,
+    )
+
+    private def binaryOp()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(atAny(FIRST_BINARY_OP))
+      peekBinaryOp() match {
+        case Some(BinaryOp.InfixFunction) =>
+          infixFunction()
+        case Some(_) =>
+          val markOp = open()
+          advance()
+          close(markOp, TreeKind.Operator)
+        case None =>
+          val markOp = open()
+          val error = ParseError.UnexpectedToken(NamedTokenSet.FromKinds(FIRST_BINARY_OP), Some(nth(0)), sctx, None, currentSourceLocation())
+          closeWithError(markOp, error, Some(nth(0)))
+      }
+    }
+
+    private def infixFunction()(implicit s: State): Mark.Closed = {
+      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      assert(at(TokenKind.Tick))
+      val mark = open()
+      advance()
+      nameAllowQualified(NAME_QNAME)
+      expect(TokenKind.Tick, Some("Infix function is missing a closing '`'"))
+      close(mark, TreeKind.Operator)
+    }
+
+    /** Returns the unary operator type of the current token, or `None` if the current token is not a unary operator. */
+    private def peekUnaryOp(token: Token): Option[UnaryOp] = {
       token.kind match {
         case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
         case TokenKind.KeywordForce => Some(UnaryOp.Force)
@@ -2054,7 +2077,7 @@ object Parser2 {
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
-      expression(leftOpt = op.flatMap(parseUnaryOp))
+      expression(leftOpt = op.flatMap(peekUnaryOp))
       close(mark, TreeKind.Expr.Unary)
     }
 

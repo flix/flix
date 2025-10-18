@@ -72,7 +72,6 @@ sealed trait TokenKind {
       case TokenKind.HoleAnonymous => "'???'"
       case TokenKind.HoleNamed => "<named hole>"
       case TokenKind.HoleVariable => "<variable hole>"
-      case TokenKind.InfixFunction => "<infix function>"
       case TokenKind.KeywordAlias => "'alias'"
       case TokenKind.KeywordAnd => "'and'"
       case TokenKind.KeywordAs => "'as'"
@@ -183,6 +182,7 @@ sealed trait TokenKind {
       case TokenKind.SetHash => "'Set#'"
       case TokenKind.Slash => "'/'"
       case TokenKind.Star => "'*'"
+      case TokenKind.Tick => "'`'"
       case TokenKind.Tilde => "'~'"
       case TokenKind.Underscore => "'_'"
       case TokenKind.VectorHash => "'Vector#'"
@@ -708,8 +708,6 @@ object TokenKind {
 
   case object HoleVariable extends TokenKind
 
-  case object InfixFunction extends TokenKind
-
   case object KeywordAlias extends TokenKind
 
   case object KeywordAnd extends TokenKind
@@ -929,6 +927,8 @@ object TokenKind {
   case object Slash extends TokenKind
 
   case object Star extends TokenKind
+
+  case object Tick extends TokenKind
 
   case object Tilde extends TokenKind
 

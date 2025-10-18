@@ -247,24 +247,6 @@ object LexerError {
   }
 
   /**
-    * An error raised when an unterminated infix function is encountered.
-    *
-    * @param loc The location of the infix function.
-    */
-  case class UnterminatedInfixFunction(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Unterminated infix function."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Missing '`' in infix function.
-         |
-         |${code(loc, "Here.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised when an unterminated regex is encountered.
     *
     * @param loc The location of the regex.
