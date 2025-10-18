@@ -73,7 +73,7 @@ mod Fixpoint3.Solver {
                 |> Debugging.notifyPreLowering("Hoisting")
                 |> Phase.IndexSelection.indexProgram
                 |> Debugging.notifyPreLowering("Index Selection")
-                |> Phase.Provenance.augmentProgram(withProv)
+                |> Phase.ProvenanceAugment.augmentProgram(withProv)
                 |> Phase.Lowering.lowerProgram(rc, withProv)
         };
         let model = match d {
@@ -163,7 +163,7 @@ mod Fixpoint3.Solver {
                 }
             }
         }
-        case Provenance(_, _) => match Fixpoint3.Provenance.provQuery(p, f, withh, d) {
+        case Provenance(_, _) => match Fixpoint3.ProvenanceReconstruct.provQuery(p, f, withh, d) {
             case None =>
                 let termsStr = Vector.join(", ", f);
                 bug!("${p}(${termsStr}) is not a fact")
