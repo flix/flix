@@ -29,7 +29,8 @@ object JvmAst {
                   anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation]) {
+                  sources: Map[Source, SourceLocation])
+  {
 
     def getMain: Option[Def] = mainEntryPoint.map(defs(_))
 
