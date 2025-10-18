@@ -17,8 +17,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{SimpleType, ReducedAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.JvmAst.*
+import ca.uwaterloo.flix.language.ast.{SimpleType, JvmAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -155,7 +155,7 @@ object JvmOps {
     *   - `instantiateStruct(S, List(Int32, IO)) = List(Int32, Int32, Object)`
     *     for `struct S[t, r] { mut x: t, y: t, z: Object }`
     */
-  def instantiateStruct(sym: Symbol.StructSym, targs: List[SimpleType])(implicit root: ReducedAst.Root): List[BackendType] = {
+  def instantiateStruct(sym: Symbol.StructSym, targs: List[SimpleType])(implicit root: Root): List[BackendType] = {
     val struct = root.structs(sym)
     val map = ListOps.zip(struct.tparams.map(_.sym), targs).toMap
     struct.fields.map(field => instantiateType(map, field.tpe))
@@ -164,7 +164,7 @@ object JvmOps {
   /**
     * Returns the set of erased tag types in `types` without searching recursively.
     */
-  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: ReducedAst.Root): Set[BackendObjType.TagType] =
+  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: JvmAst.Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc0, SimpleType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
@@ -183,7 +183,7 @@ object JvmOps {
     *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
-  def instantiateEnum(enm: ReducedAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
+  def instantiateEnum(enm: JvmAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
     val map = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
     enm.cases.map {
       case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))

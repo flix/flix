@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType}
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.util.collection.MapOps
 

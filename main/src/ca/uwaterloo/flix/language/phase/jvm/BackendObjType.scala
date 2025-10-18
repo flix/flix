@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{ReducedAst, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.*
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.*
@@ -1524,7 +1524,7 @@ object BackendObjType {
 
   case class Namespace(ns: List[String]) extends BackendObjType {
 
-    def genByteCode(defs: List[ReducedAst.Def])(implicit flix: Flix): Array[Byte] = {
+    def genByteCode(defs: List[JvmAst.Def])(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
       cm.mkConstructor(Constructor, IsPublic, nullarySuperConstructor(ClassConstants.Object.Constructor)(_))
@@ -1538,7 +1538,7 @@ object BackendObjType {
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
-    def ShimMethod(defn: ReducedAst.Def): StaticMethod = {
+    def ShimMethod(defn: JvmAst.Def): StaticMethod = {
       val erasedArgs = defn.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
       val erasedResult = BackendType.toErasedBackendType(defn.unboxedType.tpe)
       // Exported names are checked in Safety, so no mangling is needed.
@@ -1546,7 +1546,7 @@ object BackendObjType {
       StaticMethod(this.jvmName, name, MethodDescriptor(erasedArgs, erasedResult))
     }
 
-    private def shimIns(defn: ReducedAst.Def)(implicit mv: MethodVisitor): Unit = {
+    private def shimIns(defn: JvmAst.Def)(implicit mv: MethodVisitor): Unit = {
       val defnT = Defn(defn.sym)
       val paramTypes = defn.fparams.map(fp => BackendType.toErasedBackendType(fp.tpe))
       withNames(0, paramTypes) {
