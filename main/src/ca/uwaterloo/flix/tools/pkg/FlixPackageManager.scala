@@ -36,7 +36,6 @@ object FlixPackageManager {
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val parentsOf: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
-    implicit val trust: mutable.Map[Manifest, Trust] = mutable.Map.empty
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
   }
 
@@ -148,7 +147,7 @@ object FlixPackageManager {
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit parentsOf: mutable.Map[Manifest, List[Manifest]], manifestToTrust: mutable.Map[Manifest, Trust], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     // find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
@@ -156,24 +155,19 @@ object FlixPackageManager {
       // download toml files
       tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, "toml", path, apiKey).map(p => (p, dep))
+        install(depName, dep.version, "toml", path, apiKey)
       }
 
-      // parse the manifests
-      transitiveManifests <- traverse(tomlPaths) { case (p, d) =>
-        parseManifest(p).map { m =>
-          manifestToTrust.put(m, d.trust)
-          m
-        }
-      }
+      // parse manifests
+      transitiveManifests <- traverse(tomlPaths)(parseManifest)
 
     } yield {
       for (m <- transitiveManifests) {
-        parentsOf.put(m, manifest :: parentsOf.getOrElse(m, List.empty))
+        immediateDependents.put(m, manifest :: immediateDependents.getOrElse(m, List.empty))
       }
 
       // remove duplicates
-      val newManifests = transitiveManifests.filter(m => !res.contains(m))
+      val newManifests = transitiveManifests.filter(!res.contains(_))
       var newRes = res ++ newManifests
 
       // do recursive calls for all dependencies
