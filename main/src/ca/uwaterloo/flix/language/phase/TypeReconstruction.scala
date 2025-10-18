@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant, SolveMode}
+import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Constant}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.typer.SubstitutionTree
-import ca.uwaterloo.flix.util.collection.MapOps
 
 import java.lang.reflect.Executable
 
@@ -69,10 +68,10 @@ object TypeReconstruction {
     * Reconstructs types in the given fparams.
     */
   private def visitFormalParam(fparam: KindedAst.FormalParam, subst: SubstitutionTree): TypedAst.FormalParam = fparam match {
-    case KindedAst.FormalParam(sym, mod, tpe0, src, loc) =>
+    case KindedAst.FormalParam(sym, tpe0, src, loc) =>
       val tpe = subst(tpe0)
       val bnd = TypedAst.Binder(sym, tpe)
-      TypedAst.FormalParam(bnd, mod, tpe, src, loc)
+      TypedAst.FormalParam(bnd, tpe, src, loc)
   }
 
   /**
@@ -194,16 +193,13 @@ object TypeReconstruction {
       val bnd = TypedAst.Binder(sym, boundType)
       TypedAst.Expr.LocalDef(bnd, fps, e1, e2, tpe, eff, loc)
 
-    case KindedAst.Expr.Region(tpe, loc) =>
-      TypedAst.Expr.Region(tpe, loc)
-
-    case KindedAst.Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
+    case KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
       // Use the appropriate branch for the scope.
       val e = visitExp(exp)(subst.branches.getOrElse(regSym, SubstitutionTree.empty))
       val tpe = subst(tvar)
       val eff = subst(evar)
       val bnd = TypedAst.Binder(sym, eff)
-      TypedAst.Expr.Scope(bnd, regSym, e, tpe, eff, loc)
+      TypedAst.Expr.Region(bnd, regSym, e, tpe, eff, loc)
 
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
@@ -604,33 +600,25 @@ object TypeReconstruction {
       val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointQueryWithProvenance(es, s, withh, subst(tvar), eff, loc)
 
+    case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tvar, loc) =>
+      val es = exps.map(visitExp)
+      val qe = visitExp(queryExp)
+      val ss = selects.map(visitExp)
+      val f = from.map(visitBodyPredicate)
+      val w = where.map(visitExp)
+      val effs = es.map(_.eff) ::: ss.map(_.eff) ::: w.map(_.eff)
+      val eff = Type.mkUnion(effs, loc)
+      TypedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, subst(tvar), eff, loc)
+
     case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, tvar, loc) =>
       val es = exps.map(visitExp)
       val tpe = subst(tvar)
       val eff = Type.mkUnion(es.map(_.eff), loc)
       TypedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
-    case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
-      val e = visitExp(exp)
-      val eff = e.eff
-      TypedAst.Expr.FixpointFilter(pred, e, subst(tvar), eff, loc)
-
     case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
       val es = exps.map(visitExp)
       TypedAst.Expr.FixpointInjectInto(es, predsAndArities, subst(tvar), subst(evar), loc)
-
-    case KindedAst.Expr.FixpointProject(pred, arity, exp1, exp2, tvar, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val tpe = subst(tvar)
-      val eff = Type.mkUnion(e1.eff, e2.eff, loc)
-
-      // Note: This transformation should happen in the Weeder but it is here because
-      // `#{#Result(..)` | _} cannot be unified with `#{A(..)}` (a closed row).
-      // See Weeder for more details.
-      val mergeExp = TypedAst.Expr.FixpointMerge(e1, e2, e1.tpe, eff, loc)
-      val solveExp = TypedAst.Expr.FixpointSolveWithProject(mergeExp :: Nil, None, SolveMode.Default, e1.tpe, eff, loc)
-      TypedAst.Expr.FixpointProject(pred, arity, solveExp, tpe, eff, loc)
 
     case KindedAst.Expr.Error(m, tvar, evar) =>
       val tpe = subst(tvar)
@@ -734,14 +722,14 @@ object TypeReconstruction {
     * Reconstructs types in the given ext pattern.
     */
   private def visitExtPat(pat0: KindedAst.ExtPattern)(implicit subst: SubstitutionTree): TypedAst.ExtPattern = pat0 match {
-    case KindedAst.ExtPattern.Default(tvar, loc) =>
+    case KindedAst.ExtPattern.Default(_, loc) =>
       TypedAst.ExtPattern.Default(loc)
 
     case KindedAst.ExtPattern.Tag(label, pats, loc) =>
       val ps = pats.map(visitExtTagPat)
       TypedAst.ExtPattern.Tag(label, ps, loc)
 
-    case KindedAst.ExtPattern.Error(tvar, loc) =>
+    case KindedAst.ExtPattern.Error(_, loc) =>
       TypedAst.ExtPattern.Error(loc)
   }
 

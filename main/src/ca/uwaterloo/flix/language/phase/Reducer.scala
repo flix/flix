@@ -63,7 +63,7 @@ object Reducer {
 
       // Compute the types in the captured formal parameters.
       val cParamTypes = cparams.foldLeft(Set.empty[SimpleType]) {
-        case (sacc, FormalParam(_, _, paramTpe, _)) => sacc + paramTpe
+        case (sacc, FormalParam(_, paramTpe)) => sacc + paramTpe
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
@@ -77,8 +77,8 @@ object Reducer {
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
     ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
-      case Expr.Cst(cst, tpe, loc) =>
-        Expr.Cst(cst, tpe, loc)
+      case Expr.Cst(cst, loc) =>
+        Expr.Cst(cst, loc)
 
       case Expr.Var(sym, tpe, loc) =>
         Expr.Var(sym, tpe, loc)
@@ -124,21 +124,21 @@ object Reducer {
       case Expr.JumpTo(sym, tpe, purity, loc) =>
         Expr.JumpTo(sym, tpe, purity, loc)
 
-      case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+      case Expr.Let(sym, exp1, exp2, loc) =>
         lctx.lparams.addOne(LocalParam(sym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.Let(sym, e1, e2, tpe, purity, loc)
+        Expr.Let(sym, e1, e2, loc)
 
-      case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+      case Expr.Stmt(exp1, exp2, loc) =>
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.Stmt(e1, e2, tpe, purity, loc)
+        Expr.Stmt(e1, e2, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         lctx.lparams.addOne(LocalParam(sym, SimpleType.Region))
         val e = visitExpr(exp)
-        Expr.Scope(sym, e, tpe, purity, loc)
+        Expr.Region(sym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExpr(exp)
@@ -223,7 +223,7 @@ object Reducer {
     val paramTypes = op.fparams.map(_.tpe)
     val resType = op.tpe
     val continuationType = SimpleType.Object
-    val correctedFunctionType = SimpleType.Arrow(paramTypes :+ continuationType, resType)
+    val correctedFunctionType = SimpleType.mkArrow(paramTypes :+ continuationType, resType)
     correctedFunctionType
   }
 

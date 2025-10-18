@@ -101,7 +101,7 @@ object Kinder {
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
       val t = Type.mkApply(Type.Cst(TypeConstructor.Enum(sym, getEnumKind(enum0)), sym.loc.asSynthetic), targs, sym.loc.asSynthetic)
       val cases = cases0.map(visitCase(_, tparams, t, kenv, root)).map(caze => caze.sym -> caze).toMap
-      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, t, loc)
+      KindedAst.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
 
   /**
@@ -494,16 +494,13 @@ object Kinder {
         val exp2 = visitExp(exp20, kenv0, root)
         KindedAst.Expr.LocalDef(sym, fparams, exp1, exp2, loc)
 
-      case ResolvedAst.Expr.Region(tpe, loc) =>
-        KindedAst.Expr.Region(tpe, loc)
-
-      case ResolvedAst.Expr.Scope(sym, regSym, exp0, loc) =>
+      case ResolvedAst.Expr.Region(sym, regSym, exp0, loc) =>
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         // Record that we enter the new scope.
         val newScope = scope.enter(regSym)
         val exp = visitExp(exp0, kenv0, root)(newScope, renv, sctx, flix)
-        KindedAst.Expr.Scope(sym, regSym, exp, tvar, evar, loc)
+        KindedAst.Expr.Region(sym, regSym, exp, tvar, evar, loc)
 
       case ResolvedAst.Expr.Match(exp0, rules0, loc) =>
         val exp = visitExp(exp0, kenv0, root)
@@ -816,27 +813,24 @@ object Kinder {
         val s = visitHeadPredicate(select, kenv0, root)
         KindedAst.Expr.FixpointQueryWithProvenance(es, s, withh, Type.freshVar(Kind.Star, loc), loc)
 
+      case ResolvedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+        val es = exps.map(visitExp(_, kenv0, root))
+        val qe = visitExp(queryExp, kenv0, root)
+        val ss = selects.map(visitExp(_, kenv0, root))
+        val f = from.map(visitBodyPredicate(_, kenv0, root))
+        val w = where.map(visitExp(_, kenv0, root))
+        KindedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, Type.freshVar(Kind.Star, loc), loc)
+
       case ResolvedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
         val es = exps.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         KindedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, tvar, loc)
-
-      case ResolvedAst.Expr.FixpointFilter(pred, exp0, loc) =>
-        val exp = visitExp(exp0, kenv0, root)
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc)
 
       case ResolvedAst.Expr.FixpointInjectInto(exps0, predsAndArities, loc) =>
         val exps = exps0.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc)
-
-      case ResolvedAst.Expr.FixpointProject(pred, arity, exp10, exp20, loc) =>
-        val exp1 = visitExp(exp10, kenv0, root)
-        val exp2 = visitExp(exp20, kenv0, root)
-        val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
-        KindedAst.Expr.FixpointProject(pred, arity, exp1, exp2, tvar, loc)
 
       case ResolvedAst.Expr.Error(m) =>
         val tvar = Type.freshVar(Kind.Star, m.loc)
@@ -1118,7 +1112,7 @@ object Kinder {
 
     case UnkindedType.Apply(t10, t20, loc) =>
       val t2 = visitType(t20, Kind.Wild, kenv, root)
-      val k1 = Kind.Arrow(t2.kind, expectedKind)
+      val k1 = Kind.mkArrow(t2.kind, expectedKind)
       val t1 = visitType(t10, k1, kenv, root)
       mkApply(t1, t2, loc)
 
@@ -1367,12 +1361,12 @@ object Kinder {
     * Performs kinding on the given formal param under the given kind environment.
     */
   private def visitFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): KindedAst.FormalParam = fparam0 match {
-    case ResolvedAst.FormalParam(sym, mod, tpe0, loc) =>
+    case ResolvedAst.FormalParam(sym, tpe0, loc) =>
       val (t, src) = tpe0 match {
         case None => (sym.tvar, TypeSource.Inferred)
         case Some(tpe) => (visitType(tpe, Kind.Star, kenv, root), TypeSource.Ascribed)
       }
-      KindedAst.FormalParam(sym, mod, t, src, loc)
+      KindedAst.FormalParam(sym, t, src, loc)
   }
 
   /**
@@ -1423,7 +1417,7 @@ object Kinder {
     * Infers a kind environment from the given formal param.
     */
   private def inferFormalParam(fparam0: ResolvedAst.FormalParam, kenv: KindEnv, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext): KindEnv = fparam0 match {
-    case ResolvedAst.FormalParam(_, _, tpe0, _) => tpe0 match {
+    case ResolvedAst.FormalParam(_, tpe0, _) => tpe0 match {
       case None => KindEnv.empty
       case Some(tpe) => inferType(tpe, Kind.Star, kenv, root)
     }

@@ -381,9 +381,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Region(_, _) => ()
-
-      case Expr.Scope(bnd, _, exp, _, _, _) =>
+      case Expr.Region(bnd, _, exp, _, _, _) =>
         visitBinder(bnd)
         visitExpr(exp)
 
@@ -589,17 +587,18 @@ object Visitor {
         exps.foreach(visitExpr)
         visitPredicate(select)
 
+      case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+        exps.foreach(visitExpr)
+        visitExpr(queryExp)
+        selects.foreach(visitExpr)
+        from.foreach(visitPredicate)
+        where.foreach(visitExpr)
+
       case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.FixpointFilter(_, exp, _, _, _) =>
-        visitExpr(exp)
-
       case Expr.FixpointInjectInto(exps, _, _, _, _) =>
         exps.foreach(visitExpr)
-
-      case Expr.FixpointProject(_, _, exp, _, _, _) =>
-        visitExpr(exp)
 
       case Expr.Error(_, _, _) => ()
     }
@@ -694,7 +693,7 @@ object Visitor {
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(bnd, _, tpe, _, loc) = fparam
+    val FormalParam(bnd, tpe, _, loc) = fparam
     if (!a.accept(loc)) {
       return
     }

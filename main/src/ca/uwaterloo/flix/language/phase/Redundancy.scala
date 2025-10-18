@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError.*
 import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.collection.SeqOps
 
 import java.util.concurrent.ConcurrentHashMap
@@ -67,10 +68,15 @@ object Redundancy {
       case (acc, decl) => acc ++ visitDef(decl)(sctx, root, flix)
     }, _ ++ _).errors.toList
 
+    val errorsFromTraits = root.traits.foldLeft(Used.empty)({
+      case (acc, (_, t)) => acc ++ findShadowedTraitTypeParams(t)
+    }).errors.toList
+
     // Check for unused symbols.
     val errors = errorsFromDefs ++
       errorsFromInst ++
       errorsFromSigs ++
+      errorsFromTraits ++
       checkUnusedDefs()(sctx, root) ++
       checkUnusedEffects()(sctx, root) ++
       checkUnusedEnumsAndTags()(sctx, root) ++
@@ -299,6 +305,17 @@ object Redundancy {
       }
   }
 
+  /**
+    * Finds shadowed type parameters in traits.
+    */
+  private def findShadowedTraitTypeParams(traitt: Trait): Used = {
+    val traitParam = traitt.tparam
+    val traitParamName = traitParam.name.name
+    val env = Env.empty + (traitParamName, traitParam.loc)
+    traitt.sigs.flatMap(_.spec.tparams).foldLeft(Used.empty)({
+      case (acc, tparam) => acc ++ shadowing(tparam.name.name, tparam.name.loc, env)
+    })
+  }
 
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
@@ -434,15 +451,12 @@ object Redundancy {
       val fparamVars = fparams.map(_.bnd.sym)
       val shadowedFparamVars = fparamVars.map(s => shadowing(s.text, s.loc, env0))
 
-      fparamVars.zip(shadowedFparamVars).foldLeft(res1) {
+      ListOps.zip(fparamVars, shadowedFparamVars).foldLeft(res1) {
         case (acc, (s, shadow)) if deadVarSym(s, innerUsed1) => (acc ++ shadow) - s + UnusedVarSym(s)
         case (acc, (s, shadow)) => (acc ++ shadow) - s
       }
 
-    case Expr.Region(_, _) =>
-      Used.empty
-
-    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
+    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -773,7 +787,7 @@ object Redundancy {
           val shadowedFparamVars = syms.map(s => shadowing(s.text, s.loc, env0))
           val env1 = env0 ++ syms
           val usedBody = visitExp(body, env1, rc)
-          syms.zip(shadowedFparamVars).foldLeft(acc ++ usedBody) {
+          ListOps.zip(syms, shadowedFparamVars).foldLeft(acc ++ usedBody) {
             case (acc1, (s, shadow)) =>
               if (deadVarSym(s, usedBody)) {
                 acc1 ++ shadow + UnusedVarSym(s)
@@ -894,14 +908,18 @@ object Redundancy {
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      val us1 = visitExps(exps, env0, rc)
+      val us2 = visitExp(queryExp, env0, rc)
+      val us3 = visitExps(selects, env0, rc)
+      val us4 = from.foldLeft(Used.empty) {
+        case (acc, b) => acc ++ visitBodyPred(b, env0, rc)
+      }
+      val us5 = visitExps(where, env0, rc)
+      us1 ++ us2 ++ us3 ++ us4 ++ us5
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       visitExps(exps, env0, rc)
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      visitExp(exp, env0, rc)
 
     case Expr.Error(_, _, _) =>
       lctx.errorLocs += e0.loc
@@ -1179,6 +1197,7 @@ object Redundancy {
     * Returns `true` if the given definition `decl` is unused according to `used`.
     */
   private def deadDef(decl: Def)(implicit sctx: SharedContext, root: Root): Boolean =
+    !decl.spec.ann.isCompileTest &&
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !decl.spec.ann.isExport &&

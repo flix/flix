@@ -66,7 +66,7 @@ object Dependencies {
     * The value is fixed to () since it doesn't matter.
     */
   private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
+    sctx.deps.put((src.source.input, dst.source.input), ())
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
@@ -197,10 +197,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Region(tpe, _) =>
-      visitType(tpe)
-
-    case Expr.Scope(bnd, _, exp, tpe, eff, _) =>
+    case Expr.Region(bnd, _, exp, tpe, eff, _) =>
       visitBinder(bnd)
       visitExp(exp)
       visitType(tpe)
@@ -508,23 +505,22 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      from.foreach(visitConstraintBody)
+      where.foreach(visitExp)
+      visitType(tpe)
+      visitType(eff)
+
     case Expr.FixpointSolveWithProject(exps, _, _, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointFilter(_, exp, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
     case Expr.FixpointInjectInto(exps, _, tpe, eff, _) =>
       exps.foreach(visitExp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.FixpointProject(_, _, exp, tpe, eff, _) =>
-      visitExp(exp)
       visitType(tpe)
       visitType(eff)
 

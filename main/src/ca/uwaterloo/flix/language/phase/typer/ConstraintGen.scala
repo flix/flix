@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, 
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
 /**
@@ -432,12 +433,7 @@ object ConstraintGen {
         val resEff = eff2
         (resTpe, resEff)
 
-      case Expr.Region(tpe, _) =>
-        val resTpe = tpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
-      case Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
+      case Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -675,7 +671,7 @@ object ConstraintGen {
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSymUse, expr), fieldTpe1) <- fields.zip(fieldTpes)
+          ((fieldSymUse, expr), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
         } {
           instantiatedFieldTpes.get(fieldSymUse.sym) match {
             case None => () // if not an actual field, there is nothing to unify
@@ -1038,10 +1034,9 @@ object ConstraintGen {
       case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
       case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
       case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
+      case e: Expr.FixpointQueryWithSelect => SchemaConstraintGen.visitFixpointQueryWithSelect(e)
       case e: Expr.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
-      case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
       case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
-      case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
 
       case Expr.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.
@@ -1266,7 +1261,7 @@ object ConstraintGen {
         * Constrains the given formal parameter to its declared type.
         */
       def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
-        case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+        case KindedAst.FormalParam(sym, tpe, _, loc) =>
           c.unifyType(sym.tvar, tpe, loc)
       }
 

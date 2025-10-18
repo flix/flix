@@ -203,29 +203,6 @@ mod Test.Exp.Interpolation {
     def interpolation38(): Bool =
         "\\\${" == String.concat("\\$", "{")
 
-    @test
-    def interpolationDebug01(): Bool =
-        "%{123}" == "123"
-
-    @test
-    def interpolationDebug02(): Bool =
-        let x = "123";
-        "%{x}" == "\"123\""
-
-    @test
-    def interpolationDebug03(): Bool =
-        let x = "123";
-        "\\%{x}" == "\\\"123\""
-
-    @test
-    def interpolationDebug04(): Bool =
-        "\%{x}" == String.concat("%", "{x}")
-
-    @test
-    def interpolationDebug05(): Bool =
-        let x = EnumSansToString.CaseSansToString(123);
-        "my object is %{x}" == "my object is CaseSansToString(123)"
-
     pub enum Color {
         case Red,
         case Green,
@@ -237,27 +214,6 @@ mod Test.Exp.Interpolation {
     }
 
 }
-
-///pub trait ToString[a] {
-///    pub def toString(x: a): String
-///}
-///
-///instance ToString[Bool] {
-///    def toString(x: Bool): String = match x {
-///        case true => "true"
-///        case false => "false"
-///    }
-///}
-///
-///instance ToString[Int32] {
-///    def toString(x: Int32): String =
-///        import static java.lang.Integer.toString(Int32): String \ {};
-///        x.toString()
-///}
-///
-///instance ToString[String] {
-///    def toString(x: String): String = x
-///}
 
 instance ToString[Test.Exp.Interpolation.Color] {
     pub def toString(c: Test.Exp.Interpolation.Color): String =

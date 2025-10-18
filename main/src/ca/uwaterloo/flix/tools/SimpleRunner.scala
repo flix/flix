@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util.*
-import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
 
@@ -63,13 +62,13 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd, options.githubToken)(Formatter.getDefault, System.out).toResult match {
+      Bootstrap.bootstrap(cwd, options.githubToken)(Formatter.getDefault, System.out) match {
         case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
-        case Result.Err(errors) =>
-          errors.map(_.message(Formatter.getDefault)).foreach(println)
+        case Result.Err(error) =>
+          println(error.message(Formatter.getDefault))
           System.exit(1)
       }
     }
@@ -78,7 +77,7 @@ object SimpleRunner {
     val flix = new Flix()
     flix.setOptions(options)
     for (file <- cmdOpts.files) {
-      implicit val defaultSctx: SecurityContext = SecurityContext.AllPermissions
+      implicit val defaultSctx: SecurityContext = SecurityContext.Unrestricted
       val ext = file.getName.split('.').last
       ext match {
         case "flix" => flix.addFlix(file.toPath)

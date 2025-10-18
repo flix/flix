@@ -196,6 +196,8 @@ object SyntaxTree {
 
       case object CheckedTypeCast extends Expr
 
+      case object DebugInterpolator extends Expr
+
       case object ExtMatch extends Expr
 
       case object ExtMatchRuleFragment extends Expr
@@ -209,8 +211,6 @@ object SyntaxTree {
       case object InvokeConstructor extends Expr
 
       case object InvokeMethod extends Expr
-
-      case object Debug extends Expr
 
       case object FixpointConstraint extends Expr
 
@@ -282,10 +282,6 @@ object SyntaxTree {
 
       case object LiteralMapKeyValueFragment extends Expr
 
-      case object LiteralRecord extends Expr
-
-      case object LiteralRecordFieldFragment extends Expr
-
       case object LiteralStructFieldFragment extends Expr
 
       case object LiteralSet extends Expr
@@ -334,9 +330,9 @@ object SyntaxTree {
 
       case object Run extends Expr
 
-      case object Scope extends Expr
+      case object Region extends Expr
 
-      case object ScopeName extends Expr
+      case object RegionName extends Expr
 
       case object Select extends Expr
 

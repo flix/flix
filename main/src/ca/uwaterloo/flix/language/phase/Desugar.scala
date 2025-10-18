@@ -398,9 +398,9 @@ object Desugar {
     * Desugars the given [[WeededAst.FormalParam]] `fparam0`.
     */
   private def visitFormalParam(fparam0: WeededAst.FormalParam): DesugaredAst.FormalParam = fparam0 match {
-    case WeededAst.FormalParam(ident, mod, tpe0, loc) =>
+    case WeededAst.FormalParam(ident, tpe0, loc) =>
       val tpe = tpe0.map(visitType)
-      DesugaredAst.FormalParam(ident, mod, tpe, loc)
+      DesugaredAst.FormalParam(ident, tpe, loc)
   }
 
   /**
@@ -558,9 +558,9 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LocalDef(ident, fps, e1, e2, loc)
 
-    case WeededAst.Expr.Scope(ident, exp, loc) =>
+    case WeededAst.Expr.Region(ident, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Scope(ident, e, loc)
+      Expr.Region(ident, e, loc)
 
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -753,8 +753,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegionToStar(Type.IO, loc)
-      DesugaredAst.Expr.Region(tpe, loc)
+      DesugaredAst.Expr.Cst(Constant.Static, loc)
 
     case WeededAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
@@ -819,11 +818,8 @@ object Desugar {
       val s = visitHead(select)
       DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
-      desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
-
-    case WeededAst.Expr.Debug(exp, kind, loc) =>
-      desugarDebug(exp, kind, loc)
+    case WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
+      desugarFixpointQueryWithSelect(exps, selects, from, where ,loc)
 
     case WeededAst.Expr.Error(m) =>
       DesugaredAst.Expr.Error(m)
@@ -1357,7 +1353,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.FixpointQueryWithSelect]] into a series of solves and merges.
+    * Rewrites a [[WeededAst.Expr.FixpointQueryWithSelect]] to include a #Result relation to store the query result.
     *
     * E.g.,
     * {{{
@@ -1365,10 +1361,8 @@ object Desugar {
     * }}}
     * becomes
     * {{{
-    *   project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
-    *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
+    *   query e1, e2, e3, #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } select (x, y, z) from A(x, y), B(z) where x > 0
     * }}}
-    * OBS: The last merge and solve is done in the typer because of trouble when `(merge e1, e2, e3)` is a closed row.
     */
   private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val exps = visitExps(exps0)
@@ -1378,9 +1372,6 @@ object Desugar {
 
     // The fresh predicate name where to store the result of the query.
     val pred = Name.Pred(Flix.Delimiter + "Result", loc0)
-
-    // The arity of the result is the number of selects
-    val arity = selects.length
 
     // The head of the pseudo-rule.
     val den = Denotation.Relational
@@ -1402,35 +1393,7 @@ object Desugar {
     // Construct a constraint set that contains the single pseudo constraint.
     val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc0)
 
-    // Construct the merge of all the expressions.
-    val dbExp = exps.reduceRight[Expr] {
-      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
-    }
-
-    // Extract the tuples of the result predicate.
-    DesugaredAst.Expr.FixpointProject(pred, arity, queryExp, dbExp, loc0)
-  }
-
-  /**
-    * Rewrites a [[WeededAst.Expr.Debug]] into a call to `Debug.debugWithPrefix`.
-    */
-  private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val e = visitExp(exp0)
-    val prefix = mkDebugPrefix(e, kind0, loc0)
-    val e1 = DesugaredAst.Expr.Cst(Constant.Str(prefix), loc0)
-    mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-  }
-
-  /**
-    * Returns a prefix used by `Debug.debugWithPrefix` based on `kind0` and `exp0`.
-    */
-  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = kind0 match {
-    case WeededAst.DebugKind.Debug => ""
-    case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
-    case WeededAst.DebugKind.DebugWithLocAndSrc =>
-      val locPart = s"[${loc0.formatWithLine}]"
-      val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
-      locPart + srcPart
+    DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc0)
   }
 
   /**
@@ -1460,7 +1423,7 @@ object Desugar {
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.ExtMatchRule(pat0, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
@@ -1492,7 +1455,7 @@ object Desugar {
     val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
-    val fparam = DesugaredAst.FormalParam(ident, Modifiers.Empty, None, loc0.asSynthetic)
+    val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }

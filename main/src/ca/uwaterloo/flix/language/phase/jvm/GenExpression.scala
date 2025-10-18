@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
@@ -98,14 +99,13 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(cst, tpe, loc) => cst match {
+    case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case Constant.Null =>
         import BytecodeInstructions.*
         ACONST_NULL()
-        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case Constant.Bool(b) =>
         BytecodeInstructions.pushBool(b)
@@ -170,6 +170,12 @@ object GenExpression {
 
       case Constant.RecordEmpty =>
         BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
+
+      case Constant.Static =>
+        import BytecodeInstructions.*
+        //!TODO: For now, just emit null
+        ACONST_NULL()
+        CHECKCAST(BackendObjType.Region.jvmName)
 
     }
 
@@ -580,12 +586,6 @@ object GenExpression {
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
         }
 
-      case AtomicOp.Region =>
-        import BytecodeInstructions.*
-        //!TODO: For now, just emit null
-        ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.jvmName)
-
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
         val SimpleType.Enum(_, targs) = exp.tpe
@@ -931,7 +931,7 @@ object GenExpression {
         val List(exp1, exp2) = exps
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
+          case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
@@ -1101,7 +1101,7 @@ object GenExpression {
         if (canCallStaticMethod) {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
-          for ((arg, tpe) <- exps.zip(paramTpes)) {
+          for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
             BytecodeInstructions.castIfNotPrim(tpe)
           }
@@ -1248,7 +1248,7 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
         }
-        for ((arg, fp) <- exps.zip(defn.fparams).reverse) {
+        for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
           val tpe = BackendType.toBackendType(arg.tpe)
           val offset = fp.sym.getStackOffset(ctx.localOffset)
@@ -1292,7 +1292,7 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
+    case Expr.Let(sym, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
@@ -1300,13 +1300,13 @@ object GenExpression {
       xStore(bType, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
+    case Expr.Stmt(exp1, exp2, _) =>
       import BytecodeInstructions.*
       compileExpr(exp1)
       xPop(BackendType.toBackendType(exp1.tpe))
       compileExpr(exp2)
 
-    case Expr.Scope(sym, exp, _, _, loc) =>
+    case Expr.Region(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
       BytecodeInstructions.addLoc(loc)
 

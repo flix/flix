@@ -252,6 +252,27 @@ mod BPlusTree {
     }
 
     ///
+    /// Updates `t` with `k => f(v)` if `k => v` is in `t`.
+    ///
+    /// Otherwise, `t` is unchanged.
+    ///
+    /// Thread-safe.
+    ///
+    pub def adjust(f: v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] = 
+        adjustWithKey(_ -> v -> f(v), k, t)
+
+    ///
+    /// Updates `t` with `k => f(k, v)` if `k => v` is in `t`.
+    ///
+    /// Otherwise, `t` is unchanged.
+    ///
+    /// Thread-safe.
+    ///
+    pub def adjustWithKey(f: k -> v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] = 
+        let (node, stamp) = findLeaf(k, t);
+        Node.adjustWithKey(f, k, stamp, t, node)
+
+    ///
     /// Returns true if and only if `t` is a structurally correct tree.
     ///
     /// Only used for internal testing.
@@ -281,7 +302,7 @@ mod BPlusTree {
             case None =>
                 let lock = Node.getLock(leaf);
                 let writeStamp = Lock.tryConvertToWrite(stamp, lock);
-                if(not Lock.valid(writeStamp, lock)) {
+                if (not Lock.valid(writeStamp, lock)) {
                     computeIfAbsent(f, k, t)
                 } else {
                     let v = f();
@@ -289,6 +310,38 @@ mod BPlusTree {
                     v
                 }
         }
+
+    ///
+    /// Returns `true` if and only if for all `k => v` in `t`, `f(k, v) == true`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def forAll(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r = 
+        not exists(k -> v -> not f(k, v), t)
+    
+    ///
+    /// Returns `true` if and only if there exists `k => v` in `t` such that `f(k, v) == true`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def exists(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r = 
+        Node.exists(f, 0, Node.leftMostChild(t->root))
+
+    ///
+    /// Alias for `findLeft`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def find(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r = 
+        findLeft(f, t)
+
+    ///
+    /// Optionally returns the first mapping in `t` satisfying the function `f`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def findLeft(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r = 
+        Node.findLeft(f, 0, Node.leftMostChild(t->root)) 
 
     ///
     /// Increments the stored size of `t`.
@@ -305,7 +358,7 @@ mod BPlusTree {
     pub def memberOfPair(k: k, v: v, t: BPlusTree[k, v, r]): Bool \ r with Order[k], Eq[v] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         let res = Node.leafMemberOfPair(k, v, t->search, leaf);
-        if(Lock.valid(stamp, Node.getLock(leaf))) {
+        if (Lock.valid(stamp, Node.getLock(leaf))) {
             res
         } else {
             Lock.yieldBasedOn(Node.getLock(leaf));
@@ -372,6 +425,18 @@ mod BPlusTree {
     }
 
     ///
+    /// Applies `f` to a start value `i` and all values in `t` going from left to right.
+    ///
+    pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] = 
+        List.foldLeft(f, i, valuesOf(t))
+
+    ///
+    /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
+    ///
+    pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
+        List.foldLeft(b -> match (k, v) -> f(b, k, v), i, toList(t))
+
+    ///
     /// Applies `f` to all mappings `k => v` in `t`.
     ///
     /// Not thread-safe.
@@ -387,7 +452,7 @@ mod BPlusTree {
         let rootPointerStamp = Lock.tryReadLock(t->rootLock);
         let rootNode = t->root;
         let nodeStamp = Lock.tryReadLock(Node.getLock(rootNode));
-        if(Lock.valid(rootPointerStamp, t->rootLock)){
+        if (Lock.valid(rootPointerStamp, t->rootLock)) {
             (rootNode, nodeStamp)
         } else {
             Lock.yieldBasedOn(t->rootLock);
@@ -402,11 +467,40 @@ mod BPlusTree {
         Node.get(k, stamp, leaf, t)
 
     ///
+    /// Returns `Some((k, v))` if `k => v` is in `t`. Otherwise, returns `None`.
+    ///
+    /// Thread-safe.
+    ///
+    pub def getKeyAndValue(k: k, t: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] = {
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        Node.getKeyAndValue(k, stamp, leaf, t)
+    }
+
+    ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.getWithDefault(k, stamp, d, leaf, t)
+
+
+    ///
+    /// Returns the set of keys in `t`.
+    ///
+    pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] = region rc {
+        let set = MutSet.empty(rc);
+        forEach(k -> _ -> MutSet.add(k, set), t);
+        MutSet.toSet(set)
+    }
+
+    ///
+    /// Returns the list of values in `t`.
+    ///
+    pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] = region rc {
+        let list = MutList.empty(rc);
+        forEach(_ -> v -> MutList.push(v, list), t);
+        MutList.toList(list)
+    }
 
     ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
@@ -420,7 +514,7 @@ mod BPlusTree {
     @Parallel
     pub def parForEach(f: k -> v -> Unit \ r, t: BPlusTree[k, v, r]): Unit \ r = region rc {
         // `threadNum` is the number of spawned threads.
-        let threadNum = if(Node.computeHeight(t->root) >= 2) {
+        let threadNum = if (Node.computeHeight(t->root) >= 2) {
             threads()
         } else {
             Int32.min(threads(), Node.size(t->root))
@@ -454,20 +548,42 @@ mod BPlusTree {
     @Internal
     @Parallel
     pub def parForEachWhen(f1: k -> v -> Unit \ r, f2: k -> v -> Unit \ r, parLimit: Int32, t: BPlusTree[k, v, r]): Unit \ r =
-        if(size(t) < parLimit)
+        if (size(t) < parLimit)
             forEach(f1, t)
         else
             parForEach(f2, t)
-
 
     ///
     /// Updates the tree `t` with the mapping `k => v`. Replaces any
     /// existing mapping.
     ///
+    /// Updates both the key and value of the mapping.
+    ///
     /// Thread-safe.
     ///
     pub def put(k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
         fixRoot(putInternal(k, v, t), t)
+
+    ///
+    /// Updates the tree `t` with the mapping `k => v`. Replaces any
+    /// existing mapping, `k2 => v2`, if `decider(k, v, k2, v2) == true`.
+    ///
+    /// Thread-safe and atomic.
+    ///
+    pub def putIf(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
+        fixRoot(putIfInternal(decider, k, v, t), t)
+
+    ///
+    /// Internal method for `putIf`.
+    ///
+    /// Called when restarting.
+    ///
+    /// Returns the `Some(newRoot, stamp)` if the root was split where `stamp` is a write-stamp
+    /// on `rootLock`.
+    ///
+    def putIfInternal(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Option[(Node[k, v, r], Int64)] \ r with Order[k] =
+        let (leaf, stamp) = BPlusTree.findLeaf(k, t);
+        Node.insertIntoLeafIf(decider, k, v, leaf, stamp, t)
 
     ///
     /// Internal method for `put`.
@@ -489,13 +605,21 @@ mod BPlusTree {
     pub def isEmpty(t: BPlusTree[k, v, r]): Bool \ r =
         let (root, stamp) = BPlusTree.getLockedRoot(t);
         let res = Node.isEmpty(root);
-        if(Lock.valid(stamp, Node.getLock(root))) {
+        if (Lock.valid(stamp, Node.getLock(root))) {
             res
         } else {
             // Restart
             Lock.yieldBasedOn(Node.getLock(root));
             isEmpty(t)
         }
+
+    ///
+    /// Returns `true` if and only if `t` contains at least one mapping.
+    ///
+    /// Thread-safe.
+    ///
+    pub def nonEmpty(t: BPlusTree[k, v, r]): Bool \ r = 
+        not BPlusTree.isEmpty(t)
 
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
@@ -505,7 +629,7 @@ mod BPlusTree {
     pub def memberOf(k: k, t: BPlusTree[k, v, r]): Bool \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         let res = Node.leafMemberOf(k, t->search, leaf);
-        if(not Lock.valid(stamp, Node.getLock(leaf))) {
+        if (not Lock.valid(stamp, Node.getLock(leaf))) {
             Lock.yieldBasedOn(Node.getLock(leaf));
             memberOf(k, t)
         } else {
@@ -722,6 +846,35 @@ mod BPlusTree {
             node->size = size + 1
 
         ///
+        /// Internal method to update the leaf `node` with `key => f(key, val)` if `key => val` is in `node`.
+        ///
+        /// Otherwise, `node` is unchanged.
+        ///
+        /// Thread-safe.
+        ///
+        /// Lock invariant:
+        ///
+        /// - On invocation, the thread has a lock on `node`.
+        ///
+        @Internal
+        pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
+            let index = binarySearch(key, BPlusTree.search(t), node);
+            if (index >= 0) {
+                let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+                if (not Lock.valid(writeStamp, node->lock)) {
+                    Lock.yieldBasedOn(node->lock);
+                    BPlusTree.adjustWithKey(f, key, t)
+                } else {
+                    let val = Array.get(index, node->values);
+                    Array.put(f(key, val), index, node->values);
+                    Lock.unlockWrite(writeStamp, node->lock)
+                }
+            } else if (not Lock.valid(stamp, node->lock))
+                BPlusTree.adjustWithKey(f, key, t)
+            else ()
+        }
+
+        ///
         /// Applies the predicate `f` to all pairs of direcly subsequent elements of `v` and returns the and.
         /// E.g. f(v[0], v[1]) and f(v[1], v[2]) and ... and f(v[n-1], v[n])
         /// Only used by the testing functions
@@ -775,7 +928,7 @@ mod BPlusTree {
                     let children = toLength(Array.toVector(c), size);
                     let keysInOrder = isSorted(keys, search);
                     let firstChildWorks = assertNodeInvariant(Vector.get(0, children), arity, false, shouldBeBiggerThan, search);
-                    let lastChildWorks = assertNodeInvariant(unwrapNode(Vector.last(children)), arity, isRightMost, if(size == 0) shouldBeBiggerThan else Vector.last(keys), search);
+                    let lastChildWorks = assertNodeInvariant(unwrapNode(Vector.last(children)), arity, isRightMost, if (size == 0) shouldBeBiggerThan else Vector.last(keys), search);
                     let zippedWithoutFirst = Vector.filter(match (index, _) -> index != 0, Vector.mapWithIndex(i -> x -> (i, x), toLength(children, size - 1)));
                     let middleChildrenWorks = Vector.forAll(pair ->
                         let (i, p) = pair;
@@ -812,13 +965,13 @@ mod BPlusTree {
         /// `search` defines the order in which elements of the vectors are compared.
         ///
         def binarySearch(key: k, search: Search, node: Node[k, v, r]): Int32 \ r with Order[k] =
-            let length = if(not node->isLeaf) node->size - 1 else node->size;
+            let length = if (not node->isLeaf) node->size - 1 else node->size;
             let arr = node->keys;
             def f(l: Int32, r: Int32): Int32 \ r = {
                 if (l <= r) {
                     let m = (l + r) `Int32.rightShift` 1;
                     let elem = Array.get(m, arr);
-                    if(Object.isNull(elem)) {
+                    if (Object.isNull(elem)) {
                         // We read null. Return -1. For all callers this would mean that the element was not inserted
                         // This can only happen in a multi-threaded environment and all functions should in this
                         // case attempt to validate its stamp, which will fail so the result will not be used.
@@ -843,7 +996,7 @@ mod BPlusTree {
             // If so use the custom compare function for that search.
             typematch val1 {
                 case val_1: Vector[Int64] =>
-                    if(len == 0) {
+                    if (len == 0) {
                         let comp = val1 <=> val2;
                         if (comp == Comparison.GreaterThan) 1
                         else if (comp == Comparison.LessThan) -1
@@ -866,13 +1019,13 @@ mod BPlusTree {
         /// Compare `vec1` to `vec2` from `i` (inclusive) to `max` (exlusive) in the order defined by `search`.
         ///
         def vectorComp(vec1: Vector[Int64], vec2: Vector[Int64], max: Int32, i: Int32, search: Vector[Int32]): Int32 = {
-                if(i >= max) {
+                if (i >= max) {
                     0
                 } else {
                     let s = Vector.get(i, search);
                     let vec1P = Vector.get(s, vec1);
                     let vec2P = Vector.get(s, vec2);
-                    if(vec1P < vec2P) {
+                    if (vec1P < vec2P) {
                         -1
                     } else if (vec1P > vec2P) {
                         1
@@ -894,7 +1047,7 @@ mod BPlusTree {
                 match n->isLeaf {
                     case true => count
                     case false =>
-                        if(n->size == 0) {
+                        if (n->size == 0) {
                             count
                         } else {
                             loop(count + 1, Array.get(0, n->children))
@@ -915,6 +1068,54 @@ mod BPlusTree {
             unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
 
         ///
+        /// Optionally returns the first mapping satisfying the function `f` in `node` and 
+        /// to the right of `node`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def findLeft(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Option[(k, v)] \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v)) 
+                    Some((k, v))
+                else 
+                    findLeft(f, index + 1, node)
+            } else match node->next {
+                case None => None
+                case Some(next) => findLeft(f, 0, next)
+            }
+
+        ///
+        /// Returns `true` if and only if there exists mappings in `node` or to the right of `node`
+        /// satisfying `f`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def exists(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Bool \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v)) 
+                    true
+                else 
+                    exists(f, index + 1, node)
+            } else match node->next {
+                case None => false
+                case Some(next) => exists(f, 0, next)
+            }
+
+        ///
         /// Provides access to the `lock` field of `node`.
         ///
         @Internal
@@ -930,10 +1131,28 @@ mod BPlusTree {
                 None
             else
                 Some(Array.get(index, node->values));
-            if(not Lock.valid(stamp, node->lock)) {
+            if (not Lock.valid(stamp, node->lock)) {
                 // Restart
                 Lock.yieldBasedOn(node->lock);
                 BPlusTree.get(key, tree)
+            } else {
+                result
+            }
+
+        ///
+        /// Returns `Some((key, value))` if `key => val` is in `tree`. Otherwise return `None`.
+        ///
+        @Internal
+        pub def getKeyAndValue(key: k, stamp: Int64, node: Node[k, v, r], tree: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] =
+            let index = binarySearch(key, BPlusTree.search(tree), node);
+            let result = if (index < 0)
+                None
+            else
+                Some((Array.get(index, node->keys), Array.get(index, node->values)));
+            if (not Lock.valid(stamp, node->lock)) {
+                // Restart
+                Lock.yieldBasedOn(node->lock);
+                BPlusTree.getKeyAndValue(key, tree)
             } else {
                 result
             }
@@ -948,7 +1167,7 @@ mod BPlusTree {
                 d
             else
                 Array.get(index, node->values);
-            if(not Lock.valid(stamp, node->lock)) {
+            if (not Lock.valid(stamp, node->lock)) {
                 // Restart
                 Lock.yieldBasedOn(node->lock);
                 BPlusTree.getWithDefault(key, d, tree)
@@ -978,10 +1197,86 @@ mod BPlusTree {
             let search = BPlusTree.search(tree);
             let index = binarySearch(key, search, node);
             let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
-            if(not Lock.valid(writeStamp, node->lock)) {
+            if (not Lock.valid(writeStamp, node->lock)) {
                 // Restart
                 Lock.yieldBasedOn(node->lock);
                 BPlusTree.putInternal(key, val, tree)
+            } else {
+                insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
+            }
+        }
+
+        ///
+        /// Inserts the mapping `key => val` into the leaf `node` if it is not already present
+        /// Otherwise if the mapping `key2 => val2` is presents overwrite the mapping by `key => val`,
+        /// if `decider(key, val, key2, val2) == true`. If a split is caused return the new root.
+        ///
+        /// Lock invariants:
+        ///
+        /// - On invocation, `stamp` is an optimistic stamp on `node->lock`.
+        ///
+        /// - On return, the thread has no lock on the tree if the returned value is None.
+        ///   Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
+        ///
+        @Internal
+        pub def insertIntoLeafIf(
+            decider: k -> v -> k -> v -> Bool,
+            key: k,
+            val: v,
+            node: Node[k, v, r],
+            stamp: Int64,
+            tree: BPlusTree[k, v, r]
+        ): Option[(Node[k, v, r], Int64)] \ r with Order[k] = {
+            let search = BPlusTree.search(tree);
+            let index = binarySearch(key, search, node);
+            if (index < 0) {
+                // `key` is not currently in tree. Attempt to gain the write lock and add it.
+                insertIntoLeafForceIf(decider, key, val, node, stamp, index, tree)
+            } else {
+                let oldKey = Array.get(index, node->keys);
+                let oldVal = Array.get(index, node->values);
+                // Verify that the pair is legal/not corrupted.
+                if (not Lock.valid(stamp, node->lock)) {
+                    // Restart
+                    Lock.yieldBasedOn(node->lock);
+                    BPlusTree.putIfInternal(decider, key, val, tree)
+                } else {
+                    if (decider(key, val, oldKey, oldVal)) {
+                        insertIntoLeafForceIf(decider, key, val, node, stamp, index, tree)
+                    } else {
+                        // At some point `oldKey => oldVal` was in the tree. We observed it and
+                        // decided to not insert `key => val`, by `decider`.
+                        None
+                    }
+                }
+            }
+        }
+
+        ///
+        /// Attempts to grab the lock of `node` and insert the `key => val` mapping. Restarts with
+        /// `putIfInternal` if this is not successfull.
+        ///
+        /// Lock invariants:
+        ///
+        /// - On invocation, `stamp` is an optimistic stamp on `node->lock`.
+        ///
+        /// - On return, the thread has no lock on the tree if the returned value is None.
+        ///   Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
+        ///
+        def insertIntoLeafForceIf(
+            decider: k -> v -> k -> v -> Bool,
+            key: k,
+            val: v,
+            node: Node[k, v, r],
+            stamp: Int64,
+            index: Int32,
+            tree: BPlusTree[k, v, r]
+        ): Option[(Node[k, v, r], Int64)] \ r with Order[k] = {
+            let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+            if (not Lock.valid(writeStamp, node->lock)) {
+                // Restart
+                Lock.yieldBasedOn(node->lock);
+                BPlusTree.putIfInternal(decider, key, val, tree)
             } else {
                 insertIntoLeafPropagate(key, val, index, node, writeStamp, tree)
             }
@@ -1010,6 +1305,7 @@ mod BPlusTree {
             let size = node->size;
             if (index >= 0) {
                 // We now have a write lock and can insert before releasing lock
+                Array.put(key, index, node->keys);
                 Array.put(val, index, node->values);
                 Lock.unlockWrite(writeStamp, node->lock);
                 None
@@ -1127,7 +1423,7 @@ mod BPlusTree {
         @Internal
         pub def minimumKey(t: Node[k, v, r]): Option[(k, v)] \ r =
             let leftMost = leftMostChild(t);
-            if(size(leftMost) == 0) {
+            if (size(leftMost) == 0) {
                 None
             } else {
                 Some((Array.get(0, leftMost->keys), Array.get(0, leftMost->values)))
@@ -1212,7 +1508,7 @@ mod BPlusTree {
                 let children = node->children;
                 let insertionPoint = toInsertionPoint(binarySearch(newKey, search, node));
                 let size = node->size;
-                if(size < arity) {
+                if (size < arity) {
                     arrayInsert(newKey, insertionPoint, size - 1, node->keys);
                     arrayInsert(rightChild, insertionPoint + 1, size, children);
                     node->size = size + 1;
@@ -1248,7 +1544,7 @@ mod BPlusTree {
         @Internal
         pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k] =
             let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
-            if(not Lock.valid(writeStamp, node->lock)) {
+            if (not Lock.valid(writeStamp, node->lock)) {
                 // Restart
                 Lock.yieldBasedOn(node->lock);
                 BPlusTree.putWithInternal(f, key, val, tree)
@@ -1282,7 +1578,7 @@ mod BPlusTree {
             let search = BPlusTree.search(tree);
             let (minLeaf, _) = traverseDown(min, node, stamp, tree);
             let index = binarySearch(min, search, minLeaf);
-            if(index < 0) {
+            if (index < 0) {
                 let insertionPoint = toInsertionPoint(index);
                 if (insertionPoint <= minLeaf->size)
                     traverseRight(f, insertionPoint, max, search, minLeaf)
@@ -1448,7 +1744,7 @@ mod BPlusTree {
             let rightKeys = Array.empty(rc, arity - 1);
             let rightChildren = Array.empty(rc, arity);
             let rightSizeWithoutNew = rightSize - 1;
-            if(insertionPoint + 1 == mid) {
+            if (insertionPoint + 1 == mid) {
                 // If insertionPoint is the first element copy all old keys and old elements and insert new child at 0.
                 Array.copyInto(srcPos = mid - 1, dstPos = 0, len = rightSizeWithoutNew, src = leftNode->keys, rightKeys);
                 Array.copyInto(srcPos = mid, dstPos = 1, len = rightSizeWithoutNew, src = leftNode->children, rightChildren);
@@ -1461,7 +1757,7 @@ mod BPlusTree {
                 Array.put(insertedChild, childIndexInRight, rightChildren);
                 Array.put(newKey, childIndexInRight - 1, rightKeys);
                 // If insertionPoint is the last index we are done, otherwise insert rest of list.
-                if(childIndexInRight != rightSizeWithoutNew) {
+                if (childIndexInRight != rightSizeWithoutNew) {
                     Array.copyInto(srcPos = mid + childIndexInRight - 1, dstPos = childIndexInRight, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->keys, rightKeys);
                     Array.copyInto(srcPos = mid + childIndexInRight, dstPos = childIndexInRight + 1, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->children, rightChildren)
                 } else ();
@@ -1524,13 +1820,13 @@ mod BPlusTree {
                         Array.get(toInsertionPoint(index), children)
                     else
                         Array.get(index + 1, children);
-                    if(not Lock.valid(stamp, cur->lock)) {
+                    if (not Lock.valid(stamp, cur->lock)) {
                         // Give up and restart the attempt.
                         Lock.yieldBasedOn(cur->lock);
                         BPlusTree.findLeaf(key, tree)
                     } else {
                         let childStamp = Lock.tryReadLock(childToVisit->lock);
-                        if(not Lock.valid(stamp, cur->lock)) {
+                        if (not Lock.valid(stamp, cur->lock)) {
                         Lock.yieldBasedOn(cur->lock);
                             BPlusTree.findLeaf(key, tree)
                         } else {
@@ -1553,9 +1849,9 @@ mod BPlusTree {
             search: Search,
             node: Node[k, v, r]
         ): Unit \ ef + r with Order[k] =
-            if(index < node->size) {
+            if (index < node->size) {
                 let k = Array.get(index, node->keys);
-                if(comparison(k, max, search) != 1) {
+                if (comparison(k, max, search) != 1) {
                     f(k, Array.get(index, node->values));
                     traverseRight(f, index + 1, max, search, node)
                 } else ()
@@ -1575,7 +1871,7 @@ mod BPlusTree {
             index: Int32,
             node: Node[k, v, r]
         ): Unit \ ef + r =
-            if(index < node->size) {
+            if (index < node->size) {
                 let k = Array.get(index, node->keys);
                 f(k, Array.get(index, node->values));
                 traverseRightUnconditional(f, index + 1, node)
@@ -1595,7 +1891,7 @@ mod BPlusTree {
             stepSize: Int32,
             node: Node[k, v, r]
         ): Unit \ ef + r =
-            if(index < node->size) {
+            if (index < node->size) {
                 let k = Array.get(index, node->keys);
                 f(k, Array.get(index, node->values));
                 traverseRightUnconditionalInc(f, index + stepSize, stepSize, node)

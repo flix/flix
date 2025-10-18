@@ -1,25 +1,27 @@
 mod Test.Import {
 
-    import java.lang.{CharSequence => ASeqOfChars}
-    import java.lang.StringBuffer
-    import java.lang.{StringBuffer => RenamedBuffer1}
-    import java.sql.Time
+    import java.lang.{CharSequence => ASeqOfChars};
+    import java.lang.StringBuffer;
+    // Comment is fine.
+    import java.lang.{StringBuffer => RenamedBuffer1};
+    import java.sql.Time;
 
     // Doesn't cause an error because different names from above
     import java.lang.CharSequence
+    /* Comment is also fine here. */
     import java.lang.{StringBuffer => RenamedBuffer2}
 
     @test
     def testImport01(): Bool \ IO =
         let sb = new StringBuffer("Hello world");
         let subStr = unchecked_cast(sb.subSequence(6, 11) as String);
-        Assert.eq(subStr, "world")
+        subStr == "world"
 
     @test
     def testImport02(): Bool \ IO =
         let sb = new StringBuffer("Hello world");
         let subStr = unchecked_cast(sb.subSequence(6, 11) as String);
-        Assert.eq(subStr, "world")
+        subStr == "world"
 }
 
 mod Test.Import {
@@ -32,7 +34,7 @@ mod Test.Import {
     def testImport03(): Bool \ IO =
         let sb = new RenamedBuffer1("Hello world");
         let subStr = unchecked_cast(sb.subSequence(6, 11) as String);
-        Assert.eq(subStr, "world")
+        subStr == "world"
 
     @test
     def testImport04(): Time \ IO =

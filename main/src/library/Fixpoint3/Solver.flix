@@ -65,7 +65,7 @@ mod Fixpoint3.Solver {
     def runWithStratification(d0: Datalog, stf: Map[PredSym, (Int32, Int32)], withProv: Bool): Datalog = region rc {
         let d = Debugging.notifyPreSolve(d0);
         def compiler(cs: Datalog, db: Ram.Facts): (ExecutableRam.RamProgram[rc], Boxing[rc]) \ rc = {
-            Phase.Compiler.compile(cs, db, stf)
+            Phase.Compiler.compile(cs, db, stf, withProv)
                 |> Debugging.notifyPreLowering("Compiler")
                 |> Phase.Simplifier.simplifyProgram
                 |> Debugging.notifyPreLowering("Simplifier")
@@ -73,14 +73,14 @@ mod Fixpoint3.Solver {
                 |> Debugging.notifyPreLowering("Hoisting")
                 |> Phase.IndexSelection.indexProgram
                 |> Debugging.notifyPreLowering("Index Selection")
-                |> Phase.Provenance.augmentProgram(withProv)
+                |> Phase.ProvenanceAugment.augmentProgram(withProv)
                 |> Phase.Lowering.lowerProgram(rc, withProv)
         };
         let model = match d {
             case Datalog(_, r) =>
                 compiler(d, Map.empty())
                     |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc, withProv)
+                    |> Interpreter.interpret(rc)
                     |> toModelOnlyFull(withProv, r)
             case Model(_) =>
                 d
@@ -90,7 +90,7 @@ mod Fixpoint3.Solver {
                 let cs = Datalog(f, r);
                 compiler(cs, m)
                     |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc, withProv)
+                    |> Interpreter.interpret(rc)
                     |> toModelOnlyFull(withProv, r)
             case Join(Provenance(_, model), Datalog(f, r)) =>
                 let cs = Datalog(f, r);
@@ -98,7 +98,7 @@ mod Fixpoint3.Solver {
                 let m = provenanceModeltoModel(model);
                 compiler(cs, m)
                     |> Debugging.notifyPreInterpret
-                    |> Interpreter.interpret(rc, withProv)
+                    |> Interpreter.interpret(rc)
                     |> toModelOnlyFull(withProv, r)
             case _ => bug!("Datalog Boxing bug")
         };
@@ -163,7 +163,7 @@ mod Fixpoint3.Solver {
                 }
             }
         }
-        case Provenance(_, _) => match Fixpoint3.Provenance.provQuery(p, f, withh, d) {
+        case Provenance(_, _) => match Fixpoint3.ProvenanceReconstruct.provQuery(p, f, withh, d) {
             case None =>
                 let termsStr = Vector.join(", ", f);
                 bug!("${p}(${termsStr}) is not a fact")

@@ -23,11 +23,11 @@ mod Display{
                 println("\n==================== Analysis Result Per Repo ====================\n");
                 Map.forEach((repo, thisStat) -> {
                     println("\nRepository: ${repo}");
-                    thisStat |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage              
+                    thisStat |> statFilter |> renameAndMerge |> sortMapByValue |> printEachLanguage
                 }, stat);
                 resume()
             }
-            
+
             def displayByUser(stats, resume) = {
                 println("\n==================== Analysis Result For User ====================\n");
                 region rc {
@@ -35,7 +35,7 @@ mod Display{
                     foreach (
                         (_repo, stat) <- stats;
                         (ext, data) <- stat
-                    ){
+                    ) {
                         MutMap.putWith(
                             match (oldAdds, oldDels) -> match (newAdds, newDels) -> (oldAdds + newAdds, oldDels + newDels),
                             ext, data, map
@@ -45,36 +45,36 @@ mod Display{
                     resume()
                 }
             }
-            
+
             def displayByByte(stat, resume) = {
                 println("\n==================== Analysis Result By Bytes ====================\n");
-                stat 
-                |> sortMapByValue 
+                stat
+                |> sortMapByValue
                 |> List.forEach(match (lang, size) -> println("${lang}: ${size} Bytes")) ;
                 resume()
             }
         }
     }
-    
+
     ///
     /// Filters out the languages whose adds is zero.
     ///
     def statFilter(stat: Stat): Stat = Map.filter(match (adds, _) -> adds > 0ii, stat)
-        
+
     ///
     /// Prints the stat for each language.
     ///
-    def printEachLanguage(stat: List[(String, (BigInt, BigInt))]): Unit \ IO = 
+    def printEachLanguage(stat: List[(String, (BigInt, BigInt))]): Unit \ IO =
         List.forEach(match (language, (adds, dels)) -> println("${language}: ${adds} additions, ${dels} deletions."), stat)
-        
+
     ///
     /// Renames the extention to langauges and merge entries of the same language.
-    /// 
-    def renameAndMerge(stat: Stat): Stat = 
+    ///
+    def renameAndMerge(stat: Stat): Stat =
         Map.foldLeftWithKey((acc, ext, data) -> {
             match ext2Language(ext) {
                 case Option.None        => acc
-                case Option.Some(language) => 
+                case Option.Some(language) =>
                     Map.insertWith(
                         match (oldAdds, oldDels) -> match (newAdds, newDels) -> (oldAdds + newAdds, oldDels + newDels),
                         language, data, acc
@@ -90,7 +90,7 @@ mod Display{
     ///
     /// A map from extension to list.
     ///
-    def ext2Language(ext: String): Option[String] = 
+    def ext2Language(ext: String): Option[String] =
         let mapping: Map[String, String] = Map#{
             "ASM" => "Assembly",
             "asm" => "Assembly",

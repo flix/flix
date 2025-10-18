@@ -1,28 +1,13 @@
-/*
- * Copyright 2025 Casper Dalgaard Nielsen
- *                Adam Yasser Tallouzi
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod Test.Exp.Fixpoint.Application {
+
+    use Assert.assertEq;
 
     /////////////////////////////////////////////////////////////////////////////
     // Tests with application of 1 argument                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testApplicationOne01(): Bool = {
+    def testApplicationOne01(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -30,23 +15,23 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + 1));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationOne02(): Bool = {
+    def testApplicationOne02(): Unit \ Assert = {
         let n = 50;
         let r = #{
             Succ(0).
-            Succ(x + 1) :- Succ(x), if(x < n)
+            Succ(x + 1) :- Succ(x), if (x < n).
         };
         let expected = Vector.range(0, n + 1);
         let actual = query r select x from Succ(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationOne03(): Bool = {
+    def testApplicationOne03(): Unit \ Assert = {
         let g = x -> {
             let fizz = if (Int32.modulo(x, 3) == 0) "Fizz" else "";
             let buzz = if (Int32.modulo(x, 5) == 0) "Buzz" else "";
@@ -66,12 +51,12 @@ mod Test.Exp.Fixpoint.Application {
             "11", "Fizz", "13", "14", "FizzBuzz", "16", "17", "Fizz", "19", "Buzz"
         };
         let actual = query f, r select (x, y) from FizzBuzz(x, y) |> Vector.unzip |> snd;
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
 
     }
 
     @Test
-    def testApplicationOne04(): Bool = {
+    def testApplicationOne04(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -79,11 +64,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1, x));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationOne05(): Bool = {
+    def testApplicationOne05(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -91,7 +76,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1, x + 1));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -99,7 +84,7 @@ mod Test.Exp.Fixpoint.Application {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testApplicationTwo01(): Bool = {
+    def testApplicationTwo01(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -108,24 +93,24 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + 1));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationTwo02(): Bool = {
+    def testApplicationTwo02(): Unit \ Assert = {
         let n = 20;
         let r = #{
             Two(2).
             SuccTwo(0).
-            SuccTwo(x + y) :- SuccTwo(x), Two(y), if(x < n)
+            SuccTwo(x + y) :- SuccTwo(x), Two(y), if (x < n).
         };
         let expected = Vector#{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20};
         let actual = query r select x from SuccTwo(x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationTwo03(): Bool = {
+    def testApplicationTwo03(): Unit \ Assert = {
         let tuples = Vector.range(0, 50) |> Vector.map(Int32.toString);
         let f = inject tuples into P/1;
         let r = #{
@@ -134,11 +119,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + "1")) |> Vector.sort;
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationTwo04(): Bool = {
+    def testApplicationTwo04(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -147,11 +132,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1, x));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationTwo05(): Bool = {
+    def testApplicationTwo05(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -160,7 +145,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1, x + 1));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -168,7 +153,7 @@ mod Test.Exp.Fixpoint.Application {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testApplicationThree01(): Bool = {
+    def testApplicationThree01(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -178,11 +163,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + 1 + 2));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationThree02(): Bool = {
+    def testApplicationThree02(): Unit \ Assert = {
         let tuples = Vector.range(0, 50) |> Vector.map(Int32.toString);
         let f = inject tuples into P/1;
         let r = #{
@@ -192,11 +177,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + "1" + "2")) |> Vector.sort;
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationThree03(): Bool = {
+    def testApplicationThree03(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -206,11 +191,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2, x));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationThree04(): Bool = {
+    def testApplicationThree04(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -220,7 +205,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2, x + 1 + 2));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -228,7 +213,7 @@ mod Test.Exp.Fixpoint.Application {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testApplicationFour01(): Bool = {
+    def testApplicationFour01(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -239,11 +224,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + 1 + 2 + 3));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationFour02(): Bool = {
+    def testApplicationFour02(): Unit \ Assert = {
         let tuples = Vector.range(0, 50) |> Vector.map(Int32.toString);
         let f = inject tuples into P/1;
         let r = #{
@@ -254,11 +239,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + "1" + "2" + "3")) |> Vector.sort;
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationFour03(): Bool = {
+    def testApplicationFour03(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -269,11 +254,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2 + 3, x));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationFour04(): Bool = {
+    def testApplicationFour04(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -284,7 +269,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2 + 3, x + 1 + 2 + 3));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -292,7 +277,7 @@ mod Test.Exp.Fixpoint.Application {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testApplicationFive01(): Bool = {
+    def testApplicationFive01(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -304,11 +289,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + 1 + 2 + 3 + 4));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationFive02(): Bool = {
+    def testApplicationFive02(): Unit \ Assert = {
         let tuples = Vector.range(0, 50) |> Vector.map(Int32.toString);
         let f = inject tuples into P/1;
         let r = #{
@@ -320,11 +305,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x, x + "1" + "2" + "3" + "4")) |> Vector.sort;
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationFive03(): Bool = {
+    def testApplicationFive03(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -336,11 +321,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2 + 3 + 4, x));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationFive04(): Bool = {
+    def testApplicationFive04(): Unit \ Assert = {
         let tuples = Vector.range(0, 50);
         let f = inject tuples into P/1;
         let r = #{
@@ -352,7 +337,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = tuples |> Vector.map(x -> (x + 1 + 2 + 3 + 4, x + 1 + 2 + 3 + 4));
         let actual = query f, r select (x, y) from R(x, y);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -360,18 +345,18 @@ mod Test.Exp.Fixpoint.Application {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testApplicationLattice01(): Bool = {
+    def testApplicationLattice01(): Unit \ Assert = {
         let r = #{
             P(;1).
             R(;x + 1) :- P(;x).
         };
         let expected = Vector#{1 + 1};
         let actual = query r select (x) from R(;x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationLattice02(): Bool = {
+    def testApplicationLattice02(): Unit \ Assert = {
         let r = #{
             Q(;2).
             P(;1).
@@ -379,11 +364,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = Vector#{1 + 2};
         let actual = query r select x from R(;x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationLattice03(): Bool = {
+    def testApplicationLattice03(): Unit \ Assert = {
         let r = #{
             S(;3).
             Q(;2).
@@ -392,11 +377,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = Vector#{1 + 2 + 3};
         let actual = query r select x from R(;x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationLattice04(): Bool = {
+    def testApplicationLattice04(): Unit \ Assert = {
         let r = #{
             T(;4).
             S(;3).
@@ -406,11 +391,11 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = Vector#{1 + 2 + 3 + 4};
         let actual = query r select x from R(;x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
     @Test
-    def testApplicationLattice05(): Bool = {
+    def testApplicationLattice05(): Unit \ Assert = {
         let r = #{
             U(;5).
             T(;4).
@@ -421,7 +406,7 @@ mod Test.Exp.Fixpoint.Application {
         };
         let expected = Vector#{1 + 2 + 3 + 4 + 5};
         let actual = query r select x from R(;x);
-        expected `Assert.eq` actual
+        assertEq(expected = expected, actual)
     }
 
 }

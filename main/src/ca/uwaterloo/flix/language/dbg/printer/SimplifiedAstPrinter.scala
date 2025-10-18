@@ -61,7 +61,7 @@ object SimplifiedAstPrinter {
     case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVarSym(sym), fparams.map(printFormalParam), Some(SimpleTypePrinter.print(tpe)), Some(PurityPrinter.print(eff)), print(exp1), print(exp2))
-    case Scope(sym, exp, _, _, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
+    case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case SimplifiedAst.CatchRule(sym, clazz, body) =>
         (sym, clazz, print(body))
@@ -80,7 +80,7 @@ object SimplifiedAstPrinter {
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: SimplifiedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val SimplifiedAst.FormalParam(sym, _, tpe, _) = fp
+    val SimplifiedAst.FormalParam(sym, tpe, _) = fp
     DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 

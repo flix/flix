@@ -98,7 +98,7 @@ object Summary {
     */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
-    val srcLoc = root.sources.getOrElse(src, unknownLocation)
+    val srcLoc = root.sources.getOrElse(src, SourceLocation.Unknown)
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
@@ -152,7 +152,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.Text(name, "", SecurityContext.AllPermissions), Array.emptyCharArray), FileData.zero)
+      FileSummary(Source(Input.Text(name, "", SecurityContext.Unrestricted), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -202,8 +202,7 @@ object Summary {
     case Expr.Binary(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Let(_, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
-    case Expr.Region(_, _) => 0
-    case Expr.Scope(_, _, exp, _, _, _) => countCheckedEcasts(exp)
+    case Expr.Region(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
     case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.Discard(exp, _, _) => countCheckedEcasts(exp)
@@ -288,10 +287,10 @@ object Summary {
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.FixpointQueryWithProvenance(exps, TypedAst.Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
       exps.map(countCheckedEcasts).sum + terms.map(countCheckedEcasts).sum
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.map(countCheckedEcasts).sum + countCheckedEcasts(queryExp) + selects.map(countCheckedEcasts).sum + where.map(countCheckedEcasts).sum
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.FixpointFilter(_, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.map(countCheckedEcasts).sum
-    case Expr.FixpointProject(_, _, exp, _, _, _) => countCheckedEcasts(exp)
     case Expr.Error(_, _, _) => 0
   }
 
@@ -306,14 +305,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.Text("generated", "", SecurityContext.AllPermissions), Array.emptyCharArray)
-
-  private val unknownPosition =
-    SourcePosition.firstPosition(unknownSource)
-
-  private val unknownLocation =
-    SourceLocation(isReal = false, unknownPosition, unknownPosition)
-
+    Source(Input.Text("generated", "", SecurityContext.Unrestricted), Array.emptyCharArray)
 
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
@@ -333,7 +325,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
+        SourceLocation(isReal = true, src, SourcePosition.FirstPosition, SourcePosition.FirstPosition)
       )
     }
 
@@ -346,7 +338,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, SourcePosition.firstPosition(src), SourcePosition.firstPosition(src))
+          SourceLocation(isReal = true, src, SourcePosition.FirstPosition, SourcePosition.FirstPosition)
         )
       }
       FileData(

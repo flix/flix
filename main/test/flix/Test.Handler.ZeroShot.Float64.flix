@@ -12,7 +12,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testLinear02(): Bool =
@@ -23,7 +23,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testLinear03(): Bool =
@@ -35,7 +35,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testRecursiveLetRec01(): Bool =
@@ -46,7 +46,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testRecursiveLetRec02(): Bool =
@@ -57,7 +57,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testRecursiveLetRec03(): Bool =
@@ -68,7 +68,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testMutualRecursive01(): Bool =
@@ -77,7 +77,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testMutualRecursive02(): Bool =
@@ -86,7 +86,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testMutualRecursive03(): Bool =
@@ -95,7 +95,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testMutualRecursive04(): Bool =
@@ -104,7 +104,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testMutualRecursive05(): Bool =
@@ -113,7 +113,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 42.0f64
         };
-        Assert.eq(42.0f64, result)
+        42.0f64 == result
 
     @Test
     def testMutualRecursive06(): Bool =
@@ -122,7 +122,7 @@ mod Test.Handler.ZeroShot.Float64 {
         } with handler Exc {
             def raise(_k) = 40.0f64
         };
-        Assert.eq(40.0f64, result)
+        40.0f64 == result
 
     def f(): Float64 \ Exc =
          Exc.raise();

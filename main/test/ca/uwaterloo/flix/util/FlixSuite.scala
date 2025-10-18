@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.api.{Flix, FlixEvent, FlixListener}
+import ca.uwaterloo.flix.api.{Flix, FlixEvent}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
 import ca.uwaterloo.flix.verifier.{EffectVerifier, TypeVerifier}
@@ -29,7 +29,28 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
   /**
     * A global Flix instance that is used if incremental compilation is enabled.
     */
-  var flix = new Flix()
+  var Flix: Flix = mkFlix()
+
+  /**
+    * Returns a new fresh Flix instance with default options.
+    */
+  private def mkFlix(): Flix = {
+    val flix = new Flix()
+
+    flix.addListener {
+      case FlixEvent.AfterTailPos(root) =>
+        TypeVerifier.verify(root)(flix)
+      case _ => // nop
+    }
+
+    flix.addListener {
+      case FlixEvent.AfterTyper(root) =>
+        EffectVerifier.verify(root)(flix)
+      case _ => // nop
+    }
+
+    flix
+  }
 
   /**
     * Runs all tests in all files in the directory located at `path`.
@@ -41,7 +62,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     *
     */
   def mkTestDirCollected(path: String, name: String)(implicit options: Options): Unit = {
-    val files = FileOps.getFlixFilesIn(path, 1)
+    val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
     test(name)(compileAndRun(files))
   }
 
@@ -55,7 +76,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     *
     */
   def mkTestDir(path: String)(implicit options: Options): Unit = {
-    val files = FileOps.getFlixFilesIn(path, 1)
+    val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
     for (p <- files) {
       mkTest(p.toString)
     }
@@ -73,51 +94,33 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
   private def compileAndRun(paths: List[Path])(implicit options: Options): Unit = {
     // Construct a new fresh Flix object if incremental compilation is disabled.
     if (!incremental) {
-      flix = new Flix()
+      Flix = mkFlix()
     }
 
     // Set options.
-    flix.setOptions(options)
-
-    // Add verifiers.
-    flix.addListener(new FlixListener {
-      override def notify(e: FlixEvent): Unit = e match {
-        case FlixEvent.AfterTailPos(root) =>
-          TypeVerifier.verify(root)(flix)
-        case _ => // nop
-      }
-    })
-
-    flix.addListener(new FlixListener {
-      override def notify(e: FlixEvent): Unit = e match {
-        case FlixEvent.AfterTyper(root) =>
-          EffectVerifier.verify(root)(flix)
-        case _ => // nop
-      }
-    })
-
+    Flix.setOptions(options)
 
     // Default security context.
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
     // Add the given path.
     for (p <- paths) {
-      flix.addFlix(p)
+      Flix.addFlix(p)
     }
 
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
-      flix.compile().toResult match {
+      Flix.compile().toResult match {
         case Result.Ok(compilationResult) =>
           runTests(compilationResult)
         case Result.Err(errors) =>
-          val es = errors.map(_.messageWithLoc(flix.getFormatter)).mkString("\n")
+          val es = errors.map(_.messageWithLoc(Flix.getFormatter)).mkString("\n")
           fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
       }
     } finally {
       // Remove the source path.
       for (p <- paths) {
-        flix.remFlix(p)
+        Flix.remFlix(p)
       }
     }
   }

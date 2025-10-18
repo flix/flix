@@ -27,6 +27,7 @@ object AnnotationCompleter {
     */
   def getAnnotations(prefix: String, range: Range): List[Completion] =
     List(
+      Completion.AnnotationCompletion("DefaultHandler",   range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Deprecated",       range, Priority.Medium(0)),
       Completion.AnnotationCompletion("Lazy",             range, Priority.Medium(0)),
       Completion.AnnotationCompletion("LazyWhenPure",     range, Priority.Medium(0)),

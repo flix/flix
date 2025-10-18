@@ -21,13 +21,13 @@ import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityC
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
-import ca.uwaterloo.flix.language.phase.jvm.{JvmLoader, JvmWriter, JvmBackend}
+import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
-import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.*
+import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
@@ -121,10 +121,6 @@ class Flix {
     "Div.flix" -> LocalResource.get("/src/library/Div.flix"),
     "Bool.flix" -> LocalResource.get("/src/library/Bool.flix"),
 
-    // Threads
-    "Thread.flix" -> LocalResource.get("/src/library/Thread.flix"),
-    "Time.flix" -> LocalResource.get("/src/library/Time.flix"),
-
     // Built-in
     "Eq.flix" -> LocalResource.get("/src/library/Eq.flix"),
     "Hash.flix" -> LocalResource.get("/src/library/Hash.flix"),
@@ -197,6 +193,8 @@ class Flix {
     "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
     "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
+    "MutHashMap.flix" -> LocalResource.get("/src/library/MutHashMap.flix"),
+    "MutHashSet.flix" -> LocalResource.get("/src/library/MutHashSet.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
@@ -249,30 +247,6 @@ class Flix {
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
 
-    "Time/Duration.flix" -> LocalResource.get("/src/library/Time/Duration.flix"),
-    "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
-    "Time/Instant.flix" -> LocalResource.get("/src/library/Time/Instant.flix"),
-
-    "Fixpoint/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Stratifier.flix"),
-    "Fixpoint/Phase/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Compiler.flix"),
-    "Fixpoint/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Simplifier.flix"),
-    "Fixpoint/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/IndexSelection.flix"),
-    "Fixpoint/Phase/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/VarsToIndices.flix"),
-    "Fixpoint/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint/Boxable.flix"),
-    "Fixpoint/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint/Boxed.flix"),
-    "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
-    "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
-    "Fixpoint/Options.flix" -> LocalResource.get("/src/library/Fixpoint/Options.flix"),
-    "Fixpoint/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint/PredSymsOf.flix"),
-    "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
-    "Fixpoint/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint/SubstitutePredSym.flix"),
-
-    "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
-    "Fixpoint/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Shared.flix"),
-    "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
-    "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
-
-
     "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
     "Fixpoint3/Boxing.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxing.flix"),
@@ -284,10 +258,11 @@ class Flix {
     "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
     "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
     "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
-    "Fixpoint3/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Provenance.flix"),
+    "Fixpoint3/ProvenanceReconstruct.flix" -> LocalResource.get("/src/library/Fixpoint3/ProvenanceReconstruct.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
     "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
+    "Fixpoint3/TypeInfo.flix" -> LocalResource.get("/src/library/Fixpoint3/TypeInfo.flix"),
     "Fixpoint3/UniqueInts.flix" -> LocalResource.get("/src/library/Fixpoint3/UniqueInts.flix"),
     "Fixpoint3/Util.flix" -> LocalResource.get("/src/library/Fixpoint3/Util.flix"),
 
@@ -300,7 +275,7 @@ class Flix {
     "Fixpoint3/Phase/Hoisting.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Hoisting.flix"),
     "Fixpoint3/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/IndexSelection.flix"),
     "Fixpoint3/Phase/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Lowering.flix"),
-    "Fixpoint3/Phase/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Provenance.flix"),
+    "Fixpoint3/Phase/ProvenanceAugment.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/ProvenanceAugment.flix"),
     "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
     "Fixpoint3/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Simplifier.flix"),
     "Fixpoint3/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Stratifier.flix"),
@@ -312,8 +287,6 @@ class Flix {
     "Http.flix" -> LocalResource.get("/src/library/Http.flix"),
     "HttpWithResult.flix" -> LocalResource.get("/src/library/HttpWithResult.flix"),
     "Exit.flix" -> LocalResource.get("/src/library/Exit.flix"),
-    "Eff/BiasedCoin.flix" -> LocalResource.get("/src/library/Eff/BiasedCoin.flix"),
-    "Eff/RandomCoin.flix" -> LocalResource.get("/src/library/Eff/RandomCoin.flix"),
     "Logger.flix" -> LocalResource.get("/src/library/Logger.flix"),
     "FileRead.flix" -> LocalResource.get("/src/library/FileRead.flix"),
     "FileReadWithResult.flix" -> LocalResource.get("/src/library/FileReadWithResult.flix"),
@@ -328,6 +301,7 @@ class Flix {
     "Process.flix" -> LocalResource.get("/src/library/Process.flix"),
     "ProcessWithResult.flix" -> LocalResource.get("/src/library/ProcessWithResult.flix"),
     "Severity.flix" -> LocalResource.get("/src/library/Severity.flix"),
+    "Shuffle.flix" -> LocalResource.get("/src/library/Shuffle.flix"),
     "SocketAddr.flix" -> LocalResource.get("/src/library/SocketAddr.flix"),
     "SocketAddrV4.flix" -> LocalResource.get("/src/library/SocketAddrV4.flix"),
     "SocketAddrV6.flix" -> LocalResource.get("/src/library/SocketAddrV6.flix"),
@@ -344,6 +318,7 @@ class Flix {
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
+    "RichString.flix" -> LocalResource.get("/src/library/RichString.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
     "ToFlix.flix" -> LocalResource.get("/src/library/ToFlix.flix"),
@@ -419,7 +394,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.NoPermissions))
+    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -446,19 +421,45 @@ class Flix {
     * Adds the given path `p` as a Flix package file.
     */
   def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-    if (!p.getFileName.toString.endsWith(".fpkg"))
-      throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
+    isValidFpkgFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        addInput(p.toString, Input.PkgFile(p, sctx))
+        this
+    }
+  }
 
-    addInput(p.toString, Input.PkgFile(p, sctx))
-    this
+  /**
+    * Checks that `p` is a valid `.fpkg` filepath.
+    * `p` is valid if the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.fpkg`.
+    *   1. `p` must be a zip archive.
+    */
+  def isValidFpkgFile(p: Path): Result[Unit, IllegalArgumentException] = {
+    if (p == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    if (!pNorm.getFileName.toString.endsWith(".fpkg")) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
+    }
+    if (!FileOps.isZipArchive(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+    }
+    Result.Ok(())
   }
 
   /**
@@ -510,7 +511,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.NoPermissions)
+      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -580,7 +581,7 @@ class Flix {
     // We mark all inputs that contains compilation errors as dirty.
     // Hence if a file contains an error it will be recompiled -- giving it a chance to disappear.
     for (e <- cachedErrors) {
-      val i = e.loc.sp1.source.input
+      val i = e.loc.source.input
       changeSet = changeSet.markChanged(i, cachedTyperAst.dependencyGraph)
     }
 
@@ -595,6 +596,7 @@ class Flix {
 
     val (afterLexer, lexerErrors) = Lexer.run(afterReader, cachedLexerTokens, changeSet)
     errors ++= lexerErrors
+    flix.emitEvent(FlixEvent.AfterLexer(afterLexer))
 
     val (afterParser, parserErrors) = Parser2.run(afterLexer, cachedParserCst, changeSet)
     errors ++= parserErrors
@@ -698,6 +700,12 @@ class Flix {
 
   /**
     * Compiles the given typed ast to an executable ast.
+    *
+    * Note: The `codeGen` method has a long execution time, and its local variables
+    * are not eligible for garbage collection until the method completes. As a result,
+    * large ASTs may be retained in memory longer than necessary. To mitigate this,
+    * we explicitly set certain local variables to `null` once they are no longer needed.
+    * This manual cleanup has been verified as effective in the profiler.
     */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
@@ -706,28 +714,61 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
-    val loweringAst = Lowering.run(typedAst)
-    val treeShaker1Ast = TreeShaker1.run(loweringAst)
-    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
-    val lambdaDropAst = LambdaDrop.run(monomorpherAst)
-    val optimizerAst = Optimizer.run(lambdaDropAst)
-    val simplifierAst = Simplifier.run(optimizerAst)
-    val closureConvAst = ClosureConv.run(simplifierAst)
-    val lambdaLiftAst = LambdaLift.run(closureConvAst)
-    val treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
-    val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    var loweringAst = Lowering.run(typedAst)
+    // Note: Do not null typedAst. It is used later.
 
-    val tailPosAst = TailPos.run(effectBinderAst)
+    var treeShaker1Ast = TreeShaker1.run(loweringAst)
+    loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var lambdaDropAst = LambdaDrop.run(monomorpherAst)
+    monomorpherAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var optimizerAst = Optimizer.run(lambdaDropAst)
+    lambdaDropAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var simplifierAst = Simplifier.run(optimizerAst)
+    optimizerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var closureConvAst = ClosureConv.run(simplifierAst)
+    simplifierAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var lambdaLiftAst = LambdaLift.run(closureConvAst)
+    closureConvAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var treeShaker2Ast = TreeShaker2.run(lambdaLiftAst)
+    lambdaLiftAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    treeShaker2Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var tailPosAst = TailPos.run(effectBinderAst)
+    effectBinderAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
     flix.emitEvent(FlixEvent.AfterTailPos(tailPosAst))
 
-    val eraserAst = Eraser.run(tailPosAst)
-    val reducerAst = Reducer.run(eraserAst)
-    val varOffsetsAst = VarOffsets.run(reducerAst)
-    val (backendAst, classes) = JvmBackend.run(varOffsetsAst)
+    var eraserAst = Eraser.run(tailPosAst)
+    tailPosAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var reducerAst = Reducer.run(eraserAst)
+    eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    var varOffsetsAst = VarOffsets.run(reducerAst)
+    reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
+    // Generate JVM classes.
+    val bytecodeAst = JvmBackend.run(varOffsetsAst)
     val totalTime = flix.getTotalTime
-    JvmWriter.run(classes)
-    val (loadedAst, loadRes) = JvmLoader.run(backendAst, classes)
-    val result = new CompilationResult(loadedAst, loadRes.main, loadRes.defs, totalTime, loadRes.byteSize)
+
+    JvmWriter.run(bytecodeAst)
+    // (Optionally) load generated JVM classes.
+    val loaderResult = JvmLoader.run(bytecodeAst)
+
+    // Construct the compilation result.
+    val totalSize = bytecodeAst.classes.values.map(_.bytecode.length).sum
+    val result = new CompilationResult(loaderResult.main, loaderResult.tests, loaderResult.sources, totalTime, totalSize)
 
     // Shutdown fork-join thread pool.
     shutdownForkJoinPool()
@@ -756,6 +797,21 @@ class Flix {
     } else {
       Validation.Failure(Chain.from(errors))
     }
+  }
+
+  /**
+    * Clears all caches used for incremental compilation.
+    */
+  def clearCaches(): Unit = {
+    this.cachedLexerTokens = Map.empty
+    this.cachedParserCst = SyntaxTree.empty
+    this.cachedWeederAst = WeededAst.empty
+    this.cachedDesugarAst = DesugaredAst.empty
+    this.cachedKinderAst = KindedAst.empty
+    this.cachedResolverAst = ResolvedAst.empty
+    this.cachedTyperAst = TypedAst.empty
+    this.changeSet = ChangeSet.Everything
+    this.cachedErrors = Nil
   }
 
   /**
@@ -855,7 +911,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.AllPermissions) :: xs
+    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.Unrestricted) :: xs
   }
 
   /**

@@ -1,13 +1,13 @@
-pub restrictable enum Expr[_][t] {
-    case Cst(t)
-    case Var(String)
-    case Not(Option[t])
-    case And(t, t)
-    case Or(t, t)
-    case Xor(t, t)
-}
-
 mod Test.Exp.Choose.Polymorphic {
+
+    pub restrictable enum Expr[_][t] {
+        case Cst(t)
+        case Var(String)
+        case Not(Option[t])
+        case And(t, t)
+        case Or(t, t)
+        case Xor(t, t)
+    }
 
     pub def testChoose01(): Bool = {
         choose Expr.Cst(12312) {
@@ -68,4 +68,5 @@ mod Test.Exp.Choose.Polymorphic {
         let cstOrNot = if (true) open_variant Expr.Cst("hello") else open_variant Expr.Not(Some("hello"));
         h(cstOrNot)
     }
+
 }

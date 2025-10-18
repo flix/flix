@@ -13,7 +13,21 @@ type alias Heap[h: Eff] = h
 ///
 /// An enum that holds type information where a witness is not available.
 ///
-pub enum Proxy[_] {
+pub enum Proxy[_: Type] {
+    case Proxy
+}
+
+///
+/// An enum that holds effect information where a witness is not available.
+///
+pub enum ProxyEff[_: Eff] {
+    case Proxy
+}
+
+///
+/// An enum that holds type-level Bool information where a witness is not available.
+///
+pub enum ProxyBool[_: Bool] {
     case Proxy
 }
 
@@ -27,50 +41,6 @@ pub enum Proxy[_] {
 pub eff Chan
 
 ///
-/// The uninterpretable `Env` effect.
-///
-/// The `Env` effect represents actions that read from the environment (e.g. information
-/// about the shell, operating system, or hardware)
-///
-/// The `Env` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Env
-
-///
-/// The uninterpretable `Exec` effect.
-///
-/// The `Exec` effect represents the actions required to start (i.e. run) a new process outside the JVM.
-///
-/// This includes use of `System.exec`, the `Process` class, and the `ProcessBuilder` class.
-///
-/// The `Exec` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Exec
-
-///
-/// The uninterpretable `FsRead` effect.
-///
-/// The `FsRead` effect represents the actions to required to read from the file system.
-///
-/// The `FsRead` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff FsRead
-
-///
-/// The uninterpretable `FsWrite` effect.
-///
-/// The `FsWrite` effect represents the actions to required to write to the file system.
-///
-/// The `FsWrite` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff FsWrite
-
-///
-/// A type alias for the `FileRead` and `FileWrite` effects.
-///
-type alias FileIO = {FsRead, FsWrite}
-
-///
 /// The uninterpretable IO effect.
 ///
 /// The `IO` effect represents the actions not described by any other effect.
@@ -80,17 +50,6 @@ type alias FileIO = {FsRead, FsWrite}
 pub eff IO
 
 ///
-/// The uninterpretable `Net` effect.
-///
-/// The `Net` effect represents the actions required to communicate over the network.
-///
-/// This includes binding to local ports, DNS resolution, and connecting to the outside.
-///
-/// The `Net` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Net
-
-///
 /// The uninterpretable `NonDet` effect.
 ///
 /// The `NonDet` effect represents one or more non-deterministic actions.
@@ -98,17 +57,6 @@ pub eff Net
 /// The `NonDet` effect is uninterpretable which means that it cannot be handled.
 ///
 pub eff NonDet
-
-///
-/// The uninterpretable `Sys` effect.
-///
-/// The `Sys` effect represents actions that interact with the JVM.
-///
-/// This includes use of class loaders, the `Runtime` class, and reflection.
-///
-/// The `Sys` effect is uninterpretable which means that it cannot be handled.
-///
-pub eff Sys
 
 ///
 /// The pure identity function.
@@ -244,10 +192,11 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
-    case g: a -> b \ {} => Purity.Pure(g)
-    case _: _           => Purity.Impure(f)
-}
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] =
+    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure => Purity.Pure(unchecked_cast (f as a -> b \ {}))
+        case Reflect.Purity.Impure => Purity.Impure(f)
+    }
 
 ///
 /// Returns `Purity2.Pure(g)` if `f` has no effects.
@@ -255,10 +204,11 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
-    case g: a -> b -> c \ {} => Purity2.Pure(g)
-    case _: _                => Purity2.Impure(f)
-}
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] =
+    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity2.Pure(unchecked_cast (f as a -> b -> c \ {}))
+        case Reflect.Purity.Impure => Purity2.Impure(f)
+    }
 
 ///
 /// Returns `Purity3.Pure(g)` if `f` has no effects.
@@ -266,7 +216,8 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
-    case g: a -> b -> c -> d \ {} => Purity3.Pure(g)
-    case _: _                     => Purity3.Impure(f)
-}
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] =
+    match Reflect.reflectEffect((ProxyEff.Proxy: ProxyEff[ef])) {
+        case Reflect.Purity.Pure   => Purity3.Pure(unchecked_cast (f as a -> b -> c -> d \ {}))
+        case Reflect.Purity.Impure => Purity3.Impure(f)
+    }

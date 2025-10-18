@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.SymUse.TraitSymUse
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Instance, Scope, TraitConstraint}
+import ca.uwaterloo.flix.language.ast.shared.{Instance, Scope, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugTypedAst
 import ca.uwaterloo.flix.language.errors.InstanceError
@@ -84,9 +84,11 @@ object Instances {
     case TypedAst.Instance(_, _, _, trt, _, tpe, _, _, _, _, ns, _) => tpe.typeConstructor match {
       // Case 1: Enum type in the same namespace as the instance: not an orphan
       case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => ()
-      // Case 2: Any type in the trait namespace: not an orphan
+      // Case 2: Struct type in the same namespace as the instance: not an orphan
+      case Some(TypeConstructor.Struct(structSym, _)) if structSym.namespace == ns.idents.map(_.name) => ()
+      // Case 3: Any type in the trait namespace: not an orphan
       case _ if trt.sym.namespace == ns.idents.map(_.name) => ()
-      // Case 3: Any type outside the trait companion namespace and enum declaration namespace: orphan
+      // Case 4: Any type outside the trait companion namespace and enum declaration namespace: orphan
       case _ => sctx.errors.add(InstanceError.OrphanInstance(trt.sym, tpe, trt.loc))
     }
   }

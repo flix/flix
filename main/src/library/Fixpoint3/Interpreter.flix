@@ -18,15 +18,17 @@
 
 mod Fixpoint3.Interpreter {
     use Fixpoint3.Ast.ExecutableRam.{BoolExp, RamProgram, RamStmt, RamTerm, RelOp, WriteTuple}
-    use Fixpoint3.Ast.Ram.{arityOfNonLat, Predicates, RamId, RelSym, Search, toDenotation, toId}
+    use Fixpoint3.Ast.Ram.{arityOfNonLat, Predicates, RelSym, Search, toDenotation, toId}
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation}
     use Fixpoint3.Ast.Shared.Denotation.{Latticenal, Relational}
     use Fixpoint3.Boxed
     use Fixpoint3.Boxing.{boxWith, unboxWith}
-    use Fixpoint3.BoxingType.{Boxing, RamIdToPos}
+    use Fixpoint3.BoxingType.Boxing
     use Fixpoint3.Counter
     use Fixpoint3.Options.{usedArity, parLevel}
-    use Fixpoint3.Predicate.allFullRelSyms
+    use Fixpoint3.Predicate.{allFullRelSyms, getRelSymAsType}
+    use Fixpoint3.Predicate.PredType.Full
+    use Fixpoint3.TypeInfo.{TypeInformation, getTypeOf}
     use Fixpoint3.Util.getOrCrash
 
     ///
@@ -140,7 +142,7 @@ mod Fixpoint3.Interpreter {
     /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
     ///
     @Internal
-    pub def interpret(rc: Region[r], withProv: Bool, input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
+    pub def interpret(rc: Region[r], input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
         let RamProgram.Program(_, facts, _, (indexMap, posMap), _, _) = program;
@@ -159,7 +161,7 @@ mod Fixpoint3.Interpreter {
                 storeIndex(mkIndex(rc, relSym, search, tuples), pos, indexes)
             }
         };
-        interpretWithDatabase(rc, indexes, boxing, withProv, program)
+        interpretWithDatabase(rc, indexes, boxing, program)
 
     ///
     /// Executes `program` using `boxing` as `Boxing` information and `db` as initial
@@ -169,10 +171,9 @@ mod Fixpoint3.Interpreter {
         rc: Region[r],
         db: Indexes[r],
         boxing: Boxing[r],
-        withProv: Bool,
         program: RamProgram[r]
     ): (Database[r], Predicates) \ r = match program {
-        case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), marshallIndexes) =>
+        case RamProgram.Program(stmt, _, predState, (_, indexPos), (arities, constWrites), typeInfo) =>
             let minEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.minValue()));
             let maxEnv = arities |> Vector.map(x -> Array.repeat(rc, x, Int64.maxValue()));
             foreach ((id1, id2, val) <- constWrites) {
@@ -185,7 +186,7 @@ mod Fixpoint3.Interpreter {
             let ctx = (db, env, boxing);
             evalStmt(rc, ctx, parLevel(), stmt);
             // Remove the `IO` effect from dealing with static.
-            let boxedFacts = unsafely IO run marshallDb(rc, db, boxing, indexPos, predState, marshallIndexes, withProv);
+            let boxedFacts = unsafely IO run marshallDb(rc, db, boxing, indexPos, predState, typeInfo);
             (boxedFacts, predState)
     }
 
@@ -201,21 +202,12 @@ mod Fixpoint3.Interpreter {
         boxing: Boxing[r],
         indexPos: Map[(RelSym, Int32), Int32],
         predTrack: Predicates,
-        boxingIndexes: RamIdToPos,
-        withProv: Bool
+        typeInfo: TypeInformation
     ): Database[r] \ r + IO =
         let res = MutMap.empty(rc);
         foreach (relSym <- allFullRelSyms(predTrack)) {
             let innerMap = BPlusTree.empty(Static);
-            // If we are doing provenance computations we need to also rebox the annotations.
-            // Since there are 2 annotations we add 2 in this case.
-            let usedArity =
-                if (withProv) arityOfNonLat(relSym) + 2
-                else arityOfNonLat(relSym);
-            let curBoxingInfo = Vector.range(0, usedArity) |>
-                Vector.map(i ->
-                    getOrCrash(Map.get(RamId.RelPos(toId(relSym), i), boxingIndexes))
-                );
+            let curBoxingInfo = getTypeOf(toId(relSym), typeInfo);
             Array.get(getOrCrash(Map.get((relSym, 0), indexPos)), db) |>
                 BPlusTree.forEach(vec -> latticeElem -> {
                     let boxedVec = vec |>
@@ -377,6 +369,19 @@ mod Fixpoint3.Interpreter {
                 let latVal = evalBoxedTerm(env, boxing, Vector.get(len - 1, terms));
                 if (latVal `leq` bot) ()
                 else BPlusTree.putWith(lub, tuple, latVal, relIndex)
+            case RelOp.ProvProject(terms, rel, fullRel) =>
+                let relIndex = lookupIndex(rel, db);
+                let fullIndex = lookupIndex(fullRel, db);
+                let tuple = Vector.map(evalTerm(env, boxing), terms);
+                let depthPos = Vector.length(terms) - 2;
+                let chooseSmallest = k1 -> _v1 -> k2 -> _v2 -> Vector.get(depthPos, k1) < Vector.get(depthPos, k2);
+                match BPlusTree.getKeyAndValue(tuple, fullIndex) {
+                    case None =>
+                        BPlusTree.putIf(chooseSmallest, tuple, Boxed.NoValue, relIndex)
+                    case Some((k, v)) if (chooseSmallest(tuple, Boxed.NoValue, k, v)) =>
+                        BPlusTree.putIf(chooseSmallest, tuple, Boxed.NoValue, relIndex)
+                    case _ => ()
+                }
             case RelOp.Functional(tupleIndex, f, terms, writes, body, i2) =>
                 let args = Vector.map(evalBoxedTerm(env, boxing), terms);
                 let result = f(args)|>

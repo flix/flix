@@ -117,6 +117,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestMismatchedNullaryTypes.01") {
+    val input = "def foo(): #{A(Unit)| x} = #{A.}"
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestMismatchedNullaryTypes.02") {
+    val input = "def foo(): #{A| x} = #{A()}"
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
   test("TestMismatchedTypes.01") {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
@@ -472,7 +484,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
-        |def zero(): Int32 \ {} = $ARRAY_LENGTH$(mkArray())
+        |def zero(): Int32 \ {} = %%ARRAY_LENGTH%%(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
@@ -1507,7 +1519,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1527,7 +1539,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1547,7 +1559,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1569,7 +1581,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1590,7 +1602,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1612,7 +1624,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1633,7 +1645,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -2213,4 +2225,82 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedType](result)
   }
+
+  test("TypeError.MismatchedPredicateArity.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |        Foo(1, 2, 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(;1).
+        |        Foo(1; 2).
+        |        Foo(1, 2; 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1, 2).
+        |        Foo(1; 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1; 2).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
 }

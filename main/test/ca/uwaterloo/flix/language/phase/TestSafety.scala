@@ -38,7 +38,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _s: Object => "fail"
         |    }
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalCatchType](result)
   }
 
@@ -56,7 +56,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        case _e2: String => "not ok"
         |    }
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalCatchType](result)
   }
 
@@ -65,7 +65,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): String = throw "hello"
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
   }
 
@@ -75,7 +75,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |import java.io.IOException
         |def f(): String = throw (throw new IOException())
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
   }
 
@@ -85,7 +85,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |import java.io.IOException
         |pub def f(): String = throw None
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
   }
 
@@ -96,7 +96,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(Some(x)).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -107,7 +107,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(Some(2)).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -118,7 +118,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(None).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -129,7 +129,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(()), C(x::_).
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -259,7 +259,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A((x: Int32)) :- B(12; x).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -270,7 +270,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(x; l), C(x, l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -281,7 +281,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x; l) :- B(x; l), C(x, l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -292,7 +292,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(12, l) :- B(12; l), fix C(12; l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -303,7 +303,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(12) :- B(12, l), fix C(12; l).
         |}
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalRelationalUseOfLatticeVar](result)
   }
 
@@ -423,69 +423,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit =
-        |    run g() with handler Exec {}
-        |
-        |def g(): Unit \ Exec = ???
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.03") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler FsRead {}
-        |
-        |def g(): Unit \ FsRead = ???
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.04") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler FsWrite {}
-        |
-        |def g(): Unit \ FsWrite = ???
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.05") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler Net {}
-        |
-        |def g(): Unit \ Net = ???
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.06") {
-    val input =
-      """
-        |def f(): Unit =
         |    run g() with handler NonDet {}
         |
         |def g(): Unit \ NonDet = ???
-    """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[SafetyError.PrimitiveEffectInRunWith](result)
-  }
-
-  test("TestBaseEffectInRunWith.07") {
-    val input =
-      """
-        |def f(): Unit =
-        |    run g() with handler Sys {}
-        |
-        |def g(): Unit \ Sys = ???
     """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[SafetyError.PrimitiveEffectInRunWith](result)
@@ -889,7 +829,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |        Ask.ask(); ()
         |}
       """.stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalMethodEffect](result)
   }
 }

@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError.*
 import ca.uwaterloo.flix.util.*
 import ca.uwaterloo.flix.util.Validation.*
-import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, ListOps, MapOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.immutable.SortedSet
@@ -620,7 +620,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         tparams =>
           val scp = scp0 ++ mkTypeParamScp(tparams)
-          val opsVal = traverse(ops0)(resolveOp(_, scp0, taenv, ns0, root))
+          val opsVal = traverse(ops0)(resolveOp(_, scp, taenv, ns0, root))
           mapN(opsVal) {
             case ops => ResolvedAst.Declaration.Effect(doc, ann, mod, sym, tparams, ops, loc)
           }
@@ -771,7 +771,7 @@ object Resolver {
     case NamedAst.Kind.Arrow(k10, k20, _) =>
       val k1 = resolveKind(k10, scp0, ns0, root)
       val k2 = resolveKind(k20, scp0, ns0, root)
-      Kind.Arrow(k1, k2)
+      Kind.mkArrow(k1, k2)
   }
 
   /**
@@ -982,15 +982,12 @@ object Resolver {
           }
       }
 
-    case NamedAst.Expr.Region(tpe, loc) =>
-      Validation.Success(ResolvedAst.Expr.Region(tpe, loc))
-
-    case NamedAst.Expr.Scope(sym, regSym, exp, loc) =>
+    case NamedAst.Expr.Region(sym, regSym, exp, loc) =>
       val scp = scp0 ++ mkVarScp(sym) ++ mkTypeVarScp(regSym)
       // Visit the body in the new scope
       val eVal = resolveExp(exp, scp)(scope.enter(regSym), ns0, taenv, sctx, root, flix)
       mapN(eVal) {
-        e => ResolvedAst.Expr.Scope(sym, regSym, e, loc)
+        e => ResolvedAst.Expr.Region(sym, regSym, e, loc)
       }
 
     case NamedAst.Expr.Match(exp, rules, loc) =>
@@ -1483,29 +1480,45 @@ object Resolver {
           ResolvedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
       }
 
+    case NamedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+      val esVal = traverse(exps)(resolveExp(_, scp0))
+      val qeVal = resolveExp(queryExp, scp0)
+      // We cannot call resolvePredicateBody as it does not allow new variables to be introduced
+      val fVal = traverse(from) {
+        case NamedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, terms, loc1) =>
+          val ts = terms.map(resolvePattern(_, scp0, ns0, root))
+          Validation.Success(ResolvedAst.Predicate.Body.Atom(pred0, den, polarity, fixity, ts, loc1))
+        case _ => throw InternalCompilerException("Unexpected predicate body when expecting body atom", loc)
+      }
+      // We have to bind variables appearing in the atoms before resolving the select and where exps
+      flatMapN(esVal, qeVal, fVal) {
+        case (es, qe, f) =>
+          // Collect all variables appearing in atoms and bind them
+          val ts = f.flatMap(_.terms)
+          val scp1 = ts.foldLeft(scp0)(
+            (acc, t) => t match {
+              case ResolvedAst.Pattern.Var(sym, _) => acc ++ mkVarScp(sym)
+              case _ => acc
+            })
+          // Resolve select and where exps
+          val sVal = traverse(selects)(resolveExp(_, scp1))
+          val wVal = traverse(where)(resolveExp(_, scp1))
+          mapN(sVal, wVal) {
+            case (s, w) =>
+              ResolvedAst.Expr.FixpointQueryWithSelect(es, qe, s, f, w, pred, loc)
+          }
+      }
+
     case NamedAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
       val esVal = traverse(exps)(resolveExp(_, scp0))
       mapN(esVal) {
         es => ResolvedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
       }
 
-    case NamedAst.Expr.FixpointFilter(pred, exp, loc) =>
-      val eVal = resolveExp(exp, scp0)
-      mapN(eVal) {
-        e => ResolvedAst.Expr.FixpointFilter(pred, e, loc)
-      }
-
     case NamedAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val esVal = traverse(exps)(resolveExp(_, scp0))
       mapN(esVal) {
         es => ResolvedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
-      }
-
-    case NamedAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
-      val e1Val = resolveExp(exp1, scp0)
-      val e2Val = resolveExp(exp2, scp0)
-      mapN(e1Val, e2Val) {
-        case (e1, e2) => ResolvedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
       }
 
     case NamedAst.Expr.Error(m) =>
@@ -1521,7 +1534,7 @@ object Resolver {
     val varSyms = (0 until arity).map(i => freshVarSym("arg" + i, BoundBy.FormalParam, loc)).toList
 
     // Introduce a formal parameter for each variable symbol.
-    varSyms.map(sym => ResolvedAst.FormalParam(sym, Modifiers.Empty, None, loc))
+    varSyms.map(sym => ResolvedAst.FormalParam(sym, None, loc))
   }
 
   /**
@@ -2047,7 +2060,7 @@ object Resolver {
   private def resolveFormalParam(fparam0: NamedAst.FormalParam, wildness: Wildness, scp0: LocalScope, taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root)(implicit scope: Scope, sctx: SharedContext, flix: Flix): Validation[ResolvedAst.FormalParam, ResolutionError] = {
     val tVal = traverseOpt(fparam0.tpe)(resolveType(_, Some(Kind.Star), wildness, scp0, taenv, ns0, root))
     mapN(tVal) {
-      t => ResolvedAst.FormalParam(fparam0.sym, fparam0.mod, t, fparam0.loc)
+      t => ResolvedAst.FormalParam(fparam0.sym, t, fparam0.loc)
     }
   }
 
@@ -2695,7 +2708,7 @@ object Resolver {
       * The list of arguments must be the same length as the alias's parameters.
       */
     def applyAlias(alias: ResolvedAst.Declaration.TypeAlias, args: List[UnkindedType], cstLoc: SourceLocation): UnkindedType = {
-      val map = alias.tparams.map(_.sym).zip(args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
+      val map = ListOps.zip(alias.tparams.map(_.sym), args).toMap[Symbol.UnkindedTypeVarSym, UnkindedType]
       val tpe = alias.tpe.map(map)
       val symUse = TypeAliasSymUse(alias.sym, cstLoc)
       UnkindedType.Alias(symUse, args, tpe, tpe0.loc)
@@ -2973,7 +2986,7 @@ object Resolver {
           // ALERT!
           // Here we mutate the RecordWild list because we are visiting a wildcard type!
           val sym = Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), ident.loc)
-          syms.append((ident -> sym))
+          syms.append(ident -> sym)
           Result.Ok(LowerType.Var(sym))
         case Wildness.ForbidWild =>
           Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))

@@ -1,3 +1,24 @@
+/*
+ * Copyright 2025 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+///
+/// An effect used for print debugging.
+///
+eff Debug
+
 mod Debug {
 
     import java.lang.Byte
@@ -12,15 +33,22 @@ mod Debug {
     import java.util.Objects
 
     ///
-    /// Prints the stringified representation of `x` with the given `prefix`.
+    /// Prints `x` to the standard out.
     ///
-    /// Note: For internal use only. The actual `dbg(exp)` expression is parsed and ultimately rewritten to call this function.
+    pub def dprint(x: a): Unit \ Debug with ToString[a] =
+        unchecked_cast({
+            let s: String = ToString.toString(x);
+            System.out.print(s)
+        } as _ \ Debug)
+
     ///
-    @Internal
-    pub def debugWithPrefix(prefix: String, x: a): a = unsafe {
-        System.out.println("${prefix}%{x}");
-        x
-    }
+    /// Prints `x` to the standard out followed by a new line.
+    ///
+    pub def dprintln(x: a): Unit \ Debug with ToString[a] =
+        unchecked_cast({
+            let s: String = ToString.toString(x);
+            System.out.println(s)
+        } as _ \ Debug)
 
     ///
     /// Escapes the given string per Flix's escaping rules.

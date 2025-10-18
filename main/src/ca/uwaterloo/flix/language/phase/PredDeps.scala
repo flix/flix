@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, Lab
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -140,9 +140,7 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _) => ()
-
-    case Expr.Scope(_, _, exp, _, _, _) =>
+    case Expr.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -347,14 +345,14 @@ object PredDeps {
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
 
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
       exps.foreach(visitExp)
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      visitExp(exp)
 
     case Expr.Error(_, _, _) => ()
   }

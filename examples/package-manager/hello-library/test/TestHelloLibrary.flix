@@ -1,4 +1,4 @@
 mod HelloLibrary {
     @Test
-    def test01(): Bool = Assert.eq(1 + 1, 2)
+    def test01(): Bool = (1 + 1) == 2
 }

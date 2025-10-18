@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{ConcurrentCache, InternalCompilerException}
 
 import scala.annotation.tailrec
 
@@ -27,6 +27,13 @@ import scala.annotation.tailrec
 sealed trait SimpleType
 
 object SimpleType {
+
+  /**
+    * A private concurrent cache.
+    *
+    * Note: We do not cache all simple types because it is not worth it.
+    */
+  private val Cache: ConcurrentCache[SimpleType] = new ConcurrentCache()
 
   //
   // Primitive Types.
@@ -73,6 +80,8 @@ object SimpleType {
   // Compound Types.
   //
 
+  val Object: SimpleType = Native(classOf[java.lang.Object])
+
   case class Array(tpe: SimpleType) extends SimpleType
 
   case class Lazy(tpe: SimpleType) extends SimpleType
@@ -83,7 +92,7 @@ object SimpleType {
 
   case class Struct(sym: Symbol.StructSym, targs: List[SimpleType]) extends SimpleType
 
-  case class Arrow(args: List[SimpleType], result: SimpleType) extends SimpleType
+  case class Arrow(targs: List[SimpleType], result: SimpleType) extends SimpleType
 
   case object RecordEmpty extends SimpleType
 
@@ -95,7 +104,37 @@ object SimpleType {
 
   case class Native(clazz: Class[?]) extends SimpleType
 
-  val Object: SimpleType = Native(classOf[java.lang.Object])
+  /**
+    * Smart constructor for [[SimpleType.Array]].
+    */
+  def mkArray(tpe: SimpleType): SimpleType.Array = {
+    val t = Array(tpe)
+    Cache.getCanonicalValue(t)
+  }
+
+  /**
+    * Smart constructor for [[SimpleType.Tuple]].
+    */
+  def mkTuple(tpes: List[SimpleType]): SimpleType.Tuple = {
+    val t = Tuple(tpes)
+    Cache.getCanonicalValue(t)
+  }
+
+  /**
+    * Smart constructor for [[SimpleType.Arrow]].
+    */
+  def mkArrow(targs: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
+    val t = Arrow(targs, result)
+    Cache.getCanonicalValue(t)
+  }
+
+  /**
+    * Smart constructor for [[SimpleType.Enum]].
+    */
+  def mkEnum(sym: Symbol.EnumSym, targs: List[SimpleType]): SimpleType.Enum = {
+    val t = Enum(sym, targs)
+    Cache.getCanonicalValue(t)
+  }
 
   /** Returns `tpe` if it's a primitive type and returns [[SimpleType.Object]] otherwise. */
   def erase(tpe: SimpleType): SimpleType = {

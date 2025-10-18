@@ -62,8 +62,7 @@ object ResolvedAstPrinter {
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.LocalDef(sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
-    case Expr.Region(_, _) => DocAst.Expr.Region
-    case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
+    case Expr.Region(sym, _, exp, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, body, _) => (printPattern(pat), guard.map(print), print(body))
     })
@@ -126,10 +125,9 @@ object ResolvedAstPrinter {
     case Expr.FixpointLambda(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointQueryWithProvenance(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointSolveWithProject(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointFilter(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInjectInto(_, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointProject(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_) => DocAst.Expr.Error
   }
 
@@ -173,9 +171,9 @@ object ResolvedAstPrinter {
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printFormalParam(fp: ResolvedAst.FormalParam): DocAst.Expr.AscriptionTpe = fp match {
-    case ResolvedAst.FormalParam(sym, _, Some(tpe), _) =>
+    case ResolvedAst.FormalParam(sym, Some(tpe), _) =>
       DocAst.Expr.AscriptionTpe(printVarSym(sym), UnkindedTypePrinter.print(tpe))
-    case ResolvedAst.FormalParam(sym, _, None, _) =>
+    case ResolvedAst.FormalParam(sym, None, _) =>
       DocAst.Expr.AscriptionTpe(printVarSym(sym), DocAst.Type.Wild)
   }
 

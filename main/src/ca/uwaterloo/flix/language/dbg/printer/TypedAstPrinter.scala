@@ -43,8 +43,7 @@ object TypedAstPrinter {
     case Expr.Binary(sop, exp1, exp2, _, _, _) => DocAst.Expr.Binary(print(exp1), OpPrinter.print(sop), print(exp2))
     case Expr.Let(bnd, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVar(bnd.sym), Some(TypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(printVar(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
-    case Expr.Region(_, _) => DocAst.Expr.Region
-    case Expr.Scope(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Scope(printVar(sym), print(exp))
+    case Expr.Region(TypedAst.Binder(sym, _), _, exp, _, _, _) => DocAst.Expr.Region(printVar(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
@@ -100,10 +99,9 @@ object TypedAstPrinter {
     case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointFilter(_, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_, _, _) => DocAst.Expr.Error
   }
 
@@ -199,7 +197,7 @@ object TypedAstPrinter {
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: TypedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val TypedAst.FormalParam(bnd, _, tpe, _, _) = fp
+    val TypedAst.FormalParam(bnd, tpe, _, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(bnd.sym), TypePrinter.print(tpe))
   }
 

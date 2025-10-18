@@ -32,8 +32,8 @@ object DerivationError {
   /**
     * An error raised to indicate an illegal derivation.
     *
-    * @param sym       the class symbol of the illegal derivation.
-    * @param legalSyms the list of class symbols of legal derivations.
+    * @param sym       the trait symbol of the illegal derivation.
+    * @param legalSyms the list of trait symbols of legal derivations.
     * @param loc       the location where the error occurred.
     */
   case class IllegalDerivation(sym: Symbol.TraitSym, legalSyms: List[Symbol.TraitSym], loc: SourceLocation) extends DerivationError {
@@ -57,15 +57,15 @@ object DerivationError {
     * Illegal trait derivation for an empty enum.
     *
     * @param sym      the enum symbol.
-    * @param classSym the class symbol of what is being derived.
+    * @param traitSym the trait symbol of what is being derived.
     * @param loc      The source location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError {
-    def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, traitSym: Symbol.TraitSym, loc: SourceLocation) extends DerivationError {
+    def summary: String = s"Cannot derive '${traitSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
+      s""">> Cannot derive '${magenta(traitSym.name)}' for the empty enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}
          |

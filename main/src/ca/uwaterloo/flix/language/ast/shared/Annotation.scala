@@ -27,6 +27,26 @@ trait Annotation {
 object Annotation {
 
   /**
+    * An AST node that represents a `@CompileTest` annotation.
+    *
+    * A function marked with `CompileTest` is compiled, but not evaluated.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class CompileTest(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@CompileTest"
+  }
+
+  /**
+    * An annotation that marks a function as a default handler for an effect.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class DefaultHandler(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@DefaultHandler"
+  }
+
+  /**
     * An annotation that marks a construct as deprecated.
     *
     * @param loc the source location of the annotation.

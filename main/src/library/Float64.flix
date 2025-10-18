@@ -344,7 +344,7 @@ mod Float64 {
     ///
     /// Returns ` base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = Float64}, n: Float64): Float64 = $FLOAT64_EXP$(base#base, n)
+    pub def pow(base: {base = Float64}, n: Float64): Float64 = %%FLOAT64_EXP%%(base#base, n)
 
     ///
     /// Returns the exponential of `x`.

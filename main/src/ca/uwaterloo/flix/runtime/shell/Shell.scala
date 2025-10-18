@@ -165,16 +165,16 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Praise => execPraise()
       case Command.Eval(s) => execEval(s)
       case Command.ReloadAndEval(s) => execReloadAndEval(s)
-      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
-      case Command.Build => execBootstrap(bootstrap.build(flix))
-      case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix))
-      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix))
-      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
-      case Command.Release => execBootstrap(bootstrap.release(flix))
-      case Command.Check => execBootstrap(bootstrap.check(flix))
-      case Command.Doc => execBootstrap(bootstrap.doc(flix))
-      case Command.Test => execBootstrap(bootstrap.test(flix))
-      case Command.Outdated => execBootstrap(bootstrap.outdated(flix))
+      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath).toValidation)
+      case Command.Build => execBootstrap(bootstrap.build(flix).toValidation)
+      case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix).toValidation)
+      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix).toValidation)
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg().toValidation)
+      case Command.Release => execBootstrap(bootstrap.release(flix).toValidation)
+      case Command.Check => execBootstrap(bootstrap.check(flix).toValidation)
+      case Command.Doc => execBootstrap(bootstrap.doc(flix).toValidation)
+      case Command.Test => execBootstrap(bootstrap.test(flix).toValidation)
+      case Command.Outdated => execBootstrap(bootstrap.outdated(flix).toValidation)
       case Command.Unknown(s) => execUnknown(s)
     }
   }
@@ -288,7 +288,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addSourceCode(name, s)(SecurityContext.AllPermissions)
+        flix.addSourceCode(name, s)(SecurityContext.Unrestricted)
 
         // And try to compile!
         compile(progress = false).toResult match {
@@ -313,10 +313,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val src =
           s"""def ${main.name}(): Unit \\ $effString =
              |checked_ecast(
-             |  println($s)
+             |  Assert.runWithIO(_ -> println($s))
              |)
              |""".stripMargin
-        flix.addSourceCode("<shell>", src)(SecurityContext.AllPermissions)
+        flix.addSourceCode("<shell>", src)(SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
         flix.remSourceCode("<shell>")

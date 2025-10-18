@@ -1,4 +1,4 @@
-def main(): Unit \ {Exec, IO} =
+def main(): Unit \ IO =
     run {
         match ProcessWithResult.exec("ls", Nil) {
             case Result.Ok(_)    => ()

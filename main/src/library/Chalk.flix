@@ -434,7 +434,7 @@ mod Chalk {
     ///
     def downsample(c: (Int32, Int32, Int32), isFg: Bool): Int32 =
         let candidates = {
-            if(isFg) {
+            if (isFg) {
                 Ansi.Black :: Ansi.Red :: Ansi.Green :: Ansi.Yellow :: Ansi.Blue :: Ansi.Magenta ::
                     Ansi.Cyan :: Ansi.White :: Ansi.BrightBlack :: Ansi.BrightRed :: Ansi.BrightGreen ::
                     Ansi.BrightYellow :: Ansi.BrightBlue :: Ansi.BrightMagenta :: Ansi.BrightCyan ::

@@ -54,8 +54,7 @@ object TypedAstOps {
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Region(_, _) => Set.empty
-    case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.Region(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
@@ -111,10 +110,9 @@ object TypedAstOps {
     case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(queryExp) ++ selects.flatMap(sigSymsOf).toSet ++ where.flatMap(sigSymsOf).toSet
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.FixpointProject(_, _, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Error(_, _, _) => Set.empty
   }
 
@@ -184,10 +182,7 @@ object TypedAstOps {
       val bound = sym :: fparams.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
-    case Expr.Region(_, _) =>
-      Map.empty
-
-    case Expr.Scope(Binder(sym, _), _, exp, _, _, _) =>
+    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
       freeVars(exp) - sym
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -396,25 +391,20 @@ object TypedAstOps {
       freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
-      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        (acc, exp) => acc ++ freeVars(exp)
-      } ++ freeVars(select)
+      freeVars(exps) ++ freeVars(select)
+
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      freeVars(exps) ++ freeVars(queryExp) ++ freeVars(selects) ++ from.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+        (acc, b) => acc ++ freeVars(b)
+      } ++ freeVars(where)
 
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      freeVars(exp)
-
     case Expr.FixpointInjectInto(exps, _, _, _, _) =>
-      exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        (acc, exp) => acc ++ freeVars(exp)
-      }
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      freeVars(exp)
+      freeVars(exps)
 
     case Expr.Error(_, _, _) =>
       Map.empty
@@ -511,5 +501,13 @@ object TypedAstOps {
     case Body.Guard(exp, _) => freeVars(exp)
     case Body.Functional(_, exp, _) => freeVars(exp)
   }
+
+  /**
+    * Returns the free variables in the given list of expressions `exp0`.
+    */
+  private def freeVars(exps0: List[Expr]): Map[Symbol.VarSym, Type] =
+    exps0.foldLeft(Map.empty[Symbol.VarSym, Type]) {
+      case (acc, exp) => acc ++ freeVars(exp)
+    }
 
 }

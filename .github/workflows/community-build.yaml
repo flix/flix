@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install JDK
         uses: actions/setup-java@v4
         with:
@@ -40,16 +40,13 @@ jobs:
       max-parallel: 1
       matrix:
         repo:
-          - "JonathanStarup/Flix-ANSI-Terminal"
+          - "flix/datalog2"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
-          - "flix/museum"
-          - "jaschdoc/flix-parsers"
+          - "magnus-madsen/bibblitz"
           - "mlutze/flix-json"
           - "mlutze/flixball"
           - "rywiese/scope-graphs"
-          - "stephentetley/charset-locale"
-          - "stephentetley/flix-either"
           - "stephentetley/flix-htmldoc"
           - "stephentetley/flix-pretty"
     runs-on: ubuntu-latest
@@ -60,7 +57,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Check out project head
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ matrix.repo }}
       - name: Download Flix JAR

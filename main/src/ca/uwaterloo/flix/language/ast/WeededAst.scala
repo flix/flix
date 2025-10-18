@@ -119,7 +119,7 @@ object WeededAst {
 
     case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], declaredTpe: Option[Type], declaredEff: Option[Type], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
+    case class Region(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
@@ -240,8 +240,6 @@ object WeededAst {
     case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
     case class FixpointQueryWithSelect(exps: List[Expr], selects: List[Expr], from: List[Predicate.Body], where: List[Expr], loc: SourceLocation) extends Expr
-
-    case class Debug(exp: Expr, kind: DebugKind, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -428,7 +426,7 @@ object WeededAst {
 
   case class RestrictableCase(ident: Name.Ident, tpes: List[Type], loc: SourceLocation)
 
-  case class FormalParam(ident: Name.Ident, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
+  case class FormalParam(ident: Name.Ident, tpe: Option[Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 
@@ -476,7 +474,6 @@ object WeededAst {
 
   case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
-
   sealed trait ForFragment {
     def loc: SourceLocation
   }
@@ -488,18 +485,6 @@ object WeededAst {
     case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
 
     case class Let(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
-  }
-
-  sealed trait DebugKind
-
-  object DebugKind {
-
-    case object Debug extends DebugKind
-
-    case object DebugWithLoc extends DebugKind
-
-    case object DebugWithLocAndSrc extends DebugKind
-
   }
 
 }

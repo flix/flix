@@ -300,7 +300,7 @@ object Typer {
     * Reconstructs types in the given enum.
     */
   private def visitEnum(enum0: KindedAst.Enum): TypedAst.Enum = enum0 match {
-    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, _, loc) =>
+    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val cases = MapOps.mapValues(cases0) {
         case KindedAst.Case(caseSym, tagTypes, sc, caseLoc) =>

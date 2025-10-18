@@ -677,10 +677,7 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
-    case DesugaredAst.Expr.Region(tpe, loc) =>
-      NamedAst.Expr.Region(tpe, loc)
-
-    case DesugaredAst.Expr.Scope(ident, exp, loc) =>
+    case DesugaredAst.Expr.Region(ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
       val regSym = Symbol.freshRegionSym(ident)
 
@@ -693,7 +690,7 @@ object Namer {
 
       // Visit the body in the inner scope
       val e = visitExp(exp)(newScope, sctx, flix)
-      NamedAst.Expr.Scope(sym, regSym, e, loc)
+      NamedAst.Expr.Region(sym, regSym, e, loc)
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -914,18 +911,17 @@ object Namer {
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
-    case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointFilter(ident, e, loc)
+    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+      val es = exps.map(visitExp)
+      val qe = visitExp(queryExp)
+      val ss = selects.map(visitExp)
+      val f = from.map(visitBodyPredicate)
+      val w = where.map(visitExp)
+      NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
 
     case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
-
-    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
@@ -1391,7 +1387,7 @@ object Namer {
     * Translates the given weeded formal parameter to a named formal parameter.
     */
   private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.FormalParam = fparam match {
-    case DesugaredAst.FormalParam(ident, mod, tpe, loc) =>
+    case DesugaredAst.FormalParam(ident, tpe, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
@@ -1399,7 +1395,7 @@ object Namer {
       val t = tpe.map(visitType)
 
       // Construct the formal parameter.
-      NamedAst.FormalParam(freshSym, mod, t, loc)
+      NamedAst.FormalParam(freshSym, t, loc)
   }
 
   /**
@@ -1476,8 +1472,8 @@ object Namer {
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
-      case DesugaredAst.FormalParam(_, _, Some(tpe1), _) => freeTypeVars(tpe1)
-      case DesugaredAst.FormalParam(_, _, None, _) => Nil
+      case DesugaredAst.FormalParam(_, Some(tpe1), _) => freeTypeVars(tpe1)
+      case DesugaredAst.FormalParam(_, None, _) => Nil
     }
 
     val tpeTvars = freeTypeVars(tpe)
