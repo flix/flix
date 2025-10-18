@@ -17,9 +17,8 @@
 package ca.uwaterloo.flix.tools.pkg
 
 sealed trait Trust {
-
   /**
-    * Combines `this` and `other` according to the following lattice:
+    * Returns the least upper bound of `this` and `other` according to the following lattice:
     * {{{
     *     Unrestricted
     *          |
@@ -28,26 +27,30 @@ sealed trait Trust {
     *        Plain
     * }}}
     */
-  def glb(other: Trust): Trust = (this, other) match {
+  def lub(other: Trust): Trust = (this, other) match {
     // TODO: Add tests
     case (Trust.Plain, Trust.Plain) => Trust.Plain
-    case (Trust.Plain, Trust.TrustJavaClass) => Trust.Plain
-    case (Trust.Plain, Trust.Unrestricted) => Trust.Plain
-    case (Trust.TrustJavaClass, Trust.Plain) => Trust.Plain
+    case (Trust.Plain, Trust.TrustJavaClass) => Trust.TrustJavaClass
+    case (Trust.Plain, Trust.Unrestricted) => Trust.Unrestricted
+    case (Trust.TrustJavaClass, Trust.Plain) => Trust.TrustJavaClass
     case (Trust.TrustJavaClass, Trust.TrustJavaClass) => Trust.TrustJavaClass
-    case (Trust.TrustJavaClass, Trust.Unrestricted) => Trust.TrustJavaClass
-    case (Trust.Unrestricted, Trust.Plain) => Trust.Plain
-    case (Trust.Unrestricted, Trust.TrustJavaClass) => Trust.TrustJavaClass
+    case (Trust.TrustJavaClass, Trust.Unrestricted) => Trust.Unrestricted
+    case (Trust.Unrestricted, Trust.Plain) => Trust.Unrestricted
+    case (Trust.Unrestricted, Trust.TrustJavaClass) => Trust.Unrestricted
     case (Trust.Unrestricted, Trust.Unrestricted) => Trust.Unrestricted
   }
 
-  def lub(other: Trust): Trust = {
-    if (this.glb(other) != this) {
-      this
-    } else {
-      other
-    }
-  }
+  /**
+    * Returns the greatest lower bound of `this` and `other` according to the following lattice:
+    * {{{
+    *     Unrestricted
+    *          |
+    *   TrustJavaClass
+    *          |
+    *        Plain
+    * }}}
+    */
+  def glb(other: Trust): Trust = if (this.lessThanEq(other)) this else other
 
   /**
     * Returns `true` if `this` is less than or equal to `other` in the lattice
@@ -59,34 +62,25 @@ sealed trait Trust {
     *        Plain
     * }}}
     */
-  def lessThanEq(other: Trust): Boolean = (this, other) match {
-    // TODO: Add tests
-    case (Trust.Plain, Trust.Plain) => true
-    case (Trust.Plain, Trust.TrustJavaClass) => true
-    case (Trust.Plain, Trust.Unrestricted) => true
-    case (Trust.TrustJavaClass, Trust.Plain) => false
-    case (Trust.TrustJavaClass, Trust.TrustJavaClass) => true
-    case (Trust.TrustJavaClass, Trust.Unrestricted) => true
-    case (Trust.Unrestricted, Trust.Plain) => false
-    case (Trust.Unrestricted, Trust.TrustJavaClass) => false
-    case (Trust.Unrestricted, Trust.Unrestricted) => true
-  }
+  def lessThanEq(other: Trust): Boolean = this.lub(other) == other
 
   /**
     * Returns `true` iff `!this.lessThanOrEq(other)` holds.
     *
     * @see [[lessThanEq]]
     */
-  def greaterThan(other: Trust): Boolean = {
-    // TODO: Add tests
-    !this.lessThanEq(other)
-  }
+  def greaterThan(other: Trust): Boolean = !this.lessThanEq(other)
 }
 
 /**
   * Trust for dependencies.
   */
 object Trust {
+
+  def glb(ts: List[Trust]): Trust = ts match {
+    case Nil => throw new IllegalArgumentException("unexpected empty list")
+    case x :: xs => xs.foldLeft(x)((acc, y) => acc.glb(y))
+  }
 
   /**
     * Plain Flix must not have any unsafe features.
