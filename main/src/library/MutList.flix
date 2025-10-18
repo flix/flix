@@ -58,7 +58,9 @@ instance MutCollectable[MutList[a, r]] {
     type Aef = r
     type Reg = r
     pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
-        Iterator.toMutList(rc, iter)
+        let l = MutList.empty(rc);
+        Iterator.forEach(x -> MutList.push(x, l), iter);
+        l
 
 }
 
