@@ -62,6 +62,7 @@ object Reducer {
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
 
+      // Set variable offsets - the variable order is important and must match the assumptions of the backend.
       var varOffset = 0
       for (param <- d.cparams ::: d.fparams ::: ls) {
         varOffset = setOffsetAndIncrement(param.sym, param.tpe, varOffset)
