@@ -1155,15 +1155,13 @@ object Parser2 {
       if (isShorthand) {
         val markType = open()
         val mark = open()
-        oneOrMore(
+        zeroOrMore(
           namedTokenSet = NamedTokenSet.Type,
           getItem = () => Type.ttype(),
           checkForItem = _.isFirstInType,
           breakWhen = _.isRecoverInType,
-        ) match {
-          case Some(error) => closeWithError(mark, error)
-          case None => close(mark, TreeKind.Type.Tuple)
-        }
+        )
+        close(mark, TreeKind.Type.Tuple)
         close(markType, TreeKind.Type.Type)
       }
       // Derivations.
@@ -1171,16 +1169,12 @@ object Parser2 {
         Type.derivations()
       }
 
-      // Check for illegal enum using both shorthand and body.
-      if (isShorthand && eat(TokenKind.CurlyL)) {
-        val mark = open()
-        enumCases()
-        expect(TokenKind.CurlyR)
-        closeWithError(mark, WeederError.IllegalEnum(nameLoc))
-      }
-
       // Enum body.
       if (eat(TokenKind.CurlyL)) {
+        // Check for illegal enum using both shorthand and body.
+        if (isShorthand) {
+          closeWithError(open(), WeederError.IllegalEnum(nameLoc))
+        }
         enumCases()
         expect(TokenKind.CurlyR)
       }

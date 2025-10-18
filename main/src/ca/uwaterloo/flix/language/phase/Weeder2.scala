@@ -401,9 +401,9 @@ object Weeder2 {
       ) {
         (doc, ident, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Empty singleton enum
+            // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
-              // Fall back on no cases, parser has already reported an error
+              // Fall back on no cases. Whoever generated the error must have reported it.
               Validation.Success(List.empty)
             // Singleton enum
             case (Some(ts), cs) =>
@@ -459,9 +459,9 @@ object Weeder2 {
       ) {
         (doc, ident, rParam, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Empty singleton enum
+            // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
-              // Fall back on no cases, parser has already reported an error
+              // Fall back on no cases. Whoever generated the error must have reported it.
               Validation.Success(List.empty)
             // Singleton enum
             case (Some(ts), cs) =>
@@ -3000,7 +3000,7 @@ object Weeder2 {
       */
     def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
-      // Visit first child and match its kind to know what to to
+      // Visit all types of the tuple
       val inner = unfold(tree)
       val innerTypes = pickAll(TreeKind.Type.Type, inner)
       mapN(traverse(innerTypes)(visitType)) {
