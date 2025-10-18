@@ -267,10 +267,9 @@ object Reducer {
 
   /** Assigns a stack offset to `sym` and returns the next available stack offset. */
   private def setOffsetAndIncrement(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
-    // Set the stack offset for the symbol.
     sym.setStackOffset(offset)
 
-    // Compute the next free stack offset.
+    // 64-bit values take up two slots in the offsets.
     val stackSize = tpe match {
       case SimpleType.Float64 => 2
       case SimpleType.Int64 => 2
