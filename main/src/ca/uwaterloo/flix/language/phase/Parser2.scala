@@ -1206,19 +1206,14 @@ object Parser2 {
         if (at(TokenKind.ParenL)) {
           val mark = open()
           val markTuple = open()
-          oneOrMore(
+          zeroOrMore(
             namedTokenSet = NamedTokenSet.Type,
             getItem = () => Type.ttype(),
             checkForItem = _.isFirstInType,
             breakWhen = _.isRecoverInDecl
-          ) match {
-            case Some(error) =>
-              close(markTuple, TreeKind.Type.Tuple)
-              closeWithError(mark, error)
-            case None =>
-              close(markTuple, TreeKind.Type.Tuple)
-              close(mark, TreeKind.Type.Type)
-          }
+          )
+          close(markTuple, TreeKind.Type.Tuple)
+          close(mark, TreeKind.Type.Type)
         }
         close(mark, TreeKind.Case)
       }

@@ -1026,17 +1026,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
-  test("ParseError.EnumCase.01") {
-    val input =
-      """
-        |enum E {
-        |    case C()
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("ParseError.ParYield.01") {
     val input =
       """
