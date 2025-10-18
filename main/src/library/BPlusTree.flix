@@ -312,6 +312,38 @@ mod BPlusTree {
         }
 
     ///
+    /// Returns `true` if and only if for all `k => v` in `t`, `f(k, v) == true`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def forAll(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r = 
+        not exists(k -> v -> not f(k, v), t)
+    
+    ///
+    /// Returns `true` if and only if there exists `k => v` in `t` such that `f(k, v) == true`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def exists(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r = 
+        Node.exists(f, 0, Node.leftMostChild(t->root))
+
+    ///
+    /// Alias for `findLeft`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def find(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r = 
+        findLeft(f, t)
+
+    ///
+    /// Optionally returns the first mapping in `t` satisfying the function `f`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def findLeft(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r = 
+        Node.findLeft(f, 0, Node.leftMostChild(t->root)) 
+
+    ///
     /// Increments the stored size of `t`.
     ///
     /// Thread-safe.
@@ -580,6 +612,14 @@ mod BPlusTree {
             Lock.yieldBasedOn(Node.getLock(root));
             isEmpty(t)
         }
+
+    ///
+    /// Returns `true` if and only if `t` contains at least one mapping.
+    ///
+    /// Thread-safe.
+    ///
+    pub def nonEmpty(t: BPlusTree[k, v, r]): Bool \ r = 
+        not BPlusTree.isEmpty(t)
 
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
@@ -1026,6 +1066,54 @@ mod BPlusTree {
             let obj2 = unchecked_cast(o2 as JObject);
             // Unchecked cast is here used to remove the IO effect from interacting with Java.
             unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
+
+        ///
+        /// Optionally returns the first mapping satisfying the function `f` in `node` and 
+        /// to the right of `node`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def findLeft(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Option[(k, v)] \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v)) 
+                    Some((k, v))
+                else 
+                    findLeft(f, index + 1, node)
+            } else match node->next {
+                case None => None
+                case Some(next) => findLeft(f, 0, next)
+            }
+
+        ///
+        /// Returns `true` if and only if there exists mappings in `node` or to the right of `node`
+        /// satisfying `f`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def exists(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Bool \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v)) 
+                    true
+                else 
+                    exists(f, index + 1, node)
+            } else match node->next {
+                case None => false
+                case Some(next) => exists(f, 0, next)
+            }
 
         ///
         /// Provides access to the `lock` field of `node`.
