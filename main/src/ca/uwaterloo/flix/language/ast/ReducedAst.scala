@@ -34,11 +34,7 @@ object ReducedAst {
                   anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation]) {
-
-    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
-
-  }
+                  sources: Map[Source, SourceLocation])
 
   /**
     * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
