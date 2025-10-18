@@ -794,21 +794,6 @@ mod Array {
         loop(length(arr) - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i == length(arr))
-                z
-            else
-                f(get(i, arr), _ -> loop(i + 1))
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, arr: Array[a, r]): b \ { ef, r } with Monoid[b] =

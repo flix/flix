@@ -355,24 +355,6 @@ mod TestOption {
     def foldRight05(): Unit \ Assert = assertTrue(Option.foldRight((i, acc) -> if (i == 2 and acc) true else false, Some(2), true))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertFalse(Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, None, false))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertFalse(Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(1), false))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertFalse(Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(2), false))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = assertFalse(Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(1), true))
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert = assertTrue(Option.foldRightWithCont((i, k) -> if (i == 2 and k()) true else false, Some(2), true))
-
-    /////////////////////////////////////////////////////////////////////////////
     // sequence                                                                //
     /////////////////////////////////////////////////////////////////////////////
     @Test

@@ -880,6 +880,7 @@ object Inliner {
     */
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Var(_, _, _) => true
+    case Expr.Cast(exp, _, _, _) => isTrivial(exp)
     case exp => isCst(exp)
   }
 

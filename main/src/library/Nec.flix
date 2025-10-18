@@ -587,17 +587,6 @@ mod Nec {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x, _ -> checked_ecast(z))
-        case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with Monoid[b] =

@@ -810,46 +810,6 @@ mod TestMutDeque {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        assertEq(expected = 100, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.empty(rc)))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(1, d);
-        assertEq(expected = 198, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        let d = MutDeque.empty(rc);
-        MutDeque.pushFront(1, d);
-        assertEq(expected = 198, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        let d = MutDeque.empty(rc);
-        MutDeque.pushFront(1, d);
-        MutDeque.pushBack(2, d);
-        assertEq(expected = 194, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
-    }
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert = region rc {
-        let d = MutDeque.empty(rc);
-        MutDeque.pushBack(2, d);
-        MutDeque.pushBack(3, d);
-        MutDeque.pushFront(1, d);
-        assertEq(expected = 382, MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                       //
     /////////////////////////////////////////////////////////////////////////////
 

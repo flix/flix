@@ -1188,14 +1188,16 @@ object Parser2 {
       expect(TokenKind.KeywordStruct)
       nameUnqualified(NAME_TYPE)
       Type.parameters()
-      zeroOrMore(
-        namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-        getItem = structField,
-        checkForItem = token => NAME_FIELD.contains(token) || token.isModifier,
-        breakWhen = _.isRecoverInExpr,
-        delimiterL = TokenKind.CurlyL,
-        delimiterR = TokenKind.CurlyR
-      )
+      if (at(TokenKind.CurlyL)) {
+        zeroOrMore(
+          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+          getItem = structField,
+          checkForItem = token => NAME_FIELD.contains(token) || token.isModifier,
+          breakWhen = _.isRecoverInExpr,
+          delimiterL = TokenKind.CurlyL,
+          delimiterR = TokenKind.CurlyR
+        )
+      }
       close(mark, TreeKind.Decl.Struct)
     }
 

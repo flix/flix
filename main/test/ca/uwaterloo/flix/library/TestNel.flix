@@ -397,19 +397,6 @@ mod TestNel {
     def foldRight03(): Unit \ Assert = assertEq(expected = -6, Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = -1, Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, Nil)))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = -3, Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = -6, Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

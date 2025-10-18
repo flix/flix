@@ -2407,30 +2407,6 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        assertEq(expected = 100, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        assertEq(expected = 198, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        assertEq(expected = 194, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        assertEq(expected = 382, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2,3} @ rc))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

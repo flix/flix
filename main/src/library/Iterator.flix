@@ -193,16 +193,6 @@ mod Iterator {
     }
 
     ///
-    /// Returns the contents of `iter` as a MutList.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMutList(rc: Region[r1], iter: Iterator[a, ef, r2]): MutList[a, r1] \ { ef, r2, r1 } =
-        let l = MutList.empty(rc);
-        forEach(x -> MutList.push(x, l), iter);
-        l
-
-    ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
     ///
     pub def toSet(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] =
@@ -421,23 +411,6 @@ mod Iterator {
 
         };
         loop(x -> checked_ecast(x))
-
-    ///
-    /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, r }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, r } =
-        let Iterator(_, iterF) = iter;
-        def loop() = match iterF() {
-            case Skip   => loop()
-            case Ans(a) => f(a, _ -> loop())
-            case Done   => z
-        };
-        loop()
 
     ///
     /// Returns the result of mapping each element and combining the results.
