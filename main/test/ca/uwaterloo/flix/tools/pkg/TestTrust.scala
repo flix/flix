@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Formatter, Options}
+import ca.uwaterloo.flix.util.Formatter
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.PrintStream
@@ -13,15 +13,6 @@ import java.nio.file.Files
 class TestTrust extends AnyFunSuite {
   test("toString-ofString-plain") {
     val perm = Trust.Plain
-    val res = Trust.fromString(perm.toString) match {
-      case Some(r) => r
-      case None => fail()
-    }
-    assertResult(perm)(res)
-  }
-
-  test("toString-ofString-trust-javaclass") {
-    val perm = Trust.TrustJavaClass
     val res = Trust.fromString(perm.toString) match {
       case Some(r) => r
       case None => fail()

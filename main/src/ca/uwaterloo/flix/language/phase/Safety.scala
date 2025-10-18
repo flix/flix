@@ -242,13 +242,13 @@ object Safety {
     case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
       verifyUncheckedCast(cast)
       if (flix.options.checkTrust) {
-        checkCastPermissions(loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
     case Expr.Unsafe(exp, _, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkCastPermissions(loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
@@ -259,7 +259,7 @@ object Safety {
       visitExp(exp)
       rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
         if (flix.options.checkTrust) {
-          checkClassPermissions(clazz, loc.security, loc)
+          checkPermissions(loc.security, loc)
         }
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
@@ -267,7 +267,7 @@ object Safety {
 
     case Expr.Throw(exp, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkCastPermissions(loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp)
       checkThrow(exp)
@@ -283,52 +283,52 @@ object Safety {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.InvokeConstructor(constructor, args, _, _, loc) =>
+    case Expr.InvokeConstructor(_, args, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkConstructorPermissions(constructor, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       args.foreach(visitExp)
 
-    case Expr.InvokeMethod(method, exp, args, _, _, loc) =>
+    case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkMethodPermissions(method, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp)
       args.foreach(visitExp)
 
-    case Expr.InvokeStaticMethod(method, args, _, _, loc) =>
+    case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkMethodPermissions(method, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       args.foreach(visitExp)
 
-    case Expr.GetField(field, exp, _, _, loc) =>
+    case Expr.GetField(_, exp, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkFieldPermissions(field, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
-    case Expr.PutField(field, exp1, exp2, _, _, loc) =>
+    case Expr.PutField(_, exp1, exp2, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkFieldPermissions(field, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.GetStaticField(field, _, _, loc) =>
+    case Expr.GetStaticField(_, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkFieldPermissions(field, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
 
-    case Expr.PutStaticField(field, exp, _, _, loc) =>
+    case Expr.PutStaticField(_, exp, _, _, loc) =>
       if (flix.options.checkTrust) {
-        checkFieldPermissions(field, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, clazz, _, _, methods, loc) =>
+    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
       if (flix.options.checkTrust) {
-        checkClassPermissions(clazz, loc.security, loc)
+        checkPermissions(loc.security, loc)
       }
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
@@ -397,82 +397,11 @@ object Safety {
   }
 
   /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
-  private def checkCastPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    ctx match {
-      case SecurityContext.Plain | SecurityContext.TrustJavaClass => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.Unrestricted => ()
-    }
-  }
-
-  /** Emits an error if `ctx` is either
-    *   1. [[SecurityContext.Plain]]
-    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
-    *      for the package that `constructor` is a member of.
-    */
-  private def checkConstructorPermissions(constructor: reflect.Constructor[?], ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  private def checkPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
       case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.TrustJavaClass =>
-        if (!isAllowedJavaPackage(constructor.getDeclaringClass.getPackage)) {
-          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-        }
       case SecurityContext.Unrestricted => ()
     }
-  }
-
-  /** Emits an error if `ctx` is either
-    *   1. [[SecurityContext.Plain]]
-    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
-    *      for the package that `method` is a member of.
-    */
-  private def checkMethodPermissions(method: reflect.Method, ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    ctx match {
-      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.TrustJavaClass =>
-        if (!isAllowedJavaPackage(method.getDeclaringClass.getPackage)) {
-          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-        }
-      case SecurityContext.Unrestricted => ()
-    }
-  }
-
-  /** Emits an error if `ctx` is either
-    *   1. [[SecurityContext.Plain]]
-    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
-    *      for the package that `field` is a member of.
-    */
-  private def checkFieldPermissions(field: reflect.Field, ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    ctx match {
-      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.TrustJavaClass =>
-        if (!isAllowedJavaPackage(field.getDeclaringClass.getPackage)) {
-          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-        }
-      case SecurityContext.Unrestricted => ()
-    }
-  }
-
-  /** Emits an error if `ctx` is either
-    *   1. [[SecurityContext.Plain]]
-    *   1. [[SecurityContext.TrustJavaClass]] and [[isAllowedJavaPackage]] is `false`
-    *      for the package that `clazz` is a member of.
-    */
-  private def checkClassPermissions(clazz: Class[?], ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    ctx match {
-      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.TrustJavaClass =>
-        if (!isAllowedJavaPackage(clazz.getPackage)) {
-          sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-        }
-      case SecurityContext.Unrestricted => ()
-    }
-  }
-
-  /**
-    * Returns `true` if `pkg` is not null and a member of `java` or `javax`.
-    */
-  private def isAllowedJavaPackage(pkg: Package): Boolean = {
-    pkg != null && (pkg.getName.startsWith("java.") || pkg.getName.startsWith("javax."))
   }
 
   /** Checks if `cast` is legal. */
