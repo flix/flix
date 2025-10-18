@@ -3002,17 +3002,12 @@ object Weeder2 {
       expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
       // Visit first child and match its kind to know what to to
       val inner = unfold(tree)
-      inner.kind match {
-        case TreeKind.Type.Tuple =>
-          expect(inner, TreeKind.Type.Tuple)
-          mapN(traverse(pickAll(TreeKind.Type.Type, inner))(visitType)) {
-            case Nil => List(Type.Unit(inner.loc))
-            case types => types
-          }
-        case _ => visitType(tree) match {
-          case Success(t) => Success(List(t))
-          case Failure(errors) => Failure(errors)
-        }
+      val innerTypes = pickAll(TreeKind.Type.Type, inner)
+      mapN(traverse(innerTypes)(visitType)) {
+        case Nil =>
+          sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = inner.loc))
+          List(Type.Error(inner.loc))
+        case types => types
       }
     }
 

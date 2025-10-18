@@ -1876,4 +1876,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
+  test("EmptyEnumCaseType.01") {
+    val input =
+      """
+        |enum E {
+        |    case C()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
 }
