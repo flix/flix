@@ -16,11 +16,12 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymbolSet}
 import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 
-class SymbolSetSuite extends AnyFunSuite {
+class TestSymbolSet extends AnyFunSuite with TestUtils {
   def sameSymbolSet(s1: SymbolSet, s2: SymbolSet): Boolean = {
     s1.enums == s2.enums &&
       s1.structs == s2.structs &&
