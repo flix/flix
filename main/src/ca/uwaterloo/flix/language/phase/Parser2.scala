@@ -1643,7 +1643,7 @@ object Parser2 {
       close(mark, TreeKind.Operator)
     }
 
-    /** Returns the unary operator type of the current token if applicable. */
+    /** Returns the unary operator type of the current token, or `None` if the current token is not a unary operator. */
     private def peekUnaryOp(token: Token): Option[UnaryOp] = {
       token.kind match {
         case TokenKind.KeywordDiscard => Some(UnaryOp.Discard)
