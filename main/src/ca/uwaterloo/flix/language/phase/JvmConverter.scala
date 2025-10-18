@@ -20,18 +20,24 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{JvmAst, ReducedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object JvmConverter {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): JvmAst.Root = flix.phase("HowLowCanYouGo") {
+    val defs = ParOps.parMapValues(root.defs)(visitDef)
+    val enums = ParOps.parMapValues(root.enums)(visitEnum)
+    val structs = ParOps.parMapValues(root.structs)(visitStruct)
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
+    val anonClasses = root.anonClasses.map(visitAnonClass)
     JvmAst.Root(
-      MapOps.mapValues(root.defs)(visitDef),
-      MapOps.mapValues(root.enums)(visitEnum),
-      MapOps.mapValues(root.structs)(visitStruct),
-      MapOps.mapValues(root.effects)(visitEffect),
+      defs,
+      enums,
+      structs,
+      effects,
       root.types,
-      root.anonClasses.map(visitAnonClass),
+      anonClasses,
       root.mainEntryPoint,
       root.entryPoints,
       root.sources
