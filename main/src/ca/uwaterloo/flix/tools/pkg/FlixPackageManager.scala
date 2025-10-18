@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
-import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
@@ -35,8 +35,14 @@ object FlixPackageManager {
     */
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
-    implicit val parentsOf: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
+    implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
+    implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(manifest -> Trust.Unrestricted)
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
+      case Err(e) => Err(e)
+      case Ok(manifests) =>
+        val manifestTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m)))
+        traverse(manifestTrusts) { case (m, t) => checkTrust(m, t) }.map(_ => manifests)
+    }
   }
 
   /**
@@ -181,17 +187,35 @@ object FlixPackageManager {
     }
   }
 
-  private def checkTrust(origDep: FlixDependency, t: Trust, dep: Dependency): Result[Unit, PackageError] = dep match {
-    case FlixDependency(_, _, _, _, t1) if t.lessThanEq(t.lub(t1)) =>
-      Err(PackageError.TrustError(origDep, t))
+  private def minTrustLevel(dep: Manifest)(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
+    trustLevels.get(dep) match {
+      case Some(t) => t
+      case None =>
+        val trusts = immediateDependents(dep).map(minTrustLevel)
+        val glb = Trust.glb(trusts)
+        trustLevels.put(dep, glb)
+        glb
+    }
+  }
 
-    case Dependency.MavenDependency(_, _, _) if t.lessThanEq(Trust.TrustJavaClass) =>
-      Err(PackageError.TrustError(origDep, t))
-
-    case Dependency.JarDependency(_, _) if t.lessThanEq(Trust.TrustJavaClass) =>
-      Err(PackageError.TrustError(origDep, t))
-
-    case _ => Ok(())
+  private def checkTrust(m: Manifest, t: Trust): Result[Unit, PackageError] = {
+    val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
+    val trustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
+    Result.sequence(trustErrors).flatMap {
+      _ =>
+        t match {
+          case Trust.Plain =>
+            // No maven or jar deps allowed
+            Result.sequence(
+              m.dependencies.collect {
+                case d: MavenDependency => d
+                case d: JarDependency => d
+              }.map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
+            ).map(_ => ())
+          case Trust.TrustJavaClass => Ok(()) // Todo: remove
+          case Trust.Unrestricted => Ok(())
+        }
+    }
   }
 
   /**

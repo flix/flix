@@ -103,7 +103,7 @@ object PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class TrustError(origDep: Dependency.FlixDependency, trust: Trust) extends PackageError {
+  case class TrustError(origDep: Dependency, trust: Trust) extends PackageError {
 
     /**
       * Returns a human-readable and formatted string representation of this error.
