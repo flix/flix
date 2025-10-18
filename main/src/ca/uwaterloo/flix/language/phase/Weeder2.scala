@@ -396,16 +396,14 @@ object Weeder2 {
         pickDocumentation(tree),
         pickNameIdent(tree),
         Types.pickParameters(tree),
-        traverseOpt(shorthandTuple)(Types.visitCaseType(parseEmptyToUnit = false)),
+        traverseOpt(shorthandTuple)(Types.visitCaseType),
         traverse(cases)(visitEnumCase)
       ) {
         (doc, ident, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
-            case (Some(List(Type.Error(loc))), Nil) =>
-              val error = NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = loc)
-              sctx.errors.add(error)
-              // Fall back on no cases
+            case (Some(List(Type.Error(_))), Nil) =>
+              // Fall back on no cases. Whoever generated the error must have reported it.
               Validation.Success(List.empty)
             // Singleton enum
             case (Some(ts), cs) =>
@@ -432,7 +430,7 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitCaseType(parseEmptyToUnit = true)),
+        traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
@@ -456,16 +454,14 @@ object Weeder2 {
         pickNameIdent(tree),
         restrictionParam,
         Types.pickParameters(tree),
-        traverseOpt(shorthandTuple)(Types.visitCaseType(parseEmptyToUnit = false)),
+        traverseOpt(shorthandTuple)(Types.visitCaseType),
         traverse(cases)(visitRestrictableEnumCase)
       ) {
         (doc, ident, rParam, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
             // Illegal empty singleton enum (`enum A()`)
-            case (Some(List(Type.Error(loc))), Nil) =>
-              val error = NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = loc)
-              sctx.errors.add(error)
-              // Fall back on no cases
+            case (Some(List(Type.Error(_))), Nil) =>
+              // Fall back on no cases. Whoever generated the error must have reported it.
               Validation.Success(List.empty)
             // Singleton enum
             case (Some(ts), cs) =>
@@ -492,7 +488,7 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitCaseType(parseEmptyToUnit = true)),
+        traverseOpt(maybeType)(Types.visitCaseType),
         // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
@@ -3002,9 +2998,9 @@ object Weeder2 {
       *   - `Tuple(t) --> List(visitType(t))`
       *   - `t --> List(visitType(t))`
       */
-    def visitCaseType(parseEmptyToUnit: Boolean)(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
+    def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
-      // Visit first child and match its kind to know what to to
+      // Visit all types of the tuple
       val inner = unfold(tree)
       val innerTypes = pickAll(TreeKind.Type.Type, inner)
       mapN(traverse(innerTypes)(visitType)) {
