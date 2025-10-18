@@ -16,13 +16,14 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
-import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
+import scala.collection.mutable
 import scala.util.Using
 
 object FlixPackageManager {
@@ -34,7 +35,14 @@ object FlixPackageManager {
     */
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey)
+    implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
+    implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(manifest -> Trust.Unrestricted)
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
+      case Err(e) => Err(e)
+      case Ok(manifests) =>
+        val manifestTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m)))
+        traverse(manifestTrusts) { case (m, t) => checkTrust(m, t) }.map(_ => manifests)
+    }
   }
 
   /**
@@ -145,7 +153,7 @@ object FlixPackageManager {
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     // find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
@@ -156,12 +164,16 @@ object FlixPackageManager {
         install(depName, dep.version, "toml", path, apiKey)
       }
 
-      // parse the manifests
-      transManifests <- traverse(tomlPaths)(parseManifest)
+      // parse manifests
+      transitiveManifests <- traverse(tomlPaths)(parseManifest)
 
     } yield {
+      for (m <- transitiveManifests) {
+        immediateDependents.put(m, manifest :: immediateDependents.getOrElse(m, List.empty))
+      }
+
       // remove duplicates
-      val newManifests = transManifests.filter(!res.contains(_))
+      val newManifests = transitiveManifests.filter(!res.contains(_))
       var newRes = res ++ newManifests
 
       // do recursive calls for all dependencies
@@ -172,6 +184,37 @@ object FlixPackageManager {
         }
       }
       newRes
+    }
+  }
+
+  private def minTrustLevel(dep: Manifest)(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
+    trustLevels.get(dep) match {
+      case Some(t) => t
+      case None =>
+        val trusts = immediateDependents(dep).map(minTrustLevel)
+        val glb = Trust.glb(trusts)
+        trustLevels.put(dep, glb)
+        glb
+    }
+  }
+
+  private def checkTrust(m: Manifest, t: Trust): Result[Unit, PackageError] = {
+    val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
+    val trustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
+    Result.sequence(trustErrors).flatMap {
+      _ =>
+        t match {
+          case Trust.Plain =>
+            // No maven or jar deps allowed
+            Result.sequence(
+              m.dependencies.collect {
+                case d: MavenDependency => d
+                case d: JarDependency => d
+              }.map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
+            ).map(_ => ())
+          case Trust.TrustJavaClass => Ok(()) // Todo: remove
+          case Trust.Unrestricted => Ok(())
+        }
     }
   }
 
