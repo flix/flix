@@ -423,23 +423,6 @@ mod Iterator {
         loop(x -> checked_ecast(x))
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, r }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, r } =
-        let Iterator(_, iterF) = iter;
-        def loop() = match iterF() {
-            case Skip   => loop()
-            case Ans(a) => f(a, _ -> loop())
-            case Done   => z
-        };
-        loop()
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef2, iter: Iterator[a, ef1, r]): b \ { ef1, ef2, r } with Monoid[b] =

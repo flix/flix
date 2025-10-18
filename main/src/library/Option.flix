@@ -325,16 +325,6 @@ mod Option {
     }
 
     ///
-    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
-        case None    => z
-        case Some(v) => f(v, _ -> checked_ecast(z))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with Monoid[b] =

@@ -209,15 +209,6 @@ mod MutSet {
         Set.foldRight(f, z, s->inner)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in the mutable set `s` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, s: MutSet[a, r]): b \ { ef, r } =
-        Set.foldRightWithCont(f, z, s->inner)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, s: MutSet[a, r]): b \ {ef, r} with Monoid[b] =

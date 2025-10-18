@@ -896,22 +896,6 @@ mod TestChain {
     def foldRight04(): Unit \ Assert = assertEq(expected = 382, Chain.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = 100, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Chain.empty()))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = 198, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Chain.singleton(1)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = 194, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, List.toChain(1 :: 2 :: Nil)))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = assertEq(expected = 382, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

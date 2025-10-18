@@ -2012,26 +2012,6 @@ mod TestVector {
         assertEq(expected = 382, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-        assertEq(expected = 100, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-        assertEq(expected = 198, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-        assertEq(expected = 194, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-        assertEq(expected = 382, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

@@ -837,35 +837,6 @@ mod TestIterator {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, Nil);
-        assertEq(expected = 100, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, 1 :: Nil);
-        assertEq(expected = 198, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        assertEq(expected = 194, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        assertEq(expected = 382, Iterator.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, iter))
-    }
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

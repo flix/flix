@@ -502,22 +502,6 @@ mod MutList {
         loop(v->length - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from left to right.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, v: MutList[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i >= v->length)
-                z
-            else {
-                f(Array.get(i, v->values), _ -> loop(i + 1))
-            }
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, r} with Monoid[b] =

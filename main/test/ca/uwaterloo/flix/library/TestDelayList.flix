@@ -684,35 +684,6 @@ mod TestDelayList {
     	assertEq(expected = 1 :: 2 :: 3 :: Nil, DelayList.foldRight((x, acc) -> x :: acc, Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-    	assertEq(expected = 100, DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, ENil))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-    	assertEq(expected = 100, DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-    	assertEq(expected = 198, DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-    	assertEq(expected = 194, DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))))
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert =
-    	assertEq(expected = 382, DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))))
-
-    @Test
-    def foldRightWithCont06(): Unit \ Assert =
-    	assertEq(expected = 1 :: 2 :: 3 :: Nil, DelayList.foldRightWithCont((x, k) -> x :: k(), Nil, LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))))))
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
