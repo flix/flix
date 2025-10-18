@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
-import ca.uwaterloo.flix.language.ast.{LoweredMoreAst, ReducedAst}
+import ca.uwaterloo.flix.language.ast.{JvmAst, ReducedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.util.collection.MapOps
 
 object HowLowCanYouGo {
 
-  def run(root: ReducedAst.Root)(implicit flix: Flix): LoweredMoreAst.Root = flix.phase("HowLowCanYouGo") {
-    LoweredMoreAst.Root(
+  def run(root: ReducedAst.Root)(implicit flix: Flix): JvmAst.Root = flix.phase("HowLowCanYouGo") {
+    JvmAst.Root(
       MapOps.mapValues(root.defs)(visitDef),
       MapOps.mapValues(root.enums)(visitEnum),
       MapOps.mapValues(root.structs)(visitStruct),
@@ -38,8 +38,8 @@ object HowLowCanYouGo {
     )
   }(DebugNoOp())
 
-  private def visitDef(defn: ReducedAst.Def): LoweredMoreAst.Def = {
-    LoweredMoreAst.Def(
+  private def visitDef(defn: ReducedAst.Def): JvmAst.Def = {
+    JvmAst.Def(
       defn.ann,
       defn.mod,
       defn.sym,
@@ -54,8 +54,8 @@ object HowLowCanYouGo {
     )
   }
 
-  private def visitEnum(enm: ReducedAst.Enum): LoweredMoreAst.Enum = {
-    LoweredMoreAst.Enum(
+  private def visitEnum(enm: ReducedAst.Enum): JvmAst.Enum = {
+    JvmAst.Enum(
       enm.ann,
       enm.mod,
       enm.sym,
@@ -65,8 +65,8 @@ object HowLowCanYouGo {
     )
   }
 
-  private def visitStruct(struct: ReducedAst.Struct): LoweredMoreAst.Struct = {
-    LoweredMoreAst.Struct(
+  private def visitStruct(struct: ReducedAst.Struct): JvmAst.Struct = {
+    JvmAst.Struct(
       struct.ann,
       struct.mod,
       struct.sym,
@@ -76,8 +76,8 @@ object HowLowCanYouGo {
     )
   }
 
-  private def visitEffect(effect: ReducedAst.Effect): LoweredMoreAst.Effect = {
-    LoweredMoreAst.Effect(
+  private def visitEffect(effect: ReducedAst.Effect): JvmAst.Effect = {
+    JvmAst.Effect(
       effect.ann,
       effect.mod,
       effect.sym,
@@ -86,8 +86,8 @@ object HowLowCanYouGo {
     )
   }
 
-  private def visitAnonClass(anon: ReducedAst.AnonClass): LoweredMoreAst.AnonClass = {
-    LoweredMoreAst.AnonClass(
+  private def visitAnonClass(anon: ReducedAst.AnonClass): JvmAst.AnonClass = {
+    JvmAst.AnonClass(
       anon.name,
       anon.clazz,
       anon.tpe,
@@ -96,45 +96,45 @@ object HowLowCanYouGo {
     )
   }
 
-  private def visitUnboxedType(tpe: ReducedAst.UnboxedType): LoweredMoreAst.UnboxedType =
-    LoweredMoreAst.UnboxedType(
+  private def visitUnboxedType(tpe: ReducedAst.UnboxedType): JvmAst.UnboxedType =
+    JvmAst.UnboxedType(
       tpe.tpe
     )
 
-  private def visitFormalParam(fp: ReducedAst.FormalParam): LoweredMoreAst.FormalParam =
-    LoweredMoreAst.FormalParam(
+  private def visitFormalParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
+    JvmAst.FormalParam(
       fp.sym,
       fp.tpe
     )
 
-  private def visitLocalParam(lp: ReducedAst.LocalParam): LoweredMoreAst.LocalParam =
-    LoweredMoreAst.LocalParam(
+  private def visitLocalParam(lp: ReducedAst.LocalParam): JvmAst.LocalParam =
+    JvmAst.LocalParam(
       lp.sym,
       lp.tpe
     )
 
-  private def visitTypeParam(tp: ReducedAst.TypeParam): LoweredMoreAst.TypeParam =
-    LoweredMoreAst.TypeParam(
+  private def visitTypeParam(tp: ReducedAst.TypeParam): JvmAst.TypeParam =
+    JvmAst.TypeParam(
       tp.name,
       tp.sym
     )
 
-  private def visitStructField(field: ReducedAst.StructField): LoweredMoreAst.StructField =
-    LoweredMoreAst.StructField(
+  private def visitStructField(field: ReducedAst.StructField): JvmAst.StructField =
+    JvmAst.StructField(
       field.sym,
       field.tpe,
       field.loc
     )
 
-  private def visitCase(caze: ReducedAst.Case): LoweredMoreAst.Case =
-    LoweredMoreAst.Case(
+  private def visitCase(caze: ReducedAst.Case): JvmAst.Case =
+    JvmAst.Case(
       caze.sym,
       caze.tpes,
       caze.loc
     )
 
-  private def visitOp(op: ReducedAst.Op): LoweredMoreAst.Op =
-    LoweredMoreAst.Op(
+  private def visitOp(op: ReducedAst.Op): JvmAst.Op =
+    JvmAst.Op(
       op.sym,
       op.ann,
       op.mod,
@@ -144,8 +144,8 @@ object HowLowCanYouGo {
       op.loc
     )
 
-  private def visitJvmMethod(method: ReducedAst.JvmMethod): LoweredMoreAst.JvmMethod =
-    LoweredMoreAst.JvmMethod(
+  private def visitJvmMethod(method: ReducedAst.JvmMethod): JvmAst.JvmMethod =
+    JvmAst.JvmMethod(
       method.ident,
       method.fparams.map(visitFormalParam),
       visitExpr(method.exp),
@@ -154,67 +154,67 @@ object HowLowCanYouGo {
       method.loc
     )
 
-  private def visitExpr(expr: ReducedAst.Expr): LoweredMoreAst.Expr = expr match {
+  private def visitExpr(expr: ReducedAst.Expr): JvmAst.Expr = expr match {
     case Expr.Cst(cst, loc) =>
-      LoweredMoreAst.Expr.Cst(cst, loc)
+      JvmAst.Expr.Cst(cst, loc)
     case Expr.Var(sym, tpe, loc) =>
-      LoweredMoreAst.Expr.Var(sym, tpe, loc)
+      JvmAst.Expr.Var(sym, tpe, loc)
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      LoweredMoreAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
+      JvmAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
     case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
-      LoweredMoreAst.Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
+      JvmAst.Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      LoweredMoreAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
+      JvmAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
     case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      LoweredMoreAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
+      JvmAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
     case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val as = actuals.map(visitExpr)
-      LoweredMoreAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
+      JvmAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
       val e3 = visitExpr(exp3)
-      LoweredMoreAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      JvmAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val bs = MapOps.mapValues(branches)(visitExpr)
-      LoweredMoreAst.Expr.Branch(e, bs, tpe, purity, loc)
+      JvmAst.Expr.Branch(e, bs, tpe, purity, loc)
     case Expr.JumpTo(sym, tpe, purity, loc) =>
-      LoweredMoreAst.Expr.JumpTo(sym, tpe, purity, loc)
+      JvmAst.Expr.JumpTo(sym, tpe, purity, loc)
     case Expr.Let(sym, exp1, exp2, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
-      LoweredMoreAst.Expr.Let(sym, e1, e2, loc)
+      JvmAst.Expr.Let(sym, e1, e2, loc)
     case Expr.Stmt(exp1, exp2, loc) =>
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
-      LoweredMoreAst.Expr.Stmt(e1, e2, loc)
+      JvmAst.Expr.Stmt(e1, e2, loc)
     case Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
-      LoweredMoreAst.Expr.Region(sym, e, tpe, purity, loc)
+      JvmAst.Expr.Region(sym, e, tpe, purity, loc)
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rs = rules.map(visitCatchRule)
-      LoweredMoreAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+      JvmAst.Expr.TryCatch(e, rs, tpe, purity, loc)
     case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val e = visitExpr(exp)
       val rs = rules.map(visitHandlerRule)
-      LoweredMoreAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
+      JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
-      LoweredMoreAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
+      JvmAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
   }
 
-  private def visitCatchRule(rule: ReducedAst.CatchRule): LoweredMoreAst.CatchRule =
-    LoweredMoreAst.CatchRule(rule.sym, rule.clazz, visitExpr(rule.exp))
+  private def visitCatchRule(rule: ReducedAst.CatchRule): JvmAst.CatchRule =
+    JvmAst.CatchRule(rule.sym, rule.clazz, visitExpr(rule.exp))
 
-  private def visitHandlerRule(rule: ReducedAst.HandlerRule): LoweredMoreAst.HandlerRule =
-    LoweredMoreAst.HandlerRule(
+  private def visitHandlerRule(rule: ReducedAst.HandlerRule): JvmAst.HandlerRule =
+    JvmAst.HandlerRule(
       rule.op,
       rule.fparams.map(visitFormalParam),
       visitExpr(rule.exp)

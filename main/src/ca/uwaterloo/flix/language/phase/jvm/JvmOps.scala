@@ -17,8 +17,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.LoweredMoreAst.*
-import ca.uwaterloo.flix.language.ast.{SimpleType, LoweredMoreAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.JvmAst.*
+import ca.uwaterloo.flix.language.ast.{SimpleType, JvmAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -164,7 +164,7 @@ object JvmOps {
   /**
     * Returns the set of erased tag types in `types` without searching recursively.
     */
-  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: LoweredMoreAst.Root): Set[BackendObjType.TagType] =
+  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: JvmAst.Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
       case (acc0, SimpleType.Enum(sym, targs)) =>
         val tags = instantiateEnum(root.enums(sym), targs)
@@ -183,7 +183,7 @@ object JvmOps {
     *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
     *     for `enum E[t] { case A(t, Object) case B(Int32) }`
     */
-  def instantiateEnum(enm: LoweredMoreAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
+  def instantiateEnum(enm: JvmAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
     val map = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
     enm.cases.map {
       case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))
