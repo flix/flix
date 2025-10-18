@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{JvmAst, ReducedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
 import ca.uwaterloo.flix.util.ParOps
@@ -45,59 +44,70 @@ object JvmConverter {
   }(DebugNoOp())
 
   private def visitDef(defn: ReducedAst.Def): JvmAst.Def = {
+    val cparams = defn.cparams.map(visitFormalParam)
+    val fparams = defn.fparams.map(visitFormalParam)
+    val lparams = defn.lparams.map(visitLocalParam)
+    val exp = visitExp(defn.expr)
+    val unboxedType = visitUnboxedType(defn.unboxedType)
     JvmAst.Def(
       defn.ann,
       defn.mod,
       defn.sym,
-      defn.cparams.map(visitFormalParam),
-      defn.fparams.map(visitFormalParam),
-      defn.lparams.map(visitLocalParam),
+      cparams,
+      fparams,
+      lparams,
       defn.pcPoints,
-      visitExpr(defn.expr),
+      exp,
       defn.tpe,
-      visitUnboxedType(defn.unboxedType),
+      unboxedType,
       defn.loc
     )
   }
 
   private def visitEnum(enm: ReducedAst.Enum): JvmAst.Enum = {
+    val tparams = enm.tparams.map(visitTypeParam)
+    val cases = MapOps.mapValues(enm.cases)(visitCase)
     JvmAst.Enum(
       enm.ann,
       enm.mod,
       enm.sym,
-      enm.tparams.map(visitTypeParam),
-      MapOps.mapValues(enm.cases)(visitCase),
+      tparams,
+      cases,
       enm.loc
     )
   }
 
   private def visitStruct(struct: ReducedAst.Struct): JvmAst.Struct = {
+    val tparams = struct.tparams.map(visitTypeParam)
+    val fields = struct.fields.map(visitStructField)
     JvmAst.Struct(
       struct.ann,
       struct.mod,
       struct.sym,
-      struct.tparams.map(visitTypeParam),
-      struct.fields.map(visitStructField),
+      tparams,
+      fields,
       struct.loc
     )
   }
 
   private def visitEffect(effect: ReducedAst.Effect): JvmAst.Effect = {
+    val ops = effect.ops.map(visitOp)
     JvmAst.Effect(
       effect.ann,
       effect.mod,
       effect.sym,
-      effect.ops.map(visitOp),
+      ops,
       effect.loc
     )
   }
 
   private def visitAnonClass(anon: ReducedAst.AnonClass): JvmAst.AnonClass = {
+    val methods = anon.methods.map(visitJvmMethod)
     JvmAst.AnonClass(
       anon.name,
       anon.clazz,
       anon.tpe,
-      anon.methods.map(visitJvmMethod),
+      methods,
       anon.loc
     )
   }
@@ -139,90 +149,98 @@ object JvmConverter {
       caze.loc
     )
 
-  private def visitOp(op: ReducedAst.Op): JvmAst.Op =
+  private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
+    val fparams = op.fparams.map(visitFormalParam)
     JvmAst.Op(
       op.sym,
       op.ann,
       op.mod,
-      op.fparams.map(visitFormalParam),
+      fparams,
       op.tpe,
       op.purity,
       op.loc
     )
+  }
 
-  private def visitJvmMethod(method: ReducedAst.JvmMethod): JvmAst.JvmMethod =
+  private def visitJvmMethod(method: ReducedAst.JvmMethod): JvmAst.JvmMethod = {
+    val fparams = method.fparams.map(visitFormalParam)
+    val exp = visitExp(method.exp)
     JvmAst.JvmMethod(
       method.ident,
-      method.fparams.map(visitFormalParam),
-      visitExpr(method.exp),
+      fparams,
+      exp,
       method.tpe,
       method.purity,
       method.loc
     )
+  }
 
-  private def visitExpr(expr: ReducedAst.Expr): JvmAst.Expr = expr match {
-    case Expr.Cst(cst, loc) =>
-      JvmAst.Expr.Cst(cst, loc)
-    case Expr.Var(sym, tpe, loc) =>
-      JvmAst.Expr.Var(sym, tpe, loc)
-    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExpr)
-      JvmAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
-    case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      JvmAst.Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
-    case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      val es = exps.map(visitExpr)
-      JvmAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
-    case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExpr)
-      JvmAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
-    case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      val as = actuals.map(visitExpr)
-      JvmAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      val e3 = visitExpr(exp3)
-      JvmAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
-    case Expr.Branch(exp, branches, tpe, purity, loc) =>
-      val e = visitExpr(exp)
-      val bs = MapOps.mapValues(branches)(visitExpr)
-      JvmAst.Expr.Branch(e, bs, tpe, purity, loc)
-    case Expr.JumpTo(sym, tpe, purity, loc) =>
-      JvmAst.Expr.JumpTo(sym, tpe, purity, loc)
-    case Expr.Let(sym, exp1, exp2, loc) =>
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      JvmAst.Expr.Let(sym, e1, e2, loc)
-    case Expr.Stmt(exp1, exp2, loc) =>
-      val e1 = visitExpr(exp1)
-      val e2 = visitExpr(exp2)
-      JvmAst.Expr.Stmt(e1, e2, loc)
-    case Expr.Region(sym, exp, tpe, purity, loc) =>
-      val e = visitExpr(exp)
-      JvmAst.Expr.Region(sym, e, tpe, purity, loc)
-    case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+  private def visitExp(exp0: ReducedAst.Expr): JvmAst.Exp = exp0 match {
+    case ReducedAst.Expr.Cst(cst, loc) =>
+      JvmAst.Exp.Cst(cst, loc)
+    case ReducedAst.Expr.Var(sym, tpe, loc) =>
+      JvmAst.Exp.Var(sym, tpe, loc)
+    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      JvmAst.Exp.ApplyAtomic(op, es, tpe, purity, loc)
+    case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      JvmAst.Exp.ApplyClo(e1, e2, ct, tpe, purity, loc)
+    case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      JvmAst.Exp.ApplyDef(sym, es, ct, tpe, purity, loc)
+    case ReducedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp)
+      JvmAst.Exp.ApplyOp(sym, es, tpe, purity, loc)
+    case ReducedAst.Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
+      val as = actuals.map(visitExp)
+      JvmAst.Exp.ApplySelfTail(sym, as, tpe, purity, loc)
+    case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      JvmAst.Exp.IfThenElse(e1, e2, e3, tpe, purity, loc)
+    case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      val bs = MapOps.mapValues(branches)(visitExp)
+      JvmAst.Exp.Branch(e, bs, tpe, purity, loc)
+    case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
+      JvmAst.Exp.JumpTo(sym, tpe, purity, loc)
+    case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      JvmAst.Exp.Let(sym, e1, e2, loc)
+    case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      JvmAst.Exp.Stmt(e1, e2, loc)
+    case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
+      val e = visitExp(exp)
+      JvmAst.Exp.Region(sym, e, tpe, purity, loc)
+    case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+      val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
-      JvmAst.Expr.TryCatch(e, rs, tpe, purity, loc)
-    case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      JvmAst.Exp.TryCatch(e, rs, tpe, purity, loc)
+    case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val e = visitExp(exp)
       val rs = rules.map(visitHandlerRule)
-      JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
-    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      JvmAst.Exp.RunWith(e, effUse, rs, ct, tpe, purity, loc)
+    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
-      JvmAst.Expr.NewObject(name, clazz, tpe, purity, ms, loc)
+      JvmAst.Exp.NewObject(name, clazz, tpe, purity, ms, loc)
   }
 
   private def visitCatchRule(rule: ReducedAst.CatchRule): JvmAst.CatchRule =
-    JvmAst.CatchRule(rule.sym, rule.clazz, visitExpr(rule.exp))
+    JvmAst.CatchRule(rule.sym, rule.clazz, visitExp(rule.exp))
 
-  private def visitHandlerRule(rule: ReducedAst.HandlerRule): JvmAst.HandlerRule =
+  private def visitHandlerRule(rule: ReducedAst.HandlerRule): JvmAst.HandlerRule = {
+    val fparams = rule.fparams.map(visitFormalParam)
+    val exp = visitExp(rule.exp)
     JvmAst.HandlerRule(
       rule.op,
-      rule.fparams.map(visitFormalParam),
-      visitExpr(rule.exp)
+      fparams,
+      exp
     )
+  }
 }
