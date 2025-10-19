@@ -755,13 +755,6 @@ mod DelayMap {
         Map.Map(RedBlackTree.mapWithKey((_, v) -> force v, t))
 
     ///
-    /// Returns `m` as a mutable map.
-    ///
-    @Experimental @Parallel
-    pub def toMutMap(rc: Region[r], m: DelayMap[k, v]): MutMap[k, v, r] \ r =
-        new MutMap @ rc { rc = rc, inner = toMap(m) }
-
-    ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
     @Experimental

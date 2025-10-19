@@ -248,14 +248,6 @@ pub trait Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
-    /// Returns `t` as a `MutMap`.
-    ///
-    pub def toMutMap(rc: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ (r + Foldable.Aef[t]) with Order[k] =
-        let m = MutMap.empty(rc);
-        Foldable.forEach(x -> let (k, v) = x; MutMap.put(k, v, m), t);
-        m
-
-    ///
     /// Optionally returns `t` as a non empty chain.
     ///
     pub def toNec(t: t[a]): Option[Nec[a]] \ Foldable.Aef[t] =

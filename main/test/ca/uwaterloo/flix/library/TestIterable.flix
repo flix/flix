@@ -177,7 +177,8 @@ mod TestIterable {
 
     @Test
     def iterableMutMap02(): Unit \ Assert = region rc {
-        let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toMutMap(rc);
+        let m = MutMap.empty(rc);
+        Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'});
         assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, m) |> Iterator.toList)
     }
 
