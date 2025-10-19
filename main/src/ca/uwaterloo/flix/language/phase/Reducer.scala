@@ -16,9 +16,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
-import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.ast.{Purity, ReducedAst, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.ParOps
 
@@ -38,7 +37,7 @@ import scala.jdk.CollectionConverters.*
   */
 object Reducer {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer") {
+  def run(root: ReducedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentHashMap())
 
     val newDefs = ParOps.parMapValues(root.defs)(visitDef(_)(root, ctx))
@@ -54,8 +53,8 @@ object Reducer {
     root.copy(defs = newDefs, anonClasses = ctx.anonClasses.asScala.toList, types = types)
   }
 
-  private def visitDef(d: Def)(implicit root: Root, ctx: SharedContext): Def = d match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
+  private def visitDef(d: ReducedAst.Def)(implicit root: ReducedAst.Root, ctx: SharedContext): ReducedAst.Def = d match {
+    case ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, _, exp, tpe, unboxedType, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
 
@@ -72,7 +71,7 @@ object Reducer {
 
       // Compute the types in the captured formal parameters.
       val cParamTypes = cparams.foldLeft(Set.empty[SimpleType]) {
-        case (sacc, FormalParam(_, paramTpe)) => sacc + paramTpe
+        case (sacc, ReducedAst.FormalParam(_, paramTpe)) => sacc + paramTpe
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
@@ -80,104 +79,104 @@ object Reducer {
       ctx.defTypes.put(unboxedType.tpe, ())
       cParamTypes.foreach(t => ctx.defTypes.put(t, ()))
 
-      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
+      ReducedAst.Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
-  private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
+  private def visitExpr(exp0: ReducedAst.Expr)(implicit lctx: LocalContext, root: ReducedAst.Root, ctx: SharedContext): ReducedAst.Expr = {
     ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
-      case Expr.Cst(cst, loc) =>
-        Expr.Cst(cst, loc)
+      case ReducedAst.Expr.Cst(cst, loc) =>
+        ReducedAst.Expr.Cst(cst, loc)
 
-      case Expr.Var(sym, tpe, loc) =>
-        Expr.Var(sym, tpe, loc)
+      case ReducedAst.Expr.Var(sym, tpe, loc) =>
+        ReducedAst.Expr.Var(sym, tpe, loc)
 
-      case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
-        Expr.ApplyAtomic(op, es, tpe, purity, loc)
+        ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-      case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
+      case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.addPcPoint()
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
+        ReducedAst.Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
-      case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         val defn = root.defs(sym)
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.addPcPoint()
         val es = exps.map(visitExpr)
-        Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
+        ReducedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-      case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      case ReducedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
         lctx.addPcPoint()
         val es = exps.map(visitExpr)
-        Expr.ApplyOp(sym, es, tpe, purity, loc)
+        ReducedAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
 
-      case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
+      case ReducedAst.Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
-        Expr.ApplySelfTail(sym, es, tpe, purity, loc)
+        ReducedAst.Expr.ApplySelfTail(sym, es, tpe, purity, loc)
 
-      case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
         val e3 = visitExpr(exp3)
-        Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+        ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-      case Expr.Branch(exp, branches, tpe, purity, loc) =>
+      case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
         val e = visitExpr(exp)
         val bs = branches map {
           case (label, body) => label -> visitExpr(body)
         }
-        Expr.Branch(e, bs, tpe, purity, loc)
+        ReducedAst.Expr.Branch(e, bs, tpe, purity, loc)
 
-      case Expr.JumpTo(sym, tpe, purity, loc) =>
-        Expr.JumpTo(sym, tpe, purity, loc)
+      case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
+        ReducedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
-      case Expr.Let(sym, exp1, exp2, loc) =>
-        lctx.lparams.addOne(LocalParam(sym, exp1.tpe))
+      case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
+        lctx.lparams.addOne(ReducedAst.LocalParam(sym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.Let(sym, e1, e2, loc)
+        ReducedAst.Expr.Let(sym, e1, e2, loc)
 
-      case Expr.Stmt(exp1, exp2, loc) =>
+      case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        Expr.Stmt(e1, e2, loc)
+        ReducedAst.Expr.Stmt(e1, e2, loc)
 
-      case Expr.Region(sym, exp, tpe, purity, loc) =>
-        lctx.lparams.addOne(LocalParam(sym, SimpleType.Region))
+      case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
+        lctx.lparams.addOne(ReducedAst.LocalParam(sym, SimpleType.Region))
         val e = visitExpr(exp)
-        Expr.Region(sym, e, tpe, purity, loc)
+        ReducedAst.Expr.Region(sym, e, tpe, purity, loc)
 
-      case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+      case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExpr(exp)
         val rs = rules map {
-          case CatchRule(sym, clazz, body) =>
-            lctx.lparams.addOne(LocalParam(sym, SimpleType.Object))
+          case ReducedAst.CatchRule(sym, clazz, body) =>
+            lctx.lparams.addOne(ReducedAst.LocalParam(sym, SimpleType.Object))
             val b = visitExpr(body)
-            CatchRule(sym, clazz, b)
+            ReducedAst.CatchRule(sym, clazz, b)
         }
-        Expr.TryCatch(e, rs, tpe, purity, loc)
+        ReducedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
-      case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail) lctx.addPcPoint()
         val e = visitExpr(exp)
         val rs = rules.map {
-          case HandlerRule(op, fparams, body) =>
+          case ReducedAst.HandlerRule(op, fparams, body) =>
             val b = visitExpr(body)
-            HandlerRule(op, fparams, b)
+            ReducedAst.HandlerRule(op, fparams, b)
         }
-        Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
+        ReducedAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
-      case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {
-          case JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
+          case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmMethod(ident, fparams, c, retTpe, methPurity, methLoc)
+            ReducedAst.JvmMethod(ident, fparams, c, retTpe, methPurity, methLoc)
         }
-        ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))
+        ctx.anonClasses.add(ReducedAst.AnonClass(name, clazz, tpe, specs, loc))
 
-        Expr.NewObject(name, clazz, tpe, purity, specs, loc)
+        ReducedAst.Expr.NewObject(name, clazz, tpe, purity, specs, loc)
 
     }
   }
@@ -194,7 +193,7 @@ object Reducer {
     *
     * @param lparams the bound variables in the def.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam], private var pcPoints: Int, private val isControlImpure: Boolean) {
+  private case class LocalContext(lparams: mutable.ArrayBuffer[ReducedAst.LocalParam], private var pcPoints: Int, private val isControlImpure: Boolean) {
 
     /**
       * Adds n to the private [[pcPoints]] field.
@@ -216,19 +215,19 @@ object Reducer {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap[SimpleType, Unit])
+  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[ReducedAst.AnonClass], defTypes: ConcurrentHashMap[SimpleType, Unit])
 
   /**
     * Returns all types contained in the given `Effect`.
     */
-  private def typesOfEffect(e: Effect): Set[SimpleType] = {
+  private def typesOfEffect(e: ReducedAst.Effect): Set[SimpleType] = {
     e.ops.toSet.map(extractFunctionType)
   }
 
   /**
     * Returns the function type based `op` represents.
     */
-  private def extractFunctionType(op: Op): SimpleType = {
+  private def extractFunctionType(op: ReducedAst.Op): SimpleType = {
     val paramTypes = op.fparams.map(_.tpe)
     val resType = op.tpe
     val continuationType = SimpleType.Object
