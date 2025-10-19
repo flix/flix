@@ -17,7 +17,7 @@ mod TestMutList {
     ///
     def fromList(rc: Region[r], l: List[a]): MutList[a, r] \ r =
         let ml = MutList.empty(rc);
-        List.forEach(x -> MutList.push(x, ml), l);
+        MutList.pushAll(l, ml);
         ml
 
     /////////////////////////////////////////////////////////////////////////////
