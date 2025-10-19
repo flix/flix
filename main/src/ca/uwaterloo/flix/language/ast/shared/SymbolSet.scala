@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.ast.shared
 
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.ast.shared.QualifiedSym
+
 object SymbolSet {
 
   /**
@@ -44,11 +45,15 @@ object SymbolSet {
         case _ => SymbolSet.empty
       }
     }
-    (tpe.typeConstructors map getSymbolsWithin).foldLeft(empty) { _ ++ _ }
+
+    (tpe.typeConstructors map getSymbolsWithin).foldLeft(empty) {
+      _ ++ _
+    }
   }
 
   /**
     * Return a symbol set containing all the symbols in `s1` ambiguous w.r.t `s2`.
+    *
     * @param s1 The first symbol set
     * @param s2 The second symbol set
     * @return All the symbols that are in `s1` such that a symbol in `s2` has the same base name but a different namespace
@@ -74,24 +79,65 @@ object SymbolSet {
   private def isAmbiguous(sym1: QualifiedSym, sym2: QualifiedSym): Boolean = {
     sym1.name == sym2.name && sym1.namespace != sym2.namespace
   }
+
+  /**
+    * Returns a symbol set containing all the symbols in `tpe1` ambiguous w.r.t `tpe2`.
+    *
+    * @param tpe1 The first type
+    * @param tpe2 The second type
+    * @return All the symbols that are in `tpe1` such that a symbol in `tpe2` has the same base name but a different namespace
+    */
+  def ambiguities(tpe1: Type, tpe2: Type): SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(tpe1), SymbolSet.symbolsOf(tpe2))
+
+  /**
+    * Returns the full name of a qualified symbol.
+    *
+    * @param sym The qualified symbol
+    * @return The full name of the symbol, including its namespace if it has one
+    */
+  def fullNameOf(sym: QualifiedSym): String = {
+    if (sym.namespace.isEmpty) {
+      sym.name
+    } else sym.namespace.mkString(".") + "." + sym.name
+  }
 }
 
+/**
+  * A set of symbols, used for disambiguating names
+  */
 case class SymbolSet(
-                    enums: Set[Symbol.EnumSym],
-                    structs: Set[Symbol.StructSym],
-                    traits: Set[Symbol.TraitSym],
-                    effects: Set[Symbol.EffSym],
+                      enums: Set[Symbol.EnumSym],
+                      structs: Set[Symbol.StructSym],
+                      traits: Set[Symbol.TraitSym],
+                      effects: Set[Symbol.EffSym],
                     ) {
 
   /**
     * Returns the union of `this` and `that`
     */
-  def ++(that : SymbolSet): SymbolSet = {
+  def ++(that: SymbolSet): SymbolSet = {
     SymbolSet(
       enums ++ that.enums,
       structs ++ that.structs,
       traits ++ that.traits,
       effects ++ that.effects,
     )
+  }
+
+  def allSymbols: Set[QualifiedSym] = {
+    enums ++ structs ++ traits ++ effects
+  }
+
+  /**
+    * Returns the symbol as a string if it is in the set, otherwise returns just the head.
+    */
+  def qualify(sym: QualifiedSym): String = {
+    if (allSymbols.contains(sym)) {
+      if (sym.namespace.isEmpty) {
+        sym.name
+      } else sym.namespace.mkString(".") + "." + sym.name
+    } else {
+      sym.name
+    }
   }
 }

@@ -587,17 +587,6 @@ mod Nec {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x, _ -> checked_ecast(z))
-        case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with Monoid[b] =
@@ -756,13 +745,6 @@ mod Nec {
     ///
     pub def toList(c: Nec[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, c)
-
-    ///
-    /// Returns `c` as a mutable list.
-    ///
-    pub def toMutList(rc1: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc1, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
-    }
 
     ///
     /// Returns the list `c` as a set.

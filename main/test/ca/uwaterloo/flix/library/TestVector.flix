@@ -2012,26 +2012,6 @@ mod TestVector {
         assertEq(expected = 382, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-        assertEq(expected = 100, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-        assertEq(expected = 198, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-        assertEq(expected = 194, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-        assertEq(expected = 382, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -4380,54 +4360,6 @@ mod TestVector {
         let s = Vector.joinWith(Int32.toString, "..", v);
         assertEq(expected = "1..2..3", s)
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        MutList.push(2, l);
-        MutList.push(3, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4}))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{}))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

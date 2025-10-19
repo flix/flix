@@ -201,41 +201,6 @@ mod TestReducible {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-        assertEq(expected = "a", Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", Nil)))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-        assertEq(expected = "ab", Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: Nil)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-        assertEq(expected = "abc", Reducible.foldRightWithCont((a, k) -> a + k(), "", Nel.Nel("a", "b" :: "c" :: Nil)))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-        assertEq(expected = 198, Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)))
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert =
-        assertEq(expected = 194, Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)))
-
-    @Test
-    def foldRightWithCont06(): Unit \ Assert =
-        assertEq(expected = 382, Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)))
-
-    @Test
-    def foldRightWithCont07(): Unit \ Assert = region rc {
-        let l = Ref.fresh(rc, Nil);
-        discard Reducible.foldRightWithCont((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        assertEq(expected = 1 :: 2 :: 3 :: Nil, Ref.get(l))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
