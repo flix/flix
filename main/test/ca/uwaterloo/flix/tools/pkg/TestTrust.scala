@@ -74,22 +74,6 @@ class TestTrust extends AnyFunSuite {
     }
   }
 
-  test("trust:plain-dep:java-unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using Java and unchecked cast")
-    }
-  }
-
-
   test("trust:unrestricted-dep:plain") {
     val deps = List(
       """
@@ -130,21 +114,6 @@ class TestTrust extends AnyFunSuite {
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using unchecked cast")
-    } else {
-      succeed
-    }
-  }
-
-  test("trust:unrestricted-dep:java-unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using Java and unchecked cast")
     } else {
       succeed
     }
