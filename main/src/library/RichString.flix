@@ -179,11 +179,11 @@ mod RichString {
         pub def format(x: Map[k, v]): RichString =
             let pairs = Map.toList(x);
             let entries = joinWith(
-                match (k, v) -> gray(Formattable.format(k)) + text(" => ") + Formattable.format(v),
+                match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
                 text(", "),
                 pairs
             );
-            text("Map#{") + entries + text("}")
+            gray("Map#{") + entries + gray("}")
     }
 
     ///
