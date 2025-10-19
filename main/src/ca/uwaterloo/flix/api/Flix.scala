@@ -208,7 +208,7 @@ class Flix {
     "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
     "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
-    "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
+    "Env.flix" -> LocalResource.get("/src/library/Env.flix"),
 
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
     "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-eff Environment {
+eff Env {
 
     ///
     /// Returns the arguments passed to the program via the command line.
@@ -94,7 +94,7 @@ eff Environment {
 
 }
 
-mod Environment {
+mod Env {
 
     import dev.flix.runtime.Global
     import java.lang.Exception
@@ -107,14 +107,14 @@ mod Environment {
     import java.util.{Map$Entry => Entry}
 
     ///
-    /// Handles the `Environment` effect of the given function `f`.
+    /// Handles the `Env` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Environment` effect using the `IO` effect.
+    /// In other words, re-interprets the `Env` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> b \ (ef - Environment) + IO = x ->
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Env) + IO = x ->
         run {
             f(x)
-        } with handler Environment {
+        } with handler Env {
             def getArgs(k) =
                 k(unsafe Array.toList(Global.getArgs()))
 
@@ -162,11 +162,11 @@ mod Environment {
         }
 
     ///
-    /// Runs the `Environment` effect of the given function `f`.
+    /// Runs the `Env` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Environment` effect using the `IO` effect.
+    /// In other words, re-interprets the `Env` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Environment) + IO = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Env) + IO = handle(f)()
 
     def getPropHelper(name: String): Option[String] \ IO =
             try {
