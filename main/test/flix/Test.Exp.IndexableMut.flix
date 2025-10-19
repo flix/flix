@@ -119,7 +119,7 @@ mod Test.Exp.IndexableMut {
     def mutMap01(): Bool = region rc {
         run {
             let m = MutMap.empty(rc);
-            Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4});
+            MutMap.putAll(List#{(0, 1), (1, 2), (2, 3), (3, 4)}, m);
             m[0] = -1;
             m[0] == -1
         } with handler KeyNotFound {
@@ -131,7 +131,7 @@ mod Test.Exp.IndexableMut {
     def mutMap02(): Bool = region rc {
         run {
             let m = MutMap.empty(rc);
-            Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4});
+            MutMap.putAll(List#{(0, 1), (1, 2), (2, 3), (3, 4)}, m);
             m[1] = 42;
             m[1] == 42
         } with handler KeyNotFound {
@@ -143,7 +143,7 @@ mod Test.Exp.IndexableMut {
     def mutMap03(): Bool = region rc {
         run {
             let m = MutMap.empty(rc);
-            Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4});
+            MutMap.putAll(List#{(0, 1), (1, 2), (2, 3), (3, 4)}, m);
             m[2] = 200;
             m[2] == 200
         } with handler KeyNotFound {
@@ -155,7 +155,7 @@ mod Test.Exp.IndexableMut {
     def mutMap04(): Bool = region rc {
         run {
             let m = MutMap.empty(rc);
-            Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4});
+            MutMap.putAll(List#{(0, 1), (1, 2), (2, 3), (3, 4)}, m);
             m[3] = 1234;
             m[3] == 1234
         } with handler KeyNotFound {
@@ -167,7 +167,7 @@ mod Test.Exp.IndexableMut {
     def mutMap05(): Bool = region rc {
         run {
             let m = MutMap.empty(rc);
-            Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4});
+            MutMap.putAll(List#{(0, 1), (1, 2), (2, 3), (3, 4)}, m);
             m[4] = -1;
             m[4] == -1
         } with handler KeyNotFound {
@@ -179,7 +179,7 @@ mod Test.Exp.IndexableMut {
     def mutMap06(): Bool = region rc {
         run {
             let m = MutMap.empty(rc);
-            Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{0 => 1, 1 => 2, 2 => 3, 3 => 4});
+            MutMap.putAll(List#{(0, 1), (1, 2), (2, 3), (3, 4)}, m);
             m[-1] = -1;
             m[-1] == -1
         } with handler KeyNotFound {
