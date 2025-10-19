@@ -80,6 +80,10 @@ mod RichString {
         pub def format(x: RichString): RichString = x
     }
 
+    instance Formattable[Unit] {
+        pub def format(_x: Unit): RichString = gray("()")
+    }
+
     instance Formattable[Bool] {
         pub def format(x: Bool): RichString = fromString(ToString.toString(x))
     }
@@ -89,27 +93,55 @@ mod RichString {
     }
 
     instance Formattable[Int8] {
-        pub def format(x: Int8): RichString = fromString(ToString.toString(x))
+        pub def format(x: Int8): RichString =
+            if (x == Int8.minValue() or x == Int8.maxValue())
+                red(ToString.toString(x))
+            else
+                fromString(ToString.toString(x))
     }
 
     instance Formattable[Int16] {
-        pub def format(x: Int16): RichString = fromString(ToString.toString(x))
+        pub def format(x: Int16): RichString =
+            if (x == Int16.minValue() or x == Int16.maxValue())
+                red(ToString.toString(x))
+            else
+                fromString(ToString.toString(x))
     }
 
     instance Formattable[Int32] {
-        pub def format(x: Int32): RichString = fromString(ToString.toString(x))
+        pub def format(x: Int32): RichString =
+            if (x == Int32.minValue() or x == Int32.maxValue())
+                red(ToString.toString(x))
+            else
+                fromString(ToString.toString(x))
     }
 
     instance Formattable[Int64] {
-        pub def format(x: Int64): RichString = fromString(ToString.toString(x))
+        pub def format(x: Int64): RichString =
+            if (x == Int64.minValue() or x == Int64.maxValue())
+                red(ToString.toString(x))
+            else
+                fromString(ToString.toString(x))
     }
 
     instance Formattable[Float32] {
-        pub def format(x: Float32): RichString = fromString(ToString.toString(x))
+        pub def format(x: Float32): RichString =
+            if (Float32.isNan(x))
+                red(ToString.toString(x))
+            else if (Float32.isInfinite(x))
+                yellow(ToString.toString(x))
+            else
+                fromString(ToString.toString(x))
     }
 
     instance Formattable[Float64] {
-        pub def format(x: Float64): RichString = fromString(ToString.toString(x))
+        pub def format(x: Float64): RichString =
+            if (Float64.isNan(x))
+                red(ToString.toString(x))
+            else if (Float64.isInfinite(x))
+                yellow(ToString.toString(x))
+            else
+                fromString(ToString.toString(x))
     }
 
     instance Formattable[String] {
@@ -186,6 +218,12 @@ mod RichString {
         withColor(Color.Rgb(0, 0, 0), x)
 
     ///
+    /// Returns a `RichString` with the given text `x` in gray color.
+    ///
+    pub def gray(x: a): RichString with Formattable[a] =
+        withColor(Color.Rgb(80, 80, 80), x)
+
+    ///
     /// Returns a `RichString` with the given text `x` in red color.
     ///
     pub def red(x: a): RichString with Formattable[a] =
@@ -232,6 +270,12 @@ mod RichString {
     ///
     pub def bgBlack(x: a): RichString with Formattable[a] =
         withBgColor(Color.Rgb(0, 0, 0), x)
+
+    ///
+    /// Returns a `RichString` with the given text `x` on gray background.
+    ///
+    pub def bgGray(x: a): RichString with Formattable[a] =
+        withBgColor(Color.Rgb(80, 80, 80), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on red background.
