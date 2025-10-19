@@ -342,6 +342,26 @@ mod RichString {
     }
 
     ///
+    /// Returns the concatenation of the elements in `xs` formatted with RichString `sep` inserted between each.
+    ///
+    /// Uses the Formattable trait to format each element.
+    ///
+    pub def join(sep: RichString, xs: t[a]): RichString \ Foldable.Aef[t] with Formattable[a], Foldable[t] =
+        joinWith(Formattable.format, sep, xs)
+
+    ///
+    /// Returns the concatenation of elements in `xs` according to `f` with RichString `sep` inserted between each.
+    ///
+    pub def joinWith(f: a -> RichString \ ef, sep: RichString, xs: t[a]): RichString \ (ef + Foldable.Aef[t]) with Foldable[t] =
+        let l = Foldable.toList(xs);
+        match l {
+            case Nil       => empty()
+            case x :: Nil  => f(x)
+            case x :: rest =>
+                List.foldLeft((acc, elem) -> acc + sep + f(elem), f(x), rest)
+        }
+
+    ///
     /// Returns the plain text representation of the `RichString` `rs`.
     ///
     /// All styling and color information is discarded.
