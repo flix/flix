@@ -156,6 +156,36 @@ mod RichString {
         pub def format(x: BigDecimal): RichString = fromString(ToString.toString(x))
     }
 
+    instance Formattable[Option[a]] with Formattable[a] {
+        pub def format(x: Option[a]): RichString = match x {
+            case None    => gray("None")
+            case Some(v) => text("Some(") + Formattable.format(v) + text(")")
+        }
+    }
+
+    instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
+        pub def format(x: Result[e, t]): RichString = match x {
+            case Ok(v)  => text("Ok(") + Formattable.format(v) + text(")")
+            case Err(e) => red("Err(") + Formattable.format(e) + red(")")
+        }
+    }
+
+    instance Formattable[List[a]] with Formattable[a] {
+        pub def format(x: List[a]): RichString =
+            join(gray(" :: "), x)
+    }
+
+    instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
+        pub def format(x: Map[k, v]): RichString =
+            let pairs = Map.toList(x);
+            let entries = joinWith(
+                match (k, v) -> gray(Formattable.format(k)) + text(" => ") + Formattable.format(v),
+                text(", "),
+                pairs
+            );
+            text("Map#{") + entries + text("}")
+    }
+
     ///
     /// Returns an empty `RichString`.
     ///
@@ -221,7 +251,7 @@ mod RichString {
     /// Returns a `RichString` with the given text `x` in gray color.
     ///
     pub def gray(x: a): RichString with Formattable[a] =
-        withColor(Color.Rgb(80, 80, 80), x)
+        withColor(Color.Rgb(128, 128, 128), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in red color.
@@ -275,7 +305,7 @@ mod RichString {
     /// Returns a `RichString` with the given text `x` on gray background.
     ///
     pub def bgGray(x: a): RichString with Formattable[a] =
-        withBgColor(Color.Rgb(80, 80, 80), x)
+        withBgColor(Color.Rgb(128, 128, 128), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on red background.
