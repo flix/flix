@@ -92,13 +92,6 @@ object Trust {
   }
 
   /**
-    * `Trust-javaclass` may not have unchecked casts but perform Java interop.
-    */
-  case object TrustJavaClass extends Trust {
-    override def toString: String = "trust-javaclass"
-  }
-
-  /**
     * May use unchecked casts and Java interop.
     */
   case object Unrestricted extends Trust {
@@ -107,7 +100,6 @@ object Trust {
 
   def fromString(s: String): Option[Trust] = s match {
     case "plain" => Some(Plain)
-    case "trust-javaclass" => Some(TrustJavaClass)
     case "unrestricted" => Some(Unrestricted)
     case _ => None
   }
