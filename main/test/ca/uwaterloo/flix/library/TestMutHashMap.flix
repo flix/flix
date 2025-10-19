@@ -258,6 +258,72 @@ mod TestMutHashMap {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // putAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putAll01(): Unit \ Assert = region rc {
+        let m1 = (MutHashMap.empty(rc): MutHashMap[Int32, Int32, _]);
+        let m2 = (MutHashMap.empty(rc): MutHashMap[Int32, Int32, _]);
+        MutHashMap.putAll(MutHashMap.toList(m1), m2);
+        assertTrue(MutHashMap.isEmpty(m2))
+    }
+
+    @Test
+    def putAll02(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        let m2 = MutHashMap.empty(rc);
+        MutHashMap.put(1, 101, m1);
+        MutHashMap.put(1, 101, m1);
+        MutHashMap.putAll(MutHashMap.toList(m1), m2);
+        assertEq(expected = MutHashMap.toList(m1), MutHashMap.toList(m2))
+    }
+
+    @Test
+    def putAll03(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        let m2 = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m1);
+        MutHashMap.put(2, 20, m1);
+        MutHashMap.putAll(MutHashMap.toList(m1), m2);
+        assertEq(expected = 30, MutHashMap.foldLeft((acc, v) -> acc + v, 0, m2))
+    }
+
+    @Test
+    def putAll04(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        let m2 = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m1);
+        MutHashMap.put(2, 20, m1);
+        MutHashMap.put(3, 30, m1);
+        MutHashMap.putAll(MutHashMap.toList(m1), m2);
+        assertEq(expected = 60, MutHashMap.foldLeft((acc, v) -> acc + v, 0, m2))
+    }
+
+    @Test
+    def putAll05(): Unit \ Assert = region rc {
+        let m1 = MutHashMap.empty(rc);
+        MutHashMap.put("a", 1, m1);
+        MutHashMap.put("b", 2, m1);
+        MutHashMap.put("c", 3, m1);
+
+        let m2 = MutHashMap.empty(rc);
+        MutHashMap.putAll(MutHashMap.toList(m1), m2);
+        assertEq(expected = MutHashMap.toList(m1), MutHashMap.toList(m2))
+    }
+
+    @Test
+    def putAll06(): Unit \ Assert = region rc {
+        let m = MutHashMap.empty(rc);
+        MutHashMap.put(1, 10, m);
+        MutHashMap.putAll((2, 20) :: (3, 30) :: Nil, m);
+        assertEq(expected = 3, MutHashMap.size(m));
+        assertEq(expected = Some(10), MutHashMap.get(1, m));
+        assertEq(expected = Some(20), MutHashMap.get(2, m));
+        assertEq(expected = Some(30), MutHashMap.get(3, m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
