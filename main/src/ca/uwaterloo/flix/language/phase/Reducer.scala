@@ -81,10 +81,12 @@ object Reducer {
     case ReducedAst.Def(ann, mod, sym, cparams0, fparams0, exp, tpe, unboxedType0, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
 
-      val e = visitExpr(exp)
       val cparams = cparams0.map(visitFParam)
       val fparams = fparams0.map(visitFParam)
+      val e = visitExpr(exp)
+      // `ls` is initialized based on the context mutation of `visitExpr`
       val ls = lctx.lparams.toList
+      val unboxedType = JvmAst.UnboxedType(unboxedType0.tpe)
 
       // Set variable offsets - the variable order is important and must match the assumptions of the backend.
       var varOffset = 0
@@ -92,19 +94,16 @@ object Reducer {
         varOffset = setOffsetAndIncrement(param.sym, param.tpe, varOffset)
       }
 
-      val pcPoints = lctx.getPcPoints
-
-      // Compute the types in the captured formal parameters.
-      val cParamTypes = cparams0.foldLeft(Set.empty[SimpleType]) {
-        case (sacc, ReducedAst.FormalParam(_, paramTpe)) => sacc + paramTpe
-      }
-
+      // Add all types.
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
       ctx.defTypes.put(d.arrowType, ())
-      ctx.defTypes.put(unboxedType0.tpe, ())
-      cParamTypes.foreach(t => ctx.defTypes.put(t, ()))
+      ctx.defTypes.put(unboxedType.tpe, ())
+      // Compute the types in the captured formal parameters.
+      for (cp <- cparams) {
+        ctx.defTypes.put(cp.tpe, ())
+      }
 
-      val unboxedType = JvmAst.UnboxedType(unboxedType0.tpe)
+      val pcPoints = lctx.getPcPoints
 
       JvmAst.Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
@@ -112,14 +111,7 @@ object Reducer {
   private def visitEnum(enm: ReducedAst.Enum): JvmAst.Enum = {
     val tparams = enm.tparams.map(visitTParam)
     val cases = MapOps.mapValues(enm.cases)(visitCase)
-    JvmAst.Enum(
-      enm.ann,
-      enm.mod,
-      enm.sym,
-      tparams,
-      cases,
-      enm.loc
-    )
+    JvmAst.Enum(enm.ann, enm.mod, enm.sym, tparams, cases, enm.loc)
   }
 
   private def visitCase(caze: ReducedAst.Case): JvmAst.Case =
@@ -128,14 +120,7 @@ object Reducer {
   private def visitStruct(struct: ReducedAst.Struct): JvmAst.Struct = {
     val tparams = struct.tparams.map(visitTParam)
     val fields = struct.fields.map(visitStructField)
-    JvmAst.Struct(
-      struct.ann,
-      struct.mod,
-      struct.sym,
-      tparams,
-      fields,
-      struct.loc
-    )
+    JvmAst.Struct(struct.ann, struct.mod, struct.sym, tparams, fields, struct.loc)
   }
 
   private def visitStructField(field: ReducedAst.StructField): JvmAst.StructField =
@@ -143,13 +128,7 @@ object Reducer {
 
   private def visitEffect(effect: ReducedAst.Effect): JvmAst.Effect = {
     val ops = effect.ops.map(visitOp)
-    JvmAst.Effect(
-      effect.ann,
-      effect.mod,
-      effect.sym,
-      ops,
-      effect.loc
-    )
+    JvmAst.Effect(effect.ann, effect.mod, effect.sym, ops, effect.loc)
   }
 
   private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
