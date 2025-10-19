@@ -255,39 +255,6 @@ mod TestMutSet {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        assertEq(expected = 100, MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, MutSet.empty(rc)))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        let s = MutSet.empty(rc);
-        MutSet.add(1, s);
-        assertEq(expected = 198, MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        let s = MutSet.empty(rc);
-        MutSet.add(2, s);
-        MutSet.add(1, s);
-        assertEq(expected = 194, MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        let s = MutSet.empty(rc);
-        MutSet.add(3, s);
-        MutSet.add(2, s);
-        MutSet.add(1, s);
-        assertEq(expected = 382, MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

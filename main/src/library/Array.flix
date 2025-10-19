@@ -794,21 +794,6 @@ mod Array {
         loop(length(arr) - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i == length(arr))
-                z
-            else
-                f(get(i, arr), _ -> loop(i + 1))
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, arr: Array[a, r]): b \ { ef, r } with Monoid[b] =
@@ -1255,16 +1240,6 @@ mod Array {
     ///
     pub def toMap(a: Array[(a, b), r]): Map[a, b] \ r with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
-
-    ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
-        let minCap = MutList.minCapacity();
-        let len = length(a);
-        let c = Order.max(len, minCap);
-        let copy = copyOfRange(rc1, 0, c, a);
-        new MutList @ rc1 {r = rc1, values = copy, length = len}
 
     ///
     /// Alias for `findIndexOfLeft`.

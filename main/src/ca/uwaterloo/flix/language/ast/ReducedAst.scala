@@ -125,14 +125,20 @@ object ReducedAst {
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
+  sealed trait Param {
+    def sym: Symbol.VarSym
+
+    def tpe: SimpleType
+  }
+
   // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType)
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
 
   // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 
   // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
+  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
 
 }
 

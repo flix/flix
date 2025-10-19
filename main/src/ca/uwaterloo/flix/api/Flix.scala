@@ -755,11 +755,8 @@ class Flix {
     var reducerAst = Reducer.run(eraserAst)
     eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    var varOffsetsAst = VarOffsets.run(reducerAst)
+    val codeAst = JvmConverter.run(reducerAst)
     reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
-
-    val codeAst = JvmConverter.run(varOffsetsAst)
-    varOffsetsAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     // Generate JVM classes.
     val bytecodeAst = JvmBackend.run(codeAst)

@@ -912,21 +912,6 @@ mod Vector {
         loop(length(v) - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `v` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, v: Vector[a]): b \ ef =
-        def loop(i) = {
-            if (i == length(v))
-                z
-            else
-                f(get(i, v), _ -> loop(i + 1))
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, v: Vector[a]): b \ ef with Monoid[b] =
@@ -1361,12 +1346,6 @@ mod Vector {
     ///
     pub def toMap(v: Vector[(a, b)]): Map[a, b] with Order[a] =
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), v)
-
-    ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ r =
-        toArray(rc, v) |> Array.toMutList(rc)
 
     ///
     /// Alias for `findIndexOfLeft`.

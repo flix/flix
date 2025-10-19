@@ -520,25 +520,6 @@ mod Map {
         RedBlackTree.foldRight(f, s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: Map[k, v]): b \ ef =
-        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
-
-    ///
-    /// Applies `f` to a start value `z` and all key-value pairs in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
-    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: Map[k, v]): b \ ef =
-        let Map(t) = m;
-        RedBlackTree.foldRightWithCont(f, z, t)
-
-    ///
     /// Returns the result of mapping each key-value pair and combining the results.
     ///
     pub def foldMapWithKey(f: (k, v) -> b \ ef, m: Map[k, v]): b \ ef with Monoid[b] =
@@ -761,12 +742,6 @@ mod Map {
     pub def invert(m: Map[k, v]): Map[v, Set[k]] with Order[k], Order[v] =
         let f = (acc, k, v) -> Map.insertWith(Set.union, v, Set#{k}, acc);
         Map.foldLeftWithKey(f, empty(), m)
-
-    ///
-    /// Returns `m` as a mutable map.
-    ///
-    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        new MutMap @ rc { rc = rc, inner = m }
 
     ///
     /// Returns the map `m` as a list of key-value pairs.
