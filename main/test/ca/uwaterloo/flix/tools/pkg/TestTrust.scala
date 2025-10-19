@@ -11,6 +11,21 @@ import java.io.PrintStream
 import java.nio.file.Files
 
 class TestTrust extends AnyFunSuite {
+
+  private val Main: String =
+    """
+      |pub def main(): Unit \ IO =
+      |    TestPkgTrust.entry()
+      |""".stripMargin
+
+
+  private val MainTransitive: String =
+    """
+      |pub def main(): Unit \ IO =
+      |    TestPkgTrustTransitive.entry()
+      |""".stripMargin
+
+
   test("toString-ofString-plain") {
     val perm = Trust.Plain
     val res = Trust.fromString(perm.toString) match {
@@ -35,7 +50,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps)
+    val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'plain' and dependency plain")
@@ -50,7 +65,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps)
+    val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
       succeed
@@ -65,7 +80,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps)
+    val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
       succeed
@@ -80,7 +95,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps)
+    val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency plain")
@@ -95,7 +110,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps)
+    val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using java")
@@ -110,7 +125,7 @@ class TestTrust extends AnyFunSuite {
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps)
+    val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using unchecked cast")
@@ -123,7 +138,7 @@ class TestTrust extends AnyFunSuite {
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
     */
-  private def checkForbidden(deps: List[String]): (Boolean, String) = {
+  private def checkForbidden(deps: List[String], main: String): (Boolean, String) = {
     implicit val out: PrintStream = System.out
     implicit val formatter: Formatter = Formatter.NoFormatter
     val path = Files.createTempDirectory("")
@@ -154,12 +169,6 @@ class TestTrust extends AnyFunSuite {
       case Ok(ps) => ps
       case Err(e) => fail(e.message(formatter))
     }
-
-    val main: String =
-      """
-        |pub def main(): Unit \ IO =
-        |    TestPkgTrust.entry()
-        |""".stripMargin
 
     val flix = new Flix()
     flix.setOptions(flix.options.copy(checkTrust = true))
