@@ -36,7 +36,7 @@ object JvmAst {
 
   }
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, exp: Exp, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
@@ -51,7 +51,7 @@ object JvmAst {
 
   case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  sealed trait Exp {
+  sealed trait Expr {
     def tpe: SimpleType
 
     def purity: Purity
@@ -59,55 +59,55 @@ object JvmAst {
     def loc: SourceLocation
   }
 
-  object Exp {
+  object Expr {
 
-    case class Cst(cst: Constant, loc: SourceLocation) extends Exp {
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
       def tpe: SimpleType = cst.tpe
 
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Exp {
+    case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[Exp], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyClo(exp1: Exp, exp2: Exp, ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Exp], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplyOp(sym: Symbol.OpSym, exps: List[Exp], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class ApplyOp(sym: Symbol.OpSym, exps: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Exp], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: Exp, exp2: Exp, exp3: Exp, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Branch(exp: Exp, branches: Map[Symbol.LabelSym, Exp], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp {
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
 
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Stmt(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp {
+    case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
 
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Region(sym: Symbol.VarSym, exp: Exp, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Exp, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class RunWith(exp: Exp, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Exp
+    case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Exp
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: SimpleType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -119,11 +119,11 @@ object JvmAst {
 
   case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Exp, tpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Exp)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Exp)
+  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
   sealed trait Param {
     def sym: Symbol.VarSym
