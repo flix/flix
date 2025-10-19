@@ -357,42 +357,6 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutSet                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutSet01(): Unit \ Assert = region rc {
-        let s1 = (Set#{}: Set[Int32]);
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    @Test
-    def toMutSet02(): Unit \ Assert = region rc {
-        let s1 = Set#{1, 2};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    @Test
-    def toMutSet03(): Unit \ Assert = region rc {
-        let s1 = Set#{1, 2, 3};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    @Test
-    def toMutSet04(): Unit \ Assert = region rc {
-        let s1 = Set#{'a', 'b', 'c'};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
