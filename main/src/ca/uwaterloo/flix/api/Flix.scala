@@ -757,6 +757,8 @@ class Flix {
 
     // Generate JVM classes.
     val bytecodeAst = JvmBackend.run(reducerAst)
+    reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
+
     val totalTime = flix.getTotalTime
 
     JvmWriter.run(bytecodeAst)
