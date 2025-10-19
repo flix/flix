@@ -138,10 +138,10 @@ class TestTrust extends AnyFunSuite {
     // expected to fail currently
     val deps = List(
       """
-        |"github:jaschdoc/test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "plain" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "plain" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps, Main)
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
       succeed
@@ -153,10 +153,10 @@ class TestTrust extends AnyFunSuite {
   test("transitive.trust:unrestricted->unrestricted-dep:java") {
     val deps = List(
       """
-        |"github:jaschdoc/test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
         |""".stripMargin
     )
-    val (forbidden, message) = checkForbidden(deps, Main)
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
       fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->unrestricted' and dependency using java")
