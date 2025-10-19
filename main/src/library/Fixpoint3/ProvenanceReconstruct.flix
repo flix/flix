@@ -476,7 +476,8 @@ mod Fixpoint3.ProvenanceReconstruct {
         matchedFact: Vector[Boxed],
         varSymToVal: Map[VarSym, Boxed]
     ): Map[VarSym, Boxed] = region rc {
-        let result = Map.toMutMap(rc, varSymToVal);
+        let result = MutMap.empty(rc);
+        Map.forEach((k, v) -> MutMap.put(k, v, result), varSymToVal);
         foreach ((i, v) <- ForEach.withIndex(varNames)) {
             MutMap.put(v, Vector.get(i, matchedFact), result)
         };
