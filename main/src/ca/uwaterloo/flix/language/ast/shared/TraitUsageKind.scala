@@ -27,7 +27,7 @@ object TraitUsageKind {
     * Represents a trait use in an expression
     * e.g. let res = E...
     */
-  case object Expr extends TraitUsageKind
+  case object Exp extends TraitUsageKind
 
   /**
     * Represents a trait use in a constraint

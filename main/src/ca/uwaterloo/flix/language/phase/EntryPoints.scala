@@ -550,11 +550,11 @@ object EntryPoints {
       val mainArrowType = oldEntryPoint.spec.declaredScheme.base
       val mainSym = DefSymUse(oldEntryPoint.sym, SourceLocation.Unknown)
       val mainArgType = Type.Unit
-      val mainArg = TypedAst.Expr.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
+      val mainArg = TypedAst.Exp.Cst(Constant.Unit, mainArgType, SourceLocation.Unknown)
       val mainReturnType = mainArrowType.arrowResultType
       val mainEffect = mainArrowType.arrowEffectType
       // `mainFunc()`.
-      val mainCall = TypedAst.Expr.ApplyDef(mainSym, List(mainArg), List.empty, mainArrowType, mainReturnType, mainEffect, SourceLocation.Unknown)
+      val mainCall = TypedAst.Exp.ApplyDef(mainSym, List(mainArg), List.empty, mainArrowType, mainReturnType, mainEffect, SourceLocation.Unknown)
 
       // `println(mainFunc())`.
       val printSym = DefSymUse(root.defs(new Symbol.DefnSym(None, Nil, "println", SourceLocation.Unknown)).sym, SourceLocation.Unknown)
@@ -564,7 +564,7 @@ object EntryPoints {
       val printEffect = Type.IO
       val printArrowType = Type.mkArrowWithEffect(printArgType, printEffect, printReturnType, SourceLocation.Unknown)
       val printCallEffect = Type.mkUnion(printEffect, printArg.eff, SourceLocation.Unknown)
-      val printCall = TypedAst.Expr.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
+      val printCall = TypedAst.Exp.ApplyDef(printSym, List(printArg), List(printArgType), printArrowType, printReturnType, printCallEffect, SourceLocation.Unknown)
 
       val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
@@ -624,7 +624,7 @@ object EntryPoints {
       val runWithIODef = root.defs(RunWithIOSym)
       val runWithIOSymUse = DefSymUse(runWithIODef.sym, runWithIODef.loc)
       // Create _ -> exp.
-      val innerLambda = TypedAst.Expr.Lambda(TypedAst.FormalParam(
+      val innerLambda = TypedAst.Exp.Lambda(TypedAst.FormalParam(
         TypedAst.Binder(Symbol.freshVarSym("_", FormalParam, syntheticExpLocation), Type.Unit),
         Type.Unit,
         TypeSource.Inferred,
@@ -637,7 +637,7 @@ object EntryPoints {
       // Create the instantiated type of runWithIO.
       val runWithIOArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, currentDef.spec.retTpe, syntheticExpLocation)
       // Create Assert.runWithIO(_ -> exp).
-      val runWithIOCall = TypedAst.Expr.ApplyDef(runWithIOSymUse, List(innerLambda), List(innerLambda.tpe), runWithIOArrowType, currentDef.spec.retTpe, eff, syntheticExpLocation)
+      val runWithIOCall = TypedAst.Exp.ApplyDef(runWithIOSymUse, List(innerLambda), List(innerLambda.tpe), runWithIOArrowType, currentDef.spec.retTpe, eff, syntheticExpLocation)
 
       currentDef.copy(spec = spec, exp = runWithIOCall)
 

@@ -98,8 +98,8 @@ object GenExpression {
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(cst, loc) => cst match {
+  def compileExpr(exp0: Exp)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
+    case Exp.Cst(cst, loc) => cst match {
       case Constant.Unit =>
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
 
@@ -179,10 +179,10 @@ object GenExpression {
 
     }
 
-    case Expr.Var(sym, tpe, _) =>
+    case Exp.Var(sym, tpe, _) =>
       BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), sym.getStackOffset(ctx.localOffset))
 
-    case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
+    case Exp.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
       case AtomicOp.Closure(sym) =>
         // JvmType of the closure
@@ -931,7 +931,7 @@ object GenExpression {
         val List(exp1, exp2) = exps
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.Cst(Constant.Static, _) =>
+          case Exp.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
@@ -1014,7 +1014,7 @@ object GenExpression {
         ATHROW()
     }
 
-    case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
+    case Exp.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class
       val functionInterface = JvmOps.getErasedFunctionInterfaceType(exp1.tpe)
       val closureAbstractClass = JvmOps.getErasedClosureAbstractClassType(exp1.tpe)
@@ -1073,7 +1073,7 @@ object GenExpression {
           }
       }
 
-    case Expr.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
+    case Exp.ApplyDef(sym, exps, ct, _, _, loc) => ct match {
       case ExpPosition.Tail =>
         val defJvmName = BackendObjType.Defn(sym).jvmName
         // Type of the function abstract class
@@ -1097,7 +1097,7 @@ object GenExpression {
       case ExpPosition.NonTail =>
         val defn = root.defs(sym)
         val targetIsFunction = defn.cparams.isEmpty
-        val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
+        val canCallStaticMethod = Purity.isControlPure(defn.exp.purity) && targetIsFunction
         if (canCallStaticMethod) {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
@@ -1132,7 +1132,7 @@ object GenExpression {
           ctx match {
             case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
-              if (Purity.isControlPure(defn.expr.purity)) {
+              if (Purity.isControlPure(defn.exp.purity)) {
                 BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
               } else {
                 val pcPoint = pcCounter(0) + 1
@@ -1153,7 +1153,7 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplyOp(sym, exps, tpe, _, loc) => ctx match {
+    case Exp.ApplyOp(sym, exps, tpe, _, loc) => ctx match {
       case DirectInstanceContext(_, _, _) | DirectStaticContext(_, _, _) =>
         BackendObjType.Result.crashIfSuspension("Unexpected do-expression in direct method context", loc)
 
@@ -1212,7 +1212,7 @@ object GenExpression {
         castIfNotPrim(BackendType.toBackendType(tpe))
     }
 
-    case Expr.ApplySelfTail(sym, exps, _, _, _) => ctx match {
+    case Exp.ApplySelfTail(sym, exps, _, _, _) => ctx match {
       case EffectContext(_, _, _, setPc, _, _, _) =>
         // The function abstract class name
         val functionInterface = JvmOps.getErasedFunctionInterfaceType(root.defs(sym).arrowType)
@@ -1258,7 +1258,7 @@ object GenExpression {
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
     }
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       import BytecodeInstructions.*
       compileExpr(exp1)
       branch(Condition.Bool) {
@@ -1266,7 +1266,7 @@ object GenExpression {
         case Branch.FalseBranch => compileExpr(exp3)
       }
 
-    case Expr.Branch(exp, branches, _, _, _) =>
+    case Exp.Branch(exp, branches, _, _, _) =>
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
       val ctx1 = ctx.addLabels(updatedJumpLabels)
@@ -1288,11 +1288,11 @@ object GenExpression {
       // label for the end of branches
       mv.visitLabel(endLabel)
 
-    case Expr.JumpTo(sym, _, _, _) =>
+    case Exp.JumpTo(sym, _, _, _) =>
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _) =>
+    case Exp.Let(sym, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
@@ -1300,13 +1300,13 @@ object GenExpression {
       xStore(bType, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.Stmt(exp1, exp2, _) =>
+    case Exp.Stmt(exp1, exp2, _) =>
       import BytecodeInstructions.*
       compileExpr(exp1)
       xPop(BackendType.toBackendType(exp1.tpe))
       compileExpr(exp2)
 
-    case Expr.Region(sym, exp, _, _, loc) =>
+    case Exp.Region(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
       BytecodeInstructions.addLoc(loc)
 
@@ -1361,7 +1361,7 @@ object GenExpression {
       mv.visitInsn(ATHROW)
       mv.visitLabel(afterFinally)
 
-    case Expr.TryCatch(exp, rules, _, _, loc) =>
+    case Exp.TryCatch(exp, rules, _, _, loc) =>
       // Add source line number for debugging.
       BytecodeInstructions.addLoc(loc)
 
@@ -1407,7 +1407,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.RunWith(exp, effUse, rules, ct, _, _, loc) =>
+    case Exp.RunWith(exp, effUse, rules, ct, _, _, loc) =>
       import BytecodeInstructions.*
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassName(effUse.sym)
@@ -1455,7 +1455,7 @@ object GenExpression {
         ARETURN()
       }
 
-    case Expr.NewObject(name, _, _, _, methods, _) =>
+    case Exp.NewObject(name, _, _, _, methods, _) =>
       val exps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
@@ -1471,7 +1471,7 @@ object GenExpression {
 
   }
 
-  private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileIsTag(name: String, exp: Exp, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     compileExpr(exp)
     tpes match {
@@ -1485,7 +1485,7 @@ object GenExpression {
     }
   }
 
-  private def compileTag(name: String, exps: List[Expr], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileTag(name: String, exps: List[Exp], tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     tpes match {
       case Nil =>
@@ -1506,7 +1506,7 @@ object GenExpression {
     }
   }
 
-  private def compileUntag(exp: Expr, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def compileUntag(exp: Exp, idx: Int, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
@@ -1516,7 +1516,7 @@ object GenExpression {
     GETFIELD(tagType.IndexField(idx))
   }
 
-  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
+  private def visitComparisonPrologue(exp1: Exp, exp2: Exp)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
     compileExpr(exp1)
     compileExpr(exp2)
     val condElse = new Label()
@@ -1532,13 +1532,13 @@ object GenExpression {
     visitor.visitLabel(condEnd)
   }
 
-  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison1(exp1: Exp, exp2: Exp, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitJumpInsn(opcode, condElse)
     visitComparisonEpilogue(mv, condElse, condEnd)
   }
 
-  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison2(exp1: Exp, exp2: Exp, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitInsn(opcode)
     mv.visitJumpInsn(cmpOpcode, condElse)

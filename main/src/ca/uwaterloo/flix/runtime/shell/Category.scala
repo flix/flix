@@ -32,7 +32,7 @@ object Category {
   /**
     * Represents source code that is an expression.
     */
-  case object Expr extends Category
+  case object Exp extends Category
 
   /**
     * Represents source code whose category cannot be determined.
@@ -52,7 +52,7 @@ object Category {
       val start = tokens(0).kind
       (start.isFirstInDecl, start.isFirstInExp) match {
         case (true, _) => Category.Decl
-        case (_, true) => Category.Expr
+        case (_, true) => Category.Exp
         case _ => Category.Unknown
       }
     } else {

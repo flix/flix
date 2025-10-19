@@ -91,12 +91,12 @@ object LambdaLift {
       LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExp(e: SimplifiedAst.Expr)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.Expr = e match {
-    case SimplifiedAst.Expr.Cst(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
+  private def visitExp(e: SimplifiedAst.Exp)(implicit sym0: Symbol.DefnSym, liftedLocalDefs: Map[Symbol.VarSym, Symbol.DefnSym], sctx: SharedContext, flix: Flix): LiftedAst.Exp = e match {
+    case SimplifiedAst.Exp.Cst(cst, tpe, loc) => LiftedAst.Exp.Cst(cst, tpe, loc)
 
-    case SimplifiedAst.Expr.Var(sym, tpe, loc) => LiftedAst.Expr.Var(sym, tpe, loc)
+    case SimplifiedAst.Exp.Var(sym, tpe, loc) => LiftedAst.Exp.Var(sym, tpe, loc)
 
-    case SimplifiedAst.Expr.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
+    case SimplifiedAst.Exp.LambdaClosure(cparams, fparams, freeVars, exp, tpe, loc) =>
       val arrowTpe = tpe match {
         case t: SimpleType.Arrow => t
         case _ => throw InternalCompilerException(s"Lambda has unexpected type: $tpe", loc)
@@ -129,66 +129,66 @@ object LambdaLift {
 
       // Construct the closure args.
       val closureArgs = if (freeVars.isEmpty)
-        List(LiftedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc))
+        List(LiftedAst.Exp.Cst(Constant.Unit, SimpleType.Unit, loc))
       else freeVars.map {
-        case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Expr.Var(sym, fvTpe, sym.loc)
+        case SimplifiedAst.FreeVar(sym, fvTpe) => LiftedAst.Exp.Var(sym, fvTpe, sym.loc)
       }
 
       // Construct the closure expression.
-      LiftedAst.Expr.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
+      LiftedAst.Exp.ApplyAtomic(AtomicOp.Closure(freshSymbol), closureArgs, arrowTpe, Purity.Pure, loc)
 
-    case SimplifiedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
+      LiftedAst.Exp.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.ApplyClo(exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      LiftedAst.Expr.ApplyClo(e1, e2, tpe, purity, loc)
+      LiftedAst.Exp.ApplyClo(e1, e2, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
+      LiftedAst.Exp.ApplyDef(sym, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.ApplyLocalDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       val newDefnSym = liftedLocalDefs.get(sym)
       newDefnSym match {
-        case Some(defnSym) => LiftedAst.Expr.ApplyDef(defnSym, es, tpe, purity, loc)
+        case Some(defnSym) => LiftedAst.Exp.ApplyDef(defnSym, es, tpe, purity, loc)
         case None => throw InternalCompilerException(s"unable to find lifted def for local def $sym", loc)
       }
 
-    case SimplifiedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.ApplyOp(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
-      LiftedAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
+      LiftedAst.Exp.ApplyOp(sym, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      LiftedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
+      LiftedAst.Exp.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Stm(exp1, exp2, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.Stm(exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      LiftedAst.Expr.Stm(e1, e2, tpe, purity, loc)
+      LiftedAst.Exp.Stm(e1, e2, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.Branch(exp, branches, tpe, purity, loc) =>
       val e = visitExp(exp)
       val bs = branches map {
         case (sym, br) => sym -> visitExp(br)
       }
-      LiftedAst.Expr.Branch(e, bs, tpe, purity, loc)
+      LiftedAst.Exp.Branch(e, bs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
-      LiftedAst.Expr.JumpTo(sym, tpe, purity, loc)
+    case SimplifiedAst.Exp.JumpTo(sym, tpe, purity, loc) =>
+      LiftedAst.Exp.JumpTo(sym, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      LiftedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
+      LiftedAst.Exp.Let(sym, e1, e2, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
+    case SimplifiedAst.Exp.LocalDef(sym, fparams, exp1, exp2, _, _, loc) =>
       val freshDefnSym = Symbol.freshDefnSym(sym0)
       val updatedLiftedLocalDefs = liftedLocalDefs + (sym -> freshDefnSym)
       // It is **very important** we add the mapping `sym -> freshDefnSym` to liftedLocalDefs
@@ -204,20 +204,20 @@ object LambdaLift {
       sctx.liftedDefs.add(freshDefnSym -> liftedDef)
       visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
 
-    case SimplifiedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
-      LiftedAst.Expr.Region(sym, e, tpe, purity, loc)
+      LiftedAst.Exp.Region(sym, e, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case SimplifiedAst.CatchRule(sym, clazz, body) =>
           val b = visitExp(body)
           LiftedAst.CatchRule(sym, clazz, b)
       }
-      LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+      LiftedAst.Exp.TryCatch(e, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
+    case SimplifiedAst.Exp.RunWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case SimplifiedAst.HandlerRule(symUse, fparams, body) =>
@@ -225,13 +225,13 @@ object LambdaLift {
           val b = visitExp(body)
           LiftedAst.HandlerRule(symUse, fps, b)
       }
-      LiftedAst.Expr.RunWith(e, effUse, rs, tpe, purity, loc)
+      LiftedAst.Exp.RunWith(e, effUse, rs, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
+    case SimplifiedAst.Exp.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)
-      LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
+      LiftedAst.Exp.NewObject(name, clazz, tpe, purity, methods, loc)
 
-    case SimplifiedAst.Expr.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
+    case SimplifiedAst.Exp.Lambda(_, _, _, loc) => throw InternalCompilerException(s"Unexpected expression.", loc)
 
   }
 

@@ -40,20 +40,20 @@ object TypeVerifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, SimpleType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    val ret = visitExpr(decl.exp)(root, env, Map.empty)
     checkEq(decl.tpe, ret, decl.loc)
   }
 
-  private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, SimpleType], lenv: Map[Symbol.LabelSym, SimpleType]): SimpleType = expr match {
-    case Expr.Cst(cst, _) => cst.tpe
+  private def visitExpr(exp: Exp)(implicit root: Root, env: Map[Symbol.VarSym, SimpleType], lenv: Map[Symbol.LabelSym, SimpleType]): SimpleType = exp match {
+    case Exp.Cst(cst, _) => cst.tpe
 
-    case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
+    case Exp.Var(sym, tpe1, loc) => env.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", sym.loc)
       case Some(tpe2) =>
         checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
+    case Exp.ApplyAtomic(op, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
 
       op match {
@@ -446,20 +446,20 @@ object TypeVerifier {
           checkJavaSubtype(tpe, method.getReturnType, loc)
       }
 
-    case Expr.ApplyClo(exp1, exp2, _, tpe, _, loc) =>
+    case Exp.ApplyClo(exp1, exp2, _, tpe, _, loc) =>
       val lamType1 = visitExpr(exp1)
       val lamType2 = SimpleType.mkArrow(List(visitExpr(exp2)), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 
-    case Expr.ApplyDef(sym, exps, _, tpe, _, loc) =>
+    case Exp.ApplyDef(sym, exps, _, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = SimpleType.mkArrow(exps.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.ApplyOp(sym, exps, tpe, _, loc) =>
+    case Exp.ApplyOp(sym, exps, tpe, _, loc) =>
       val ts = exps.map(visitExpr)
       val eff = root.effects.getOrElse(sym.eff,
         throw InternalCompilerException(s"Unknown effect sym: '${sym.eff}'", sym.loc))
@@ -479,14 +479,14 @@ object TypeVerifier {
       checkEq(sig, opsig, loc)
       tpe
 
-    case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
+    case Exp.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = SimpleType.mkArrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = SimpleType.mkArrow(actuals.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, tpe, _, _) =>
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
@@ -494,7 +494,7 @@ object TypeVerifier {
       checkEq(tpe, thenType, exp2.loc)
       checkEq(tpe, elseType, exp3.loc)
 
-    case Expr.Branch(_, branches, tpe, _, loc) =>
+    case Exp.Branch(_, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
@@ -504,31 +504,31 @@ object TypeVerifier {
       }
       tpe
 
-    case Expr.JumpTo(sym, tpe1, _, loc) => lenv.get(sym) match {
+    case Exp.JumpTo(sym, tpe1, _, loc) => lenv.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown label sym: '$sym'.", loc)
       case Some(tpe2) => checkEq(tpe1, tpe2, loc)
     }
 
-    case Expr.Let(sym, exp1, exp2, _) =>
+    case Exp.Let(sym, exp1, exp2, _) =>
       val letBoundType = visitExpr(exp1)
       visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
 
-    case Expr.Stmt(exp1, exp2, _) =>
+    case Exp.Stmt(exp1, exp2, _) =>
       // Visit `exp1` to check types inside.
       visitExpr(exp1)
       visitExpr(exp2)
 
-    case Expr.Region(sym, exp, tpe, _, loc) =>
+    case Exp.Region(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Region), lenv), loc)
 
-    case Expr.TryCatch(exp, rules, tpe, _, loc) =>
+    case Exp.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
         checkEq(tpe, visitExpr(exp)(root, env + (sym -> SimpleType.Native(clazz)), lenv), exp.loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.RunWith(exp, effUse, rules, _, tpe, _, loc) =>
+    case Exp.RunWith(exp, effUse, rules, _, tpe, _, loc) =>
       val exptype = visitExpr(exp) match {
         case SimpleType.Arrow(List(SimpleType.Unit), t) => t
         case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
@@ -552,7 +552,7 @@ object TypeVerifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+    case Exp.NewObject(_, clazz, tpe, _, methods, loc) =>
       for (m <- methods) {
         val exptype = visitExpr(m.exp)
         val signature = SimpleType.mkArrow(m.fparams.map(_.tpe), m.tpe)

@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstru
 object MagicMatchCompleter {
 
   /**
-    * Returns a list of Completions for match, triggered by expr.match.
+    * Returns a list of Completions for match, triggered by exp.match.
     *
     * Example-1:
     * Given an identifier `x` of an enum type `Color` with cases `Red`, `Green`, and `Blue`,
@@ -55,7 +55,7 @@ object MagicMatchCompleter {
     } yield {
       val name = s"$baseExp.match"
       val snippet = s"match $baseExp {\n$patternMatchBody}"
-      Completion.MagicMatchCompletion(name, range, Priority.High(0), snippet, "match expr { ... }")
+      Completion.MagicMatchCompletion(name, range, Priority.High(0), snippet, "match exp { ... }")
     }
   }
 

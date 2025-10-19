@@ -27,15 +27,15 @@ object TokenPrinter {
     DocAst.Program(Nil, Nil, files)
   }
 
-  private def print(tokens: Array[Token]): DocAst.Expr = {
+  private def print(tokens: Array[Token]): DocAst.Exp = {
     val printedTokens = tokens.iterator.map(print).toList
-    DocAst.Expr.App(DocAst.Expr.AsIs("Tokens"), printedTokens)
+    DocAst.Exp.App(DocAst.Exp.AsIs("Tokens"), printedTokens)
   }
 
-  private def print(token: Token): DocAst.Expr = {
+  private def print(token: Token): DocAst.Exp = {
     val kindString = token.kind.getClass.getSimpleName.replace("$", "")
     val contentString = printContent(token)
-    DocAst.Expr.AsIs(s"$kindString($contentString)")
+    DocAst.Exp.AsIs(s"$kindString($contentString)")
   }
 
   private def printContent(token: Token): String = {

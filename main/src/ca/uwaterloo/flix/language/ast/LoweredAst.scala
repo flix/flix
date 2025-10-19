@@ -43,9 +43,9 @@ object LoweredAst {
 
   case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: TraitSymUse, tparams: List[TypeParam], tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr], loc: SourceLocation)
+  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Exp], loc: SourceLocation)
 
-  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr, loc: SourceLocation)
+  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Exp, loc: SourceLocation)
 
   case class Spec(doc: Doc, ann: Annotations, mod: Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[TraitConstraint])
 
@@ -65,7 +65,7 @@ object LoweredAst {
 
   case class Op(sym: Symbol.OpSym, spec: Spec, loc: SourceLocation)
 
-  sealed trait Expr extends Product {
+  sealed trait Exp extends Product {
     def tpe: Type
 
     def eff: Type
@@ -73,71 +73,71 @@ object LoweredAst {
     def loc: SourceLocation
   }
 
-  object Expr {
+  object Exp {
 
-    case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, tpe: Type, loc: SourceLocation) extends Exp {
       def eff: Type = Type.Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends Exp {
       def eff: Type = Type.Pure
     }
 
-    case class Lambda(fparam: FormalParam, exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
+    case class Lambda(fparam: FormalParam, exp: Exp, tpe: Type, loc: SourceLocation) extends Exp {
       def eff: Type = Type.Pure
     }
 
-    case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyAtomic(op: AtomicOp, exps: List[Exp], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class ApplyClo(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyClo(exp1: Exp, exp2: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[Exp], targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyLocalDef(sym: Symbol.VarSym, exps: List[Exp], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class ApplyOp(sym: Symbol.OpSym, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplyOp(sym: Symbol.OpSym, exps: List[Exp], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class ApplySig(sym: Symbol.SigSym, exps: List[Expr], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ApplySig(sym: Symbol.SigSym, exps: List[Exp], targ: Type, targs: List[Type], itpe: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Exp, exp2: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Exp, exp2: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class Region(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class IfThenElse(exp1: Exp, exp2: Exp, exp3: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class Stm(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Stm(exp1: Exp, exp2: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class Discard(exp: Expr, eff: Type, loc: SourceLocation) extends Expr {
+    case class Discard(exp: Exp, eff: Type, loc: SourceLocation) extends Exp {
       def tpe: Type = Type.mkUnit(loc)
     }
 
-    case class Match(exp: Expr, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Match(exp: Exp, rules: List[MatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class ExtMatch(exp: Exp, rules: List[ExtMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class TypeMatch(exp: Exp, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class VectorLit(exps: List[Exp], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class VectorLoad(exp1: Exp, exp2: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr {
+    case class VectorLength(exp: Exp, loc: SourceLocation) extends Exp {
       def eff: Type = exp.eff
 
       def tpe: Type = Type.Int32
     }
 
-    case class Ascribe(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Ascribe(exp: Exp, tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class Cast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Cast(exp: Exp, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Exp, rules: List[CatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class RunWith(exp: Expr, effUse: EffSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class RunWith(exp: Exp, effUse: EffSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Exp
 
-    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
+    case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Exp
 
   }
 
@@ -204,7 +204,7 @@ object LoweredAst {
 
     object Head {
 
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[Expr], tpe: Type, loc: SourceLocation) extends Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, terms: List[Exp], tpe: Type, loc: SourceLocation) extends Predicate.Head
 
     }
 
@@ -214,9 +214,9 @@ object LoweredAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
 
-      case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
+      case class Functional(outVars: List[Symbol.VarSym], exp: Exp, loc: SourceLocation) extends Predicate.Body
 
-      case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
+      case class Guard(exp: Exp, loc: SourceLocation) extends Predicate.Body
 
     }
 
@@ -230,22 +230,22 @@ object LoweredAst {
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Exp, retTpe: Type, eff: Type, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Exp)
 
-  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(symUse: OpSymUse, fparams: List[FormalParam], exp: Exp)
 
-  case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
+  case class MatchRule(pat: Pattern, guard: Option[Exp], exp: Exp)
 
-  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
+  case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Exp)
 
-  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Exp, loc: SourceLocation)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Exp, exp: Exp)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 
-  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
+  case class ParYieldFragment(pat: Pattern, exp: Exp, loc: SourceLocation)
 
 }

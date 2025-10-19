@@ -72,316 +72,316 @@ object EffectVerifier {
   /**
     * Verifies the effects in the given expression
     */
-  def visitExp(e: Expr)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = e match {
-    case Expr.Cst(cst, tpe, loc) => ()
-    case Expr.Var(sym, tpe, loc) => ()
-    case Expr.Hole(sym, env, tpe, eff, loc) => ()
-    case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
+  def visitExp(e: Exp)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = e match {
+    case Exp.Cst(cst, tpe, loc) => ()
+    case Exp.Var(sym, tpe, loc) => ()
+    case Exp.Hole(sym, env, tpe, eff, loc) => ()
+    case Exp.HoleWithExp(exp, env, tpe, eff, loc) =>
       visitExp(exp)
     // TODO ?
-    case Expr.OpenAs(symUse, exp, tpe, loc) =>
+    case Exp.OpenAs(symUse, exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.Use(sym, alias, exp, loc) =>
+    case Exp.Use(sym, alias, exp, loc) =>
       visitExp(exp)
-    case Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Exp.Lambda(fparam, exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Exp.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(Type.eraseTopAliases(exp1.tpe).arrowEffectType :: exp1.eff :: exp2.eff :: Nil, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyDef(_, exps, _, itpe, _, eff, loc) =>
+    case Exp.ApplyDef(_, exps, _, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyLocalDef(_, exps, arrowTpe, _, eff, loc) =>
+    case Exp.ApplyLocalDef(_, exps, arrowTpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(arrowTpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ApplyOp(op, exps, tpe, eff, loc) =>
+    case Exp.ApplyOp(op, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO effect stuff
       ()
-    case Expr.ApplySig(_, exps, _, _, itpe, _, eff, loc) =>
+    case Exp.ApplySig(_, exps, _, _, itpe, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(Type.eraseTopAliases(itpe).arrowEffectType :: exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Unary(sop, exp, tpe, eff, loc) =>
+    case Exp.Unary(sop, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Exp.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Exp.Let(sym, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.LocalDef(_, _, exp1, exp2, _, eff, loc) =>
+    case Exp.LocalDef(_, _, exp1, exp2, _, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = exp2.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
+    case Exp.Region(sym, regSym, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = Type.purifyRegion(exp.eff, regSym)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, exp3.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Exp.Stm(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Discard(exp, eff, loc) =>
+    case Exp.Discard(exp, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Exp.Match(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => r.guard.foreach(visitExp); visitExp(r.exp) }
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+    case Exp.TypeMatch(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
+    case Exp.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ExtMatch(exp, rules, _, eff, loc) =>
+    case Exp.ExtMatch(exp, rules, _, eff, loc) =>
       visitExp(exp)
       rules.foreach(r => visitExp(r.exp))
       val expected = Type.mkUnion(exp.eff :: rules.map(r => r.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
+    case Exp.Tag(symUse, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+    case Exp.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ExtTag(_, exps, _, eff, loc) =>
+    case Exp.ExtTag(_, exps, _, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Tuple(elms, tpe, eff, loc) =>
+    case Exp.Tuple(elms, tpe, eff, loc) =>
       elms.foreach(visitExp)
       val expected = Type.mkUnion(elms.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+    case Exp.RecordSelect(exp, label, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+    case Exp.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+    case Exp.RecordRestrict(label, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Exp.ArrayLit(exps, exp, tpe, eff, loc) =>
       exps.foreach(visitExp)
       visitExp(exp)
       // TODO region stuff
       ()
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
       // TODO region stuff
       ()
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+    case Exp.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       // TODO region stuff
       ()
-    case Expr.ArrayLength(exp, eff, loc) =>
+    case Exp.ArrayLength(exp, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+    case Exp.ArrayStore(exp1, exp2, exp3, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
       // TODO region stuff
       ()
-    case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
+    case Exp.StructNew(sym, fields, region, tpe, eff, loc) =>
       fields.map { case (k, v) => v }.foreach(visitExp)
       visitExp(region)
       // TODO region stuff
       ()
-    case Expr.StructGet(e, _, t, _, _) =>
+    case Exp.StructGet(e, _, t, _, _) =>
       // JOE TODO region stuff
       visitExp(e)
-    case Expr.StructPut(e1, _, e2, t, _, _) =>
+    case Exp.StructPut(e1, _, e2, t, _, _) =>
       // JOE TODO region stuff
       visitExp(e1)
       visitExp(e2)
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
+    case Exp.VectorLit(exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       val expected = Type.mkUnion(exps.map(_.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Exp.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       val expected = Type.mkUnion(exp1.eff, exp2.eff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.VectorLength(exp, loc) =>
+    case Exp.VectorLength(exp, loc) =>
       visitExp(exp)
-    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
+    case Exp.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.InstanceOf(exp, clazz, loc) =>
+    case Exp.InstanceOf(exp, clazz, loc) =>
       visitExp(exp)
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+    case Exp.CheckedCast(cast, exp, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Exp.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+    case Exp.Unsafe(exp, runEff, tpe, eff, loc) =>
       visitExp(exp)
       val expected = Type.mkDifference(exp.eff, runEff, loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Without(exp, symUse, tpe, eff, loc) =>
+    case Exp.Without(exp, symUse, tpe, eff, loc) =>
       visitExp(exp)
       val expected = exp.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Exp.TryCatch(exp, rules, tpe, eff, loc) =>
       visitExp(exp)
       rules.foreach { r => visitExp(r.exp) }
       val expected = Type.mkUnion(exp.eff :: rules.map(_.exp.eff), loc)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Throw(exp, _, eff, loc) =>
+    case Exp.Throw(exp, _, eff, loc) =>
       visitExp(exp)
       expectType(eff, Type.mkUnion(exp.eff, Type.IO, loc), loc)
-    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case Exp.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       rules.foreach { r => visitExp(r.exp) }
       // TODO effect stuff
       ()
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Exp.RunWith(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       // TODO effect stuff
       ()
-    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+    case Exp.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
-    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+    case Exp.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       visitExp(exp)
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
-    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+    case Exp.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO Java stuff
       ()
-    case Expr.GetField(field, exp, tpe, eff, loc) =>
+    case Exp.GetField(field, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO Java stuff
       ()
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Exp.PutField(field, exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       // TODO Java stuff
       ()
-    case Expr.GetStaticField(field, tpe, eff, loc) =>
+    case Exp.GetStaticField(field, tpe, eff, loc) =>
       // TODO Java stuff
       ()
-    case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Exp.PutStaticField(field, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO Java stuff
       ()
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Exp.NewObject(name, clazz, tpe, eff, methods, loc) =>
       methods.foreach { m => visitExp(m.exp) }
       // TODO Java stuff
       ()
-    case Expr.NewChannel(exp, tpe, eff, loc) =>
+    case Exp.NewChannel(exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO region stuff
       ()
-    case Expr.GetChannel(exp, tpe, eff, loc) =>
+    case Exp.GetChannel(exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO region stuff
       ()
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
+    case Exp.PutChannel(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       // TODO region stuff
       ()
-    case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
+    case Exp.SelectChannel(rules, default, tpe, eff, loc) =>
       rules.foreach { r => visitExp(r.exp) }
       default.foreach { d => visitExp(d) }
       // TODO region stuff
       ()
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+    case Exp.Spawn(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
+    case Exp.ParYield(frags, exp, tpe, eff, loc) =>
       frags.foreach { f => visitExp(f.exp) }
       visitExp(exp)
       // TODO ?
       ()
-    case Expr.Lazy(exp, tpe, loc) =>
+    case Exp.Lazy(exp, tpe, loc) =>
       visitExp(exp)
-    case Expr.Force(exp, tpe, eff, loc) =>
+    case Exp.Force(exp, tpe, eff, loc) =>
       visitExp(exp)
     // TODO ?
-    case Expr.FixpointConstraintSet(cs, tpe, loc) =>
+    case Exp.FixpointConstraintSet(cs, tpe, loc) =>
     // TODO inner exps
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+    case Exp.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       visitExp(exp)
       // TODO ?
       ()
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+    case Exp.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
       // TODO ?
       ()
-    case Expr.FixpointQueryWithProvenance(exps, select, withh, tpe1, eff1, loc1) =>
+    case Exp.FixpointQueryWithProvenance(exps, select, withh, tpe1, eff1, loc1) =>
       exps.foreach(visitExp)
       select match {
         case TypedAst.Predicate.Head.Atom(pred, den, terms, tpe2, loc2) =>
@@ -389,20 +389,20 @@ object EffectVerifier {
       }
       // TODO ?
       ()
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
       exps.foreach(visitExp)
       where.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+    case Exp.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+    case Exp.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       exps.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.Error(m, tpe, eff) => ()
+    case Exp.Error(m, tpe, eff) => ()
   }
 
   /**

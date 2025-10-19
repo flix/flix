@@ -311,7 +311,7 @@ object ZhegalkinExpr {
 
 }
 
-/** Represents a Zhegalkin expr: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
+/** Represents a Zhegalkin exp: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn */
 case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
 
   // Representation Invariants:

@@ -65,88 +65,88 @@ object TreeShaker1 {
   }
 
   /** Returns the symbols reachable from `e0`. */
-  private def visitExp(e0: Expr): Set[ReachableSym] = e0 match {
-    case Expr.Cst(_, _, _) =>
+  private def visitExp(e0: Exp): Set[ReachableSym] = e0 match {
+    case Exp.Cst(_, _, _) =>
       Set.empty
 
-    case Expr.Var(_, _, _) =>
+    case Exp.Var(_, _, _) =>
       Set.empty
 
-    case Expr.Lambda(_, exp, _, _) =>
+    case Exp.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _, _) =>
+    case Exp.ApplyDef(sym, exps, _, _, _, _, _) =>
       Set(ReachableSym.DefnSym(sym)) ++ visitExps(exps)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+    case Exp.ApplyLocalDef(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Exp.ApplyOp(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.ApplySig(sym, exps, _, _, _, _, _, _) =>
+    case Exp.ApplySig(sym, exps, _, _, _, _, _, _) =>
       Set(ReachableSym.SigSym(sym)) ++ visitExps(exps)
 
-    case Expr.ApplyAtomic(_, exps, _, _, _) =>
+    case Exp.ApplyAtomic(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Let(_, exp1, exp2, _, _, _) =>
+    case Exp.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Exp.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Region(_, _, exp, _, _, _) =>
+    case Exp.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Discard(exp, _, _) =>
+    case Exp.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Match(exp, rules, _, _, _) =>
+    case Exp.Match(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp)) ++ visitExps(rules.flatMap(_.guard))
 
-    case Expr.ExtMatch(exp, rules, _, _, _) =>
+    case Exp.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
+    case Exp.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.VectorLit(exps, _, _, _) =>
+    case Exp.VectorLit(exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Exp.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _) =>
+    case Exp.Ascribe(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Cast(exp, _, _, _, _, _) =>
+    case Exp.Cast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
+    case Exp.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Exp.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.exp))
 
-    case Expr.RunWith(exp, _, rules, _, _, _) =>
+    case Exp.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
   }
 
   /** Returns the symbols reachable from `exps`. */
-  private def visitExps(exps: List[Expr]): Set[ReachableSym] =
+  private def visitExps(exps: List[Exp]): Set[ReachableSym] =
     exps.map(visitExp).fold(Set())(_ ++ _)
 
 

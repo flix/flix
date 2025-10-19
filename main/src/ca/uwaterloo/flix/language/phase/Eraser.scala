@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimpleType.erase
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.ReducedAst.Expr.*
+import ca.uwaterloo.flix.language.ast.ReducedAst.Exp.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, Purity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -49,7 +49,7 @@ object Eraser {
   private def visitDef(defn: Def): Def = defn match {
     case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
-      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
+      val e = Exp.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
       Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
@@ -85,7 +85,7 @@ object Eraser {
       StructField(sym, polymorphicErasure(tpe), loc)
   }
 
-  private def visitBranch(branch: (Symbol.LabelSym, Expr)): (Symbol.LabelSym, Expr) = branch match {
+  private def visitBranch(branch: (Symbol.LabelSym, Exp)): (Symbol.LabelSym, Exp) = branch match {
     case (sym, exp) =>
       (sym, visitExp(exp))
   }
@@ -106,7 +106,7 @@ object Eraser {
       JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
   }
 
-  private def visitExp(exp0: Expr): Expr = exp0 match {
+  private def visitExp(exp0: Exp): Exp = exp0 match {
     case Cst(cst, loc) =>
       Cst(cst, loc)
     case Var(sym, tpe, loc) =>
@@ -191,12 +191,12 @@ object Eraser {
       NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
   }
 
-  private def castExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
-    Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
+  private def castExp(exp: Exp, t: SimpleType, purity: Purity, loc: SourceLocation): Exp = {
+    Exp.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def unboxExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
-    Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
+  private def unboxExp(exp: Exp, t: SimpleType, purity: Purity, loc: SourceLocation): Exp = {
+    Exp.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
   private def visitEffect(eff: Effect): Effect = eff match {

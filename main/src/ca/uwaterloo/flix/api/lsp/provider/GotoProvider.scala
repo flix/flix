@@ -124,7 +124,7 @@ object GotoProvider {
     // Type Vars
     case Type.Var(sym, loc) => Some(LocationLink.fromTypeVarSym(sym, loc))
     // Vars
-    case TypedAst.Expr.Var(sym, _, loc) => Some(LocationLink.fromVarSym(sym, loc))
+    case TypedAst.Exp.Var(sym, _, loc) => Some(LocationLink.fromVarSym(sym, loc))
     case _ => None
   }
 
@@ -141,7 +141,7 @@ object GotoProvider {
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
     case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
-    case exp: TypedAst.Expr => exp.loc.isReal
+    case exp: TypedAst.Exp => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
     case TypedAst.RestrictableChoosePattern.Wild(_, loc) => loc.isReal
     case TypedAst.RestrictableChoosePattern.Var(_, _, loc) => loc.isReal

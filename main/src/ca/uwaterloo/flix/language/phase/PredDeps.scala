@@ -90,221 +90,221 @@ object PredDeps {
   /**
     * Returns the labelled graph of the given expression `exp0`.
     */
-  private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
-    case Expr.Cst(_, _, _) => ()
+  private def visitExp(exp0: Exp)(implicit sctx: SharedContext): Unit = exp0 match {
+    case Exp.Cst(_, _, _) => ()
 
-    case Expr.Var(_, _, _) => ()
+    case Exp.Var(_, _, _) => ()
 
-    case Expr.Hole(_, _, _, _, _) => ()
+    case Exp.Hole(_, _, _, _, _) => ()
 
-    case Expr.HoleWithExp(exp, _, _, _, _) =>
+    case Exp.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.OpenAs(_, exp, _, _) =>
+    case Exp.OpenAs(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Use(_, _, exp, _) =>
+    case Exp.Use(_, _, exp, _) =>
       visitExp(exp)
 
-    case Expr.Lambda(_, exp, _, _) =>
+    case Exp.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+    case Exp.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Exp.ApplyLocalDef(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Exp.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+    case Exp.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Unary(_, exp, _, _, _) =>
+    case Exp.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+    case Exp.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Let(_, exp1, exp2, _, _, _) =>
+    case Exp.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Exp.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _, exp, _, _, _) =>
+    case Exp.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Discard(exp, _, _) =>
+    case Exp.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Match(exp, rules, _, _, _) =>
+    case Exp.Match(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case MatchRule(_, g, b, _) =>
         g.foreach(visitExp)
         visitExp(b)
       }
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
+    case Exp.TypeMatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case TypeMatchRule(_, _, b, _) => visitExp(b) }
 
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+    case Exp.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case RestrictableChooseRule(_, body) => visitExp(body) }
 
-    case Expr.ExtMatch(exp, rules, _, _, _) =>
+    case Exp.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach(r => visitExp(r.exp))
 
-    case Expr.Tag(_, exps, _, _, _) =>
+    case Exp.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.RestrictableTag(_, exps, _, _, _) =>
+    case Exp.RestrictableTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ExtTag(_, exps, _, _, _) =>
+    case Exp.ExtTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Tuple(elms, _, _, _) =>
+    case Exp.Tuple(elms, _, _, _) =>
       elms.foreach(visitExp)
 
-    case Expr.RecordSelect(base, _, _, _, _) =>
+    case Exp.RecordSelect(base, _, _, _, _) =>
       visitExp(base)
 
-    case Expr.RecordExtend(_, value, rest, _, _, _) =>
+    case Exp.RecordExtend(_, value, rest, _, _, _) =>
       visitExp(value)
       visitExp(rest)
 
-    case Expr.RecordRestrict(_, rest, _, _, _) =>
+    case Exp.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest)
 
-    case Expr.ArrayLit(elms, exp, _, _, _) =>
+    case Exp.ArrayLit(elms, exp, _, _, _) =>
       elms.foreach(visitExp)
       visitExp(exp)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.ArrayLoad(base, index, _, _, _) =>
+    case Exp.ArrayLoad(base, index, _, _, _) =>
       visitExp(base)
       visitExp(index)
 
-    case Expr.ArrayLength(base, _, _) =>
+    case Exp.ArrayLength(base, _, _) =>
       visitExp(base)
 
-    case Expr.ArrayStore(base, index, elm, _, _) =>
+    case Exp.ArrayStore(base, index, elm, _, _) =>
       visitExp(base)
       visitExp(index)
       visitExp(elm)
 
-    case Expr.StructNew(_, fields, region, _, _, _) =>
+    case Exp.StructNew(_, fields, region, _, _, _) =>
       visitExp(region)
       fields.foreach { case (_, e) => visitExp(e) }
 
-    case Expr.StructGet(e, _, _, _, _) =>
+    case Exp.StructGet(e, _, _, _, _) =>
       visitExp(e)
 
-    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+    case Exp.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.VectorLit(exps, _, _, _) =>
+    case Exp.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Exp.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _, _, _) =>
+    case Exp.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.InstanceOf(exp, _, _) =>
+    case Exp.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.CheckedCast(_, exp, _, _, _) =>
+    case Exp.CheckedCast(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
+    case Exp.UncheckedCast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Unsafe(exp, _, _, _, _) =>
+    case Exp.Unsafe(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
+    case Exp.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
+    case Exp.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case CatchRule(_, _, e, _) => visitExp(e) }
 
-    case Expr.Throw(exp, _, _, _) =>
+    case Exp.Throw(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Handler(_, rules, _, _, _, _, _) =>
+    case Exp.Handler(_, rules, _, _, _, _, _) =>
       rules.foreach { case HandlerRule(_, _, e, _) => visitExp(e) }
 
-    case Expr.RunWith(exp1, exp2, _, _, _) =>
+    case Exp.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.InvokeConstructor(_, args, _, _, _) =>
+    case Exp.InvokeConstructor(_, args, _, _, _) =>
       args.foreach(visitExp)
 
-    case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+    case Exp.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp)
       args.foreach(visitExp)
 
-    case Expr.InvokeStaticMethod(_, args, _, _, _) =>
+    case Exp.InvokeStaticMethod(_, args, _, _, _) =>
       args.foreach(visitExp)
 
-    case Expr.GetField(_, exp, _, _, _) =>
+    case Exp.GetField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.PutField(_, exp1, exp2, _, _, _) =>
+    case Exp.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.GetStaticField(_, _, _, _) => ()
+    case Exp.GetStaticField(_, _, _, _) => ()
 
-    case Expr.PutStaticField(_, exp, _, _, _) =>
+    case Exp.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.NewObject(_, _, _, _, _, _) => ()
+    case Exp.NewObject(_, _, _, _, _, _) => ()
 
-    case Expr.NewChannel(exp, _, _, _) =>
+    case Exp.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.GetChannel(exp, _, _, _) =>
+    case Exp.GetChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+    case Exp.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.SelectChannel(rules, default, _, _, _) =>
+    case Exp.SelectChannel(rules, default, _, _, _) =>
       default.foreach(visitExp)
       rules.foreach {
         case SelectChannelRule(_, exp1, exp2, _) =>
@@ -312,49 +312,49 @@ object PredDeps {
           visitExp(exp2)
       }
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
+    case Exp.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ParYield(frags, exp, _, _, _) =>
+    case Exp.ParYield(frags, exp, _, _, _) =>
       visitExp(exp)
       frags.foreach {
         case ParYieldFragment(_, e, _) => visitExp(e)
       }
 
-    case Expr.Lazy(exp, _, _) =>
+    case Exp.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Force(exp, _, _, _) =>
+    case Exp.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _) =>
+    case Exp.FixpointConstraintSet(cs, _, _) =>
       cs.foreach(visitConstraint)
 
-    case Expr.FixpointLambda(_, exp, _, _, _) =>
+    case Exp.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+    case Exp.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+    case Exp.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
       exps.foreach(visitExp)
       terms.foreach(visitExp)
 
-    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+    case Exp.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
       exps.foreach(visitExp)
       visitExp(queryExp)
       selects.foreach(visitExp)
       where.foreach(visitExp)
 
-    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+    case Exp.FixpointInjectInto(exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Error(_, _, _) => ()
+    case Exp.Error(_, _, _) => ()
   }
 
   /**

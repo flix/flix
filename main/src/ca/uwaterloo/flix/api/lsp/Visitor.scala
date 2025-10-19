@@ -319,142 +319,142 @@ object Visitor {
     c.consumeTypeParam(tparam)
   }
 
-  private def visitExpr(expr: Expr)(implicit a: Acceptor, c: Consumer): Unit = {
-    if (!a.accept(expr.loc)) {
+  private def visitExpr(exp: Exp)(implicit a: Acceptor, c: Consumer): Unit = {
+    if (!a.accept(exp.loc)) {
       return
     }
 
-    c.consumeExpr(expr)
+    c.consumeExpr(exp)
 
-    expr match {
-      case Expr.Cst(_, _, _) => ()
-      case Expr.Var(_, _, _) => ()
-      case Expr.Hole(_, _, _, _, _) => ()
+    exp match {
+      case Exp.Cst(_, _, _) => ()
+      case Exp.Var(_, _, _) => ()
+      case Exp.Hole(_, _, _, _, _) => ()
 
-      case Expr.HoleWithExp(exp, _, _, _, _) =>
+      case Exp.HoleWithExp(exp, _, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
+      case Exp.OpenAs(_, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.Use(_, _, exp, _) =>
+      case Exp.Use(_, _, exp, _) =>
         visitExpr(exp)
 
-      case Expr.Lambda(fparam, exp, _, _) =>
+      case Exp.Lambda(fparam, exp, _, _) =>
         visitFormalParam(fparam)
         visitExpr(exp)
 
-      case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+      case Exp.ApplyClo(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ApplyDef(symUse, exps, _, _, _, _, _) =>
+      case Exp.ApplyDef(symUse, exps, _, _, _, _, _) =>
         visitDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyLocalDef(symUse, exps, _, _, _, _) =>
+      case Exp.ApplyLocalDef(symUse, exps, _, _, _, _) =>
         visitLocalDefSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.ApplyOp(op, exps, _, _, _) =>
+      case Exp.ApplyOp(op, exps, _, _, _) =>
         visitOpSymUse(op)
         exps.foreach(visitExpr)
 
-      case Expr.ApplySig(symUse, exps, _, _, _, _, _, _) =>
+      case Exp.ApplySig(symUse, exps, _, _, _, _, _, _) =>
         visitSigSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.Unary(_, exp, _, _, _) =>
+      case Exp.Unary(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.Binary(_, exp1, exp2, _, _, _) =>
+      case Exp.Binary(_, exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+      case Exp.Let(bnd, exp1, exp2, _, _, _) =>
         visitBinder(bnd)
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.LocalDef(bnd, fparams, exp1, exp2, _, _, _) =>
+      case Exp.LocalDef(bnd, fparams, exp1, exp2, _, _, _) =>
         visitBinder(bnd)
         fparams.foreach(visitFormalParam)
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Region(bnd, _, exp, _, _, _) =>
+      case Exp.Region(bnd, _, exp, _, _, _) =>
         visitBinder(bnd)
         visitExpr(exp)
 
-      case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
         visitExpr(exp3)
 
-      case Expr.Stm(exp1, exp2, _, _, _) =>
+      case Exp.Stm(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Discard(exp, _, _) =>
+      case Exp.Discard(exp, _, _) =>
         visitExpr(exp)
 
-      case Expr.Match(exp, rules, _, _, _) =>
+      case Exp.Match(exp, rules, _, _, _) =>
         visitExpr(exp)
         rules.foreach(visitMatchRule)
 
-      case Expr.TypeMatch(exp, rules, _, _, _) =>
+      case Exp.TypeMatch(exp, rules, _, _, _) =>
         visitExpr(exp)
         rules.foreach(visitTypeMatchRule)
 
-      case Expr.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
+      case Exp.RestrictableChoose(_, _, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtMatch(exp, rules, _, _, _) =>
+      case Exp.ExtMatch(exp, rules, _, _, _) =>
         visitExpr(exp)
         rules.foreach(visitExtMatchRule)
 
-      case Expr.Tag(symUse, exps, _, _, _) =>
+      case Exp.Tag(symUse, exps, _, _, _) =>
         visitCaseSymUse(symUse)
         exps.foreach(visitExpr)
 
-      case Expr.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
+      case Exp.RestrictableTag(_, _, _, _, _) => () // Not visited, unsupported feature.
 
-      case Expr.ExtTag(_, exps, _, _, _) =>
+      case Exp.ExtTag(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.Tuple(exps, _, _, _) =>
+      case Exp.Tuple(exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.RecordSelect(exp, _, _, _, _) =>
+      case Exp.RecordSelect(exp, _, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
+      case Exp.RecordExtend(_, exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.RecordRestrict(_, exp, _, _, _) =>
+      case Exp.RecordRestrict(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.ArrayLit(exps, exp, _, _, _) =>
+      case Exp.ArrayLit(exps, exp, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)
 
-      case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      case Exp.ArrayNew(exp1, exp2, exp3, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
         visitExpr(exp3)
 
-      case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+      case Exp.ArrayLoad(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ArrayLength(exp, _, _) =>
+      case Exp.ArrayLength(exp, _, _) =>
         visitExpr(exp)
 
-      case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      case Exp.ArrayStore(exp1, exp2, exp3, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
         visitExpr(exp3)
 
-      case Expr.StructNew(_, fields, region, _, _, _) =>
+      case Exp.StructNew(_, fields, region, _, _, _) =>
         fields.foreach {
           case (symUse, exp) =>
             visitStructFieldSymUse(symUse)
@@ -462,145 +462,145 @@ object Visitor {
         }
         visitExpr(region)
 
-      case Expr.StructGet(exp, symUse, _, _, _) =>
+      case Exp.StructGet(exp, symUse, _, _, _) =>
         visitExpr(exp)
         visitStructFieldSymUse(symUse)
 
-      case Expr.StructPut(exp1, symUse, exp2, _, _, _) =>
+      case Exp.StructPut(exp1, symUse, exp2, _, _, _) =>
         visitExpr(exp1)
         visitStructFieldSymUse(symUse)
         visitExpr(exp2)
 
-      case Expr.VectorLit(exps, _, _, _) =>
+      case Exp.VectorLit(exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+      case Exp.VectorLoad(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.VectorLength(exp, _) =>
+      case Exp.VectorLength(exp, _) =>
         visitExpr(exp)
 
-      case Expr.Ascribe(exp, _, _, _, _, _) =>
+      case Exp.Ascribe(exp, _, _, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.InstanceOf(exp, _, _) =>
+      case Exp.InstanceOf(exp, _, _) =>
         visitExpr(exp)
 
-      case Expr.CheckedCast(_, exp, _, _, _) =>
+      case Exp.CheckedCast(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
+      case Exp.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
         visitExpr(exp)
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
-      case Expr.Unsafe(exp, runEff, _, _, _) =>
+      case Exp.Unsafe(exp, runEff, _, _, _) =>
         // runEff is first syntactically
         visitType(runEff)
         visitExpr(exp)
 
-      case Expr.Without(exp, symUse, _, _, _) =>
+      case Exp.Without(exp, symUse, _, _, _) =>
         visitExpr(exp)
         visitEffSymUse(symUse)
 
-      case Expr.TryCatch(exp, rules, _, _, _) =>
+      case Exp.TryCatch(exp, rules, _, _, _) =>
         visitExpr(exp)
         rules.foreach(visitCatchRule)
 
-      case Expr.Throw(exp, _, _, _) =>
+      case Exp.Throw(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+      case Exp.Handler(symUse, rules, _, _, _, _, _) =>
         visitEffSymUse(symUse)
         rules.foreach(visitHandlerRule)
 
-      case Expr.RunWith(exp1, exp2, _, _, _) =>
+      case Exp.RunWith(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.InvokeConstructor(_, exps, _, _, _) =>
+      case Exp.InvokeConstructor(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.InvokeMethod(_, exp, exps, _, _, _) =>
+      case Exp.InvokeMethod(_, exp, exps, _, _, _) =>
         visitExpr(exp)
         exps.foreach(visitExpr)
 
-      case Expr.InvokeStaticMethod(_, exps, _, _, _) =>
+      case Exp.InvokeStaticMethod(_, exps, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.GetField(_, exp, _, _, _) =>
+      case Exp.GetField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.PutField(_, exp1, exp2, _, _, _) =>
+      case Exp.PutField(_, exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.GetStaticField(_, _, _, _) => ()
+      case Exp.GetStaticField(_, _, _, _) => ()
 
-      case Expr.PutStaticField(_, exp, _, _, _) =>
+      case Exp.PutStaticField(_, exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.NewObject(_, _, _, _, methods, _) =>
+      case Exp.NewObject(_, _, _, _, methods, _) =>
         methods.foreach(visitJvmMethod)
 
-      case Expr.NewChannel(exp, _, _, _) =>
+      case Exp.NewChannel(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.GetChannel(exp, _, _, _) =>
+      case Exp.GetChannel(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      case Exp.PutChannel(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.SelectChannel(rules, default, _, _, _) =>
+      case Exp.SelectChannel(rules, default, _, _, _) =>
         rules.foreach(visitSelectChannelRule)
         default.foreach(visitExpr)
 
-      case Expr.Spawn(exp1, exp2, _, _, _) =>
+      case Exp.Spawn(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.ParYield(frags, exp, _, _, _) =>
+      case Exp.ParYield(frags, exp, _, _, _) =>
         visitExpr(exp)
         frags.foreach(visitParYieldFrag)
 
-      case Expr.Lazy(exp, _, _) =>
+      case Exp.Lazy(exp, _, _) =>
         visitExpr(exp)
 
-      case Expr.Force(exp, _, _, _) =>
+      case Exp.Force(exp, _, _, _) =>
         visitExpr(exp)
 
-      case Expr.FixpointConstraintSet(cs, _, _) =>
+      case Exp.FixpointConstraintSet(cs, _, _) =>
         cs.foreach(visitConstraint)
 
-      case Expr.FixpointLambda(pparams, exp, _, _, _) =>
+      case Exp.FixpointLambda(pparams, exp, _, _, _) =>
         pparams.foreach(visitPredicateParam)
         visitExpr(exp)
 
-      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      case Exp.FixpointMerge(exp1, exp2, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+      case Exp.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
         exps.foreach(visitExpr)
         visitPredicate(select)
 
-      case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+      case Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
         exps.foreach(visitExpr)
         visitExpr(queryExp)
         selects.foreach(visitExpr)
         from.foreach(visitPredicate)
         where.foreach(visitExpr)
 
-      case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      case Exp.FixpointSolveWithProject(exps, _, _, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      case Exp.FixpointInjectInto(exps, _, _, _, _) =>
         exps.foreach(visitExpr)
 
-      case Expr.Error(_, _, _) => ()
+      case Exp.Error(_, _, _) => ()
     }
   }
 

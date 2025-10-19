@@ -36,14 +36,14 @@ object RestrictableChooseConstraintGen {
     *
     * {{{
     *     match x {
-    *         case Expr.Var(y) => Expr.Cst(22)
-    *         case Expr.Xor(y, z) => Expr.Xor(y, z)
-    *         case Expr.Cst(y)    => Expr.Cst(y)
-    *         case Expr.And(y, z) => Expr.Or(x, y)
+    *         case Exp.Var(y) => Exp.Cst(22)
+    *         case Exp.Xor(y, z) => Exp.Xor(y, z)
+    *         case Exp.Cst(y)    => Exp.Cst(y)
+    *         case Exp.And(y, z) => Exp.Or(x, y)
     *     }
     * }}}
     *
-    * then it returns { Expr.Var, Expr.Xor, Expr.Cst, Expr.And }.
+    * then it returns { Exp.Var, Exp.Xor, Exp.Cst, Exp.And }.
     */
   private def dom(rules: List[KindedAst.RestrictableChooseRule]): Set[Symbol.RestrictableCaseSym] = {
     rules.flatMap {
@@ -71,11 +71,11 @@ object RestrictableChooseConstraintGen {
   /**
     * Performs type inference on the given restrictable choose expression.
     */
-  def visitRestrictableChoose(exp: KindedAst.Expr.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitRestrictableChoose(exp: KindedAst.Exp.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
 
     exp match {
-      case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
+      case KindedAst.Exp.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
         rules0.headOption match {
@@ -117,7 +117,7 @@ object RestrictableChooseConstraintGen {
           }
         }
 
-      case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
+      case KindedAst.Exp.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
         // Get the enum symbols for the matched type
         rules0.headOption match {
@@ -191,9 +191,9 @@ object RestrictableChooseConstraintGen {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def visitApplyRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitApplyRestrictableTag(exp: KindedAst.Exp.RestrictableTag)(implicit scope: Scope, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp match {
-      case KindedAst.Expr.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
+      case KindedAst.Exp.RestrictableTag(symUse, exps, isOpen, tvar, evar, loc) =>
 
         // Lookup the enum declaration.
         val enumSym = symUse.sym.enumSym
@@ -268,10 +268,10 @@ object RestrictableChooseConstraintGen {
     * -------------------------------------
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
-  def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitOpenAs(exp0: KindedAst.Exp.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     exp0 match {
-      case KindedAst.Expr.OpenAs(RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
+      case KindedAst.Exp.OpenAs(RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
         val `enum` = root.restrictableEnums(sym)
 
         val (enumType, indexVar, targs) = instantiatedEnumType(`enum`, loc.asSynthetic)

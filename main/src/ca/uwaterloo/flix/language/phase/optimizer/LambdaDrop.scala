@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Occur}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Exp, Occur}
 import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
@@ -103,7 +103,7 @@ object LambdaDrop {
   }
 
   /**
-    * Replaces the body of `defn` with a [[Expr.LocalDef]] where constant parameters
+    * Replaces the body of `defn` with a [[Exp.LocalDef]] where constant parameters
     * are closure captured.
     */
   private def lambdaDrop(defn: MonoAst.Def)(implicit lctx: LocalContext, flix: Flix): MonoAst.Def = {
@@ -121,58 +121,58 @@ object LambdaDrop {
     * @param sym0 the symbol of function being visited.
     * @param lctx the local context. This will be mutated.
     */
-  private def visitExp(exp0: MonoAst.Expr)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): Unit = exp0 match {
-    case Expr.Cst(_, _, _) =>
+  private def visitExp(exp0: MonoAst.Exp)(implicit sym0: Symbol.DefnSym, lctx: LocalContext): Unit = exp0 match {
+    case Exp.Cst(_, _, _) =>
 
-    case Expr.Var(_, _, _) =>
+    case Exp.Var(_, _, _) =>
 
-    case Expr.Lambda(_, exp, _, _) =>
+    case Exp.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyAtomic(_, exps, _, _, _) =>
+    case Exp.ApplyAtomic(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case expr@Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case exp@Exp.ApplyDef(sym, exps, _, _, _, _) =>
       // Check for self-recursive call
       if (sym == sym0) {
-        lctx.recursiveCalls.addOne(expr)
+        lctx.recursiveCalls.addOne(exp)
       }
       exps.foreach(visitExp)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _) =>
+    case Exp.ApplyLocalDef(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Exp.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Let(_, exp1, exp2, _, _, _, _) =>
+    case Exp.Let(_, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _, _) =>
+    case Exp.LocalDef(_, _, exp1, exp2, _, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _, exp, _, _, _) =>
+    case Exp.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Discard(exp, _, _) =>
+    case Exp.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Match(exp1, rules, _, _, _) =>
+    case Exp.Match(exp1, rules, _, _, _) =>
       visitExp(exp1)
       rules.foreach {
         case MonoAst.MatchRule(_, guard, exp2) =>
@@ -180,75 +180,75 @@ object LambdaDrop {
           visitExp(exp2)
       }
 
-    case Expr.ExtMatch(exp, rules, _, _, _) =>
+    case Exp.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach {
         case MonoAst.ExtMatchRule(_, exp1, _) =>
           visitExp(exp1)
       }
 
-    case Expr.VectorLit(exps, _, _, _) =>
+    case Exp.VectorLit(exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Exp.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Cast(exp, _, _, _) =>
+    case Exp.Cast(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp1, rules, _, _, _) =>
+    case Exp.TryCatch(exp1, rules, _, _, _) =>
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.RunWith(exp1, _, rules, _, _, _) =>
+    case Exp.RunWith(exp1, _, rules, _, _, _) =>
       visitExp(exp1)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Exp.NewObject(_, _, _, _, methods, _) =>
       methods.foreach(m => visitExp(m.exp))
   }
 
   /**
-    * Rewrites every [[Expr.ApplyDef]] expression of `oldDefnSym` to
-    * an [[Expr.ApplyLocalDef]] expression, replacing `oldDefnSym` with
+    * Rewrites every [[Exp.ApplyDef]] expression of `oldDefnSym` to
+    * an [[Exp.ApplyLocalDef]] expression, replacing `oldDefnSym` with
     * `newDefnSym`.
     *
     * Also applies the substitution `subst` on all variables, so non-constant
     * variables are renamed to matching formal parameters of the local def
     * with name `newDefnSym`.
     *
-    * @param expr0      the expression to rewrite
+    * @param exp0      the expression to rewrite
     * @param oldDefnSym the symbol of the function to rewrite
     * @param newDefnSym the symbol of the local def to insert
     * @param subst      the substitution defined on non-constant parameters.
     *                   It is up to the caller to ensure which variables the substitution is defined over.
     * @param fparams0   the formal parameters and their [[ParamKind]]s of the function to rewrite.
     */
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
-    case Expr.Cst(_, _, _) =>
-      expr0
+  private def rewriteExp(exp0: MonoAst.Exp)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Exp = exp0 match {
+    case Exp.Cst(_, _, _) =>
+      exp0
 
-    case Expr.Var(sym, tpe, loc) =>
-      Expr.Var(subst(sym), tpe, loc)
+    case Exp.Var(sym, tpe, loc) =>
+      Exp.Var(subst(sym), tpe, loc)
 
-    case Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Exp.Lambda(fparam, exp, tpe, loc) =>
       val e = rewriteExp(exp)
-      Expr.Lambda(fparam, e, tpe, loc)
+      Exp.Lambda(fparam, e, tpe, loc)
 
-    case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+    case Exp.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
-      Expr.ApplyAtomic(op, es, tpe, eff, loc)
+      Exp.ApplyAtomic(op, es, tpe, eff, loc)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Exp.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.ApplyClo(e1, e2, tpe, eff, loc)
+      Exp.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+    case Exp.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
       if (sym == oldDefnSym) {
         // Rewrite call to new function symbol and drop constant parameters
         val es = ListOps.zip(exps, fparams0).filter {
@@ -256,51 +256,51 @@ object LambdaDrop {
         }.map {
           case (e, (_, _)) => rewriteExp(e)
         }
-        Expr.ApplyLocalDef(newDefnSym, es, tpe, eff, loc)
+        Exp.ApplyLocalDef(newDefnSym, es, tpe, eff, loc)
       } else {
         // Preserve call as is
         val es = exps.map(rewriteExp)
-        Expr.ApplyDef(sym, es, itpe, tpe, eff, loc)
+        Exp.ApplyDef(sym, es, itpe, tpe, eff, loc)
       }
 
-    case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+    case Exp.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
-      Expr.ApplyLocalDef(sym, es, tpe, eff, loc)
+      Exp.ApplyLocalDef(sym, es, tpe, eff, loc)
 
-    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Exp.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
-      Expr.ApplyOp(sym, es, tpe, eff, loc)
+      Exp.ApplyOp(sym, es, tpe, eff, loc)
 
-    case Expr.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
+    case Exp.Let(sym, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.Let(sym, e1, e2, tpe, eff, occur, loc)
+      Exp.Let(sym, e1, e2, tpe, eff, occur, loc)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
+    case Exp.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, occur, loc)
+      Exp.LocalDef(sym, fparams, e1, e2, tpe, eff, occur, loc)
 
-    case Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
+    case Exp.Region(sym, regSym, exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
-      Expr.Region(sym, regSym, e, tpe, eff, loc)
+      Exp.Region(sym, regSym, e, tpe, eff, loc)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
       val e3 = rewriteExp(exp3)
-      Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      Exp.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Exp.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.Stm(e1, e2, tpe, eff, loc)
+      Exp.Stm(e1, e2, tpe, eff, loc)
 
-    case Expr.Discard(exp, eff, loc) =>
+    case Exp.Discard(exp, eff, loc) =>
       val e = rewriteExp(exp)
-      Expr.Discard(e, eff, loc)
+      Exp.Discard(e, eff, loc)
 
-    case Expr.Match(exp1, rules, tpe, eff, loc) =>
+    case Exp.Match(exp1, rules, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val rs = rules.map {
         case MonoAst.MatchRule(pat, guard, exp2) =>
@@ -308,59 +308,59 @@ object LambdaDrop {
           val e2 = rewriteExp(exp2)
           MonoAst.MatchRule(pat, g, e2)
       }
-      Expr.Match(e1, rs, tpe, eff, loc)
+      Exp.Match(e1, rs, tpe, eff, loc)
 
-    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case Exp.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = rewriteExp(exp)
       val rs = rules.map {
         case MonoAst.ExtMatchRule(pat, exp1, loc1) =>
           val e1 = rewriteExp(exp1)
           MonoAst.ExtMatchRule(pat, e1, loc1)
       }
-      Expr.ExtMatch(e, rs, tpe, eff, loc)
+      Exp.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
+    case Exp.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(rewriteExp)
-      Expr.VectorLit(es, tpe, eff, loc)
+      Exp.VectorLit(es, tpe, eff, loc)
 
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Exp.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      Expr.VectorLoad(e1, e2, tpe, eff, loc)
+      Exp.VectorLoad(e1, e2, tpe, eff, loc)
 
-    case Expr.VectorLength(exp, loc) =>
+    case Exp.VectorLength(exp, loc) =>
       val e = rewriteExp(exp)
-      Expr.VectorLength(e, loc)
+      Exp.VectorLength(e, loc)
 
-    case Expr.Cast(exp, tpe, eff, loc) =>
+    case Exp.Cast(exp, tpe, eff, loc) =>
       val e = rewriteExp(exp)
-      Expr.Cast(e, tpe, eff, loc)
+      Exp.Cast(e, tpe, eff, loc)
 
-    case Expr.TryCatch(exp1, rules, tpe, eff, loc) =>
+    case Exp.TryCatch(exp1, rules, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val rs = rules.map {
         case MonoAst.CatchRule(sym, clazz, exp2) =>
           val e2 = rewriteExp(exp2)
           MonoAst.CatchRule(sym, clazz, e2)
       }
-      Expr.TryCatch(e1, rs, tpe, eff, loc)
+      Exp.TryCatch(e1, rs, tpe, eff, loc)
 
-    case Expr.RunWith(exp1, effUse, rules, tpe, eff, loc) =>
+    case Exp.RunWith(exp1, effUse, rules, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val rs = rules.map {
         case MonoAst.HandlerRule(op, fparams, exp2) =>
           val e2 = rewriteExp(exp2)
           MonoAst.HandlerRule(op, fparams, e2)
       }
-      Expr.RunWith(e1, effUse, rs, tpe, eff, loc)
+      Exp.RunWith(e1, effUse, rs, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
+    case Exp.NewObject(name, clazz, tpe, eff1, methods, loc1) =>
       val ms = methods.map {
         case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff2, loc2) =>
           val e = rewriteExp(exp)
           MonoAst.JvmMethod(ident, fparams, e, retTpe, eff2, loc2)
       }
-      Expr.NewObject(name, clazz, tpe, eff1, ms, loc1)
+      Exp.NewObject(name, clazz, tpe, eff1, ms, loc1)
 
   }
 
@@ -382,12 +382,12 @@ object LambdaDrop {
     *
     * Otherwise, it is marked [[ParamKind.NonConst]]
     */
-  private def paramKinds(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
+  private def paramKinds(calls: List[Exp.ApplyDef], fparams: List[MonoAst.FormalParam]): List[(MonoAst.FormalParam, ParamKind)] = {
     val matrix = calls.map(call => ListOps.zip(fparams, call.exps)).transpose
     matrix.map {
       case invocations =>
         val allConstant = invocations.forall {
-          case (fp, Expr.Var(sym, _, _)) => fp.sym == sym
+          case (fp, Exp.Var(sym, _, _)) => fp.sym == sym
           case _ => false
         }
         invocations.headOption match {
@@ -399,7 +399,7 @@ object LambdaDrop {
   }
 
   /** Returns `true` if there exists at least one constant parameter. */
-  private def hasConstantParameter(calls: List[Expr.ApplyDef], fparams: List[MonoAst.FormalParam]): Boolean = {
+  private def hasConstantParameter(calls: List[Exp.ApplyDef], fparams: List[MonoAst.FormalParam]): Boolean = {
     paramKinds(calls, fparams).exists {
       case (_, pkind) => pkind == ParamKind.Const
     }
@@ -412,7 +412,7 @@ object LambdaDrop {
   }
 
   /**
-    * Returns a [[Expr.LocalDef]] that is immediately applied after its declaration.
+    * Returns a [[Exp.LocalDef]] that is immediately applied after its declaration.
     * Only non-constant parameters are declared as parameters for the local def.
     *
     * See [[LambdaDrop]] for an example.
@@ -422,14 +422,14 @@ object LambdaDrop {
     * @param subst  The variable substitution.
     * @param params The list of formal parameters and their [[ParamKind]].
     */
-  private def mkLocalDefExpr(exp0: Expr, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
+  private def mkLocalDefExpr(exp0: Exp, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Exp = {
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParamKind.NonConst
     }
     val args = nonConstantParams.map {
-      case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
+      case (fp, _) => Exp.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
     }
-    val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
+    val applyLocalDefExpr = Exp.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
 
     val localDefParams = nonConstantParams.map {
       case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
@@ -437,7 +437,7 @@ object LambdaDrop {
     val tpe = applyLocalDefExpr.tpe
     val eff = applyLocalDefExpr.eff
     val loc = applyLocalDefExpr.loc.asSynthetic
-    Expr.LocalDef(sym, localDefParams, exp0, applyLocalDefExpr, tpe, eff, Occur.Unknown, loc)
+    Exp.LocalDef(sym, localDefParams, exp0, applyLocalDefExpr, tpe, eff, Occur.Unknown, loc)
   }
 
   private object LocalContext {
@@ -452,7 +452,7 @@ object LambdaDrop {
     *
     * @param recursiveCalls A mutable buffer to collect recursive calls.
     */
-  private case class LocalContext(recursiveCalls: mutable.ArrayBuffer[Expr.ApplyDef])
+  private case class LocalContext(recursiveCalls: mutable.ArrayBuffer[Exp.ApplyDef])
 
   /**
     * A substitution defined on `vars`.

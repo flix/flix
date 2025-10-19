@@ -26,10 +26,10 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object SchemaConstraintGen {
 
-  def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointConstraintSet(e: KindedAst.Exp.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
+      case KindedAst.Exp.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
         c.unifyAllTypes(constraintTypes, loc)
         val schemaRow = constraintTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
@@ -40,10 +40,10 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointLambda(e: KindedAst.Exp.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
+      case KindedAst.Exp.FixpointLambda(pparams, exp, tvar, loc) =>
 
         def mkRowExtend(pparam: KindedAst.PredicateParam, restRow: Type): Type = pparam match {
           case KindedAst.PredicateParam(pred, paramTpe, _) => Type.mkSchemaRowExtend(pred, paramTpe, restRow, paramTpe.loc)
@@ -63,10 +63,10 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointMerge(e: KindedAst.Exp.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
+      case KindedAst.Exp.FixpointMerge(exp1, exp2, loc) =>
         //
         //  exp1 : #{...}    exp2 : #{...}
         //  ------------------------------
@@ -81,10 +81,10 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointQueryWithProvenance(e: KindedAst.Expr.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointQueryWithProvenance(e: KindedAst.Exp.FixpointQueryWithProvenance)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
+      case KindedAst.Exp.FixpointQueryWithProvenance(exps, select, withh, tvar, loc1) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val selectRow = visitHeadPredicate(select)
         val (withRow, resultRow) = mkSchemaRowPair(withh, loc1)
@@ -96,10 +96,10 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointQueryWithSelect(e: KindedAst.Expr.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointQueryWithSelect(e: KindedAst.Exp.FixpointQueryWithSelect)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
+      case KindedAst.Exp.FixpointQueryWithSelect(exps, queryExp, selects, _, _, pred, tvar, loc) =>
         //
         //  exp = exps[0] <+> exps[1] <+> ... (exp is conceptual; it does not actually exist)
         //
@@ -125,10 +125,10 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointSolveWithProject(e: KindedAst.Expr.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointSolveWithProject(e: KindedAst.Exp.FixpointSolveWithProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointSolveWithProject(exps, optPreds, _, tvar, loc) =>
+      case KindedAst.Exp.FixpointSolveWithProject(exps, optPreds, _, tvar, loc) =>
         //
         //  exp = exps₁ <+> exps₂ <+> ... <+> expsₘ
         //
@@ -154,10 +154,10 @@ object SchemaConstraintGen {
     }
   }
 
-  def visitFixpointInjectInto(e: KindedAst.Expr.FixpointInjectInto)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitFixpointInjectInto(e: KindedAst.Exp.FixpointInjectInto)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     e match {
-      case KindedAst.Expr.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
+      case KindedAst.Exp.FixpointInjectInto(exps, predsAndArities, tvar, evar, loc) =>
         predsAndArities.zip(exps).foreach {
           case (PredicateAndArity(pred, arity), exp) =>
             //

@@ -59,90 +59,90 @@ object Safety {
   /**
     * Checks the safety and well-formedness of `exp0`.
     *
-    *   - [[Expr.TypeMatch]] must end with a default case.
-    *   - [[Expr.Handler]] are not defined for primitive effects.
+    *   - [[Exp.TypeMatch]] must end with a default case.
+    *   - [[Exp.Handler]] are not defined for primitive effects.
     *   - JVM operations and casts are allowed by the relevant [[SecurityContext]].
-    *   - [[Expr.UncheckedCast]] are not impossible.
-    *   - [[Expr.Throw]] only throws exceptions.
-    *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
-    *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
+    *   - [[Exp.UncheckedCast]] are not impossible.
+    *   - [[Exp.Throw]] only throws exceptions.
+    *   - [[Exp.NewObject]] are valid (see [[checkObjectImplementation]]).
+    *   - [[Exp.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
-  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(_, _, _) =>
+  private def visitExp(exp0: Exp)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
+    case Exp.Cst(_, _, _) =>
       ()
 
-    case Expr.Var(_, _, _) =>
+    case Exp.Var(_, _, _) =>
       ()
 
-    case Expr.Hole(_, _, _, _, _) =>
+    case Exp.Hole(_, _, _, _, _) =>
       ()
 
-    case Expr.HoleWithExp(exp, _, _, _, _) =>
+    case Exp.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.OpenAs(_, exp, _, _) =>
+    case Exp.OpenAs(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Use(_, _, exp, _) =>
+    case Exp.Use(_, _, exp, _) =>
       visitExp(exp)
 
-    case Expr.Lambda(_, exp, _, _) =>
+    case Exp.Lambda(_, exp, _, _) =>
       visitExp(exp)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+    case Exp.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Exp.ApplyLocalDef(_, exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Exp.ApplyOp(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+    case Exp.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Unary(_, exp, _, _, _) =>
+    case Exp.Unary(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+    case Exp.Binary(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Let(_, exp1, exp2, _, _, _) =>
+    case Exp.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
+    case Exp.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _, exp, _, _, _) =>
+    case Exp.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Discard(exp, _, _) =>
+    case Exp.Discard(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Match(exp, rules, _, _, _) =>
+    case Exp.Match(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { rule =>
         rule.guard.foreach(visitExp)
         visitExp(rule.exp)
       }
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
+    case Exp.TypeMatch(exp, rules, _, _, _) =>
       // Check whether the last case in the type match looks like `..: _`.
       rules.lastOption match {
         // Use top scope since the rigidity check only cares if it's a syntactically known variable.
@@ -154,108 +154,108 @@ object Safety {
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+    case Exp.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.ExtMatch(exp, rules, _, _, _) =>
+    case Exp.ExtMatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach(r => visitExp(r.exp))
 
-    case Expr.Tag(_, exps, _, _, _) =>
+    case Exp.Tag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.RestrictableTag(_, exps, _, _, _) =>
+    case Exp.RestrictableTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.ExtTag(_, exps, _, _, _) =>
+    case Exp.ExtTag(_, exps, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Tuple(elms, _, _, _) =>
+    case Exp.Tuple(elms, _, _, _) =>
       elms.foreach(visitExp)
 
-    case Expr.RecordSelect(exp, _, _, _, _) =>
+    case Exp.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.RecordExtend(_, value, rest, _, _, _) =>
+    case Exp.RecordExtend(_, value, rest, _, _, _) =>
       visitExp(value)
       visitExp(rest)
 
-    case Expr.RecordRestrict(_, rest, _, _, _) =>
+    case Exp.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest)
 
-    case Expr.ArrayLit(elms, exp, _, _, _) =>
+    case Exp.ArrayLit(elms, exp, _, _, _) =>
       elms.foreach(visitExp)
       visitExp(exp)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+    case Exp.ArrayLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ArrayLength(base, _, _) =>
+    case Exp.ArrayLength(base, _, _) =>
       visitExp(base)
 
-    case Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+    case Exp.ArrayStore(exp1, exp2, exp3, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
 
-    case Expr.StructNew(_, fields, region, _, _, _) =>
+    case Exp.StructNew(_, fields, region, _, _, _) =>
       fields.foreach { case (_, exp) => visitExp(exp) }
       visitExp(region)
 
-    case Expr.StructGet(e, _, _, _, _) =>
+    case Exp.StructGet(e, _, _, _, _) =>
       visitExp(e)
 
-    case Expr.StructPut(exp1, _, exp2, _, _, _) =>
+    case Exp.StructPut(exp1, _, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.VectorLit(elms, _, _, _) =>
+    case Exp.VectorLit(elms, _, _, _) =>
       elms.foreach(visitExp)
 
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Exp.VectorLoad(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, _, _, _) =>
+    case Exp.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.InstanceOf(exp, _, _) =>
+    case Exp.InstanceOf(exp, _, _) =>
       visitExp(exp)
 
-    case cast@Expr.CheckedCast(castType, exp, _, _, _) =>
+    case cast@Exp.CheckedCast(castType, exp, _, _, _) =>
       castType match {
         case CheckedCastType.TypeCast => checkCheckedTypeCast(cast)
         case CheckedCastType.EffectCast => ()
       }
       visitExp(exp)
 
-    case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
+    case cast@Exp.UncheckedCast(exp, _, _, _, _, loc) =>
       verifyUncheckedCast(cast)
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
-    case Expr.Unsafe(exp, _, _, _, loc) =>
+    case Exp.Unsafe(exp, _, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
+    case Exp.Without(exp, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
+    case Exp.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
         if (flix.options.checkTrust) {
@@ -265,85 +265,85 @@ object Safety {
         visitExp(e)
       }
 
-    case Expr.Throw(exp, _, _, loc) =>
+    case Exp.Throw(exp, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp)
       checkThrow(exp)
 
-    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+    case Exp.Handler(symUse, rules, _, _, _, _, _) =>
       // Check for [[PrimitiveEffectInRunWith]]
       if (Symbol.isPrimitiveEff(symUse.sym)) {
         sctx.errors.add(PrimitiveEffectInRunWith(symUse.sym, symUse.qname.loc))
       }
       rules.foreach(rule => visitExp(rule.exp))
 
-    case Expr.RunWith(exp1, exp2, _, _, _) =>
+    case Exp.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.InvokeConstructor(_, args, _, _, loc) =>
+    case Exp.InvokeConstructor(_, args, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       args.foreach(visitExp)
 
-    case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+    case Exp.InvokeMethod(_, exp, args, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp)
       args.foreach(visitExp)
 
-    case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+    case Exp.InvokeStaticMethod(_, args, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       args.foreach(visitExp)
 
-    case Expr.GetField(_, exp, _, _, loc) =>
+    case Exp.GetField(_, exp, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
-    case Expr.PutField(_, exp1, exp2, _, _, loc) =>
+    case Exp.PutField(_, exp1, exp2, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.GetStaticField(_, _, _, loc) =>
+    case Exp.GetStaticField(_, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
 
-    case Expr.PutStaticField(_, exp, _, _, loc) =>
+    case Exp.PutStaticField(_, exp, _, _, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       visitExp(exp)
 
-    case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
+    case newObject@Exp.NewObject(_, _, _, _, methods, loc) =>
       if (flix.options.checkTrust) {
         checkPermissions(loc.security, loc)
       }
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
 
-    case Expr.NewChannel(exp, _, _, _) =>
+    case Exp.NewChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.GetChannel(exp, _, _, _) =>
+    case Exp.GetChannel(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+    case Exp.PutChannel(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.SelectChannel(rules, default, _, _, _) =>
+    case Exp.SelectChannel(rules, default, _, _, _) =>
       rules.foreach {
         case SelectChannelRule(_, chan, body, _) =>
           visitExp(chan)
@@ -351,47 +351,47 @@ object Safety {
       }
       default.map(visitExp).getOrElse(Nil)
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
+    case Exp.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.ParYield(frags, exp, _, _, _) =>
+    case Exp.ParYield(frags, exp, _, _, _) =>
       frags.foreach(fragment => visitExp(fragment.exp))
       visitExp(exp)
 
-    case Expr.Lazy(exp, _, _) =>
+    case Exp.Lazy(exp, _, _) =>
       visitExp(exp)
 
-    case Expr.Force(exp, _, _, _) =>
+    case Exp.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _) =>
+    case Exp.FixpointConstraintSet(cs, _, _) =>
       cs.foreach(checkConstraint)
 
-    case Expr.FixpointLambda(_, exp, _, _, _) =>
+    case Exp.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+    case Exp.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.FixpointQueryWithProvenance(exps, Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+    case Exp.FixpointQueryWithProvenance(exps, Predicate.Head.Atom(_, _, terms, _, _), _, _, _, _) =>
       exps.foreach(visitExp)
       terms.foreach(visitExp)
 
-    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+    case Exp.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
       exps.foreach(visitExp)
       visitExp(queryExp)
       selects.foreach(visitExp)
       where.foreach(visitExp)
 
-    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+    case Exp.FixpointInjectInto(exps, _, _, _, _) =>
       exps.foreach(visitExp)
 
-    case Expr.Error(_, _, _) =>
+    case Exp.Error(_, _, _) =>
       ()
 
   }
@@ -405,8 +405,8 @@ object Safety {
   }
 
   /** Checks if `cast` is legal. */
-  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
-    case Expr.CheckedCast(_, exp, tpe, _, loc) =>
+  private def checkCheckedTypeCast(cast: Exp.CheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+    case Exp.CheckedCast(_, exp, tpe, _, loc) =>
       val from = exp.tpe
       val to = tpe
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
@@ -470,8 +470,8 @@ object Safety {
     *   - No primitive type can be cast to a reference type and vice-versa.
     *   - No Bool type can be cast to a non-Bool type and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
-    case Expr.UncheckedCast(exp, declaredType, _, _, _, loc) =>
+  private def verifyUncheckedCast(cast: Exp.UncheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+    case Exp.UncheckedCast(exp, declaredType, _, _, _, loc) =>
       val from = exp.tpe
       val to = declaredType
       val primitives = List(
@@ -657,7 +657,7 @@ object Safety {
   }
 
   /** Checks that the free variables in `exps` does not include `latVars`. */
-  private def checkTerms(exps: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  private def checkTerms(exps: List[Exp], latVars: Set[Symbol.VarSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     val allFreeVars = exps.flatMap(t => freeVars(t).keys).toSet
 
     // Compute the lattice variables that are illegally used in the exps.
@@ -693,7 +693,7 @@ object Safety {
     classOf[Throwable].isAssignableFrom(clazz)
 
   /** Checks that the type of the argument to `throw` is [[java.lang.Throwable]] or a subclass. */
-  private def checkThrow(exp: Expr)(implicit sctx: SharedContext): Unit =
+  private def checkThrow(exp: Exp)(implicit sctx: SharedContext): Unit =
     if (!isThrowableType(exp.tpe)) sctx.errors.add(IllegalThrowType(exp.loc))
 
   /** Returns `true` if `tpe` is [[java.lang.Throwable]] or a subclass of it. */
@@ -716,8 +716,8 @@ object Safety {
     *   - `methods` must not include non-existing methods.
     *   - `methods` must not let control effects escape.
     */
-  private def checkObjectImplementation(newObject: Expr.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
-    case Expr.NewObject(_, clazz, tpe0, _, methods, loc) =>
+  private def checkObjectImplementation(newObject: Exp.NewObject)(implicit flix: Flix, sctx: SharedContext): Unit = newObject match {
+    case Exp.NewObject(_, clazz, tpe0, _, methods, loc) =>
       val tpe = Type.eraseAliases(tpe0)
       // `clazz` must be an interface or have a non-private constructor without arguments.
       if (!clazz.isInterface && !hasNonPrivateZeroArgConstructor(clazz)) {

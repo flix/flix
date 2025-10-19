@@ -54,50 +54,50 @@ object TreeShaker2 {
   }
 
   /** Returns the function symbols reachable from `e0`. */
-  private def visitExp(e0: Expr): Set[Symbol.DefnSym] = e0 match {
-    case Expr.Cst(_, _, _) =>
+  private def visitExp(e0: Exp): Set[Symbol.DefnSym] = e0 match {
+    case Exp.Cst(_, _, _) =>
       Set.empty
 
-    case Expr.Var(_, _, _) =>
+    case Exp.Var(_, _, _) =>
       Set.empty
 
-    case Expr.ApplyAtomic(op, exps, _, _, _) =>
+    case Exp.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.ApplyDef(sym, exps, _, _, _) =>
+    case Exp.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Exp.ApplyOp(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Branch(exp, branches, _, _, _) =>
+    case Exp.Branch(exp, branches, _, _, _) =>
       visitExp(exp) ++ visitExps(branches.values.toList)
 
-    case Expr.JumpTo(_, _, _, _) =>
+    case Exp.JumpTo(_, _, _, _) =>
       Set.empty
 
-    case Expr.Let(_, exp1, exp2, _, _, _) =>
+    case Exp.Let(_, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Region(_, exp, _, _, _) =>
+    case Exp.Region(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
+    case Exp.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.RunWith(exp, _, rules, _, _, _) =>
+    case Exp.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Exp.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
   }
@@ -109,7 +109,7 @@ object TreeShaker2 {
   }
 
   /** Returns the function symbols reachable from `es`. */
-  private def visitExps(es: List[Expr]): Set[Symbol.DefnSym] =
+  private def visitExps(es: List[Exp]): Set[Symbol.DefnSym] =
     es.map(visitExp).fold(Set())(_ ++ _)
 
 }

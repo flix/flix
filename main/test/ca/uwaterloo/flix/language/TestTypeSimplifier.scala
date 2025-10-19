@@ -57,7 +57,7 @@ class TestTypeSimplifier extends AnyFunSuite with TestUtils {
     Visitor.visitRoot(
       root,
       new Consumer {
-        override def consumeExpr(exp: TypedAst.Expr): Unit = types.append(exp.tpe)
+        override def consumeExpr(exp: TypedAst.Exp): Unit = types.append(exp.tpe)
       },
       (_: SourceLocation) => true
     )

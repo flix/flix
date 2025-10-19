@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 import ca.uwaterloo.flix.api.lsp.acceptors.{FileAcceptor, InsideAcceptor}
 import ca.uwaterloo.flix.api.lsp.consumers.StackConsumer
 import ca.uwaterloo.flix.api.lsp.{Acceptor, Consumer, DocumentHighlight, DocumentHighlightKind, Position, Range, ResponseStatus, Visitor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Expr, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Binder, Exp, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{CaseSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{Constant, SymUse, TraitConstraint}
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -131,8 +131,8 @@ object HighlightProvider {
     * Certain AST nodes are filtered out. We filter out [[TypedAst.Def]], [[TypedAst.Sig]],
     * [[TypedAst.Op]] and [[TypedAst.Enum]] nodes if the cursor is in them but _not_ in their [[Symbol]].
     * Additionally, we filter out [[Constant.RecordEmpty]] nodes, since they're uninteresting
-    * for highlighting and their [[SourceLocation]] overshadows [[TypedAst.Expr.RecordExtend]]
-    * and [[TypedAst.Expr.RecordRestrict]] nodes. Lastly we filter out AST nodes with synthetic
+    * for highlighting and their [[SourceLocation]] overshadows [[TypedAst.Exp.RecordExtend]]
+    * and [[TypedAst.Exp.RecordRestrict]] nodes. Lastly we filter out AST nodes with synthetic
     * [[SourceLocation]]s as these, like the previous, are uninteresting and might shadow other nodes.
     *
     * We return the most precise AST node under the right [[Position]] (after filtering), unless there is none,
@@ -179,7 +179,7 @@ object HighlightProvider {
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
     case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
-    case exp: TypedAst.Expr => exp.loc.isReal
+    case exp: TypedAst.Exp => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
     case TypedAst.RestrictableChoosePattern.Wild(_, loc) => loc.isReal
     case TypedAst.RestrictableChoosePattern.Var(_, _, loc) => loc.isReal
@@ -219,7 +219,7 @@ object HighlightProvider {
   }
 
   private def isNotEmptyRecord(x: AnyRef): Boolean = x match {
-    case TypedAst.Expr.Cst(Constant.RecordEmpty, _, _) => false
+    case TypedAst.Exp.Cst(Constant.RecordEmpty, _, _) => false
     case _ => true
   }
 
@@ -282,9 +282,9 @@ object HighlightProvider {
       case TypedAst.Op(sym, _, _) => Some(getOpSymOccurs(sym))
       case SymUse.OpSymUse(sym, _) => Some(getOpSymOccurs(sym))
       // Records
-      case TypedAst.Expr.RecordExtend(label, _, _, _, _, _) => Some(getLabelOccurs(label))
-      case TypedAst.Expr.RecordRestrict(label, _, _, _, _) => Some(getLabelOccurs(label))
-      case TypedAst.Expr.RecordSelect(_, label, _, _, _) => Some(getLabelOccurs(label))
+      case TypedAst.Exp.RecordExtend(label, _, _, _, _, _) => Some(getLabelOccurs(label))
+      case TypedAst.Exp.RecordRestrict(label, _, _, _, _) => Some(getLabelOccurs(label))
+      case TypedAst.Exp.RecordSelect(_, label, _, _, _) => Some(getLabelOccurs(label))
       // Signatures
       case TypedAst.Sig(sym, _, _, _) => Some(getSigSymOccurs(sym))
       case SymUse.SigSymUse(sym, _) => Some(getSigSymOccurs(sym))
@@ -304,7 +304,7 @@ object HighlightProvider {
       case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
       // Variables
       case Binder(sym, _) => Some(getVarSymOccurs(sym))
-      case TypedAst.Expr.Var(varSym, _, _) => Some(getVarSymOccurs(varSym))
+      case TypedAst.Exp.Var(varSym, _, _) => Some(getVarSymOccurs(varSym))
 
       case _ => None
     }
@@ -392,8 +392,8 @@ object HighlightProvider {
         case _ => ()
       }
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.ApplyOp(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
+      override def consumeExpr(exp: Exp): Unit = exp match {
+        case Exp.ApplyOp(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
     }
@@ -504,10 +504,10 @@ object HighlightProvider {
     }
 
     object LabelConsumer extends Consumer {
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.RecordExtend(l, _, _, _, _, _) => considerWrite(l, l.loc)
-        case Expr.RecordSelect(_, l, _, _, _) => considerRead(l, l.loc)
-        case Expr.RecordRestrict(l, _, _, _, _) => considerWrite(l, l.loc)
+      override def consumeExpr(exp: Exp): Unit = exp match {
+        case Exp.RecordExtend(l, _, _, _, _, _) => considerWrite(l, l.loc)
+        case Exp.RecordSelect(_, l, _, _, _) => considerRead(l, l.loc)
+        case Exp.RecordRestrict(l, _, _, _, _) => considerWrite(l, l.loc)
         case _ => ()
       }
     }
@@ -563,8 +563,8 @@ object HighlightProvider {
     object StructSymConsumer extends Consumer {
       override def consumeStruct(struct: TypedAst.Struct): Unit = considerWrite(struct.sym, struct.sym.loc)
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.StructNew(sym, _, _, _, _, loc) => considerRead(sym, loc)
+      override def consumeExpr(exp: Exp): Unit = exp match {
+        case Exp.StructNew(sym, _, _, _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
 
@@ -714,8 +714,8 @@ object HighlightProvider {
 
       override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = considerRead(symUse.sym, symUse.loc)
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
-        case Expr.Var(sym, _, loc) => considerRead(sym, loc)
+      override def consumeExpr(exp: Exp): Unit = exp match {
+        case Exp.Var(sym, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
     }

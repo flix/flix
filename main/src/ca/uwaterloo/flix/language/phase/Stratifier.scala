@@ -99,345 +99,345 @@ object Stratifier {
   /**
     * Performs stratification of the given expression `exp0`.
     */
-  private def visitExp(exp0: Expr)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Expr = exp0 match {
-    case Expr.Cst(_, _, _) => exp0
+  private def visitExp(exp0: Exp)(implicit g: LabelledPrecedenceGraph, sctx: SharedContext, root: Root, flix: Flix): Exp = exp0 match {
+    case Exp.Cst(_, _, _) => exp0
 
-    case Expr.Var(_, _, _) => exp0
+    case Exp.Var(_, _, _) => exp0
 
-    case Expr.Hole(_, _, _, _, _) => exp0
+    case Exp.Hole(_, _, _, _, _) => exp0
 
-    case Expr.HoleWithExp(exp, env, tpe, eff, loc) =>
+    case Exp.HoleWithExp(exp, env, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.HoleWithExp(e, env, tpe, eff, loc)
+      Exp.HoleWithExp(e, env, tpe, eff, loc)
 
-    case Expr.OpenAs(sym, exp, tpe, loc) =>
+    case Exp.OpenAs(sym, exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expr.OpenAs(sym, e, tpe, loc)
+      Exp.OpenAs(sym, e, tpe, loc)
 
-    case Expr.Use(sym, alias, exp, loc) =>
+    case Exp.Use(sym, alias, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Use(sym, alias, e, loc)
+      Exp.Use(sym, alias, e, loc)
 
-    case Expr.Lambda(fparam, exp, tpe, loc) =>
+    case Exp.Lambda(fparam, exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expr.Lambda(fparam, e, tpe, loc)
+      Exp.Lambda(fparam, e, tpe, loc)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case Exp.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.ApplyClo(e1, e2, tpe, eff, loc)
+      Exp.ApplyClo(e1, e2, tpe, eff, loc)
 
-    case Expr.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
+    case Exp.ApplyDef(symUse, exps, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyDef(symUse, es, targs, itpe, tpe, eff, loc)
+      Exp.ApplyDef(symUse, es, targs, itpe, tpe, eff, loc)
 
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
+    case Exp.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
+      Exp.ApplyLocalDef(symUse, es, arrowTpe, tpe, eff, loc)
 
-    case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case Exp.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplyOp(sym, es, tpe, eff, loc)
+      Exp.ApplyOp(sym, es, tpe, eff, loc)
 
-    case Expr.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
+    case Exp.ApplySig(symUse, exps, targ, targs, itpe, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, loc)
+      Exp.ApplySig(symUse, es, targ, targs, itpe, tpe, eff, loc)
 
-    case Expr.Unary(sop, exp, tpe, eff, loc) =>
+    case Exp.Unary(sop, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Unary(sop, e, tpe, eff, loc)
+      Exp.Unary(sop, e, tpe, eff, loc)
 
-    case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) =>
+    case Exp.Binary(sop, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Binary(sop, e1, e2, tpe, eff, loc)
+      Exp.Binary(sop, e1, e2, tpe, eff, loc)
 
-    case Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
+    case Exp.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Let(sym, e1, e2, tpe, eff, loc)
+      Exp.Let(sym, e1, e2, tpe, eff, loc)
 
-    case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
+    case Exp.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
+      Exp.LocalDef(sym, fparams, e1, e2, tpe, eff, loc)
 
-    case Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
+    case Exp.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Region(sym, regionVar, e, tpe, eff, loc)
+      Exp.Region(sym, regionVar, e, tpe, eff, loc)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      Exp.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+    case Exp.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, tpe, eff, loc)
+      Exp.Stm(e1, e2, tpe, eff, loc)
 
-    case Expr.Discard(exp, eff, loc) =>
+    case Exp.Discard(exp, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Discard(e, eff, loc)
+      Exp.Discard(e, eff, loc)
 
-    case Expr.Match(exp, rules, tpe, eff, loc) =>
+    case Exp.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
-      Expr.Match(e, rs, tpe, eff, loc)
+      Exp.Match(e, rs, tpe, eff, loc)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
+    case Exp.TypeMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitTypeMatchRule)
-      Expr.TypeMatch(e, rs, tpe, eff, loc)
+      Exp.TypeMatch(e, rs, tpe, eff, loc)
 
-    case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
+    case Exp.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
-      Expr.RestrictableChoose(star, e, rs, tpe, eff, loc)
+      Exp.RestrictableChoose(star, e, rs, tpe, eff, loc)
 
-    case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case Exp.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitExtMatchRule)
-      Expr.ExtMatch(e, rs, tpe, eff, loc)
+      Exp.ExtMatch(e, rs, tpe, eff, loc)
 
-    case Expr.Tag(symUse, exps, tpe, eff, loc) =>
+    case Exp.Tag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.Tag(symUse, es, tpe, eff, loc)
+      Exp.Tag(symUse, es, tpe, eff, loc)
 
-    case Expr.RestrictableTag(symUse, exps, tpe, eff, loc) =>
+    case Exp.RestrictableTag(symUse, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.RestrictableTag(symUse, es, tpe, eff, loc)
+      Exp.RestrictableTag(symUse, es, tpe, eff, loc)
 
-    case Expr.ExtTag(label, exps, tpe, eff, loc) =>
+    case Exp.ExtTag(label, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.ExtTag(label, es, tpe, eff, loc)
+      Exp.ExtTag(label, es, tpe, eff, loc)
 
-    case Expr.Tuple(exps, tpe, eff, loc) =>
+    case Exp.Tuple(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.Tuple(es, tpe, eff, loc)
+      Exp.Tuple(es, tpe, eff, loc)
 
-    case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+    case Exp.RecordSelect(exp, label, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.RecordSelect(e, label, tpe, eff, loc)
+      Exp.RecordSelect(e, label, tpe, eff, loc)
 
-    case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+    case Exp.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.RecordExtend(label, e1, e2, tpe, eff, loc)
+      Exp.RecordExtend(label, e1, e2, tpe, eff, loc)
 
-    case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+    case Exp.RecordRestrict(label, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.RecordRestrict(label, e, tpe, eff, loc)
+      Exp.RecordRestrict(label, e, tpe, eff, loc)
 
-    case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
+    case Exp.ArrayLit(exps, exp, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val e = visitExp(exp)
-      Expr.ArrayLit(es, e, tpe, eff, loc)
+      Exp.ArrayLit(es, e, tpe, eff, loc)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
-      Expr.ArrayNew(e1, e2, e3, tpe, eff, loc)
-
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.ArrayLoad(e1, e2, tpe, eff, loc)
-
-    case Expr.ArrayLength(exp, eff, loc) =>
-      val e = visitExp(exp)
-      Expr.ArrayLength(e, eff, loc)
-
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expr.ArrayStore(e1, e2, e3, eff, loc)
+      Exp.ArrayNew(e1, e2, e3, tpe, eff, loc)
 
-    case Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
+    case Exp.ArrayLoad(exp1, exp2, tpe, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      Exp.ArrayLoad(e1, e2, tpe, eff, loc)
+
+    case Exp.ArrayLength(exp, eff, loc) =>
+      val e = visitExp(exp)
+      Exp.ArrayLength(e, eff, loc)
+
+    case Exp.ArrayStore(exp1, exp2, exp3, eff, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      Exp.ArrayStore(e1, e2, e3, eff, loc)
+
+    case Exp.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map {
         case (name, e0) => name -> visitExp(e0)
       }
       val region = visitExp(region0)
-      Expr.StructNew(sym, fields, region, tpe, eff, loc)
+      Exp.StructNew(sym, fields, region, tpe, eff, loc)
 
-    case Expr.StructGet(e0, field, tpe, eff, loc) =>
+    case Exp.StructGet(e0, field, tpe, eff, loc) =>
       val e = visitExp(e0)
-      Expr.StructGet(e, field, tpe, eff, loc)
+      Exp.StructGet(e, field, tpe, eff, loc)
 
-    case Expr.StructPut(exp1, field, exp2, tpe, eff, loc) =>
+    case Exp.StructPut(exp1, field, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.StructPut(e1, field, e2, tpe, eff, loc)
+      Exp.StructPut(e1, field, e2, tpe, eff, loc)
 
-    case Expr.VectorLit(exps, tpe, eff, loc) =>
+    case Exp.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.VectorLit(es, tpe, eff, loc)
+      Exp.VectorLit(es, tpe, eff, loc)
 
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+    case Exp.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.VectorLoad(e1, e2, tpe, eff, loc)
+      Exp.VectorLoad(e1, e2, tpe, eff, loc)
 
-    case Expr.VectorLength(exp, loc) =>
+    case Exp.VectorLength(exp, loc) =>
       val e = visitExp(exp)
-      Expr.VectorLength(e, loc)
+      Exp.VectorLength(e, loc)
 
-    case Expr.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
+    case Exp.Ascribe(exp, expectedType, expectedEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
+      Exp.Ascribe(e, expectedType, expectedEff, tpe, eff, loc)
 
-    case Expr.InstanceOf(exp, clazz, loc) =>
+    case Exp.InstanceOf(exp, clazz, loc) =>
       val e = visitExp(exp)
-      Expr.InstanceOf(e, clazz, loc)
+      Exp.InstanceOf(e, clazz, loc)
 
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+    case Exp.CheckedCast(cast, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.CheckedCast(cast, e, tpe, eff, loc)
+      Exp.CheckedCast(cast, e, tpe, eff, loc)
 
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
+    case Exp.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
+      Exp.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+    case Exp.Unsafe(exp, runEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Unsafe(e, runEff, tpe, eff, loc)
+      Exp.Unsafe(e, runEff, tpe, eff, loc)
 
-    case Expr.Without(exp, symUse, tpe, eff, loc) =>
+    case Exp.Without(exp, symUse, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Without(e, symUse, tpe, eff, loc)
+      Exp.Without(e, symUse, tpe, eff, loc)
 
-    case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case Exp.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitTryCatchRule)
-      Expr.TryCatch(e, rs, tpe, eff, loc)
+      Exp.TryCatch(e, rs, tpe, eff, loc)
 
-    case Expr.Throw(exp, tpe, eff, loc) =>
+    case Exp.Throw(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Throw(e, tpe, eff, loc)
+      Exp.Throw(e, tpe, eff, loc)
 
-    case Expr.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
+    case Exp.Handler(symUse, rules, bodyTpe, bodyEff, handledEff, tpe, loc) =>
       val rs = rules.map(visitRunWithRule)
-      Expr.Handler(symUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
+      Exp.Handler(symUse, rs, bodyTpe, bodyEff, handledEff, tpe, loc)
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, loc) =>
+    case Exp.RunWith(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.RunWith(e1, e2, tpe, eff, loc)
+      Exp.RunWith(e1, e2, tpe, eff, loc)
 
-    case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
+    case Exp.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.InvokeConstructor(constructor, es, tpe, eff, loc)
+      Exp.InvokeConstructor(constructor, es, tpe, eff, loc)
 
-    case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
+    case Exp.InvokeMethod(method, exp, exps, tpe, eff, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp)
-      Expr.InvokeMethod(method, e, es, tpe, eff, loc)
+      Exp.InvokeMethod(method, e, es, tpe, eff, loc)
 
-    case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
+    case Exp.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.InvokeStaticMethod(method, es, tpe, eff, loc)
+      Exp.InvokeStaticMethod(method, es, tpe, eff, loc)
 
-    case Expr.GetField(field, exp, tpe, eff, loc) =>
+    case Exp.GetField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.GetField(field, e, tpe, eff, loc)
+      Exp.GetField(field, e, tpe, eff, loc)
 
-    case Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+    case Exp.PutField(field, exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.PutField(field, e1, e2, tpe, eff, loc)
+      Exp.PutField(field, e1, e2, tpe, eff, loc)
 
-    case Expr.GetStaticField(field, tpe, eff, loc) =>
-      Expr.GetStaticField(field, tpe, eff, loc)
+    case Exp.GetStaticField(field, tpe, eff, loc) =>
+      Exp.GetStaticField(field, tpe, eff, loc)
 
-    case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
+    case Exp.PutStaticField(field, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.PutStaticField(field, e, tpe, eff, loc)
+      Exp.PutStaticField(field, e, tpe, eff, loc)
 
-    case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+    case Exp.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(name, clazz, tpe, eff, ms, loc)
+      Exp.NewObject(name, clazz, tpe, eff, ms, loc)
 
-    case Expr.NewChannel(exp, tpe, eff, loc) =>
+    case Exp.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.NewChannel(e, tpe, eff, loc)
+      Exp.NewChannel(e, tpe, eff, loc)
 
-    case Expr.GetChannel(exp, tpe, eff, loc) =>
+    case Exp.GetChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.GetChannel(e, tpe, eff, loc)
+      Exp.GetChannel(e, tpe, eff, loc)
 
-    case Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
+    case Exp.PutChannel(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.PutChannel(e1, e2, tpe, eff, loc)
+      Exp.PutChannel(e1, e2, tpe, eff, loc)
 
-    case Expr.SelectChannel(rules, exp, tpe, eff, loc) =>
+    case Exp.SelectChannel(rules, exp, tpe, eff, loc) =>
       val e = exp.map(visitExp)
       val rs = rules.map(visitSelectChannelRule)
-      Expr.SelectChannel(rs, e, tpe, eff, loc)
+      Exp.SelectChannel(rs, e, tpe, eff, loc)
 
-    case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+    case Exp.Spawn(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Spawn(e1, e2, tpe, eff, loc)
+      Exp.Spawn(e1, e2, tpe, eff, loc)
 
-    case Expr.ParYield(frags, exp, tpe, eff, loc) =>
+    case Exp.ParYield(frags, exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val fs = frags.map(visitParYieldFragment)
-      Expr.ParYield(fs, e, tpe, eff, loc)
+      Exp.ParYield(fs, e, tpe, eff, loc)
 
-    case Expr.Lazy(exp, tpe, loc) =>
+    case Exp.Lazy(exp, tpe, loc) =>
       val e = visitExp(exp)
-      Expr.Lazy(e, tpe, loc)
+      Exp.Lazy(e, tpe, loc)
 
-    case Expr.Force(exp, tpe, eff, loc) =>
+    case Exp.Force(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Force(e, tpe, eff, loc)
+      Exp.Force(e, tpe, eff, loc)
 
-    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
+    case Exp.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
       val cs = cs0.map(reorder)
-      Expr.FixpointConstraintSet(cs, tpe, loc)
+      Exp.FixpointConstraintSet(cs, tpe, loc)
 
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+    case Exp.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
-      Expr.FixpointLambda(pparams, exp, tpe, eff, loc)
+      Exp.FixpointLambda(pparams, exp, tpe, eff, loc)
 
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+    case Exp.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.FixpointMerge(e1, e2, tpe, eff, loc)
+      Exp.FixpointMerge(e1, e2, tpe, eff, loc)
 
-    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(pred, den, terms, tpe2, loc2), withh, tpe1, eff1, loc1) =>
+    case Exp.FixpointQueryWithProvenance(exps, Head.Atom(pred, den, terms, tpe2, loc2), withh, tpe1, eff1, loc1) =>
       val es = exps.map(visitExp)
       val ts = terms.map(visitExp)
-      Expr.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
+      Exp.FixpointQueryWithProvenance(es, Head.Atom(pred, den, ts, tpe2, loc2), withh, tpe1, eff1, loc1)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val qe = visitExp(queryExp)
       val ss = selects.map(visitExp)
       val w = where.map(visitExp)
-      Expr.FixpointQueryWithSelect(es, qe, ss, from, w, pred, tpe, eff, loc)
+      Exp.FixpointQueryWithSelect(es, qe, ss, from, w, pred, tpe, eff, loc)
 
-    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+    case Exp.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
       // Compute the stratification.
       stratify(g, tpe, loc)
       val es = exps.map(visitExp)
-      Expr.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
+      Exp.FixpointSolveWithProject(es, optPreds, mode, tpe, eff, loc)
 
-    case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+    case Exp.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
       val es = exps.map(visitExp)
-      Expr.FixpointInjectInto(es, predsAndArities, tpe, eff, loc)
+      Exp.FixpointInjectInto(es, predsAndArities, tpe, eff, loc)
 
-    case Expr.Error(m, tpe, eff) =>
-      Expr.Error(m, tpe, eff)
+    case Exp.Error(m, tpe, eff) =>
+      Exp.Error(m, tpe, eff)
 
   }
 

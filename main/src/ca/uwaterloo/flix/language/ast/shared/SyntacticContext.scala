@@ -42,12 +42,12 @@ object SyntacticContext {
     case object Type extends Decl
   }
 
-  sealed trait Expr extends SyntacticContext
+  sealed trait Exp extends SyntacticContext
 
-  object Expr {
-    case object Constraint extends Expr
+  object Exp {
+    case object Constraint extends Exp
 
-    case object OtherExpr extends Expr
+    case object OtherExpr extends Exp
   }
 
 

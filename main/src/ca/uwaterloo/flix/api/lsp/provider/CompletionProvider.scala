@@ -74,7 +74,7 @@ object CompletionProvider {
             OpCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             SignatureCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
             EnumTagCompleter.getCompletions(uri, pos, qn, range, ap, scp) ++
-            TraitCompleter.getCompletions(qn, TraitUsageKind.Expr, range, ap, scp) ++
+            TraitCompleter.getCompletions(qn, TraitUsageKind.Exp, range, ap, scp) ++
             ModuleCompleter.getCompletions(qn, range, ap, scp)
 
         case err: ResolutionError.UndefinedType =>
@@ -123,8 +123,8 @@ object CompletionProvider {
       Nil
     else e.sctx match {
       // Expressions.
-      case SyntacticContext.Expr.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
-      case SyntacticContext.Expr.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
+      case SyntacticContext.Exp.Constraint => (PredicateCompleter.getCompletions(uri, range) ++ KeywordCompleter.getConstraintKeywords(range)).toList
+      case SyntacticContext.Exp.OtherExpr => KeywordCompleter.getExprKeywords(None, range)
 
       // Declarations.
       case SyntacticContext.Decl.Enum => KeywordCompleter.getEnumKeywords(range)

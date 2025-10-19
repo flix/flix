@@ -83,43 +83,43 @@ object Simplifier {
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
   }
 
-  private def visitExp(exp0: MonoAst.Expr)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = exp0 match {
-    case MonoAst.Expr.Var(sym, tpe, loc) =>
+  private def visitExp(exp0: MonoAst.Exp)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Exp = exp0 match {
+    case MonoAst.Exp.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Var(sym, t, loc)
+      SimplifiedAst.Exp.Var(sym, t, loc)
 
-    case MonoAst.Expr.Cst(cst, tpe, loc) =>
+    case MonoAst.Exp.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Cst(cst, t, loc)
+      SimplifiedAst.Exp.Cst(cst, t, loc)
 
-    case MonoAst.Expr.Lambda(fparam, exp, tpe, loc) =>
+    case MonoAst.Exp.Lambda(fparam, exp, tpe, loc) =>
       val p = visitFormalParam(fparam)
       val e = visitExp(exp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Lambda(List(p), e, t, loc)
+      SimplifiedAst.Exp.Lambda(List(p), e, t, loc)
 
-    case MonoAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+    case MonoAst.Exp.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyClo(e1, e2, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.ApplyClo(e1, e2, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.ApplyDef(sym, exps, _, tpe, eff, loc) =>
+    case MonoAst.Exp.ApplyDef(sym, exps, _, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.ApplyDef(sym, es, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+    case MonoAst.Exp.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.ApplyLocalDef(sym, es, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+    case MonoAst.Exp.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyOp(sym, es, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.ApplyOp(sym, es, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+    case MonoAst.Exp.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(visitExp)
       val purity = simplifyEffect(eff)
       op match {
@@ -128,36 +128,36 @@ object Simplifier {
           val strClass = Class.forName("java.lang.String")
           val method = strClass.getMethod("concat", strClass)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.InvokeMethod(method), es, t, purity, loc)
+          SimplifiedAst.Exp.ApplyAtomic(AtomicOp.InvokeMethod(method), es, t, purity, loc)
 
         case AtomicOp.ArrayLit | AtomicOp.ArrayNew =>
           // The region expression is dropped (head of exps / es)
           val es1 = es.tail
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es1, t, purity, loc)
+          SimplifiedAst.Exp.ApplyAtomic(op, es1, t, purity, loc)
 
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
           val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e1.tpe)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
-          val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
+          val lambdaExp = SimplifiedAst.Exp.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
+          SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
 
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
           val e = es.head
           val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e.tpe)
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
-          val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
+          val lambdaExp = SimplifiedAst.Exp.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
+          SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
 
         case AtomicOp.HoleError(_) | AtomicOp.Throw =>
           // Simplify purity to impure, must be done after Monomorph
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es, t, Purity.Impure, loc)
+          SimplifiedAst.Exp.ApplyAtomic(op, es, t, Purity.Impure, loc)
 
         case AtomicOp.StructNew(sym, givenFields) =>
           // Re-arrange the fields to be given in the declared order.
@@ -195,92 +195,92 @@ object Simplifier {
           }
 
           // Construct var expressions.
-          val regVar = SimplifiedAst.Expr.Var(freshRegName, regType, synthLoc)
+          val regVar = SimplifiedAst.Exp.Var(freshRegName, regType, synthLoc)
           val fieldVars = fieldsDeclaredOrder.map {
-            field => SimplifiedAst.Expr.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
+            field => SimplifiedAst.Exp.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
           }
 
           // Construct the full expression.
-          val newStructExp = SimplifiedAst.Expr.ApplyAtomic(
+          val newStructExp = SimplifiedAst.Exp.ApplyAtomic(
             AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym)),
             regVar :: fieldVars,
             visitType(tpe),
             Purity.Pure,
             loc
           )
-          val fieldBoundExp = freshFieldInitialization.foldRight(newStructExp: SimplifiedAst.Expr) {
-            case ((varSym, e), acc) => SimplifiedAst.Expr.Let(varSym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
+          val fieldBoundExp = freshFieldInitialization.foldRight(newStructExp: SimplifiedAst.Exp) {
+            case ((varSym, e), acc) => SimplifiedAst.Exp.Let(varSym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
           }
-          SimplifiedAst.Expr.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
+          SimplifiedAst.Exp.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
 
         case _ =>
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+          SimplifiedAst.Exp.ApplyAtomic(op, es, t, purity, loc)
       }
 
-    case MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
+    case MonoAst.Exp.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
+    case MonoAst.Exp.Stm(e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.Stm(visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case d@MonoAst.Expr.Discard(exp, eff, loc) =>
+    case d@MonoAst.Exp.Discard(exp, eff, loc) =>
       val sym = Symbol.freshVarSym("_", BoundBy.Let, loc)
       val t = visitType(d.tpe)
-      SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.Let(sym, visitExp(exp), SimplifiedAst.Exp.Cst(Constant.Unit, SimpleType.Unit, loc), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Let(sym, e1, e2, tpe, eff, _, loc) =>
+    case MonoAst.Exp.Let(sym, e1, e2, tpe, eff, _, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
+    case MonoAst.Exp.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _, loc) =>
       val fps = fparams.map(visitFormalParam)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
       val ef = simplifyEffect(eff)
-      SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
+      SimplifiedAst.Exp.LocalDef(sym, fps, e1, e2, t, ef, loc)
 
-    case MonoAst.Expr.Region(sym, _, exp, tpe, eff, loc) =>
+    case MonoAst.Exp.Region(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Region(sym, visitExp(exp), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.Region(sym, visitExp(exp), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Match(exp, rules, tpe, _, loc) =>
+    case MonoAst.Exp.Match(exp, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp, rules, tpe, loc)
 
-    case MonoAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+    case MonoAst.Exp.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       val ef = simplifyEffect(eff)
       extMatch(e, rules, t, ef, loc)
 
-    case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
+    case MonoAst.Exp.VectorLit(exps, tpe, _, loc) =>
       // Note: We simplify Vectors to Arrays.
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLit, es, t, Purity.Pure, loc)
+      SimplifiedAst.Exp.ApplyAtomic(AtomicOp.ArrayLit, es, t, Purity.Pure, loc)
 
-    case MonoAst.Expr.VectorLoad(exp1, exp2, tpe, _, loc) =>
+    case MonoAst.Exp.VectorLoad(exp1, exp2, tpe, _, loc) =>
       // Note: We simplify Vectors to Arrays.
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, Purity.Pure, loc)
+      SimplifiedAst.Exp.ApplyAtomic(AtomicOp.ArrayLoad, List(e1, e2), t, Purity.Pure, loc)
 
-    case MonoAst.Expr.VectorLength(exp, loc) =>
+    case MonoAst.Exp.VectorLength(exp, loc) =>
       // Note: We simplify Vectors to Arrays.
       val e = visitExp(exp)
       val purity = e.purity
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), SimpleType.Int32, purity, loc)
+      SimplifiedAst.Exp.ApplyAtomic(AtomicOp.ArrayLength, List(e), SimpleType.Int32, purity, loc)
 
-    case MonoAst.Expr.Cast(exp, tpe, eff, loc) =>
+    case MonoAst.Exp.Cast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Cast, List(e), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Cast, List(e), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+    case MonoAst.Exp.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.CatchRule(sym, clazz, body) =>
@@ -288,9 +288,9 @@ object Simplifier {
           SimplifiedAst.CatchRule(sym, clazz, b)
       }
       val t = visitType(tpe)
-      SimplifiedAst.Expr.TryCatch(e, rs, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.TryCatch(e, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+    case MonoAst.Exp.RunWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case MonoAst.HandlerRule(sym, fparams, body) =>
@@ -299,12 +299,12 @@ object Simplifier {
           SimplifiedAst.HandlerRule(sym, fps, b)
       }
       val t = visitType(tpe)
-      SimplifiedAst.Expr.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
+      SimplifiedAst.Exp.RunWith(e, effUse, rs, t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
+    case MonoAst.Exp.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val t = visitType(tpe)
       val methods = methods0 map visitJvmMethod
-      SimplifiedAst.Expr.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
+      SimplifiedAst.Exp.NewObject(name, clazz, t, simplifyEffect(eff), methods, loc)
 
   }
 
@@ -674,20 +674,20 @@ object Simplifier {
       SimplifiedAst.JvmMethod(ident, fparams, exp, rt, simplifyEffect(eff), loc)
   }
 
-  private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Expr = pat0 match {
+  private def pat2exp(pat0: MonoAst.Pattern): SimplifiedAst.Exp = pat0 match {
     case MonoAst.Pattern.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Cst(cst, t, loc)
+      SimplifiedAst.Exp.Cst(cst, t, loc)
     case MonoAst.Pattern.Tag(CaseSymUse(sym, _), ps, tpe, loc) =>
       val es = ps.map(pat2exp)
       val t = visitType(tpe)
       val purity = Purity.combineAll(es.map(_.purity))
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tag(sym), es, t, purity, loc)
+      SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Tag(sym), es, t, purity, loc)
     case MonoAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(pat2exp)
       val t = visitType(tpe)
       val purity = Purity.combineAll(es.map(_.purity))
-      SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tuple, es.toList, t, purity, loc)
+      SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Tuple, es.toList, t, purity, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
   }
 
@@ -696,7 +696,7 @@ object Simplifier {
     case _ => false
   }
 
-  private def mkEqual(e1: SimplifiedAst.Expr, e2: SimplifiedAst.Expr, loc: SourceLocation): SimplifiedAst.Expr = {
+  private def mkEqual(e1: SimplifiedAst.Exp, e2: SimplifiedAst.Exp, loc: SourceLocation): SimplifiedAst.Exp = {
     /*
      * Special Case 1: Unit
      * Special Case 2: String - must be desugared to String.equals
@@ -704,21 +704,21 @@ object Simplifier {
     (e1.tpe, e2.tpe) match {
       case (SimpleType.Unit, SimpleType.Unit) =>
         // Unit is always equal to itself.
-        return SimplifiedAst.Expr.Cst(Constant.Bool(true), SimpleType.Bool, loc)
+        return SimplifiedAst.Exp.Cst(Constant.Bool(true), SimpleType.Bool, loc)
 
       case (SimpleType.String, _) =>
         val strClass = Class.forName("java.lang.String")
         val objClass = Class.forName("java.lang.Object")
         val method = strClass.getMethod("equals", objClass)
         val op = AtomicOp.InvokeMethod(method)
-        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
+        return SimplifiedAst.Exp.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case (SimpleType.BigInt, _) =>
         val bigIntClass = Class.forName("java.math.BigInteger")
         val objClass = Class.forName("java.lang.Object")
         val method = bigIntClass.getMethod("equals", objClass)
         val op = AtomicOp.InvokeMethod(method)
-        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
+        return SimplifiedAst.Exp.ApplyAtomic(op, List(e1, e2), SimpleType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case _ => // fallthrough
     }
@@ -738,13 +738,13 @@ object Simplifier {
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
     }
     val purity = Purity.combine(e1.purity, e2.purity)
-    SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), SimpleType.Bool, purity, loc)
+    SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), SimpleType.Bool, purity, loc)
   }
 
   /**
     * Eliminates pattern matching by translations to labels and jumps.
     */
-  private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+  private def patternMatchWithLabels(exp0: MonoAst.Exp, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Exp = {
     //
     // Given the code:
     //
@@ -804,30 +804,30 @@ object Simplifier {
         val success = visitExp(body)
 
         // Failure case: Jump to the next label.
-        val failure = SimplifiedAst.Expr.JumpTo(next, t, jumpPurity, loc)
+        val failure = SimplifiedAst.Exp.JumpTo(next, t, jumpPurity, loc)
 
         // Return the branch with its label.
-        label -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
+        label -> patternMatchList(List(pat), List(matchVar), guard.getOrElse(MonoAst.Exp.Cst(Constant.Bool(true), Type.Bool, SourceLocation.Unknown)), success, failure
         )
     }
     // Construct the error branch.
-    val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
+    val errorExp = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.MatchError, List.empty, t, Purity.Impure, loc)
     val errorBranch = defaultLab -> errorExp
 
     // The initial expression simply jumps to the first label.
-    val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
+    val entry = SimplifiedAst.Exp.JumpTo(ruleLabels.head, t, jumpPurity, loc)
 
     // The purity of the branch
     val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
 
     // Assemble all the branches together.
-    val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
+    val branch = SimplifiedAst.Exp.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
 
     // The purity of the match exp
     val matchPurity = Purity.combine(matchExp.purity, branch.purity)
 
     // Wrap the branches inside a let-binding for the match variable.
-    SimplifiedAst.Expr.Let(matchVar, matchExp, branch, t, matchPurity, loc)
+    SimplifiedAst.Exp.Let(matchVar, matchExp, branch, t, matchPurity, loc)
   }
 
   /**
@@ -837,7 +837,7 @@ object Simplifier {
     *
     * Evaluates `succ` on success and `fail` otherwise.
     */
-  private def patternMatchList(xs: List[MonoAst.Pattern], ys: List[Symbol.VarSym], guard: MonoAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr =
+  private def patternMatchList(xs: List[MonoAst.Pattern], ys: List[Symbol.VarSym], guard: MonoAst.Exp, succ: SimplifiedAst.Exp, fail: SimplifiedAst.Exp)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Exp =
     ((xs, ys): @unchecked) match {
       /**
         * There are no more patterns and variables to match.
@@ -848,9 +848,9 @@ object Simplifier {
         val g = visitExp(guard)
         // Only produce IfThenElse if g is non-trivial
         g match {
-          case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
-          case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
-          case e => SimplifiedAst.Expr.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
+          case SimplifiedAst.Exp.Cst(Constant.Bool(true), _, _) => succ
+          case SimplifiedAst.Exp.Cst(Constant.Bool(false), _, _) => fail
+          case e => SimplifiedAst.Exp.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
         }
 
       /**
@@ -872,7 +872,7 @@ object Simplifier {
       case (MonoAst.Pattern.Var(sym, tpe, _, loc) :: ps, v :: vs) =>
         val t = visitType(tpe)
         val exp = patternMatchList(ps, vs, guard, succ, fail)
-        SimplifiedAst.Expr.Let(sym, SimplifiedAst.Expr.Var(v, t, loc), exp, succ.tpe, exp.purity, loc)
+        SimplifiedAst.Exp.Let(sym, SimplifiedAst.Exp.Var(v, t, loc), exp, succ.tpe, exp.purity, loc)
 
       /**
         * Matching a literal may succeed or fail.
@@ -886,9 +886,9 @@ object Simplifier {
       case (lit :: ps, v :: vs) if isPatLiteral(lit) =>
         val exp = patternMatchList(ps, vs, guard, succ, fail)
         val t = visitType(lit.tpe)
-        val cond = mkEqual(pat2exp(lit), SimplifiedAst.Expr.Var(v, t, lit.loc), lit.loc)
+        val cond = mkEqual(pat2exp(lit), SimplifiedAst.Exp.Var(v, t, lit.loc), lit.loc)
         val purity = Purity.combine3(cond.purity, exp.purity, fail.purity)
-        SimplifiedAst.Expr.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
+        SimplifiedAst.Exp.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
 
       /**
         * Matching a tag may succeed or fail.
@@ -922,18 +922,18 @@ object Simplifier {
         * }}}
         */
       case (MonoAst.Pattern.Tag(CaseSymUse(sym, _), pats, tpe, loc) :: ps, v :: vs) =>
-        val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
-        val cond = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), List(varExp), SimpleType.Bool, Purity.Pure, loc)
+        val varExp = SimplifiedAst.Exp.Var(v, visitType(tpe), loc)
+        val cond = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Is(sym), List(varExp), SimpleType.Bool, Purity.Pure, loc)
         val freshVars = pats.map(_ => Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc))
         val zero = patternMatchList(pats ::: ps, freshVars ::: vs, guard, succ, fail)
         val consequent = ListOps.zip(pats, freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
-            val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym, idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
-            SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
+            val varExp = SimplifiedAst.Exp.Var(v, visitType(tpe), loc)
+            val indexExp = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Untag(sym, idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
+            SimplifiedAst.Exp.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
         }
         val purity2 = Purity.combine3(cond.purity, consequent.purity, fail.purity)
-        SimplifiedAst.Expr.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
+        SimplifiedAst.Exp.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
       /**
         * Matching a tuple may succeed or fail.
@@ -947,9 +947,9 @@ object Simplifier {
         val zero = patternMatchList(elms.toList ::: ps, freshVars.toList ::: vs, guard, succ, fail)
         elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
-            val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
-            val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
-            SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
+            val varExp = SimplifiedAst.Exp.Var(v, visitType(tpe), loc)
+            val indexExp = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.Index(idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
+            SimplifiedAst.Exp.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
         }
 
       /**
@@ -962,20 +962,20 @@ object Simplifier {
       case (MonoAst.Pattern.Record(pats, pat, tpe, loc) :: ps, v :: vs) =>
         val freshVars = pats.map(_ => Symbol.freshVarSym("innerLabel" + Flix.Delimiter, BoundBy.Let, loc))
         val labelPats = pats.map(_.pat)
-        val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
+        val varExp = SimplifiedAst.Exp.Var(v, visitType(tpe), loc)
         val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
         // Let-binders are built in reverse, but it does not matter since binders are independent and pure
-        val (one, restrictedMatchVar) = ListOps.zip(pats, freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
+        val (one, restrictedMatchVar) = ListOps.zip(pats, freshVars).foldLeft((zero, varExp): (SimplifiedAst.Exp, SimplifiedAst.Exp)) {
           case ((exp, matchVarExp), (MonoAst.Pattern.Record.RecordLabelPattern(label, subpat, _, loc1), name)) =>
-            val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(subpat.tpe), Purity.Pure, loc1)
-            val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, matchVarExp.tpe), matchVarExp.purity, loc1)
-            val labelLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
+            val recordSelectExp = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(subpat.tpe), Purity.Pure, loc1)
+            val restrictedMatchVarExp = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, matchVarExp.tpe), matchVarExp.purity, loc1)
+            val labelLetBinding = SimplifiedAst.Exp.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
             (labelLetBinding, restrictedMatchVarExp)
         }
         pat match {
           case MonoAst.Pattern.Var(sym, _, _, varLoc) =>
             // Extension is { ... | sym } so we generate a let-binding `let sym = matchVar`
-            SimplifiedAst.Expr.Let(sym, restrictedMatchVar, one, succ.tpe, restrictedMatchVar.purity, varLoc)
+            SimplifiedAst.Exp.Let(sym, restrictedMatchVar, one, succ.tpe, restrictedMatchVar.purity, varLoc)
           case _ =>
             // Extension is either wild or non-existent
             one
@@ -984,7 +984,7 @@ object Simplifier {
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
 
-  private def extMatch(exp: SimplifiedAst.Expr, rules: List[MonoAst.ExtMatchRule], tpe: SimpleType, eff: Purity, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+  private def extMatch(exp: SimplifiedAst.Exp, rules: List[MonoAst.ExtMatchRule], tpe: SimpleType, eff: Purity, loc: SourceLocation)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.Exp = {
     //
     // exp match {
     //     case Label1(sym1, sym2)     => exp1
@@ -1019,9 +1019,9 @@ object Simplifier {
     // Build the nested if-then-else
     val tagType = exp.tpe
     val extName = Symbol.freshVarSym("ext", BoundBy.Let, exp.loc)(Scope.Top, flix)
-    val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
-    val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
-    val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
+    val extVar = SimplifiedAst.Exp.Var(extName, tagType, exp.loc)
+    val errorExp = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
+    val iftes = rules.foldRight(errorExp: SimplifiedAst.Exp) {
       case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Default(_), exp1, _), _) =>
         // Note: If we have a default case, there is only 1 single default case, and it is the last rule.
         // This invariant is ensured by the unreachable case check in Redunancy.
@@ -1029,19 +1029,19 @@ object Simplifier {
 
       case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _), exp1, loc1), branch2) =>
         val e1 = visitExp(exp1)
-        val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
+        val is = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
         // Let-bind each variable in the rule / pattern
         val branch1 = pats.zipWithIndex.foldRight(e1) {
           case ((MonoAst.ExtTagPattern.Wild(_, _), _), acc1) => acc1
           case ((MonoAst.ExtTagPattern.Var(sym, _, _, _), idx), acc1) =>
-            val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
-            SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
+            val untag = SimplifiedAst.Exp.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
+            SimplifiedAst.Exp.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
           case ((MonoAst.ExtTagPattern.Unit(_, _), _), acc1) => acc1
         }
-        SimplifiedAst.Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
+        SimplifiedAst.Exp.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
     }
-    SimplifiedAst.Expr.Let(extName, exp, iftes, tpe, eff, loc)
+    SimplifiedAst.Exp.Let(extName, exp, iftes, tpe, eff, loc)
   }
 
   private def visitEffOp(op: MonoAst.Op)(implicit universe: Set[Symbol.EffSym]): SimplifiedAst.Op = op match {

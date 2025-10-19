@@ -14,29 +14,29 @@ object SyntaxTreePrinter {
     DocAst.Program(Nil, Nil, units)
   }
 
-  private def print(tree: SyntaxTree.Tree): DocAst.Expr = {
+  private def print(tree: SyntaxTree.Tree): DocAst.Exp = {
     val SyntaxTree.Tree(kind, children, _) = tree
     kind match {
       // ErrorTree is not a case object, so we can't rely on the generated `toString`.
       case TreeKind.ErrorTree(_) =>
-        DocAst.Expr.App(DocAst.Expr.AsIs("ErrorTree"), children.iterator.map(print).toList)
+        DocAst.Exp.App(DocAst.Exp.AsIs("ErrorTree"), children.iterator.map(print).toList)
       case other =>
-        DocAst.Expr.App(DocAst.Expr.AsIs(other.toString), children.iterator.map(print).toList)
+        DocAst.Exp.App(DocAst.Exp.AsIs(other.toString), children.iterator.map(print).toList)
     }
   }
 
-  private def print(token: Token): DocAst.Expr = token.kind match {
+  private def print(token: Token): DocAst.Exp = token.kind match {
     // Err is not a case object, so we can't rely on the generated `toString`.
     case TokenKind.Err(_) =>
-      DocAst.Expr.SquareApp(DocAst.Expr.AsIs("Err"), List(DocAst.Expr.AsIs(s"\"${token.text}\"")))
+      DocAst.Exp.SquareApp(DocAst.Exp.AsIs("Err"), List(DocAst.Exp.AsIs(s"\"${token.text}\"")))
     case other =>
-      DocAst.Expr.SquareApp(DocAst.Expr.AsIs(other.toString), List(DocAst.Expr.AsIs(s"\"${token.text}\"")))
+      DocAst.Exp.SquareApp(DocAst.Exp.AsIs(other.toString), List(DocAst.Exp.AsIs(s"\"${token.text}\"")))
   }
 
-  private def print(child: SyntaxTree.Child): DocAst.Expr = child match {
+  private def print(child: SyntaxTree.Child): DocAst.Exp = child match {
     case token: Token => print(token)
     case tree: SyntaxTree.Tree => print(tree)
-    case _ => DocAst.Expr.Unknown
+    case _ => DocAst.Exp.Unknown
   }
 
 }

@@ -167,216 +167,216 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// EXPRESSIONS                                                                         //
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait Expr extends TreeKind
+    sealed trait Exp extends TreeKind
 
-    object Expr {
+    object Exp {
 
       /**
         * A marker kind used to wrap nested expressions.
         */
       // For instance on a binary expression "1 + 2" you would do
-      // Expr
+      // Exp
       //   Binary
-      //     Expr
+      //     Exp
       //       LiteralNumber
       //   Operator
-      //     Expr
+      //     Exp
       //       LiteralNumber
-      case object Expr extends Expr
+      case object Exp extends Exp
 
-      case object Apply extends Expr
+      case object Apply extends Exp
 
-      case object Ascribe extends Expr
+      case object Ascribe extends Exp
 
-      case object Binary extends Expr
+      case object Binary extends Exp
 
-      case object Block extends Expr
+      case object Block extends Exp
 
-      case object CheckedEffectCast extends Expr
+      case object CheckedEffectCast extends Exp
 
-      case object CheckedTypeCast extends Expr
+      case object CheckedTypeCast extends Exp
 
-      case object DebugInterpolator extends Expr
+      case object DebugInterpolator extends Exp
 
-      case object ExtMatch extends Expr
+      case object ExtMatch extends Exp
 
-      case object ExtMatchRuleFragment extends Expr
+      case object ExtMatchRuleFragment extends Exp
 
-      case object ExtTag extends Expr
+      case object ExtTag extends Exp
 
-      case object Index extends Expr
+      case object Index extends Exp
 
-      case object IndexMut extends Expr
+      case object IndexMut extends Exp
 
-      case object InvokeConstructor extends Expr
+      case object InvokeConstructor extends Exp
 
-      case object InvokeMethod extends Expr
+      case object InvokeMethod extends Exp
 
-      case object FixpointConstraint extends Expr
+      case object FixpointConstraint extends Exp
 
-      case object FixpointConstraintSet extends Expr
+      case object FixpointConstraintSet extends Exp
 
-      case object FixpointLambda extends Expr
+      case object FixpointLambda extends Exp
 
-      case object FixpointFromFragment extends Expr
+      case object FixpointFromFragment extends Exp
 
-      case object FixpointInject extends Expr
+      case object FixpointInject extends Exp
 
-      case object FixpointQuery extends Expr
+      case object FixpointQuery extends Exp
 
-      case object FixpointQueryWithProvenance extends Expr
+      case object FixpointQueryWithProvenance extends Exp
 
-      case object FixpointSelect extends Expr
+      case object FixpointSelect extends Exp
 
-      case object FixpointSolveWithProject extends Expr
+      case object FixpointSolveWithProject extends Exp
 
-      case object FixpointSolveWithProvenance extends Expr
+      case object FixpointSolveWithProvenance extends Exp
 
-      case object FixpointWhere extends Expr
+      case object FixpointWhere extends Exp
 
-      case object FixpointWith extends Expr
+      case object FixpointWith extends Exp
 
-      case object ForApplicative extends Expr
+      case object ForApplicative extends Exp
 
-      case object Foreach extends Expr
+      case object Foreach extends Exp
 
-      case object ForMonadic extends Expr
+      case object ForMonadic extends Exp
 
-      case object ForFragmentGenerator extends Expr
+      case object ForFragmentGenerator extends Exp
 
-      case object ForFragmentGuard extends Expr
+      case object ForFragmentGuard extends Exp
 
-      case object ForFragmentLet extends Expr
+      case object ForFragmentLet extends Exp
 
-      case object GetField extends Expr
+      case object GetField extends Exp
 
-      case object Handler extends Expr
+      case object Handler extends Exp
 
-      case object Hole extends Expr
+      case object Hole extends Exp
 
-      case object HoleVariable extends Expr
+      case object HoleVariable extends Exp
 
-      case object IfThenElse extends Expr
+      case object IfThenElse extends Exp
 
-      case object InstanceOf extends Expr
+      case object InstanceOf extends Exp
 
-      case object Intrinsic extends Expr
+      case object Intrinsic extends Exp
 
-      case object JvmMethod extends Expr
+      case object JvmMethod extends Exp
 
-      case object Lambda extends Expr
+      case object Lambda extends Exp
 
-      case object LambdaExtMatch extends Expr
+      case object LambdaExtMatch extends Exp
 
-      case object LambdaMatch extends Expr
+      case object LambdaMatch extends Exp
 
-      case object LetMatch extends Expr
+      case object LetMatch extends Exp
 
-      case object Literal extends Expr
+      case object Literal extends Exp
 
-      case object LiteralArray extends Expr
+      case object LiteralArray extends Exp
 
-      case object LiteralList extends Expr
+      case object LiteralList extends Exp
 
-      case object LiteralMap extends Expr
+      case object LiteralMap extends Exp
 
-      case object LiteralMapKeyValueFragment extends Expr
+      case object LiteralMapKeyValueFragment extends Exp
 
-      case object LiteralStructFieldFragment extends Expr
+      case object LiteralStructFieldFragment extends Exp
 
-      case object LiteralSet extends Expr
+      case object LiteralSet extends Exp
 
-      case object LiteralVector extends Expr
+      case object LiteralVector extends Exp
 
-      case object LocalDef extends Expr
+      case object LocalDef extends Exp
 
-      case object Match extends Expr
+      case object Match extends Exp
 
-      case object MatchRuleFragment extends Expr
+      case object MatchRuleFragment extends Exp
 
-      case object NewObject extends Expr
+      case object NewObject extends Exp
 
-      case object NewStruct extends Expr
+      case object NewStruct extends Exp
 
-      case object StructGet extends Expr
+      case object StructGet extends Exp
 
-      case object StructPut extends Expr
+      case object StructPut extends Exp
 
-      case object StructPutRHS extends Expr
+      case object StructPutRHS extends Exp
 
-      case object OpenVariant extends Expr
+      case object OpenVariant extends Exp
 
-      case object OpenVariantAs extends Expr
+      case object OpenVariantAs extends Exp
 
-      case object Paren extends Expr
+      case object Paren extends Exp
 
-      case object ParYield extends Expr
+      case object ParYield extends Exp
 
-      case object ParYieldFragment extends Expr
+      case object ParYieldFragment extends Exp
 
-      case object RecordOperation extends Expr
+      case object RecordOperation extends Exp
 
-      case object RecordOpExtend extends Expr
+      case object RecordOpExtend extends Exp
 
-      case object RecordOpRestrict extends Expr
+      case object RecordOpRestrict extends Exp
 
-      case object RecordOpUpdate extends Expr
+      case object RecordOpUpdate extends Exp
 
-      case object RecordSelect extends Expr
+      case object RecordSelect extends Exp
 
-      case object RestrictableChoose extends Expr
+      case object RestrictableChoose extends Exp
 
-      case object RestrictableChooseStar extends Expr
+      case object RestrictableChooseStar extends Exp
 
-      case object Run extends Expr
+      case object Run extends Exp
 
-      case object Region extends Expr
+      case object Region extends Exp
 
-      case object RegionName extends Expr
+      case object RegionName extends Exp
 
-      case object Select extends Expr
+      case object Select extends Exp
 
-      case object SelectRuleFragment extends Expr
+      case object SelectRuleFragment extends Exp
 
-      case object SelectRuleDefaultFragment extends Expr
+      case object SelectRuleDefaultFragment extends Exp
 
-      case object Spawn extends Expr
+      case object Spawn extends Exp
 
-      case object Statement extends Expr
+      case object Statement extends Exp
 
-      case object Static extends Expr
+      case object Static extends Exp
 
-      case object StringInterpolation extends Expr
+      case object StringInterpolation extends Exp
 
-      case object Try extends Expr
+      case object Try extends Exp
 
-      case object Throw extends Expr
+      case object Throw extends Exp
 
-      case object TryCatchBodyFragment extends Expr
+      case object TryCatchBodyFragment extends Exp
 
-      case object TryCatchRuleFragment extends Expr
+      case object TryCatchRuleFragment extends Exp
 
-      case object RunWithBodyExpr extends Expr
+      case object RunWithBodyExpr extends Exp
 
-      case object RunWithRuleFragment extends Expr
+      case object RunWithRuleFragment extends Exp
 
-      case object Tuple extends Expr
+      case object Tuple extends Exp
 
-      case object TypeMatch extends Expr
+      case object TypeMatch extends Exp
 
-      case object TypeMatchRuleFragment extends Expr
+      case object TypeMatchRuleFragment extends Exp
 
-      case object Unary extends Expr
+      case object Unary extends Exp
 
-      case object UncheckedCast extends Expr
+      case object UncheckedCast extends Exp
 
-      case object Unsafe extends Expr
+      case object Unsafe extends Exp
 
-      case object UnsafeOld extends Expr
+      case object UnsafeOld extends Exp
 
-      case object Use extends Expr
+      case object Use extends Exp
 
-      case object Without extends Expr
+      case object Without extends Exp
 
     }
 

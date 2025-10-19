@@ -34,14 +34,14 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, Derivation
   * Example
   * {{{
   * object ExprListConsumer extends Consumer {
-  *   var stack: List[Expr] = Nil
-  *   override consumeExpr(exp: Expr): Unit = {
+  *   var stack: List[Exp] = Nil
+  *   override consumeExpr(exp: Exp): Unit = {
   *     stack = exp :: stack
   *   }
   * }
   * }}}
   *
-  * This consumer only cares about [[Expr]]s and simply collects all expressions visited.
+  * This consumer only cares about [[Exp]]s and simply collects all expressions visited.
   */
 trait Consumer {
   def consumeAnnotation(ann: Annotation): Unit = ()
@@ -80,7 +80,7 @@ trait Consumer {
 
   def consumeEqualityConstraint(ec: EqualityConstraint): Unit = ()
 
-  def consumeExpr(exp: Expr): Unit = ()
+  def consumeExpr(exp: Exp): Unit = ()
 
   def consumeFormalParam(fparam: FormalParam): Unit = ()
 

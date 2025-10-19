@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
+import ca.uwaterloo.flix.language.ast.KindedAst.{Exp, ExtPattern, ExtTagPattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
@@ -42,20 +42,20 @@ object ConstraintGen {
     * Returns the type of the expression and its effect.
     * The type and effect may include variables that must be resolved.
     */
-  def visitExp(exp0: KindedAst.Expr)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  def visitExp(exp0: KindedAst.Exp)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     exp0 match {
-      case Expr.Var(sym, _) =>
+      case Exp.Var(sym, _) =>
         val resTpe = sym.tvar
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(_, _, tpe, eff, _) =>
+      case Exp.Hole(_, _, tpe, eff, _) =>
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.HoleWithExp(exp, _, tvar, evar, loc) =>
+      case Exp.HoleWithExp(exp, _, tvar, evar, loc) =>
         // We ignore exp's type and allow the hole to have any type.
         // We allow the effect to be any superset of exp's effect.
         val (_, eff) = visitExp(exp)
@@ -65,17 +65,17 @@ object ConstraintGen {
         val resEff = atLeastEff
         (resTpe, resEff)
 
-      case e: Expr.OpenAs => RestrictableChooseConstraintGen.visitOpenAs(e)
+      case e: Exp.OpenAs => RestrictableChooseConstraintGen.visitOpenAs(e)
 
-      case Expr.Use(_, _, exp, _) =>
+      case Exp.Use(_, _, exp, _) =>
         visitExp(exp)
 
-      case Expr.Cst(cst, _) =>
+      case Exp.Cst(cst, _) =>
         val resTpe = Type.constantType(cst)
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.ApplyClo(exp1, exp2, tvar, evar, loc) =>
+      case Exp.ApplyClo(exp1, exp2, tvar, evar, loc) =>
         val lambdaBodyType = freshVar(Kind.Star, loc)
         val lambdaBodyEff = freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
@@ -87,7 +87,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyDef(DefSymUse(sym, loc1), exps, targs, itvar, tvar, evar, loc2) =>
+      case Exp.ApplyDef(DefSymUse(sym, loc1), exps, targs, itvar, tvar, evar, loc2) =>
         val defn = root.defs(sym)
 
         // Pseudo variable for source to flow into
@@ -117,7 +117,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
+      case Exp.ApplyLocalDef(LocalDefSymUse(sym, loc1), exps, arrowTvar, tvar, evar, loc2) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val defEff = freshVar(Kind.Eff, loc1)
         val actualDefTpe = Type.mkUncurriedArrowWithEffect(tpes, defEff, tvar, loc1)
@@ -128,7 +128,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
+      case Exp.ApplyOp(OpSymUse(sym, loc1), exps, tvar, evar, loc2) =>
         val op = lookupOp(sym, loc1)
         val (tconstrs0, econstrs0, declaredType, _) = Scheme.instantiate(op.spec.sc, loc1.asSynthetic)
         val tconstrs = tconstrs0.map(_.copy(loc = loc2))
@@ -146,7 +146,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ApplySig(SigSymUse(sym, loc1), exps, targ, targs, itvar, tvar, evar, loc2) =>
+      case Exp.ApplySig(SigSymUse(sym, loc1), exps, targ, targs, itvar, tvar, evar, loc2) =>
         val trt = root.traits(sym.trt)
         val sig = trt.sigs(sym)
 
@@ -171,14 +171,14 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Lambda(fparam, exp, allowSubeffecting, loc) =>
+      case Exp.Lambda(fparam, exp, allowSubeffecting, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff0) = visitExp(exp)
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions.
         val shouldSubeffect = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val useless = exp match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case Exp.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
           enabled && allowSubeffecting && !useless
@@ -188,7 +188,7 @@ object ConstraintGen {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case KindedAst.Expr.Unary(sop, exp, tvar, _) => sop match {
+      case KindedAst.Exp.Unary(sop, exp, tvar, _) => sop match {
         case SemanticOp.BoolOp.Not =>
           val (tpe, eff) = visitExp(exp)
           c.expectType(expected = Type.Bool, actual = tpe, exp.loc)
@@ -246,7 +246,7 @@ object ConstraintGen {
           (resTpe, resEff)
       }
 
-      case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
+      case KindedAst.Exp.Binary(sop, exp1, exp2, tvar, loc) => sop match {
 
         case SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or =>
           val (tpe1, eff1) = visitExp(exp1)
@@ -382,7 +382,7 @@ object ConstraintGen {
           (resTpe, resEff)
       }
 
-      case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
+      case Exp.IfThenElse(exp1, exp2, exp3, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val (tpe3, eff3) = visitExp(exp3)
@@ -392,20 +392,20 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
         (resTpe, resEff)
 
-      case Expr.Stm(exp1, exp2, loc) =>
+      case Exp.Stm(exp1, exp2, loc) =>
         val (_, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.Discard(exp, _) =>
+      case Exp.Discard(exp, _) =>
         val (_, eff) = visitExp(exp)
         val resTpe = Type.Unit
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Let(sym, exp1, exp2, loc) =>
+      case Exp.Let(sym, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         c.unifyType(sym.tvar, tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -413,14 +413,14 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.LocalDef(sym, fparams, exp1, exp2, loc) =>
+      case Exp.LocalDef(sym, fparams, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         fparams.foreach(fp => c.unifyType(fp.sym.tvar, fp.tpe, loc))
         // SUB-EFFECTING: Check if sub-effecting is enabled for lambda expressions (which include local defs).
         val shouldSubeffect = {
           val enabled = flix.options.xsubeffecting.contains(Subeffecting.Lambdas)
           val useless = exp1 match {
-            case Expr.Ascribe(_, _, Some(Type.Pure), _, _) => true
+            case Exp.Ascribe(_, _, Some(Type.Pure), _, _) => true
             case _ => false
           }
           enabled && !useless
@@ -433,7 +433,7 @@ object ConstraintGen {
         val resEff = eff2
         (resTpe, resEff)
 
-      case Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
+      case Exp.Region(sym, regSym, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -453,7 +453,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Match(exp, rules, loc) =>
+      case Exp.Match(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
         c.unifyAllTypes(tpe :: patTpes, loc)
@@ -462,7 +462,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case Expr.TypeMatch(exp, rules, loc) =>
+      case Exp.TypeMatch(exp, rules, loc) =>
         val (_, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitTypeMatchRule).unzip
         c.unifyAllTypes(tpes, loc)
@@ -470,9 +470,9 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
+      case e: Exp.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
-      case Expr.ExtMatch(exp, rules, loc) =>
+      case Exp.ExtMatch(exp, rules, loc) =>
         // Note that x_i_m mean last variable term `x` of tag `i`. Think of `m` as shorthand for `max` or `last`.
         // Thus, it may be the case that `|x_i_1, ..., x_i_m| != |x_j_1, ..., x_j_m|` but equality may occur.
         // This also means `t_i_k != t_j_k` can happen and that equality can also occur.
@@ -519,7 +519,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(scrutineeEff :: ruleBodyEffs, loc)
         (resTpe, resEff)
 
-      case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
+      case KindedAst.Exp.Tag(symUse, exps, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
@@ -533,9 +533,9 @@ object ConstraintGen {
         val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
-      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
+      case e: Exp.RestrictableTag => RestrictableChooseConstraintGen.visitApplyRestrictableTag(e)
 
-      case KindedAst.Expr.ExtTag(label, exps, tvar, loc) =>
+      case KindedAst.Exp.ExtTag(label, exps, tvar, loc) =>
         val pred = Name.Pred(label.name, label.loc)
         val (tpes, effs) = exps.map(visitExp).unzip
         val rest = Type.freshVar(Kind.SchemaRow, loc)
@@ -547,13 +547,13 @@ object ConstraintGen {
         val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
-      case Expr.Tuple(exps, loc) =>
+      case Exp.Tuple(exps, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         val resTpe = Type.mkTuple(tpes, loc)
         val resEff = Type.mkUnion(effs, loc)
         (resTpe, resEff)
 
-      case Expr.RecordSelect(exp, label, tvar, loc) =>
+      case Exp.RecordSelect(exp, label, tvar, loc) =>
         //
         // r : { label = tpe | row }
         // -------------------------
@@ -568,7 +568,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.RecordExtend(label, exp1, exp2, tvar, loc) =>
+      case Exp.RecordExtend(label, exp1, exp2, tvar, loc) =>
         //
         //       exp1 : tpe        exp2 : {| r }
         // ---------------------------------------------
@@ -583,7 +583,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.RecordRestrict(label, exp, tvar, loc) =>
+      case Exp.RecordRestrict(label, exp, tvar, loc) =>
         //
         //  exp : { label  :: t | r }
         // -------------------------
@@ -598,7 +598,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.ArrayLit(exps, exp, tvar, evar, loc) =>
+      case Exp.ArrayLit(exps, exp, tvar, evar, loc) =>
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val (tpes, effs) = exps.map(visitExp).unzip
@@ -612,7 +612,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
+      case Exp.ArrayNew(exp1, exp2, exp3, tvar, evar, loc) =>
         val regionVar = freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegionToStar(regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
@@ -626,7 +626,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
+      case Exp.ArrayLoad(exp1, exp2, tvar, evar, loc) =>
         val regionVar = freshVar(Kind.Eff, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -637,7 +637,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayStore(exp1, exp2, exp3, evar, loc) =>
+      case Exp.ArrayStore(exp1, exp2, exp3, evar, loc) =>
         val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val arrayType = Type.mkArray(elmVar, regionVar, loc)
@@ -652,7 +652,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ArrayLength(exp, evar, loc) =>
+      case Exp.ArrayLength(exp, evar, loc) =>
         val elmVar = freshVar(Kind.Star, loc)
         val regionVar = freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
@@ -662,7 +662,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+      case Exp.StructNew(sym, fields, region, tvar, evar, loc) =>
         // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
         // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
@@ -671,11 +671,11 @@ object ConstraintGen {
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSymUse, expr), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
+          ((fieldSymUse, exp), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
         } {
           instantiatedFieldTpes.get(fieldSymUse.sym) match {
             case None => () // if not an actual field, there is nothing to unify
-            case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
+            case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, exp.loc)
           }
         }
         c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)
@@ -684,7 +684,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructGet(exp, symUse, tvar, evar, loc) =>
+      case Exp.StructGet(exp, symUse, tvar, evar, loc) =>
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
@@ -697,7 +697,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructPut(exp1, symUse, exp2, tvar, evar, loc) =>
+      case Exp.StructPut(exp1, symUse, exp2, tvar, evar, loc) =>
         val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
@@ -710,7 +710,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.VectorLit(exps, tvar, evar, loc) =>
+      case Exp.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
         c.unifyAllTypes(tpes, loc)
         val tpe = tpes.headOption.getOrElse(freshVar(Kind.Star, loc))
@@ -720,7 +720,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.VectorLoad(exp1, exp2, tvar, evar, loc) =>
+      case Exp.VectorLoad(exp1, exp2, tvar, evar, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(expected = Type.mkVector(tvar, loc), actual = tpe1, exp1.loc)
@@ -730,7 +730,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.VectorLength(exp, loc) =>
+      case Exp.VectorLength(exp, loc) =>
         val elmVar = freshVar(Kind.Star, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(Type.mkVector(elmVar, loc), tpe, exp.loc)
@@ -738,7 +738,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
+      case Exp.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         val (actualTpe, actualEff) = visitExp(exp)
         expectedTpe.foreach { tpe => c.expectType(expected = tpe, actual = actualTpe, loc) }
@@ -748,13 +748,13 @@ object ConstraintGen {
         val resEff = actualEff
         (resTpe, resEff)
 
-      case Expr.InstanceOf(exp, _, _) =>
+      case Exp.InstanceOf(exp, _, _) =>
         val (_, eff) = visitExp(exp)
         val resTpe = Type.Bool
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
+      case Exp.CheckedCast(cast, exp, tvar, evar, loc) =>
         // A cast expression is sound; the type system ensures the declared type is correct.
         cast match {
           case CheckedCastType.TypeCast =>
@@ -783,7 +783,7 @@ object ConstraintGen {
             (resTpe, resEff)
         }
 
-      case Expr.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
+      case Exp.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
         // An unchecked cast expression is unsound; the type system assumes the declared type and effect are correct.
         val (actualTyp, actualEff) = visitExp(exp)
         c.unifyType(tvar, declaredTpe.getOrElse(actualTyp), loc)
@@ -791,13 +791,13 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.Unsafe(exp, eff0, loc) =>
+      case Exp.Unsafe(exp, eff0, loc) =>
         val (tpe, eff) = visitExp(exp)
         val resTpe = tpe
         val resEff = Type.mkDifference(eff, eff0, loc)
         (resTpe, resEff)
 
-      case Expr.Without(exp, symUse, _) =>
+      case Exp.Without(exp, symUse, _) =>
         //
         // e: tpe \ eff - symUse
         // -------------------------
@@ -810,7 +810,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.TryCatch(exp, rules, loc) =>
+      case Exp.TryCatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitCatchRule).unzip
         c.unifyAllTypes(tpes, loc)
@@ -820,14 +820,14 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case KindedAst.Expr.Throw(exp, tvar, evar, loc) =>
+      case KindedAst.Exp.Throw(exp, tvar, evar, loc) =>
         val (_, eff) = visitExp(exp)
         c.unifyType(evar, Type.mkUnion(eff, Type.IO, loc), loc)
         val resultTpe = tvar
         val resultEff = evar
         (resultTpe, resultEff)
 
-      case Expr.Handler(symUse, rules, tvar, evar1, evar2, loc) =>
+      case Exp.Handler(symUse, rules, tvar, evar1, evar2, loc) =>
         //
         // ∀i. Γ, opix1: opit1, .., ki: opit -> t \ k_ef ⊢ ei: t \ ei_ef
         //     k_ef = (ef - Eff) ∪ (∪_i ei_ef)
@@ -856,7 +856,7 @@ object ConstraintGen {
         val resultEff = Type.Pure
         (resultTpe, resultEff)
 
-      case Expr.RunWith(exp1, exp2, tvar, evar, loc) =>
+      case Exp.RunWith(exp1, exp2, tvar, evar, loc) =>
         val (tpe, eff) = visitExp(exp1)
         val (handlerTpe, handlerExpEff) = visitExp(exp2)
         val handlerArg = Type.mkArrowWithEffect(Type.Unit, eff, tpe, loc.asSynthetic)
@@ -865,7 +865,7 @@ object ConstraintGen {
         val resultEff = Type.mkUnion(evar, handlerExpEff, loc.asSynthetic)
         (resultTpe, resultEff)
 
-      case Expr.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
+      case Exp.InvokeConstructor(clazz, exps, jvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmConstructor(k, eᵢ ...)
         // --------------------------------------------------------
         // Γ ⊢ new k(e₁ ...) : k \ JvmToEff[ι]
@@ -878,7 +878,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
+      case Exp.InvokeMethod(exp, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmMethod(τ, m, τᵢ ...)
         // ---------------------------------------------------------------
         // Γ ⊢ e.m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
@@ -892,7 +892,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
+      case Exp.InvokeStaticMethod(clazz, methodName, exps, jvar, tvar, evar, loc) =>
         // Γ ⊢ eᵢ ... : τ₁ ...    Γ ⊢ ι ~ JvmStaticMethod(m, τᵢ ...)
         // ---------------------------------------------------------------
         // Γ ⊢ m(eᵢ ...) : JvmToType[ι] \ JvmToEff[ι]
@@ -905,7 +905,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.GetField(exp, fieldName, jvar, tvar, evar, loc) =>
+      case Exp.GetField(exp, fieldName, jvar, tvar, evar, loc) =>
         // Γ ⊢ e : τ    Γ ⊢ ι ~ JvmFieldMethod(τ, m)
         // ---------------------------------------------------------------
         // Γ ⊢ e.f : JvmToType[ι]
@@ -917,7 +917,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.PutField(field, clazz, exp1, exp2, loc) =>
+      case Exp.PutField(field, clazz, exp1, exp2, loc) =>
         val fieldType = Type.getFlixType(field.getType)
         val classType = Type.getFlixType(clazz)
         val (tpe1, eff1) = visitExp(exp1)
@@ -928,26 +928,26 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.GetStaticField(field, _) =>
+      case Exp.GetStaticField(field, _) =>
         val fieldType = Type.getFlixType(field.getType)
         val resTpe = fieldType
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.PutStaticField(field, exp, loc) =>
+      case Exp.PutStaticField(field, exp, loc) =>
         val (valueTyp, eff) = visitExp(exp)
         c.expectType(expected = Type.getFlixType(field.getType), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(eff, Type.IO, loc)
         (resTpe, resEff)
 
-      case Expr.NewObject(_, clazz, methods, _) =>
+      case Exp.NewObject(_, clazz, methods, _) =>
         methods.foreach(visitJvmMethod)
         val resTpe = Type.getFlixType(clazz)
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.NewChannel(exp, tvar, loc) =>
+      case Exp.NewChannel(exp, tvar, loc) =>
         val elmTpe = freshVar(Kind.Star, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = Type.Int32, actual = tpe, exp.loc)
@@ -956,7 +956,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff, Type.Chan, loc)
         (resTpe, resEff)
 
-      case Expr.GetChannel(exp, tvar, evar, loc) =>
+      case Exp.GetChannel(exp, tvar, evar, loc) =>
         val elmTpe = freshVar(Kind.Star, loc)
         val receiverTpe = Type.mkReceiver(elmTpe, loc)
         val (tpe, eff) = visitExp(exp)
@@ -967,7 +967,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.PutChannel(exp1, exp2, evar, loc) =>
+      case Exp.PutChannel(exp1, exp2, evar, loc) =>
         val elmTpe = freshVar(Kind.Star, loc)
         val senderTpe = Type.mkSender(elmTpe, loc)
         val (tpe1, eff1) = visitExp(exp1)
@@ -979,7 +979,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.SelectChannel(rules, default, tvar, evar, loc) =>
+      case Exp.SelectChannel(rules, default, tvar, evar, loc) =>
         val (ruleTypes, ruleEffs) = rules.map(visitSelectRule).unzip
         val (defaultType, eff2) = visitDefaultRule(default, loc)
         c.unifyAllTypes(tvar :: defaultType :: ruleTypes, loc)
@@ -988,7 +988,7 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.Spawn(exp1, exp2, loc) =>
+      case Exp.Spawn(exp1, exp2, loc) =>
         // Γ ⊢ e1 : τ \ ef1 ∩ prims      Γ ⊢ e2 : Region[r] \ ef2
         // --------------------------------------------------------
         // Γ ⊢ spawn e1 @ e2 : Unit \ (ef1 ∩ prims) ∪ ef2
@@ -1004,7 +1004,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.ParYield(frags, exp, _) =>
+      case Exp.ParYield(frags, exp, _) =>
         // We don't need to keep the types of the fragments
         // since they are all bound to the patterns
 
@@ -1016,29 +1016,29 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Lazy(exp, loc) =>
+      case Exp.Lazy(exp, loc) =>
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = Type.Pure, actual = eff, exp.loc)
         val resTpe = Type.mkLazy(tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Force(exp, tvar, loc) =>
+      case Exp.Force(exp, tvar, loc) =>
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = Type.mkLazy(tvar, loc), actual = tpe, exp.loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
 
-      case e: Expr.FixpointConstraintSet => SchemaConstraintGen.visitFixpointConstraintSet(e)
-      case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
-      case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
-      case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
-      case e: Expr.FixpointQueryWithSelect => SchemaConstraintGen.visitFixpointQueryWithSelect(e)
-      case e: Expr.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
-      case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
+      case e: Exp.FixpointConstraintSet => SchemaConstraintGen.visitFixpointConstraintSet(e)
+      case e: Exp.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
+      case e: Exp.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
+      case e: Exp.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
+      case e: Exp.FixpointQueryWithSelect => SchemaConstraintGen.visitFixpointQueryWithSelect(e)
+      case e: Exp.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
+      case e: Exp.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
 
-      case Expr.Error(_, tvar, evar) =>
+      case Exp.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.
         val resTpe = tvar
         val resEff = evar
@@ -1293,7 +1293,7 @@ object ConstraintGen {
     *
     * Returns the type and effect of the rule body.
     */
-  private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  private def visitDefaultRule(exp0: Option[KindedAst.Exp], loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     implicit val scope: Scope = c.getScope
     exp0 match {
       case None => (freshVar(Kind.Star, loc), Type.Pure)

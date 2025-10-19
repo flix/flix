@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expr.*
+import ca.uwaterloo.flix.language.ast.LiftedAst.Exp.*
 import ca.uwaterloo.flix.language.ast.{LiftedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -43,46 +43,46 @@ object LiftedAstPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `e`.
+    * Returns the [[DocAst.Exp]] representation of `e`.
     */
-  def print(e: LiftedAst.Expr): DocAst.Expr = e match {
+  def print(e: LiftedAst.Exp): DocAst.Exp = e match {
     case Cst(cst, _, _) => ConstantPrinter.print(cst)
     case Var(sym, _, _) => printVarSym(sym)
     case ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), SimpleTypePrinter.print(tpe), PurityPrinter.print(purity))
-    case ApplyClo(exp1, exp2, _, _, _) => DocAst.Expr.ApplyClo(print(exp1), List(print(exp2)))
-    case ApplyDef(sym, args, _, _, _) => DocAst.Expr.ApplyDef(sym, args.map(print))
-    case ApplyOp(sym, exps, _, _, _) => DocAst.Expr.ApplyOp(sym, exps.map(print))
-    case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
-    case Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
-    case JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
-    case Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
-    case Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
-    case Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
-    case TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
+    case ApplyClo(exp1, exp2, _, _, _) => DocAst.Exp.ApplyClo(print(exp1), List(print(exp2)))
+    case ApplyDef(sym, args, _, _, _) => DocAst.Exp.ApplyDef(sym, args.map(print))
+    case ApplyOp(sym, exps, _, _, _) => DocAst.Exp.ApplyOp(sym, exps.map(print))
+    case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Exp.IfThenElse(print(exp1), print(exp2), print(exp3))
+    case Branch(exp, branches, _, _, _) => DocAst.Exp.Branch(print(exp), MapOps.mapValues(branches)(print))
+    case JumpTo(sym, _, _, _) => DocAst.Exp.JumpTo(sym)
+    case Let(sym, exp1, exp2, _, _, _) => DocAst.Exp.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Stm(exp1, exp2, _, _, _) => DocAst.Exp.Stm(print(exp1), print(exp2))
+    case Region(sym, exp, _, _, _) => DocAst.Exp.Region(printVarSym(sym), print(exp))
+    case TryCatch(exp, rules, _, _, _) => DocAst.Exp.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
     })
-    case RunWith(exp, effUse, rules, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
+    case RunWith(exp, effUse, rules, _, _, _) => DocAst.Exp.RunWithHandler(print(exp), effUse.sym, rules.map {
       case LiftedAst.HandlerRule(symUse, fparams, body) =>
         (symUse.sym, fparams.map(printFormalParam), print(body))
     })
-    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expr.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
+    case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Exp.NewObject(name, clazz, SimpleTypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), SimpleTypePrinter.print(retTpe))
     })
   }
 
   /**
-    * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
+    * Returns the [[DocAst.Exp.AscriptionTpe]] representation of `fp`.
     */
-  private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Expr.AscriptionTpe = {
+  private def printFormalParam(fp: LiftedAst.FormalParam): DocAst.Exp.AscriptionTpe = {
     val LiftedAst.FormalParam(sym, tpe, _) = fp
-    DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
+    DocAst.Exp.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `sym`.
+    * Returns the [[DocAst.Exp]] representation of `sym`.
     */
-  private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
-    DocAst.Expr.Var(sym)
+  private def printVarSym(sym: Symbol.VarSym): DocAst.Exp =
+    DocAst.Exp.Var(sym)
 
 }

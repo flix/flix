@@ -42,17 +42,17 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
   private val C2 = Symbol.mkRestrictableCaseSym(E, mkIdent("C2"))
   private val C3 = Symbol.mkRestrictableCaseSym(E, mkIdent("C3"))
 
-  private val Expr = Symbol.mkRestrictableEnumSym(
+  private val Exp = Symbol.mkRestrictableEnumSym(
     Name.RootNS,
-    mkIdent("Expr"),
+    mkIdent("Exp"),
     List("And", "Xor", "Or", "Var", "Not", "Cst").map(mkIdent)
   )
-  private val And = Symbol.mkRestrictableCaseSym(Expr, mkIdent("And"))
-  private val Xor = Symbol.mkRestrictableCaseSym(Expr, mkIdent("Xor"))
-  private val Or = Symbol.mkRestrictableCaseSym(Expr, mkIdent("Or"))
-  private val Var = Symbol.mkRestrictableCaseSym(Expr, mkIdent("Var"))
-  private val Not = Symbol.mkRestrictableCaseSym(Expr, mkIdent("Not"))
-  private val Cst = Symbol.mkRestrictableCaseSym(Expr, mkIdent("Cst"))
+  private val And = Symbol.mkRestrictableCaseSym(Exp, mkIdent("And"))
+  private val Xor = Symbol.mkRestrictableCaseSym(Exp, mkIdent("Xor"))
+  private val Or = Symbol.mkRestrictableCaseSym(Exp, mkIdent("Or"))
+  private val Var = Symbol.mkRestrictableCaseSym(Exp, mkIdent("Var"))
+  private val Not = Symbol.mkRestrictableCaseSym(Exp, mkIdent("Not"))
+  private val Cst = Symbol.mkRestrictableCaseSym(Exp, mkIdent("Cst"))
 
   test("Test.CaseSetUnification.01") {
     // ∅ ≐ ∅
@@ -321,22 +321,22 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
   }
 
   test("Test.CaseSetUnification.17") {
-    val varS1 = mkTypeVarSym("s1", Expr)
-    val varS2 = mkTypeVarSym("s2", Expr)
+    val varS1 = mkTypeVarSym("s1", Exp)
+    val varS2 = mkTypeVarSym("s2", Exp)
 
-    val caseAnd = Type.Cst(TypeConstructor.CaseSet(SortedSet(And), Expr), loc)
-    val caseXor = Type.Cst(TypeConstructor.CaseSet(SortedSet(Xor), Expr), loc)
-    val caseOr = Type.Cst(TypeConstructor.CaseSet(SortedSet(Or), Expr), loc)
+    val caseAnd = Type.Cst(TypeConstructor.CaseSet(SortedSet(And), Exp), loc)
+    val caseXor = Type.Cst(TypeConstructor.CaseSet(SortedSet(Xor), Exp), loc)
+    val caseOr = Type.Cst(TypeConstructor.CaseSet(SortedSet(Or), Exp), loc)
 
     val tpe1 = Type.mkCaseIntersection(
       Type.Var(varS1, loc),
       Type.mkCaseUnion(
         caseAnd,
         caseXor,
-        Expr,
+        Exp,
         loc
       ),
-      Expr,
+      Exp,
       loc
     )
 
@@ -345,28 +345,28 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
       Type.mkCaseUnion(
         caseOr,
         caseXor,
-        Expr,
+        Exp,
         loc
       ),
-      Expr,
+      Exp,
       loc
     )
 
     val renv = RigidityEnv.empty
-    assertUnifies(tpe1, tpe2, renv, Expr)
+    assertUnifies(tpe1, tpe2, renv, Exp)
   }
 
   test("Test.CaseSetUnification.18") {
-    val varS1 = mkTypeVarSym("s1", Expr)
-    val varS2 = mkTypeVarSym("s2", Expr)
+    val varS1 = mkTypeVarSym("s1", Exp)
+    val varS2 = mkTypeVarSym("s2", Exp)
 
-    val caseAnd = Type.Cst(TypeConstructor.CaseSet(SortedSet(And), Expr), loc)
-    val caseXor = Type.Cst(TypeConstructor.CaseSet(SortedSet(Xor), Expr), loc)
+    val caseAnd = Type.Cst(TypeConstructor.CaseSet(SortedSet(And), Exp), loc)
+    val caseXor = Type.Cst(TypeConstructor.CaseSet(SortedSet(Xor), Exp), loc)
 
     val tpe1 = Type.mkCaseUnion(
       Type.Var(varS1, loc),
       caseXor,
-      Expr,
+      Exp,
       loc
     )
 
@@ -375,15 +375,15 @@ class TestCaseSetUnification extends AnyFunSuite with TestUtils {
       Type.mkCaseUnion(
         caseXor,
         caseAnd,
-        Expr,
+        Exp,
         loc
       ),
-      Expr,
+      Exp,
       loc
     )
 
     val renv = RigidityEnv.empty
-    assertUnifies(tpe1, tpe2, renv, Expr)
+    assertUnifies(tpe1, tpe2, renv, Exp)
   }
 
   test("Test.CaseSetUnification.Fail.01") {

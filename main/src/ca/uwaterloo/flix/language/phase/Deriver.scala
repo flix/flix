@@ -153,18 +153,18 @@ object Deriver {
   /**
     * Creates the eq implementation for the given enum, where `param1` and `param2` are the parameters to the function.
     */
-  private def mkEqImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkEqImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Exp = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
       // create a match rule for each case
       val mainMatchRules = getCasesInStableOrder(cases).map(mkEqMatchRule(_, loc, root))
 
       // create a default rule
       // `case _ => false`
-      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Expr.Cst(Constant.Bool(false), loc), loc)
+      val defaultRule = KindedAst.MatchRule(KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc), None, KindedAst.Exp.Cst(Constant.Bool(false), loc), loc)
 
       // group the match rules in an expression
-      KindedAst.Expr.Match(
-        KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+      KindedAst.Exp.Match(
+        KindedAst.Exp.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
         mainMatchRules ++ List(defaultRule),
         loc
       )
@@ -216,7 +216,7 @@ object Deriver {
       // `x0 == y0`, `x1 == y1`
       val eqs = ListOps.zip(varSyms1, varSyms2).map {
         case (varSym1, varSym2) =>
-          KindedAst.Expr.ApplySig(SigSymUse(eqSym, loc),
+          KindedAst.Exp.ApplySig(SigSymUse(eqSym, loc),
             List(
               mkVarExpr(varSym1, loc),
               mkVarExpr(varSym2, loc)
@@ -234,10 +234,10 @@ object Deriver {
       // `x0 == y0 and x1 == y1`
       val exp = eqs match {
         // Case 1: no arguments: return true
-        case Nil => KindedAst.Expr.Cst(Constant.Bool(true), loc)
+        case Nil => KindedAst.Exp.Cst(Constant.Bool(true), loc)
         // Case 2: at least one argument: join everything with `and`
-        case head :: tail => tail.foldLeft(head: KindedAst.Expr) {
-          case (acc, eq) => KindedAst.Expr.Binary(SemanticOp.BoolOp.And, acc, eq, Type.freshVar(Kind.Star, loc), loc)
+        case head :: tail => tail.foldLeft(head: KindedAst.Exp) {
+          case (acc, eq) => KindedAst.Exp.Binary(SemanticOp.BoolOp.And, acc, eq, Type.freshVar(Kind.Star, loc), loc)
         }
       }
 
@@ -313,7 +313,7 @@ object Deriver {
   /**
     * Creates the compare implementation for the given enum, where `param1` and `param2` are the parameters to the function.
     */
-  private def mkCompareImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkCompareImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Exp = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
       val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
 
@@ -322,8 +322,8 @@ object Deriver {
       // Create the lambda mapping tags to indices
       val lambdaParamSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
-      val lambda = KindedAst.Expr.Lambda(
+      val indexMatchExp = KindedAst.Exp.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
+      val lambda = KindedAst.Exp.Lambda(
         KindedAst.FormalParam(lambdaParamSym, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
         indexMatchExp,
         allowSubeffecting = false,
@@ -338,17 +338,17 @@ object Deriver {
       val defaultMatchRule = KindedAst.MatchRule(
         KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc),
         None,
-        KindedAst.Expr.ApplySig(
+        KindedAst.Exp.ApplySig(
           SigSymUse(compareSigSym, loc),
           List(
-            KindedAst.Expr.ApplyClo(
+            KindedAst.Exp.ApplyClo(
               mkVarExpr(lambdaSym, loc),
               mkVarExpr(param1, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
-            KindedAst.Expr.ApplyClo(
+            KindedAst.Exp.ApplyClo(
               mkVarExpr(lambdaSym, loc),
               mkVarExpr(param2, loc),
               Type.freshVar(Kind.Star, loc),
@@ -366,14 +366,14 @@ object Deriver {
       )
 
       // Wrap the cases in a match expression
-      val matchExp = KindedAst.Expr.Match(
-        KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+      val matchExp = KindedAst.Exp.Match(
+        KindedAst.Exp.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
         matchRules :+ defaultMatchRule,
         loc
       )
 
       // Put the expressions together in a let
-      KindedAst.Expr.Let(lambdaSym, lambda, matchExp, loc)
+      KindedAst.Exp.Let(lambdaSym, lambda, matchExp, loc)
   }
 
   /**
@@ -415,7 +415,7 @@ object Deriver {
     case KindedAst.Case(sym, tpes, _, _) =>
       val pats = tpes.map(_ => KindedAst.Pattern.Wild(Type.freshVar(Kind.Star, loc), loc))
       val pat = KindedAst.Pattern.Tag(CaseSymUse(sym, loc), pats, Type.freshVar(Kind.Star, loc), loc)
-      val exp = KindedAst.Expr.Cst(Constant.Int32(index), loc)
+      val exp = KindedAst.Exp.Cst(Constant.Int32(index), loc)
       KindedAst.MatchRule(pat, None, exp, loc)
   }
 
@@ -439,7 +439,7 @@ object Deriver {
       // `compare(x0, y0)`, `compare(x1, y1)`
       val compares = ListOps.zip(varSyms1, varSyms2).map {
         case (varSym1, varSym2) =>
-          KindedAst.Expr.ApplySig(
+          KindedAst.Exp.ApplySig(
             SigSymUse(compareSigSym, loc),
             List(
               mkVarExpr(varSym1, loc),
@@ -458,9 +458,9 @@ object Deriver {
         * Joins the two expressions via nested match rules.
         * (Cannot be inlined due to issues with Scala's type inference.
         */
-      def thenCompare(exp1: KindedAst.Expr, exp2: KindedAst.Expr): KindedAst.Expr = {
+      def thenCompare(exp1: KindedAst.Exp, exp2: KindedAst.Exp): KindedAst.Exp = {
         val matchVarSym = Symbol.freshVarSym("z", BoundBy.Pattern, loc)
-        KindedAst.Expr.Match(exp1,
+        KindedAst.Exp.Match(exp1,
           List(
             KindedAst.MatchRule(
               KindedAst.Pattern.Tag(
@@ -482,7 +482,7 @@ object Deriver {
       // compare(x0, y0) `thenCompare` lazy compare(x1, y1)
       val exp = compares match {
         // Case 1: no variables to compare; just return true
-        case Nil => KindedAst.Expr.Tag(CaseSymUse(equalToSym, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
+        case Nil => KindedAst.Exp.Tag(CaseSymUse(equalToSym, loc), Nil, Type.freshVar(Kind.Star, loc), loc)
         // Case 2: multiple comparisons to be done; wrap them in Order.thenCompare
         case cmps => cmps.reduceRight(thenCompare)
       }
@@ -548,13 +548,13 @@ object Deriver {
   /**
     * Creates the toString implementation for the given enum, where `param` is the parameter to the function.
     */
-  private def mkToStringImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkToStringImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Exp = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
       // create a match rule for each case
       val matchRules = getCasesInStableOrder(cases).map(mkToStringMatchRule(_, loc, root))
 
       // group the match rules in an expression
-      KindedAst.Expr.Match(
+      KindedAst.Exp.Match(
         mkVarExpr(param, loc),
         matchRules,
         loc
@@ -599,13 +599,13 @@ object Deriver {
       val (pat, varSyms) = mkPattern(sym, tpes, "x", loc)
 
       // "C2"
-      val tagPart = KindedAst.Expr.Cst(Constant.Str(sym.name), loc)
+      val tagPart = KindedAst.Exp.Cst(Constant.Str(sym.name), loc)
 
       // call toString on each variable,
       // `toString(x0)`, `toString(x1)`
       val toStrings = varSyms.map {
         varSym =>
-          KindedAst.Expr.ApplySig(
+          KindedAst.Exp.ApplySig(
             SigSymUse(toStringSym, loc),
             List(mkVarExpr(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
@@ -691,7 +691,7 @@ object Deriver {
   /**
     * Creates the hash implementation for the given enum, where `param` is the parameter to the function.
     */
-  private def mkHashImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkHashImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Exp = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
       // create a match rule for each case
       val matchRules = getCasesInStableOrder(cases).zipWithIndex.map {
@@ -699,7 +699,7 @@ object Deriver {
       }
 
       // group the match rules in an expression
-      KindedAst.Expr.Match(
+      KindedAst.Exp.Match(
         mkVarExpr(param, loc),
         matchRules,
         loc
@@ -747,14 +747,14 @@ object Deriver {
       // build a hash code by repeatedly adding elements via the combine function
       // the first hash is the index + 1
       // `3 `combine` hash(x0) `combine` hash(y0)`
-      val exp = varSyms.foldLeft(KindedAst.Expr.Cst(Constant.Int32(index + 1), loc): KindedAst.Expr) {
+      val exp = varSyms.foldLeft(KindedAst.Exp.Cst(Constant.Int32(index + 1), loc): KindedAst.Exp) {
         case (acc, varSym) =>
           // `acc `combine` hash(varSym)
-          KindedAst.Expr.ApplyDef(
+          KindedAst.Exp.ApplyDef(
             DefSymUse(combineDefSym, loc),
             List(
               acc,
-              KindedAst.Expr.ApplySig(
+              KindedAst.Exp.ApplySig(
                 SigSymUse(hashSigSym, loc),
                 List(mkVarExpr(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
@@ -849,13 +849,13 @@ object Deriver {
   /**
     * Creates the coerce implementation for the given enum.
     */
-  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = enum0 match {
+  private def mkCoerceImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation)(implicit flix: Flix): KindedAst.Exp = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _) =>
       val (_, caze) = cases.head
       val matchRule = mkCoerceMatchRule(caze, loc)
 
-      KindedAst.Expr.Match(
-        KindedAst.Expr.Var(param, loc),
+      KindedAst.Exp.Match(
+        KindedAst.Exp.Var(param, loc),
         List(matchRule),
         loc
       )
@@ -899,11 +899,11 @@ object Deriver {
       val (pat, varSyms) = mkPattern(sym, tpes, "x", loc)
 
       // the body is a tuplish of whatever we extracted
-      val vars = varSyms.map(KindedAst.Expr.Var(_, loc))
+      val vars = varSyms.map(KindedAst.Exp.Var(_, loc))
       val exp = vars match {
-        case Nil => KindedAst.Expr.Cst(Constant.Unit, loc)
+        case Nil => KindedAst.Exp.Cst(Constant.Unit, loc)
         case x :: Nil => x
-        case xs@(_ :: _ :: _) => KindedAst.Expr.Tuple(xs, loc)
+        case xs@(_ :: _ :: _) => KindedAst.Exp.Tuple(xs, loc)
       }
 
       KindedAst.MatchRule(pat, None, exp, loc)
@@ -928,26 +928,26 @@ object Deriver {
   /**
     * Builds a string expression from the given string.
     */
-  private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expr = KindedAst.Expr.Cst(Constant.Str(str), loc)
+  private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Exp = KindedAst.Exp.Cst(Constant.Str(str), loc)
 
   /**
     * Builds a var expression from the given var sym.
     */
-  private def mkVarExpr(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(sym, loc)
+  private def mkVarExpr(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Exp.Var = KindedAst.Exp.Var(sym, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.
     */
-  private def concat(exp1: KindedAst.Expr, exp2: KindedAst.Expr, loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
-    KindedAst.Expr.Binary(SemanticOp.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star, loc), loc)
+  private def concat(exp1: KindedAst.Exp, exp2: KindedAst.Exp, loc: SourceLocation)(implicit flix: Flix): KindedAst.Exp = {
+    KindedAst.Exp.Binary(SemanticOp.StringOp.Concat, exp1, exp2, Type.freshVar(Kind.Star, loc), loc)
   }
 
   /**
     * Builds a string concatenation expression from the given expressions.
     */
-  private def concatAll(exps: List[KindedAst.Expr], loc: SourceLocation)(implicit flix: Flix): KindedAst.Expr = {
+  private def concatAll(exps: List[KindedAst.Exp], loc: SourceLocation)(implicit flix: Flix): KindedAst.Exp = {
     exps match {
-      case Nil => KindedAst.Expr.Cst(Constant.Str(""), loc)
+      case Nil => KindedAst.Exp.Cst(Constant.Str(""), loc)
       case head :: tail => tail.foldLeft(head)(concat(_, _, loc))
     }
   }

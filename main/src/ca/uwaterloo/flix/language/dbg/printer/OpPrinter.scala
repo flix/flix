@@ -19,8 +19,8 @@ package ca.uwaterloo.flix.language.dbg.printer
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.DocAst
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.language.dbg.DocAst.Exp
+import ca.uwaterloo.flix.language.dbg.DocAst.Exp.*
 import ca.uwaterloo.flix.util.collection.ListOps
 
 object OpPrinter {
@@ -164,9 +164,9 @@ object OpPrinter {
   }
 
   /**
-    * Returns the [[DocAst.Expr]] representation of `op`.
+    * Returns the [[DocAst.Exp]] representation of `op`.
     */
-  def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type, eff: DocAst.Type): Expr = (op, ds) match {
+  def print(op: AtomicOp, ds: List[Exp], tpe: DocAst.Type, eff: DocAst.Type): Exp = (op, ds) match {
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
@@ -186,11 +186,11 @@ object OpPrinter {
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
     case (AtomicOp.StructNew(sym, fields), d :: rs) =>
       ListOps.zipOption(fields, rs) match {
-        case None => Expr.Unknown
-        case Some(fs) => Expr.StructNew(sym, fs, d)
+        case None => Exp.Unknown
+        case Some(fs) => Exp.StructNew(sym, fs, d)
       }
-    case (AtomicOp.StructGet(field), List(d)) => Expr.StructGet(d, field)
-    case (AtomicOp.StructPut(field), List(d1, d2)) => Expr.StructPut(d1, field, d2)
+    case (AtomicOp.StructGet(field), List(d)) => Exp.StructGet(d, field)
+    case (AtomicOp.StructPut(field), List(d1, d2)) => Exp.StructPut(d1, field, d2)
     case (AtomicOp.Lazy, List(d)) => Lazy(d)
     case (AtomicOp.Force, List(d)) => Force(d)
     case (AtomicOp.GetField(field), List(d)) => JavaGetField(field, d)

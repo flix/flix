@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.optimizer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Expr, Occur}
+import ca.uwaterloo.flix.language.ast.MonoAst.{DefContext, Exp, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.VarSym
 import ca.uwaterloo.flix.language.ast.{MonoAst, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -53,15 +53,15 @@ object OccurrenceAnalyzer {
   /**
     * Performs occurrence analysis on `exp0`
     */
-  private def visitExp(exp0: Expr)(implicit sym0: Symbol.DefnSym): (Expr, ExprContext) = {
+  private def visitExp(exp0: Exp)(implicit sym0: Symbol.DefnSym): (Exp, ExprContext) = {
     exp0 match {
-      case Expr.Cst(_, _, _) =>
+      case Exp.Cst(_, _, _) =>
         (exp0, ExprContext.Empty)
 
-      case Expr.Var(sym, _, _) =>
+      case Exp.Var(sym, _, _) =>
         (exp0, ExprContext.Empty.addVar(sym, Occur.Once))
 
-      case Expr.Lambda(fparam, exp, tpe, loc) =>
+      case Exp.Lambda(fparam, exp, tpe, loc) =>
         val (e, ctx1) = visitExp(exp)
         val ctx2 = ctx1.map {
           case Occur.Once => Occur.OnceInLambda
@@ -72,57 +72,57 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && (fp eq fparam)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.Lambda(fp, e, tpe, loc), ctx3)
+          (Exp.Lambda(fp, e, tpe, loc), ctx3)
         }
 
-      case Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
+      case Exp.ApplyAtomic(op, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.ApplyAtomic(op, es, tpe, eff, loc), ctx)
+          (Exp.ApplyAtomic(op, es, tpe, eff, loc), ctx)
         }
 
-      case Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
+      case Exp.ApplyClo(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
+          (Exp.ApplyClo(e1, e2, tpe, eff, loc), ctx3)
         }
 
-      case Expr.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
+      case Exp.ApplyDef(sym, exps, itpe, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx1 = if (sym == sym0) ExprContext.RecursiveOnce else ExprContext.Empty
         val ctx2 = ctxs.foldLeft(ctx1)(combineSeq)
         if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx2) // Reuse exp0.
         } else {
-          (Expr.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
+          (Exp.ApplyDef(sym, es, itpe, tpe, eff, loc), ctx2)
         }
 
-      case Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
+      case Exp.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq).addVar(sym, Occur.Once)
         if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
+          (Exp.ApplyLocalDef(sym, es, tpe, eff, loc), ctx)
         }
 
-      case Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
+      case Exp.ApplyOp(sym, exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (exps.zip(es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.ApplyOp(sym, es, tpe, eff, loc), ctx)
+          (Exp.ApplyOp(sym, es, tpe, eff, loc), ctx)
         }
 
-      case Expr.Let(sym, exp1, exp2, tpe, eff, occur0, loc) =>
+      case Exp.Let(sym, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
@@ -131,10 +131,10 @@ object OccurrenceAnalyzer {
         if ((e1 eq exp1) && (e2 eq exp2) && (occur eq occur0)) {
           (exp0, ctx4) // Reuse exp0.
         } else {
-          (Expr.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
+          (Exp.Let(sym, e1, e2, tpe, eff, occur, loc), ctx4)
         }
 
-      case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur0, loc) =>
+      case Exp.LocalDef(sym, fparams, exp1, exp2, tpe, eff, occur0, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val ctx2 = ctx1.map {
           case Occur.Once => Occur.OnceInLocalDef
@@ -149,18 +149,18 @@ object OccurrenceAnalyzer {
         if ((e1 eq exp1) && (e2 eq exp2) && ListOps.zip(fparams, fps).forall { case (fp1, fp2) => fp1 eq fp2 } && (occur eq occur0)) {
           (exp0, ctx6) // Reuse exp0.
         } else {
-          (Expr.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
+          (Exp.LocalDef(sym, fps, e1, e2, tpe, eff, occur, loc), ctx6)
         }
 
-      case Expr.Region(sym, rsym, exp, tpe, eff, loc) =>
+      case Exp.Region(sym, rsym, exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.Region(sym, rsym, e, tpe, eff, loc), ctx)
+          (Exp.Region(sym, rsym, e, tpe, eff, loc), ctx)
         }
 
-      case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      case Exp.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val (e3, ctx3) = visitExp(exp3)
@@ -168,28 +168,28 @@ object OccurrenceAnalyzer {
         if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) {
           (exp0, ctx4) // Reuse exp0.
         } else {
-          (Expr.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
+          (Exp.IfThenElse(e1, e2, e3, tpe, eff, loc), ctx4)
         }
 
-      case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+      case Exp.Stm(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.Stm(e1, e2, tpe, eff, loc), ctx3)
+          (Exp.Stm(e1, e2, tpe, eff, loc), ctx3)
         }
 
-      case Expr.Discard(exp, eff, loc) =>
+      case Exp.Discard(exp, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.Discard(e, eff, loc), ctx)
+          (Exp.Discard(e, eff, loc), ctx)
         }
 
-      case Expr.Match(exp, rules, tpe, eff, loc) =>
+      case Exp.Match(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitMatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -197,10 +197,10 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.Match(e, rs, tpe, eff, loc), ctx3)
+          (Exp.Match(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
+      case Exp.ExtMatch(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitExtMatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -208,45 +208,45 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && rules.zip(rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.ExtMatch(e, rs, tpe, eff, loc), ctx3)
+          (Exp.ExtMatch(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.VectorLit(exps, tpe, eff, loc) =>
+      case Exp.VectorLit(exps, tpe, eff, loc) =>
         val (es, ctxs) = exps.map(visitExp).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineSeq)
         if (ListOps.zip(exps, es).forall { case (e1, e2) => e1 eq e2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.VectorLit(es, tpe, eff, loc), ctx)
+          (Exp.VectorLit(es, tpe, eff, loc), ctx)
         }
 
-      case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
+      case Exp.VectorLoad(exp1, exp2, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
         val ctx3 = combineSeq(ctx1, ctx2)
         if ((e1 eq exp1) && (e2 eq exp2)) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
+          (Exp.VectorLoad(e1, e2, tpe, eff, loc), ctx3)
         }
 
-      case Expr.VectorLength(exp, loc) =>
+      case Exp.VectorLength(exp, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.VectorLength(e, loc), ctx)
+          (Exp.VectorLength(e, loc), ctx)
         }
 
-      case Expr.Cast(exp, tpe, eff, loc) =>
+      case Exp.Cast(exp, tpe, eff, loc) =>
         val (e, ctx) = visitExp(exp)
         if (e eq exp) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.Cast(e, tpe, eff, loc), ctx)
+          (Exp.Cast(e, tpe, eff, loc), ctx)
         }
 
-      case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
+      case Exp.TryCatch(exp, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitCatchRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -254,10 +254,10 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.TryCatch(e, rs, tpe, eff, loc), ctx3)
+          (Exp.TryCatch(e, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.RunWith(exp, effUse, rules, tpe, eff, loc) =>
+      case Exp.RunWith(exp, effUse, rules, tpe, eff, loc) =>
         val (e, ctx1) = visitExp(exp)
         val (rs, ctxs) = rules.map(visitHandlerRule).unzip
         val ctx2 = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
@@ -265,16 +265,16 @@ object OccurrenceAnalyzer {
         if ((e eq exp) && ListOps.zip(rules, rs).forall { case (r1, r2) => r1 eq r2 }) {
           (exp0, ctx3) // Reuse exp0.
         } else {
-          (Expr.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
+          (Exp.RunWith(e, effUse, rs, tpe, eff, loc), ctx3)
         }
 
-      case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
+      case Exp.NewObject(name, clazz, tpe, eff, methods, loc) =>
         val (ms, ctxs) = methods.map(visitJvmMethod).unzip
         val ctx = ctxs.foldLeft(ExprContext.Empty)(combineBranch)
         if (ListOps.zip(methods, ms).forall { case (m1, m2) => m1 eq m2 }) {
           (exp0, ctx) // Reuse exp0.
         } else {
-          (Expr.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
+          (Exp.NewObject(name, clazz, tpe, eff, ms, loc), ctx)
         }
     }
   }
@@ -529,7 +529,7 @@ object OccurrenceAnalyzer {
     * Stores various pieces of information extracted from an expression.
     *
     * @param selfOccur Occurrence information on how the function occurs in its own definition.
-    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[Expr.LocalDef]]).
+    * @param vars      A map from variable symbols to occurrence information (this also includes uses of [[Exp.LocalDef]]).
     *                  If the map does not contain a certain symbol, then the symbol is [[Occur.Dead]].
     */
   case class ExprContext(selfOccur: Occur, vars: Map[VarSym, Occur]) {

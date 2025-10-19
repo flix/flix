@@ -140,7 +140,7 @@ object FindReferencesProvider {
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
     case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
-    case exp: TypedAst.Expr => exp.loc.isReal
+    case exp: TypedAst.Exp => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
     case TypedAst.RestrictableChoosePattern.Wild(_, loc) => loc.isReal
     case TypedAst.RestrictableChoosePattern.Var(_, _, loc) => loc.isReal
@@ -230,7 +230,7 @@ object FindReferencesProvider {
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
     // Vars
-    case TypedAst.Expr.Var(sym, _, _) => Some(getVarSymOccurs(sym))
+    case TypedAst.Exp.Var(sym, _, _) => Some(getVarSymOccurs(sym))
     case Binder(sym, _) => Some(getVarSymOccurs(sym))
 
     case _ => None
@@ -491,8 +491,8 @@ object FindReferencesProvider {
     object VarSymConsumer extends Consumer {
       override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
 
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(varSym, _, loc) => consider(varSym, loc)
+      override def consumeExpr(exp: TypedAst.Exp): Unit = exp match {
+        case TypedAst.Exp.Var(varSym, _, loc) => consider(varSym, loc)
         case _ => ()
       }
     }

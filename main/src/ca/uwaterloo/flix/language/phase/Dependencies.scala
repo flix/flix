@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, ExtTagPattern, Pattern, RestrictableChoosePattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Exp, ExtMatchRule, ExtPattern, ExtTagPattern, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -109,87 +109,87 @@ object Dependencies {
     typeAlias
   }
 
-  private def visitExp(exp0: Expr)(implicit sctx: SharedContext): Unit = exp0 match {
-    case Expr.Cst(_, tpe, _) =>
+  private def visitExp(exp0: Exp)(implicit sctx: SharedContext): Unit = exp0 match {
+    case Exp.Cst(_, tpe, _) =>
       visitType(tpe)
 
-    case Expr.Var(_, tpe, _) =>
+    case Exp.Var(_, tpe, _) =>
       visitType(tpe)
 
-    case Expr.Hole(_, _, tpe, eff, _) =>
+    case Exp.Hole(_, _, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
 
-    case Expr.HoleWithExp(exp, _, tpe, eff, _) =>
+    case Exp.HoleWithExp(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.OpenAs(symUse, exp, tpe, _) =>
+    case Exp.OpenAs(symUse, exp, tpe, _) =>
       visitSymUse(symUse)
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.Use(_, _, exp, _) =>
+    case Exp.Use(_, _, exp, _) =>
       visitExp(exp)
 
-    case Expr.Lambda(fparam, exp, tpe, _) =>
+    case Exp.Lambda(fparam, exp, tpe, _) =>
       visitFormalParam(fparam)
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.ApplyClo(exp1, exp2, tpe, eff, _) =>
+    case Exp.ApplyClo(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyDef(symUse, exps, _, itpe, tpe, eff, _) =>
+    case Exp.ApplyDef(symUse, exps, _, itpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _) =>
+    case Exp.ApplyLocalDef(symUse, exps, arrowTpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(arrowTpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplyOp(op, exps, tpe, eff, _) =>
+    case Exp.ApplyOp(op, exps, tpe, eff, _) =>
       visitSymUse(op)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _) =>
+    case Exp.ApplySig(symUse, exps, _, _, itpe, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(itpe)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Unary(_, exp, tpe, eff, _) =>
+    case Exp.Unary(_, exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Binary(_, exp1, exp2, tpe, eff, _) =>
+    case Exp.Binary(_, exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Let(bnd, exp1, exp2, tpe, eff, _) =>
+    case Exp.Let(bnd, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) =>
+    case Exp.LocalDef(bnd, fparams, exp1, exp2, tpe, eff, _) =>
       visitBinder(bnd)
       fparams.foreach(visitFormalParam)
       visitExp(exp1)
@@ -197,121 +197,121 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Region(bnd, _, exp, tpe, eff, _) =>
+    case Exp.Region(bnd, _, exp, tpe, eff, _) =>
       visitBinder(bnd)
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Stm(exp1, exp2, tpe, eff, _) =>
+    case Exp.Stm(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Discard(exp, eff, _) =>
+    case Exp.Discard(exp, eff, _) =>
       visitExp(exp)
       visitType(eff)
 
-    case Expr.Match(exp, rules, tpe, eff, _) =>
+    case Exp.Match(exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitMatchRule)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.TypeMatch(exp, rules, tpe, eff, _) =>
+    case Exp.TypeMatch(exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitTypeMatchRule)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RestrictableChoose(_, exp, rules, tpe, eff, _) =>
+    case Exp.RestrictableChoose(_, exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitRestrictableChooseRule)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtMatch(exp, rules, tpe, eff, _) =>
+    case Exp.ExtMatch(exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitExtMatchRule)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Tag(symUse, exps, tpe, eff, _) =>
+    case Exp.Tag(symUse, exps, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RestrictableTag(symUse, exps, tpe, eff, _) =>
+    case Exp.RestrictableTag(symUse, exps, tpe, eff, _) =>
       visitSymUse(symUse)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ExtTag(_, exps, tpe, eff, _) =>
+    case Exp.ExtTag(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Tuple(exps, tpe, eff, _) =>
+    case Exp.Tuple(exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RecordSelect(exp, _, tpe, eff, _) =>
+    case Exp.RecordSelect(exp, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RecordExtend(_, exp1, exp2, tpe, eff, _) =>
+    case Exp.RecordExtend(_, exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.RecordRestrict(_, exp, tpe, eff, _) =>
+    case Exp.RecordRestrict(_, exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ArrayLit(exps, exp, tpe, eff, _) =>
+    case Exp.ArrayLit(exps, exp, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, _) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ArrayLoad(exp1, exp2, tpe, eff, _) =>
+    case Exp.ArrayLoad(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ArrayLength(exp, eff, _) =>
+    case Exp.ArrayLength(exp, eff, _) =>
       visitExp(exp)
       visitType(eff)
 
-    case Expr.ArrayStore(exp1, exp2, exp3, eff, _) =>
+    case Exp.ArrayStore(exp1, exp2, exp3, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitExp(exp3)
       visitType(eff)
 
-    case Expr.StructNew(_, fields, region, tpe, eff, _) =>
+    case Exp.StructNew(_, fields, region, tpe, eff, _) =>
       fields.foreach{ field =>
         visitSymUse(field._1)
         visitExp(field._2)
@@ -320,77 +320,77 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.StructGet(exp, symUse, tpe, eff, _) =>
+    case Exp.StructGet(exp, symUse, tpe, eff, _) =>
       visitExp(exp)
       visitSymUse(symUse)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.StructPut(exp1, symUse, exp2, tpe, eff, _) =>
+    case Exp.StructPut(exp1, symUse, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitSymUse(symUse)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.VectorLit(exps, tpe, eff, _) =>
+    case Exp.VectorLit(exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.VectorLoad(exp1, exp2, tpe, eff, _) =>
+    case Exp.VectorLoad(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       visitExp(exp)
 
-    case Expr.Ascribe(exp, _, _, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.InstanceOf(exp, _, _) =>
-      visitExp(exp)
-
-    case Expr.CheckedCast(_, exp, tpe, eff, _) =>
+    case Exp.Ascribe(exp, _, _, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, _) =>
+    case Exp.InstanceOf(exp, _, _) =>
+      visitExp(exp)
+
+    case Exp.CheckedCast(_, exp, tpe, eff, _) =>
+      visitExp(exp)
+      visitType(tpe)
+      visitType(eff)
+
+    case Exp.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, _) =>
       visitExp(exp)
       declaredType.toList.foreach(visitType)
       declaredEff.toList.foreach(visitType)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, _) =>
+    case Exp.Unsafe(exp, runEff, tpe, eff, _) =>
       visitExp(exp)
       visitType(runEff)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Without(exp, symUse, tpe, eff, _) =>
+    case Exp.Without(exp, symUse, tpe, eff, _) =>
       visitExp(exp)
       visitSymUse(symUse)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.TryCatch(exp, rules, tpe, eff, _) =>
+    case Exp.TryCatch(exp, rules, tpe, eff, _) =>
       visitExp(exp)
       rules.foreach(visitCatchRule)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Throw(exp, tpe, eff, _) =>
+    case Exp.Throw(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, _) =>
+    case Exp.Handler(symUse, rules, bodyType, bodyEff, handledEff, tpe, _) =>
       visitSymUse(symUse)
       rules.foreach(visitHandlerRule)
       visitType(bodyType)
@@ -398,114 +398,114 @@ object Dependencies {
       visitType(handledEff)
       visitType(tpe)
 
-    case Expr.RunWith(exp1, exp2, tpe, eff, _) =>
+    case Exp.RunWith(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.InvokeConstructor(_, exps, tpe, eff, _) =>
+    case Exp.InvokeConstructor(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.InvokeMethod(_, exp, exps, tpe, eff, _) =>
+    case Exp.InvokeMethod(_, exp, exps, tpe, eff, _) =>
       visitExp(exp)
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.InvokeStaticMethod(_, exps, tpe, eff, _) =>
+    case Exp.InvokeStaticMethod(_, exps, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.GetField(_, exp, tpe, eff, _) =>
+    case Exp.GetField(_, exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.PutField(_, exp1, exp2, tpe, eff, _) =>
+    case Exp.PutField(_, exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.GetStaticField(_, tpe, eff, _) =>
+    case Exp.GetStaticField(_, tpe, eff, _) =>
       visitType(tpe)
       visitType(eff)
 
-    case Expr.PutStaticField(_, exp, tpe, eff, _) =>
+    case Exp.PutStaticField(_, exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.NewObject(_, _, tpe, eff, methods, _) =>
+    case Exp.NewObject(_, _, tpe, eff, methods, _) =>
       visitType(tpe)
       visitType(eff)
       methods.foreach(visitJvmMethod)
 
-    case Expr.NewChannel(exp, tpe, eff, _) =>
+    case Exp.NewChannel(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.PutChannel(exp1, exp2, tpe, eff, _) =>
+    case Exp.PutChannel(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.SelectChannel(rules, default, tpe, eff, _) =>
+    case Exp.SelectChannel(rules, default, tpe, eff, _) =>
       rules.foreach(visitSelectChannelRule)
       default.toList.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Spawn(exp1, exp2, tpe, eff, _) =>
+    case Exp.Spawn(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.ParYield(frags, exp, tpe, eff, _) =>
+    case Exp.ParYield(frags, exp, tpe, eff, _) =>
       frags.foreach(visitParYieldFragment)
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Lazy(exp, tpe, _) =>
+    case Exp.Lazy(exp, tpe, _) =>
       visitExp(exp)
       visitType(tpe)
 
-    case Expr.Force(exp, tpe, eff, _) =>
+    case Exp.Force(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointConstraintSet(cs, tpe, _) =>
+    case Exp.FixpointConstraintSet(cs, tpe, _) =>
       cs.foreach(visitConstrait)
       visitType(tpe)
 
-    case Expr.FixpointLambda(pparams, exp, tpe, eff, _) =>
+    case Exp.FixpointLambda(pparams, exp, tpe, eff, _) =>
       pparams.foreach(visitPParam)
       visitExp(exp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointMerge(exp1, exp2, tpe, eff, _) =>
+    case Exp.FixpointMerge(exp1, exp2, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointQueryWithProvenance(exps, select, _, tpe, eff, _) =>
+    case Exp.FixpointQueryWithProvenance(exps, select, _, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitHead(select)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe, eff, _) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitExp(queryExp)
       selects.foreach(visitExp)
@@ -514,21 +514,21 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointSolveWithProject(exps, _, _, tpe, eff, _) =>
+    case Exp.FixpointSolveWithProject(exps, _, _, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointInjectInto(exps, _, tpe, eff, _) =>
+    case Exp.FixpointInjectInto(exps, _, tpe, eff, _) =>
       exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Error(_, tpe, eff) =>
+    case Exp.Error(_, tpe, eff) =>
       visitType(tpe)
       visitType(eff)
 
-    case Expr.GetChannel(exp, tpe, eff, _) =>
+    case Exp.GetChannel(exp, tpe, eff, _) =>
       visitExp(exp)
       visitType(tpe)
       visitType(eff)

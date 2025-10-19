@@ -302,7 +302,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
             w.println("Error: Declaration ignored due to previous error(s).")
         }
 
-      case Category.Expr =>
+      case Category.Exp =>
         // The input is an expression. Wrap it in main and run it.
 
         // The name of the generated main function.

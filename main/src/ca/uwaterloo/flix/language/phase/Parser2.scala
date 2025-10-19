@@ -107,7 +107,7 @@ object Parser2 {
     *
     * Conversely, we sometimes need to open a group before the currently open one. The best example
     * is binary expressions. In '1 + 2' we first see '1' and open a group for a Literal. Then we see
-    * '+' which means we want to open a Expr.Binary group that also includes the '1'. This is done
+    * '+' which means we want to open a Exp.Binary group that also includes the '1'. This is done
     * with [[openBefore]] which takes a [[Mark.Closed]] and inserts an Open event before it.
     * Whenever possible grammar rules return a [[Mark.Closed]] so another rule may wrap it.
     */
@@ -269,7 +269,7 @@ object Parser2 {
     * (Literal '1') '+' (Literal '2')
     *
     * Into:
-    * (Expr.Binary (Literal '1') '+' (Literal '2'))
+    * (Exp.Binary (Literal '1') '+' (Literal '2'))
     */
   private def openBefore(before: Mark.Closed)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(before.index)
@@ -1038,7 +1038,7 @@ object Parser2 {
         equalityConstraints()
       }
       if (eat(TokenKind.Equal)) {
-        Expr.statement()
+        Exp.statement()
       }
       close(mark, TreeKind.Decl.Signature)
     }
@@ -1070,7 +1070,7 @@ object Parser2 {
       // def f(): Unit // <- no equal sign
       // def main(): Unit = ()
       if (eat(TokenKind.Equal)) {
-        Expr.statement()
+        Exp.statement()
       } else {
         expect(TokenKind.Equal) // Produce an error for missing '='.
       }
@@ -1098,7 +1098,7 @@ object Parser2 {
       if (at(TokenKind.KeywordWhere)) {
         equalityConstraints()
       }
-      Expr.expression()
+      Exp.expression()
       close(mark, TreeKind.Decl.Law)
     }
 
@@ -1390,7 +1390,7 @@ object Parser2 {
     }
   }
 
-  private object Expr {
+  private object Exp {
 
     /**
       * Parse a statement, which is an expression optionally followed by a semi-colon and another
@@ -1399,23 +1399,23 @@ object Parser2 {
       * @param rhsIsOptional If false, the right-hand-side expression is not treated as optional.
       */
     def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       var lhs = expression()
       if (eat(TokenKind.Semi)) {
         statement()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        lhs = close(openBefore(lhs), TreeKind.Exp.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
-        //       "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'".
+        //       "Add an expression after the let-binding like so: 'let x = <exp1>; <exp2>'".
         expect(TokenKind.Semi)
       }
       lhs
     }
 
     def expression(leftOpt: Option[Op] = None)(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       var lhs = exprDelimited()
       // Handle chained calls and record lookups.
       var continue = true
@@ -1424,8 +1424,8 @@ object Parser2 {
           case TokenKind.ParenL => // Function call.
             val mark = openBefore(lhs)
             arguments()
-            lhs = close(mark, TreeKind.Expr.Apply)
-            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            lhs = close(mark, TreeKind.Exp.Apply)
+            lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
           case TokenKind.Dot if nth(1) == TokenKind.NameLowercase => // Invoke method.
             val mark = openBefore(lhs)
             eat(TokenKind.Dot)
@@ -1433,17 +1433,17 @@ object Parser2 {
             // `exp.f` is a Java field lookup and `exp.f(..)` is a Java method invocation.
             if (at(TokenKind.ParenL)) {
               arguments()
-              lhs = close(mark, TreeKind.Expr.InvokeMethod)
+              lhs = close(mark, TreeKind.Exp.InvokeMethod)
             } else {
-              lhs = close(mark, TreeKind.Expr.GetField)
+              lhs = close(mark, TreeKind.Exp.GetField)
             }
-            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
           case TokenKind.Hash if nth(1) == TokenKind.NameLowercase => // Record lookup.
             val mark = openBefore(lhs)
             eat(TokenKind.Hash)
             nameUnqualified(NAME_FIELD)
-            lhs = close(mark, TreeKind.Expr.RecordSelect)
-            lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+            lhs = close(mark, TreeKind.Exp.RecordSelect)
+            lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
           case TokenKind.ArrowThinRTight if nth(1) == TokenKind.NameLowercase => // Struct get or put.
             val mark = openBefore(lhs)
             eat(TokenKind.ArrowThinRTight)
@@ -1452,12 +1452,12 @@ object Parser2 {
               eat(TokenKind.Equal)
               val mark2 = open()
               expression()
-              close(mark2, TreeKind.Expr.StructPutRHS)
-              lhs = close(mark, TreeKind.Expr.StructPut)
-              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+              close(mark2, TreeKind.Exp.StructPutRHS)
+              lhs = close(mark, TreeKind.Exp.StructPut)
+              lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
             } else { // Struct get.
-              lhs = close(mark, TreeKind.Expr.StructGet)
-              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+              lhs = close(mark, TreeKind.Exp.StructGet)
+              lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
             }
           case TokenKind.BracketL =>
             val mark = openBefore(lhs)
@@ -1467,11 +1467,11 @@ object Parser2 {
             if (at(TokenKind.Equal)) { // Index write.
               eat(TokenKind.Equal)
               expression()
-              lhs = close(mark, TreeKind.Expr.IndexMut)
-              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+              lhs = close(mark, TreeKind.Exp.IndexMut)
+              lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
             } else { // Index read.
-              lhs = close(mark, TreeKind.Expr.Index)
-              lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+              lhs = close(mark, TreeKind.Exp.Index)
+              lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
             }
           case _ => continue = false
         }
@@ -1494,8 +1494,8 @@ object Parser2 {
                 val mark = openBefore(lhs)
                 binaryOp()
                 expression(Some(right))
-                lhs = close(mark, TreeKind.Expr.Binary)
-                lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+                lhs = close(mark, TreeKind.Exp.Binary)
+                lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
             }
           case None =>
             // Non-operator or EOF.
@@ -1527,8 +1527,8 @@ object Parser2 {
             loc = previousSourceLocation()))
         }
         close(mark, TreeKind.Type.EffectSet)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Without)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        lhs = close(openBefore(lhs), TreeKind.Exp.Without)
+        lhs = close(openBefore(lhs), TreeKind.Exp.Exp)
       }
       lhs
     }
@@ -1588,7 +1588,7 @@ object Parser2 {
     )
 
     private def binaryOp()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(atAny(FIRST_BINARY_OP))
       peekBinaryOp() match {
         case Some(BinaryOp.InfixFunction) =>
@@ -1605,7 +1605,7 @@ object Parser2 {
     }
 
     private def infixFunction()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.Tick))
       val mark = open()
       advance()
@@ -1734,7 +1734,7 @@ object Parser2 {
     }
 
     private def arguments()(implicit s: State): Unit = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       if (nth(0) != TokenKind.ParenL) return
       val mark = open()
       zeroOrMore(
@@ -1764,7 +1764,7 @@ object Parser2 {
     }
 
     private def exprDelimited()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       // If a new expression is added here then add it to FIRST_EXPR too.
       val mark = open()
       nth(0) match {
@@ -1852,80 +1852,80 @@ object Parser2 {
           advance()
           closeWithError(mark, error)
       }
-      close(mark, TreeKind.Expr.Expr)
+      close(mark, TreeKind.Exp.Exp)
     }
 
     private def openVariantExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordOpenVariant))
       val mark = open()
       expect(TokenKind.KeywordOpenVariant)
       nameAllowQualified(NAME_QNAME)
-      close(mark, TreeKind.Expr.OpenVariant)
+      close(mark, TreeKind.Exp.OpenVariant)
     }
 
     private def openVariantAsExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordOpenVariantAs))
       val mark = open()
       expect(TokenKind.KeywordOpenVariantAs)
       nameAllowQualified(NAME_QNAME)
       expression()
-      close(mark, TreeKind.Expr.OpenVariantAs)
+      close(mark, TreeKind.Exp.OpenVariantAs)
     }
 
     private def holeExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(atAny(Set(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
       val mark = open()
       nth(0) match {
         case TokenKind.HoleAnonymous =>
           advance()
-          close(mark, TreeKind.Expr.Hole)
+          close(mark, TreeKind.Exp.Hole)
         case TokenKind.HoleNamed =>
           nameUnqualified(Set(TokenKind.HoleNamed))
-          close(mark, TreeKind.Expr.Hole)
+          close(mark, TreeKind.Exp.Hole)
         case _ => throw InternalCompilerException("Parser assert missed case", currentSourceLocation())
       }
     }
 
     private def holeVariableExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.HoleVariable))
       val mark = open()
       nameUnqualified(Set(TokenKind.HoleVariable))
-      close(mark, TreeKind.Expr.HoleVariable)
+      close(mark, TreeKind.Exp.HoleVariable)
     }
 
     private def useExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       use()
       expect(TokenKind.Semi)
       statement()
-      close(mark, TreeKind.Expr.Use)
+      close(mark, TreeKind.Exp.Use)
     }
 
     private def literalExpr()(implicit s: State): Mark.Closed = {
       val mark = open()
       advance()
-      close(mark, TreeKind.Expr.Literal)
+      close(mark, TreeKind.Exp.Literal)
     }
 
     private def parenOrTupleOrLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.ParenL))
       (nth(0), nth(1)) match {
         // Detect unit tuple.
         case (TokenKind.ParenL, TokenKind.ParenR) =>
-          // Detect unit lambda `() -> expr`.
+          // Detect unit lambda `() -> exp`.
           if (nth(2) == TokenKind.ArrowThinRWhitespace) {
             lambda()
           } else {
             val mark = open()
             advance()
             advance()
-            close(mark, TreeKind.Expr.Tuple)
+            close(mark, TreeKind.Exp.Tuple)
           }
 
         case (TokenKind.ParenL, _) =>
@@ -1969,16 +1969,16 @@ object Parser2 {
     }
 
     private def lambda()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       Decl.parameters()
       expect(TokenKind.ArrowThinRWhitespace)
       expression()
-      close(mark, TreeKind.Expr.Lambda)
+      close(mark, TreeKind.Exp.Lambda)
     }
 
     private def parenOrTupleOrAscribe()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       expect(TokenKind.ParenL)
       val markExpr = expression()
@@ -1989,7 +1989,7 @@ object Parser2 {
           expect(TokenKind.Colon)
           Type.typeAndEffect()
           expect(TokenKind.ParenR)
-          close(mark, TreeKind.Expr.Ascribe)
+          close(mark, TreeKind.Exp.Ascribe)
         // Tuple.
         case TokenKind.Equal | TokenKind.Comma =>
           if (eat(TokenKind.Equal)) {
@@ -2003,16 +2003,16 @@ object Parser2 {
             argument()
           }
           expect(TokenKind.ParenR)
-          close(mark, TreeKind.Expr.Tuple)
+          close(mark, TreeKind.Exp.Tuple)
         // Paren.
         case _ =>
           expect(TokenKind.ParenR)
-          close(mark, TreeKind.Expr.Paren)
+          close(mark, TreeKind.Exp.Paren)
       }
     }
 
     private def extMatchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       detectMatchLambda(TokenKind.KeywordEMatch) match {
         case Result.Err(mark) => mark
         case Result.Ok((isLambda, mark)) =>
@@ -2020,7 +2020,7 @@ object Parser2 {
             Pattern.pattern()
             expect(TokenKind.ArrowThinRWhitespace)
             expression()
-            close(mark, TreeKind.Expr.LambdaExtMatch)
+            close(mark, TreeKind.Exp.LambdaExtMatch)
           } else {
             expression()
             zeroOrMore(
@@ -2032,13 +2032,13 @@ object Parser2 {
               delimiterR = TokenKind.CurlyR,
               separation = Separation.Optional(TokenKind.Comma)
             )
-            close(mark, TreeKind.Expr.ExtMatch)
+            close(mark, TreeKind.Exp.ExtMatch)
           }
       }
     }
 
     private def extTagExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordXvar))
       val mark = open()
       expect(TokenKind.KeywordXvar)
@@ -2047,11 +2047,11 @@ object Parser2 {
         case TokenKind.ParenL => arguments()
         case _ => ()
       }
-      close(mark, TreeKind.Expr.ExtTag)
+      close(mark, TreeKind.Exp.ExtTag)
     }
 
     private def unaryLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       val markParams = open()
       val markParam = open()
@@ -2060,7 +2060,7 @@ object Parser2 {
       close(markParams, TreeKind.ParameterList)
       expect(TokenKind.ArrowThinRWhitespace)
       expression()
-      close(mark, TreeKind.Expr.Lambda)
+      close(mark, TreeKind.Exp.Lambda)
     }
 
     private val FIRST_EXPR_UNARY: Set[TokenKind] = Set(
@@ -2073,18 +2073,18 @@ object Parser2 {
     )
 
     private def unaryExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       val op = nthToken(0)
       val markOp = open()
       expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
       expression(leftOpt = op.flatMap(peekUnaryOp))
-      close(mark, TreeKind.Expr.Unary)
+      close(mark, TreeKind.Exp.Unary)
     }
 
     private def ifThenElseExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
@@ -2097,11 +2097,11 @@ object Parser2 {
         // get read as let-rec-defs.
         expression()
       }
-      close(mark, TreeKind.Expr.IfThenElse)
+      close(mark, TreeKind.Exp.IfThenElse)
     }
 
     private def letMatchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordLet))
       val mark = open()
       expect(TokenKind.KeywordLet)
@@ -2111,11 +2111,11 @@ object Parser2 {
       }
       expect(TokenKind.Equal)
       statement(rhsIsOptional = false)
-      close(mark, TreeKind.Expr.LetMatch)
+      close(mark, TreeKind.Exp.LetMatch)
     }
 
     private def localDefExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
       val mark = open(consumeDocComments = false)
       Decl.docComment()
@@ -2128,11 +2128,11 @@ object Parser2 {
       }
       expect(TokenKind.Equal)
       statement(rhsIsOptional = false)
-      close(mark, TreeKind.Expr.LocalDef)
+      close(mark, TreeKind.Exp.LocalDef)
     }
 
     private def regionExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
       expect(TokenKind.KeywordRegion)
@@ -2140,24 +2140,24 @@ object Parser2 {
       if (at(TokenKind.CurlyL)) {
         block()
       }
-      close(mark, TreeKind.Expr.Region)
+      close(mark, TreeKind.Exp.Region)
     }
 
     private def block()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
       expect(TokenKind.CurlyL)
       if (eat(TokenKind.CurlyR)) { // Handle an empty block.
-        return close(mark, TreeKind.Expr.RecordOperation)
+        return close(mark, TreeKind.Exp.RecordOperation)
       }
       statement()
       expect(TokenKind.CurlyR)
-      close(mark, TreeKind.Expr.Block)
+      close(mark, TreeKind.Exp.Block)
     }
 
     private def matchOrMatchLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       detectMatchLambda(TokenKind.KeywordMatch) match {
         case Result.Err(errMark) => errMark
         case Result.Ok((isLambda, mark)) =>
@@ -2165,7 +2165,7 @@ object Parser2 {
             Pattern.pattern()
             expect(TokenKind.ArrowThinRWhitespace)
             expression()
-            close(mark, TreeKind.Expr.LambdaMatch)
+            close(mark, TreeKind.Exp.LambdaMatch)
           } else {
             expression()
             zeroOrMore(
@@ -2177,7 +2177,7 @@ object Parser2 {
               delimiterR = TokenKind.CurlyR,
               separation = Separation.Optional(TokenKind.Comma)
             )
-            close(mark, TreeKind.Expr.Match)
+            close(mark, TreeKind.Exp.Match)
           }
       }
     }
@@ -2215,9 +2215,9 @@ object Parser2 {
       var parenNestingLevel = 0
       while (continue && !eof()) {
         nth(lookAhead) match {
-          // match `expr { case ... }`.
+          // match `exp { case ... }`.
           case TokenKind.KeywordCase => continue = false
-          // match `pattern -> expr`.
+          // match `pattern -> exp`.
           case TokenKind.ArrowThinRWhitespace if parenNestingLevel == 0 => result = true; continue = false
           case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
           case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
@@ -2239,7 +2239,7 @@ object Parser2 {
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
@@ -2259,11 +2259,11 @@ object Parser2 {
         expect(TokenKind.ArrowThickR)
       }
       statement()
-      close(mark, TreeKind.Expr.MatchRuleFragment)
+      close(mark, TreeKind.Exp.MatchRuleFragment)
     }
 
     private def extMatchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
@@ -2280,11 +2280,11 @@ object Parser2 {
         expect(TokenKind.ArrowThickR)
       }
       statement()
-      close(mark, TreeKind.Expr.ExtMatchRuleFragment)
+      close(mark, TreeKind.Exp.ExtMatchRuleFragment)
     }
 
     private def typematchExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordTypeMatch))
       val mark = open()
       expect(TokenKind.KeywordTypeMatch)
@@ -2298,11 +2298,11 @@ object Parser2 {
         delimiterR = TokenKind.CurlyR,
         separation = Separation.Optional(TokenKind.Comma)
       )
-      close(mark, TreeKind.Expr.TypeMatch)
+      close(mark, TreeKind.Exp.TypeMatch)
     }
 
     private def typematchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
@@ -2314,11 +2314,11 @@ object Parser2 {
       if (eat(TokenKind.ArrowThickR)) {
         statement()
       }
-      close(mark, TreeKind.Expr.TypeMatchRuleFragment)
+      close(mark, TreeKind.Exp.TypeMatchRuleFragment)
     }
 
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(atAny(Set(TokenKind.KeywordChoose, TokenKind.KeywordChooseStar)))
       val mark = open()
       val isStar = eat(TokenKind.KeywordChooseStar)
@@ -2335,11 +2335,11 @@ object Parser2 {
         delimiterR = TokenKind.CurlyR,
         separation = Separation.Optional(TokenKind.Comma)
       )
-      close(mark, if (isStar) TreeKind.Expr.RestrictableChooseStar else TreeKind.Expr.RestrictableChoose)
+      close(mark, if (isStar) TreeKind.Exp.RestrictableChooseStar else TreeKind.Exp.RestrictableChoose)
     }
 
     private def forApplicativeExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordForA))
       val mark = open()
       expect(TokenKind.KeywordForA)
@@ -2347,14 +2347,14 @@ object Parser2 {
       forFragments()
       expect(TokenKind.KeywordYield)
       expression()
-      close(mark, TreeKind.Expr.ForApplicative)
+      close(mark, TreeKind.Exp.ForApplicative)
     }
 
     private def foreachExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordForeach))
       val mark = open()
-      val kind: TreeKind = TreeKind.Expr.Foreach
+      val kind: TreeKind = TreeKind.Exp.Foreach
       expect(TokenKind.KeywordForeach)
       forFragments()
       expression()
@@ -2362,18 +2362,18 @@ object Parser2 {
     }
 
     private def forMonadicExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordForM))
       val mark = open()
       expect(TokenKind.KeywordForM)
       forFragments()
       expect(TokenKind.KeywordYield)
       expression()
-      close(mark, TreeKind.Expr.ForMonadic)
+      close(mark, TreeKind.Exp.ForMonadic)
     }
 
     private def forFragments()(implicit s: State): Unit = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       zeroOrMore(
         namedTokenSet = NamedTokenSet.ForFragment,
         checkForItem = t => t.isFirstInPattern || t == TokenKind.KeywordIf,
@@ -2389,16 +2389,16 @@ object Parser2 {
     }
 
     private def guardFragment()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
       expression()
-      close(mark, TreeKind.Expr.ForFragmentGuard)
+      close(mark, TreeKind.Exp.ForFragmentGuard)
     }
 
     private def generatorOrLetFragment()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       Pattern.pattern()
       val isGenerator = eat(TokenKind.ArrowThinL)
@@ -2407,9 +2407,9 @@ object Parser2 {
       }
       expression()
       close(mark, if (isGenerator) {
-        TreeKind.Expr.ForFragmentGenerator
+        TreeKind.Exp.ForFragmentGenerator
       } else {
-        TreeKind.Expr.ForFragmentLet
+        TreeKind.Exp.ForFragmentLet
       })
     }
 
@@ -2440,7 +2440,7 @@ object Parser2 {
              | (TokenKind.NameLowercase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowercase)
              | (TokenKind.Minus, TokenKind.NameLowercase) =>
-            // Either `{ +y = expr | expr }` or `{ x = expr }`.
+            // Either `{ +y = exp | exp }` or `{ x = exp }`.
             // Both are parsed the same and the difference is handled in Weeder.
             recordOperation()
         case _ => block()
@@ -2448,7 +2448,7 @@ object Parser2 {
     }
 
     private def recordOperation()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.CurlyL))
       val mark = open()
       zeroOrMore(
@@ -2460,11 +2460,11 @@ object Parser2 {
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => expression()))
       )
-      close(mark, TreeKind.Expr.RecordOperation)
+      close(mark, TreeKind.Exp.RecordOperation)
     }
 
     private def recordOp()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       nth(0) match {
         case TokenKind.Plus =>
@@ -2472,16 +2472,16 @@ object Parser2 {
           nameUnqualified(NAME_FIELD)
           expect(TokenKind.Equal)
           expression()
-          close(mark, TreeKind.Expr.RecordOpExtend)
+          close(mark, TreeKind.Exp.RecordOpExtend)
         case TokenKind.Minus =>
           advance()
           nameUnqualified(NAME_FIELD)
-          close(mark, TreeKind.Expr.RecordOpRestrict)
+          close(mark, TreeKind.Exp.RecordOpRestrict)
         case TokenKind.NameLowercase =>
           nameUnqualified(NAME_FIELD)
           expect(TokenKind.Equal)
           expression()
-          close(mark, TreeKind.Expr.RecordOpUpdate)
+          close(mark, TreeKind.Exp.RecordOpUpdate)
         case at =>
           val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), actual = Some(at), sctx, loc = currentSourceLocation())
           advanceWithError(error, Some(mark))
@@ -2489,7 +2489,7 @@ object Parser2 {
     }
 
     private def arrayLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.ArrayHash))
       val mark = open()
       expect(TokenKind.ArrayHash)
@@ -2502,19 +2502,19 @@ object Parser2 {
         delimiterR = TokenKind.CurlyR
       )
       regionName()
-      close(mark, TreeKind.Expr.LiteralArray)
+      close(mark, TreeKind.Exp.LiteralArray)
     }
 
     private def regionName()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       expect(TokenKind.At)
       expression()
-      close(mark, TreeKind.Expr.RegionName)
+      close(mark, TreeKind.Exp.RegionName)
     }
 
     private def vectorLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.VectorHash))
       val mark = open()
       expect(TokenKind.VectorHash)
@@ -2526,11 +2526,11 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      close(mark, TreeKind.Expr.LiteralVector)
+      close(mark, TreeKind.Exp.LiteralVector)
     }
 
     private def listLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.ListHash))
       val mark = open()
       expect(TokenKind.ListHash)
@@ -2542,11 +2542,11 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      close(mark, TreeKind.Expr.LiteralList)
+      close(mark, TreeKind.Exp.LiteralList)
     }
 
     private def setLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.SetHash))
       val mark = open()
       expect(TokenKind.SetHash)
@@ -2558,11 +2558,11 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      close(mark, TreeKind.Expr.LiteralSet)
+      close(mark, TreeKind.Exp.LiteralSet)
     }
 
     private def mapLiteralExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.MapHash))
       val mark = open()
       expect(TokenKind.MapHash)
@@ -2574,20 +2574,20 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      close(mark, TreeKind.Expr.LiteralMap)
+      close(mark, TreeKind.Exp.LiteralMap)
     }
 
     private def mapLiteralValue()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       expression()
       expect(TokenKind.ArrowThickR)
       expression()
-      close(mark, TreeKind.Expr.LiteralMapKeyValueFragment)
+      close(mark, TreeKind.Exp.LiteralMapKeyValueFragment)
     }
 
     private def dotdotdotLiteral()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.DotDotDot))
       val mark = open()
       expect(TokenKind.DotDotDot)
@@ -2599,11 +2599,11 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      close(mark, TreeKind.Expr.LiteralVector)
+      close(mark, TreeKind.Exp.LiteralVector)
     }
 
     private def checkedTypeCastExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordCheckedCast))
       val mark = open()
       expect(TokenKind.KeywordCheckedCast)
@@ -2611,11 +2611,11 @@ object Parser2 {
         expression()
         expect(TokenKind.ParenR)
       }
-      close(mark, TreeKind.Expr.CheckedTypeCast)
+      close(mark, TreeKind.Exp.CheckedTypeCast)
     }
 
     private def checkedEffectCastExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordCheckedECast))
       val mark = open()
       expect(TokenKind.KeywordCheckedECast)
@@ -2623,11 +2623,11 @@ object Parser2 {
         expression()
         expect(TokenKind.ParenR)
       }
-      close(mark, TreeKind.Expr.CheckedEffectCast)
+      close(mark, TreeKind.Exp.CheckedEffectCast)
     }
 
     private def uncheckedCastExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordUncheckedCast))
       val mark = open()
       expect(TokenKind.KeywordUncheckedCast)
@@ -2638,16 +2638,16 @@ object Parser2 {
         }
         expect(TokenKind.ParenR)
       }
-      close(mark, TreeKind.Expr.UncheckedCast)
+      close(mark, TreeKind.Exp.UncheckedCast)
     }
 
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordUnsafe))
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
       expression()
-      close(mark, TreeKind.Expr.UnsafeOld)
+      close(mark, TreeKind.Exp.UnsafeOld)
     }
 
     /**
@@ -2655,32 +2655,32 @@ object Parser2 {
       *
       * produces
       *
-      *   - TreeKind.Expr.UnsafelyRun
+      *   - TreeKind.Exp.UnsafelyRun
       *     - TreeKind.Type.Type
-      *     - TreeKind.Expr.Expr
+      *     - TreeKind.Exp.Exp
       */
     private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordUnsafely))
       val mark = open()
       expect(TokenKind.KeywordUnsafely)
       Type.ttype()
       expect(TokenKind.KeywordRun)
       expression()
-      close(mark, TreeKind.Expr.Unsafe)
+      close(mark, TreeKind.Exp.Unsafe)
     }
 
     /**
       * `'run' EXPRESSION ('with' EXPRESSION)*`
       *
       * produces
-      *   - TreeKind.Expr.Run
-      *     - TreeKind.Expr.RunWithBodyExpr
-      *     - TreeKind.Expr.RunWithBodyExpr
+      *   - TreeKind.Exp.Run
+      *     - TreeKind.Exp.RunWithBodyExpr
+      *     - TreeKind.Exp.RunWithBodyExpr
       *     - .. (potentially zero)
       */
     private def runExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordRun))
       val mark = open()
       expect(TokenKind.KeywordRun)
@@ -2688,11 +2688,11 @@ object Parser2 {
       while (at(TokenKind.KeywordWith)) {
         withBody()
       }
-      close(mark, TreeKind.Expr.Run)
+      close(mark, TreeKind.Exp.Run)
     }
 
     private def handlerExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordHandler))
       val mark = open()
       expect(TokenKind.KeywordHandler)
@@ -2710,11 +2710,11 @@ object Parser2 {
       } else {
         s.errors.append(ParseError.UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.CurlyL)), actual = Some(nth(0)), sctx = sctx, loc = currentSourceLocation()))
       }
-      close(mark, TreeKind.Expr.Handler)
+      close(mark, TreeKind.Exp.Handler)
     }
 
     private def tryExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordTry))
       val mark = open()
       expect(TokenKind.KeywordTry)
@@ -2722,11 +2722,11 @@ object Parser2 {
       while (at(TokenKind.KeywordCatch)) {
         catchBody()
       }
-      close(mark, TreeKind.Expr.Try)
+      close(mark, TreeKind.Exp.Try)
     }
 
     private def catchBody()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordCatch))
       val mark = open()
       expect(TokenKind.KeywordCatch)
@@ -2739,11 +2739,11 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
-      close(mark, TreeKind.Expr.TryCatchBodyFragment)
+      close(mark, TreeKind.Exp.TryCatchBodyFragment)
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       expect(TokenKind.KeywordCase)
       nameUnqualified(NAME_VARIABLE)
@@ -2751,20 +2751,20 @@ object Parser2 {
       nameAllowQualified(NAME_JAVA, tail = Set())
       expect(TokenKind.ArrowThickR)
       statement()
-      close(mark, TreeKind.Expr.TryCatchRuleFragment)
+      close(mark, TreeKind.Exp.TryCatchRuleFragment)
     }
 
     private def withBody()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
       expression()
-      close(mark, TreeKind.Expr.RunWithBodyExpr)
+      close(mark, TreeKind.Exp.RunWithBodyExpr)
     }
 
     private def withRule()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(nth(0).isComment || at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
@@ -2772,20 +2772,20 @@ object Parser2 {
       Decl.parameters()
       expect(TokenKind.Equal)
       expression()
-      close(mark, TreeKind.Expr.RunWithRuleFragment)
+      close(mark, TreeKind.Exp.RunWithRuleFragment)
     }
 
     private def throwExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordThrow))
       val mark = open()
       expect(TokenKind.KeywordThrow)
       expression()
-      close(mark, TreeKind.Expr.Throw)
+      close(mark, TreeKind.Exp.Throw)
     }
 
     private def ambiguousNewExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordNew))
       val mark = open()
       expect(TokenKind.KeywordNew)
@@ -2793,7 +2793,7 @@ object Parser2 {
 
       // Either NewStruct, NewObject, or InvokeConstructor.
       if (at(TokenKind.At)) {
-        // Either `new Struct @ rc {field1 = expr1, field2 = expr2, ...}`
+        // Either `new Struct @ rc {field1 = exp1, field2 = exp2, ...}`
         //     or `new Struct @ rc {}`.
         expect(TokenKind.At)
         expression()
@@ -2810,7 +2810,7 @@ object Parser2 {
             delimiterR = TokenKind.CurlyR
           )
         }
-        close(mark, TreeKind.Expr.NewStruct)
+        close(mark, TreeKind.Exp.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
         zeroOrMore(
@@ -2822,25 +2822,25 @@ object Parser2 {
           delimiterR = TokenKind.CurlyR,
           separation = Separation.None
         )
-        close(mark, TreeKind.Expr.NewObject)
+        close(mark, TreeKind.Exp.NewObject)
       } else {
         // `new Type(exps...)`.
         arguments()
-        close(mark, TreeKind.Expr.InvokeConstructor)
+        close(mark, TreeKind.Exp.InvokeConstructor)
       }
     }
 
     private def structFieldInit()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       nameUnqualified(NAME_FIELD)
       expect(TokenKind.Equal)
       expression()
-      close(mark, TreeKind.Expr.LiteralStructFieldFragment)
+      close(mark, TreeKind.Exp.LiteralStructFieldFragment)
     }
 
     private def jvmMethod()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
@@ -2849,20 +2849,20 @@ object Parser2 {
       expect(TokenKind.Colon)
       Type.typeAndEffect()
       expect(TokenKind.Equal)
-      Expr.statement()
-      close(mark, TreeKind.Expr.JvmMethod)
+      Exp.statement()
+      close(mark, TreeKind.Exp.JvmMethod)
     }
 
     private def staticExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordStaticUppercase))
       val mark = open()
       expect(TokenKind.KeywordStaticUppercase)
-      close(mark, TreeKind.Expr.Static)
+      close(mark, TreeKind.Exp.Static)
     }
 
     private def selectExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
@@ -2881,7 +2881,7 @@ object Parser2 {
           expect(TokenKind.Underscore)
           expect(TokenKind.ArrowThickR)
           statement()
-          close(ruleMark, TreeKind.Expr.SelectRuleDefaultFragment)
+          close(ruleMark, TreeKind.Exp.SelectRuleDefaultFragment)
         } else {
           nameUnqualified(NAME_VARIABLE)
           expect(TokenKind.ArrowThinL)
@@ -2894,26 +2894,26 @@ object Parser2 {
           expect(TokenKind.ParenR)
           expect(TokenKind.ArrowThickR)
           statement()
-          close(ruleMark, TreeKind.Expr.SelectRuleFragment)
+          close(ruleMark, TreeKind.Exp.SelectRuleFragment)
         }
       }
       expect(TokenKind.CurlyR)
 
-      close(mark, TreeKind.Expr.Select)
+      close(mark, TreeKind.Exp.Select)
     }
 
     private def spawnExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordSpawn))
       val mark = open()
       expect(TokenKind.KeywordSpawn)
       expression()
       regionName()
-      close(mark, TreeKind.Expr.Spawn)
+      close(mark, TreeKind.Exp.Spawn)
     }
 
     private def parYieldExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordPar))
       val mark = open()
       expect(TokenKind.KeywordPar)
@@ -2928,20 +2928,20 @@ object Parser2 {
       }
       expect(TokenKind.KeywordYield)
       expression()
-      close(mark, TreeKind.Expr.ParYield)
+      close(mark, TreeKind.Exp.ParYield)
     }
 
     private def parYieldFragment()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       Pattern.pattern()
       expect(TokenKind.ArrowThinL)
       expression()
-      close(mark, TreeKind.Expr.ParYieldFragment)
+      close(mark, TreeKind.Exp.ParYieldFragment)
     }
 
     private def fixpointConstraintSetExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
       zeroOrMore(
@@ -2953,11 +2953,11 @@ object Parser2 {
         separation = Separation.None,
         breakWhen = _.isRecoverInExpr,
       )
-      close(mark, TreeKind.Expr.FixpointConstraintSet)
+      close(mark, TreeKind.Exp.FixpointConstraintSet)
     }
 
     private def fixpointConstraint()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
       Predicate.head()
       if (eat(TokenKind.ColonMinus)) {
@@ -2967,21 +2967,21 @@ object Parser2 {
         }
       }
       expect(TokenKind.DotWhiteSpace, hint = Some("Datalog constraints must end with a '.'"))
-      close(mark, TreeKind.Expr.FixpointConstraint)
+      close(mark, TreeKind.Exp.FixpointConstraint)
     }
 
     private def fixpointLambdaExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.HashParenL))
       val mark = open()
       Predicate.params()
       expect(TokenKind.ArrowThinRWhitespace)
       expression()
-      close(mark, TreeKind.Expr.FixpointLambda)
+      close(mark, TreeKind.Exp.FixpointLambda)
     }
 
     private def fixpointSolveExpr(isPSolve: Boolean)(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val expectedToken = if (isPSolve) TokenKind.KeywordPSolve else TokenKind.KeywordSolve
       assert(at(expectedToken))
       val mark = open()
@@ -2992,7 +2992,7 @@ object Parser2 {
       }
 
       if (isPSolve) {
-        return close(mark, TreeKind.Expr.FixpointSolveWithProvenance)
+        return close(mark, TreeKind.Exp.FixpointSolveWithProvenance)
       }
       if (eat(TokenKind.KeywordProject)) {
         nameUnqualified(NAME_PREDICATE)
@@ -3000,11 +3000,11 @@ object Parser2 {
           nameUnqualified(NAME_PREDICATE)
         }
       }
-      close(mark, TreeKind.Expr.FixpointSolveWithProject)
+      close(mark, TreeKind.Exp.FixpointSolveWithProject)
     }
 
     private def fixpointInjectExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordInject))
       val mark = open()
       expect(TokenKind.KeywordInject)
@@ -3017,11 +3017,11 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         predicateAndArity()
       }
-      close(mark, TreeKind.Expr.FixpointInject)
+      close(mark, TreeKind.Exp.FixpointInject)
     }
 
     private def fixpointPQueryExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordPQuery))
       val mark = open()
       expect(TokenKind.KeywordPQuery)
@@ -3031,19 +3031,19 @@ object Parser2 {
       }
       fixpointPQuerySelect()
       fixpointPQueryWith()
-      close(mark, TreeKind.Expr.FixpointQueryWithProvenance)
+      close(mark, TreeKind.Exp.FixpointQueryWithProvenance)
     }
 
     private def fixpointPQuerySelect()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       expect(TokenKind.KeywordSelect)
       Predicate.head()
-      close(mark, TreeKind.Expr.FixpointSelect)
+      close(mark, TreeKind.Exp.FixpointSelect)
     }
 
     private def fixpointPQueryWith()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       expect(TokenKind.KeywordWith)
       nth(0) match {
@@ -3063,11 +3063,11 @@ object Parser2 {
           loc = currentSourceLocation()
         ))
       }
-      close(mark, TreeKind.Expr.FixpointWith)
+      close(mark, TreeKind.Exp.FixpointWith)
     }
 
     private def fixpointQueryExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordQuery))
       val mark = open()
       expect(TokenKind.KeywordQuery)
@@ -3084,11 +3084,11 @@ object Parser2 {
       if (at(TokenKind.KeywordWhere)) {
         fixpointQueryWhere()
       }
-      close(mark, TreeKind.Expr.FixpointQuery)
+      close(mark, TreeKind.Exp.FixpointQuery)
     }
 
     private def fixpointQuerySelect()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
@@ -3102,11 +3102,11 @@ object Parser2 {
         )
         case _ => expression()
       }
-      close(mark, TreeKind.Expr.FixpointSelect)
+      close(mark, TreeKind.Exp.FixpointSelect)
     }
 
     private def fixpointQueryFrom()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordFrom))
       val mark = open()
       expect(TokenKind.KeywordFrom)
@@ -3114,20 +3114,20 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         Predicate.atom()
       }
-      close(mark, TreeKind.Expr.FixpointFromFragment)
+      close(mark, TreeKind.Exp.FixpointFromFragment)
     }
 
     private def fixpointQueryWhere()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere)
       expression()
-      close(mark, TreeKind.Expr.FixpointWhere)
+      close(mark, TreeKind.Exp.FixpointWhere)
     }
 
     private def predicateAndArity()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
 
@@ -3142,20 +3142,20 @@ object Parser2 {
     private def intrinsicExpr()(implicit s: State): Mark.Closed = {
       val mark = open()
       advance()
-      close(mark, TreeKind.Expr.Intrinsic)
+      close(mark, TreeKind.Exp.Intrinsic)
     }
 
     private def debugInterpolator()(implicit s: State): Mark.Closed = {
       eat(TokenKind.DebugInterpolator)
       val mark = open()
       exprDelimited()
-      close(mark, TreeKind.Expr.DebugInterpolator)
+      close(mark, TreeKind.Exp.DebugInterpolator)
     }
 
     private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL)
 
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.OtherExpr
       assert(atAny(FIRST_EXPR_INTERPOLATED_STRING))
       val mark = open()
 
@@ -3179,7 +3179,7 @@ object Parser2 {
         }
       }
       expectAny(Set(TokenKind.LiteralStringInterpolationR))
-      close(mark, TreeKind.Expr.StringInterpolation)
+      close(mark, TreeKind.Exp.StringInterpolation)
     }
   }
 
@@ -3754,7 +3754,7 @@ object Parser2 {
 
   private object Predicate {
     def head()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
       nameUnqualified(NAME_PREDICATE)
       // Check for `A` or `A(...)`
@@ -3765,17 +3765,17 @@ object Parser2 {
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
 
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Expression,
-        getItem = () => Expr.expression(),
+        getItem = () => Exp.expression(),
         checkForItem = _.isFirstInExp,
         breakWhen = _.isRecoverInExpr,
         optionallyWith = Some((TokenKind.Semi, () => {
           val mark = open()
-          Expr.expression()
+          Exp.expression()
           close(mark, TreeKind.Predicate.LatticeTerm)
         }))
       )
@@ -3783,7 +3783,7 @@ object Parser2 {
     }
 
     private def patternList()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Pattern,
@@ -3800,7 +3800,7 @@ object Parser2 {
     }
 
     def body()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
       nth(0) match {
         case TokenKind.KeywordIf =>
@@ -3824,18 +3824,18 @@ object Parser2 {
     }
 
     private def guard()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
       expect(TokenKind.ParenL)
-      Expr.expression()
+      Exp.expression()
       expect(TokenKind.ParenR)
       close(mark, TreeKind.Predicate.Guard)
     }
 
     private def functional()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       assert(at(TokenKind.KeywordLet))
       val mark = open()
       expect(TokenKind.KeywordLet)
@@ -3859,12 +3859,12 @@ object Parser2 {
           advanceWithError(error)
       }
       expect(TokenKind.Equal)
-      Expr.expression()
+      Exp.expression()
       close(mark, TreeKind.Predicate.Functional)
     }
 
     def atom()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
       eat(TokenKind.KeywordNot)
       eat(TokenKind.KeywordFix)
@@ -3877,7 +3877,7 @@ object Parser2 {
     }
 
     def params()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       val mark = open()
       zeroOrMore(
         namedTokenSet = NamedTokenSet.Parameter,
@@ -3890,7 +3890,7 @@ object Parser2 {
     }
 
     private def param()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.Constraint
+      implicit val sctx: SyntacticContext = SyntacticContext.Exp.Constraint
       var kind: TreeKind = TreeKind.Predicate.ParamUntyped
       val mark = open()
       nameUnqualified(NAME_PREDICATE)

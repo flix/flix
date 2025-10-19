@@ -326,11 +326,11 @@ object SetFormula {
     * The case set bounds include what cases the set will always have and
     * cases the set can maximally have.
     * {{{
-    * formatLowerAndUpperBounds(Expr[s ++ <Expr.Cst>][Int32]) =
+    * formatLowerAndUpperBounds(Exp[s ++ <Exp.Cst>][Int32]) =
     *     Lowerbound: {Cst}
     *     Upperbound: {Cst, Var, Not, And, Or, Xor}
     *
-    * formatLowerAndUpperBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
+    * formatLowerAndUpperBounds(Exp[s1 -- s2 -- <Exp.Xor, Exp.And> ++ <Exp.Cst, Exp.Not>]) =
     *     Lowerbound: {Cst, Not}
     *     Upperbound: {Cst, Var, Not, Or}
     * }}}
@@ -345,11 +345,11 @@ object SetFormula {
     * include what cases the set will always have and what cases the set can
     * maximally have.
     * {{{
-    * restrictableEnumBounds(Expr[s ++ <Expr.Cst>][Int32]) =
+    * restrictableEnumBounds(Exp[s ++ <Exp.Cst>][Int32]) =
     *     Lowerbound: {Cst}
     *     Upperbound: {Cst, Var, Not, And, Or, Xor}
     *
-    * restrictableEnumBounds(Expr[s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>]) =
+    * restrictableEnumBounds(Exp[s1 -- s2 -- <Exp.Xor, Exp.And> ++ <Exp.Cst, Exp.Not>]) =
     *     Lowerbound: {Cst, Not}
     *     Upperbound: {Cst, Var, Not, Or}
     * }}}
@@ -388,10 +388,10 @@ object SetFormula {
     * always be present (lowerBound) and which cases that can maximally be
     * present (upperBound).
     * {{{
-    * boundsAnalysisType(s ++ <Expr.Cst>) =
+    * boundsAnalysisType(s ++ <Exp.Cst>) =
     *     Some(({Cst}, {Cst, Var, Not, And, Or, Xor}))
     *
-    * boundsAnalysisType(s1 -- s2 -- <Expr.Xor, Expr.And> ++ <Expr.Cst, Expr.Not>) =
+    * boundsAnalysisType(s1 -- s2 -- <Exp.Xor, Exp.And> ++ <Exp.Cst, Exp.Not>) =
     *     Some(({Cst, Not}, {Cst, Var, Not, Or}))
     *
     * boundsAnalysisType(Int32) = None

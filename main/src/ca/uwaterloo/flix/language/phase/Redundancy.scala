@@ -320,10 +320,10 @@ object Redundancy {
   /**
     * Returns the symbols used in the given expression `e0` under the given environment `env0`.
     */
-  private def visitExp(e0: Expr, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
-    case Expr.Cst(_, _, _) => Used.empty
+  private def visitExp(e0: Exp, env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used = e0 match {
+    case Exp.Cst(_, _, _) => Used.empty
 
-    case Expr.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
+    case Exp.Var(sym, _, loc) => (sym.isWild, rc.vars.contains(sym)) match {
       // Case 1: Non-wild, non-recursive use of sym.
       case (false, false) => Used.of(sym)
       // Case 2: Non-wild, recursive use of sym. Does not count as a use.
@@ -334,17 +334,17 @@ object Redundancy {
       case (true, true) => Used.empty + HiddenVarSym(sym, loc)
     }
 
-    case Expr.Hole(sym, _, _, _, _) =>
+    case Exp.Hole(sym, _, _, _, _) =>
       lctx.holeSyms += sym
       Used.empty
 
-    case Expr.HoleWithExp(exp, _, _, _, _) =>
+    case Exp.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.OpenAs(_, exp, _, _) =>
+    case Exp.OpenAs(_, exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Use(_, alias, exp, _) =>
+    case Exp.Use(_, alias, exp, _) =>
       // Check if the alias is shadowing
       val shadowedName = shadowing(alias.name, alias.loc, env0)
 
@@ -357,7 +357,7 @@ object Redundancy {
       // TODO NS-REFACTOR check for unused syms
       innerUsed ++ shadowedName
 
-    case Expr.Lambda(fparam, exp, _, _) =>
+    case Exp.Lambda(fparam, exp, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + fparam.bnd.sym
 
@@ -373,45 +373,45 @@ object Redundancy {
       else
         innerUsed ++ shadowedVar - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) =>
+    case Exp.ApplyDef(DefSymUse(sym, _), exps, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.defSyms.put(sym, ())
       }
       visitExps(exps, env0, rc)
 
-    case Expr.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) =>
+    case Exp.ApplyLocalDef(LocalDefSymUse(sym, _), exps, _, _, _, _) =>
       if (rc.vars.contains(sym)) {
         visitExps(exps, env0, rc)
       } else {
         Used.of(sym) ++ visitExps(exps, env0, rc)
       }
 
-    case Expr.ApplyOp(opUse, exps, _, _, _) =>
+    case Exp.ApplyOp(opUse, exps, _, _, _) =>
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
+    case Exp.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
       // Recursive calls do not count as uses.
       if (!rc.defn.contains(sym)) {
         sctx.sigSyms.put(sym, ())
       }
       visitExps(exps, env0, rc)
 
-    case Expr.Unary(_, exp, _, _, _) =>
+    case Exp.Unary(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+    case Exp.Binary(_, exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.Let(Binder(sym, _), exp1, exp2, _, _, _) =>
+    case Exp.Let(Binder(sym, _), exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -428,7 +428,7 @@ object Redundancy {
       else
         (innerUsed1 ++ innerUsed2 ++ shadowedVar) - sym
 
-    case Expr.LocalDef(Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
+    case Exp.LocalDef(Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -456,7 +456,7 @@ object Redundancy {
         case (acc, (s, shadow)) => (acc ++ shadow) - s
       }
 
-    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
+    case Exp.Region(Binder(sym, _), _, exp, _, _, _) =>
       // Extend the environment with the variable symbol.
       val env1 = env0 + sym
 
@@ -472,13 +472,13 @@ object Redundancy {
       else
         (innerUsed ++ shadowedVar) - sym
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       val us3 = visitExp(exp3, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
 
@@ -494,7 +494,7 @@ object Redundancy {
         us1 ++ us2
       }
 
-    case Expr.Discard(exp, _, _) =>
+    case Exp.Discard(exp, _, _) =>
       val us = visitExp(exp, env0, rc)
 
       if (isPure(exp))
@@ -504,7 +504,7 @@ object Redundancy {
       else
         us
 
-    case Expr.Match(exp, rules, _, _, _) =>
+    case Exp.Match(exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
 
@@ -535,7 +535,7 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
+    case Exp.TypeMatch(exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
 
@@ -563,7 +563,7 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+    case Exp.RestrictableChoose(_, exp, rules, _, _, _) =>
       // Visit the match expression.
       val usedMatch = visitExp(exp, env0, rc)
 
@@ -593,7 +593,7 @@ object Redundancy {
 
       usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.ExtMatch(exp, rules, _, _, _) =>
+    case Exp.ExtMatch(exp, rules, _, _, _) =>
       val usedMatch = visitExp(exp, env0, rc)
 
       // Visit each match rule.
@@ -646,85 +646,85 @@ object Redundancy {
 
       Used(Set.empty, duplicatePatterns.toSet ++ unreachableCases) ++ usedMatch ++ usedRules.reduceLeft(_ ++ _)
 
-    case Expr.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
+    case Exp.Tag(CaseSymUse(sym, _), exps, _, _, _) =>
       val us = visitExps(exps, env0, rc)
       sctx.enumSyms.put(sym.enumSym, ())
       sctx.caseSyms.put(sym, ())
       us
 
-    case Expr.RestrictableTag(_, exps, _, _, _) =>
+    case Exp.RestrictableTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.ExtTag(_, exps, _, _, _) =>
+    case Exp.ExtTag(_, exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.Tuple(elms, _, _, _) =>
+    case Exp.Tuple(elms, _, _, _) =>
       visitExps(elms, env0, rc)
 
-    case Expr.RecordSelect(exp, _, _, _, _) =>
+    case Exp.RecordSelect(exp, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.RecordExtend(_, value, rest, _, _, _) =>
+    case Exp.RecordExtend(_, value, rest, _, _, _) =>
       val us1 = visitExp(value, env0, rc)
       val us2 = visitExp(rest, env0, rc)
       us1 ++ us2
 
-    case Expr.RecordRestrict(_, rest, _, _, _) =>
+    case Exp.RecordRestrict(_, rest, _, _, _) =>
       visitExp(rest, env0, rc)
 
-    case Expr.ArrayLit(exps, exp, _, _, _) =>
+    case Exp.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps, env0, rc) ++ visitExp(exp, env0, rc)
 
-    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       val us3 = visitExp(exp3, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expr.ArrayLoad(base, index, _, _, _) =>
+    case Exp.ArrayLoad(base, index, _, _, _) =>
       val us1 = visitExp(base, env0, rc)
       val us2 = visitExp(index, env0, rc)
       us1 ++ us2
 
-    case Expr.ArrayLength(base, _, _) =>
+    case Exp.ArrayLength(base, _, _) =>
       visitExp(base, env0, rc)
 
-    case Expr.ArrayStore(base, index, elm, _, _) =>
+    case Exp.ArrayStore(base, index, elm, _, _) =>
       val us1 = visitExp(base, env0, rc)
       val us2 = visitExp(index, env0, rc)
       val us3 = visitExp(elm, env0, rc)
       us1 ++ us2 ++ us3
 
-    case Expr.StructNew(sym, fields, region, _, _, _) =>
+    case Exp.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
       visitExps(fields.map { case (_, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
 
-    case Expr.StructGet(e, field, _, _, _) =>
+    case Exp.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())
       visitExp(e, env0, rc)
 
-    case Expr.StructPut(e1, field, e2, _, _, _) =>
+    case Exp.StructPut(e1, field, e2, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())
       visitExp(e1, env0, rc) ++ visitExp(e2, env0, rc)
 
-    case Expr.VectorLit(exps, _, _, _) =>
+    case Exp.VectorLit(exps, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Exp.VectorLoad(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Ascribe(exp, _, _, _, _, _) =>
+    case Exp.Ascribe(exp, _, _, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.InstanceOf(exp, _, _) =>
+    case Exp.InstanceOf(exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.CheckedCast(cast, exp, tpe, eff, loc) =>
+    case Exp.CheckedCast(cast, exp, tpe, eff, loc) =>
       cast match {
         case CheckedCastType.TypeCast =>
           if (exp.tpe == tpe)
@@ -738,7 +738,7 @@ object Redundancy {
             visitExp(exp, env0, rc)
       }
 
-    case Expr.UncheckedCast(exp, _, declaredEff, _, _, loc) =>
+    case Exp.UncheckedCast(exp, _, declaredEff, _, _, loc) =>
       declaredEff match {
         // Don't capture redundant purity casts if there's also a set effect
         case Some(eff) =>
@@ -753,18 +753,18 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+    case Exp.Unsafe(exp, runEff, _, _, loc) =>
       (runEff, exp.eff) match {
         case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
         case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Without(exp, symUse, _, _, _) =>
+    case Exp.Without(exp, symUse, _, _, _) =>
       sctx.effSyms.put(symUse.sym, ())
       visitExp(exp, env0, rc)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
+    case Exp.TryCatch(exp, rules, _, _, _) =>
       val usedExp = visitExp(exp, env0, rc)
       val usedRules = rules.foldLeft(Used.empty) {
         case (acc, CatchRule(bnd, _, body, _)) =>
@@ -776,10 +776,10 @@ object Redundancy {
       }
       usedExp ++ usedRules
 
-    case Expr.Throw(exp, _, _, _) =>
+    case Exp.Throw(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Handler(symUse, rules, _, _, _, _, _) =>
+    case Exp.Handler(symUse, rules, _, _, _, _, _) =>
       sctx.effSyms.put(symUse.sym, ())
       rules.foldLeft(Used.empty) {
         case (acc, HandlerRule(_, fparams, body, _)) =>
@@ -797,31 +797,31 @@ object Redundancy {
           }
       }
 
-    case Expr.RunWith(exp1, exp2, _, _, _) =>
+    case Exp.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
-    case Expr.InvokeConstructor(_, args, _, _, _) =>
+    case Exp.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
-    case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+    case Exp.InvokeMethod(_, exp, args, _, _, _) =>
       visitExp(exp, env0, rc) ++ visitExps(args, env0, rc)
 
-    case Expr.InvokeStaticMethod(_, args, _, _, _) =>
+    case Exp.InvokeStaticMethod(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 
-    case Expr.GetField(_, exp, _, _, _) =>
+    case Exp.GetField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.PutField(_, exp1, exp2, _, _, _) =>
+    case Exp.PutField(_, exp1, exp2, _, _, _) =>
       visitExp(exp1, env0, rc) ++ visitExp(exp2, env0, rc)
 
-    case Expr.GetStaticField(_, _, _, _) =>
+    case Exp.GetStaticField(_, _, _, _) =>
       Used.empty
 
-    case Expr.PutStaticField(_, exp, _, _, _) =>
+    case Exp.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Exp.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(Used.empty) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
           // Extend the environment with the formal parameter symbols
@@ -831,18 +831,18 @@ object Redundancy {
           acc ++ used ++ unusedFParams
       }
 
-    case Expr.NewChannel(exp, _, _, _) =>
+    case Exp.NewChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.GetChannel(exp, _, _, _) =>
+    case Exp.GetChannel(exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+    case Exp.PutChannel(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.SelectChannel(rules, defaultOpt, _, _, _) =>
+    case Exp.SelectChannel(rules, defaultOpt, _, _, _) =>
       val defaultUsed = defaultOpt match {
         case None => Used.empty
         case Some(default) => visitExp(default, env0, rc)
@@ -871,44 +871,44 @@ object Redundancy {
         case (acc, used) => acc ++ used
       }
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
+    case Exp.Spawn(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.ParYield(frags, exp, _, _, _) =>
+    case Exp.ParYield(frags, exp, _, _, _) =>
       val (used, env1, fvs) = visitParYieldFragments(frags, env0, rc)
       val usedYield = visitExp(exp, env1, rc)
       val unusedVarSyms = findUnusedVarSyms(fvs, usedYield)
       (usedYield -- fvs) ++ unusedVarSyms ++ used
 
-    case Expr.Lazy(exp, _, _) =>
+    case Exp.Lazy(exp, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.Force(exp, _, _, _) => visitExp(exp, env0, rc)
+    case Exp.Force(exp, _, _, _) => visitExp(exp, env0, rc)
 
-    case Expr.FixpointConstraintSet(cs, _, _) =>
+    case Exp.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Used.empty) {
         case (used, con) => used ++ visitConstraint(con, env0, rc: RecursionContext)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _) =>
+    case Exp.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp, env0, rc)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+    case Exp.FixpointMerge(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
+    case Exp.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) =>
       val us1 = visitExps(exps, env0, rc)
       val us2 = visitExps(terms, env0, rc)
       us1 ++ us2
 
-    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+    case Exp.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
       val us1 = visitExps(exps, env0, rc)
       val us2 = visitExp(queryExp, env0, rc)
       val us3 = visitExps(selects, env0, rc)
@@ -918,10 +918,10 @@ object Redundancy {
       val us5 = visitExps(where, env0, rc)
       us1 ++ us2 ++ us3 ++ us4 ++ us5
 
-    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+    case Exp.FixpointInjectInto(exps, _, _, _, _) =>
       visitExps(exps, env0, rc)
 
-    case Expr.Error(_, _, _) =>
+    case Exp.Error(_, _, _) =>
       lctx.errorLocs += e0.loc
       Used.empty
 
@@ -979,7 +979,7 @@ object Redundancy {
   /**
     * Returns the symbols used in the given list of expressions `es` under the given environment `env0`.
     */
-  private def visitExps(es: List[Expr], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used =
+  private def visitExps(es: List[Exp], env0: Env, rc: RecursionContext)(implicit lctx: LocalContext, sctx: SharedContext, root: Root, flix: Flix): Used =
     es.foldLeft(Used.empty) {
       case (acc, exp) => acc ++ visitExp(exp, env0, rc)
     }
@@ -1051,7 +1051,7 @@ object Redundancy {
   /**
     * Returns true if the expression is pure and of impure function type.
     */
-  private def isUnderAppliedFunction(exp: Expr): Boolean = {
+  private def isUnderAppliedFunction(exp: Exp): Boolean = {
     val isPure = exp.eff == Type.Pure
     val isNonPureFunction = exp.tpe.typeConstructor match {
       case Some(TypeConstructor.Arrow(_)) =>
@@ -1086,19 +1086,19 @@ object Redundancy {
   /**
     * Returns true if the expression is pure.
     */
-  private def isPure(exp: Expr): Boolean =
+  private def isPure(exp: Exp): Boolean =
     exp.eff == Type.Pure
 
   /**
     * Returns true if the expression is pure.
     */
-  private def isUselessExpression(exp: Expr): Boolean =
+  private def isUselessExpression(exp: Exp): Boolean =
     isPure(exp)
 
   /**
     * Returns `true` if the expression must be used.
     */
-  private def isMustUse(exp: Expr)(implicit root: Root): Boolean =
+  private def isMustUse(exp: Exp)(implicit root: Root): Boolean =
     isMustUseType(exp.tpe)
 
   /**
@@ -1113,9 +1113,9 @@ object Redundancy {
   /**
     * Returns true if the expression is a hole.
     */
-  private def isHole(exp: Expr): Boolean = exp match {
-    case Expr.Hole(_, _, _, _, _) => true
-    case Expr.HoleWithExp(_, _, _, _, _) => true
+  private def isHole(exp: Exp): Boolean = exp match {
+    case Exp.Hole(_, _, _, _, _) => true
+    case Exp.HoleWithExp(_, _, _, _, _) => true
     case _ => false
   }
 

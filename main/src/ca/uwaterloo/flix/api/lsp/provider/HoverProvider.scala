@@ -37,7 +37,7 @@ object HoverProvider {
   private def hoverAny(x: AnyRef)(implicit root: Root, flix: Flix): Option[Hover] = x match {
     case tpe: Type => hoverKind(tpe.kind, tpe.loc)
     case (varSym: Symbol.VarSym, tpe: Type) => hoverType(tpe, varSym.loc)
-    case exp: Expr => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
+    case exp: Exp => hoverTypeAndEff(exp.tpe, exp.eff, exp.loc)
     case Binder(sym, tpe) => hoverType(tpe, sym.loc)
     case DefSymUse(sym, loc) => hoverDef(sym, loc)
     case SigSymUse(sym, loc) => hoverSig(sym, loc)

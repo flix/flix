@@ -37,83 +37,83 @@ object TypedAstOps {
   /**
     * Creates a set of all the sigs used in the given `exp`.
     */
-  def sigSymsOf(exp0: Expr): Set[Symbol.SigSym] = exp0 match {
-    case Expr.Cst(_, _, _) => Set.empty
-    case Expr.Var(_, _, _) => Set.empty
-    case Expr.Hole(_, _, _, _, _) => Set.empty
-    case Expr.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expr.OpenAs(_, exp, _, _) => sigSymsOf(exp)
-    case Expr.Use(_, _, exp, _) => sigSymsOf(exp)
-    case Expr.Lambda(_, exp, _, _) => sigSymsOf(exp)
-    case Expr.ApplyClo(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ApplyOp(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
-    case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.LocalDef(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Region(_, _, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
-    case Expr.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.Discard(exp, _, _) => sigSymsOf(exp)
-    case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
-    case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.ExtMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(r => sigSymsOf(r.exp))
-    case Expr.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.ExtTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
-    case Expr.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expr.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
-    case Expr.RecordRestrict(_, rest, _, _, _) => sigSymsOf(rest)
-    case Expr.ArrayLit(exps, exp, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(exp)
-    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
-    case Expr.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
-    case Expr.ArrayLength(base, _, _) => sigSymsOf(base)
-    case Expr.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
-    case Expr.StructNew(_, fields, region, _, _, _) => sigSymsOf(region) ++ fields.flatMap { case (_, v) => sigSymsOf(v) }
-    case Expr.StructGet(e, _, _, _, _) => sigSymsOf(e)
-    case Expr.StructPut(e1, _, e2, _, _, _) => sigSymsOf(e1) ++ sigSymsOf(e2)
-    case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.VectorLoad(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.VectorLength(exp, _) => sigSymsOf(exp)
-    case Expr.Ascribe(exp, _, _, _, _, _) => sigSymsOf(exp)
-    case Expr.InstanceOf(exp, _, _) => sigSymsOf(exp)
-    case Expr.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
-    case Expr.Unsafe(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expr.Without(exp, _, _, _, _) => sigSymsOf(exp)
-    case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.Throw(exp, _, _, _) => sigSymsOf(exp)
-    case Expr.Handler(_, rules, _, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.exp)).toSet
-    case Expr.RunWith(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
-    case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
-    case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
-    case Expr.GetField(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.PutField(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.GetStaticField(_, _, _, _) => Set.empty
-    case Expr.PutStaticField(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.NewObject(_, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
-    case Expr.NewChannel(exp, _, _, _) => sigSymsOf(exp)
-    case Expr.GetChannel(exp, _, _, _) => sigSymsOf(exp)
-    case Expr.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
-    case Expr.Spawn(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
-    case Expr.Lazy(exp, _, _) => sigSymsOf(exp)
-    case Expr.Force(exp, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointConstraintSet(_, _, _) => Set.empty
-    case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(queryExp) ++ selects.flatMap(sigSymsOf).toSet ++ where.flatMap(sigSymsOf).toSet
-    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.Error(_, _, _) => Set.empty
+  def sigSymsOf(exp0: Exp): Set[Symbol.SigSym] = exp0 match {
+    case Exp.Cst(_, _, _) => Set.empty
+    case Exp.Var(_, _, _) => Set.empty
+    case Exp.Hole(_, _, _, _, _) => Set.empty
+    case Exp.HoleWithExp(exp, _, _, _, _) => sigSymsOf(exp)
+    case Exp.OpenAs(_, exp, _, _) => sigSymsOf(exp)
+    case Exp.Use(_, _, exp, _) => sigSymsOf(exp)
+    case Exp.Lambda(_, exp, _, _) => sigSymsOf(exp)
+    case Exp.ApplyClo(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.ApplyDef(_, exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.ApplyLocalDef(_, exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.ApplyOp(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.ApplySig(SigSymUse(sym, _), exps, _, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet + sym
+    case Exp.Unary(_, exp, _, _, _) => sigSymsOf(exp)
+    case Exp.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.Let(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.LocalDef(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.Region(_, _, exp, _, _, _) => sigSymsOf(exp)
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Exp.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.Discard(exp, _, _) => sigSymsOf(exp)
+    case Exp.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
+    case Exp.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Exp.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Exp.ExtMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(r => sigSymsOf(r.exp))
+    case Exp.Tag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.RestrictableTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.ExtTag(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.Tuple(elms, _, _, _) => elms.flatMap(sigSymsOf).toSet
+    case Exp.RecordSelect(exp, _, _, _, _) => sigSymsOf(exp)
+    case Exp.RecordExtend(_, value, rest, _, _, _) => sigSymsOf(value) ++ sigSymsOf(rest)
+    case Exp.RecordRestrict(_, rest, _, _, _) => sigSymsOf(rest)
+    case Exp.ArrayLit(exps, exp, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(exp)
+    case Exp.ArrayNew(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
+    case Exp.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
+    case Exp.ArrayLength(base, _, _) => sigSymsOf(base)
+    case Exp.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
+    case Exp.StructNew(_, fields, region, _, _, _) => sigSymsOf(region) ++ fields.flatMap { case (_, v) => sigSymsOf(v) }
+    case Exp.StructGet(e, _, _, _, _) => sigSymsOf(e)
+    case Exp.StructPut(e1, _, e2, _, _, _) => sigSymsOf(e1) ++ sigSymsOf(e2)
+    case Exp.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.VectorLoad(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.VectorLength(exp, _) => sigSymsOf(exp)
+    case Exp.Ascribe(exp, _, _, _, _, _) => sigSymsOf(exp)
+    case Exp.InstanceOf(exp, _, _) => sigSymsOf(exp)
+    case Exp.CheckedCast(_, exp, _, _, _) => sigSymsOf(exp)
+    case Exp.UncheckedCast(exp, _, _, _, _, _) => sigSymsOf(exp)
+    case Exp.Unsafe(exp, _, _, _, _) => sigSymsOf(exp)
+    case Exp.Without(exp, _, _, _, _) => sigSymsOf(exp)
+    case Exp.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
+    case Exp.Throw(exp, _, _, _) => sigSymsOf(exp)
+    case Exp.Handler(_, rules, _, _, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.exp)).toSet
+    case Exp.RunWith(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
+    case Exp.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
+    case Exp.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
+    case Exp.GetField(_, exp, _, _, _) => sigSymsOf(exp)
+    case Exp.PutField(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.GetStaticField(_, _, _, _) => Set.empty
+    case Exp.PutStaticField(_, exp, _, _, _) => sigSymsOf(exp)
+    case Exp.NewObject(_, _, _, _, methods, _) => methods.flatMap(method => sigSymsOf(method.exp)).toSet
+    case Exp.NewChannel(exp, _, _, _) => sigSymsOf(exp)
+    case Exp.GetChannel(exp, _, _, _) => sigSymsOf(exp)
+    case Exp.PutChannel(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.SelectChannel(rules, default, _, _, _) => rules.flatMap(rule => sigSymsOf(rule.chan) ++ sigSymsOf(rule.exp)).toSet ++ default.toSet.flatMap(sigSymsOf)
+    case Exp.Spawn(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
+    case Exp.Lazy(exp, _, _) => sigSymsOf(exp)
+    case Exp.Force(exp, _, _, _) => sigSymsOf(exp)
+    case Exp.FixpointConstraintSet(_, _, _) => Set.empty
+    case Exp.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
+    case Exp.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Exp.FixpointQueryWithProvenance(exps, Head.Atom(_, _, terms, _, _), _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ terms.flatMap(sigSymsOf).toSet
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ sigSymsOf(queryExp) ++ selects.flatMap(sigSymsOf).toSet ++ where.flatMap(sigSymsOf).toSet
+    case Exp.FixpointSolveWithProject(exps, _, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.FixpointInjectInto(exps, _, _, _, _) => exps.flatMap(sigSymsOf).toSet
+    case Exp.Error(_, _, _) => Set.empty
   }
 
   /**
@@ -129,284 +129,284 @@ object TypedAstOps {
   /**
     * Returns the free variables in the given expression `exp0`.
     */
-  def freeVars(exp0: Expr): Map[Symbol.VarSym, Type] = exp0 match {
-    case Expr.Cst(_, _, _) => Map.empty
+  def freeVars(exp0: Exp): Map[Symbol.VarSym, Type] = exp0 match {
+    case Exp.Cst(_, _, _) => Map.empty
 
-    case Expr.Var(sym, tpe, _) => Map(sym -> tpe)
+    case Exp.Var(sym, tpe, _) => Map(sym -> tpe)
 
-    case Expr.Hole(_, _, _, _, _) => Map.empty
+    case Exp.Hole(_, _, _, _, _) => Map.empty
 
-    case Expr.HoleWithExp(exp, _, _, _, _) =>
+    case Exp.HoleWithExp(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.OpenAs(_, exp, _, _) =>
+    case Exp.OpenAs(_, exp, _, _) =>
       freeVars(exp)
 
-    case Expr.Use(_, _, exp, _) =>
+    case Exp.Use(_, _, exp, _) =>
       freeVars(exp)
 
-    case Expr.Lambda(fparam, exp, _, _) =>
+    case Exp.Lambda(fparam, exp, _, _) =>
       freeVars(exp) - fparam.bnd.sym
 
-    case Expr.ApplyClo(exp1, exp2, _, _, _) =>
+    case Exp.ApplyClo(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.ApplyDef(_, exps, _, _, _, _, _) =>
+    case Exp.ApplyDef(_, exps, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
+    case Exp.ApplyLocalDef(_, exps, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.ApplyOp(_, exps, _, _, _) =>
+    case Exp.ApplyOp(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap
 
-    case Expr.ApplySig(_, exps, _, _, _, _, _, _) =>
+    case Exp.ApplySig(_, exps, _, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.Unary(_, exp, _, _, _) =>
+    case Exp.Unary(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.Binary(_, exp1, exp2, _, _, _) =>
+    case Exp.Binary(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.Let(bnd, exp1, exp2, _, _, _) =>
+    case Exp.Let(bnd, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - bnd.sym
 
-    case Expr.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
+    case Exp.LocalDef(TypedAst.Binder(sym, _), fparams, exp1, exp2, _, _, _) =>
       val bound = sym :: fparams.map(_.bnd.sym)
       (freeVars(exp1) -- bound) ++ (freeVars(exp2) - sym)
 
-    case Expr.Region(Binder(sym, _), _, exp, _, _, _) =>
+    case Exp.Region(Binder(sym, _), _, exp, _, _, _) =>
       freeVars(exp) - sym
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+    case Exp.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
-    case Expr.Stm(exp1, exp2, _, _, _) =>
+    case Exp.Stm(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.Discard(exp, _, _) =>
+    case Exp.Discard(exp, _, _) =>
       freeVars(exp)
 
-    case Expr.Match(exp, rules, _, _, _) =>
+    case Exp.Match(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, MatchRule(pat, guard, body, _)) =>
           acc ++ ((guard.map(freeVars).getOrElse(Map.empty) ++ freeVars(body)) -- freeVars(pat).keys)
       }
 
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
+    case Exp.TypeMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, TypeMatchRule(bnd, _, body, _)) => acc ++ (freeVars(body) - bnd.sym)
       }
 
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
+    case Exp.RestrictableChoose(_, exp, rules, _, _, _) =>
       val e = freeVars(exp)
       val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, RestrictableChooseRule(pat, body)) => acc ++ (freeVars(body) -- freeVars(pat).toList)
       }
       e ++ rs
 
-    case Expr.ExtMatch(exp, rules, _, _, _) =>
+    case Exp.ExtMatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, ExtMatchRule(pat, exp1, _)) =>
           acc ++ freeVars(exp1) -- freeVars(pat)
       }
 
-    case Expr.Tag(_, exps, _, _, _) =>
+    case Exp.Tag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.RestrictableTag(_, exps, _, _, _) =>
+    case Exp.RestrictableTag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.ExtTag(_, exps, _, _, _) =>
+    case Exp.ExtTag(_, exps, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => freeVars(exp) ++ acc
       }
 
-    case Expr.Tuple(elms, _, _, _) =>
+    case Exp.Tuple(elms, _, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.RecordSelect(exp, _, _, _, _) =>
+    case Exp.RecordSelect(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.RecordExtend(_, value, rest, _, _, _) =>
+    case Exp.RecordExtend(_, value, rest, _, _, _) =>
       freeVars(value) ++ freeVars(rest)
 
-    case Expr.RecordRestrict(_, rest, _, _, _) =>
+    case Exp.RecordRestrict(_, rest, _, _, _) =>
       freeVars(rest)
 
-    case Expr.ArrayLit(elms, exp, _, _, _) =>
+    case Exp.ArrayLit(elms, exp, _, _, _) =>
       elms.foldLeft(freeVars(exp)) {
         case (acc, e) => acc ++ freeVars(e)
       }
 
-    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+    case Exp.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
-    case Expr.ArrayLoad(base, index, _, _, _) =>
+    case Exp.ArrayLoad(base, index, _, _, _) =>
       freeVars(base) ++ freeVars(index)
 
-    case Expr.ArrayLength(base, _, _) =>
+    case Exp.ArrayLength(base, _, _) =>
       freeVars(base)
 
-    case Expr.ArrayStore(base, index, elm, _, _) =>
+    case Exp.ArrayStore(base, index, elm, _, _) =>
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
-    case Expr.StructNew(_, fields, region, _, _, _) =>
+    case Exp.StructNew(_, fields, region, _, _, _) =>
       freeVars(region) ++ fields.flatMap { case (_, v) => freeVars(v) }
 
-    case Expr.StructGet(e, _, _, _, _) =>
+    case Exp.StructGet(e, _, _, _, _) =>
       freeVars(e)
 
-    case Expr.StructPut(e1, _, e2, _, _, _) =>
+    case Exp.StructPut(e1, _, e2, _, _, _) =>
       freeVars(e1) ++ freeVars(e2)
 
-    case Expr.VectorLit(elms, _, _, _) =>
+    case Exp.VectorLit(elms, _, _, _) =>
       elms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, e) => acc ++ freeVars(e)
       }
 
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
+    case Exp.VectorLoad(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.VectorLength(exp, _) =>
+    case Exp.VectorLength(exp, _) =>
       freeVars(exp)
 
-    case Expr.Ascribe(exp, _, _, _, _, _) =>
+    case Exp.Ascribe(exp, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.Without(exp, _, _, _, _) =>
+    case Exp.Without(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.InstanceOf(exp, _, _) =>
+    case Exp.InstanceOf(exp, _, _) =>
       freeVars(exp)
 
-    case Expr.CheckedCast(_, exp, _, _, _) =>
+    case Exp.CheckedCast(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
+    case Exp.UncheckedCast(exp, _, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.Unsafe(exp, _, _, _, _) =>
+    case Exp.Unsafe(exp, _, _, _, _) =>
       freeVars(exp)
 
-    case Expr.TryCatch(exp, rules, _, _, _) =>
+    case Exp.TryCatch(exp, rules, _, _, _) =>
       rules.foldLeft(freeVars(exp)) {
         case (acc, CatchRule(bnd, _, body, _)) => acc ++ freeVars(body) - bnd.sym
       }
 
-    case Expr.Throw(exp, _, _, _) => freeVars(exp)
+    case Exp.Throw(exp, _, _, _) => freeVars(exp)
 
-    case Expr.Handler(_, rules, _, _, _, _, _) =>
+    case Exp.Handler(_, rules, _, _, _, _, _) =>
       rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, HandlerRule(_, fparams, exp, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
-    case Expr.RunWith(exp1, exp2, _, _, _) =>
+    case Exp.RunWith(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.InvokeConstructor(_, args, _, _, _) =>
+    case Exp.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.InvokeMethod(_, exp, args, _, _, _) =>
+    case Exp.InvokeMethod(_, exp, args, _, _, _) =>
       args.foldLeft(freeVars(exp)) {
         case (acc, obj) => acc ++ freeVars(obj)
       }
 
-    case Expr.InvokeStaticMethod(_, args, _, _, _) =>
+    case Exp.InvokeStaticMethod(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.GetField(_, exp, _, _, _) =>
+    case Exp.GetField(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.PutField(_, exp1, exp2, _, _, _) =>
+    case Exp.PutField(_, exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.GetStaticField(_, _, _, _) =>
+    case Exp.GetStaticField(_, _, _, _) =>
       Map.empty
 
-    case Expr.PutStaticField(_, exp, _, _, _) =>
+    case Exp.PutStaticField(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.NewObject(_, _, _, _, methods, _) =>
+    case Exp.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) => acc ++ freeVars(exp) -- fparams.map(_.bnd.sym)
       }
 
-    case Expr.NewChannel(exp, _, _, _) =>
+    case Exp.NewChannel(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.GetChannel(exp, _, _, _) =>
+    case Exp.GetChannel(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+    case Exp.PutChannel(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.SelectChannel(rules, default, _, _, _) =>
+    case Exp.SelectChannel(rules, default, _, _, _) =>
       val d = default.map(freeVars).getOrElse(Map.empty)
       rules.foldLeft(d) {
         case (acc, SelectChannelRule(Binder(sym, _), chan, exp, _)) => acc ++ ((freeVars(chan) ++ freeVars(exp)) - sym)
       }
 
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
+    case Exp.Spawn(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.ParYield(frags, exp, _, _, _) =>
+    case Exp.ParYield(frags, exp, _, _, _) =>
       val freeFragVars = frags.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, ParYieldFragment(p, e, _)) => acc ++ freeVars(p) ++ freeVars(e)
       }
       freeVars(exp) -- freeFragVars.keys
 
-    case Expr.Lazy(exp, _, _) =>
+    case Exp.Lazy(exp, _, _) =>
       freeVars(exp)
 
-    case Expr.Force(exp, _, _, _) =>
+    case Exp.Force(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _) =>
+    case Exp.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, c) => acc ++ freeVars(c)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _) =>
+    case Exp.FixpointLambda(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+    case Exp.FixpointMerge(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
+    case Exp.FixpointQueryWithProvenance(exps, select, _, _, _, _) =>
       freeVars(exps) ++ freeVars(select)
 
-    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+    case Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
       freeVars(exps) ++ freeVars(queryExp) ++ freeVars(selects) ++ from.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         (acc, b) => acc ++ freeVars(b)
       } ++ freeVars(where)
 
-    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+    case Exp.FixpointSolveWithProject(exps, _, _, _, _, _) =>
       exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         (acc, exp) => acc ++ freeVars(exp)
       }
 
-    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+    case Exp.FixpointInjectInto(exps, _, _, _, _) =>
       freeVars(exps)
 
-    case Expr.Error(_, _, _) =>
+    case Exp.Error(_, _, _) =>
       Map.empty
 
   }
@@ -505,7 +505,7 @@ object TypedAstOps {
   /**
     * Returns the free variables in the given list of expressions `exp0`.
     */
-  private def freeVars(exps0: List[Expr]): Map[Symbol.VarSym, Type] =
+  private def freeVars(exps0: List[Exp]): Map[Symbol.VarSym, Type] =
     exps0.foldLeft(Map.empty[Symbol.VarSym, Type]) {
       case (acc, exp) => acc ++ freeVars(exp)
     }

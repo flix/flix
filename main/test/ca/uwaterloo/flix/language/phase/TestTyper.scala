@@ -909,12 +909,12 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChoose.01") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
-        |pub def foo(): Bool = choose Expr.Cst {
-        |    case Expr.Var(_) => true
+        |pub def foo(): Bool = choose Exp.Cst {
+        |    case Exp.Var(_) => true
         |}
         |""".stripMargin
     expectError[TypeError](compile(input, Options.TestWithLibNix))
@@ -923,21 +923,21 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChoose.02") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         | pub def testChoose06(): Bool = {
         |     let f = x -> choose x {
-        |         case Expr.Cst(_) => false
-        |         case Expr.Var(_) => true
+        |         case Exp.Cst(_) => false
+        |         case Exp.Var(_) => true
         |     };
         |     let g = x -> choose x {
-        |         case Expr.Cst(_) => false
-        |         case Expr.Xor(_) => true
+        |         case Exp.Cst(_) => false
+        |         case Exp.Xor(_) => true
         |     };
         |     let h = if (true) f else g;
-        |     h(Expr.Var)
+        |     h(Exp.Var)
         | }
         |""".stripMargin
     expectError[TypeError](compile(input, Options.TestWithLibNix))
@@ -946,24 +946,24 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChoose.03") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         | pub def testChoose06(): Bool = {
         |     let f = x -> choose x {
-        |         case Expr.Cst(_) => false
-        |         case Expr.Var(_) => true
-        |         case Expr.Not(_) => false
+        |         case Exp.Cst(_) => false
+        |         case Exp.Var(_) => true
+        |         case Exp.Not(_) => false
         |     };
         |     let g = x -> choose x {
-        |         case Expr.Cst(_) => false
-        |         case Expr.Xor(_) => true
-        |         case Expr.Not(_) => false
+        |         case Exp.Cst(_) => false
+        |         case Exp.Xor(_) => true
+        |         case Exp.Not(_) => false
         |     };
         |     let h = if (true) f else g;
         |
-        |     let cstOrNotOrVar = if (true) open_variant Expr.Cst else if (true) open_variant Expr.Not else open_variant Expr.Var;
+        |     let cstOrNotOrVar = if (true) open_variant Exp.Cst else if (true) open_variant Exp.Not else open_variant Exp.Var;
         |
         |     h(cstOrNotOrVar)
         | }
@@ -974,17 +974,17 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChooseStar.01") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         |pub def foo(): Bool = {
         |    // P2: check the lower bound by using result in a choose
-        |    let star = choose* Expr.Cst {
-        |        case Expr.Cst(_) => Expr.Var()
+        |    let star = choose* Exp.Cst {
+        |        case Exp.Cst(_) => Exp.Var()
         |    };
         |    choose star {
-        |        case Expr.Cst(_) => false
+        |        case Exp.Cst(_) => false
         |    }
         |}
         |""".stripMargin
@@ -994,19 +994,19 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChooseStar.02") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         |pub def quack(): Bool = {
         |    // P2: check the lower bound by using result in a choose
-        |    let star = choose* Expr.Cst {
-        |        case Expr.Cst(_) => Expr.Var()
-        |        case Expr.Not(_) => Expr.Var()
-        |        case Expr.Xor(_) => Expr.Var()
+        |    let star = choose* Exp.Cst {
+        |        case Exp.Cst(_) => Exp.Var()
+        |        case Exp.Not(_) => Exp.Var()
+        |        case Exp.Xor(_) => Exp.Var()
         |    };
         |    choose star {
-        |        case Expr.Xor(_) => false
+        |        case Exp.Xor(_) => false
         |    }
         |}
         |""".stripMargin
@@ -1016,19 +1016,19 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChooseStar.03") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         |pub def liquorice(): Bool = {
         |    // P2: check the lower bound by using result in a choose
-        |    let star = choose* Expr.Cst {
-        |        case Expr.Cst(_) => Expr.Var()
-        |        case Expr.Not(_) => Expr.Var()
-        |        case Expr.Xor(_) => Expr.Not()
+        |    let star = choose* Exp.Cst {
+        |        case Exp.Cst(_) => Exp.Var()
+        |        case Exp.Not(_) => Exp.Var()
+        |        case Exp.Xor(_) => Exp.Not()
         |    };
         |    choose star {
-        |        case Expr.Not(_) => false
+        |        case Exp.Not(_) => false
         |    }
         |}
         |""".stripMargin
@@ -1038,20 +1038,20 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChooseStar.04") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         |pub def testChooseStar4(): Bool = {
         |    // P2: check the lower bound by using result in a choose
-        |    let star = choose* Expr.Cst {
-        |        case Expr.Cst(_) => Expr.Var()
-        |        case Expr.Not(_) => Expr.Var()
-        |        case Expr.Xor(_) => Expr.Not()
+        |    let star = choose* Exp.Cst {
+        |        case Exp.Cst(_) => Exp.Var()
+        |        case Exp.Not(_) => Exp.Var()
+        |        case Exp.Xor(_) => Exp.Not()
         |    };
         |    choose star {
-        |        case Expr.Var(_) => true
-        |        case Expr.Xor(_) => false
+        |        case Exp.Var(_) => true
+        |        case Exp.Xor(_) => false
         |    }
         |}
         |""".stripMargin
@@ -1061,18 +1061,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestChooseStar.05") {
     val input =
       """
-        |restrictable enum Expr[s] {
+        |restrictable enum Exp[s] {
         |    case Cst, Var, Not, And, Or, Xor
         |}
         |
         |pub def foo(): Bool = {
         |    // P2: check the lower bound by using result in a choose
-        |    let star = choose* Expr.Cst {
-        |        case Expr.Not(_) => Expr.Not()
-        |        case Expr.Cst(_) => Expr.Var()
+        |    let star = choose* Exp.Cst {
+        |        case Exp.Not(_) => Exp.Not()
+        |        case Exp.Cst(_) => Exp.Var()
         |    };
         |    choose star {
-        |        case Expr.Cst(_) => false
+        |        case Exp.Cst(_) => false
         |    }
         |}
         |""".stripMargin

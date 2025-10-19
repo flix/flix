@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.{Consumer, InlayHint, InlayHintKind, Position, Range, Visitor}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Exp, Root}
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 
@@ -76,9 +76,9 @@ object InlayHintProvider {
   private def getOpSymUses(uri: String)(implicit root: Root): List[(SymUse.OpSymUse, SourceLocation)] = {
     var opSymUses: List[(SymUse.OpSymUse, SourceLocation)] = List.empty
     object opSymUseConsumer extends Consumer {
-      override def consumeExpr(expr: Expr): Unit = {
-        expr match {
-          case Expr.ApplyOp(opSymUse, _, _, _, loc) =>
+      override def consumeExpr(exp: Exp): Unit = {
+        exp match {
+          case Exp.ApplyOp(opSymUse, _, _, _, loc) =>
             opSymUses = (opSymUse, loc) :: opSymUses
           case _ => ()
         }
@@ -94,9 +94,9 @@ object InlayHintProvider {
   private def getDefSymUses(uri: String)(implicit root: Root): List[(SymUse.DefSymUse, SourceLocation)] = {
     var defSymUses: List[(SymUse.DefSymUse, SourceLocation)] = List.empty
     object defSymUseConsumer extends Consumer {
-      override def consumeExpr(expr: Expr): Unit = {
-        expr match {
-          case Expr.ApplyDef(defSymUse, _, _, _, _, _, loc) =>
+      override def consumeExpr(exp: Exp): Unit = {
+        exp match {
+          case Exp.ApplyDef(defSymUse, _, _, _, _, _, loc) =>
             defSymUses = (defSymUse, loc) :: defSymUses
           case _ => ()
         }

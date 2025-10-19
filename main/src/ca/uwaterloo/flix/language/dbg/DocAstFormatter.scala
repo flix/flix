@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.dbg
 import ca.uwaterloo.flix.language.ast.shared.{ExpPosition, VarText}
 import ca.uwaterloo.flix.language.dbg.Doc.*
 import ca.uwaterloo.flix.language.dbg.DocAst.*
-import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.language.dbg.DocAst.Exp.*
 
 import scala.annotation.tailrec
 
@@ -59,18 +59,18 @@ object DocAstFormatter {
         ((sym.namespace: Seq[String], sym.name), d)
     }
     val misc = misc0.map {
-      case (name, expr) =>
+      case (name, exp) =>
         val intro = text("/*") +: sep(breakWith(" "), name.split(" ").toList.map(text)) +: text("*/")
-        val e = format(expr)
+        val e = format(exp)
         intro +: e
     }
     (enums ++ defs).sortBy(_._1).map(_._2) ++ misc
   }
 
-  def format(d: Expr)(implicit i: Indent): Doc =
+  def format(d: Exp)(implicit i: Indent): Doc =
     aux(d, paren = false, inBlock = true)
 
-  private def aux(d0: Expr, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
+  private def aux(d0: Exp, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d0 match {
       case Unit =>
         text("()")
@@ -302,9 +302,9 @@ object DocAstFormatter {
   private def formatAscription(tpe: Option[Type])(implicit i: Indent): Doc =
     tpe.map(t => text(":") +: formatType(t)).getOrElse(empty)
 
-  private def collectLetBinders(d: Expr): (List[LetBinder], Expr) = {
+  private def collectLetBinders(d: Exp): (List[LetBinder], Exp) = {
     @tailrec
-    def chase(d0: Expr, acc: List[LetBinder]): (List[LetBinder], Expr) = {
+    def chase(d0: Exp, acc: List[LetBinder]): (List[LetBinder], Exp) = {
       d0 match {
         case s@Stm(_, d2) =>
           chase(d2, s :: acc)
@@ -319,9 +319,9 @@ object DocAstFormatter {
     chase(d, List())
   }
 
-  private def collectRecordOps(d: Expr): (List[RecordOp], Option[Expr]) = {
+  private def collectRecordOps(d: Exp): (List[RecordOp], Option[Exp]) = {
     @tailrec
-    def chase(d0: Expr, acc: List[RecordOp]): (List[RecordOp], Option[Expr]) = {
+    def chase(d0: Exp, acc: List[RecordOp]): (List[RecordOp], Option[Exp]) = {
       d0 match {
         case re@RecordExtend(_, _, rest) =>
           chase(rest, re :: acc)

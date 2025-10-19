@@ -128,7 +128,7 @@ object RenameProvider {
     case TypedAst.AssocTypeDef(_, _, _, _, _, loc) => loc.isReal
     case TypedAst.Effect(_, _, _, _, _, _, loc) => loc.isReal
     case TypedAst.Op(_, _, loc) => loc.isReal
-    case exp: TypedAst.Expr => exp.loc.isReal
+    case exp: TypedAst.Exp => exp.loc.isReal
     case pat: TypedAst.Pattern => pat.loc.isReal
     case TypedAst.RestrictableChoosePattern.Wild(_, loc) => loc.isReal
     case TypedAst.RestrictableChoosePattern.Var(_, _, loc) => loc.isReal
@@ -184,7 +184,7 @@ object RenameProvider {
     case TypedAst.TypeParam(_, sym, _) => Some(getTypeVarSymOccurs(sym))
     case Type.Var(sym, _) => Some(getTypeVarSymOccurs(sym))
     // Vars
-    case TypedAst.Expr.Var(sym, _, _) => Some(getVarOccurs(sym))
+    case TypedAst.Exp.Var(sym, _, _) => Some(getVarOccurs(sym))
     case TypedAst.Binder(sym, _) => Some(getVarOccurs(sym))
 
     case _ => None
@@ -221,8 +221,8 @@ object RenameProvider {
     }
 
     object VarSymConsumer extends Consumer {
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
-        case TypedAst.Expr.Var(s, _, loc) => consider(s, loc)
+      override def consumeExpr(exp: TypedAst.Exp): Unit = exp match {
+        case TypedAst.Exp.Var(s, _, loc) => consider(s, loc)
         case _ => ()
       }
     }
