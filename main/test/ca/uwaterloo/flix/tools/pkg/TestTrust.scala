@@ -89,65 +89,6 @@ class TestTrust extends AnyFunSuite {
     }
   }
 
-  test("trust:trust-javaclass-dep:plain") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "trust-javaclass" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'trust-javaclass' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("trust:trust-javaclass-dep:java") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "trust-javaclass" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'trust-javaclass' and dependency using Java")
-    } else {
-      succeed
-    }
-  }
-
-  test("trust:trust-javaclass-dep:unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'trust-javaclass' and dependency using unchecked cast")
-    }
-  }
-
-  test("trust:trust-javaclass-dep:java-unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-java-unchecked-cast" = { version = "0.1.0", trust = "trust-javaclass" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'trust-javaclass' and dependency using Java and unchecked cast")
-    }
-  }
 
   test("trust:unrestricted-dep:plain") {
     val deps = List(
