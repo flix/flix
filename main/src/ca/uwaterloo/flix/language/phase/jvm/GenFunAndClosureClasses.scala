@@ -60,7 +60,7 @@ object GenFunAndClosureClasses {
 
   private def isFunction(defn: Def): Boolean = defn.cparams.isEmpty
 
-  private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.exp.purity)
+  private def isControlPure(defn: Def): Boolean = Purity.isControlPure(defn.expr.purity)
 
   /**
     * Generates the following code for control-pure functions.
@@ -283,7 +283,7 @@ object GenFunAndClosureClasses {
     val localOffset = 0
     val labelEnv = Map.empty[Symbol.LabelSym, Label]
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
-    GenExpression.compileExpr(defn.exp)(m, ctx, root, flix)
+    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
@@ -361,9 +361,9 @@ object GenFunAndClosureClasses {
     loadParamsOf(cparams)
     loadParamsOf(fparams)
 
-    if (Purity.isControlPure(defn.exp.purity)) {
+    if (Purity.isControlPure(defn.expr.purity)) {
       val ctx = GenExpression.DirectInstanceContext(enterLabel, Map.empty, localOffset)
-      GenExpression.compileExpr(defn.exp)(m, ctx, root, flix)
+      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     } else {
       val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
       if (defn.pcPoints > 0) {
@@ -400,7 +400,7 @@ object GenFunAndClosureClasses {
       }
 
       val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
-      GenExpression.compileExpr(defn.exp)(m, ctx, root, flix)
+      GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 
