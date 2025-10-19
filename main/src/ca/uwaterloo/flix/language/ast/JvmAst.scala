@@ -133,9 +133,9 @@ object JvmAst {
 
   case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
 
-  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
-
   case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 
 }
 
