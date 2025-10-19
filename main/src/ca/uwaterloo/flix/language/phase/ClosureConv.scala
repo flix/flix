@@ -442,7 +442,7 @@ object ClosureConv {
     *   }
     * }}}
     */
-  private def visitLocalDef(expr0: Expr.LocalDef)(implicit flix: Flix): Expr.LocalDef = expr0 match {
+  private def visitLocalDef(exp0: Expr.LocalDef)(implicit flix: Flix): Expr.LocalDef = exp0 match {
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, purity, loc) =>
       // Step 1: Compute the free variables in the body expression.
       //         (Remove the variables bound by the function itself).
@@ -509,11 +509,11 @@ object ClosureConv {
     * }}}
     *
     */
-  private def rewriteApplyLocalDef(expr00: Expr, sym0: Symbol.VarSym, freeVars: List[FreeVar]): Expr = {
-    def visit(expr0: Expr): Expr = expr0 match {
-      case Expr.Cst(_, _, _) => expr0
+  private def rewriteApplyLocalDef(exp00: Expr, sym0: Symbol.VarSym, freeVars: List[FreeVar]): Expr = {
+    def visit(exp0: Expr): Expr = exp0 match {
+      case Expr.Cst(_, _, _) => exp0
 
-      case Expr.Var(_, _, _) => expr0
+      case Expr.Var(_, _, _) => exp0
 
       case Expr.Lambda(fparams, exp, tpe, loc) =>
         val e = visit(exp)
@@ -576,7 +576,7 @@ object ClosureConv {
         }
         Expr.Branch(e, bs, tpe, purity, loc)
 
-      case Expr.JumpTo(_, _, _, _) => expr0
+      case Expr.JumpTo(_, _, _, _) => exp0
 
       case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val e1 = visit(exp1)
@@ -619,7 +619,7 @@ object ClosureConv {
         Expr.NewObject(name, clazz, tpe, purity, ms, loc)
     }
 
-    visit(expr00)
+    visit(exp00)
   }
 
 }

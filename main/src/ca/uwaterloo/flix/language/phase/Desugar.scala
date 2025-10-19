@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
+import ca.uwaterloo.flix.language.ast.DesugaredAst.Exp
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugDesugaredAst
@@ -475,36 +475,36 @@ object Desugar {
   /**
     * Desugars the given [[WeededAst.Expr]] `exp0`.
     */
-  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = exp0 match {
+  private def visitExp(exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Exp = exp0 match {
     case WeededAst.Expr.Ambiguous(qname, loc) =>
-      Expr.Ambiguous(qname, loc)
+      Exp.Ambiguous(qname, loc)
 
     case WeededAst.Expr.Open(qname, loc) =>
-      Expr.Open(qname, loc)
+      Exp.Open(qname, loc)
 
     case WeededAst.Expr.OpenAs(qname, exp, loc) =>
       val e = visitExp(exp)
-      Expr.OpenAs(qname, e, loc)
+      Exp.OpenAs(qname, e, loc)
 
     case WeededAst.Expr.Hole(name, loc) =>
-      Expr.Hole(name, loc)
+      Exp.Hole(name, loc)
 
     case WeededAst.Expr.HoleWithExp(exp, loc) =>
       val e = visitExp(exp)
-      Expr.HoleWithExp(e, loc)
+      Exp.HoleWithExp(e, loc)
 
     case WeededAst.Expr.Use(uses, exp, loc) =>
       val u1 = uses.map(visitUseOrImport)
       val e = visitExp(exp)
-      Expr.Use(u1, e, loc)
+      Exp.Use(u1, e, loc)
 
     case WeededAst.Expr.Cst(cst, loc) =>
-      Expr.Cst(cst, loc)
+      Exp.Cst(cst, loc)
 
     case WeededAst.Expr.Apply(exp, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
-      Expr.Apply(e, es, loc)
+      Exp.Apply(e, es, loc)
 
     case WeededAst.Expr.Infix(exp1, exp2, exp3, loc) =>
       desugarInfix(exp1, exp2, exp3, loc)
@@ -512,7 +512,7 @@ object Desugar {
     case WeededAst.Expr.Lambda(fparam, exp, loc) =>
       val fparam1 = visitFormalParam(fparam)
       val e = visitExp(exp)
-      Expr.Lambda(fparam1, e, loc)
+      Exp.Lambda(fparam1, e, loc)
 
     case WeededAst.Expr.LambdaExtMatch(pat, exp, loc) =>
       val p = visitExtPattern(pat)
@@ -526,27 +526,27 @@ object Desugar {
 
     case WeededAst.Expr.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Unary(sop, e, loc)
+      Exp.Unary(sop, e, loc)
 
     case WeededAst.Expr.Binary(sop, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Binary(sop, e1, e2, loc)
+      Exp.Binary(sop, e1, e2, loc)
 
     case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expr.IfThenElse(e1, e2, e3, loc)
+      Exp.IfThenElse(e1, e2, e3, loc)
 
     case WeededAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Stm(e1, e2, loc)
+      Exp.Stm(e1, e2, loc)
 
     case WeededAst.Expr.Discard(exp, loc) =>
       val e = visitExp(exp)
-      Expr.Discard(e, loc)
+      Exp.Discard(e, loc)
 
     case WeededAst.Expr.LocalDef(ident, fparams, dtpe, deff, exp1, exp2, loc) =>
       val fps = visitFormalParams(fparams)
@@ -554,33 +554,33 @@ object Desugar {
       val ef = deff.map(visitType)
       val e10 = visitExp(exp1)
       // Ascribe has an invariant that at least t or ef must be defined
-      val e1 = if (t.isDefined || ef.isDefined) Expr.Ascribe(e10, t, ef, e10.loc) else e10
+      val e1 = if (t.isDefined || ef.isDefined) Exp.Ascribe(e10, t, ef, e10.loc) else e10
       val e2 = visitExp(exp2)
-      Expr.LocalDef(ident, fps, e1, e2, loc)
+      Exp.LocalDef(ident, fps, e1, e2, loc)
 
     case WeededAst.Expr.Region(ident, exp, loc) =>
       val e = visitExp(exp)
-      Expr.Region(ident, e, loc)
+      Exp.Region(ident, e, loc)
 
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
-      Expr.Match(e, rs, loc)
+      Exp.Match(e, rs, loc)
 
     case WeededAst.Expr.TypeMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitTypeMatchRule)
-      Expr.TypeMatch(e, rs, loc)
+      Exp.TypeMatch(e, rs, loc)
 
     case WeededAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
-      Expr.RestrictableChoose(star, e, rs, loc)
+      Exp.RestrictableChoose(star, e, rs, loc)
 
     case WeededAst.Expr.ExtMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitExtMatchRule)
-      Expr.ExtMatch(e, rs, loc)
+      Exp.ExtMatch(e, rs, loc)
 
     case WeededAst.Expr.ApplicativeFor(frags, exp, loc) =>
       desugarApplicativeFor(frags, exp, loc)
@@ -596,73 +596,73 @@ object Desugar {
 
     case WeededAst.Expr.ExtTag(label, exps, loc) =>
       val es = visitExps(exps)
-      Expr.ExtTag(label, es, loc)
+      Exp.ExtTag(label, es, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
       desugarTuple(exps, loc)
 
     case WeededAst.Expr.RecordSelect(exp, label, loc) =>
       val e = visitExp(exp)
-      Expr.RecordSelect(e, label, loc)
+      Exp.RecordSelect(e, label, loc)
 
     case WeededAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.RecordExtend(label, e1, e2, loc)
+      Exp.RecordExtend(label, e1, e2, loc)
 
     case WeededAst.Expr.RecordRestrict(label, exp, loc) =>
       val e = visitExp(exp)
-      Expr.RecordRestrict(label, e, loc)
+      Exp.RecordRestrict(label, e, loc)
 
     case WeededAst.Expr.ArrayLit(exps, exp, loc) =>
       val es = visitExps(exps)
       val e = visitExp(exp)
-      Expr.ArrayLit(es, e, loc)
+      Exp.ArrayLit(es, e, loc)
 
     case WeededAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expr.ArrayNew(e1, e2, e3, loc)
+      Exp.ArrayNew(e1, e2, e3, loc)
 
     case WeededAst.Expr.ArrayLoad(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.ArrayLoad(e1, e2, loc)
+      Exp.ArrayLoad(e1, e2, loc)
 
     case WeededAst.Expr.ArrayLength(exp, loc) =>
       val e = visitExp(exp)
-      Expr.ArrayLength(e, loc)
+      Exp.ArrayLength(e, loc)
 
     case WeededAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
-      Expr.ArrayStore(e1, e2, e3, loc)
+      Exp.ArrayStore(e1, e2, e3, loc)
 
     case WeededAst.Expr.StructNew(name, fields0, region0, loc) =>
       val fields = fields0.map(field => (field._1, visitExp(field._2)))
       val region = visitExp(region0)
-      Expr.StructNew(name, fields, region, loc)
+      Exp.StructNew(name, fields, region, loc)
 
     case WeededAst.Expr.StructGet(e, name, loc) =>
-      Expr.StructGet(visitExp(e), name, loc)
+      Exp.StructGet(visitExp(e), name, loc)
 
     case WeededAst.Expr.StructPut(e1, name, e2, loc) =>
-      Expr.StructPut(visitExp(e1), name, visitExp(e2), loc)
+      Exp.StructPut(visitExp(e1), name, visitExp(e2), loc)
 
     case WeededAst.Expr.VectorLit(exps, loc) =>
       val e = visitExps(exps)
-      Expr.VectorLit(e, loc)
+      Exp.VectorLit(e, loc)
 
     case WeededAst.Expr.VectorLoad(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.VectorLoad(e1, e2, loc)
+      Exp.VectorLoad(e1, e2, loc)
 
     case WeededAst.Expr.VectorLength(exp, loc) =>
       val e = visitExp(exp)
-      Expr.VectorLength(e, loc)
+      Exp.VectorLength(e, loc)
 
     case WeededAst.Expr.FCons(exp1, exp2, loc) =>
       desugarFCons(exp1, exp2, loc)
@@ -683,152 +683,152 @@ object Desugar {
       val e = visitExp(exp)
       val ts = expectedType.map(visitType)
       val effs = expectedEff.map(visitType)
-      Expr.Ascribe(e, ts, effs, loc)
+      Exp.Ascribe(e, ts, effs, loc)
 
     case WeededAst.Expr.InstanceOf(exp, className, loc) =>
       val e = visitExp(exp)
-      Expr.InstanceOf(e, className, loc)
+      Exp.InstanceOf(e, className, loc)
 
     case WeededAst.Expr.CheckedCast(cast, exp, loc) =>
       val e = visitExp(exp)
-      Expr.CheckedCast(cast, e, loc)
+      Exp.CheckedCast(cast, e, loc)
 
     case WeededAst.Expr.UncheckedCast(exp, declaredType, declaredEff, loc) =>
       val e = visitExp(exp)
       val t = declaredType.map(visitType)
       val eff = declaredEff.map(visitType)
-      Expr.UncheckedCast(e, t, eff, loc)
+      Exp.UncheckedCast(e, t, eff, loc)
 
     case WeededAst.Expr.Unsafe(exp, eff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
-      Expr.Unsafe(e, eff, loc)
+      Exp.Unsafe(e, eff, loc)
 
     case WeededAst.Expr.UnsafeOld(exp, loc) =>
       // We desugar an unsafe expression to an unchecked cast to pure.
       val e = visitExp(exp)
       val declaredType = None
       val declaredEff = Some(DesugaredAst.Type.Pure(loc.asSynthetic))
-      Expr.UncheckedCast(e, declaredType, declaredEff, loc)
+      Exp.UncheckedCast(e, declaredType, declaredEff, loc)
 
     case WeededAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Without(e, eff, loc)
+      Exp.Without(e, eff, loc)
 
     case WeededAst.Expr.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitCatchRule)
-      Expr.TryCatch(e, rs, loc)
+      Exp.TryCatch(e, rs, loc)
 
     case WeededAst.Expr.Throw(exp, loc) =>
       val e = visitExp(exp)
-      Expr.Throw(e, loc)
+      Exp.Throw(e, loc)
 
     case WeededAst.Expr.Handler(eff, rules, loc) =>
       val rs = rules.map(visitHandlerRule)
-      Expr.Handler(eff, rs, loc)
+      Exp.Handler(eff, rs, loc)
 
     case WeededAst.Expr.RunWith(exp, exps, loc) =>
       val e = visitExp(exp)
       exps.foldLeft(e) {
-        case (acc, e2) => Expr.RunWith(acc, visitExp(e2), loc)
+        case (acc, e2) => Exp.RunWith(acc, visitExp(e2), loc)
       }
 
     case WeededAst.Expr.InvokeConstructor(className, exps, loc) =>
       val es = visitExps(exps)
-      Expr.InvokeConstructor(className, es, loc)
+      Exp.InvokeConstructor(className, es, loc)
 
     case WeededAst.Expr.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = visitExps(exps)
-      Expr.InvokeMethod(e, name, es, loc)
+      Exp.InvokeMethod(e, name, es, loc)
 
     case WeededAst.Expr.GetField(exp, name, loc) =>
       val e = visitExp(exp)
-      Expr.GetField(e, name, loc)
+      Exp.GetField(e, name, loc)
 
     case WeededAst.Expr.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
-      Expr.NewObject(t, ms, loc)
+      Exp.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      DesugaredAst.Expr.Cst(Constant.Static, loc)
+      DesugaredAst.Exp.Cst(Constant.Static, loc)
 
     case WeededAst.Expr.NewChannel(exp, loc) =>
       val e = visitExp(exp)
-      Expr.NewChannel(e, loc)
+      Exp.NewChannel(e, loc)
 
     case WeededAst.Expr.GetChannel(exp, loc) =>
       val e = visitExp(exp)
-      Expr.GetChannel(e, loc)
+      Exp.GetChannel(e, loc)
 
     case WeededAst.Expr.PutChannel(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.PutChannel(e1, e2, loc)
+      Exp.PutChannel(e1, e2, loc)
 
     case WeededAst.Expr.SelectChannel(rules, exp, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val es = exp.map(visitExp)
-      Expr.SelectChannel(rs, es, loc)
+      Exp.SelectChannel(rs, es, loc)
 
     case WeededAst.Expr.Spawn(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.Spawn(e1, e2, loc)
+      Exp.Spawn(e1, e2, loc)
 
     case WeededAst.Expr.ParYield(frags, exp, loc) =>
       val fs = frags.map(visitParYieldFragment)
       val e = visitExp(exp)
-      Expr.ParYield(fs, e, loc)
+      Exp.ParYield(fs, e, loc)
 
     case WeededAst.Expr.Lazy(exp, loc) =>
       val e = visitExp(exp)
-      Expr.Lazy(e, loc)
+      Exp.Lazy(e, loc)
 
     case WeededAst.Expr.Force(exp, loc) =>
       val e = visitExp(exp)
-      Expr.Force(e, loc)
+      Exp.Force(e, loc)
 
     case WeededAst.Expr.FixpointConstraintSet(cs, loc) =>
       val cs1 = cs.map(visitConstraint)
-      Expr.FixpointConstraintSet(cs1, loc)
+      Exp.FixpointConstraintSet(cs1, loc)
 
     case WeededAst.Expr.FixpointLambda(pparams, exp, loc) =>
       val ps = pparams.map(visitPredicateParam)
       val e = visitExp(exp)
-      Expr.FixpointLambda(ps, e, loc)
+      Exp.FixpointLambda(ps, e, loc)
 
     case WeededAst.Expr.FixpointMerge(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      Expr.FixpointMerge(e1, e2, loc)
+      Exp.FixpointMerge(e1, e2, loc)
 
     case WeededAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
       val es = visitExps(exps)
-      DesugaredAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
+      DesugaredAst.Exp.FixpointInjectInto(es, predsAndArities, loc)
 
     case WeededAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
       val es = visitExps(exps)
-      DesugaredAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
+      DesugaredAst.Exp.FixpointSolveWithProject(es, optPreds, mode, loc)
 
     case WeededAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
       val es = visitExps(exps)
       val s = visitHead(select)
-      DesugaredAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
+      DesugaredAst.Exp.FixpointQueryWithProvenance(es, s, withh, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc) =>
       desugarFixpointQueryWithSelect(exps, selects, from, where ,loc)
 
     case WeededAst.Expr.Error(m) =>
-      DesugaredAst.Expr.Error(m)
+      DesugaredAst.Exp.Error(m)
   }
 
   /**
     * Desugars the given list of [[WeededAst.Expr]] `exps0`.
     */
-  private def visitExps(exps0: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
+  private def visitExps(exps0: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Exp] =
     exps0.map(visitExp)
 
   /**
@@ -1079,11 +1079,11 @@ object Desugar {
     *   f(a, b)
     * }}}
     */
-  private def desugarInfix(exp1: WeededAst.Expr, exp2: WeededAst.Expr, exp3: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Apply = {
+  private def desugarInfix(exp1: WeededAst.Expr, exp2: WeededAst.Expr, exp3: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp.Apply = {
     val e1 = visitExp(exp1)
     val e2 = visitExp(exp2)
     val e3 = visitExp(exp3)
-    Expr.Apply(e2, List(e1, e3), loc0)
+    Exp.Apply(e2, List(e1, e3), loc0)
   }
 
   /**
@@ -1101,7 +1101,7 @@ object Desugar {
     * }}}
     *
     */
-  private def desugarApplicativeFor(frags0: List[WeededAst.ForFragment.Generator], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarApplicativeFor(frags0: List[WeededAst.ForFragment.Generator], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     val fqnAp = "Applicative.ap"
     val fqnMap = "Functor.map"
     val yieldExp = visitExp(exp0)
@@ -1139,7 +1139,7 @@ object Desugar {
     *   ForEach.foreach(x -> if (x > 0) ForEach.foreach(y -> println(x + y), ys) else (), xs)
     * }}}
     */
-  private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarForEach(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr)(implicit flix: Flix): DesugaredAst.Exp = {
     val fqnForEach = "ForEach.forEach"
 
     frags0.foldRight(visitExp(exp0)) {
@@ -1152,14 +1152,14 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
+        DesugaredAst.Exp.IfThenElse(e1, acc, DesugaredAst.Exp.Cst(Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
         val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
-        DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
+        DesugaredAst.Exp.Match(e1, List(matchRule), loc1.asSynthetic)
     }
   }
 
@@ -1177,7 +1177,7 @@ object Desugar {
     *   Monad.flatMap(x -> if (x > 0) Monad.flatMap(y -> Applicative.point(x + y), ys) else MonadZero.empty(), xs)
     * }}}
     */
-  private def desugarMonadicFor(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Expr = {
+  private def desugarMonadicFor(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Exp = {
     val fqnFlatMap = "Monad.flatMap"
     val fqnPoint = "Applicative.point"
     val fqnZero = "MonadZero.empty"
@@ -1193,22 +1193,22 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
-        DesugaredAst.Expr.IfThenElse(e1, acc, zero, loc1.asSynthetic)
+        val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Exp.Cst(Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
+        DesugaredAst.Exp.IfThenElse(e1, acc, zero, loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match
         val p1 = visitPattern(pat1)
         val e1 = visitExp(exp1)
         val matchRule = DesugaredAst.MatchRule(p1, None, acc, loc1.asSynthetic)
-        DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
+        DesugaredAst.Exp.Match(e1, List(matchRule), loc1.asSynthetic)
     }
   }
 
   /**
     * Rewrites a let-match to a regular let-binding or a full pattern match.
     */
-  private def desugarLetMatch(pat0: WeededAst.Pattern, tpe0: Option[WeededAst.Type], exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Expr = {
+  private def desugarLetMatch(pat0: WeededAst.Pattern, tpe0: Option[WeededAst.Type], exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Exp = {
     val p = visitPattern(pat0)
     val t = tpe0.map(visitType)
     val e1 = visitExp(exp1)
@@ -1216,23 +1216,23 @@ object Desugar {
     p match {
       case DesugaredAst.Pattern.Var(ident, _) =>
         // No pattern match
-        DesugaredAst.Expr.Let(ident, withAscription(e1, t), e2, loc0)
+        DesugaredAst.Exp.Let(ident, withAscription(e1, t), e2, loc0)
       case _ =>
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2, loc0)
-        DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc0)
+        DesugaredAst.Exp.Match(withAscription(e1, t), List(rule), loc0)
     }
   }
 
   /**
     * Rewrites empty tuples to [[Constant.Unit]] and eliminate single-element tuples.
     */
-  private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     val es = visitExps(exps0)
     es match {
-      case Nil => DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      case Nil => DesugaredAst.Exp.Cst(Constant.Unit, loc0)
       case x :: Nil => x
-      case xs => DesugaredAst.Expr.Tuple(xs, loc0)
+      case xs => DesugaredAst.Exp.Tuple(xs, loc0)
     }
   }
 
@@ -1245,7 +1245,7 @@ object Desugar {
     *
     * E.g., `1 :: 2 :: 3 :: ... :: 25 :: xs` is translated to `List.append(Vector.toList(Vector#{1, 2, 3, ..., 25}), xs)`.
     */
-  private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     val (flattened, rest) = flattenFCons(exp1, exp2)
     if (flattened.length > 20) {
       val desugaredFCons = desugarListLit(flattened, loc0)
@@ -1295,7 +1295,7 @@ object Desugar {
   /**
     * Rewrites  [[WeededAst.Expr.FAppend]] (`xs ++ ys`) into a call to `List.append`.
     */
-  private def desugarFAppend(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFAppend(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     // NB: We painstakingly construct the qualified name
     // to ensure that source locations are available.
     val e1 = visitExp(exp1)
@@ -1306,19 +1306,19 @@ object Desugar {
   /**
     * Rewrites [[WeededAst.Expr.ListLit]] (`List#{1, 2, 3}`) expression into `Vector.toList(Vector#{1, 2, 3})`.
     */
-  private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     desugarCollectionLitToVec("Vector.toList", exps0, loc0)
   }
 
   /**
     * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Vector.toSet(Vector#{1, 2})`.
     */
-  private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     if (exps0.isEmpty) {
       // Vector.toSet requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty set directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Exp.Cst(Constant.Unit, loc0)
       mkApplyFqn("Set.empty", List(unit), loc0)
     } else {
       desugarCollectionLitToVec("Vector.toSet", exps0, loc0)
@@ -1328,12 +1328,12 @@ object Desugar {
   /**
     * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Vector.toMap(Vector#{(1, 2), (2, 3)})`.
     */
-  private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     if (exps0.isEmpty) {
       // Vector.toMap requires an instance of Order[a]
       // which we do not have for an empty literal
       // so we construct the empty map directly.
-      val unit = DesugaredAst.Expr.Cst(Constant.Unit, loc0)
+      val unit = DesugaredAst.Exp.Cst(Constant.Unit, loc0)
       mkApplyFqn("Map.empty", List(unit), loc0)
     } else {
       val es = exps0.map { case (k, v) => WeededAst.Expr.Tuple(List(k, v), k.loc) }
@@ -1346,9 +1346,9 @@ object Desugar {
     *
     * Conceptually, it returns (in Flix): `fqn(Vector#{exps})`.
     */
-  private def desugarCollectionLitToVec(fqn: String, exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarCollectionLitToVec(fqn: String, exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     val es = visitExps(exps0)
-    val vectorLit = DesugaredAst.Expr.VectorLit(es, loc0)
+    val vectorLit = DesugaredAst.Exp.VectorLit(es, loc0)
     mkApplyFqn(fqn, List(vectorLit), loc0)
   }
 
@@ -1364,7 +1364,7 @@ object Desugar {
     *   query e1, e2, e3, #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } select (x, y, z) from A(x, y), B(z) where x > 0
     * }}}
     */
-  private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp = {
     val exps = visitExps(exps0)
     val selects = visitExps(selects0)
     val from = visitPredicateBodies(from0)
@@ -1391,9 +1391,9 @@ object Desugar {
     val pseudoConstraint = DesugaredAst.Constraint(head, body, loc0)
 
     // Construct a constraint set that contains the single pseudo constraint.
-    val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc0)
+    val queryExp = DesugaredAst.Exp.FixpointConstraintSet(List(pseudoConstraint), loc0)
 
-    DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc0)
+    DesugaredAst.Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc0)
   }
 
   /**
@@ -1415,17 +1415,17 @@ object Desugar {
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
     */
-  private def desugarLambdaExtMatch(pat0: DesugaredAst.ExtPattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+  private def desugarLambdaExtMatch(pat0: DesugaredAst.ExtPattern, exp0: DesugaredAst.Exp, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val paramVarExpr = DesugaredAst.Exp.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.ExtMatchRule(pat0, exp0, loc0.asSynthetic)
 
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
-    val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
-    DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
+    val body = DesugaredAst.Exp.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
+    DesugaredAst.Exp.Lambda(fparam, body, loc0.asSynthetic)
   }
 
   /**
@@ -1447,36 +1447,36 @@ object Desugar {
     * @param exp0 the body of the lambda.
     * @param loc0 the location of the entire lambda.
     */
-  private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+  private def desugarLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Exp, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Exp.Lambda = {
     // The name of the lambda parameter.
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val paramVarExpr = DesugaredAst.Exp.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
-    val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
-    DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
+    val body = DesugaredAst.Exp.Match(paramVarExpr, List(rule), loc0.asSynthetic)
+    DesugaredAst.Exp.Lambda(fparam, body, loc0.asSynthetic)
   }
 
   /**
     * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args0`.
     */
-  private def mkApplyFqn(fqn0: String, args0: List[DesugaredAst.Expr], loc0: SourceLocation): DesugaredAst.Expr = {
+  private def mkApplyFqn(fqn0: String, args0: List[DesugaredAst.Exp], loc0: SourceLocation): DesugaredAst.Exp = {
     val l = loc0.asSynthetic
-    val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn0), l)
-    DesugaredAst.Expr.Apply(lambda, args0, l)
+    val lambda = DesugaredAst.Exp.Ambiguous(Name.mkQName(fqn0), l)
+    DesugaredAst.Exp.Apply(lambda, args0, l)
   }
 
   /**
     * Returns the given expression `exp0` optionally wrapped in a type ascription if `tpe0` is `Some`.
     */
-  private def withAscription(exp0: DesugaredAst.Expr, tpe0: Option[DesugaredAst.Type]): DesugaredAst.Expr = {
+  private def withAscription(exp0: DesugaredAst.Exp, tpe0: Option[DesugaredAst.Type]): DesugaredAst.Exp = {
     val l = exp0.loc.asSynthetic
     tpe0 match {
       case None => exp0
-      case Some(t) => DesugaredAst.Expr.Ascribe(exp0, Some(t), None, l)
+      case Some(t) => DesugaredAst.Exp.Ascribe(exp0, Some(t), None, l)
     }
   }
 

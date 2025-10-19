@@ -1408,7 +1408,7 @@ object Parser2 {
       } else if (!rhsIsOptional) {
         // If no semi is found and it was required, produce an error.
         // TODO: We could add a parse error hint as an argument to statement like:
-        //       "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'".
+        //       "Add an expression after the let-binding like so: 'let x = <exp1>; <exp2>'".
         expect(TokenKind.Semi)
       }
       lhs
@@ -1416,7 +1416,7 @@ object Parser2 {
 
     def expression(leftOpt: Option[Op] = None)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      var lhs = exprDelimited()
+      var lhs = expDelimited()
       // Handle chained calls and record lookups.
       var continue = true
       while (continue) {
@@ -1763,7 +1763,7 @@ object Parser2 {
       }
     }
 
-    private def exprDelimited()(implicit s: State): Mark.Closed = {
+    private def expDelimited()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       // If a new expression is added here then add it to FIRST_EXPR too.
       val mark = open()
@@ -1918,7 +1918,7 @@ object Parser2 {
       (nth(0), nth(1)) match {
         // Detect unit tuple.
         case (TokenKind.ParenL, TokenKind.ParenR) =>
-          // Detect unit lambda `() -> expr`.
+          // Detect unit lambda `() -> exp`.
           if (nth(2) == TokenKind.ArrowThinRWhitespace) {
             lambda()
           } else {
@@ -2215,9 +2215,9 @@ object Parser2 {
       var parenNestingLevel = 0
       while (continue && !eof()) {
         nth(lookAhead) match {
-          // match `expr { case ... }`.
+          // match `exp { case ... }`.
           case TokenKind.KeywordCase => continue = false
-          // match `pattern -> expr`.
+          // match `pattern -> exp`.
           case TokenKind.ArrowThinRWhitespace if parenNestingLevel == 0 => result = true; continue = false
           case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
           case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
@@ -2440,7 +2440,7 @@ object Parser2 {
              | (TokenKind.NameLowercase, TokenKind.Equal)
              | (TokenKind.Plus, TokenKind.NameLowercase)
              | (TokenKind.Minus, TokenKind.NameLowercase) =>
-            // Either `{ +y = expr | expr }` or `{ x = expr }`.
+            // Either `{ +y = exp | exp }` or `{ x = exp }`.
             // Both are parsed the same and the difference is handled in Weeder.
             recordOperation()
         case _ => block()
@@ -2793,7 +2793,7 @@ object Parser2 {
 
       // Either NewStruct, NewObject, or InvokeConstructor.
       if (at(TokenKind.At)) {
-        // Either `new Struct @ rc {field1 = expr1, field2 = expr2, ...}`
+        // Either `new Struct @ rc {field1 = exp1, field2 = exp2, ...}`
         //     or `new Struct @ rc {}`.
         expect(TokenKind.At)
         expression()
@@ -3148,7 +3148,7 @@ object Parser2 {
     private def debugInterpolator()(implicit s: State): Mark.Closed = {
       eat(TokenKind.DebugInterpolator)
       val mark = open()
-      exprDelimited()
+      expDelimited()
       close(mark, TreeKind.Expr.DebugInterpolator)
     }
 

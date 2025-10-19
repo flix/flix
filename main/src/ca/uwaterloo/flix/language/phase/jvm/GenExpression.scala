@@ -1097,7 +1097,7 @@ object GenExpression {
       case ExpPosition.NonTail =>
         val defn = root.defs(sym)
         val targetIsFunction = defn.cparams.isEmpty
-        val canCallStaticMethod = Purity.isControlPure(defn.expr.purity) && targetIsFunction
+        val canCallStaticMethod = Purity.isControlPure(defn.exp.purity) && targetIsFunction
         if (canCallStaticMethod) {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
@@ -1132,7 +1132,7 @@ object GenExpression {
           ctx match {
             case EffectContext(_, _, newFrame, setPc, _, pcLabels, pcCounter) =>
               val defn = root.defs(sym)
-              if (Purity.isControlPure(defn.expr.purity)) {
+              if (Purity.isControlPure(defn.exp.purity)) {
                 BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
               } else {
                 val pcPoint = pcCounter(0) + 1

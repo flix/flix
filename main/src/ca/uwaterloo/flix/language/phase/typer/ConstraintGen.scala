@@ -671,11 +671,11 @@ object ConstraintGen {
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSymUse, expr), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
+          ((fieldSymUse, exp), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
         } {
           instantiatedFieldTpes.get(fieldSymUse.sym) match {
             case None => () // if not an actual field, there is nothing to unify
-            case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
+            case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, exp.loc)
           }
         }
         c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)

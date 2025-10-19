@@ -152,7 +152,7 @@ object Inliner {
               visitExp(exp, ctx0.withSubst(subst))
 
             case Some(SubstRange.DoneExpr(exp)) =>
-              // Copy-propagation of visited expr.
+              // Copy-propagation of visited exp.
               // Use the empty expression substitution since this has already been visited
               // and the context might indicate that if exp is a var, it should be inlined again.
               sctx.changed.putIfAbsent(sym0, ())
@@ -218,7 +218,7 @@ object Inliner {
           visitExp(letBinding, ctx0.withSubst(subst))
 
         case None | Some(_) =>
-          // It was not unconditionally inlined, so return same expr with visited subexpressions
+          // It was not unconditionally inlined, so return same exp with visited subexpressions
           val es = exps.map(visitExp(_, ctx0))
           Expr.ApplyLocalDef(sym1, es, tpe, eff, loc)
       }
@@ -980,7 +980,7 @@ object Inliner {
       * previous decisions, since the purity / effect did not change during inlining.
       * The subsequent round of inlining may then choose to inline the let-bound variable.
       */
-    case class LetBound(expr: MonoAst.Expr, occur: Occur, eff: Type) extends BoundKind
+    case class LetBound(exp: MonoAst.Expr, occur: Occur, eff: Type) extends BoundKind
 
   }
 

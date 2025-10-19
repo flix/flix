@@ -601,83 +601,83 @@ object Namer {
   /**
     * Performs naming on the given expression `exp0`.
     */
-  private def visitExp(exp0: DesugaredAst.Expr)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Expr = exp0 match {
-    case DesugaredAst.Expr.Ambiguous(name, loc) =>
+  private def visitExp(exp0: DesugaredAst.Exp)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.Expr = exp0 match {
+    case DesugaredAst.Exp.Ambiguous(name, loc) =>
       NamedAst.Expr.Ambiguous(name, loc)
 
-    case DesugaredAst.Expr.OpenAs(name, exp, loc) =>
+    case DesugaredAst.Exp.OpenAs(name, exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.OpenAs(name, e, loc)
 
-    case DesugaredAst.Expr.Open(name, loc) =>
+    case DesugaredAst.Exp.Open(name, loc) =>
       NamedAst.Expr.Open(name, loc)
 
-    case DesugaredAst.Expr.Hole(name, loc) =>
+    case DesugaredAst.Exp.Hole(name, loc) =>
       NamedAst.Expr.Hole(name, loc)
 
-    case DesugaredAst.Expr.HoleWithExp(exp, loc) =>
+    case DesugaredAst.Exp.HoleWithExp(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.HoleWithExp(e, loc)
 
-    case DesugaredAst.Expr.Use(uses0, exp, loc) =>
+    case DesugaredAst.Exp.Use(uses0, exp, loc) =>
       val uses = uses0.map(visitUseOrImport)
       val e = visitExp(exp)
       uses.foldRight(e) {
         case (use, acc) => NamedAst.Expr.Use(use, acc, loc)
       }
 
-    case DesugaredAst.Expr.Cst(cst, loc) =>
+    case DesugaredAst.Exp.Cst(cst, loc) =>
       NamedAst.Expr.Cst(cst, loc)
 
-    case DesugaredAst.Expr.Apply(exp, exps, loc) =>
+    case DesugaredAst.Exp.Apply(exp, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       NamedAst.Expr.Apply(e, es, loc)
 
-    case DesugaredAst.Expr.Lambda(fparam, exp, loc) =>
+    case DesugaredAst.Exp.Lambda(fparam, exp, loc) =>
       val fp = visitFormalParam(fparam)
       val e = visitExp(exp)
       NamedAst.Expr.Lambda(fp, e, loc)
 
-    case DesugaredAst.Expr.Unary(sop, exp, loc) =>
+    case DesugaredAst.Exp.Unary(sop, exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.Unary(sop, e, loc)
 
-    case DesugaredAst.Expr.Binary(sop, exp1, exp2, loc) =>
+    case DesugaredAst.Exp.Binary(sop, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.Binary(sop, e1, e2, loc)
 
-    case DesugaredAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
+    case DesugaredAst.Exp.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       NamedAst.Expr.IfThenElse(e1, e2, e3, loc)
 
-    case DesugaredAst.Expr.Stm(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.Stm(e1, e2, loc)
 
-    case DesugaredAst.Expr.Discard(exp, loc) =>
+    case DesugaredAst.Exp.Discard(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.Discard(e, loc)
 
-    case DesugaredAst.Expr.Let(ident, exp1, exp2, loc) =>
+    case DesugaredAst.Exp.Let(ident, exp1, exp2, loc) =>
       // make a fresh variable symbol for the local variable.
       val sym = Symbol.freshVarSym(ident, BoundBy.Let)
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.Let(sym, e1, e2, loc)
 
-    case DesugaredAst.Expr.LocalDef(ident, fparams, exp1, exp2, loc) =>
+    case DesugaredAst.Exp.LocalDef(ident, fparams, exp1, exp2, loc) =>
       val sym = Symbol.freshVarSym(ident, BoundBy.LocalDef)
       val fps = fparams.map(visitFormalParam(_))
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
-    case DesugaredAst.Expr.Region(ident, exp, loc) =>
+    case DesugaredAst.Exp.Region(ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
       val regSym = Symbol.freshRegionSym(ident)
 
@@ -692,226 +692,226 @@ object Namer {
       val e = visitExp(exp)(newScope, sctx, flix)
       NamedAst.Expr.Region(sym, regSym, e, loc)
 
-    case DesugaredAst.Expr.Match(exp, rules, loc) =>
+    case DesugaredAst.Exp.Match(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule(_))
       NamedAst.Expr.Match(e, rs, loc)
 
-    case DesugaredAst.Expr.TypeMatch(exp, rules, loc) =>
+    case DesugaredAst.Exp.TypeMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitTypeMatchRule)
       NamedAst.Expr.TypeMatch(e, rs, loc)
 
-    case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
+    case DesugaredAst.Exp.RestrictableChoose(star, exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitRestrictableChooseRule)
       NamedAst.Expr.RestrictableChoose(star, e, rs, loc)
 
-    case DesugaredAst.Expr.ExtMatch(exp, rules, loc) =>
+    case DesugaredAst.Exp.ExtMatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitExtMatchRule)
       NamedAst.Expr.ExtMatch(e, rs, loc)
 
-    case DesugaredAst.Expr.ExtTag(label, exps, loc) =>
+    case DesugaredAst.Exp.ExtTag(label, exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.ExtTag(label, es, loc)
 
-    case DesugaredAst.Expr.Tuple(exps, loc) =>
+    case DesugaredAst.Exp.Tuple(exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.Tuple(es, loc)
 
-    case DesugaredAst.Expr.RecordSelect(exp, label, loc) =>
+    case DesugaredAst.Exp.RecordSelect(exp, label, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.RecordSelect(e, label, loc)
 
-    case DesugaredAst.Expr.RecordExtend(label, exp1, exp2, loc) =>
+    case DesugaredAst.Exp.RecordExtend(label, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.RecordExtend(label, e1, e2, loc)
 
-    case DesugaredAst.Expr.RecordRestrict(label, exp, loc) =>
+    case DesugaredAst.Exp.RecordRestrict(label, exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.RecordRestrict(label, e, loc)
 
-    case DesugaredAst.Expr.ArrayLit(exps, exp, loc) =>
+    case DesugaredAst.Exp.ArrayLit(exps, exp, loc) =>
       val es = exps.map(visitExp(_))
       val e = visitExp(exp)
       NamedAst.Expr.ArrayLit(es, e, loc)
 
-    case DesugaredAst.Expr.ArrayNew(exp1, exp2, exp3, loc) =>
+    case DesugaredAst.Exp.ArrayNew(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       NamedAst.Expr.ArrayNew(e1, e2, e3, loc)
 
-    case DesugaredAst.Expr.ArrayLoad(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.ArrayLoad(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.ArrayLoad(e1, e2, loc)
 
-    case DesugaredAst.Expr.ArrayStore(exp1, exp2, exp3, loc) =>
+    case DesugaredAst.Exp.ArrayStore(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val e3 = visitExp(exp3)
       NamedAst.Expr.ArrayStore(e1, e2, e3, loc)
 
-    case DesugaredAst.Expr.ArrayLength(exp, loc) =>
+    case DesugaredAst.Exp.ArrayLength(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
+    case DesugaredAst.Exp.StructNew(qname, exps, exp, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitStructField)
       NamedAst.Expr.StructNew(qname, es, e, loc)
 
-    case DesugaredAst.Expr.StructGet(exp, name, loc) =>
+    case DesugaredAst.Exp.StructGet(exp, name, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.StructGet(e, name, loc)
 
-    case DesugaredAst.Expr.StructPut(exp1, name, exp2, loc) =>
+    case DesugaredAst.Exp.StructPut(exp1, name, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.StructPut(e1, name, e2, loc)
 
-    case DesugaredAst.Expr.VectorLit(exps, loc) =>
+    case DesugaredAst.Exp.VectorLit(exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.VectorLit(es, loc)
 
-    case DesugaredAst.Expr.VectorLoad(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.VectorLoad(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.VectorLoad(e1, e2, loc)
 
-    case DesugaredAst.Expr.VectorLength(exp, loc) =>
+    case DesugaredAst.Exp.VectorLength(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.VectorLength(e, loc)
 
-    case DesugaredAst.Expr.Ascribe(exp, tpe, eff, loc) =>
+    case DesugaredAst.Exp.Ascribe(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
       NamedAst.Expr.Ascribe(e, t, ef, loc)
 
-    case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
+    case DesugaredAst.Exp.InstanceOf(exp, className, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.InstanceOf(e, className, loc)
 
-    case DesugaredAst.Expr.CheckedCast(c, exp, loc) =>
+    case DesugaredAst.Exp.CheckedCast(c, exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.CheckedCast(c, e, loc)
 
-    case DesugaredAst.Expr.UncheckedCast(exp, tpe, eff, loc) =>
+    case DesugaredAst.Exp.UncheckedCast(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = tpe.map(visitType)
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
-    case DesugaredAst.Expr.Unsafe(exp, eff0, loc) =>
+    case DesugaredAst.Exp.Unsafe(exp, eff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
       NamedAst.Expr.Unsafe(e, eff, loc)
 
-    case DesugaredAst.Expr.Without(exp, qname, loc) =>
+    case DesugaredAst.Exp.Without(exp, qname, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.Without(e, qname, loc)
 
-    case DesugaredAst.Expr.TryCatch(exp, rules, loc) =>
+    case DesugaredAst.Exp.TryCatch(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitTryCatchRule)
       NamedAst.Expr.TryCatch(e, rs, loc)
 
-    case DesugaredAst.Expr.Throw(exp, loc) =>
+    case DesugaredAst.Exp.Throw(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.Throw(e, loc)
 
-    case DesugaredAst.Expr.Handler(qname, rules, loc) =>
+    case DesugaredAst.Exp.Handler(qname, rules, loc) =>
       val rs = rules.map(visitRunWithRule)
       NamedAst.Expr.Handler(qname, rs, loc)
 
-    case DesugaredAst.Expr.RunWith(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.RunWith(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.RunWith(e1, e2, loc)
 
-    case DesugaredAst.Expr.InvokeConstructor(className, exps, loc) =>
+    case DesugaredAst.Exp.InvokeConstructor(className, exps, loc) =>
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeConstructor(className, es, loc)
 
-    case DesugaredAst.Expr.InvokeMethod(exp, name, exps, loc) =>
+    case DesugaredAst.Exp.InvokeMethod(exp, name, exps, loc) =>
       val e = visitExp(exp)
       val es = exps.map(visitExp(_))
       NamedAst.Expr.InvokeMethod(e, name, es, loc)
 
-    case DesugaredAst.Expr.GetField(exp, name, loc) =>
+    case DesugaredAst.Exp.GetField(exp, name, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.GetField(e, name, loc)
 
-    case DesugaredAst.Expr.NewObject(tpe, methods, loc) =>
+    case DesugaredAst.Exp.NewObject(tpe, methods, loc) =>
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
       val name = s"Anon$$${flix.genSym.freshId()}"
       NamedAst.Expr.NewObject(name, t, ms, loc)
 
-    case DesugaredAst.Expr.NewChannel(exp, loc) =>
+    case DesugaredAst.Exp.NewChannel(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.NewChannel(e, loc)
 
-    case DesugaredAst.Expr.GetChannel(exp, loc) =>
+    case DesugaredAst.Exp.GetChannel(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.GetChannel(e, loc)
 
-    case DesugaredAst.Expr.PutChannel(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.PutChannel(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.PutChannel(e1, e2, loc)
 
-    case DesugaredAst.Expr.SelectChannel(rules, exp, loc) =>
+    case DesugaredAst.Exp.SelectChannel(rules, exp, loc) =>
       val rs = rules.map(visitSelectChannelRule)
       val e = exp.map(visitExp(_))
       NamedAst.Expr.SelectChannel(rs, e, loc)
 
-    case DesugaredAst.Expr.Spawn(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.Spawn(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.Spawn(e1, e2, loc)
 
-    case DesugaredAst.Expr.ParYield(frags, exp, loc) =>
+    case DesugaredAst.Exp.ParYield(frags, exp, loc) =>
       val e = visitExp(exp)
       val fs = frags.map(visitParYieldFragment(_))
       NamedAst.Expr.ParYield(fs, e, loc)
 
-    case DesugaredAst.Expr.Lazy(exp, loc) =>
+    case DesugaredAst.Exp.Lazy(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.Lazy(e, loc)
 
-    case DesugaredAst.Expr.Force(exp, loc) =>
+    case DesugaredAst.Exp.Force(exp, loc) =>
       val e = visitExp(exp)
       NamedAst.Expr.Force(e, loc)
 
-    case DesugaredAst.Expr.FixpointConstraintSet(cs0, loc) =>
+    case DesugaredAst.Exp.FixpointConstraintSet(cs0, loc) =>
       val cs = cs0.map(visitConstraint)
       NamedAst.Expr.FixpointConstraintSet(cs, loc)
 
-    case DesugaredAst.Expr.FixpointLambda(pparams, exp, loc) =>
+    case DesugaredAst.Exp.FixpointLambda(pparams, exp, loc) =>
       val ps = pparams.map(visitPredicateParam)
       val e = visitExp(exp)
       NamedAst.Expr.FixpointLambda(ps, e, loc)
 
-    case DesugaredAst.Expr.FixpointMerge(exp1, exp2, loc) =>
+    case DesugaredAst.Exp.FixpointMerge(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       NamedAst.Expr.FixpointMerge(e1, e2, loc)
 
-    case DesugaredAst.Expr.FixpointQueryWithProvenance(exps, select, withh, loc) =>
+    case DesugaredAst.Exp.FixpointQueryWithProvenance(exps, select, withh, loc) =>
       val es = exps.map(visitExp)
       val s = visitHeadPredicate(select)
       NamedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case DesugaredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
+    case DesugaredAst.Exp.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
-    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+    case DesugaredAst.Exp.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
       val es = exps.map(visitExp)
       val qe = visitExp(queryExp)
       val ss = selects.map(visitExp)
@@ -919,11 +919,11 @@ object Namer {
       val w = where.map(visitExp)
       NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
 
-    case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
+    case DesugaredAst.Exp.FixpointInjectInto(exps, predsAndArities, loc) =>
       val es = exps.map(visitExp)
       NamedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
-    case DesugaredAst.Expr.Error(m) =>
+    case DesugaredAst.Exp.Error(m) =>
       NamedAst.Expr.Error(m)
 
   }
@@ -973,7 +973,7 @@ object Namer {
   /**
     * Performs naming on the given struct field expression `exp0`.
     */
-  private def visitStructField(field: (Name.Label, DesugaredAst.Expr))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = field match {
+  private def visitStructField(field: (Name.Label, DesugaredAst.Exp))(implicit scope: Scope, sctx: SharedContext, flix: Flix): (Name.Label, NamedAst.Expr) = field match {
     case (n, exp0) =>
       val e = visitExp(exp0)
       (n, e)

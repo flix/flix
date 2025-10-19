@@ -136,10 +136,10 @@ object LambdaDrop {
       visitExp(exp1)
       visitExp(exp2)
 
-    case expr@Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case exp@Expr.ApplyDef(sym, exps, _, _, _, _) =>
       // Check for self-recursive call
       if (sym == sym0) {
-        lctx.recursiveCalls.addOne(expr)
+        lctx.recursiveCalls.addOne(exp)
       }
       exps.foreach(visitExp)
 
@@ -221,16 +221,16 @@ object LambdaDrop {
     * variables are renamed to matching formal parameters of the local def
     * with name `newDefnSym`.
     *
-    * @param expr0      the expression to rewrite
+    * @param exp0       the expression to rewrite
     * @param oldDefnSym the symbol of the function to rewrite
     * @param newDefnSym the symbol of the local def to insert
     * @param subst      the substitution defined on non-constant parameters.
     *                   It is up to the caller to ensure which variables the substitution is defined over.
     * @param fparams0   the formal parameters and their [[ParamKind]]s of the function to rewrite.
     */
-  private def rewriteExp(expr0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = expr0 match {
+  private def rewriteExp(exp0: MonoAst.Expr)(implicit oldDefnSym: Symbol.DefnSym, newDefnSym: Symbol.VarSym, subst: Substitution, fparams0: List[(MonoAst.FormalParam, ParamKind)]): MonoAst.Expr = exp0 match {
     case Expr.Cst(_, _, _) =>
-      expr0
+      exp0
 
     case Expr.Var(sym, tpe, loc) =>
       Expr.Var(subst(sym), tpe, loc)
