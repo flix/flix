@@ -12,14 +12,6 @@ mod TestMutList {
         Array.forEach(x -> MutList.push(x, ml), a);
         ml
 
-    ///
-    /// Utility function: Returns `l` as a mutable list.
-    ///
-    def fromList(rc: Region[r], l: List[a]): MutList[a, r] \ r =
-        let ml = MutList.empty(rc);
-        MutList.pushAll(l, ml);
-        ml
-
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //
     /////////////////////////////////////////////////////////////////////////////
@@ -855,18 +847,22 @@ mod TestMutList {
 
     @Test
     def flatten02(): Unit \ Assert = region rc {
-        let empties = List.repeat(10, MutList.empty(rc)) |> fromList(rc);
+        let empties = MutList.empty(rc);
+        MutList.pushAll(List.repeat(10, MutList.empty(rc)), empties);
         assertTrue(MutList.flatten(rc, empties) |> MutList.isEmpty)
     }
 
     @Test
     def flatten03(): Unit \ Assert = region rc {
-        let lists = List#{
-            List#{1, 2} |> fromList(rc),
-            MutList.empty(rc),
-            List#{3, 4} |> fromList(rc)
-        } |> fromList(rc);
-        assertTrue(MutList.sameElements(MutList.flatten(rc, lists), List#{1, 2, 3, 4} |> fromList(rc)))
+        let ml1 = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2}, ml1);
+        let ml2 = MutList.empty(rc);
+        MutList.pushAll(List#{3, 4}, ml2);
+        let lists = MutList.empty(rc);
+        MutList.pushAll(List#{ml1, MutList.empty(rc), ml2}, lists);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{1, 2, 3, 4}, expected);
+        assertTrue(MutList.sameElements(MutList.flatten(rc, lists), expected))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -887,7 +883,11 @@ mod TestMutList {
     @Test
     def flatMap03(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 0, 100);
-        def f(n) = List#{n} |> fromList(rc);
+        def f(n) = {
+            let ml = MutList.empty(rc);
+            MutList.pushAll(List#{n}, ml);
+            ml
+        };
         let w = MutList.flatMap(rc, f, v);
         assertTrue(MutList.sameElements(v, w))
     }
@@ -895,11 +895,14 @@ mod TestMutList {
     @Test
     pub def flatMap04(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 0, 5);
-        def f(n) = List.repeat(n, Int32.toString(n)) |> fromList(rc);
+        def f(n) = {
+            let ml = MutList.empty(rc);
+            MutList.pushAll(List.repeat(n, Int32.toString(n)), ml);
+            ml
+        };
         let w = MutList.flatMap(rc, f, v);
-        let expected = List#{
-            "1", "2", "2", "3", "3", "3", "4", "4", "4", "4"
-        } |> fromList(rc);
+        let expected = MutList.empty(rc);
+        MutList.pushAll(List#{"1", "2", "2", "3", "3", "3", "4", "4", "4", "4"}, expected);
         assertTrue(MutList.sameElements(expected, w))
     }
 
@@ -1053,27 +1056,37 @@ mod TestMutList {
 
     @Test
     def foldMap01(): Unit \ Assert = region rc {
-        assertEq(expected = 0, MutList.foldMap(x -> 2 * x, fromList(rc, (Nil: List[Int32]))))
+        let l = MutList.empty(rc);
+        MutList.pushAll((Nil: List[Int32]), l);
+        assertEq(expected = 0, MutList.foldMap(x -> 2 * x, l))
     }
 
     @Test
     def foldMap02(): Unit \ Assert = region rc {
-        assertEq(expected = 6, MutList.foldMap(x -> 2 * x, fromList(rc, 1 :: 2 :: Nil)))
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: Nil, l);
+        assertEq(expected = 6, MutList.foldMap(x -> 2 * x, l))
     }
 
     @Test
     def foldMap03(): Unit \ Assert = region rc {
-        assertEq(expected = "b", MutList.foldMap(x -> if (x == "a") "b" else x, fromList(rc, "a" :: Nil)))
+        let l = MutList.empty(rc);
+        MutList.pushAll("a" :: Nil, l);
+        assertEq(expected = "b", MutList.foldMap(x -> if (x == "a") "b" else x, l))
     }
 
     @Test
     def foldMap04(): Unit \ Assert = region rc {
-        assertEq(expected = "abb", MutList.foldMap(x -> if (x == "c") "b" else x, fromList(rc, "a" :: "b" :: "c":: Nil)))
+        let l = MutList.empty(rc);
+        MutList.pushAll("a" :: "b" :: "c":: Nil, l);
+        assertEq(expected = "abb", MutList.foldMap(x -> if (x == "c") "b" else x, l))
     }
 
     @Test
     def foldMap05(): Unit \ Assert = region rc {
-        assertEq(expected = "123", MutList.foldMap(Int32.toString, fromList(rc, 1 :: 2 :: 3 :: Nil)))
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
+        assertEq(expected = "123", MutList.foldMap(Int32.toString, l))
     }
 
 
@@ -1726,7 +1739,8 @@ mod TestMutList {
 
     @Test
     def iterator02(): Unit \ Assert = region rc {
-        let l = fromList(rc, 1 :: 2 :: 3 :: Nil);
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case Some(_) => ()
@@ -1736,7 +1750,8 @@ mod TestMutList {
 
     @Test
     def iterator03(): Unit \ Assert = region rc {
-        let l = fromList(rc, 1 :: 2 :: 3 :: Nil);
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
         discard MutList.pop(l);
         discard MutList.pop(l);
         discard MutList.pop(l);
@@ -1749,7 +1764,8 @@ mod TestMutList {
 
     @Test
     def iterator04(): Unit \ Assert = region rc {
-        let l = fromList(rc, 1 :: 2 :: 3 :: Nil);
+        let l = MutList.empty(rc);
+        MutList.pushAll(1 :: 2 :: 3 :: Nil, l);
         assertEq(expected = 1 :: 2 :: 3 :: Nil, MutList.iterator(rc, l) |> Iterator.toList)
     }
 
@@ -2452,11 +2468,15 @@ mod TestMutList {
     def shuffle01(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l: List[Int32] = Nil;
-            let v = MutList.shuffle(rc, fromList(rc, l));
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
             MutList.sort(v);
 
             assertEq(expected = 0, MutList.length(v));
-            assertTrue(v `MutList.sameElements` fromList(rc, l))
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
         } with Shuffle.runWithIO
     }
 
@@ -2464,11 +2484,15 @@ mod TestMutList {
     def shuffle02(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l = 1 :: Nil;
-            let v = MutList.shuffle(rc, fromList(rc, l));
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
             MutList.sort(v);
 
             assertEq(expected = 1, MutList.length(v));
-            assertTrue(v `MutList.sameElements` fromList(rc, l))
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
         } with Shuffle.runWithIO
     }
 
@@ -2476,11 +2500,15 @@ mod TestMutList {
     def shuffle03(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l = 1 :: 2 :: 3 :: Nil;
-            let v = MutList.shuffle(rc, fromList(rc, l));
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
             MutList.sort(v);
 
             assertEq(expected = 3, MutList.length(v));
-            assertTrue(v `MutList.sameElements` fromList(rc, l))
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
         } with Shuffle.runWithIO
     }
 
@@ -2488,11 +2516,15 @@ mod TestMutList {
     def shuffle04(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-            let v = MutList.shuffle(rc, fromList(rc, l));
+            let v1 = MutList.empty(rc);
+            MutList.pushAll(l, v1);
+            let v = MutList.shuffle(rc, v1);
             MutList.sort(v);
 
             assertEq(expected = 10, MutList.length(v));
-            assertTrue(v `MutList.sameElements` fromList(rc, l))
+            let v2 = MutList.empty(rc);
+            MutList.pushAll(l, v2);
+            assertTrue(v `MutList.sameElements` v2)
         } with Shuffle.runWithIO
     }
 
