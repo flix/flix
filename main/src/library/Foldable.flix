@@ -221,14 +221,6 @@ pub trait Foldable[t : Type -> Type] {
         Foldable.foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
 
     ///
-    /// Returns the set `s` as a `MutSet`.
-    ///
-    pub def toMutSet(rc: Region[r], t: t[a]): MutSet[a, r] \ (r + Foldable.Aef[t]) with Order[a] =
-        let s = MutSet.empty(rc);
-        Foldable.forEach(x -> MutSet.add(x, s), t);
-        s
-
-    ///
     /// Returns `t` as a map.
     ///
     pub def toMap(t: t[(k, v)]): Map[k, v] \ Foldable.Aef[t] with Order[k] =
