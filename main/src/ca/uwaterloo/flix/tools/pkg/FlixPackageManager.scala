@@ -212,7 +212,6 @@ object FlixPackageManager {
                 case d: JarDependency => d
               }.map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
             ).map(_ => ())
-          case Trust.TrustJavaClass => Ok(()) // Todo: remove
           case Trust.Unrestricted => Ok(())
         }
     }

@@ -22,21 +22,14 @@ sealed trait Trust {
     * {{{
     *     Unrestricted
     *          |
-    *   TrustJavaClass
-    *          |
     *        Plain
     * }}}
     */
   def lub(other: Trust): Trust = (this, other) match {
     // TODO: Add tests
     case (Trust.Plain, Trust.Plain) => Trust.Plain
-    case (Trust.Plain, Trust.TrustJavaClass) => Trust.TrustJavaClass
     case (Trust.Plain, Trust.Unrestricted) => Trust.Unrestricted
-    case (Trust.TrustJavaClass, Trust.Plain) => Trust.TrustJavaClass
-    case (Trust.TrustJavaClass, Trust.TrustJavaClass) => Trust.TrustJavaClass
-    case (Trust.TrustJavaClass, Trust.Unrestricted) => Trust.Unrestricted
     case (Trust.Unrestricted, Trust.Plain) => Trust.Unrestricted
-    case (Trust.Unrestricted, Trust.TrustJavaClass) => Trust.Unrestricted
     case (Trust.Unrestricted, Trust.Unrestricted) => Trust.Unrestricted
   }
 
@@ -44,8 +37,6 @@ sealed trait Trust {
     * Returns the greatest lower bound of `this` and `other` according to the following lattice:
     * {{{
     *     Unrestricted
-    *          |
-    *   TrustJavaClass
     *          |
     *        Plain
     * }}}
@@ -56,8 +47,6 @@ sealed trait Trust {
     * Returns `true` if `this` is less than or equal to `other` in the lattice
     * {{{
     *     Unrestricted
-    *          |
-    *   TrustJavaClass
     *          |
     *        Plain
     * }}}
