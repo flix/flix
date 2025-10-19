@@ -195,6 +195,7 @@ object FlixPackageManager {
     trustLevels.get(dep) match {
       case Some(t) => t
       case None =>
+        // fixme: also get the trust level for `dep` in each manifest in `immediateDependents(dep)` - maybe require converting it to a dep or matching on name
         val trusts = immediateDependents(dep).map(minTrustLevel)
         val glb = Trust.glb(trusts)
         trustLevels.put(dep, glb)
