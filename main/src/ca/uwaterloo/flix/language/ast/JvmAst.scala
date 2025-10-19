@@ -125,14 +125,17 @@ object JvmAst {
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Exp)
 
-  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType)
+  sealed trait Param {
+    def sym: Symbol.VarSym
 
-  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
+    def tpe: SimpleType
+  }
+
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 
-  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
+  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
 
 }
 

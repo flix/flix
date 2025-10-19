@@ -24,22 +24,17 @@ import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
-                  types: Set[SimpleType],
-                  anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  /**
-    * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
-    */
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
@@ -125,20 +120,14 @@ object ReducedAst {
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  sealed trait Param {
-    def sym: Symbol.VarSym
-
-    def tpe: SimpleType
-  }
-
   // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
   // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 
   // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
 }
 
