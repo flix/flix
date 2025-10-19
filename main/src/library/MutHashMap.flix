@@ -284,6 +284,12 @@ mod MutHashMap {
         putWithKey((_, newV, _) -> newV, k, v, m)
 
     ///
+    /// Adds all key-value pairs in the collection `kvs` to the mutable map `m`.
+    ///
+    pub def putAll(kvs: f[(k, v)], m: MutHashMap[k, v, r]): Unit \ (r + Foldable.Aef[f]) with Eq[k], Hash[k], Foldable[f] =
+        Foldable.forEach(match (k, v) -> put(k, v, m), kvs)
+
+    ///
     /// Inserts key `k` with value `v` into `m`, using combiner function `f` if key exists.
     ///
     /// If key exists with value `oldV`, updates to `f(v, oldV)`.

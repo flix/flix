@@ -207,6 +207,12 @@ mod MutMap {
         m->inner = Map.insert(k, v, m->inner)
 
     ///
+    /// Adds all key-value pairs in the collection `kvs` to the mutable map `m`.
+    ///
+    pub def putAll(kvs: f[(k, v)], m: MutMap[k, v, r]): Unit \ (r + Foldable.Aef[f]) with Order[k], Foldable[f] =
+        Foldable.forEach(match (k, v) -> put(k, v, m), kvs)
+
+    ///
     /// Updates the mutable map `m` with the binding `k -> f(v, v1)` if `k -> v1` is in `m`.
     ///
     /// Otherwise updates the mutable map `m` with the binding `k -> v`.
