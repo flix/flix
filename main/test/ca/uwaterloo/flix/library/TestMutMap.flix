@@ -385,5 +385,64 @@ mod TestMutMap {
         assertEq(expected = 2, Ref.get(ri))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // putWith                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putWith01(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putWith((x, y) -> x + y, 1, 10, m);
+        assertEq(expected = Some(10), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWith02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.putWith((x, y) -> x + y, 1, 10, m);
+        assertEq(expected = Some(15), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWith03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.put(2, 10, m);
+        MutMap.putWith((x, y) -> x + y, 1, 3, m);
+        assertEq(expected = 2, MutMap.size(m));
+        assertEq(expected = Some(8), MutMap.get(1, m))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // putWithKey                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def putWithKey01(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.putWithKey((k, x, y) -> k + x + y, 1, 10, m);
+        // Key doesn't exist, so inserts 1 => 10 (function not applied)
+        assertEq(expected = Some(10), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWithKey02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.putWithKey((k, x, y) -> k + x + y, 1, 10, m);
+        assertEq(expected = Some(16), MutMap.get(1, m))
+    }
+
+    @Test
+    def putWithKey03(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        MutMap.put(1, 5, m);
+        MutMap.put(2, 10, m);
+        MutMap.putWithKey((k, x, y) -> k + x + y, 2, 3, m);
+        assertEq(expected = 2, MutMap.size(m));
+        assertEq(expected = Some(15), MutMap.get(2, m))
+    }
+
 }
 
