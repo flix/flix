@@ -1422,30 +1422,6 @@ mod TestChain {
         assertEq(expected = 1 :: 2 :: 3 :: Nil, Chain.toList(List.toChain(1 :: 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, (Chain.empty(): Chain[Int32])) `MutList.sameElements` (List.toMutList(rc, Nil): MutList[Int32, rc]))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, Chain.singleton(1)) `MutList.sameElements` List.toMutList(rc, 1 :: Nil))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(rc, 1 :: 2 :: Nil))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(rc, 1 :: 2 :: 3 :: Nil))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 

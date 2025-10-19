@@ -142,25 +142,29 @@ mod TestIterable {
 
     @Test
     def iterableMutList02(): Unit \ Assert = region rc {
-        let l = List#{2, 5, 11, 8} |> List.toMutList(rc);
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{2, 5, 11, 8}, l);
         assertEq(expected = List#{2, 5, 11, 8}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
     @Test
     def iterableMutList03(): Unit \ Assert = region rc {
-        let l = List#{'A', 'B', 'D', 'C'} |> List.toMutList(rc);
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{'A', 'B', 'D', 'C'}, l);
         assertEq(expected = List#{'A', 'B', 'D', 'C'}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
     @Test
     def iterableMutList04(): Unit \ Assert = region rc {
-        let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutList(rc);
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, l);
         assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
     @Test
     def iterableMutList05(): Unit \ Assert = region rc {
-        let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutList(rc);
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, l);
         assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 

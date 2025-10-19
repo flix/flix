@@ -1348,12 +1348,6 @@ mod Vector {
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), v)
 
     ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ r =
-        toArray(rc, v) |> Array.toMutList(rc)
-
-    ///
     /// Alias for `findIndexOfLeft`.
     ///
     pub def findIndexOf(f: a -> Bool \ ef, v: Vector[a]): Option[Int32] \ ef =

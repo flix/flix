@@ -1144,13 +1144,6 @@ mod List {
         List.foldLeft(Chain.snoc, Chain.empty(), l)
 
     ///
-    /// Returns `l` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
-    }
-
-    ///
     /// Returns the list `l` as a set.
     ///
     pub def toSet(l: List[a]): Set[a] with Order[a] =

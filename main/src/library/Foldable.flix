@@ -215,13 +215,6 @@ pub trait Foldable[t : Type -> Type] {
     }
 
     ///
-    /// Returns `t` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], t: t[a]): MutList[a, r] \ (r + Foldable.Aef[t]) = region rc2 {
-        Array.toMutList(rc, Foldable.toArray(rc2, t))
-    }
-
-    ///
     /// Returns `t` as a set.
     ///
     pub def toSet(t: t[a]): Set[a] \ Foldable.Aef[t] with Order[a] =
