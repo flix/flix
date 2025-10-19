@@ -4,6 +4,22 @@ mod TestMutList {
     use ToString.toString
     use MutList.sameElements
 
+    ///
+    /// Utility function: Returns the array `a` as a MutList.
+    ///
+    def fromArray(rc: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
+        let ml = MutList.empty(rc);
+        Array.forEach(x -> MutList.push(x, ml), a);
+        ml
+
+    ///
+    /// Utility function: Returns `l` as a mutable list.
+    ///
+    def fromList(rc: Region[r], l: List[a]): MutList[a, r] \ r =
+        let ml = MutList.empty(rc);
+        List.forEach(x -> MutList.push(x, ml), l);
+        ml
+
     /////////////////////////////////////////////////////////////////////////////
     // emptyWithCapacity                                                       //
     /////////////////////////////////////////////////////////////////////////////
@@ -806,7 +822,7 @@ mod TestMutList {
     @Test
     def map01(): Unit \ Assert = region rc {
         let v = MutList.map(rc, x -> x * 2, MutList.range(rc, 0, 6));
-        assertTrue(MutList.sameElements(v, Array.toMutList(rc, Array#{0, 2, 4, 6, 8, 10} @ rc)))
+        assertTrue(MutList.sameElements(v, fromArray(rc, Array#{0, 2, 4, 6, 8, 10} @ rc)))
     }
 
     @Test
@@ -839,18 +855,18 @@ mod TestMutList {
 
     @Test
     def flatten02(): Unit \ Assert = region rc {
-        let empties = List.repeat(10, MutList.empty(rc)) |> List.toMutList(rc);
+        let empties = List.repeat(10, MutList.empty(rc)) |> fromList(rc);
         assertTrue(MutList.flatten(rc, empties) |> MutList.isEmpty)
     }
 
     @Test
     def flatten03(): Unit \ Assert = region rc {
         let lists = List#{
-            List#{1, 2} |> List.toMutList(rc),
+            List#{1, 2} |> fromList(rc),
             MutList.empty(rc),
-            List#{3, 4} |> List.toMutList(rc)
-        } |> List.toMutList(rc);
-        assertTrue(MutList.sameElements(MutList.flatten(rc, lists), List#{1, 2, 3, 4} |> List.toMutList(rc)))
+            List#{3, 4} |> fromList(rc)
+        } |> fromList(rc);
+        assertTrue(MutList.sameElements(MutList.flatten(rc, lists), List#{1, 2, 3, 4} |> fromList(rc)))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -871,7 +887,7 @@ mod TestMutList {
     @Test
     def flatMap03(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 0, 100);
-        def f(n) = List#{n} |> List.toMutList(rc);
+        def f(n) = List#{n} |> fromList(rc);
         let w = MutList.flatMap(rc, f, v);
         assertTrue(MutList.sameElements(v, w))
     }
@@ -879,11 +895,11 @@ mod TestMutList {
     @Test
     pub def flatMap04(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 0, 5);
-        def f(n) = List.repeat(n, Int32.toString(n)) |> List.toMutList(rc);
+        def f(n) = List.repeat(n, Int32.toString(n)) |> fromList(rc);
         let w = MutList.flatMap(rc, f, v);
         let expected = List#{
             "1", "2", "2", "3", "3", "3", "4", "4", "4", "4"
-        } |> List.toMutList(rc);
+        } |> fromList(rc);
         assertTrue(MutList.sameElements(expected, w))
     }
 
@@ -895,7 +911,7 @@ mod TestMutList {
     def transform01(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 0, 6);
         MutList.transform(x -> x * 2, v);
-        assertTrue(MutList.sameElements(v, Array.toMutList(rc, Array#{0, 2, 4, 6, 8, 10} @ rc)))
+        assertTrue(MutList.sameElements(v, fromArray(rc, Array#{0, 2, 4, 6, 8, 10} @ rc)))
     }
 
     @Test
@@ -927,13 +943,13 @@ mod TestMutList {
     @Test
     def mapWithIndex01(): Unit \ Assert = region rc {
         let v = MutList.mapWithIndex(rc, (i, _) -> if (i < 3) 0 else 1, MutList.range(rc, 0, 6));
-        assertTrue(MutList.sameElements(v, Array.toMutList(rc, Array#{0, 0, 0, 1, 1, 1} @ rc)))
+        assertTrue(MutList.sameElements(v, fromArray(rc, Array#{0, 0, 0, 1, 1, 1} @ rc)))
     }
 
     @Test
     def mapWithIndex02(): Unit \ Assert = region rc {
         let v = MutList.mapWithIndex(rc, (i, x) -> if (x == 8 and i == 1) 42 else 0, MutList.range(rc, 7, 10));
-        assertTrue(MutList.sameElements(v, Array.toMutList(rc, Array#{0, 42, 0} @ rc)))
+        assertTrue(MutList.sameElements(v, fromArray(rc, Array#{0, 42, 0} @ rc)))
     }
 
     @Test
@@ -951,14 +967,14 @@ mod TestMutList {
     def transformWithIndex01(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 0, 6);
         MutList.transformWithIndex((i, _) -> if (i < 3) 0 else 1, v);
-        assertTrue(MutList.sameElements(v, Array.toMutList(rc, Array#{0, 0, 0, 1, 1, 1} @ rc)))
+        assertTrue(MutList.sameElements(v, fromArray(rc, Array#{0, 0, 0, 1, 1, 1} @ rc)))
     }
 
     @Test
     def transformWithIndex02(): Unit \ Assert = region rc {
         let v = MutList.range(rc, 7, 10);
         MutList.transformWithIndex((i, x) -> if (x == 8 and i == 1) 42 else 0, v);
-        assertTrue(MutList.sameElements(v, Array.toMutList(rc, Array#{0, 42, 0} @ rc)))
+        assertTrue(MutList.sameElements(v, fromArray(rc, Array#{0, 42, 0} @ rc)))
     }
 
     @Test
@@ -1037,27 +1053,27 @@ mod TestMutList {
 
     @Test
     def foldMap01(): Unit \ Assert = region rc {
-        assertEq(expected = 0, MutList.foldMap(x -> 2 * x, List.toMutList(rc, (Nil: List[Int32]))))
+        assertEq(expected = 0, MutList.foldMap(x -> 2 * x, fromList(rc, (Nil: List[Int32]))))
     }
 
     @Test
     def foldMap02(): Unit \ Assert = region rc {
-        assertEq(expected = 6, MutList.foldMap(x -> 2 * x, List.toMutList(rc, 1 :: 2 :: Nil)))
+        assertEq(expected = 6, MutList.foldMap(x -> 2 * x, fromList(rc, 1 :: 2 :: Nil)))
     }
 
     @Test
     def foldMap03(): Unit \ Assert = region rc {
-        assertEq(expected = "b", MutList.foldMap(x -> if (x == "a") "b" else x, List.toMutList(rc, "a" :: Nil)))
+        assertEq(expected = "b", MutList.foldMap(x -> if (x == "a") "b" else x, fromList(rc, "a" :: Nil)))
     }
 
     @Test
     def foldMap04(): Unit \ Assert = region rc {
-        assertEq(expected = "abb", MutList.foldMap(x -> if (x == "c") "b" else x, List.toMutList(rc, "a" :: "b" :: "c":: Nil)))
+        assertEq(expected = "abb", MutList.foldMap(x -> if (x == "c") "b" else x, fromList(rc, "a" :: "b" :: "c":: Nil)))
     }
 
     @Test
     def foldMap05(): Unit \ Assert = region rc {
-        assertEq(expected = "123", MutList.foldMap(Int32.toString, List.toMutList(rc, 1 :: 2 :: 3 :: Nil)))
+        assertEq(expected = "123", MutList.foldMap(Int32.toString, fromList(rc, 1 :: 2 :: 3 :: Nil)))
     }
 
 
@@ -1710,7 +1726,7 @@ mod TestMutList {
 
     @Test
     def iterator02(): Unit \ Assert = region rc {
-        let l = List.toMutList(rc, 1 :: 2 :: 3 :: Nil);
+        let l = fromList(rc, 1 :: 2 :: 3 :: Nil);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case Some(_) => ()
@@ -1720,7 +1736,7 @@ mod TestMutList {
 
     @Test
     def iterator03(): Unit \ Assert = region rc {
-        let l = List.toMutList(rc, 1 :: 2 :: 3 :: Nil);
+        let l = fromList(rc, 1 :: 2 :: 3 :: Nil);
         discard MutList.pop(l);
         discard MutList.pop(l);
         discard MutList.pop(l);
@@ -1733,7 +1749,7 @@ mod TestMutList {
 
     @Test
     def iterator04(): Unit \ Assert = region rc {
-        let l = List.toMutList(rc, 1 :: 2 :: 3 :: Nil);
+        let l = fromList(rc, 1 :: 2 :: 3 :: Nil);
         assertEq(expected = 1 :: 2 :: 3 :: Nil, MutList.iterator(rc, l) |> Iterator.toList)
     }
 
@@ -1892,12 +1908,12 @@ mod TestMutList {
 
     @Test
     def toArray01(): Unit \ Assert = region rc {
-        assertTrue(Array.sameElements(MutList.toArray(rc, Array.toMutList(rc, Array#{1, 2, 3} @ rc)), Array#{1, 2, 3} @ rc))
+        assertTrue(Array.sameElements(MutList.toArray(rc, fromArray(rc, Array#{1, 2, 3} @ rc)), Array#{1, 2, 3} @ rc))
     }
 
     @Test
     def toArray02(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
+        let v = fromArray(rc, Array#{1, 2, 3} @ rc);
         let a = MutList.toArray(rc, v);
         Array.put(42, 1, a);
         assertEq(expected = Some(2), MutList.nth(1, v))
@@ -1905,7 +1921,7 @@ mod TestMutList {
 
     @Test
     def toArray03(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
+        let v = fromArray(rc, Array#{1, 2, 3} @ rc);
         discard MutList.pop(v);
         discard MutList.pop(v);
         assertEq(expected = 1, Array.length(MutList.toArray(rc, v)))
@@ -2012,92 +2028,92 @@ mod TestMutList {
 
     @Test
     def sortWith01(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]));
+        let a = fromArray(rc, ((Array#{} @ rc): Array[Int32, rc]));
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
+        assertTrue(a `sameElements` fromArray(rc, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @Test
     def sortWith02(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{0} @ rc);
+        let a = fromArray(rc, Array#{0} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0} @ rc))
     }
 
     @Test
     def sortWith03(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{0,1} @ rc);
+        let a = fromArray(rc, Array#{0,1} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1} @ rc))
     }
 
     @Test
     def sortWith04(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{1,0} @ rc);
+        let a = fromArray(rc, Array#{1,0} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1} @ rc))
     }
     @Test
     def sortWith05(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{1,1} @ rc);
+        let a = fromArray(rc, Array#{1,1} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{1,1} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{1,1} @ rc))
     }
 
     @Test
     def sortWith06(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        let a = fromArray(rc, Array#{0,1,2,3,4,5} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
     def sortWith07(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        let a = fromArray(rc, Array#{5,4,3,2,1,0} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
     def sortWith08(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        let a = fromArray(rc, Array#{5,3,0,4,1,2} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
     def sortWith09(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        let a = fromArray(rc, Array#{2,3,0,4,1,2} @ rc);
         MutList.sortWith(cmp, a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,2,3,4} @ rc))
     }
 
     @Test
     def sortWith10(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        let a = fromArray(rc, Array#{0,1,2,3,4,5} @ rc);
         MutList.sortWith(flip(cmp), a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{5,4,3,2,1,0} @ rc))
     }
 
     @Test
     def sortWith11(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        let a = fromArray(rc, Array#{5,4,3,2,1,0} @ rc);
         MutList.sortWith(flip(cmp), a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{5,4,3,2,1,0} @ rc))
     }
 
     @Test
     def sortWith12(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        let a = fromArray(rc, Array#{5,3,0,4,1,2} @ rc);
         MutList.sortWith(flip(cmp), a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{5,4,3,2,1,0} @ rc))
     }
 
     @Test
     def sortWith13(): Unit \ Assert = region rc {
-        let a = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        let a = fromArray(rc, Array#{2,3,0,4,1,2} @ rc);
         MutList.sortWith(flip(cmp), a);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{4,3,2,2,1,0} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{4,3,2,2,1,0} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -2114,47 +2130,47 @@ mod TestMutList {
 
     @Test
     def sort01(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]))))
+        assertTrue(testSortSortWith(fromArray(rc, ((Array#{} @ rc): Array[Int32, rc]))))
     }
 
     @Test
     def sort02(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{0} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{0} @ rc)))
     }
 
     @Test
     def sort03(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{0,1} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{0,1} @ rc)))
     }
 
     @Test
     def sort04(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{1,0} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{1,0} @ rc)))
     }
 
     @Test
     def sort05(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{1,1} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{1,1} @ rc)))
     }
 
     @Test
     def sort06(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{0,1,2,3,4,5} @ rc)))
     }
 
     @Test
     def sort07(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{5,4,3,2,1,0} @ rc)))
     }
 
     @Test
     def sort08(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{5,3,0,4,1,2} @ rc)))
     }
 
     @Test
     def sort09(): Unit \ Assert = region rc {
-        assertTrue(testSortSortWith(Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc)))
+        assertTrue(testSortSortWith(fromArray(rc, Array#{2,3,0,4,1,2} @ rc)))
     }
 
 
@@ -2164,92 +2180,92 @@ mod TestMutList {
 
     @Test
     def sortBy01(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{} @ rc))
     }
 
     @Test
     def sortBy02(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{0} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{0} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{0} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{0} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0} @ rc))
     }
 
     @Test
     def sortBy03(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{0,1} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{0,1} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0,1} @ rc))
     }
 
     @Test
     def sortBy04(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,0} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{1,0} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,0} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{1,0} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0,1} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0,1} @ rc))
     }
 
     @Test
     def sortBy05(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,1} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{1,1} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{1,1} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{1,1} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{1,1} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{1,1} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{1,1} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{1,1} @ rc))
     }
 
     @Test
     def sortBy06(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{0,1,2,3,4,5} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{0,1,2,3,4,5} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
     def sortBy07(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{5,4,3,2,1,0} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,4,3,2,1,0} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{5,4,3,2,1,0} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
     def sortBy08(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{5,3,0,4,1,2} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{5,3,0,4,1,2} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{5,3,0,4,1,2} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0,1,2,3,4,5} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0,1,2,3,4,5} @ rc))
     }
 
     @Test
     def sortBy09(): Unit \ Assert = region rc {
-        let a: MutList[Int32, rc] = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        let a: MutList[Int32, rc] = fromArray(rc, Array#{2,3,0,4,1,2} @ rc);
         MutList.sortBy(identity, a);
-        let b: MutList[Int32, rc] = Array.toMutList(rc, Array#{2,3,0,4,1,2} @ rc);
+        let b: MutList[Int32, rc] = fromArray(rc, Array#{2,3,0,4,1,2} @ rc);
         MutList.sortBy(x -> 4 * x + 7, b);
-        assertTrue(a `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc));
-        assertTrue(b `sameElements` Array.toMutList(rc, Array#{0,1,2,2,3,4} @ rc))
+        assertTrue(a `sameElements` fromArray(rc, Array#{0,1,2,2,3,4} @ rc));
+        assertTrue(b `sameElements` fromArray(rc, Array#{0,1,2,2,3,4} @ rc))
     }
 
 
@@ -2436,11 +2452,11 @@ mod TestMutList {
     def shuffle01(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l: List[Int32] = Nil;
-            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            let v = MutList.shuffle(rc, fromList(rc, l));
             MutList.sort(v);
 
             assertEq(expected = 0, MutList.length(v));
-            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertTrue(v `MutList.sameElements` fromList(rc, l))
         } with Shuffle.runWithIO
     }
 
@@ -2448,11 +2464,11 @@ mod TestMutList {
     def shuffle02(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l = 1 :: Nil;
-            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            let v = MutList.shuffle(rc, fromList(rc, l));
             MutList.sort(v);
 
             assertEq(expected = 1, MutList.length(v));
-            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertTrue(v `MutList.sameElements` fromList(rc, l))
         } with Shuffle.runWithIO
     }
 
@@ -2460,11 +2476,11 @@ mod TestMutList {
     def shuffle03(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l = 1 :: 2 :: 3 :: Nil;
-            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            let v = MutList.shuffle(rc, fromList(rc, l));
             MutList.sort(v);
 
             assertEq(expected = 3, MutList.length(v));
-            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertTrue(v `MutList.sameElements` fromList(rc, l))
         } with Shuffle.runWithIO
     }
 
@@ -2472,11 +2488,11 @@ mod TestMutList {
     def shuffle04(): Unit \ {Assert, NonDet} = region rc {
         run {
             let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-            let v = MutList.shuffle(rc, List.toMutList(rc, l));
+            let v = MutList.shuffle(rc, fromList(rc, l));
             MutList.sort(v);
 
             assertEq(expected = 10, MutList.length(v));
-            assertTrue(v `MutList.sameElements` List.toMutList(rc, l))
+            assertTrue(v `MutList.sameElements` fromList(rc, l))
         } with Shuffle.runWithIO
     }
 

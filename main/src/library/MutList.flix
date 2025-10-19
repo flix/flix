@@ -879,8 +879,12 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = region rc2 {
-        toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
+    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = {
+        let a = toArray(rc1, v);
+        Array.shuffle(a);
+        let ml = MutList.empty(rc1);
+        Array.forEach(x -> MutList.push(x, ml), a);
+        ml
     }
 
 }

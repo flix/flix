@@ -1242,16 +1242,6 @@ mod Array {
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
-        let minCap = MutList.minCapacity();
-        let len = length(a);
-        let c = Order.max(len, minCap);
-        let copy = copyOfRange(rc1, 0, c, a);
-        new MutList @ rc1 {r = rc1, values = copy, length = len}
-
-    ///
     /// Alias for `findIndexOfLeft`.
     ///
     pub def findIndexOf(f: a -> Bool \ ef, a: Array[a, r]): Option[Int32] \ { ef, r } =

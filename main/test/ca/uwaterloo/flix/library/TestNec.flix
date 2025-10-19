@@ -1019,31 +1019,6 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        let m1 = Nec.toMutList(rc, singleton(1));
-        let m2 = MutList.range(rc, 1, 2);
-        assertTrue(MutList.sameElements(m1, m2))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let m1 = Nec.toMutList(rc, necOf2(1, 2));
-        let m2 = MutList.range(rc, 1, 3);
-        assertTrue(MutList.sameElements(m1, m2))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let m1 = Nec.toMutList(rc, necOf3(1, 2, 3));
-        let m2 = MutList.range(rc, 1, 4);
-        assertTrue(MutList.sameElements(m1, m2))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 

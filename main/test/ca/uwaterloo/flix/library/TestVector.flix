@@ -4362,54 +4362,6 @@ mod TestVector {
 
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        MutList.push(2, l);
-        MutList.push(3, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4}))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{}))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

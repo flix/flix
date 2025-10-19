@@ -58,7 +58,11 @@ mod Test.Exp.IndexableMut {
     @Test
     def mutList01(): Bool = region rc {
         run {
-            let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
+            let l = MutList.empty(rc);
+            MutList.push(0, l);
+            MutList.push(1, l);
+            MutList.push(2, l);
+            MutList.push(3, l);
             l[0] = 4;
             l[0] == 4
         } with handler OutOfBounds {
@@ -69,7 +73,11 @@ mod Test.Exp.IndexableMut {
     @Test
     def mutList02(): Bool = region rc {
         run {
-            let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
+            let l = MutList.empty(rc);
+            MutList.push(0, l);
+            MutList.push(1, l);
+            MutList.push(2, l);
+            MutList.push(3, l);
             l[1] = 42;
             l[1] == 42
         } with handler OutOfBounds {
@@ -80,7 +88,11 @@ mod Test.Exp.IndexableMut {
     @Test
     def mutList03(): Bool = region rc {
         run {
-            let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
+            let l = MutList.empty(rc);
+            MutList.push(0, l);
+            MutList.push(1, l);
+            MutList.push(2, l);
+            MutList.push(3, l);
             l[3] = 200;
             l[3] == 200
         } with handler OutOfBounds {
@@ -91,7 +103,11 @@ mod Test.Exp.IndexableMut {
     @Test
     def mutList04(): Bool = region rc {
         run {
-            let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
+            let l = MutList.empty(rc);
+            MutList.push(0, l);
+            MutList.push(1, l);
+            MutList.push(2, l);
+            MutList.push(3, l);
             l[-1] = 4;
             false
         } with handler OutOfBounds {
@@ -102,7 +118,11 @@ mod Test.Exp.IndexableMut {
     @Test
     def mutList05(): Bool = region rc {
         run {
-            let l = Vector#{0, 1, 2, 3} |> Vector.toMutList(rc);
+            let l = MutList.empty(rc);
+            MutList.push(0, l);
+            MutList.push(1, l);
+            MutList.push(2, l);
+            MutList.push(3, l);
             l[5] = 4;
             false
         } with handler OutOfBounds {
