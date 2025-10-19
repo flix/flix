@@ -727,13 +727,6 @@ mod Seq {
         d
 
     ///
-    /// Returns `l` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], l: Seq[s][a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
-    }
-
-    ///
     /// Returns the list `l` as a set.
     ///
     pub def toSet(l: Seq[s][a]): Set[a] with Order[a] =

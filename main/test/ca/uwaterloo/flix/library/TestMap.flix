@@ -1061,46 +1061,6 @@ mod TestMap {
         assertEq(expected = 21, Map.foldRightWithKey((k, v, acc) -> k + acc + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = 
-        assertEq(expected = 0, Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{}))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = 
-        assertEq(expected = 2, Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{1 => 2}))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = 
-        assertEq(expected = 6, Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 4}))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = 
-        assertEq(expected = 12, Map.foldRightWithCont((v, k) -> k() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithKeyCont                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithKeyCont01(): Unit \ Assert = 
-        assertEq(expected = 0, Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{}))
-
-    @Test
-    def foldRightWithKeyCont02(): Unit \ Assert = 
-        assertEq(expected = 3, Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2}))
-
-    @Test
-    def foldRightWithKeyCont03(): Unit \ Assert = 
-        assertEq(expected = 10, Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4}))
-
-    @Test
-    def foldRightWithKeyCont04(): Unit \ Assert = 
-        assertEq(expected = 21, Map.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0, Map#{1 => 2, 3 => 4, 5 => 6}))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMapWithKey                                                          //
     /////////////////////////////////////////////////////////////////////////////
 

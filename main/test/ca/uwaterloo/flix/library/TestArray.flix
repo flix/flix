@@ -2407,30 +2407,6 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        assertEq(expected = 100, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        assertEq(expected = 198, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        assertEq(expected = 194, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        assertEq(expected = 382, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2,3} @ rc))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -5586,54 +5562,6 @@ mod TestArray {
         assertEq(expected = "1..2..3", s)
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let v = MutList.empty(rc);
-        MutList.push(1, v);
-        assertTrue(MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let v = MutList.empty(rc);
-        MutList.push(1, v);
-        MutList.push(2, v);
-        MutList.push(3, v);
-        assertTrue(MutList.sameElements(Array.toMutList(rc, Array#{1, 2, 3} @ rc), v))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Array.range(rc, 0, 100) |> Array.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push(4, v);
-        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{1, 2, 3, 4} @ rc))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push(4, v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{} @ rc))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

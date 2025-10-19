@@ -1122,33 +1122,6 @@ mod TestList {
     def foldRight08(): Unit \ Assert = assertEq(expected = 382, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = 100, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = 198, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = 194, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = assertEq(expected = 382, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert = assertEq(expected = 100, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
-
-    @Test
-    def foldRightWithCont06(): Unit \ Assert = assertEq(expected = 198, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
-
-    @Test
-    def foldRightWithCont07(): Unit \ Assert = assertEq(expected = 194, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
-
-    @Test
-    def foldRightWithCont08(): Unit \ Assert = assertEq(expected = 382, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
-
-    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
     @Test

@@ -58,7 +58,9 @@ instance MutCollectable[MutList[a, r]] {
     type Aef = r
     type Reg = r
     pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
-        Iterator.toMutList(rc, iter)
+        let l = MutList.empty(rc);
+        Iterator.forEach(x -> MutList.push(x, l), iter);
+        l
 
 }
 
@@ -502,22 +504,6 @@ mod MutList {
         loop(v->length - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from left to right.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, v: MutList[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i >= v->length)
-                z
-            else {
-                f(Array.get(i, v->values), _ -> loop(i + 1))
-            }
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, r} with Monoid[b] =
@@ -893,8 +879,12 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = region rc2 {
-        toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
+    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = {
+        let a = toArray(rc1, v);
+        Array.shuffle(a);
+        let ml = MutList.empty(rc1);
+        Array.forEach(x -> MutList.push(x, ml), a);
+        ml
     }
 
 }

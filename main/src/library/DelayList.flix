@@ -628,25 +628,6 @@ mod DelayList {
         loop(l, x -> checked_ecast(x))
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    /// Calling the continuation forces the list `l`.
-    ///
-    @Experimental
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: DelayList[a]): b \ ef =
-        def loop(ll) = match ll {
-            case ENil         => z
-            case ECons(x, xs) => f(x, _ -> loop(xs))
-            case LCons(x, xs) => f(x, _ -> loop(force xs))
-            case LList(xs)    =>           loop(force xs)
-        };
-        loop(l)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with Monoid[b] =
@@ -1229,16 +1210,6 @@ mod DelayList {
             case LList(xs)    => loop(force xs, k)
         };
         loop(l, identity)
-
-    ///
-    /// Returns `l` as a `List`.
-    ///
-    /// Forces the entire list `l`.
-    ///
-    @Experimental
-    pub def toMutList(rc: Region[r], l: DelayList[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`.
-    }
 
     ///
     /// Returns the association list `l` as a map.

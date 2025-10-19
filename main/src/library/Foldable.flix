@@ -215,13 +215,6 @@ pub trait Foldable[t : Type -> Type] {
     }
 
     ///
-    /// Returns `t` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], t: t[a]): MutList[a, r] \ (r + Foldable.Aef[t]) = region rc2 {
-        Array.toMutList(rc, Foldable.toArray(rc2, t))
-    }
-
-    ///
     /// Returns `t` as a set.
     ///
     pub def toSet(t: t[a]): Set[a] \ Foldable.Aef[t] with Order[a] =
@@ -246,14 +239,6 @@ pub trait Foldable[t : Type -> Type] {
     ///
     pub def toMapWith(f: a -> b, s: t[a]): Map[a, b] \ Foldable.Aef[t] with Order[a] =
         Foldable.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
-
-    ///
-    /// Returns `t` as a `MutMap`.
-    ///
-    pub def toMutMap(rc: Region[r], t: t[(k, v)]): MutMap[k, v, r] \ (r + Foldable.Aef[t]) with Order[k] =
-        let m = MutMap.empty(rc);
-        Foldable.forEach(x -> let (k, v) = x; MutMap.put(k, v, m), t);
-        m
 
     ///
     /// Optionally returns `t` as a non empty chain.
