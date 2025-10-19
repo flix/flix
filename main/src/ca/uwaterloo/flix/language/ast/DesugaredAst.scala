@@ -39,11 +39,11 @@ object DesugaredAst {
 
     case class Instance(doc: Doc, ann: Annotations, mod: Modifiers, trt: Name.QName, tpe: Type, tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Sig(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Option[Exp], tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
+    case class Sig(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
-    case class Def(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Exp, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
+    case class Def(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TraitConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
 
-    case class Law(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Exp, tpe: Type, eff: Type, tconstrs: List[TraitConstraint], loc: SourceLocation) extends Declaration
+    case class Law(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Type, tconstrs: List[TraitConstraint], loc: SourceLocation) extends Declaration
 
     case class Enum(doc: Doc, ann: Annotations, mod: Modifiers, ident: Name.Ident, tparams: List[TypeParam], derives: Derivations, cases: List[Case], loc: SourceLocation) extends Declaration
 
@@ -73,145 +73,145 @@ object DesugaredAst {
   }
 
 
-  sealed trait Exp {
+  sealed trait Expr {
     def loc: SourceLocation
   }
 
-  object Exp {
+  object Expr {
 
-    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends Exp
+    case class Ambiguous(qname: Name.QName, loc: SourceLocation) extends Expr
 
-    case class Open(qname: Name.QName, loc: SourceLocation) extends Exp
+    case class Open(qname: Name.QName, loc: SourceLocation) extends Expr
 
-    case class OpenAs(qname: Name.QName, exp: Exp, loc: SourceLocation) extends Exp
+    case class OpenAs(qname: Name.QName, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends Exp
+    case class Hole(name: Option[Name.Ident], loc: SourceLocation) extends Expr
 
-    case class HoleWithExp(exp: Exp, loc: SourceLocation) extends Exp
+    case class HoleWithExp(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Use(uses: List[UseOrImport], exp: Exp, loc: SourceLocation) extends Exp
+    case class Use(uses: List[UseOrImport], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Cst(cst: Constant, loc: SourceLocation) extends Exp
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr
 
-    case class Apply(exp: Exp, exps: List[Exp], loc: SourceLocation) extends Exp
+    case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Lambda(fparam: FormalParam, exp: Exp, loc: SourceLocation) extends Exp
+    case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Unary(sop: SemanticOp.UnaryOp, exp: Exp, loc: SourceLocation) extends Exp
+    case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOp.BinaryOp, exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: Exp, exp2: Exp, exp3: Exp, loc: SourceLocation) extends Exp
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class Stm(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Discard(exp: Exp, loc: SourceLocation) extends Exp
+    case class Discard(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Let(ident: Name.Ident, exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class Let(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class LocalDef(ident: Name.Ident, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Region(ident: Name.Ident, exp: Exp, loc: SourceLocation) extends Exp
+    case class Region(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Match(exp: Exp, rules: List[MatchRule], loc: SourceLocation) extends Exp
+    case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
-    case class TypeMatch(exp: Exp, rules: List[TypeMatchRule], loc: SourceLocation) extends Exp
+    case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
 
-    case class RestrictableChoose(star: Boolean, exp: Exp, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Exp
+    case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
-    case class ExtMatch(exp: Exp, rules: List[ExtMatchRule], loc: SourceLocation) extends Exp
+    case class ExtMatch(exp: Expr, rules: List[ExtMatchRule], loc: SourceLocation) extends Expr
 
-    case class ExtTag(label: Name.Label, exps: List[Exp], loc: SourceLocation) extends Exp
+    case class ExtTag(label: Name.Label, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Tuple(exps: List[Exp], loc: SourceLocation) extends Exp
+    case class Tuple(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Exp, label: Name.Label, loc: SourceLocation) extends Exp
+    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(label: Name.Label, exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class RecordExtend(label: Name.Label, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(label: Name.Label, exp: Exp, loc: SourceLocation) extends Exp
+    case class RecordRestrict(label: Name.Label, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLit(exps: List[Exp], exp: Exp, loc: SourceLocation) extends Exp
+    case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayNew(exp1: Exp, exp2: Exp, exp3: Exp, loc: SourceLocation) extends Exp
+    case class ArrayNew(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLoad(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class ArrayLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayLength(exp: Exp, loc: SourceLocation) extends Exp
+    case class ArrayLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ArrayStore(exp1: Exp, exp2: Exp, exp3: Exp, loc: SourceLocation) extends Exp
+    case class ArrayStore(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(name: Name.QName, exps: List[(Name.Label, Exp)], region: Exp, loc: SourceLocation) extends Exp
+    case class StructNew(name: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
 
-    case class StructGet(exp: Exp, name: Name.Label, loc: SourceLocation) extends Exp
+    case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
-    case class StructPut(exp1: Exp, name: Name.Label, exp2: Exp, loc: SourceLocation) extends Exp
+    case class StructPut(exp1: Expr, name: Name.Label, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class VectorLit(exps: List[Exp], loc: SourceLocation) extends Exp
+    case class VectorLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class VectorLoad(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class VectorLoad(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class VectorLength(exp: Exp, loc: SourceLocation) extends Exp
+    case class VectorLength(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Ascribe(exp: Exp, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Exp
+    case class Ascribe(exp: Expr, expectedType: Option[Type], expectedEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class InstanceOf(exp: Exp, className: Name.Ident, loc: SourceLocation) extends Exp
+    case class InstanceOf(exp: Expr, className: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class CheckedCast(cast: CheckedCastType, exp: Exp, loc: SourceLocation) extends Exp
+    case class CheckedCast(cast: CheckedCastType, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class UncheckedCast(exp: Exp, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Exp
+    case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Unsafe(exp: Exp, eff: Type, loc: SourceLocation) extends Exp
+    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Without(exp: Exp, eff: Name.QName, loc: SourceLocation) extends Exp
+    case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Exp, rules: List[CatchRule], loc: SourceLocation) extends Exp
+    case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
-    case class Throw(exp: Exp, loc: SourceLocation) extends Exp
+    case class Throw(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Exp
+    case class Handler(eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
-    case class RunWith(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class RunWith(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(clazzName: Name.Ident, exps: List[Exp], loc: SourceLocation) extends Exp
+    case class InvokeConstructor(clazzName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(exp: Exp, methodName: Name.Ident, exps: List[Exp], loc: SourceLocation) extends Exp
+    case class InvokeMethod(exp: Expr, methodName: Name.Ident, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class GetField(exp: Exp, fieldName: Name.Ident, loc: SourceLocation) extends Exp
+    case class GetField(exp: Expr, fieldName: Name.Ident, loc: SourceLocation) extends Expr
 
-    case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Exp
+    case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
-    case class NewChannel(exp: Exp, loc: SourceLocation) extends Exp
+    case class NewChannel(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class GetChannel(exp: Exp, loc: SourceLocation) extends Exp
+    case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class PutChannel(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class PutChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class SelectChannel(rules: List[SelectChannelRule], exp: Option[Exp], loc: SourceLocation) extends Exp
+    case class SelectChannel(rules: List[SelectChannelRule], exp: Option[Expr], loc: SourceLocation) extends Expr
 
-    case class Spawn(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class Spawn(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class ParYield(frags: List[ParYieldFragment], exp: Exp, loc: SourceLocation) extends Exp
+    case class ParYield(frags: List[ParYieldFragment], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Lazy(exp: Exp, loc: SourceLocation) extends Exp
+    case class Lazy(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Force(exp: Exp, loc: SourceLocation) extends Exp
+    case class Force(exp: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointConstraintSet(cs: List[Constraint], loc: SourceLocation) extends Exp
+    case class FixpointConstraintSet(cs: List[Constraint], loc: SourceLocation) extends Expr
 
-    case class FixpointLambda(pparams: List[PredicateParam], exp: Exp, loc: SourceLocation) extends Exp
+    case class FixpointLambda(pparams: List[PredicateParam], exp: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointMerge(exp1: Exp, exp2: Exp, loc: SourceLocation) extends Exp
+    case class FixpointMerge(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FixpointQueryWithProvenance(exps: List[Exp], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Exp
+    case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
-    case class FixpointQueryWithSelect(exps: List[Exp], queryExp: Exp, selects: List[Exp], from: List[Predicate.Body], where: List[Exp], pred: Name.Pred, loc: SourceLocation) extends Exp
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, loc: SourceLocation) extends Expr
 
-    case class FixpointSolveWithProject(exps: List[Exp], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Exp
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
 
-    case class FixpointInjectInto(exps: List[Exp], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Exp
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
 
-    case class Error(m: CompilationMessage) extends Exp {
+    case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
     }
 
@@ -299,7 +299,7 @@ object DesugaredAst {
 
     object Head {
 
-      case class Atom(pred: Name.Pred, den: Denotation, exps: List[Exp], loc: SourceLocation) extends Predicate.Head
+      case class Atom(pred: Name.Pred, den: Denotation, exps: List[Expr], loc: SourceLocation) extends Predicate.Head
 
     }
 
@@ -309,9 +309,9 @@ object DesugaredAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Polarity, fixity: Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
-      case class Functional(idents: List[Name.Ident], exp: Exp, loc: SourceLocation) extends Predicate.Body
+      case class Functional(idents: List[Name.Ident], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
-      case class Guard(exp: Exp, loc: SourceLocation) extends Predicate.Body
+      case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
 
     }
 
@@ -409,13 +409,13 @@ object DesugaredAst {
 
   }
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Exp, tpe: Type, eff: Option[Type], loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
-  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Exp, loc: SourceLocation)
+  case class CatchRule(ident: Name.Ident, className: Name.Ident, exp: Expr, loc: SourceLocation)
 
-  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Exp, loc: SourceLocation)
+  case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr, loc: SourceLocation)
 
-  case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Exp)
+  case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
   case class TraitConstraint(trt: Name.QName, tpe: Type, loc: SourceLocation)
 
@@ -423,13 +423,13 @@ object DesugaredAst {
 
   case class Constraint(head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
 
-  case class MatchRule(pat: Pattern, exp1: Option[Exp], exp2: Exp, loc: SourceLocation)
+  case class MatchRule(pat: Pattern, exp1: Option[Expr], exp2: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(pat: ExtPattern, exp: Exp, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
-  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Exp, loc: SourceLocation)
+  case class TypeMatchRule(ident: Name.Ident, tpe: Type, exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(ident: Name.Ident, exp1: Exp, exp2: Exp, loc: SourceLocation)
+  case class SelectChannelRule(ident: Name.Ident, exp1: Expr, exp2: Expr, loc: SourceLocation)
 
   sealed trait TypeParam
 
@@ -441,7 +441,7 @@ object DesugaredAst {
 
   }
 
-  case class ParYieldFragment(pat: Pattern, exp: Exp, loc: SourceLocation)
+  case class ParYieldFragment(pat: Pattern, exp: Expr, loc: SourceLocation)
 
   case class Derivations(traits: List[Name.QName], loc: SourceLocation)
 
