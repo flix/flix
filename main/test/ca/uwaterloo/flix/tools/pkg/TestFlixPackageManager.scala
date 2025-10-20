@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
-import java.net.URI
 import java.nio.file.Files
 
 class TestFlixPackageManager extends AnyFunSuite {
@@ -50,6 +49,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Install missing dependency.02") {
     assertResult(expected = true)(actual = {
@@ -88,6 +88,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Install missing dependencies from list of manifests") {
     assertResult(expected = true)(actual = {
@@ -153,6 +154,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Do not install existing dependency") {
     assertResult(expected = true)(actual = {
@@ -192,6 +194,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Find transitive dependency") {
     assertResult(expected = true)(actual = {
@@ -224,6 +227,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Give error for missing dependency") {
     val toml = {
@@ -257,6 +261,7 @@ class TestFlixPackageManager extends AnyFunSuite {
         succeed
     }
   }
+  Thread.sleep(1000)
 
   test("Give error for missing version") {
     assertResult(expected = PackageError.VersionDoesNotExist(SemVer(0, 0, 1), Project("flix", "museum")).message(f))(actual = {
@@ -289,6 +294,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Install transitive dependency") {
     assertResult(expected = true)(actual = {
