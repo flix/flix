@@ -317,6 +317,7 @@ class TestFlixPackageManager extends AnyFunSuite {
         case Ok(resolution) => FlixPackageManager.computeTrust(resolution)
         case Err(e) => fail(e.message(f))
       }
+
       FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) =>
           l.exists { case (p, _) => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg") } &&
