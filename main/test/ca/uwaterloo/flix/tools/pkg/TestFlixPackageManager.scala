@@ -144,7 +144,7 @@ class TestFlixPackageManager extends AnyFunSuite {
         case Ok(res) => res
         case Err(e) => fail(e.message(f))
       }
-      val resolution = resolution1.copy(trust = resolution1.trust ++ resolution2.trust, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
+      val resolution = FlixPackageManager.TrustResolution(origin = manifest1, trust = resolution1.trust ++ resolution2.trust, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
 
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
