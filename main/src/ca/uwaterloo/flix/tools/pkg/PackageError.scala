@@ -46,8 +46,7 @@ object PackageError {
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
-         |Error:
-         |${f.red(exception.getMessage)}
+         |Error: ${f.red(exception.getMessage)}
          |""".stripMargin
   }
 
