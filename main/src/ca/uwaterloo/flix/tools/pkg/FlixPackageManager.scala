@@ -227,8 +227,8 @@ object FlixPackageManager {
           case d: JarDependency => d
         }.map(d => PackageError.TrustError(d, t))
         manifestTrustErrors ::: dependencyTrustErrors
-      case Trust.Unrestricted =>
-        manifestTrustErrors
+
+      case Trust.Unrestricted => manifestTrustErrors
     }
   }
 
