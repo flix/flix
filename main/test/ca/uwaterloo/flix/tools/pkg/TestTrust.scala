@@ -214,7 +214,7 @@ class TestTrust extends AnyFunSuite {
       case Err(e) => fail(e.message(formatter))
     }
 
-    val manifestsWithTrust = FlixPackageManager.computeTrust(allManifests)
+    val manifestsWithTrust = FlixPackageManager.resolveTrust(allManifests)
 
     val trustResolutionErrors = FlixPackageManager.checkTrust(manifestsWithTrust)
     if (trustResolutionErrors.nonEmpty) {

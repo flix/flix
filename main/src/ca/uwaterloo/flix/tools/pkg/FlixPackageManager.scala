@@ -52,13 +52,22 @@ object FlixPackageManager {
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, manifestToFlixDeps.toMap))
   }
 
-  def computeTrust(resolution: Resolution): TrustResolution = {
+  /**
+    * Resolves the maximal allowed trust level for all dependencies in `resolution`.
+    */
+  def resolveTrust(resolution: Resolution): TrustResolution = {
     implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(resolution.origin -> Trust.Unrestricted)
     implicit val res: Resolution = resolution
     val manifests = resolution.manifests.map(m => (m, minTrustLevel(m))).toMap
     TrustResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
   }
 
+  /**
+    * Finds all trust errors at the package level if any.
+    * A trust error exists if at least one of the following holds:
+    *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
+    *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
+    */
   def checkTrust(resolution: TrustResolution): List[PackageError.TrustError] = {
     resolution.trust.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
   }
@@ -222,6 +231,11 @@ object FlixPackageManager {
     }
   }
 
+  /**
+    * A trust error is present if one of the following holds:
+    *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
+    *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
+    */
   private def findTrustViolations(m: Manifest, t: Trust): List[PackageError.TrustError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
     val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustError(d, t))
