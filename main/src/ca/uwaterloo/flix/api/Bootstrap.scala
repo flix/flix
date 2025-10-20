@@ -871,7 +871,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       */
     def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[Map[Manifest, Trust], BootstrapError] = {
-      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).mapErr(BootstrapError.FlixPackageError(_))
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.computeTrust) match {
+        case Err(e) => Err(BootstrapError.FlixPackageError(e))
+        case Ok(trustMap) =>
+          val trustResolutionErrors = FlixPackageManager.checkTrust(trustMap)
+          if (trustResolutionErrors.isEmpty) {
+            Ok(trustMap)
+          } else {
+            Err(BootstrapError.GeneralError(trustResolutionErrors.map(_.toString)))
+          }
+      }
     }
 
     /**

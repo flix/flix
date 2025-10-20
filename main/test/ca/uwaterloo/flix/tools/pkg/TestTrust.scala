@@ -209,13 +209,19 @@ class TestTrust extends AnyFunSuite {
       case Err(e) => fail(e.message(formatter))
     }
 
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None, checkTrust = true) match {
+    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
       case Ok(ms) => ms
-      case Err(e: PackageError.TrustError) => return (true, e.toString) // A trust error was raised by the package manager
       case Err(e) => fail(e.message(formatter))
     }
 
-    val pkgs = FlixPackageManager.installAll(allManifests, path, None) match {
+    val manifestsWithTrust = FlixPackageManager.computeTrust(allManifests)
+
+    val trustResolutionErrors = FlixPackageManager.checkTrust(manifestsWithTrust)
+    if (trustResolutionErrors.nonEmpty) {
+      return (true, trustResolutionErrors.mkString(System.lineSeparator()))
+    }
+
+    val pkgs = FlixPackageManager.installAll(manifestsWithTrust, path, None) match {
       case Ok(ps) => ps
       case Err(e) => fail(e.message(formatter))
     }

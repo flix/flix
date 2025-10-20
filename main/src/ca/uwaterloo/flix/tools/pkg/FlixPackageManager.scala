@@ -29,27 +29,30 @@ import scala.util.Using
 
 object FlixPackageManager {
 
+  case class Resolution(origin: Manifest,
+                        manifests: List[Manifest],
+                        immediateDependents: Map[Manifest, List[Manifest]],
+                        manifestToFlixDep: Map[Manifest, List[FlixDependency]])
+
   /**
     * Finds all the transitive dependencies for `manifest` and
     * returns their manifests. The toml files for the manifests
     * will be put at `path/lib`.
     */
-  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], checkTrust: Boolean = false)(implicit formatter: Formatter, out: PrintStream): Result[Map[Manifest, Trust], PackageError] = {
+  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
     out.println("Resolving Flix dependencies...")
-    implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
-    implicit val manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]] = mutable.Map.empty
-    implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(manifest -> Trust.Unrestricted)
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
-      case Err(e) => Err(e)
-      case Ok(manifests) =>
-        val withTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m))).toMap
-        val result = manifests.map(m => m -> trustLevels(m)).toMap
-        if (checkTrust) {
-          traverse(withTrusts) { case (m, t) => findTrustViolations(m, t) }.map(_ => result)
-        } else {
-          Ok(result)
-        }
-    }
+    implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
+    implicit val manifestToDep: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, manifestToDep.toMap))
+  }
+
+  def computeTrust(resolution: Resolution): Map[Manifest, Trust] = {
+    implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(resolution.origin -> Trust.Unrestricted)
+    resolution.manifests.map(m => (m, minTrustLevel(m)(resolution.immediateDependents, resolution.manifestToFlixDep, trustLevels))).toMap
+  }
+
+  def checkTrust(manifests: Map[Manifest, Trust]): List[PackageError.TrustError] = {
+    manifests.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
   }
 
   /**
@@ -199,7 +202,7 @@ object FlixPackageManager {
     }
   }
 
-  private def minTrustLevel(manifest: Manifest)(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
+  private def minTrustLevel(manifest: Manifest)(implicit immediateDependents: Map[Manifest, List[Manifest]], manifestToDep: Map[Manifest, List[Dependency.FlixDependency]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
     trustLevels.get(manifest) match {
       case Some(t) => t
       case None =>
@@ -212,22 +215,19 @@ object FlixPackageManager {
     }
   }
 
-  private def findTrustViolations(m: Manifest, t: Trust): Result[Unit, PackageError] = {
+  private def findTrustViolations(m: Manifest, t: Trust): List[PackageError.TrustError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
-    val trustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
-    Result.sequence(trustErrors).flatMap {
-      _ =>
-        t match {
-          case Trust.Plain =>
-            // No maven or jar deps allowed
-            Result.sequence(
-              m.dependencies.collect {
-                case d: MavenDependency => d
-                case d: JarDependency => d
-              }.map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
-            ).map(_ => ())
-          case Trust.Unrestricted => Ok(())
-        }
+    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustError(d, t))
+    t match {
+      case Trust.Plain =>
+        // No maven or jar deps allowed
+        val dependencyTrustErrors = m.dependencies.collect {
+          case d: MavenDependency => d
+          case d: JarDependency => d
+        }.map(d => PackageError.TrustError(d, t))
+        manifestTrustErrors ::: dependencyTrustErrors
+      case Trust.Unrestricted =>
+        manifestTrustErrors
     }
   }
 
