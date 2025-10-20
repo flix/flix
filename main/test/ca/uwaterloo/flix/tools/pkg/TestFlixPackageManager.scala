@@ -17,8 +17,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   private implicit val formatter: Formatter = Formatter.NoFormatter
   private implicit val out: PrintStream = System.out
 
-  before { // before each test, sleep for 1000
+  before { // before each test, sleep for 1000 ms
     Thread.sleep(1000)
+  }
+
+  private def throttle[A](action: => A): A = {
+    Thread.sleep(1000)
+    val result = action
+    Thread.sleep(1000)
+    result
   }
 
   private val Main: String =
@@ -27,19 +34,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       |    TestPkgTrust.entry()
       |""".stripMargin
 
-
   private val MainTransitive: String =
     """
       |pub def main(): Unit \ IO =
       |    TestPkgTrustTransitive.entry()
       |""".stripMargin
-
-  private def throttle[A](action: => A): A = {
-    Thread.sleep(1000)
-    val result = action
-    Thread.sleep(1000)
-    result
-  }
 
   test("Install missing dependency.01") {
     assertResult(expected = true)(actual = {
