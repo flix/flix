@@ -47,20 +47,15 @@ object Eraser {
   }
 
   private def visitDef(defn: Def): Def = defn match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
       val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
     case FormalParam(sym, tpe) =>
       FormalParam(sym, visitType(tpe))
-  }
-
-  private def visitLocalParam(p: LocalParam): LocalParam = p match {
-    case LocalParam(sym, tpe) =>
-      LocalParam(sym, visitType(tpe))
   }
 
   private def visitEnum(enm: Enum): Enum = enm match {

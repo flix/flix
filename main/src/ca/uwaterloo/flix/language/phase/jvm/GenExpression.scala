@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2025 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers, Source}
 
-import java.lang.reflect.Method
-
-object ReducedAst {
-
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
+object JvmAst {
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
+                  types: Set[SimpleType],
+                  anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
+  {
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
+
+  }
+
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
@@ -61,6 +63,7 @@ object ReducedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
       def tpe: SimpleType = cst.tpe
+
       def purity: Purity = Pure
     }
 
@@ -87,12 +90,14 @@ object ReducedAst {
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
+
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
     case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
+
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
@@ -120,14 +125,17 @@ object ReducedAst {
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType)
+  sealed trait Param {
+    def sym: Symbol.VarSym
 
-  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
+    def tpe: SimpleType
+  }
+
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+
+  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
-
-  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
-  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
 }
 
