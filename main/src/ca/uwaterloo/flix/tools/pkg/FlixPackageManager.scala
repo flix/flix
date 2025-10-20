@@ -36,6 +36,7 @@ object FlixPackageManager {
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
+    implicit val manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]] = mutable.Map.empty
     implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(manifest -> Trust.Unrestricted)
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
       case Err(e) => Err(e)
@@ -157,7 +158,7 @@ object FlixPackageManager {
     * parses them to manifests. Returns the list of manifests.
     * `res` is the list of Manifests found so far to avoid duplicates.
     */
-  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  private def findTransitiveDependenciesRec(manifest: Manifest, path: Path, res: List[Manifest], apiKey: Option[String])(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     // find Flix dependencies of the current manifest
     val flixDeps = findFlixDependencies(manifest)
 
@@ -165,11 +166,16 @@ object FlixPackageManager {
       // download toml files
       tomlPaths <- traverse(flixDeps) { dep =>
         val depName = s"${dep.username}/${dep.projectName}"
-        install(depName, dep.version, "toml", path, apiKey)
+        install(depName, dep.version, "toml", path, apiKey).map(p => (p, dep))
       }
 
       // parse manifests
-      transitiveManifests <- traverse(tomlPaths)(parseManifest)
+      transitiveManifests <- traverse(tomlPaths) { case (p, d) => parseManifest(p).map {
+        m =>
+          manifestToDep.put(m, d :: manifestToDep.getOrElse(m, List.empty))
+          m
+      }
+      }
 
     } yield {
       for (m <- transitiveManifests) {
@@ -191,14 +197,15 @@ object FlixPackageManager {
     }
   }
 
-  private def minTrustLevel(dep: Manifest)(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
-    trustLevels.get(dep) match {
+  private def minTrustLevel(manifest: Manifest)(implicit immediateDependents: mutable.Map[Manifest, List[Manifest]], manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
+    trustLevels.get(manifest) match {
       case Some(t) => t
       case None =>
-        // fixme: also get the trust level for `dep` in each manifest in `immediateDependents(dep)` - maybe require converting it to a dep or matching on name
-        val trusts = immediateDependents(dep).map(minTrustLevel)
-        val glb = Trust.glb(trusts)
-        trustLevels.put(dep, glb)
+        val imDeps = immediateDependents(manifest)
+        val incomingTrusts = manifestToDep(manifest).map(_.trust)
+        val parentTrusts = imDeps.map(minTrustLevel)
+        val glb = Trust.glb(parentTrusts ::: incomingTrusts)
+        trustLevels.put(manifest, glb)
         glb
     }
   }
