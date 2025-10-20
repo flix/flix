@@ -179,7 +179,7 @@ class TestTrust extends AnyFunSuite {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->unrestricted' and dependency using java")
+      fail(message + System.lineSeparator() + "expected failure with trust 'unrestricted->unrestricted+plain' and dependency using java")
     }
   }
 
