@@ -235,7 +235,9 @@ object ConstraintSolver2 {
   private def breakDownConstraints(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = constr match {
     case TypeConstraint.Equality(t1@Type.Apply(tpe11, tpe12, _), t2@Type.Apply(tpe21, tpe22, _), prov) if isSyntactic(t1.kind) && isSyntactic(t2.kind) =>
       progress.markProgress()
-      List(TypeConstraint.Equality(tpe11, tpe21, prov), TypeConstraint.Equality(tpe12, tpe22, prov))
+      val setA = breakDownConstraints(TypeConstraint.Equality(tpe11,tpe21,prov),progress).flatMap(trivialSolve(_,progress))
+      val setB = breakDownConstraints(TypeConstraint.Equality(tpe12,tpe22,prov),progress).flatMap(trivialSolve(_,progress))
+      setA ++ setB
 
     case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       val nested = nested0.flatMap(breakDownConstraints(_, progress))
@@ -244,6 +246,14 @@ object ConstraintSolver2 {
     case c => List(c)
   }
 
+  /**
+    * Performs trivial solving on the given constraint.
+    * Eliminates identities and errors.
+    */
+  private def trivialSolve(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = {
+    eliminateIdentities(constr, progress)
+      .flatMap(eliminateErrors(_, progress))
+  }
   /**
     * Eliminates constraints that are the same on the left and right
     *
