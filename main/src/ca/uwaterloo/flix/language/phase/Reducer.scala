@@ -71,8 +71,8 @@ object Reducer {
     case ReducedAst.Def(ann, mod, sym, cparams0, fparams0, exp, tpe, unboxedType0, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
 
-      val cparams = cparams0.map(visitFParam)
-      val fparams = fparams0.map(visitFParam)
+      val cparams = cparams0.map(visitFormalParam)
+      val fparams = fparams0.map(visitFormalParam)
       val e = visitExpr(exp)
       // `ls` is initialized based on the context mutation of `visitExpr`
       val ls = lctx.lparams.toList
@@ -99,7 +99,7 @@ object Reducer {
   }
 
   private def visitEnum(enm: ReducedAst.Enum): JvmAst.Enum = {
-    val tparams = enm.tparams.map(visitTParam)
+    val tparams = enm.tparams.map(visitTypeParam)
     val cases = MapOps.mapValues(enm.cases)(visitCase)
     JvmAst.Enum(enm.ann, enm.mod, enm.sym, tparams, cases, enm.loc)
   }
@@ -108,7 +108,7 @@ object Reducer {
     JvmAst.Case(caze.sym, caze.tpes, caze.loc)
 
   private def visitStruct(struct: ReducedAst.Struct): JvmAst.Struct = {
-    val tparams = struct.tparams.map(visitTParam)
+    val tparams = struct.tparams.map(visitTypeParam)
     val fields = struct.fields.map(visitStructField)
     JvmAst.Struct(struct.ann, struct.mod, struct.sym, tparams, fields, struct.loc)
   }
@@ -122,7 +122,7 @@ object Reducer {
   }
 
   private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
-    val fparams = op.fparams.map(visitFParam)
+    val fparams = op.fparams.map(visitFormalParam)
     JvmAst.Op(op.sym, op.ann, op.mod, fparams, op.tpe, op.purity, op.loc)
   }
 
@@ -208,7 +208,7 @@ object Reducer {
         val rs = rules.map {
           case ReducedAst.HandlerRule(op, fparams, body) =>
             val b = visitExpr(body)
-            JvmAst.HandlerRule(op, fparams.map(visitFParam), b)
+            JvmAst.HandlerRule(op, fparams.map(visitFormalParam), b)
         }
         JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
@@ -216,7 +216,7 @@ object Reducer {
         val specs = methods.map {
           case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmAst.JvmMethod(ident, fparams.map(visitFParam), c, retTpe, methPurity, methLoc)
+            JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
 
@@ -225,10 +225,10 @@ object Reducer {
     }
   }
 
-  private def visitFParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
+  private def visitFormalParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
     JvmAst.FormalParam(fp.sym, fp.tpe)
 
-  private def visitTParam(tp: ReducedAst.TypeParam): JvmAst.TypeParam =
+  private def visitTypeParam(tp: ReducedAst.TypeParam): JvmAst.TypeParam =
     JvmAst.TypeParam(tp.name, tp.sym)
 
   /**
