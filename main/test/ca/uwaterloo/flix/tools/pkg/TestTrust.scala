@@ -183,6 +183,22 @@ class TestTrust extends AnyFunSuite {
     }
   }
 
+  test("transitive.diamond.trust:unrestricted->unrestricted+unrestricted-dep:java") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->unrestricted+unrestricted' and dependency using java")
+    } else {
+      succeed
+    }
+  }
+
   /**
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
