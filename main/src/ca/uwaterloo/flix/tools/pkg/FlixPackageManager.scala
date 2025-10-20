@@ -219,6 +219,12 @@ object FlixPackageManager {
     }
   }
 
+  /**
+    * Computes the maximum allowed trust level for `manifest` which is the minimum / greatest lower bound of both
+    *   1. the [[minTrustLevel]] of all (transitive) dependent / parent manifests and
+    *   1. the trust levels with which `manifest` is depended upon,
+    *      i.e., when `trust = "..."` occurs in a manifest and that dependency points to `manifest`.
+    */
   private def minTrustLevel(manifest: Manifest)(implicit resolution: Resolution, trustLevels: mutable.Map[Manifest, Trust]): Trust = {
     trustLevels.get(manifest) match {
       case Some(t) => t
