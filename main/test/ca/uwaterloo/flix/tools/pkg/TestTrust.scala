@@ -44,6 +44,38 @@ class TestTrust extends AnyFunSuite {
     assertResult(perm)(res)
   }
 
+  test("lub.01") {
+    assertResult(Trust.Plain)(Trust.Plain.lub(Trust.Plain))
+  }
+
+  test("lub.02") {
+    assertResult(Trust.Unrestricted)(Trust.Plain.lub(Trust.Unrestricted))
+  }
+
+  test("lub.03") {
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.lub(Trust.Plain))
+  }
+
+  test("lub.04") {
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.lub(Trust.Unrestricted))
+  }
+
+  test("glb.01") {
+    assertResult(Trust.Plain)(Trust.Plain.lub(Trust.Plain))
+  }
+
+  test("glb.02") {
+    assertResult(Trust.Plain)(Trust.Plain.lub(Trust.Unrestricted))
+  }
+
+  test("glb.03") {
+    assertResult(Trust.Plain)(Trust.Unrestricted.lub(Trust.Plain))
+  }
+
+  test("glb.04") {
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.lub(Trust.Unrestricted))
+  }
+
   test("trust:plain-dep:plain") {
     val deps = List(
       """
