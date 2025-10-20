@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, Ma
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
+import ca.uwaterloo.flix.util.collection.ListMap
 
 import java.io.{IOException, PrintStream}
 import java.nio.file.{Files, Path, StandardCopyOption}
@@ -33,7 +34,7 @@ object FlixPackageManager {
     * returns their manifests. The toml files for the manifests
     * will be put at `path/lib`.
     */
-  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], checkTrust: Boolean = false)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], checkTrust: Boolean = false)(implicit formatter: Formatter, out: PrintStream): Result[Map[Manifest, Trust], PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
     implicit val manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]] = mutable.Map.empty
@@ -41,11 +42,12 @@ object FlixPackageManager {
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
       case Err(e) => Err(e)
       case Ok(manifests) =>
+        val withTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m))).toMap
+        val result = manifests.map(m => m -> withTrusts(m)).toMap
         if (checkTrust) {
-          val manifestTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m)))
-          traverse(manifestTrusts) { case (m, t) => findTrustViolations(m, t) }.map(_ => manifests)
+          traverse(withTrusts) { case (m, t) => findTrustViolations(m, t) }.map(_ => result)
         } else {
-          Ok(manifests)
+          Ok(result)
         }
     }
   }
@@ -77,20 +79,20 @@ object FlixPackageManager {
     * Installs all the Flix dependencies for a list of Manifests at the `lib/` directory
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifests: List[Manifest], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
+  def installAll(manifests: Map[Manifest, Trust], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps: List[FlixDependency] = manifests.foldLeft(List.empty[FlixDependency])((l, m) => l ::: findFlixDependencies(m))
+    val allFlixDeps = manifests.keys.foldLeft(ListMap.empty[Trust, FlixDependency])((acc, m) => acc ++ (manifests(m) -> findFlixDependencies(m)))
 
-    val flixPaths = allFlixDeps.map { dep =>
+    val flixPaths = allFlixDeps.map { case (trust, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, "fpkg", path, apiKey) match {
-        case Ok(p) => (p, dep.trust)
+        case Ok(p) => (p, trust.glb(dep.trust))
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
       }
-    }
+    }.toList
 
     Ok(flixPaths)
   }
