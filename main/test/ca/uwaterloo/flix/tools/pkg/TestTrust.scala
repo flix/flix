@@ -193,6 +193,7 @@ class TestTrust extends AnyFunSuite {
 
     val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
       case Ok(ms) => ms
+      case Err(e: PackageError.TrustError) => return (true, e.toString)
       case Err(e) => fail(e.message(formatter))
     }
 
