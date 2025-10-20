@@ -43,7 +43,7 @@ object FlixPackageManager {
       case Err(e) => Err(e)
       case Ok(manifests) =>
         val withTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m))).toMap
-        val result = manifests.map(m => m -> withTrusts(m)).toMap
+        val result = manifests.map(m => m -> trustLevels(m)).toMap
         if (checkTrust) {
           traverse(withTrusts) { case (m, t) => findTrustViolations(m, t) }.map(_ => result)
         } else {
