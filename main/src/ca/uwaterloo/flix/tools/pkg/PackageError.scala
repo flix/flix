@@ -47,7 +47,7 @@ object PackageError {
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
          |Error:
-         |${f.red(exception.getStackTrace.mkString(exception.getMessage, System.lineSeparator(), ""))}
+         |${f.red(exception.getMessage)}
          |""".stripMargin
   }
 
