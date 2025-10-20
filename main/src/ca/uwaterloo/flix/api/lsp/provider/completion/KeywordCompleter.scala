@@ -83,7 +83,7 @@ object KeywordCompleter {
     *
     * Returns only those keywords that are a prefix of the given `qname` (if present).
     */
-  def getExprKeywords(qname: Option[Name.QName], range: Range): List[Completion] =
+  def getExpKeywords(qname: Option[Name.QName], range: Range): List[Completion] =
     List(
       // A
       Completion.KeywordCompletion("and"         , range, Priority.Lowest(0)),

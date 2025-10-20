@@ -126,7 +126,7 @@ object CodeHinter {
 
       override def consumeDefSymUse(symUse: DefSymUse): Unit = defOccurs = symUse :: defOccurs
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
+      override def consumeExp(exp: Expr): Unit = exp match {
         case TypedAst.Expr.ApplyDef(symUse, exps, _, _, _, _, _) => applyDefOccurs = (symUse.sym, exps) :: applyDefOccurs
         case _ => ()
       }

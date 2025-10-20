@@ -628,7 +628,7 @@ class TestCompletionProvider extends AnyFunSuite {
     var occurs: Set[SymUse.DefSymUse] = Set.empty
 
     object DefSymUseConsumer extends Consumer {
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+      override def consumeExp(exp: TypedAst.Expr): Unit = exp match {
         case TypedAst.Expr.ApplyDef(symUse, _, _, _, _, _, _) if symUse.loc.isReal =>
           occurs += symUse
         case _ =>
@@ -647,7 +647,7 @@ class TestCompletionProvider extends AnyFunSuite {
     var occurs: Set[(Symbol.VarSym, SourceLocation)] = Set.empty
 
     object VarConsumer extends Consumer {
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+      override def consumeExp(exp: TypedAst.Expr): Unit = exp match {
         case TypedAst.Expr.Var(sym, _, loc) if sym.loc.isReal => occurs += ((sym, loc))
         case _ =>
       }

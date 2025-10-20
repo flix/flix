@@ -1420,11 +1420,11 @@ object Desugar {
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val paramVarExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.ExtMatchRule(pat0, exp0, loc0.asSynthetic)
 
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
-    val body = DesugaredAst.Expr.ExtMatch(paramVarExpr, List(rule), loc0.asSynthetic)
+    val body = DesugaredAst.Expr.ExtMatch(paramVarExp, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
 
@@ -1452,11 +1452,11 @@ object Desugar {
     val ident = Name.Ident("matchVar" + Flix.Delimiter + flix.genSym.freshId(), loc0.asSynthetic)
 
     // Construct the body of the lambda expression.
-    val paramVarExpr = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
+    val paramVarExp = DesugaredAst.Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), loc0.asSynthetic)
     val rule = DesugaredAst.MatchRule(pat0, None, exp0, loc0.asSynthetic)
 
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
-    val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
+    val body = DesugaredAst.Expr.Match(paramVarExp, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
   }
 

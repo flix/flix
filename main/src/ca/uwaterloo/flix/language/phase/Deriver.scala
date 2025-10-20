@@ -164,7 +164,7 @@ object Deriver {
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
-        KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+        KindedAst.Expr.Tuple(List(mkVarExp(param1, loc), mkVarExp(param2, loc)), loc),
         mainMatchRules ++ List(defaultRule),
         loc
       )
@@ -218,8 +218,8 @@ object Deriver {
         case (varSym1, varSym2) =>
           KindedAst.Expr.ApplySig(SigSymUse(eqSym, loc),
             List(
-              mkVarExpr(varSym1, loc),
-              mkVarExpr(varSym2, loc)
+              mkVarExp(varSym1, loc),
+              mkVarExp(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
             List.empty,
@@ -322,7 +322,7 @@ object Deriver {
       // Create the lambda mapping tags to indices
       val lambdaParamSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
       val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamSym, loc), indexMatchRules, loc)
+      val indexMatchExp = KindedAst.Expr.Match(mkVarExp(lambdaParamSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
         KindedAst.FormalParam(lambdaParamSym, lambdaParamSym.tvar, TypeSource.Ascribed, loc),
         indexMatchExp,
@@ -342,15 +342,15 @@ object Deriver {
           SigSymUse(compareSigSym, loc),
           List(
             KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaSym, loc),
-              mkVarExpr(param1, loc),
+              mkVarExp(lambdaSym, loc),
+              mkVarExp(param1, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc
             ),
             KindedAst.Expr.ApplyClo(
-              mkVarExpr(lambdaSym, loc),
-              mkVarExpr(param2, loc),
+              mkVarExp(lambdaSym, loc),
+              mkVarExp(param2, loc),
               Type.freshVar(Kind.Star, loc),
               Type.freshVar(Kind.Eff, loc),
               loc),
@@ -367,7 +367,7 @@ object Deriver {
 
       // Wrap the cases in a match expression
       val matchExp = KindedAst.Expr.Match(
-        KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
+        KindedAst.Expr.Tuple(List(mkVarExp(param1, loc), mkVarExp(param2, loc)), loc),
         matchRules :+ defaultMatchRule,
         loc
       )
@@ -442,8 +442,8 @@ object Deriver {
           KindedAst.Expr.ApplySig(
             SigSymUse(compareSigSym, loc),
             List(
-              mkVarExpr(varSym1, loc),
-              mkVarExpr(varSym2, loc)
+              mkVarExp(varSym1, loc),
+              mkVarExp(varSym2, loc)
             ),
             Type.freshVar(Kind.Star, loc),
             List.empty,
@@ -471,7 +471,7 @@ object Deriver {
             KindedAst.MatchRule(
               mkVarPattern(matchVarSym, loc),
               None,
-              mkVarExpr(matchVarSym, loc),
+              mkVarExp(matchVarSym, loc),
               loc
             ),
         ),
@@ -555,7 +555,7 @@ object Deriver {
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
-        mkVarExpr(param, loc),
+        mkVarExp(param, loc),
         matchRules,
         loc
       )
@@ -607,7 +607,7 @@ object Deriver {
         varSym =>
           KindedAst.Expr.ApplySig(
             SigSymUse(toStringSym, loc),
-            List(mkVarExpr(varSym, loc)),
+            List(mkVarExp(varSym, loc)),
             Type.freshVar(Kind.Star, loc),
             List.empty,
             Type.freshVar(Kind.Star, loc),
@@ -619,7 +619,7 @@ object Deriver {
 
       // put commas between the arguments
       // `toString(x0)`, `", "`, `toString(x1)`
-      val sep = mkStrExpr(", ", loc)
+      val sep = mkStrExp(", ", loc)
       val valuePart = intersperse(toStrings, sep)
 
       // put it all together
@@ -628,7 +628,7 @@ object Deriver {
         // Case 1: no arguments: just show the tag
         case Nil => tagPart
         // Case 2: at least one argument: concatenate the tag with the values wrapped in parens
-        case exps => concatAll(tagPart :: mkStrExpr("(", loc) :: (exps :+ mkStrExpr(")", loc)), loc)
+        case exps => concatAll(tagPart :: mkStrExp("(", loc) :: (exps :+ mkStrExp(")", loc)), loc)
       }
 
       KindedAst.MatchRule(pat, None, exp, loc)
@@ -700,7 +700,7 @@ object Deriver {
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
-        mkVarExpr(param, loc),
+        mkVarExp(param, loc),
         matchRules,
         loc
       )
@@ -756,7 +756,7 @@ object Deriver {
               acc,
               KindedAst.Expr.ApplySig(
                 SigSymUse(hashSigSym, loc),
-                List(mkVarExpr(varSym, loc)),
+                List(mkVarExp(varSym, loc)),
                 Type.freshVar(Kind.Star, loc),
                 List.empty,
                 Type.freshVar(Kind.Star, loc),
@@ -928,12 +928,12 @@ object Deriver {
   /**
     * Builds a string expression from the given string.
     */
-  private def mkStrExpr(str: String, loc: SourceLocation): KindedAst.Expr = KindedAst.Expr.Cst(Constant.Str(str), loc)
+  private def mkStrExp(str: String, loc: SourceLocation): KindedAst.Expr = KindedAst.Expr.Cst(Constant.Str(str), loc)
 
   /**
     * Builds a var expression from the given var sym.
     */
-  private def mkVarExpr(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(sym, loc)
+  private def mkVarExp(sym: Symbol.VarSym, loc: SourceLocation): KindedAst.Expr.Var = KindedAst.Expr.Var(sym, loc)
 
   /**
     * Builds a string concatenation expression from the given expressions.

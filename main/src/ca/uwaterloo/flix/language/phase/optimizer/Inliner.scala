@@ -1014,9 +1014,9 @@ object Inliner {
       this.copy(varSubst = l.foldLeft(this.varSubst)(_ ++ _))
     }
 
-    /** Returns a [[LocalContext]] with the mapping `sym -> substExpr` added to [[subst]]. */
-    def addSubst(sym: Symbol.VarSym, substExpr: SubstRange): LocalContext = {
-      this.copy(subst = this.subst.updated(sym, substExpr))
+    /** Returns a [[LocalContext]] with the mapping `sym -> substExp` added to [[subst]]. */
+    def addSubst(sym: Symbol.VarSym, substExp: SubstRange): LocalContext = {
+      this.copy(subst = this.subst.updated(sym, substExp))
     }
 
     /** Returns a [[LocalContext]] with [[subst]] overwritten by `newSubst`. */

@@ -59,7 +59,7 @@ object Reducer {
       implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
 
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       val ls = lctx.lparams.toList
 
       // Set variable offsets - the variable order is important and must match the assumptions of the backend.
@@ -83,7 +83,7 @@ object Reducer {
       Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, loc)
   }
 
-  private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
+  private def visitExp(exp0: Expr)(implicit lctx: LocalContext, root: Root, ctx: SharedContext): Expr = {
     ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
       case Expr.Cst(cst, loc) =>
@@ -93,40 +93,40 @@ object Reducer {
         Expr.Var(sym, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExpr)
+        val es = exps.map(visitExp)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.addPcPoint()
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         Expr.ApplyClo(e1, e2, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         val defn = root.defs(sym)
         if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.exp.purity)) lctx.addPcPoint()
-        val es = exps.map(visitExpr)
+        val es = exps.map(visitExp)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
       case Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
         lctx.addPcPoint()
-        val es = exps.map(visitExpr)
+        val es = exps.map(visitExp)
         Expr.ApplyOp(sym, es, tpe, purity, loc)
 
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
-        val es = exps.map(visitExpr)
+        val es = exps.map(visitExp)
         Expr.ApplySelfTail(sym, es, tpe, purity, loc)
 
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
-        val e3 = visitExpr(exp3)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
+        val e3 = visitExp(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
       case Expr.Branch(exp, branches, tpe, purity, loc) =>
-        val e = visitExpr(exp)
+        val e = visitExp(exp)
         val bs = branches map {
-          case (label, body) => label -> visitExpr(body)
+          case (label, body) => label -> visitExp(body)
         }
         Expr.Branch(e, bs, tpe, purity, loc)
 
@@ -135,36 +135,36 @@ object Reducer {
 
       case Expr.Let(sym, exp1, exp2, loc) =>
         lctx.lparams.addOne(LocalParam(sym, exp1.tpe))
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         Expr.Let(sym, e1, e2, loc)
 
       case Expr.Stmt(exp1, exp2, loc) =>
-        val e1 = visitExpr(exp1)
-        val e2 = visitExpr(exp2)
+        val e1 = visitExp(exp1)
+        val e2 = visitExp(exp2)
         Expr.Stmt(e1, e2, loc)
 
       case Expr.Region(sym, exp, tpe, purity, loc) =>
         lctx.lparams.addOne(LocalParam(sym, SimpleType.Region))
-        val e = visitExpr(exp)
+        val e = visitExp(exp)
         Expr.Region(sym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
-        val e = visitExpr(exp)
+        val e = visitExp(exp)
         val rs = rules map {
           case CatchRule(sym, clazz, body) =>
             lctx.lparams.addOne(LocalParam(sym, SimpleType.Object))
-            val b = visitExpr(body)
+            val b = visitExp(body)
             CatchRule(sym, clazz, b)
         }
         Expr.TryCatch(e, rs, tpe, purity, loc)
 
       case Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
         if (ct == ExpPosition.NonTail) lctx.addPcPoint()
-        val e = visitExpr(exp)
+        val e = visitExp(exp)
         val rs = rules.map {
           case HandlerRule(op, fparams, body) =>
-            val b = visitExpr(body)
+            val b = visitExp(body)
             HandlerRule(op, fparams, b)
         }
         Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
@@ -172,7 +172,7 @@ object Reducer {
       case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
         val specs = methods.map {
           case JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
-            val c = visitExpr(clo)
+            val c = visitExp(clo)
             JvmMethod(ident, fparams, c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(AnonClass(name, clazz, tpe, specs, loc))

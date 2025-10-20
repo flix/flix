@@ -76,7 +76,7 @@ case class StackConsumer() extends Consumer {
 
   override def consumeEqualityConstraint(ec: EqualityConstraint): Unit = push(ec)
 
-  override def consumeExpr(exp: Expr): Unit = push(exp)
+  override def consumeExp(exp: Expr): Unit = push(exp)
 
   override def consumeFormalParam(fparam: FormalParam): Unit = push(fparam)
 

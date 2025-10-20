@@ -221,7 +221,7 @@ object RenameProvider {
     }
 
     object VarSymConsumer extends Consumer {
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+      override def consumeExp(exp: TypedAst.Expr): Unit = exp match {
         case TypedAst.Expr.Var(s, _, loc) => consider(s, loc)
         case _ => ()
       }

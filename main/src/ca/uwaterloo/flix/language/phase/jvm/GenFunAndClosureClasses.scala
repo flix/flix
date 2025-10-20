@@ -283,7 +283,7 @@ object GenFunAndClosureClasses {
     val localOffset = 0
     val labelEnv = Map.empty[Symbol.LabelSym, Label]
     val ctx = GenExpression.DirectStaticContext(enterLabel, labelEnv, localOffset)
-    GenExpression.compileExpr(defn.exp)(m, ctx, root, flix)
+    GenExpression.compileExp(defn.exp)(m, ctx, root, flix)
 
     BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
 
@@ -363,7 +363,7 @@ object GenFunAndClosureClasses {
 
     if (Purity.isControlPure(defn.exp.purity)) {
       val ctx = GenExpression.DirectInstanceContext(enterLabel, Map.empty, localOffset)
-      GenExpression.compileExpr(defn.exp)(m, ctx, root, flix)
+      GenExpression.compileExp(defn.exp)(m, ctx, root, flix)
     } else {
       val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
       if (defn.pcPoints > 0) {
@@ -400,7 +400,7 @@ object GenFunAndClosureClasses {
       }
 
       val ctx = GenExpression.EffectContext(enterLabel, Map.empty, newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
-      GenExpression.compileExpr(defn.exp)(m, ctx, root, flix)
+      GenExpression.compileExp(defn.exp)(m, ctx, root, flix)
       assert(ctx.pcCounter(0) == pcLabels.size, s"${(className, ctx.pcCounter(0), pcLabels.size)}")
     }
 

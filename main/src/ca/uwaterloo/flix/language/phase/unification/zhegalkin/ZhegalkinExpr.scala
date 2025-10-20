@@ -29,7 +29,7 @@ object ZhegalkinExpr {
     *
     * A Zhegalkin expression is of the form: c ⊕ t1 ⊕ t2 ⊕ ... ⊕ tn
     */
-  def mkZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+  def mkZhegalkinExp[T](cst: T, terms: List[ZhegalkinTerm[T]])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     if (cst == lat.Bot && terms.isEmpty) {
       return alg.zero
     }
@@ -147,7 +147,7 @@ object ZhegalkinExpr {
           }
           ZhegalkinTerm(mergedCst, vars)
       }
-      mkZhegalkinExpr(c, mergedTerms)
+      mkZhegalkinExp(c, mergedTerms)
   }
 
   /**
@@ -219,18 +219,18 @@ object ZhegalkinExpr {
     */
   private def computeInter[T](e1: ZhegalkinExpr[T], e2: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e1 match {
     case ZhegalkinExpr(c1, ts1) =>
-      val zero = mkInterConstantExpr(c1, e2)
+      val zero = mkInterConstantExp(c1, e2)
       ts1.foldLeft(zero) {
-        case (acc, z) => mkXor(acc, mkInterTermExpr(z, e2))
+        case (acc, z) => mkXor(acc, mkInterTermExp(z, e2))
       }
   }
 
   /**
     * Computes the intersection of the given Zhegalkin constant `c` and the given Zhegalkin expression `e`.
     */
-  private def mkInterConstantExpr[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
+  private def mkInterConstantExp[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = {
     // Perform a cache lookup or an actual computation.
-    alg.Cache.lookupOrComputeInterCst(c, e, computeInterConstantExpr)
+    alg.Cache.lookupOrComputeInterCst(c, e, computeInterConstantExp)
   }
 
   /**
@@ -240,10 +240,10 @@ object ZhegalkinExpr {
     *   c ∩ (c2 ⊕ t21 ⊕ t22 ⊕ ... ⊕ t2m) = (c ∩ c2) ⊕ (c ∩ t21) ⊕ (c ∩ t22) ⊕ ... ⊕ (c ∩ t2m)
     * }}}
     */
-  private def computeInterConstantExpr[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
+  private def computeInterConstantExp[T](c: T, e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
       val ts = terms.map(t => mkInterConstantTerm(c, t))
-      mkZhegalkinExpr(lat.meet(c, c2), ts)
+      mkZhegalkinExp(lat.meet(c, c2), ts)
   }
 
   /**
@@ -270,11 +270,11 @@ object ZhegalkinExpr {
     * }}}
     *
     */
-  private def mkInterTermExpr[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
+  private def mkInterTermExp[T](t: ZhegalkinTerm[T], e: ZhegalkinExpr[T])(implicit alg: ZhegalkinAlgebra[T], lat: BoolLattice[T]): ZhegalkinExpr[T] = e match {
     case ZhegalkinExpr(c2, terms) =>
-      val zero: ZhegalkinExpr[T] = mkZhegalkinExpr(lat.Bot, List(mkInterConstantTerm(c2, t)))
+      val zero: ZhegalkinExpr[T] = mkZhegalkinExp(lat.Bot, List(mkInterConstantTerm(c2, t)))
       terms.foldLeft(zero) {
-        case (acc, t2) => mkXor(acc, mkZhegalkinExpr(lat.Bot, List(mkInterTermTerm(t, t2))))
+        case (acc, t2) => mkXor(acc, mkZhegalkinExp(lat.Bot, List(mkInterTermTerm(t, t2))))
       }
   }
 
@@ -342,7 +342,7 @@ case class ZhegalkinExpr[T](cst: T, terms: List[ZhegalkinTerm[T]]) {
       return this
     }
 
-    terms.foldLeft(ZhegalkinExpr.mkZhegalkinExpr(cst, Nil)) {
+    terms.foldLeft(ZhegalkinExpr.mkZhegalkinExp(cst, Nil)) {
       case (acc, term) => ZhegalkinExpr.mkXor(acc, term.map(f))
     }
   }

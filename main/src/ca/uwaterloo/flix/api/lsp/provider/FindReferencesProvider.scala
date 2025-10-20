@@ -491,7 +491,7 @@ object FindReferencesProvider {
     object VarSymConsumer extends Consumer {
       override def consumeBinder(bnd: Binder): Unit = consider(bnd.sym, bnd.sym.loc)
 
-      override def consumeExpr(exp: TypedAst.Expr): Unit = exp match {
+      override def consumeExp(exp: TypedAst.Expr): Unit = exp match {
         case TypedAst.Expr.Var(varSym, _, loc) => consider(varSym, loc)
         case _ => ()
       }

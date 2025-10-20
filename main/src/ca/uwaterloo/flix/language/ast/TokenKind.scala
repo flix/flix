@@ -556,7 +556,7 @@ sealed trait TokenKind {
   }
 
   /** Returns `true` if this token warrants breaking an expression parsing loop. */
-  def isRecoverInExpr: Boolean = this match {
+  def isRecoverInExp: Boolean = this match {
     case TokenKind.Semi => true
     case _ if this.isFirstInDecl => true
     case _ => false

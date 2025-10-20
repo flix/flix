@@ -75,7 +75,7 @@ object EffectBinder {
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
       val lparams = Nil
-      val exp = visitExpr(exp0)
+      val exp = visitExp(exp0)
       ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
   }
 
@@ -123,7 +123,7 @@ object EffectBinder {
       // JvmMethods are generated as their own functions so let-binding do not
       // span across
       val fparams = fparams0.map(visitParam)
-      val clo = visitExpr(clo0)
+      val clo = visitExp(clo0)
       ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc)
   }
 
@@ -131,90 +131,90 @@ object EffectBinder {
     * Transforms the [[LiftedAst.Expr]] such that effect operations will be run without an
     * operand stack - binding necessary expressions in the returned [[ReducedAst.Expr]].
     */
-  private def visitExpr(exp0: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp0 match {
+  private def visitExp(exp0: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp0 match {
     case LiftedAst.Expr.Cst(_, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Var(_, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.ApplyAtomic(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.ApplyClo(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.ApplyDef(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.ApplyOp(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.IfThenElse(_, _, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Branch(exp, branches0, tpe, purity, loc) =>
-      val e = visitExpr(exp)
-      val branches = MapOps.mapValues(branches0)(visitExpr)
+      val e = visitExp(exp)
+      val branches = MapOps.mapValues(branches0)(visitExp)
       ReducedAst.Expr.Branch(e, branches, tpe, purity, loc)
 
     case LiftedAst.Expr.JumpTo(_, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
+      val e1 = visitExpInnerWithBinders(binders)(exp1)
+      val e2 = visitExp(exp2)
       val e = ReducedAst.Expr.Let(sym, e1, e2, loc)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
+      val e1 = visitExpInnerWithBinders(binders)(exp1)
+      val e2 = visitExp(exp2)
       val e = ReducedAst.Expr.Stmt(e1, e2, loc)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       ReducedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case LiftedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       val rules1 = rules.map {
-        case cr => ReducedAst.CatchRule(cr.sym, cr.clazz, visitExpr(cr.exp))
+        case cr => ReducedAst.CatchRule(cr.sym, cr.clazz, visitExp(cr.exp))
       }
       ReducedAst.Expr.TryCatch(e, rules1, tpe, purity, loc)
 
     case LiftedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       val rules1 = rules.map {
         case LiftedAst.HandlerRule(symUse, fparams0, body) =>
           val fparams = fparams0.map(visitParam)
-          val b = visitExpr(body)
+          val b = visitExp(body)
           ReducedAst.HandlerRule(symUse, fparams, b)
       }
       ReducedAst.Expr.RunWith(e, effUse, rules1, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.NewObject(_, _, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp0)
+      val e = visitExpInnerWithBinders(binders)(exp0)
       bindBinders(binders, e)
   }
 
@@ -226,7 +226,7 @@ object EffectBinder {
     * Necessary bindings are added to binders, where the first binder is the
     * outermost one.
     */
-  private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp0: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp0 match {
+  private def visitExpInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp0: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp0 match {
     case LiftedAst.Expr.Cst(cst, tpe, loc) =>
       ReducedAst.Expr.Cst(cst, loc)
 
@@ -236,37 +236,37 @@ object EffectBinder {
     case LiftedAst.Expr.ApplyAtomic(op@AtomicOp.Binary(SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or), exps, tpe, purity, loc) =>
       // And and Or does not leave the first argument on the stack in genExpression.
       val List(exp1, exp2) = exps
-      val e1 = visitExprWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
+      val e1 = visitExpWithBinders(binders)(exp1)
+      val e2 = visitExp(exp2)
       ReducedAst.Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExprWithBinders(binders))
+      val es = exps.map(visitExpWithBinders(binders))
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyClo(exp1, exp2, tpe, purity, loc) =>
-      val e1 = visitExprWithBinders(binders)(exp1)
-      val e2 = visitExprWithBinders(binders)(exp2)
+      val e1 = visitExpWithBinders(binders)(exp1)
+      val e2 = visitExpWithBinders(binders)(exp2)
       ReducedAst.Expr.ApplyClo(e1, e2, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExprWithBinders(binders))
+      val es = exps.map(visitExpWithBinders(binders))
       ReducedAst.Expr.ApplyDef(sym, es, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
-      val es = exps.map(visitExprWithBinders(binders))
+      val es = exps.map(visitExpWithBinders(binders))
       ReducedAst.Expr.ApplyOp(sym, es, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
-      val e2 = visitExpr(exp2)
-      val e3 = visitExpr(exp3)
+      val e1 = visitExpInnerWithBinders(binders)(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
       ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case LiftedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       val bs = branches.map {
-        case (sym, branchExp) => (sym, visitExpr(branchExp))
+        case (sym, branchExp) => (sym, visitExp(branchExp))
       }
       ReducedAst.Expr.Branch(e, bs, tpe, purity, loc)
 
@@ -274,35 +274,35 @@ object EffectBinder {
       ReducedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
     case LiftedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
+      val e1 = visitExpInnerWithBinders(binders)(exp1)
       binders.addOne(LetBinder(sym, e1, loc))
-      visitExprInnerWithBinders(binders)(exp2)
+      visitExpInnerWithBinders(binders)(exp2)
 
     case LiftedAst.Expr.Stm(exp1, exp2, _, _, loc) =>
-      val e1 = visitExprInnerWithBinders(binders)(exp1)
+      val e1 = visitExpInnerWithBinders(binders)(exp1)
       binders.addOne(NonBinder(e1, loc))
-      visitExprInnerWithBinders(binders)(exp2)
+      visitExpInnerWithBinders(binders)(exp2)
 
     case LiftedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       ReducedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case LiftedAst.Expr.TryCatch(exp, rules0, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       val rules = rules0.map {
         case LiftedAst.CatchRule(sym, clazz, body) =>
           // assumes that catch rule is control pure
-          val b = visitExpr(body)
+          val b = visitExp(body)
           ReducedAst.CatchRule(sym, clazz, b)
       }
       ReducedAst.Expr.TryCatch(e, rules, tpe, purity, loc)
 
     case LiftedAst.Expr.RunWith(exp, effUse, rules, tpe, purity, loc) =>
-      val e = visitExpr(exp)
+      val e = visitExp(exp)
       val rs = rules.map {
         case LiftedAst.HandlerRule(symUse, fparams0, body) =>
           val fparams = fparams0.map(visitParam)
-          val b = visitExpr(body)
+          val b = visitExp(body)
           ReducedAst.HandlerRule(symUse, fparams, b)
       }
       ReducedAst.Expr.RunWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
@@ -320,7 +320,7 @@ object EffectBinder {
     * Necessary bindings are added to binders, where the first binder is the
     * outermost one.
     */
-  private def visitExprWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = {
+  private def visitExpWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = {
     /**
       * Let-binds the given expression, unless its a variable or constant.
       * If the given argument is a binder, then the structure is flattened.
@@ -333,32 +333,32 @@ object EffectBinder {
       case ReducedAst.Expr.JumpTo(_, _, _, _) => e
       case ReducedAst.Expr.ApplyAtomic(_, _, _, _, _) => e
       // non-trivial expressions
-      case ReducedAst.Expr.ApplyClo(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.ApplyDef(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.ApplyOp(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.ApplySelfTail(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.IfThenElse(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.Branch(_, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.ApplyClo(_, _, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.ApplyDef(_, _, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.ApplyOp(_, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.ApplySelfTail(_, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.IfThenElse(_, _, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.Branch(_, _, _, _, _) => letBindExp(binders)(e)
       case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
         binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
       case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
         binders.addOne(NonBinder(exp1, loc))
         bind(exp2)
-      case ReducedAst.Expr.Region(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.RunWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.Region(_, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.RunWith(_, _, _, _, _, _, _) => letBindExp(binders)(e)
+      case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExp(binders)(e)
     }
 
-    bind(visitExprInnerWithBinders(binders)(exp))
+    bind(visitExpInnerWithBinders(binders)(exp))
   }
 
   /**
     * Simply let-binds the given expression, adding a [[ReducedAst.Expr.Let]] to binders.
     * The local params of [[LocalContext]] is updated with this new binder.
     */
-  private def letBindExpr(binders: mutable.ArrayBuffer[Binder])(e: ReducedAst.Expr)(implicit flix: Flix): ReducedAst.Expr.Var = {
+  private def letBindExp(binders: mutable.ArrayBuffer[Binder])(e: ReducedAst.Expr)(implicit flix: Flix): ReducedAst.Expr.Var = {
     val loc = e.loc.asSynthetic
     val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)
     binders.addOne(LetBinder(sym, e, loc))

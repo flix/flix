@@ -98,7 +98,7 @@ object GenExpression {
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
+  def compileExp(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -196,14 +196,14 @@ object GenExpression {
         for ((arg, i) <- exps.zipWithIndex) {
           val argType = BackendType.toBackendType(arg.tpe)
           mv.visitInsn(DUP)
-          compileExpr(arg)
+          compileExp(arg)
           BytecodeInstructions.castIfNotPrim(argType)
           mv.visitFieldInsn(PUTFIELD, jvmName.toInternalName, s"clo$i", argType.toDescriptor)
         }
 
       case AtomicOp.Unary(sop) =>
         val List(exp) = exps
-        compileExpr(exp)
+        compileExp(exp)
 
         sop match {
           case SemanticOp.BoolOp.Not =>
@@ -247,41 +247,41 @@ object GenExpression {
         sop match {
           case BoolOp.And =>
             val andEnd = new Label()
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(DUP)
             mv.visitJumpInsn(IFEQ, andEnd)
             mv.visitInsn(POP)
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitLabel(andEnd)
 
           case BoolOp.Or =>
             val orEnd = new Label()
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(DUP)
             mv.visitJumpInsn(IFNE, orEnd)
             mv.visitInsn(POP)
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitLabel(orEnd)
 
           case Float32Op.Exp =>
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitInsn(F2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2F) // Convert double to float
 
           case Float64Op.Exp =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
 
           case Int8Op.Exp =>
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
@@ -289,9 +289,9 @@ object GenExpression {
             mv.visitInsn(I2B) // Convert int to byte
 
           case Int16Op.Exp =>
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
@@ -299,83 +299,83 @@ object GenExpression {
             mv.visitInsn(I2S) // Convert int to short
 
           case Int32Op.Exp =>
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitInsn(I2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2I) // Convert to int
 
           case Int64Op.Exp =>
-            compileExpr(exp1)
+            compileExp(exp1)
             mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
-            compileExpr(exp2)
+            compileExp(exp2)
             mv.visitInsn(L2D) // Convert to double since "pow" is only defined for doubles
             mv.visitMethodInsn(INVOKESTATIC, JvmName.Math.toInternalName, "pow",
               mkDescriptor(BackendType.Float64, BackendType.Float64)(BackendType.Float64).toDescriptor, false)
             mv.visitInsn(D2L) // Convert to long
 
           case Int8Op.And | Int16Op.And | Int32Op.And =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IAND)
 
           case Int8Op.Or | Int16Op.Or | Int32Op.Or =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IOR)
 
           case Int8Op.Xor | Int16Op.Xor | Int32Op.Xor =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IXOR)
 
           case Int8Op.Shr | Int16Op.Shr | Int32Op.Shr =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISHR)
 
           case Int8Op.Shl =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISHL)
             mv.visitInsn(I2B) // Sign extend to make left most bit appear in the sign bit
 
           case Int16Op.Shl =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISHL)
             mv.visitInsn(I2S) // Sign extend to make left most bit appear in the sign bit
 
           case Int32Op.Shl =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISHL)
 
           case Int64Op.And =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LAND)
 
           case Int64Op.Or =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LOR)
 
           case Int64Op.Xor =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LXOR)
 
           case Int64Op.Shr =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LSHR)
 
           case Int64Op.Shl =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LSHL)
 
           case Float32Op.Lt => visitComparison2(exp1, exp2, FCMPG, IFGE)
@@ -433,153 +433,153 @@ object GenExpression {
           case Int64Op.Gt => visitComparison2(exp1, exp2, LCMP, IFLE)
 
           case Float32Op.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(FADD)
 
           case Float32Op.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(FSUB)
 
           case Float32Op.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(FMUL)
 
           case Float32Op.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(FDIV)
 
           case Float64Op.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(DADD)
 
           case Float64Op.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(DSUB)
 
           case Float64Op.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(DMUL)
 
           case Float64Op.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(DDIV)
 
           case Int8Op.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IADD)
             mv.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISUB)
             mv.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IMUL)
             mv.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IDIV)
             mv.visitInsn(I2B) // Sign extend after operation
 
           case Int8Op.Rem =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IREM)
             mv.visitInsn(I2B) // Sign extend after operation
 
           case Int16Op.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IADD)
             mv.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISUB)
             mv.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IMUL)
             mv.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IDIV)
             mv.visitInsn(I2S) // Sign extend after operation
 
           case Int16Op.Rem =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IREM)
             mv.visitInsn(I2S) // Sign extend after operation
 
           case Int32Op.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IADD)
 
           case Int32Op.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(ISUB)
 
           case Int32Op.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IMUL)
 
           case Int32Op.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IDIV)
 
           case Int32Op.Rem =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(IREM)
 
           case Int64Op.Add =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LADD)
 
           case Int64Op.Sub =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LSUB)
 
           case Int64Op.Mul =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LMUL)
 
           case Int64Op.Div =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LDIV)
 
           case Int64Op.Rem =>
-            compileExpr(exp1)
-            compileExpr(exp2)
+            compileExp(exp1)
+            compileExp(exp2)
             mv.visitInsn(LREM)
 
           case StringOp.Concat =>
@@ -615,7 +615,7 @@ object GenExpression {
         val SimpleType.Tuple(elmTypes) = exp.tpe
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
 
-        compileExpr(exp)
+        compileExp(exp)
         GETFIELD(tupleType.IndexField(idx))
 
       case AtomicOp.Tuple =>
@@ -624,7 +624,7 @@ object GenExpression {
         val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
         NEW(tupleType.jvmName)
         DUP()
-        exps.foreach(compileExpr)
+        exps.foreach(compileExp)
         INVOKESPECIAL(tupleType.Constructor)
 
       case AtomicOp.RecordSelect(field) =>
@@ -632,7 +632,7 @@ object GenExpression {
         val List(exp) = exps
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
 
-        compileExpr(exp)
+        compileExp(exp)
         pushString(field.name)
         INVOKEINTERFACE(BackendObjType.Record.LookupFieldMethod)
         // Now that the specific RecordExtend object is found, we cast it to its exact class and extract the value.
@@ -650,17 +650,17 @@ object GenExpression {
         pushString(field.name)
         PUTFIELD(recordType.LabelField)
         DUP()
-        compileExpr(exp1)
+        compileExp(exp1)
         PUTFIELD(recordType.ValueField)
         DUP()
-        compileExpr(exp2)
+        compileExp(exp2)
         PUTFIELD(recordType.RestField)
 
       case AtomicOp.RecordRestrict(field) =>
         import BytecodeInstructions.*
         val List(exp) = exps
 
-        compileExpr(exp)
+        compileExp(exp)
         pushString(field.name)
         INVOKEINTERFACE(BackendObjType.Record.RestrictFieldMethod)
 
@@ -692,7 +692,7 @@ object GenExpression {
         for ((e, i) <- exps.zipWithIndex) {
           DUP()
           pushInt(i)
-          compileExpr(e)
+          compileExp(e)
           xArrayStore(backendType)
         }
 
@@ -703,8 +703,8 @@ object GenExpression {
         val innerType = tpe.asInstanceOf[SimpleType.Array].tpe
         val backendType = BackendType.toBackendType(innerType)
         val fillMethod = ClassMaker.StaticMethod(JvmName.Arrays, "fill", mkDescriptor(BackendType.Array(backendType.toErased), backendType.toErased)(VoidableType.Void))
-        compileExpr(exp1) // default
-        compileExpr(exp2) // default, length
+        compileExp(exp1) // default
+        compileExp(exp2) // default, length
         xNewArray(backendType) // default, arr
         if (backendType.is64BitWidth) DUP_X2() else DUP_X1() // arr, default, arr
         xSwap(lowerLarge = backendType.is64BitWidth, higherLarge = false) // arr, arr, default
@@ -716,8 +716,8 @@ object GenExpression {
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
-        compileExpr(exp1)
-        compileExpr(exp2)
+        compileExp(exp1)
+        compileExp(exp2)
         xArrayLoad(BackendType.toBackendType(tpe))
 
       case AtomicOp.ArrayStore =>
@@ -727,17 +727,17 @@ object GenExpression {
 
         // Add source line number for debugging (can fail with out of bounds).
         addLoc(loc)
-        compileExpr(exp1) // Evaluating the array
+        compileExp(exp1) // Evaluating the array
         castIfNotPrim(BackendType.Array(elmTpe))
-        compileExpr(exp2) // Evaluating the index
-        compileExpr(exp3) // Evaluating the element
+        compileExp(exp2) // Evaluating the index
+        compileExp(exp3) // Evaluating the element
         xArrayStore(elmTpe)
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case AtomicOp.ArrayLength =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
+        compileExp(exp)
         ARRAYLENGTH()
 
       case AtomicOp.StructNew(_, _) =>
@@ -748,11 +748,11 @@ object GenExpression {
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
         // Evaluate the region and ignore its value
-        compileExpr(region)
+        compileExp(region)
         xPop(BackendType.toBackendType(region.tpe))
         NEW(structType.jvmName)
         DUP()
-        fieldExps.foreach(compileExpr)
+        fieldExps.foreach(compileExp)
         INVOKESPECIAL(structType.Constructor)
 
       case AtomicOp.StructGet(field) =>
@@ -763,7 +763,7 @@ object GenExpression {
         val SimpleType.Struct(sym, targs) = exp.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
-        compileExpr(exp)
+        compileExp(exp)
         GETFIELD(structType.IndexField(idx))
 
       case AtomicOp.StructPut(field) =>
@@ -774,8 +774,8 @@ object GenExpression {
         val SimpleType.Struct(sym, targs) = exp1.tpe
         val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
 
-        compileExpr(exp1)
-        compileExpr(exp2)
+        compileExp(exp1)
+        compileExp(exp2)
         PUTFIELD(structType.IndexField(idx))
         GETSTATIC(BackendObjType.Unit.SingletonField)
 
@@ -783,19 +783,19 @@ object GenExpression {
         import BytecodeInstructions.*
         val List(exp) = exps
         val jvmName = JvmName.ofClass(clazz)
-        compileExpr(exp)
+        compileExp(exp)
         INSTANCEOF(jvmName)
 
       case AtomicOp.Cast =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
+        compileExp(exp)
         castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Unbox =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        compileExpr(exp)
+        compileExp(exp)
         CHECKCAST(BackendObjType.Value.jvmName)
         GETFIELD(BackendObjType.Value.fieldFromType(BackendType.toBackendType(tpe)))
 
@@ -804,7 +804,7 @@ object GenExpression {
         val List(exp) = exps
         val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
         val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
-        compileExpr(exp)
+        compileExp(exp)
         NEW(BackendObjType.Value.jvmName)
         DUP()
         INVOKESPECIAL(BackendObjType.Value.Constructor)
@@ -822,7 +822,7 @@ object GenExpression {
         // Duplicate the reference since the first argument for a constructor call is the reference to the object
         mv.visitInsn(DUP)
         for ((arg, argType) <- exps.zip(constructor.getParameterTypes)) {
-          compileExpr(arg)
+          compileExp(arg)
           if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
         }
 
@@ -836,12 +836,12 @@ object GenExpression {
         BytecodeInstructions.addLoc(loc)
 
         // Evaluate the receiver object.
-        compileExpr(exp)
+        compileExp(exp)
         val thisType = asm.Type.getInternalName(method.getDeclaringClass)
         mv.visitTypeInsn(CHECKCAST, thisType)
 
         for ((arg, argType) <- args.zip(method.getParameterTypes)) {
-          compileExpr(arg)
+          compileExp(arg)
           if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
         }
 
@@ -865,7 +865,7 @@ object GenExpression {
         // Add source line number for debugging (can fail when calling unsafe java methods)
         BytecodeInstructions.addLoc(loc)
         for ((arg, argType) <- exps.zip(method.getParameterTypes)) {
-          compileExpr(arg)
+          compileExp(arg)
           if (!argType.isPrimitive) mv.visitTypeInsn(CHECKCAST, asm.Type.getInternalName(argType))
         }
         val declaration = asm.Type.getInternalName(method.getDeclaringClass)
@@ -885,7 +885,7 @@ object GenExpression {
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
-        compileExpr(exp)
+        compileExp(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(GETFIELD, declaration, field.getName, BackendType.toBackendType(tpe).toDescriptor)
 
@@ -893,8 +893,8 @@ object GenExpression {
         val List(exp1, exp2) = exps
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
-        compileExpr(exp1)
-        compileExpr(exp2)
+        compileExp(exp1)
+        compileExp(exp2)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(PUTFIELD, declaration, field.getName, BackendType.toBackendType(exp2.tpe).toDescriptor)
 
@@ -911,7 +911,7 @@ object GenExpression {
         val List(exp) = exps
         // Add source line number for debugging (can fail when calling java)
         BytecodeInstructions.addLoc(loc)
-        compileExpr(exp)
+        compileExp(exp)
         val declaration = asm.Type.getInternalName(field.getDeclaringClass)
         mv.visitFieldInsn(PUTSTATIC, declaration, field.getName, BackendType.toBackendType(exp.tpe).toDescriptor)
 
@@ -923,7 +923,7 @@ object GenExpression {
         val List(exp) = exps
         // Add source line number for debugging (can fail when handling exception).
         addLoc(loc)
-        compileExpr(exp)
+        compileExp(exp)
         ATHROW()
 
       case AtomicOp.Spawn =>
@@ -933,16 +933,16 @@ object GenExpression {
           // The expression represents the `Static` region, just start a thread directly
           case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
-            compileExpr(exp1)
+            compileExp(exp1)
             CHECKCAST(JvmName.Runnable)
             INVOKESTATIC(ClassConstants.Thread.StartVirtualThreadMethod)
             POP()
             GETSTATIC(BackendObjType.Unit.SingletonField)
           case _ =>
             addLoc(loc)
-            compileExpr(exp2)
+            compileExp(exp2)
             CHECKCAST(BackendObjType.Region.jvmName)
-            compileExpr(exp1)
+            compileExp(exp1)
             CHECKCAST(JvmName.Runnable)
             INVOKEVIRTUAL(BackendObjType.Region.SpawnMethod)
             GETSTATIC(BackendObjType.Unit.SingletonField)
@@ -958,7 +958,7 @@ object GenExpression {
 
         NEW(lazyType.jvmName)
         DUP()
-        compileExpr(exp)
+        compileExp(exp)
         INVOKESPECIAL(lazyType.Constructor)
 
       case AtomicOp.Force =>
@@ -971,7 +971,7 @@ object GenExpression {
         val lazyType = BackendObjType.Lazy(erasedElmType)
 
         // Emit code for the lazy expression.
-        compileExpr(exp)
+        compileExp(exp)
         CHECKCAST(lazyType.jvmName)
         DUP()
         GETFIELD(lazyType.ExpField)
@@ -1021,7 +1021,7 @@ object GenExpression {
       ct match {
         case ExpPosition.Tail =>
           // Evaluating the closure
-          compileExpr(exp1)
+          compileExp(exp1)
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
           // retrieving the unique thread object
@@ -1030,13 +1030,13 @@ object GenExpression {
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
           // Evaluating the expression
-          compileExpr(exp2)
+          compileExp(exp2)
           BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
           // Return the closure
           mv.visitInsn(ARETURN)
 
         case ExpPosition.NonTail =>
-          compileExpr(exp1)
+          compileExp(exp1)
           // Casting to JvmType of closure abstract class
           mv.visitTypeInsn(CHECKCAST, closureAbstractClass.jvmName.toInternalName)
           // retrieving the unique thread object
@@ -1045,7 +1045,7 @@ object GenExpression {
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
           // Evaluating the expression
-          compileExpr(exp2)
+          compileExp(exp2)
           BytecodeInstructions.PUTFIELD(functionInterface.ArgField(0))
 
           // Calling unwind and unboxing
@@ -1088,7 +1088,7 @@ object GenExpression {
           // Duplicate the FunctionInterface
           mv.visitInsn(DUP)
           // Evaluating the expression
-          compileExpr(arg)
+          compileExp(arg)
           BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
         }
         // Return the def
@@ -1102,7 +1102,7 @@ object GenExpression {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
           for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
-            compileExpr(arg)
+            compileExp(arg)
             BytecodeInstructions.castIfNotPrim(tpe)
           }
           val resultTpe = BackendObjType.Result.toTpe
@@ -1124,7 +1124,7 @@ object GenExpression {
             // Duplicate the FunctionInterface
             mv.visitInsn(DUP)
             // Evaluating the expression
-            compileExpr(arg)
+            compileExp(arg)
             mv.visitFieldInsn(PUTFIELD, defJvmName.toInternalName,
               s"arg$i", BackendType.toErasedBackendType(arg.tpe).toDescriptor)
           }
@@ -1181,7 +1181,7 @@ object GenExpression {
         PUTFIELD(Suspension.EffSymField)
         DUP()
         // --- eff op ---
-        exps.foreach(compileExpr)
+        exps.foreach(compileExp)
         mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2)
         // --------------
         PUTFIELD(Suspension.EffOpField)
@@ -1220,7 +1220,7 @@ object GenExpression {
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
-          compileExpr(arg)
+          compileExp(arg)
           BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
         }
         mv.visitVarInsn(ALOAD, 0)
@@ -1236,7 +1236,7 @@ object GenExpression {
         for ((arg, i) <- exps.zipWithIndex) {
           mv.visitVarInsn(ALOAD, 0)
           // Evaluate the argument and push the result on the stack.
-          compileExpr(arg)
+          compileExp(arg)
           BytecodeInstructions.PUTFIELD(functionInterface.ArgField(i))
         }
         // Jump to the entry point of the method.
@@ -1246,7 +1246,7 @@ object GenExpression {
         val defn = root.defs(sym)
         for (arg <- exps) {
           // Evaluate the argument and push the result on the stack.
-          compileExpr(arg)
+          compileExp(arg)
         }
         for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
@@ -1260,10 +1260,10 @@ object GenExpression {
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       import BytecodeInstructions.*
-      compileExpr(exp1)
+      compileExp(exp1)
       branch(Condition.Bool) {
-        case Branch.TrueBranch => compileExpr(exp2)
-        case Branch.FalseBranch => compileExpr(exp3)
+        case Branch.TrueBranch => compileExp(exp2)
+        case Branch.FalseBranch => compileExp(exp3)
       }
 
     case Expr.Branch(exp, branches, _, _, _) =>
@@ -1271,7 +1271,7 @@ object GenExpression {
       val updatedJumpLabels = branches.map(branch => branch._1 -> new Label())
       val ctx1 = ctx.addLabels(updatedJumpLabels)
       // Compiling the exp
-      compileExpr(exp)(mv, ctx1, root, flix)
+      compileExp(exp)(mv, ctx1, root, flix)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -1281,7 +1281,7 @@ object GenExpression {
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpr(branchExp)(mv, ctx1, root, flix)
+        compileExp(branchExp)(mv, ctx1, root, flix)
         // Skip the rest of the branches
         mv.visitJumpInsn(GOTO, endLabel)
       }
@@ -1295,16 +1295,16 @@ object GenExpression {
     case Expr.Let(sym, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
-      compileExpr(exp1)
+      compileExp(exp1)
       castIfNotPrim(bType)
       xStore(bType, sym.getStackOffset(ctx.localOffset))
-      compileExpr(exp2)
+      compileExp(exp2)
 
     case Expr.Stmt(exp1, exp2, _) =>
       import BytecodeInstructions.*
-      compileExpr(exp1)
+      compileExp(exp1)
       xPop(BackendType.toBackendType(exp1.tpe))
-      compileExpr(exp2)
+      compileExp(exp2)
 
     case Expr.Region(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
@@ -1332,7 +1332,7 @@ object GenExpression {
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
-      compileExpr(exp)
+      compileExp(exp)
 
       // Emit try finally block. It's important to do this after compiling sub-expressions to ensure
       // correct catch case ordering.
@@ -1381,7 +1381,7 @@ object GenExpression {
 
       // Emit code for the try block.
       mv.visitLabel(beforeTryBlock)
-      compileExpr(exp)
+      compileExp(exp)
       mv.visitLabel(afterTryBlock)
       mv.visitJumpInsn(GOTO, afterTryAndCatch)
 
@@ -1394,7 +1394,7 @@ object GenExpression {
         BytecodeInstructions.xStore(BackendType.Object, sym.getStackOffset(ctx.localOffset))
 
         // Emit code for the handler body expression.
-        compileExpr(body)
+        compileExp(body)
         mv.visitJumpInsn(GOTO, afterTryAndCatch)
       }
 
@@ -1420,7 +1420,7 @@ object GenExpression {
       // bind handler closures
       for (HandlerRule(op, _, body) <- rules) {
         mv.visitInsn(Opcodes.DUP)
-        compileExpr(body)
+        compileExp(body)
         mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
       }
       // frames
@@ -1428,7 +1428,7 @@ object GenExpression {
       DUP()
       INVOKESPECIAL(BackendObjType.FramesNil.Constructor)
       // continuation
-      compileExpr(exp)
+      compileExp(exp)
       // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
       // implicit null is fine.
       // call installHandler
@@ -1465,7 +1465,7 @@ object GenExpression {
       // For each method, compile the closure which implements the body of that method and store it in a field
       exps.zipWithIndex.foreach { case (e, i) =>
         mv.visitInsn(DUP)
-        compileExpr(e)
+        compileExp(e)
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
@@ -1473,7 +1473,7 @@ object GenExpression {
 
   private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     import BytecodeInstructions.*
-    compileExpr(exp)
+    compileExp(exp)
     tpes match {
       case Nil =>
         INSTANCEOF(BackendObjType.NullaryTag(name).jvmName)
@@ -1500,7 +1500,7 @@ object GenExpression {
         PUTFIELD(tagType.NameField)
         exps.zipWithIndex.foreach {
           case (e, i) => DUP()
-            compileExpr(e)
+            compileExp(e)
             PUTFIELD(tagType.IndexField(i))
         }
     }
@@ -1511,14 +1511,14 @@ object GenExpression {
     // BackendObjType.NullaryTag cannot happen here since terms must be non-empty.
     if (tpes.isEmpty) throw InternalCompilerException(s"Unexpected empty tag types", exp.loc)
     val tagType = BackendObjType.Tag(tpes)
-    compileExpr(exp)
+    compileExp(exp)
     CHECKCAST(tagType.jvmName)
     GETFIELD(tagType.IndexField(idx))
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
-    compileExpr(exp1)
-    compileExpr(exp2)
+    compileExp(exp1)
+    compileExp(exp2)
     val condElse = new Label()
     val condEnd = new Label()
     (condElse, condEnd)

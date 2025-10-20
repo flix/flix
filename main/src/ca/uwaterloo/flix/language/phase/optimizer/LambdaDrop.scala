@@ -110,7 +110,7 @@ object LambdaDrop {
     implicit val params: List[(MonoAst.FormalParam, ParamKind)] = paramKinds(lctx.recursiveCalls.toList, defn.spec.fparams)
     implicit val (newDefnSym, subst): (Symbol.VarSym, Substitution) = mkSubst(defn, params)
     val rewrittenExp = rewriteExp(defn.exp)(defn.sym, newDefnSym, subst, params)
-    val body = mkLocalDefExpr(rewrittenExp, newDefnSym)
+    val body = mkLocalDefExp(rewrittenExp, newDefnSym)
     defn.copy(exp = body)
   }
 
@@ -422,22 +422,22 @@ object LambdaDrop {
     * @param subst  The variable substitution.
     * @param params The list of formal parameters and their [[ParamKind]].
     */
-  private def mkLocalDefExpr(exp0: Expr, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
+  private def mkLocalDefExp(exp0: Expr, sym: Symbol.VarSym)(implicit subst: Substitution, params: List[(MonoAst.FormalParam, ParamKind)]): Expr = {
     val nonConstantParams = params.filter {
       case (_, pkind) => pkind == ParamKind.NonConst
     }
     val args = nonConstantParams.map {
       case (fp, _) => Expr.Var(fp.sym, fp.tpe, fp.loc.asSynthetic)
     }
-    val applyLocalDefExpr = Expr.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
+    val applyLocalDefExp = Expr.ApplyLocalDef(sym, args, exp0.tpe, exp0.eff, exp0.loc.asSynthetic)
 
     val localDefParams = nonConstantParams.map {
       case (fp, _) => fp.copy(sym = subst(fp.sym), loc = fp.loc.asSynthetic)
     }
-    val tpe = applyLocalDefExpr.tpe
-    val eff = applyLocalDefExpr.eff
-    val loc = applyLocalDefExpr.loc.asSynthetic
-    Expr.LocalDef(sym, localDefParams, exp0, applyLocalDefExpr, tpe, eff, Occur.Unknown, loc)
+    val tpe = applyLocalDefExp.tpe
+    val eff = applyLocalDefExp.eff
+    val loc = applyLocalDefExp.loc.asSynthetic
+    Expr.LocalDef(sym, localDefParams, exp0, applyLocalDefExp, tpe, eff, Occur.Unknown, loc)
   }
 
   private object LocalContext {

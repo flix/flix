@@ -56,7 +56,7 @@ object ExprContext {
   /**
     * Returns the expression context at the given `uri` and position `pos`.
     */
-  def getExprContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
+  def getExpContext(uri: String, pos: Position)(implicit root: Root, flix: Flix): ExprContext = {
     val stack = LspUtil.getStack(uri, pos)
     // The stack contains the path of expressions from the leaf to the root.
     stack match {

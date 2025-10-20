@@ -444,7 +444,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("BadCallExpr.01") {
+  test("BadCallExp.01") {
     val input =
       """
         |def foo(x: Int32, y: Int32): Int32 = bar(1,

@@ -35,7 +35,7 @@ import ca.uwaterloo.flix.language.ast.shared.{Annotation, Derivation, Derivation
   * {{{
   * object ExprListConsumer extends Consumer {
   *   var stack: List[Expr] = Nil
-  *   override consumeExpr(exp: Expr): Unit = {
+  *   override consumeExp(exp: Expr): Unit = {
   *     stack = exp :: stack
   *   }
   * }
@@ -80,7 +80,7 @@ trait Consumer {
 
   def consumeEqualityConstraint(ec: EqualityConstraint): Unit = ()
 
-  def consumeExpr(exp: Expr): Unit = ()
+  def consumeExp(exp: Expr): Unit = ()
 
   def consumeFormalParam(fparam: FormalParam): Unit = ()
 

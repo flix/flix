@@ -392,7 +392,7 @@ object HighlightProvider {
         case _ => ()
       }
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
+      override def consumeExp(exp: Expr): Unit = exp match {
         case Expr.ApplyOp(_, _, _, eff, loc) if eff.effects.contains(sym) => reads += loc
         case _ => ()
       }
@@ -504,7 +504,7 @@ object HighlightProvider {
     }
 
     object LabelConsumer extends Consumer {
-      override def consumeExpr(exp: Expr): Unit = exp match {
+      override def consumeExp(exp: Expr): Unit = exp match {
         case Expr.RecordExtend(l, _, _, _, _, _) => considerWrite(l, l.loc)
         case Expr.RecordSelect(_, l, _, _, _) => considerRead(l, l.loc)
         case Expr.RecordRestrict(l, _, _, _, _) => considerWrite(l, l.loc)
@@ -563,7 +563,7 @@ object HighlightProvider {
     object StructSymConsumer extends Consumer {
       override def consumeStruct(struct: TypedAst.Struct): Unit = considerWrite(struct.sym, struct.sym.loc)
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
+      override def consumeExp(exp: Expr): Unit = exp match {
         case Expr.StructNew(sym, _, _, _, _, loc) => considerRead(sym, loc)
         case _ => ()
       }
@@ -714,7 +714,7 @@ object HighlightProvider {
 
       override def consumeLocalDefSym(symUse: SymUse.LocalDefSymUse): Unit = considerRead(symUse.sym, symUse.loc)
 
-      override def consumeExpr(exp: Expr): Unit = exp match {
+      override def consumeExp(exp: Expr): Unit = exp match {
         case Expr.Var(sym, _, loc) => considerRead(sym, loc)
         case _ => ()
       }

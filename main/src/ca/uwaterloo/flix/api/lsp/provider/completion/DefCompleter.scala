@@ -30,7 +30,7 @@ object DefCompleter {
     * When providing completions for unqualified defs that is not in scope, we will also automatically use the def.
     */
   def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: Root, flix: Flix): Iterable[Completion] = {
-    val ectx = ExprContext.getExprContext(uri, pos)
+    val ectx = ExprContext.getExpContext(uri, pos)
 
     if (qn.namespace.nonEmpty) {
       root.defs.values.collect {

@@ -28,7 +28,7 @@ object EnumTagCompleter {
     * Returns a List of Completion for Tag for UndefinedName.
     */
   def getCompletions(uri: String, pos: Position, qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope)(implicit root: TypedAst.Root, flix: Flix): Iterable[Completion] = {
-    val ectx = ExprContext.getExprContext(uri, pos)
+    val ectx = ExprContext.getExpContext(uri, pos)
     if (qn.namespace.nonEmpty)
       fullyQualifiedCompletion(qn, range, ap, ectx) ++ partiallyQualifiedCompletions(qn, range, ap, scp, ectx)
     else
