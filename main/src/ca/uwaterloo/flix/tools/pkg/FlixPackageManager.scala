@@ -48,7 +48,8 @@ object FlixPackageManager {
 
   def computeTrust(resolution: Resolution): Map[Manifest, Trust] = {
     implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(resolution.origin -> Trust.Unrestricted)
-    resolution.manifests.map(m => (m, minTrustLevel(m)(resolution.immediateDependents, resolution.manifestToFlixDep, trustLevels))).toMap
+    implicit val res: Resolution = resolution
+    resolution.manifests.map(m => (m, minTrustLevel(m))).toMap
   }
 
   def checkTrust(manifests: Map[Manifest, Trust]): List[PackageError.TrustError] = {
@@ -202,12 +203,12 @@ object FlixPackageManager {
     }
   }
 
-  private def minTrustLevel(manifest: Manifest)(implicit immediateDependents: Map[Manifest, List[Manifest]], manifestToDep: Map[Manifest, List[Dependency.FlixDependency]], trustLevels: mutable.Map[Manifest, Trust]): Trust = {
+  private def minTrustLevel(manifest: Manifest)(implicit resolution: Resolution, trustLevels: mutable.Map[Manifest, Trust]): Trust = {
     trustLevels.get(manifest) match {
       case Some(t) => t
       case None =>
-        val imDeps = immediateDependents(manifest)
-        val incomingTrusts = manifestToDep(manifest).map(_.trust)
+        val imDeps = resolution.immediateDependents(manifest)
+        val incomingTrusts = resolution.manifestToFlixDep(manifest).map(_.trust)
         val parentTrusts = imDeps.map(minTrustLevel)
         val glb = Trust.glb(parentTrusts ::: incomingTrusts)
         trustLevels.put(manifest, glb)
