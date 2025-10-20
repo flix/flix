@@ -61,19 +61,19 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("glb.01") {
-    assertResult(Trust.Plain)(Trust.Plain.lub(Trust.Plain))
+    assertResult(Trust.Plain)(Trust.Plain.glb(Trust.Plain))
   }
 
   test("glb.02") {
-    assertResult(Trust.Plain)(Trust.Plain.lub(Trust.Unrestricted))
+    assertResult(Trust.Plain)(Trust.Plain.glb(Trust.Unrestricted))
   }
 
   test("glb.03") {
-    assertResult(Trust.Plain)(Trust.Unrestricted.lub(Trust.Plain))
+    assertResult(Trust.Plain)(Trust.Unrestricted.glb(Trust.Plain))
   }
 
   test("glb.04") {
-    assertResult(Trust.Unrestricted)(Trust.Unrestricted.lub(Trust.Unrestricted))
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.glb(Trust.Unrestricted))
   }
 
   test("trust:plain-dep:plain") {
