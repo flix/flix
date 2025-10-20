@@ -59,8 +59,8 @@ object FlixPackageManager {
     TrustResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
   }
 
-  def checkTrust(manifests: Map[Manifest, Trust]): List[PackageError.TrustError] = {
-    manifests.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
+  def checkTrust(resolution: TrustResolution): List[PackageError.TrustError] = {
+    resolution.trust.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
   }
 
   /**
