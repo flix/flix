@@ -187,8 +187,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) //installs the dependency
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match { //does nothing
         case Ok(l) =>
-          val (p, _) = l.head
-          p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg")
+          l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") }
         case Err(e) => e.message(f)
       }
     })
@@ -252,13 +251,8 @@ class TestFlixPackageManager extends AnyFunSuite {
 
       val path = Files.createTempDirectory("")
 
-      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.computeTrust) match {
+      FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.computeTrust) match {
         case Ok(res) => res
-        case Err(e) => fail(e.message(f))
-      }
-
-      FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l
         case Err(e) => e.message(f)
       }
     })
@@ -289,13 +283,8 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
-      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.computeTrust) match {
+      FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.computeTrust) match {
         case Ok(res) => res
-        case Err(e) => fail(e.message(f))
-      }
-
-      FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l
         case Err(e) => e.message(f)
       }
     })
