@@ -32,7 +32,13 @@ object FlixPackageManager {
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
-                        manifestToFlixDep: Map[Manifest, List[FlixDependency]])
+                        manifestToFlixDeps: Map[Manifest, List[FlixDependency]])
+
+  case class TrustResolution(origin: Manifest,
+                             trust: Map[Manifest, Trust],
+                             manifestToFlixDeps: Map[Manifest, List[FlixDependency]]) {
+    val manifests: List[Manifest] = trust.keys.toList
+  }
 
   /**
     * Finds all the transitive dependencies for `manifest` and
@@ -42,14 +48,15 @@ object FlixPackageManager {
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[Resolution, PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
-    implicit val manifestToDep: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, manifestToDep.toMap))
+    implicit val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, manifestToFlixDeps.toMap))
   }
 
-  def computeTrust(resolution: Resolution): Map[Manifest, Trust] = {
+  def computeTrust(resolution: Resolution): TrustResolution = {
     implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(resolution.origin -> Trust.Unrestricted)
     implicit val res: Resolution = resolution
-    resolution.manifests.map(m => (m, minTrustLevel(m))).toMap
+    val manifests = resolution.manifests.map(m => (m, minTrustLevel(m))).toMap
+    TrustResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
   }
 
   def checkTrust(manifests: Map[Manifest, Trust]): List[PackageError.TrustError] = {
@@ -83,10 +90,10 @@ object FlixPackageManager {
     * Installs all the Flix dependencies for a list of Manifests at the `lib/` directory
     * of `path` and returns a list of paths to all the dependencies.
     */
-  def installAll(manifests: Map[Manifest, Trust], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
+  def installAll(resolution: TrustResolution, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps = manifests.foldLeft(ListMap.empty[Trust, FlixDependency]) { case (acc, (manifest, trust)) => acc ++ (trust -> findFlixDependencies(manifest)) }
+    val allFlixDeps = resolution.manifestToFlixDeps.foldLeft(ListMap.empty[Trust, FlixDependency]) { case (acc, (manifest, flixDeps)) => acc ++ (resolution.trust(manifest) -> flixDeps) }
 
     val flixPaths = allFlixDeps.map { case (trust, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
@@ -207,9 +214,8 @@ object FlixPackageManager {
     trustLevels.get(manifest) match {
       case Some(t) => t
       case None =>
-        val imDeps = resolution.immediateDependents(manifest)
-        val incomingTrusts = resolution.manifestToFlixDep(manifest).map(_.trust)
-        val parentTrusts = imDeps.map(minTrustLevel)
+        val incomingTrusts = resolution.manifestToFlixDeps(manifest).map(_.trust)
+        val parentTrusts = resolution.immediateDependents(manifest).map(minTrustLevel)
         val glb = Trust.glb(parentTrusts ::: incomingTrusts)
         trustLevels.put(manifest, glb)
         glb
