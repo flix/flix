@@ -87,8 +87,8 @@ object FlixPackageManager {
   }
 
   /**
-    * Installs all the Flix dependencies for a list of Manifests at the `lib/` directory
-    * of `path` and returns a list of paths to all the dependencies.
+    * Installs all the Flix dependencies a [[TrustResolution]] into the `lib/` directory
+    * of `path` and returns a list of paths to all the dependencies along with their allowed trust level.
     */
   def installAll(resolution: TrustResolution, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
     out.println("Downloading Flix dependencies...")
