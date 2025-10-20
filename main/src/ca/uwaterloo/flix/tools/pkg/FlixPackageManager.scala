@@ -42,10 +42,6 @@ object FlixPackageManager {
       case Err(e) => Err(e)
       case Ok(manifests) =>
         val manifestTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m)))
-        out.println(s"DEBUG: manifest = $manifest")
-        out.println(s"DEBUG: immediateDependents = ${immediateDependents.toMap}")
-        out.println(s"DEBUG: trustLevels = ${trustLevels.toMap}")
-        out.println(s"DEBUG: manifestTrusts = ${manifestTrusts.toMap}")
         traverse(manifestTrusts) { case (m, t) => checkTrust(m, t) }.map(_ => manifests)
     }
   }
