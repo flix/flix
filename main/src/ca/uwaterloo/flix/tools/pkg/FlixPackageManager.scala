@@ -36,8 +36,8 @@ object FlixPackageManager {
     */
   def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], checkTrust: Boolean = false)(implicit formatter: Formatter, out: PrintStream): Result[Map[Manifest, Trust], PackageError] = {
     out.println("Resolving Flix dependencies...")
-    implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
-    implicit val manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]] = mutable.Map.empty
+    implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
+    implicit val manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]] = mutable.Map(manifest -> List.empty)
     implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(manifest -> Trust.Unrestricted)
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
       case Err(e) => Err(e)
@@ -174,14 +174,14 @@ object FlixPackageManager {
       // parse manifests
       transitiveManifests <- traverse(tomlPaths) { case (p, d) => parseManifest(p).map {
         m =>
-          manifestToDep.put(m, d :: manifestToDep.getOrElse(m, List.empty))
+          manifestToDep.put(m, d :: manifestToDep(m))
           m
       }
       }
 
     } yield {
       for (m <- transitiveManifests) {
-        immediateDependents.put(m, manifest :: immediateDependents.getOrElse(m, List.empty))
+        immediateDependents.put(m, manifest :: immediateDependents(m))
       }
 
       // remove duplicates
