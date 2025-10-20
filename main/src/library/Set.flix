@@ -515,12 +515,6 @@ mod Set {
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
 
     ///
-    /// Returns the set `s` as a `MutSet`.
-    ///
-    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        new MutSet @ rc { rc = rc, inner = s }
-
-    ///
     /// Applies `f` to every element of `s`.
     ///
     pub def forEach(f: a -> Unit \ ef, s: Set[a]): Unit \ ef =

@@ -224,19 +224,25 @@ mod TestIterable {
 
     @Test
     def iterableMutSet02(): Unit \ Assert = region rc {
-        let s = Set#{2, 5, 11, 8} |> Set.toMutSet(rc);
+        let s = MutSet.empty(rc);
+        MutSet.addAll(2 :: 5 :: 11 :: 8 :: Nil, s);
         assertEq(expected = Set#{2, 5, 8, 11}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
     @Test
     def iterableMutSet03(): Unit \ Assert = region rc {
-        let s = Set#{'A', 'B', 'D', 'C'} |> Set.toMutSet(rc);
+        let s = MutSet.empty(rc);
+        MutSet.addAll('A' :: 'B' :: 'D' :: 'C' :: Nil, s);
         assertEq(expected = Set#{'A', 'B', 'C', 'D'}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
     @Test
     def iterableMutSet04(): Unit \ Assert = region rc {
-        let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> Set.toMutSet(rc);
+        let s = MutSet.empty(rc);
+        MutSet.add((2, 'A'), s);
+        MutSet.add((5, 'B'), s);
+        MutSet.add((11, 'D'), s);
+        MutSet.add((8, 'C'), s);
         assertEq(expected = Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
