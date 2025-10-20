@@ -32,11 +32,11 @@ object FlixPackageManager {
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
-                        manifestToFlixDeps: Map[Manifest, List[FlixDependency]])
+                        manifestToFlixDeps: ListMap[Manifest, FlixDependency])
 
   case class TrustResolution(origin: Manifest,
                              trust: Map[Manifest, Trust],
-                             manifestToFlixDeps: Map[Manifest, List[FlixDependency]]) {
+                             manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
     val manifests: List[Manifest] = trust.keys.toList
   }
 
@@ -49,7 +49,7 @@ object FlixPackageManager {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map(manifest -> List.empty)
     implicit val manifestToFlixDeps: mutable.Map[Manifest, List[FlixDependency]] = mutable.Map(manifest -> List.empty)
-    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, manifestToFlixDeps.toMap))
+    findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey).map(manifests => Resolution(manifest, manifests, immediateDependents.toMap, ListMap.from(manifestToFlixDeps.flatMap { case (m, deps) => deps.map(d => (m, d)) })))
   }
 
   /**
@@ -102,7 +102,7 @@ object FlixPackageManager {
   def installAll(resolution: TrustResolution, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps = resolution.manifestToFlixDeps.foldLeft(ListMap.empty[Trust, FlixDependency]) { case (acc, (manifest, flixDeps)) => acc ++ (resolution.trust(manifest) -> flixDeps) }
+    val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map { case (manifest, flixDep) => resolution.trust(manifest) -> flixDep })
 
     val flixPaths = allFlixDeps.map { case (trust, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
