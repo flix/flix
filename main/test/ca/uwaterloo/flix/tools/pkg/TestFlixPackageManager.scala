@@ -51,6 +51,7 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
+  Thread.sleep(1000)
 
   test("Install missing dependency.02") {
     assertResult(expected = true)(actual = {
@@ -82,7 +83,7 @@ class TestFlixPackageManager extends AnyFunSuite {
         case Ok(resolution) => FlixPackageManager.resolveTrust(resolution)
         case Err(e) => fail(e.message(f))
       }
-      Thread.sleep(1000)
+      Thread.sleep(2000)
 
       FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
