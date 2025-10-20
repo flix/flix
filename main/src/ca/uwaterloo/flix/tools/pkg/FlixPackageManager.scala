@@ -86,7 +86,7 @@ object FlixPackageManager {
   def installAll(manifests: Map[Manifest, Trust], path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps = manifests.keys.foldLeft(ListMap.empty[Trust, FlixDependency])((acc, m) => acc ++ (manifests(m) -> findFlixDependencies(m)))
+    val allFlixDeps = manifests.foldLeft(ListMap.empty[Trust, FlixDependency]) { case (acc, (manifest, trust)) => acc ++ (trust -> findFlixDependencies(manifest)) }
 
     val flixPaths = allFlixDeps.map { case (trust, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
