@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.Formatter
 
+import java.io.IOException
 import java.net.URL
 
 sealed trait PackageError {
@@ -40,11 +41,13 @@ object PackageError {
          |""".stripMargin
   }
 
-  case class ProjectNotFound(url: URL, project: Project) extends PackageError {
+  case class ProjectNotFound(url: URL, project: Project, exception: IOException) extends PackageError {
     override def message(f: Formatter): String =
       s"""An I/O error occurred while trying to read the following url:
          |${f.cyan(url.toString)}
          |Project: ${f.bold(project.toString)}
+         |Error:
+         |${f.red(exception.getStackTrace.mkString(exception.getMessage, System.lineSeparator(), ""))}
          |""".stripMargin
   }
 
@@ -60,10 +63,11 @@ object PackageError {
     override def message(f: Formatter): String =
       s"""A download error occurred while downloading ${f.bold(asset.name)}
          |${
-         message match {
-           case Some(e) => e
-           case None => ""
-         }}
+        message match {
+          case Some(e) => e
+          case None => ""
+        }
+      }
          |""".stripMargin
   }
 

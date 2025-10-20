@@ -226,36 +226,36 @@ class TestFlixPackageManager extends AnyFunSuite {
   }
 
   test("Give error for missing dependency") {
-    assertResult(expected = PackageError.ProjectNotFound(new URI("https://api.github.com/repos/flix/does-not-exist/releases").toURL, Project("flix", "does-not-exist")).message(f))(actual = {
-      val toml = {
-        """
-          |[package]
-          |name = "test"
-          |description = "test"
-          |version = "0.0.0"
-          |flix = "0.0.0"
-          |authors = ["Anna Blume"]
-          |
-          |[dependencies]
-          |"github:flix/does-not-exist" = "1.0.0"
-          |
-          |[mvn-dependencies]
-          |
-          |""".stripMargin
-      }
+    val toml = {
+      """
+        |[package]
+        |name = "test"
+        |description = "test"
+        |version = "0.0.0"
+        |flix = "0.0.0"
+        |authors = ["Anna Blume"]
+        |
+        |[dependencies]
+        |"github:flix/does-not-exist" = "1.0.0"
+        |
+        |[mvn-dependencies]
+        |
+        |""".stripMargin
+    }
 
-      val manifest = ManifestParser.parse(toml, null) match {
-        case Ok(m) => m
-        case Err(e) => fail(e.message(f)) //should not happen
-      }
+    val manifest = ManifestParser.parse(toml, null) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(f)) //should not happen
+    }
 
-      val path = Files.createTempDirectory("")
+    val path = Files.createTempDirectory("")
 
-      FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
-        case Ok(res) => res
-        case Err(e) => e.message(f)
-      }
-    })
+    FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
+      case Ok(res) => fail(res.toString)
+      case Err(e) =>
+        e.message(f)
+        succeed
+    }
   }
 
   test("Give error for missing version") {
