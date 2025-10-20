@@ -33,7 +33,7 @@ object FlixPackageManager {
     * returns their manifests. The toml files for the manifests
     * will be put at `path/lib`.
     */
-  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
+  def findTransitiveDependencies(manifest: Manifest, path: Path, apiKey: Option[String], checkTrust: Boolean = false)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], PackageError] = {
     out.println("Resolving Flix dependencies...")
     implicit val immediateDependents: mutable.Map[Manifest, List[Manifest]] = mutable.Map.empty
     implicit val manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]] = mutable.Map.empty
@@ -41,8 +41,12 @@ object FlixPackageManager {
     findTransitiveDependenciesRec(manifest, path, List(manifest), apiKey) match {
       case Err(e) => Err(e)
       case Ok(manifests) =>
-        val manifestTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m)))
-        traverse(manifestTrusts) { case (m, t) => checkTrust(m, t) }.map(_ => manifests)
+        if (checkTrust) {
+          val manifestTrusts = immediateDependents.keys.map(m => (m, minTrustLevel(m)))
+          traverse(manifestTrusts) { case (m, t) => findTrustViolations(m, t) }.map(_ => manifests)
+        } else {
+          Ok(manifests)
+        }
     }
   }
 
@@ -206,7 +210,7 @@ object FlixPackageManager {
     }
   }
 
-  private def checkTrust(m: Manifest, t: Trust): Result[Unit, PackageError] = {
+  private def findTrustViolations(m: Manifest, t: Trust): Result[Unit, PackageError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
     val trustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => Err[Unit, PackageError](PackageError.TrustError(d, t)))
     Result.sequence(trustErrors).flatMap {
