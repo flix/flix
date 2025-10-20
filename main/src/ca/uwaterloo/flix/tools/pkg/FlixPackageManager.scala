@@ -91,7 +91,7 @@ object FlixPackageManager {
     val flixPaths = allFlixDeps.map { case (trust, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
       install(depName, dep.version, "fpkg", path, apiKey) match {
-        case Ok(p) => (p, trust.glb(dep.trust))
+        case Ok(p) => (p, trust)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
           return Err(e)
