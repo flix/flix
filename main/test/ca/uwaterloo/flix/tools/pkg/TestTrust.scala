@@ -135,7 +135,6 @@ class TestTrust extends AnyFunSuite {
   }
 
   test("transitive.trust:plain->unrestricted-dep:java") {
-    // expected to fail currently
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "plain" }
