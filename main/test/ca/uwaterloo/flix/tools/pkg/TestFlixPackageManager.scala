@@ -35,12 +35,14 @@ class TestFlixPackageManager extends AnyFunSuite {
         case Ok(m) => m
         case Err(e) => fail(e.message(f)) //should not happen
       }
+      Thread.sleep(1000)
 
       val path = Files.createTempDirectory("")
       val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(f))
       }
+      Thread.sleep(1000)
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) =>
           val (p, _) = l.head
@@ -49,7 +51,6 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
-  Thread.sleep(1000)
 
   test("Install missing dependency.02") {
     assertResult(expected = true)(actual = {
@@ -74,12 +75,14 @@ class TestFlixPackageManager extends AnyFunSuite {
         case Ok(m) => m
         case Err(e) => fail(e.message(f)) //should not happen
       }
+      Thread.sleep(1000)
 
       val path = Files.createTempDirectory("")
       val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
         case Ok(resolution) => FlixPackageManager.resolveTrust(resolution)
         case Err(e) => fail(e.message(f))
       }
+      Thread.sleep(1000)
 
       FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
@@ -88,7 +91,6 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
     })
   }
-  Thread.sleep(1000)
 
   test("Install missing dependencies from list of manifests") {
     assertResult(expected = true)(actual = {
@@ -136,16 +138,20 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
+      Thread.sleep(1000)
 
       val resolution1 = FlixPackageManager.findTransitiveDependencies(manifest1, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(f))
       }
+      Thread.sleep(1000)
+
       val resolution2 = FlixPackageManager.findTransitiveDependencies(manifest2, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(f))
       }
       val resolution = FlixPackageManager.TrustResolution(origin = manifest1, trust = resolution1.trust ++ resolution2.trust, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
+      Thread.sleep(1000)
 
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
@@ -181,12 +187,17 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
+      Thread.sleep(1000)
 
       val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
         case Ok(res) => res
         case Err(e) => fail(e.message(f))
       }
+      Thread.sleep(1000)
+
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) //installs the dependency
+      Thread.sleep(1000)
+
       FlixPackageManager.installAll(resolution, path, None)(Formatter.getDefault, System.out) match { //does nothing
         case Ok(l) =>
           l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") }
@@ -221,6 +232,8 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
+      Thread.sleep(1000)
+
       FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
         case Ok(resolution) => resolution.manifests.contains(manifest) && resolution.manifests.exists(m => m.name == "museum-clerk")
         case Err(e) => e.message(f)
@@ -253,6 +266,8 @@ class TestFlixPackageManager extends AnyFunSuite {
     }
 
     val path = Files.createTempDirectory("")
+    Thread.sleep(1000)
+
 
     FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
       case Ok(res) => fail(res.toString)
@@ -288,6 +303,8 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
+      Thread.sleep(1000)
+
       FlixPackageManager.findTransitiveDependencies(manifest, path, None)(f, System.out).map(FlixPackageManager.resolveTrust) match {
         case Ok(res) => res
         case Err(e) => e.message(f)
@@ -319,10 +336,13 @@ class TestFlixPackageManager extends AnyFunSuite {
       }
 
       val path = Files.createTempDirectory("")
+      Thread.sleep(1000)
+
       val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
         case Ok(resolution) => FlixPackageManager.resolveTrust(resolution)
         case Err(e) => fail(e.message(f))
       }
+      Thread.sleep(1000)
 
       FlixPackageManager.installAll(manifests, path, None)(Formatter.getDefault, System.out) match {
         case Ok(l) =>
