@@ -72,7 +72,6 @@ mod Debug {
     @Internal
     pub def stringify(x: a): String = {
         typematch x {
-            /// Primitives.
             case b: Bool => if (b) "true" else "false"
             case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
