@@ -1551,32 +1551,40 @@ mod Array {
     /// If the range is valid and greater than the length of `a`, the resulting array will have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } = {
+        use Reflect.JvmType;
         // All of the below casts are required to cast the type to `Array[a, ...]`.
-        typematch a {
+        match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
             // The casts here are used to both modify the java method type and to simulate GADT typing
-            case arr: Array[Bool, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Char, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int8, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int16, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[a, r1] =>
-                // `a` must be non-primitive now
-                let arrObj = unchecked_cast(arr as Array[Object, r1]);
-                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
-            case _: _ => unreachable!()
+            case JvmType.JvmBool =>
+                let arr = unchecked_cast(a as Array[Bool, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmChar =>
+                let arr = unchecked_cast(a as Array[Char, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt8 =>
+                let arr = unchecked_cast(a as Array[Int8, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt16 =>
+                let arr = unchecked_cast(a as Array[Int16, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt32 =>
+                let arr = unchecked_cast(a as Array[Int32, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt64 =>
+                let arr = unchecked_cast(a as Array[Int64, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmFloat32 =>
+                let arr = unchecked_cast(a as Array[Float32, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmFloat64 =>
+                let arr = unchecked_cast(a as Array[Float64, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmObject =>
+                let arr = unchecked_cast(a as Array[Object, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
         }
+    }
 
     ///
     /// Shuffles `a` using a random permutation.
