@@ -27,6 +27,7 @@ object JvmAst {
                   effects: Map[Symbol.EffSym, Effect],
                   types: Set[SimpleType],
                   anonClasses: List[AnonClass],
+                  tuples: List[Tuple],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
@@ -73,6 +74,8 @@ object JvmAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
+    case class Tuple(id: Int, exps: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+
     case class ApplyClo(exp1: Expr, exp2: Expr, ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: ExpPosition, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
@@ -118,6 +121,8 @@ object JvmAst {
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
+
+  case class Tuple(id: Int, tpes: List[SimpleType])
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 

@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimpleType
 import ca.uwaterloo.flix.language.dbg.DocAst.Type
 
@@ -43,6 +44,7 @@ object SimpleTypePrinter {
     case SimpleType.Array(tpe) => Type.Array(print(tpe))
     case SimpleType.Lazy(tpe) => Type.Lazy(print(tpe))
     case SimpleType.Tuple(elms) => Type.Tuple(elms.map(print))
+    case SimpleType.NominalTuple(id) => Type.AsIs("Tuple" + Flix.Delimiter + id)
     case SimpleType.Enum(sym, targs) => Type.Enum(sym, targs.map(print))
     case SimpleType.Struct(sym, targs) => Type.Struct(sym, targs.map(print))
     case SimpleType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))

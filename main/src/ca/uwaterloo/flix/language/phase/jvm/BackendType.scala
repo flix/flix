@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
 
@@ -150,7 +151,7 @@ object BackendType {
       case SimpleType.Null => BackendType.Object
       case SimpleType.Array(tpe) => Array(toBackendType(tpe))
       case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
-      case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
+      case SimpleType.NominalTuple(id) => BackendObjType.Tuple(id).toTpe
       case SimpleType.Enum(_, _) => BackendObjType.Tagged.toTpe
       case SimpleType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
       case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
@@ -159,6 +160,7 @@ object BackendType {
       case SimpleType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
       case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
       case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
+      case SimpleType.Tuple(_) => throw InternalCompilerException(s"Unexpected type $tpe0", SourceLocation.Unknown)
     }
   }
 
@@ -191,11 +193,12 @@ object BackendType {
     case SimpleType.Float64 => BackendType.Float64
     case SimpleType.Void | SimpleType.AnyType | SimpleType.Unit | SimpleType.BigDecimal | SimpleType.BigInt |
          SimpleType.String | SimpleType.Regex | SimpleType.Array(_) | SimpleType.Lazy(_) |
-         SimpleType.Tuple(_) | SimpleType.Enum(_, _) | SimpleType.Struct(_, _) | SimpleType.Arrow(_, _) |
+         SimpleType.NominalTuple(_) | SimpleType.Enum(_, _) | SimpleType.Struct(_, _) | SimpleType.Arrow(_, _) |
          SimpleType.RecordEmpty | SimpleType.RecordExtend(_, _, _) |
          SimpleType.ExtensibleExtend(_, _, _) | SimpleType.ExtensibleEmpty | SimpleType.Native(_) |
          SimpleType.Region | SimpleType.Null =>
       BackendType.Object
+    case SimpleType.Tuple(_) => throw InternalCompilerException(s"Unexpected type '$tpe'", SourceLocation.Unknown)
   }
 
   sealed trait PrimitiveType extends BackendType

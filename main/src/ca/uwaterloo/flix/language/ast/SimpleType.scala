@@ -88,6 +88,8 @@ object SimpleType {
 
   case class Tuple(tpes: List[SimpleType]) extends SimpleType
 
+  case class NominalTuple(id: Int) extends SimpleType
+
   case class Enum(sym: Symbol.EnumSym, targs: List[SimpleType]) extends SimpleType
 
   case class Struct(sym: Symbol.StructSym, targs: List[SimpleType]) extends SimpleType
@@ -121,6 +123,14 @@ object SimpleType {
   }
 
   /**
+    * Smart constructor for [[SimpleType.NominalTuple]].
+    */
+  def mkNominalTuple(id: Int): SimpleType.NominalTuple = {
+    val t = NominalTuple(id)
+    Cache.getCanonicalValue(t)
+  }
+
+  /**
     * Smart constructor for [[SimpleType.Arrow]].
     */
   def mkArrow(targs: List[SimpleType], result: SimpleType): SimpleType.Arrow = {
@@ -148,9 +158,10 @@ object SimpleType {
       case Int32 => Int32
       case Int64 => Int64
       case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Tuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
+           Lazy(_) | NominalTuple(_) | Enum(_, _) | Struct(_, _) | Arrow(_, _) | RecordEmpty |
            RecordExtend(_, _, _) | ExtensibleEmpty | ExtensibleExtend(_, _, _) | Native(_) | Null =>
         SimpleType.Object
+      case Tuple(_) => throw InternalCompilerException(s"Unexpected type '$tpe'", SourceLocation.Unknown)
     }
   }
 

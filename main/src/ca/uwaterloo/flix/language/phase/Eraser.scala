@@ -20,9 +20,6 @@ import scala.annotation.unused
   *
   *   - Ref
   *     - component type erasure
-  *   - Tuple
-  *     - component type erasure
-  *     - index casting
   *   - Record
   *     - component type erasure
   *     - select casting
@@ -116,8 +113,7 @@ object Eraser {
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Index(_) =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.Index(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
@@ -226,7 +222,7 @@ object Eraser {
       case Null => Null
       case Array(tpe) => SimpleType.mkArray(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
-      case Tuple(elms) => SimpleType.mkTuple(elms.map(erase))
+      case Tuple(elms) => SimpleType.mkTuple(elms.map(visitType))
       case SimpleType.Enum(sym, targs) => SimpleType.mkEnum(sym, targs.map(erase))
       case SimpleType.Struct(sym, tparams) => SimpleType.Struct(sym, tparams.map(erase))
       case Arrow(args, result) => SimpleType.mkArrow(args.map(visitType), box(result))
@@ -235,6 +231,7 @@ object Eraser {
       case ExtensibleExtend(cons, tpes, rest) => ExtensibleExtend(cons, tpes.map(erase), visitType(rest))
       case ExtensibleEmpty => ExtensibleEmpty
       case Native(clazz) => Native(clazz)
+      case NominalTuple(_) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     }
   }
 

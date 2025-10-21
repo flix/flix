@@ -40,7 +40,7 @@ sealed trait BackendObjType {
   val jvmName: JvmName = this match {
     case BackendObjType.Unit => JvmName(DevFlixRuntime, mkClassName("Unit"))
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
-    case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
+    case BackendObjType.Tuple(id) => JvmName(RootPackage, mkClassName("Tuple" + Flix.Delimiter + id))
     case BackendObjType.Struct(elms) => JvmName(RootPackage, mkClassName("Struct", elms))
     case BackendObjType.NullaryTag(sym) => JvmName(RootPackage, mkClassName(sym.toString))
     case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
@@ -230,24 +230,24 @@ object BackendObjType {
     }
   }
 
-  case class Tuple(elms: List[BackendType]) extends BackendObjType {
+  case class Tuple(id: Int) extends BackendObjType {
 
-    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+    def genByteCode(elms: List[BackendType])(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
-      elms.indices.foreach(i => cm.mkField(IndexField(i), IsPublic, NotFinal, NotVolatile))
-      cm.mkConstructor(Constructor, IsPublic, constructorIns(_))
-      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(_))
+      elms.zipWithIndex.foreach{case (tpe, i) => cm.mkField(IndexField(i, tpe), IsPublic, NotFinal, NotVolatile)}
+      cm.mkConstructor(Constructor, IsPublic, constructorIns(elms)(_))
+      cm.mkMethod(ClassConstants.Object.ToStringMethod.implementation(this.jvmName), IsPublic, NotFinal, toStringIns(elms)(_))
 
       cm.closeClassMaker()
     }
 
-    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, s"field$i", elms(i))
+    def IndexField(i: Int, tpe: BackendType): InstanceField = InstanceField(this.jvmName, s"field$i", tpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, elms)
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, Nil)
 
     /** `[] --> return` */
-    private def constructorIns(implicit mv: MethodVisitor): Unit =
+    private def constructorIns(elms: List[BackendType])(implicit mv: MethodVisitor): Unit =
       withNames(1, elms) { case (_, variables) =>
         thisLoad()
         // super()
@@ -257,20 +257,20 @@ object BackendObjType {
         for ((elm, i) <- variables.zipWithIndex) {
           DUP()
           elm.load()
-          PUTFIELD(IndexField(i))
+          PUTFIELD(IndexField(i, elm.tpe))
         }
         RETURN()
       }
 
     /** `[] --> return String` */
-    private def toStringIns(implicit mv: MethodVisitor): Unit = {
-      Util.mkString(Some(_ => pushString("(")), Some(_ => pushString(")")), elms.length, getIndexField)
+    private def toStringIns(elms: List[BackendType])(implicit mv: MethodVisitor): Unit = {
+      Util.mkString(Some(_ => pushString("(")), Some(_ => pushString(")")), elms.length, i => getIndexField(i, elms(i)))
       xReturn(BackendType.String)
     }
 
     /** `[] --> [this.index(i).xString()]` */
-    private def getIndexField(i: Int)(implicit mv: MethodVisitor): Unit = {
-      val field = IndexField(i)
+    private def getIndexField(i: Int, tpe: BackendType)(implicit mv: MethodVisitor): Unit = {
+      val field = IndexField(i, tpe)
       thisLoad()
       GETFIELD(field)
       xToString(field.tpe)

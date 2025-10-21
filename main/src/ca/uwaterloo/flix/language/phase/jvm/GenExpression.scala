@@ -612,20 +612,14 @@ object GenExpression {
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val SimpleType.Tuple(elmTypes) = exp.tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
+        val SimpleType.NominalTuple(id) = exp.tpe
+        val tupleType = BackendObjType.Tuple(id)
+        val indexType = BackendType.toBackendType(root.tuples(id).tpes(idx))
 
         compileExpr(exp)
-        GETFIELD(tupleType.IndexField(idx))
+        GETFIELD(tupleType.IndexField(idx, indexType))
 
-      case AtomicOp.Tuple =>
-        import BytecodeInstructions.*
-        val SimpleType.Tuple(elmTypes) = tpe
-        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.toBackendType))
-        NEW(tupleType.jvmName)
-        DUP()
-        exps.foreach(compileExpr)
-        INVOKESPECIAL(tupleType.Constructor)
+      case AtomicOp.Tuple => throw InternalCompilerException("Unexpected Tuple Ast node", loc)
 
       case AtomicOp.RecordSelect(field) =>
         import BytecodeInstructions.*
@@ -1013,6 +1007,19 @@ object GenExpression {
         INVOKESPECIAL(BackendObjType.CastError.Constructor) // CastError
         ATHROW()
     }
+
+    case Expr.Tuple(id, exps, _, _, _) =>
+      import BytecodeInstructions.*
+      val tuple = BackendObjType.Tuple(id)
+      val tpes = root.tuples(id).tpes.map(BackendType.toBackendType)
+      NEW(tuple.jvmName)
+      DUP()
+      INVOKESPECIAL(tuple.Constructor)
+      for (((exp, tpe), i) <- ListOps.zip(exps, tpes).zipWithIndex) {
+        DUP()
+        compileExpr(exp)
+        PUTFIELD(tuple.IndexField(i, tpe))
+      }
 
     case Expr.ApplyClo(exp1, exp2, ct, _, purity, loc) =>
       // Type of the function abstract class

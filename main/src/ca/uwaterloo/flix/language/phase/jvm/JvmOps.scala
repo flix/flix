@@ -131,14 +131,6 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /** Returns the set of tuple types in `types` without searching recursively. */
-  def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =
-    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
-      case (acc, SimpleType.Tuple(elms)) =>
-        acc + BackendObjType.Tuple(elms.map(BackendType.toBackendType))
-      case (acc, _) => acc
-    }
-
   /** Returns the set of erased struct types in `types` without searching recursively. */
   def getErasedStructTypesOf(root: Root, types: Iterable[SimpleType]): Set[BackendObjType.Struct] =
     types.foldLeft(Set.empty[BackendObjType.Struct]) {
