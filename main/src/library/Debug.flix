@@ -72,39 +72,16 @@ mod Debug {
     @Internal
     pub def stringify(x: a): String = {
         typematch x {
-            case _: Unit => "()"
+            /// Primitives.
             case b: Bool => if (b) "true" else "false"
             case c: Char => "\'" + escape("${(c: Char)}") + "\'"
-            case y: Float32 =>
-                Float.toString(y) + "f32"
-            case y: Float64 =>
-                Double.toString(y)
-            case y: BigDecimal =>
-                if (unsafe Objects.isNull(y)) {
-                    "null"
-                } else {
-                    unsafe y.toString() + "ff"
-                }
-            case y: Int8 =>
-                Byte.toString(y) + "i8"
-            case y: Int16 =>
-                Short.toString(y) + "i16"
-            case y: Int32 =>
-                Integer.toString(y)
-            case y: Int64 =>
-                Long.toString(y) + "i64"
-            case y: BigInt =>
-                if (unsafe Objects.isNull(y)) {
-                    "null"
-                } else {
-                    unsafe y.toString() + "ii"
-                }
-            case s: String =>
-                if (unsafe Objects.isNull(s)) {
-                    "null"
-                } else {
-                    "\"" + escape(s) + "\""
-                }
+            case y: Float32 => Float.toString(y) + "f32"
+            case y: Float64 => Double.toString(y)
+            case y: Int8 => Byte.toString(y) + "i8"
+            case y: Int16 => Short.toString(y) + "i16"
+            case y: Int32 => Integer.toString(y)
+            case y: Int64 => Long.toString(y) + "i64"
+            // Arrays.
             case y: Array[Bool, _] =>
                 unsafe Arrays.toString(unchecked_cast(y as Array[Bool, Static]))
             case y: Array[Char, _] =>
@@ -121,18 +98,28 @@ mod Debug {
                 unsafe Arrays.toString(unchecked_cast(y as Array[Int32, Static]))
             case y: Array[Int64, _] =>
                 unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
-            case y: Array[Unit, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigInt, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigDecimal, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[String, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[Array[_, _], _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[_, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
+                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
+            // Objects.
+            case y: BigDecimal =>
+                if (unsafe Objects.isNull(y)) {
+                    "null"
+                } else {
+                    unsafe y.toString() + "ff"
+                }
+            case y: BigInt =>
+                if (unsafe Objects.isNull(y)) {
+                    "null"
+                } else {
+                    unsafe y.toString() + "ii"
+                }
+            case s: String =>
+                if (unsafe Objects.isNull(s)) {
+                    "null"
+                } else {
+                    "\"" + escape(s) + "\""
+                }
+            // Default.
             case y: _ =>
                 unsafe Objects.toString(unchecked_cast(y as Object))
         }
