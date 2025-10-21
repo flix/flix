@@ -72,7 +72,6 @@ mod Debug {
     @Internal
     pub def stringify(x: a): String = {
         typematch x {
-            case _: Unit => "()"
             case b: Bool => if (b) "true" else "false"
             case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
@@ -121,18 +120,8 @@ mod Debug {
                 unsafe Arrays.toString(unchecked_cast(y as Array[Int32, Static]))
             case y: Array[Int64, _] =>
                 unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
-            case y: Array[Unit, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigInt, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigDecimal, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[String, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[Array[_, _], _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
             case y: Array[_, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
+                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
             case y: _ =>
                 unsafe Objects.toString(unchecked_cast(y as Object))
         }
