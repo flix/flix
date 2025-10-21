@@ -78,16 +78,20 @@ mod Debug {
                 Float.toString(y) + "f32"
             case y: Float64 =>
                 Double.toString(y)
-            case y: Int8 => Byte.toString(y) + "i8"
-            case y: Int16 => Short.toString(y) + "i16"
-            case y: Int32 => Integer.toString(y)
-            case y: Int64 => Long.toString(y) + "i64"
             case y: BigDecimal =>
                 if (unsafe Objects.isNull(y)) {
                     "null"
                 } else {
                     unsafe y.toString() + "ff"
                 }
+            case y: Int8 =>
+                Byte.toString(y) + "i8"
+            case y: Int16 =>
+                Short.toString(y) + "i16"
+            case y: Int32 =>
+                Integer.toString(y)
+            case y: Int64 =>
+                Long.toString(y) + "i64"
             case y: BigInt =>
                 if (unsafe Objects.isNull(y)) {
                     "null"
