@@ -40,7 +40,7 @@ object TypeVerifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, SimpleType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    val ret = visitExpr(decl.exp)(root, env, Map.empty)
     checkEq(decl.tpe, ret, decl.loc)
   }
 

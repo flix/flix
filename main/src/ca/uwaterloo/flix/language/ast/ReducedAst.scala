@@ -34,7 +34,7 @@ object ReducedAst {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
