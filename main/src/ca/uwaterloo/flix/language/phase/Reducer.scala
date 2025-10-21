@@ -147,7 +147,7 @@ object Reducer {
 
       case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         val defn = root.defs(sym)
-        if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.expr.purity)) lctx.addPcPoint()
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(defn.exp.purity)) lctx.addPcPoint()
         val es = exps.map(visitExpr)
         JvmAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
