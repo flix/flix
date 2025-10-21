@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.mutable
 
@@ -64,13 +65,13 @@ trait Formatter {
     */
   def table(colHeaders: List[String], colFormatters: List[String => String], rows: List[List[String]]): String = {
     val cols = rows.transpose
-    val (headersPadded, colsPadded) = (colHeaders zip cols).map { case (header, col) =>
+    val (headersPadded, colsPadded) = ListOps.zip(colHeaders, cols).map { case (header, col) =>
       val headerPadded :: colPadded = padToLongest(header :: col)
       (headerPadded, colPadded)
     }.unzip
 
     // Formatting must happen after padding
-    val colsFormatted = (colsPadded zip colFormatters).map { case (c, f) => c.map(f) }
+    val colsFormatted = ListOps.zip(colsPadded, colFormatters).map { case (c, f) => c.map(f) }
     val rowsFormatted = colsFormatted.transpose
 
     val sb = new mutable.StringBuilder
