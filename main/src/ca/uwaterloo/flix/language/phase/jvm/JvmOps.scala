@@ -161,6 +161,18 @@ object JvmOps {
     struct.fields.map(field => instantiateType(map, field.tpe))
   }
 
+  /** Returns the tag type of each case in `enm`. */
+  def getTagsOf(enm: JvmAst.Enum)(implicit root: Root): List[BackendObjType.TagType] = {
+    enm.cases.values.map {
+      case caze => caze.tpes match {
+        case Nil =>
+          BackendObjType.NullaryTag(caze.sym.name)
+        case elms =>
+          BackendObjType.Tag(elms.map(BackendType.toBackendType))
+      }
+    }.toList
+  }
+
   /**
     * Instantiates `tpe` given the variable map `m`.
     *
