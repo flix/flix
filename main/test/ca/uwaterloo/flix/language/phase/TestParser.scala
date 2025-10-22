@@ -49,6 +49,98 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("IllegalDefName.01") {
+    val input =
+      """
+        |def A(): Unit = ()
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.02") {
+    val input =
+      """
+        |pub trait A[a] {
+        |    pub def A(): Unit = ()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.03") {
+    val input =
+      """
+        |trait A[x] {}
+        |instance A[Int32] {
+        |    pub def A(): Unit = ()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.04") {
+    val input =
+      """
+        |trait A[x] {}
+        |instance A[Int32] {
+        |    pub redef A(): Unit = ()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.05") {
+    val input =
+      """
+        |trait B[a] {
+        |    law A:forall() false
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.06") {
+    val input =
+      """
+        |pub eff C {
+        |    def A(): Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.07") {
+    val input =
+      """
+        |def a(): Unit = {
+        |    def A() = ();
+        |    A()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Use.01") {
     val input =
       """

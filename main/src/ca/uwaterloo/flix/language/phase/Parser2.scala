@@ -618,6 +618,7 @@ object Parser2 {
     */
   private val NAME_LIKE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase, TokenKind.NameMath, TokenKind.GenericOperator)
+  private val NAME_FUNCTION: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameMath, TokenKind.GenericOperator)
   private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameMath, TokenKind.Underscore)
   private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameLowercase, TokenKind.NameUppercase)
@@ -1023,7 +1024,7 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordDef))
       expect(TokenKind.KeywordDef)
-      nameUnqualified(NAME_DEFINITION)
+      nameUnqualified(NAME_FUNCTION)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1047,7 +1048,7 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(declKind))
       expect(declKind)
-      nameUnqualified(NAME_DEFINITION)
+      nameUnqualified(NAME_FUNCTION)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -1083,7 +1084,7 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       assert(at(TokenKind.KeywordLaw))
       expect(TokenKind.KeywordLaw)
-      nameUnqualified(NAME_DEFINITION)
+      nameUnqualified(NAME_FUNCTION)
       expect(TokenKind.Colon)
       expect(TokenKind.KeywordForall)
       if (at(TokenKind.BracketL)) {
@@ -1301,7 +1302,7 @@ object Parser2 {
     private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       expect(TokenKind.KeywordDef)
-      nameUnqualified(NAME_DEFINITION)
+      nameUnqualified(NAME_FUNCTION)
 
       // Check for illegal type parameters.
       if (at(TokenKind.BracketL)) {
@@ -2121,7 +2122,7 @@ object Parser2 {
       Decl.docComment()
       Decl.annotations()
       expect(TokenKind.KeywordDef)
-      nameUnqualified(NAME_DEFINITION)
+      nameUnqualified(NAME_FUNCTION)
       Decl.parameters()
       if (eat(TokenKind.Colon)) {
         Type.typeAndEffect()
