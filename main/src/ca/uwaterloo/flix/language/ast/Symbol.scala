@@ -330,43 +330,9 @@ object Symbol {
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
 
     /**
-      * The internal stack offset. Computed by [[ca.uwaterloo.flix.language.phase.VarOffsets]].
-      *
-      * Note: We do not use an `Option` here because there are many `VarSym`s and this wastes a lot of memory.
-      */
-    private var stackOffset: Int = -1
-
-    /**
       * Returns `true` if `this` symbol is a wildcard.
       */
     def isWild: Boolean = text.startsWith("_")
-
-    /**
-      * Returns the stack offset of `this` variable symbol.
-      *
-      * The local offset should be the number of jvm arguments for static
-      * methods and one higher than that for instance methods.
-      *
-      * Throws [[InternalCompilerException]] if the stack offset has not been set.
-      */
-    def getStackOffset(localOffset: Int): Int = {
-      if (stackOffset == -1) {
-        throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      } else {
-        stackOffset + localOffset
-      }
-    }
-
-    /**
-      * Sets the internal stack offset to given argument.
-      */
-    def setStackOffset(offset: Int): Unit = {
-      if (stackOffset != -1) {
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
-      } else {
-        stackOffset = offset
-      }
-    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -382,7 +348,7 @@ object Symbol {
     override val hashCode: Int = id
 
     /**
-      * Return the comparison of `this` symbol to `that` symol.
+      * Return the comparison of `this` symbol to `that` symbol.
       */
     override def compare(that: VarSym): Int = this.id.compare(that.id)
 
@@ -390,6 +356,55 @@ object Symbol {
       * Human readable representation.
       */
     override def toString: String = text + Flix.Delimiter + id
+  }
+
+  /**
+    * Offset Variable Symbol.
+    *
+    * Used in the backend where variables are placed on the local variable stack.
+    * The absolute index of a variable depends on whether it is used in a object instance or a static context,
+    * so the offset is relative to some base number (see [[getIndex]]).
+    *
+    * @param id      the globally unique name of the symbol.
+    * @param text    the original name, as it appears in the source code, of the symbol
+    * @param offset   the index of the variable in the local variable stack.
+    * @param boundBy the way the variable is bound.
+    * @param loc     the source location associated with the symbol.
+    */
+  final class OffsetVarSym(val id: Int, val text: String, val offset: Int, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
+
+    /**
+      * Returns `true` if `this` symbol is a wildcard.
+      */
+    def isWild: Boolean = text.startsWith("_")
+
+    /**
+      * Returns the index of `this` variable symbol in the local variable stack, the sum of the symbol offset and the context offset.
+      */
+    def getIndex(contextOffset: Int): Int = offset + contextOffset
+
+    /**
+      * Returns `true` if this symbol is equal to `that` symbol.
+      */
+    override def equals(obj: scala.Any): Boolean = obj match {
+      case that: VarSym => this.id == that.id
+      case _ => false
+    }
+
+    /**
+      * Returns the hash code of this symbol.
+      */
+    override val hashCode: Int = id
+
+    /**
+      * Return the comparison of `this` symbol to `that` symbol.
+      */
+    override def compare(that: VarSym): Int = this.id.compare(that.id)
+
+    /**
+      * Human readable representation.
+      */
+    override def toString: String = text + Flix.Delimiter + id + Flix.Delimiter + offset
   }
 
   /**

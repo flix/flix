@@ -180,7 +180,7 @@ object GenExpression {
     }
 
     case Expr.Var(sym, tpe, _) =>
-      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), sym.getIndex(ctx.localOffset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
@@ -1251,7 +1251,7 @@ object GenExpression {
         for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
           val tpe = BackendType.toBackendType(arg.tpe)
-          val offset = fp.sym.getStackOffset(ctx.localOffset)
+          val offset = fp.sym.getIndex(ctx.localOffset)
           BytecodeInstructions.xStore(tpe, offset)
         }
         // Jump to the entry point of the method.
@@ -1297,7 +1297,7 @@ object GenExpression {
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
       castIfNotPrim(bType)
-      xStore(bType, sym.getStackOffset(ctx.localOffset))
+      xStore(bType, sym.getIndex(ctx.localOffset))
       compileExpr(exp2)
 
     case Expr.Stmt(exp1, exp2, _) =>
@@ -1328,7 +1328,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, JvmName.ConstructorMethod,
         MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, sym.getIndex(ctx.localOffset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1339,14 +1339,14 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getIndex(ctx.localOffset))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getIndex(ctx.localOffset))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1354,7 +1354,7 @@ object GenExpression {
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getIndex(ctx.localOffset))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1391,7 +1391,7 @@ object GenExpression {
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        BytecodeInstructions.xStore(BackendType.Object, sym.getStackOffset(ctx.localOffset))
+        BytecodeInstructions.xStore(BackendType.Object, sym.getIndex(ctx.localOffset))
 
         // Emit code for the handler body expression.
         compileExpr(body)

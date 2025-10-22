@@ -49,7 +49,7 @@ object JvmAst {
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Op], loc: SourceLocation)
 
-  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[FormalParam], tpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class Op(sym: Symbol.OpSym, ann: Annotations, mod: Modifiers, fparams: List[SymbolicFormalParam], tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
   sealed trait Expr {
     def tpe: SimpleType
@@ -67,7 +67,7 @@ object JvmAst {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Var(sym: Symbol.OffsetVarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
@@ -87,7 +87,7 @@ object JvmAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+    case class Let(sym: Symbol.OffsetVarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
 
@@ -101,7 +101,7 @@ object JvmAst {
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.OffsetVarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -119,21 +119,17 @@ object JvmAst {
 
   case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[SymbolicFormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.OffsetVarSym, clazz: java.lang.Class[?], exp: Expr)
 
-  case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
+  case class HandlerRule(op: OpSymUse, fparams: List[SymbolicFormalParam], exp: Expr)
 
-  sealed trait Param {
-    def sym: Symbol.VarSym
+  case class SymbolicFormalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
-    def tpe: SimpleType
-  }
+  case class FormalParam(sym: Symbol.OffsetVarSym, tpe: SimpleType)
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
-
-  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+  case class LocalParam(sym: Symbol.OffsetVarSym, tpe: SimpleType)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 

@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
 import ca.uwaterloo.flix.language.ast.{JvmAst, Purity, ReducedAst, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
 
 import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
@@ -69,20 +69,15 @@ object Reducer {
 
   private def visitDef(d: ReducedAst.Def)(implicit root: ReducedAst.Root, ctx: SharedContext): JvmAst.Def = d match {
     case ReducedAst.Def(ann, mod, sym, cparams0, fparams0, exp, tpe, unboxedType0, loc) =>
-      implicit val lctx: LocalContext = LocalContext.mk(exp.purity)
+      implicit val lctx: LocalContext = new LocalContext(isControlImpure = Purity.isControlImpure(exp.purity))
 
+      // It is important to visit parameters and variables in the order the backend expects: cparams, fparams, then lparams.
       val cparams = cparams0.map(visitFormalParam)
       val fparams = fparams0.map(visitFormalParam)
       val e = visitExpr(exp)
       // `ls` is initialized based on the context mutation of `visitExpr`
       val ls = lctx.lparams.toList
       val unboxedType = JvmAst.UnboxedType(unboxedType0.tpe)
-
-      // Set variable offsets - the variable order is important and must match the assumptions of the backend.
-      var varOffset = 0
-      for (param <- cparams ::: fparams ::: ls) {
-        varOffset = setOffsetAndIncrement(param.sym, param.tpe, varOffset)
-      }
 
       // Add all types.
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
@@ -122,7 +117,7 @@ object Reducer {
   }
 
   private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
-    val fparams = op.fparams.map(visitFormalParam)
+    val fparams = op.fparams.map(visitSymbolicFormalParam)
     JvmAst.Op(op.sym, op.ann, op.mod, fparams, op.tpe, op.purity, op.loc)
   }
 
@@ -133,7 +128,8 @@ object Reducer {
         JvmAst.Expr.Cst(cst, loc)
 
       case ReducedAst.Expr.Var(sym, tpe, loc) =>
-        JvmAst.Expr.Var(sym, tpe, loc)
+        val s = visitVarSymRead(sym)
+        JvmAst.Expr.Var(s, tpe, loc)
 
       case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
@@ -177,10 +173,11 @@ object Reducer {
         JvmAst.Expr.JumpTo(sym, tpe, purity, loc)
 
       case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
-        lctx.lparams.addOne(JvmAst.LocalParam(sym, exp1.tpe))
+        val s = lctx.assignOffset(sym, exp1.tpe)
+        lctx.lparams.addOne(JvmAst.LocalParam(s, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        JvmAst.Expr.Let(sym, e1, e2, loc)
+        JvmAst.Expr.Let(s, e1, e2, loc)
 
       case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
         val e1 = visitExpr(exp1)
@@ -188,17 +185,19 @@ object Reducer {
         JvmAst.Expr.Stmt(e1, e2, loc)
 
       case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
-        lctx.lparams.addOne(JvmAst.LocalParam(sym, SimpleType.Region))
+        val s = lctx.assignOffset(sym, SimpleType.Region)
+        lctx.lparams.addOne(JvmAst.LocalParam(s, SimpleType.Region))
         val e = visitExpr(exp)
-        JvmAst.Expr.Region(sym, e, tpe, purity, loc)
+        JvmAst.Expr.Region(s, e, tpe, purity, loc)
 
       case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExpr(exp)
         val rs = rules map {
           case ReducedAst.CatchRule(sym, clazz, body) =>
-            lctx.lparams.addOne(JvmAst.LocalParam(sym, SimpleType.Object))
+            val s = lctx.assignOffset(sym, SimpleType.Object)
+            lctx.lparams.addOne(JvmAst.LocalParam(s, SimpleType.Object))
             val b = visitExpr(body)
-            JvmAst.CatchRule(sym, clazz, b)
+            JvmAst.CatchRule(s, clazz, b)
         }
         JvmAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
@@ -208,7 +207,7 @@ object Reducer {
         val rs = rules.map {
           case ReducedAst.HandlerRule(op, fparams, body) =>
             val b = visitExpr(body)
-            JvmAst.HandlerRule(op, fparams.map(visitFormalParam), b)
+            JvmAst.HandlerRule(op, fparams.map(visitSymbolicFormalParam), b)
         }
         JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
@@ -216,7 +215,7 @@ object Reducer {
         val specs = methods.map {
           case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
+            JvmAst.JvmMethod(ident, fparams.map(visitSymbolicFormalParam), c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
 
@@ -225,25 +224,34 @@ object Reducer {
     }
   }
 
-  private def visitFormalParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
-    JvmAst.FormalParam(fp.sym, fp.tpe)
+  /** Assigns the offset of `lctx` to `sym`. */
+  private def visitVarSymRead(sym: Symbol.VarSym)(implicit lctx: LocalContext): Symbol.OffsetVarSym =
+    lctx.getOffset(sym)
+
+  /** Assigns the next offset to `fp`, mutating `lctx`. */
+  private def visitFormalParam(fp: ReducedAst.FormalParam)(implicit lctx: LocalContext): JvmAst.FormalParam = {
+    val sym = lctx.assignOffset(fp.sym, fp.tpe)
+    JvmAst.FormalParam(sym, fp.tpe)
+  }
+
+  private def visitSymbolicFormalParam(fp: ReducedAst.FormalParam): JvmAst.SymbolicFormalParam =
+    JvmAst.SymbolicFormalParam(fp.sym, fp.tpe)
 
   private def visitTypeParam(tp: ReducedAst.TypeParam): JvmAst.TypeParam =
     JvmAst.TypeParam(tp.name, tp.sym)
 
   /**
-    * Companion object for [[LocalContext]].
-    */
-  private object LocalContext {
-    def mk(purity: Purity): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0, Purity.isControlImpure(purity))
-  }
-
-  /**
     * A local non-shared context. Does not need to be thread-safe.
-    *
-    * @param lparams the bound variables in the def.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[JvmAst.LocalParam], private var pcPoints: Int, private val isControlImpure: Boolean) {
+  private class LocalContext(private val isControlImpure: Boolean) {
+
+    val lparams: mutable.ArrayBuffer[JvmAst.LocalParam] = mutable.ArrayBuffer.empty
+
+    private var pcPoints: Int = 0
+
+    private var nextVarOffset: Int = 0
+
+    private val offsets: mutable.Map[Symbol.VarSym, Int] = mutable.HashMap.empty
 
     /**
       * Adds n to the private [[pcPoints]] field.
@@ -258,6 +266,36 @@ object Reducer {
       * Returns the pcPoints field.
       */
     def getPcPoints: Int = pcPoints
+
+    /** Assigns the next offset to `sym`. */
+    def assignOffset(sym: Symbol.VarSym, tpe: SimpleType): Symbol.OffsetVarSym = {
+      if (offsets.contains(sym)) throw InternalCompilerException(s"Already assigned offset to '$sym'", sym.loc)
+
+      val offset = nextVarOffsetAndIncrement(tpe)
+      offsets.put(sym, offset)
+      new Symbol.OffsetVarSym(sym.id, sym.text, offset, sym.boundBy, sym.loc)
+    }
+
+    /** Returns the offset of `sym`, throwing [[InternalCompilerException]] if not found. */
+    def getOffset(sym: Symbol.VarSym): Symbol.OffsetVarSym = {
+      offsets.get(sym) match {
+        case Some(offset) => new Symbol.OffsetVarSym(sym.id, sym.text, offset, sym.boundBy, sym.loc)
+        case None => throw InternalCompilerException(s"No offset found for '$sym'", sym.loc)
+      }
+    }
+
+    /** Returns the next available offset and increments the running offset. */
+    private def nextVarOffsetAndIncrement(tpe: SimpleType): Int = {
+      val res = nextVarOffset
+      val offset = tpe match {
+        case SimpleType.Float64 => 2
+        case SimpleType.Int64 => 2
+        case _ => 1
+      }
+      nextVarOffset += offset
+      res
+    }
+
   }
 
   /**
@@ -313,19 +351,6 @@ object Reducer {
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc
     }
-  }
-
-  /** Assigns a stack offset to `sym` and returns the next available stack offset. */
-  private def setOffsetAndIncrement(sym: Symbol.VarSym, tpe: SimpleType, offset: Int): Int = {
-    sym.setStackOffset(offset)
-
-    // 64-bit values take up two slots in the offsets.
-    val stackSize = tpe match {
-      case SimpleType.Float64 => 2
-      case SimpleType.Int64 => 2
-      case _ => 1
-    }
-    offset + stackSize
   }
 
 }
