@@ -588,23 +588,17 @@ object GenExpression {
 
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val SimpleType.Enum(_, targs) = exp.tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
         compileIsTag(sym.name, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
-        val SimpleType.Enum(_, targs) = tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
         compileTag(sym.name, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
         import BytecodeInstructions.*
         val List(exp) = exps
-        val SimpleType.Enum(_, targs) = exp.tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
         castIfNotPrim(BackendType.toBackendType(tpe))

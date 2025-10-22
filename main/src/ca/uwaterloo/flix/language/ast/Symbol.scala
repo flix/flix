@@ -89,6 +89,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh enum symbol based on the given symbol.
+    */
+  def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
+    val id = Some(flix.genSym.freshId())
+    new EnumSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {

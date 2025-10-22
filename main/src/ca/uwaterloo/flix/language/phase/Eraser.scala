@@ -3,11 +3,13 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimpleType.erase
 import ca.uwaterloo.flix.language.ast.{AtomicOp, ErasedAst, Purity, ReducedAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.dbg.AstPrinter.{DebugNoOp, DebugReducedAst}
+import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-import ca.uwaterloo.flix.util.collection.MapOps
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.unused
+import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
   * Erase types and introduce corresponding casting
@@ -30,42 +32,50 @@ import scala.annotation.unused
   *   - Function
   *     - result type boxing, this includes return types of defs and their applications
   *     - function call return value casting
-  *   - Enums and Structs
+  *   - Structs
   *     - type arguments are erased
   *     - polymorphic term types in the declaration are polymorphically erased (see [[polymorphicErasure]])
+  *   - Enums
+  *     - Enums are erased and specialized to their uses.
   */
 object Eraser {
 
   def run(root: ReducedAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase("Eraser") {
+    implicit val r: ReducedAst.Root = root
+    implicit val ctx: SharedContext = new SharedContext()
+
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
+    val newEnums = specializeEnums(ctx.getSpecializations)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
     ErasedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.entryPoints, root.sources)
   }(DebugNoOp())
 
-  private def visitDef(defn: ReducedAst.Def): ErasedAst.Def = defn match {
+  private def visitDef(defn: ReducedAst.Def)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Def = defn match {
     case ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
       val e = ErasedAst.Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
       ErasedAst.Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), ErasedAst.UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
-  private def visitParam(fp: ReducedAst.FormalParam): ErasedAst.FormalParam = fp match {
+  private def specializeEnums(specializations: Iterable[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.EnumSym, ErasedAst.Enum] = {
+    ParOps.parMap(specializations) {
+      case (sym, targs, newSym) =>
+        val enm = root.enums(sym)
+        val subst = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
+        val cases = enm.cases.values.map(specializeCase(_, newSym, subst)).map(caze => caze.sym -> caze).toMap
+        ErasedAst.Enum(enm.ann, enm.mod, newSym, cases, enm.loc)
+    }.map(enm => enm.sym -> enm).toMap
+  }
+
+  private def specializeCase(caze: ReducedAst.Case, newSym: Symbol.EnumSym, subst: Map[Symbol.KindedTypeVarSym, SimpleType]): ErasedAst.Case = {
+    val sym = new Symbol.CaseSym(newSym, caze.sym.name, caze.sym.loc)
+    ErasedAst.Case(sym, caze.tpes.map(instantiateAndEraseType(subst, _)), caze.loc)
+  }
+
+  private def visitParam(fp: ReducedAst.FormalParam)(implicit ctx: SharedContext, flix: Flix): ErasedAst.FormalParam = fp match {
     case ReducedAst.FormalParam(sym, tpe) =>
       ErasedAst.FormalParam(sym, visitType(tpe))
-  }
-
-  private def visitEnum(enm: ReducedAst.Enum): ErasedAst.Enum = enm match {
-    case ReducedAst.Enum(ann, mod, sym, tparams0, cases0, loc) =>
-      val cases = MapOps.mapValues(cases0)(visitEnumTag)
-      val tparams = tparams0.map(tp => ErasedAst.TypeParam(tp.name, tp.sym))
-      ErasedAst.Enum(ann, mod, sym, tparams, cases, loc)
-  }
-
-  private def visitEnumTag(caze: ReducedAst.Case): ErasedAst.Case = caze match {
-    case ReducedAst.Case(sym, tpes, loc) =>
-      ErasedAst.Case(sym, tpes.map(polymorphicErasure), loc)
   }
 
   private def visitStruct(struct: ReducedAst.Struct): ErasedAst.Struct = struct match {
@@ -80,28 +90,28 @@ object Eraser {
       ErasedAst.StructField(sym, polymorphicErasure(tpe), loc)
   }
 
-  private def visitBranch(branch: (Symbol.LabelSym, ReducedAst.Expr)): (Symbol.LabelSym, ErasedAst.Expr) = branch match {
+  private def visitBranch(branch: (Symbol.LabelSym, ReducedAst.Expr))(implicit ctx: SharedContext, flix: Flix): (Symbol.LabelSym, ErasedAst.Expr) = branch match {
     case (sym, exp) =>
       (sym, visitExp(exp))
   }
 
-  private def visitCatchRule(rule: ReducedAst.CatchRule): ErasedAst.CatchRule = rule match {
+  private def visitCatchRule(rule: ReducedAst.CatchRule)(implicit ctx: SharedContext, flix: Flix): ErasedAst.CatchRule = rule match {
     case ReducedAst.CatchRule(sym, clazz, exp) =>
       ErasedAst.CatchRule(sym, clazz, visitExp(exp))
   }
 
-  private def visitHandlerRule(rule: ReducedAst.HandlerRule): ErasedAst.HandlerRule = rule match {
+  private def visitHandlerRule(rule: ReducedAst.HandlerRule)(implicit ctx: SharedContext, flix: Flix): ErasedAst.HandlerRule = rule match {
     case ReducedAst.HandlerRule(op, fparams, exp) =>
       ErasedAst.HandlerRule(op, fparams.map(visitParam), visitExp(exp))
   }
 
-  private def visitJvmMethod(method: ReducedAst.JvmMethod): ErasedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: ReducedAst.JvmMethod)(implicit ctx: SharedContext, flix: Flix): ErasedAst.JvmMethod = method match {
     case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       // return type is not erased to maintain class signatures
       ErasedAst.JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
   }
 
-  private def visitExp(exp0: ReducedAst.Expr): ErasedAst.Expr = exp0 match {
+  private def visitExp(exp0: ReducedAst.Expr)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Expr = exp0 match {
     case ReducedAst.Expr.Cst(cst, loc) =>
       ErasedAst.Expr.Cst(cst, loc)
     case ReducedAst.Expr.Var(sym, tpe, loc) =>
@@ -113,9 +123,17 @@ object Eraser {
         case AtomicOp.Closure(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unary(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Binary(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Is(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Tag(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Untag(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Is(sym0) =>
+          val List(e) = es
+          val sym = getSpecializedCaseSym(sym0, e.tpe.asInstanceOf[SimpleType.Enum])
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), es, t, purity, loc)
+        case AtomicOp.Tag(sym0) =>
+          val sym = getSpecializedCaseSym(sym0, t.asInstanceOf[SimpleType.Enum])
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.Tag(sym), es, t, purity, loc)
+        case AtomicOp.Untag(sym0, idx) =>
+          val List(e) = es
+          val sym = getSpecializedCaseSym(sym0, e.tpe.asInstanceOf[SimpleType.Enum])
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym, idx), es, t, purity, loc)
         case AtomicOp.Index(_) =>
           castExp(ErasedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -186,6 +204,17 @@ object Eraser {
       ErasedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
   }
 
+  /**
+    * Returns a copy of `sym` that refers to the enum of `tpe`.
+    *
+    * {{{
+    *   getSpecializedCaseSym("Option.Some", "Result") = "Result.Some"
+    * }}}
+    */
+  private def getSpecializedCaseSym(sym0: Symbol.CaseSym, tpe: SimpleType.Enum): Symbol.CaseSym = {
+    new Symbol.CaseSym(tpe.sym, sym0.name, sym0.loc)
+  }
+
   private def castExp(exp: ErasedAst.Expr, t: SimpleType, purity: Purity, loc: SourceLocation): ErasedAst.Expr = {
     ErasedAst.Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
@@ -194,17 +223,17 @@ object Eraser {
     ErasedAst.Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def visitEffect(eff: ReducedAst.Effect): ErasedAst.Effect = eff match {
+  private def visitEffect(eff: ReducedAst.Effect)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Effect = eff match {
     case ReducedAst.Effect(ann, mod, sym, ops, loc) =>
       ErasedAst.Effect(ann, mod, sym, ops.map(visitOp), loc)
   }
 
-  private def visitOp(op: ReducedAst.Op): ErasedAst.Op = op match {
+  private def visitOp(op: ReducedAst.Op)(implicit ctx: SharedContext, flix: Flix): ErasedAst.Op = op match {
     case ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc) =>
       ErasedAst.Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
   }
 
-  private def visitType(tpe0: SimpleType): SimpleType = {
+  private def visitType(tpe0: SimpleType)(implicit ctx: SharedContext, flix: Flix): SimpleType = {
     import SimpleType.*
     tpe0 match {
       case Void => Void
@@ -227,8 +256,11 @@ object Eraser {
       case Array(tpe) => SimpleType.mkArray(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
       case Tuple(elms) => SimpleType.mkTuple(elms.map(erase))
-      case SimpleType.Enum(sym, targs) => SimpleType.mkEnum(sym, targs.map(erase))
-      case SimpleType.Struct(sym, tparams) => SimpleType.Struct(sym, tparams.map(erase))
+      case Enum(sym, targs) =>
+        // `Option[String]` erases to `Option[Object]` and is then specialized to `Option$42`.
+        val specializedSym = ctx.getSpecializedName(sym, targs.map(erase))
+        SimpleType.mkEnum(specializedSym, Nil)
+      case Struct(sym, tparams) => SimpleType.Struct(sym, tparams.map(erase))
       case Arrow(args, result) => SimpleType.mkArrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
@@ -275,5 +307,69 @@ object Eraser {
   }
 
   private def box(@unused tpe: SimpleType): SimpleType = SimpleType.Object
+
+  private final class SharedContext {
+
+    /**
+      * `(Option, List(Int32)) -> Option$42` means that `Option` is specialized wrt. `Int32`
+      * under the name `Option$42`.
+      */
+    private val enumSpecializations: ConcurrentHashMap[(Symbol.EnumSym, List[SimpleType]), Symbol.EnumSym] =
+      new ConcurrentHashMap()
+
+    /** Specializes the enum if not done already. */
+    def getSpecializedName(sym: Symbol.EnumSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.EnumSym = {
+      targs match {
+        case Nil =>
+          // No specialization required.
+          enumSpecializations.computeIfAbsent((sym, targs), _ => sym)
+        case _ =>
+          // Do specialization.
+          enumSpecializations.computeIfAbsent((sym, targs), _ => Symbol.freshEnumSym(sym))
+      }
+    }
+
+    def getSpecializations: Iterable[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)] =
+      toMap(enumSpecializations).toList.map { case (a, b) => (a._1, a._2, b) }
+
+    private def toMap[A, B](map: ConcurrentHashMap[A, B]): Map[A, B] =
+      map.asScala.toMap
+
+  }
+
+  /**
+    * Instantiates `tpe` given the variable map `subst` and erases the result.
+    *
+    * Examples:
+    *   - `instantiateAndEraseType([x -> Int32], x) = Int32`
+    *   - `instantiateAndEraseType(_, Int32) = Int32`
+    *   - `instantiateAndEraseType(_, Object) = Object`
+    *   - `instantiateAndEraseType([x -> String], x) = Object`
+    *   - `instantiateAndEraseType(_, Option[Int32]) = Object`
+    *   - `instantiateAndEraseType([x -> Int32], y) = crash!`
+    */
+  private def instantiateAndEraseType(subst: Map[Symbol.KindedTypeVarSym, SimpleType], tpe: Type) = tpe match {
+    case Type.Var(sym, _) => erase(subst(sym))
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Bool => SimpleType.Bool
+      case TypeConstructor.Char => SimpleType.Char
+      case TypeConstructor.Float32 => SimpleType.Float32
+      case TypeConstructor.Float64 => SimpleType.Float64
+      case TypeConstructor.Int8 => SimpleType.Int8
+      case TypeConstructor.Int16 => SimpleType.Int16
+      case TypeConstructor.Int32 => SimpleType.Int32
+      case TypeConstructor.Int64 => SimpleType.Int64
+      // All primitive types covered, so lefter types are Object.
+      case _ => SimpleType.Object
+    }
+    // Any type application will result in an Object type.
+    case Type.Apply(_, _, _) => SimpleType.Object
+
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+  }
 
 }

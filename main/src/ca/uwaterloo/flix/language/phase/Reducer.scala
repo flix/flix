@@ -99,9 +99,8 @@ object Reducer {
   }
 
   private def visitEnum(enm: ErasedAst.Enum): JvmAst.Enum = {
-    val tparams = enm.tparams.map(visitTypeParam)
     val cases = MapOps.mapValues(enm.cases)(visitCase)
-    JvmAst.Enum(enm.ann, enm.mod, enm.sym, tparams, cases, enm.loc)
+    JvmAst.Enum(enm.ann, enm.mod, enm.sym, cases, enm.loc)
   }
 
   private def visitCase(caze: ErasedAst.Case): JvmAst.Case =

@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.JvmAst.*
-import ca.uwaterloo.flix.language.ast.{SimpleType, JvmAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -54,7 +54,7 @@ object JvmOps {
     */
   def getErasedClosureAbstractClassType(tpe: SimpleType): BackendObjType.AbstractArrow = tpe match {
     case SimpleType.Arrow(targs, tresult) =>
-     BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
+      BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
@@ -162,35 +162,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the set of erased tag types in `types` without searching recursively.
-    */
-  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: JvmAst.Root): Set[BackendObjType.TagType] =
-    types.foldLeft(Set.empty[BackendObjType.TagType]) {
-      case (acc0, SimpleType.Enum(sym, targs)) =>
-        val tags = instantiateEnum(root.enums(sym), targs)
-        tags.foldLeft(acc0) {
-          case (acc, (tagSym, Nil)) => acc + BackendObjType.NullaryTag(tagSym.name)
-          case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
-        }
-      case (acc, _) => acc
-    }
-
-  /**
-    * Returns the ordered list of enums terms based on the given type `sym[targs..]`. It is assumed
-    * that both `targs` and the enums in `root` use erased types.
-    *
-    * Example:
-    *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
-    *     for `enum E[t] { case A(t, Object) case B(Int32) }`
-    */
-  def instantiateEnum(enm: JvmAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
-    val map = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
-    enm.cases.map {
-      case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))
-    }
-  }
-
-  /**
     * Instantiates `tpe` given the variable map `m`.
     *
     * Examples:
@@ -201,7 +172,7 @@ object JvmOps {
     *   - `instantiateType([x -> Int32], y) = throw InternalCompilerException`
     *   - `instantiateType(_, Option[Int32]) =  throw InternalCompilerException`
     *
-    * @param m Decides types for variables, must only contain erased types.
+    * @param m   Decides types for variables, must only contain erased types.
     * @param tpe the type to instantiate, must be a polymorphic erased type
     *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
     */

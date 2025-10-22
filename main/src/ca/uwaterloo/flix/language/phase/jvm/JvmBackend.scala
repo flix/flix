@@ -63,7 +63,19 @@ object JvmBackend {
     }.map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = JvmOps.getErasedTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val tagClasses = root.enums.values.flatMap {
+      enm =>
+        enm.cases.values.map(
+          caze => caze.tpes match {
+            case Nil =>
+              val bt = BackendObjType.NullaryTag(caze.sym.name)
+              JvmClass(bt.jvmName, bt.genByteCode())
+            case elms =>
+              val bt = BackendObjType.Tag(elms.map(BackendType.toBackendType))
+              JvmClass(bt.jvmName, bt.genByteCode())
+          }
+        )
+    }.toList
     val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
