@@ -1,4 +1,4 @@
-struct S[r] {
+struct S {
     foo: Int32
 }
 
@@ -6,20 +6,20 @@ struct S[r] {
 def foo(): Unit = ()
 
 mod Test.Dec.Struct {
-    pub struct Empty[r] {}
+    pub struct Empty {}
 
-    pub struct ShortEmpty[r]
+    pub struct ShortEmpty
 
-    pub struct Singleton[r] {
+    pub struct Singleton {
         singletonfield: Int32
     }
 
-    pub struct Poly[a, r] {
+    pub struct Poly[a] {
         zero: Int32,
         one: a
     }
 
-    pub struct PolyMulti[a, b, r] {
+    pub struct PolyMulti[a, b] {
         polymulti_zero: Int32,
         polymulti_oneA: a,
         polymulti_oneB: b,
@@ -38,7 +38,7 @@ mod Test.Dec.Struct {
 
     pub struct PolyRecursiveNonRegular[a, r] {
         poly_nonregular_simple: a,
-        poly_nonregular_recurse: PolyRecursiveNonRegular[Poly[a, r], r]
+        poly_nonregular_recurse: PolyRecursiveNonRegular[Poly[a], r]
     }
 
     pub struct BinaryTree[t, r] {

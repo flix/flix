@@ -550,7 +550,8 @@ object SemanticTokensProvider {
       val (names, exps) = fields.unzip
       val ts = names.map(name => SemanticToken(SemanticTokenType.Property, Nil, name.loc))
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
-      visitExps(exps) ++ visitExp(region) ++ ts ++ Iterator(t)
+      val rts = region.map(visitExp).getOrElse(Nil)
+      visitExps(exps) ++ rts ++ ts ++ Iterator(t)
 
     case Expr.StructGet(exp, field, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Property, Nil, field.loc)

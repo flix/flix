@@ -45,7 +45,7 @@ mod Test.Exp.Struct.Get {
             }
 
         // From https://github.com/flix/flix/issues/10057
-        pub struct Node[r] {
+        pub struct Node {
             keys:       Int32,
             children:   Option[Int32],
             leaves:     Option[Int32],
@@ -55,8 +55,8 @@ mod Test.Exp.Struct.Get {
 
         mod Node {
             @test
-            pub def empty(): Unit \ IO = region rc {
-                let node = new Node @ rc {
+            pub def empty(): Unit \ IO = {
+                let node = new Node $ {
                     keys = 0,
                     children = None,
                     leaves = None,

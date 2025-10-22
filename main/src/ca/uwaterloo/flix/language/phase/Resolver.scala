@@ -1156,11 +1156,19 @@ object Resolver {
                 case e => (fieldSymUse, e)
               }
           }
-          val regionVal = resolveExp(region0, scp0)
-          val structNew = mapN(fieldsVal, regionVal) {
-            case (fields, region) =>
-              ResolvedAst.Expr.StructNew(st0.sym, fields, region, loc)
+          val regionValOpt = region0.map(resolveExp(_, scp0))
+          val structNew = regionValOpt match {
+            case None => mapN(fieldsVal) {
+              fields => ResolvedAst.Expr.StructNew(st0.sym, fields, None, loc)
+            }
+            case Some(regionVal) =>
+              mapN(fieldsVal, regionVal) {
+                case (fields, region) =>
+                  ResolvedAst.Expr.StructNew(st0.sym, fields, Some(region), loc)
+              }
           }
+
+
           // Potential errors
           val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
           val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))

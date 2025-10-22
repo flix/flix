@@ -642,7 +642,7 @@ object Desugar {
 
     case WeededAst.Expr.StructNew(name, fields0, region0, loc) =>
       val fields = fields0.map(field => (field._1, visitExp(field._2)))
-      val region = visitExp(region0)
+      val region = region0.map(visitExp)
       Expr.StructNew(name, fields, region, loc)
 
     case WeededAst.Expr.StructGet(e, name, loc) =>

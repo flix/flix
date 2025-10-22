@@ -215,6 +215,13 @@ object DocAst {
       DoubleKeyword(beforeRecord, record, "@", Left(d2))
     }
 
+    def PureStructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)]): Expr = {
+      val beforeRecord = "new " + sym.toString
+      val name = Name.Label(sym.name, sym.loc)
+      val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc) }
+      Keyword(beforeRecord, record)
+    }
+
     def StructGet(d1: Expr, field: Symbol.StructFieldSym): Expr =
       Dot(d1, AsIs(field.name))
 

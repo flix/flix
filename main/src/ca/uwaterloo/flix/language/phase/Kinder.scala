@@ -110,19 +110,23 @@ object Kinder {
     */
   private def visitStruct(struct0: ResolvedAst.Declaration.Struct, root: ResolvedAst.Root)(implicit taenv: TypeAliasEnv, sctx: SharedContext, flix: Flix): KindedAst.Struct = struct0 match {
     case ResolvedAst.Declaration.Struct(doc, ann, mod, sym, tparams0, fields0, loc) =>
+      val isMutable = struct0.mod.isMutable
       // In the case in which the user doesn't supply any type params,
       // the parser will have already notified the user of this error
       // The recovery step here is to simply add a single type param that is never used
-      val tparams1 = if (tparams0.isEmpty) {
+      val tparams1 = if (tparams0.isEmpty && isMutable) {
         val regionTparam = ResolvedAst.TypeParam.Unkinded(Name.Ident("$rc", loc), Symbol.freshUnkindedTypeVarSym(VarText.Absent, loc)(Scope.Top, flix), loc)
         List(regionTparam)
       } else {
         tparams0
       }
-      val kenv1 = getKindEnvFromTypeParams(tparams1.init)
-      val kenv2 = getKindEnvFromRegion(tparams1.last)
-      // The last add is simply to verify that the last tparam was marked as Eff
-      val kenv = KindEnv.disjointAppend(kenv1, kenv2) + (tparams1.last.sym -> Kind.Eff)
+      val kenv0 = getStructParamKenv(struct0)
+      val kenv = if (!isMutable) {
+        kenv0
+      } else {
+        // The last add is simply to verify that the last tparam was marked as Eff
+        kenv0 + (tparams1.last.sym -> Kind.Eff)
+      }
       val tparams = tparams1.map(visitTypeParam(_, kenv))
       val fields = fields0.map(visitStructField(_, kenv, root))
       val targs = tparams.map(tparam => Type.Var(tparam.sym, tparam.loc.asSynthetic))
@@ -601,7 +605,7 @@ object Kinder {
             val exp = visitExp(fieldExp0, kenv0, root)
             (symUse, exp)
         }
-        val region = visitExp(region0, kenv0, root)
+        val region = region0.map(visitExp(_, kenv0, root))
         val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)
         val evar = Type.freshVar(Kind.Eff, loc.asSynthetic)
         KindedAst.Expr.StructNew(sym, fields, region, tvar, evar, loc)
@@ -1647,18 +1651,38 @@ object Kinder {
   }
 
   /**
+    * Gets the kenv of the struct.
+    */
+  private def getStructParamKenv(struct0: ResolvedAst.Declaration.Struct): KindEnv = struct0 match {
+    case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
+      if (!struct0.mod.isMutable) {
+        getKindEnvFromTypeParams(tparams0)
+      } else {
+        // tparams default to zero except for the region param
+        tparams0 match {
+          case tparams@(_ :: _) =>
+            val kenv1 = getKindEnvFromTypeParams(tparams.init)
+            val kenv2 = getKindEnvFromRegion(tparams.last)
+            KindEnv.disjointAppend(kenv1, kenv2)
+          case Nil => KindEnv.empty
+        }
+      }
+  }
+
+  /**
+    * Return true if the struct has no modifiable fields.
+    */
+  private def isStructMutable(struct0: ResolvedAst.Declaration.Struct): Boolean = struct0 match {
+    case ResolvedAst.Declaration.Struct(_, _, _, _, _, fields0, _) => fields0.exists(_.mod.isMutable)
+  }
+
+  /**
     * Gets the kind of the struct.
     */
   private def getStructKind(struct0: ResolvedAst.Declaration.Struct): Kind = struct0 match {
     case ResolvedAst.Declaration.Struct(_, _, _, _, tparams0, _, _) =>
       // tparams default to zero except for the region param
-      val kenv = tparams0 match {
-        case tparams@(_ :: _) =>
-          val kenv1 = getKindEnvFromTypeParams(tparams.init)
-          val kenv2 = getKindEnvFromRegion(tparams.last)
-          KindEnv.disjointAppend(kenv1, kenv2)
-        case Nil => KindEnv.empty
-      }
+      val kenv = getStructParamKenv(struct0)
       tparams0.foldRight(Kind.Star: Kind) {
         case (tparam, acc) => kenv.map(tparam.sym) ->: acc
       }

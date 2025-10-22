@@ -167,6 +167,10 @@ object Eraser {
           val specializedStruct = t.asInstanceOf[SimpleType.Struct]
           val specializedFields = fields.map(fieldSym => specializedFieldSym(fieldSym, specializedStruct))
           ErasedAst.Expr.ApplyAtomic(AtomicOp.StructNew(specializedStruct.sym, specializedFields), es, t, purity, loc)
+        case AtomicOp.PureStructNew(_, fields) =>
+          val specializedStruct = t.asInstanceOf[SimpleType.Struct]
+          val specializedFields = fields.map(fieldSym => specializedFieldSym(fieldSym, specializedStruct))
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.PureStructNew(specializedStruct.sym, specializedFields), es, t, purity, loc)
         case AtomicOp.StructGet(sym) =>
           val List(e) = es
           val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]

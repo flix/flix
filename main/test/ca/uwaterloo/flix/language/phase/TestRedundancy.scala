@@ -806,7 +806,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |mod N {
-         |    struct _Color[r] { }
+         |    struct _Color[r] { mut a: Int32 }
          |}
          |
        """.stripMargin

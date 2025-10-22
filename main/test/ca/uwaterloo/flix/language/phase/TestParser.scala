@@ -232,17 +232,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("StructNoTParams.01") {
-    val input =
-      """
-        |struct S { }
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = check(input, Options.TestWithLibMin)
-    expectErrorOnCheck[ParseError](result)
-    expectMain(result)
-  }
-
   test("DefNoParams.01") {
     val input =
       """
