@@ -72,8 +72,8 @@ object Reducer {
       implicit val lctx: LocalContext = new LocalContext(isControlImpure = Purity.isControlImpure(exp.purity))
 
       // It is important to visit parameters and variables in the order the backend expects: cparams, fparams, then lparams.
-      val cparams = cparams0.map(visitFormalParam)
-      val fparams = fparams0.map(visitFormalParam)
+      val cparams = cparams0.map(visitOffsetFormalParam)
+      val fparams = fparams0.map(visitOffsetFormalParam)
       val e = visitExpr(exp)
       // `ls` is initialized based on the context mutation of `visitExpr`
       val ls = lctx.lparams.toList
@@ -117,7 +117,7 @@ object Reducer {
   }
 
   private def visitOp(op: ReducedAst.Op): JvmAst.Op = {
-    val fparams = op.fparams.map(visitSymbolicFormalParam)
+    val fparams = op.fparams.map(visitFormalParam)
     JvmAst.Op(op.sym, op.ann, op.mod, fparams, op.tpe, op.purity, op.loc)
   }
 
@@ -207,7 +207,7 @@ object Reducer {
         val rs = rules.map {
           case ReducedAst.HandlerRule(op, fparams, body) =>
             val b = visitExpr(body)
-            JvmAst.HandlerRule(op, fparams.map(visitSymbolicFormalParam), b)
+            JvmAst.HandlerRule(op, fparams.map(visitFormalParam), b)
         }
         JvmAst.Expr.RunWith(e, effUse, rs, ct, tpe, purity, loc)
 
@@ -215,7 +215,7 @@ object Reducer {
         val specs = methods.map {
           case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, methPurity, methLoc) =>
             val c = visitExpr(clo)
-            JvmAst.JvmMethod(ident, fparams.map(visitSymbolicFormalParam), c, retTpe, methPurity, methLoc)
+            JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
         ctx.anonClasses.add(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
 
@@ -229,13 +229,13 @@ object Reducer {
     lctx.getOffset(sym)
 
   /** Assigns the next offset to `fp`, mutating `lctx`. */
-  private def visitFormalParam(fp: ReducedAst.FormalParam)(implicit lctx: LocalContext): JvmAst.FormalParam = {
+  private def visitOffsetFormalParam(fp: ReducedAst.FormalParam)(implicit lctx: LocalContext): JvmAst.OffsetFormalParam = {
     val sym = lctx.assignOffset(fp.sym, fp.tpe)
-    JvmAst.FormalParam(sym, fp.tpe)
+    JvmAst.OffsetFormalParam(sym, fp.tpe)
   }
 
-  private def visitSymbolicFormalParam(fp: ReducedAst.FormalParam): JvmAst.SymbolicFormalParam =
-    JvmAst.SymbolicFormalParam(fp.sym, fp.tpe)
+  private def visitFormalParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
+    JvmAst.FormalParam(fp.sym, fp.tpe)
 
   private def visitTypeParam(tp: ReducedAst.TypeParam): JvmAst.TypeParam =
     JvmAst.TypeParam(tp.name, tp.sym)
