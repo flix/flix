@@ -58,7 +58,7 @@ object Eraser {
       ErasedAst.Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), ErasedAst.UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
-  private def specializeEnums(specializations: Iterable[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.EnumSym, ErasedAst.Enum] = {
+  private def specializeEnums(specializations: List[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.EnumSym, ErasedAst.Enum] = {
     ParOps.parMap(specializations) {
       case (sym, targs, newSym) =>
         val enm = root.enums(sym)
@@ -73,7 +73,7 @@ object Eraser {
     ErasedAst.Case(sym, caze.tpes.map(instantiateAndEraseType(subst, _)), caze.loc)
   }
 
-  private def specializeStructs(specializations: Iterable[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.StructSym, ErasedAst.Struct] = {
+  private def specializeStructs(specializations: List[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.StructSym, ErasedAst.Struct] = {
     ParOps.parMap(specializations) {
       case (sym, targs, newSym) =>
         val struct = root.structs(sym)
