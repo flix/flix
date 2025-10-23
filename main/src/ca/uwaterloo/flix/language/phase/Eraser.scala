@@ -351,7 +351,7 @@ object Eraser {
     private val structSpecializations: ConcurrentHashMap[(Symbol.StructSym, List[SimpleType]), Symbol.StructSym] =
       new ConcurrentHashMap()
 
-    /** Specializes the enum if not done already. */
+    /** Returns the specialized version of `sym` according to `targs`, creating a new symbol if not done already. */
     def getSpecializedEnumName(sym: Symbol.EnumSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.EnumSym = {
       targs match {
         case Nil =>
@@ -363,10 +363,14 @@ object Eraser {
       }
     }
 
+    /**
+      * Returns all enum specializations `(sym, targs, newSym)` where `sym` should be
+      * specialized wrt. `targs` under the name `newSym`.
+      */
     def getEnumSpecializations: List[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)] =
       toList(enumSpecializations)
 
-    /** Specializes the struct if not done already. */
+    /** Returns the specialized version of `sym` according to `targs`, creating a new symbol if not done already. */
     def getSpecializedStructName(sym: Symbol.StructSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.StructSym = {
       targs match {
         case Nil =>
@@ -378,12 +382,17 @@ object Eraser {
       }
     }
 
+    /**
+      * Returns all struct specializations `(sym, targs, newSym)` where `sym` should be
+      * specialized wrt. `targs` under the name `newSym`.
+      */
     def getStructSpecializations: List[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)] =
       toList(structSpecializations)
 
-    private def toList[A, B](map: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
+    /** Returns the entries of `m`. */
+    private def toList[A, B](m: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
       val res = mutable.ListBuffer.empty[(A, B, A)]
-      map.forEach(new BiConsumer[(A, B), A] {
+      m.forEach(new BiConsumer[(A, B), A] {
         override def accept(t: (A, B), u: A): Unit = res.append((t._1, t._2, u))
       })
       res.toList
