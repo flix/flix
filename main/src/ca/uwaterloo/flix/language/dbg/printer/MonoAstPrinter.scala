@@ -61,8 +61,8 @@ object MonoAstPrinter {
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */
-  private def printCatchRule(rule: MonoAst.CatchRule): (Symbol.VarSym, Class[?], DocAst.Expr) = rule match {
-    case MonoAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
+  private def printCatchRule(rule: MonoAst.CatchRule): (DocAst.Expr, Class[?], DocAst.Expr) = rule match {
+    case MonoAst.CatchRule(sym, clazz, exp) => (printVar(sym), clazz, print(exp))
   }
 
   /** Returns the [[DocAst]] representation of `rule`. */

@@ -108,7 +108,7 @@ object DocAst {
       */
     case class Hash(d1: Expr, d2: Expr) extends Atom
 
-    case class TryCatch(d: Expr, rules: List[(Symbol.VarSym, Class[?], Expr)]) extends Atom
+    case class TryCatch(d: Expr, rules: List[(Expr, Class[?], Expr)]) extends Atom
 
     case class Handler(eff: Symbol.EffSym, rules: List[(Symbol.OpSym, List[AscriptionTpe], Expr)]) extends Composite
 
@@ -144,6 +144,9 @@ object DocAst {
       Meta("unknown exp")
 
     def Var(sym: Symbol.VarSym): Expr =
+      AsIs(sym.toString)
+
+    def OffsetVar(sym: Symbol.OffsetVarSym): Expr =
       AsIs(sym.toString)
 
     val Wild: Expr =

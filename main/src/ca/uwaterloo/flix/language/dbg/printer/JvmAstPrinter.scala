@@ -26,12 +26,12 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.Program]] representation of `root`. */
   def print(root: JvmAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case JvmAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, stmt, tpe, _, _) =>
+      case JvmAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
-          (cparams ++ fparams).map(printFormalParam),
+          (cparams ++ fparams).map(printOffsetFormalParam),
           SimpleTypePrinter.print(tpe),
           PurityPrinter.print(stmt.purity),
           print(stmt)
@@ -43,7 +43,7 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `e`. */
   def print(e: JvmAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Expr.Var(sym, _, _) => printVarSym(sym)
+    case Expr.Var(sym, _, _) => printOffsetVarSym(sym)
     case Expr.ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), SimpleTypePrinter.print(tpe), PurityPrinter.print(purity))
     case Expr.ApplyClo(exp1, exp2, ct, _, _, _) => DocAst.Expr.ApplyCloWithTail(print(exp1), List(print(exp2)), ct)
     case Expr.ApplyDef(sym, exps, ct, _, _, _) => DocAst.Expr.ApplyDefWithTail(sym, exps.map(print), ct)
@@ -52,11 +52,11 @@ object JvmAstPrinter {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case Expr.JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
-    case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printOffsetVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.Stmt(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
-    case Expr.Region(sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
+    case Expr.Region(sym, exp, _, _, _) => DocAst.Expr.Region(printOffsetVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case JvmAst.CatchRule(sym, clazz, body) => (sym, clazz, print(body))
+      case JvmAst.CatchRule(sym, clazz, body) => (printOffsetVarSym(sym), clazz, print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case JvmAst.HandlerRule(op, fparams, body) =>
@@ -71,9 +71,19 @@ object JvmAstPrinter {
     DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 
+  /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
+  private def printOffsetFormalParam(fp: JvmAst.OffsetFormalParam): DocAst.Expr.AscriptionTpe = {
+    val JvmAst.OffsetFormalParam(sym, tpe) = fp
+    DocAst.Expr.AscriptionTpe(printOffsetVarSym(sym), SimpleTypePrinter.print(tpe))
+  }
+
   /** Returns the [[DocAst.Expr]] representation of `sym`. */
   private def printVarSym(sym: Symbol.VarSym): DocAst.Expr =
     DocAst.Expr.Var(sym)
+
+  /** Returns the [[DocAst.Expr]] representation of `sym`. */
+  private def printOffsetVarSym(sym: Symbol.OffsetVarSym): DocAst.Expr =
+    DocAst.Expr.OffsetVar(sym)
 
   /** Returns the [[DocAst.JvmMethod]] representation of `method`. */
   private def printJvmMethod(method: JvmAst.JvmMethod): DocAst.JvmMethod = method match {
