@@ -339,15 +339,13 @@ object Eraser {
   private final class SharedContext {
 
     /**
-      * `(Option, List(Int32)) -> Option$42` means that `Option` is specialized wrt. `Int32`
-      * under the name `Option$42`.
+      * `(Option, List(Int32)) -> Option$42` means that `Option` is specialized wrt. `Int32` under the name `Option$42`.
       */
     private val enumSpecializations: ConcurrentHashMap[(Symbol.EnumSym, List[SimpleType]), Symbol.EnumSym] =
       new ConcurrentHashMap()
 
     /**
-      * `(MutList, List(Int32)) -> MutList$42` means that `MutList` is specialized wrt. `Int32`
-      * under the name `Option$42`.
+      * `(MutList, List(Int32)) -> MutList$42` means that `MutList` is specialized wrt. `Int32` under the name `MutList$42`.
       */
     private val structSpecializations: ConcurrentHashMap[(Symbol.StructSym, List[SimpleType]), Symbol.StructSym] =
       new ConcurrentHashMap()
