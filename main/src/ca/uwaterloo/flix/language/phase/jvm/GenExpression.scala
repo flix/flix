@@ -607,7 +607,6 @@ object GenExpression {
         val termTypes = cases(sym)
 
         compileUntag(exp, idx, termTypes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
