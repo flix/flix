@@ -113,7 +113,8 @@ object Eraser {
         case AtomicOp.Binary(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Untag(_, _) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Untag(_, _) =>
+          castExp(ReducedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Index(_) =>
           castExp(ReducedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
