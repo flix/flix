@@ -128,8 +128,8 @@ object Reducer {
         JvmAst.Expr.Cst(cst, loc)
 
       case ReducedAst.Expr.Var(sym, tpe, loc) =>
-        val s = visitVarSymRead(sym)
-        JvmAst.Expr.Var(s, tpe, loc)
+        val offset = getVarSymReadOffset(sym)
+        JvmAst.Expr.Var(offset, sym, tpe, loc)
 
       case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
@@ -173,11 +173,11 @@ object Reducer {
         JvmAst.Expr.JumpTo(sym, tpe, purity, loc)
 
       case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
-        val s = lctx.assignOffset(sym, exp1.tpe)
-        lctx.lparams.addOne(JvmAst.LocalParam(s, exp1.tpe))
+        val offset = lctx.assignOffset(sym, exp1.tpe)
+        lctx.lparams.addOne(JvmAst.LocalParam(offset, sym, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        JvmAst.Expr.Let(s, e1, e2, loc)
+        JvmAst.Expr.Let(offset, sym, e1, e2, loc)
 
       case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
         val e1 = visitExpr(exp1)
@@ -185,19 +185,19 @@ object Reducer {
         JvmAst.Expr.Stmt(e1, e2, loc)
 
       case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
-        val s = lctx.assignOffset(sym, SimpleType.Region)
-        lctx.lparams.addOne(JvmAst.LocalParam(s, SimpleType.Region))
+        val offset = lctx.assignOffset(sym, SimpleType.Region)
+        lctx.lparams.addOne(JvmAst.LocalParam(offset, sym, SimpleType.Region))
         val e = visitExpr(exp)
-        JvmAst.Expr.Region(s, e, tpe, purity, loc)
+        JvmAst.Expr.Region(offset, sym, e, tpe, purity, loc)
 
       case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExpr(exp)
         val rs = rules map {
           case ReducedAst.CatchRule(sym, clazz, body) =>
-            val s = lctx.assignOffset(sym, SimpleType.Object)
-            lctx.lparams.addOne(JvmAst.LocalParam(s, SimpleType.Object))
+            val offset = lctx.assignOffset(sym, SimpleType.Object)
+            lctx.lparams.addOne(JvmAst.LocalParam(offset, sym, SimpleType.Object))
             val b = visitExpr(body)
-            JvmAst.CatchRule(s, clazz, b)
+            JvmAst.CatchRule(offset, sym, clazz, b)
         }
         JvmAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
@@ -224,14 +224,14 @@ object Reducer {
     }
   }
 
-  /** Assigns the offset of `lctx` to `sym`. */
-  private def visitVarSymRead(sym: Symbol.VarSym)(implicit lctx: LocalContext): Symbol.OffsetVarSym =
+  /** returns the offset of `sym` defined in `lctx`. */
+  private def getVarSymReadOffset(sym: Symbol.VarSym)(implicit lctx: LocalContext): Int =
     lctx.getOffset(sym)
 
   /** Assigns the next offset to `fp`, mutating `lctx`. */
   private def visitOffsetFormalParam(fp: ReducedAst.FormalParam)(implicit lctx: LocalContext): JvmAst.OffsetFormalParam = {
-    val sym = lctx.assignOffset(fp.sym, fp.tpe)
-    JvmAst.OffsetFormalParam(sym, fp.tpe)
+    val offset = lctx.assignOffset(fp.sym, fp.tpe)
+    JvmAst.OffsetFormalParam(offset, fp.sym, fp.tpe)
   }
 
   private def visitFormalParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
@@ -267,19 +267,19 @@ object Reducer {
       */
     def getPcPoints: Int = pcPoints
 
-    /** Assigns the next offset to `sym`. */
-    def assignOffset(sym: Symbol.VarSym, tpe: SimpleType): Symbol.OffsetVarSym = {
+    /** Assigns the next offset to `sym` and returns it. */
+    def assignOffset(sym: Symbol.VarSym, tpe: SimpleType): Int = {
       if (offsets.contains(sym)) throw InternalCompilerException(s"Already assigned offset to '$sym'", sym.loc)
 
       val offset = nextVarOffsetAndIncrement(tpe)
       offsets.put(sym, offset)
-      new Symbol.OffsetVarSym(sym.id, sym.text, offset, sym.boundBy, sym.loc)
+      offset
     }
 
     /** Returns the offset of `sym`, throwing [[InternalCompilerException]] if not found. */
-    def getOffset(sym: Symbol.VarSym): Symbol.OffsetVarSym = {
+    def getOffset(sym: Symbol.VarSym): Int = {
       offsets.get(sym) match {
-        case Some(offset) => new Symbol.OffsetVarSym(sym.id, sym.text, offset, sym.boundBy, sym.loc)
+        case Some(offset) => offset
         case None => throw InternalCompilerException(s"No offset found for '$sym'", sym.loc)
       }
     }

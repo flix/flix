@@ -3494,7 +3494,6 @@ object Resolver {
     case sym: Symbol.EffSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.OpSym => root.symbols(Name.mkUnlocatedNName(sym.namespace))(sym.name)
     case sym: Symbol.ModuleSym => root.symbols(Name.mkUnlocatedNName(sym.ns.init))(sym.ns.last)
-    case sym: Symbol.OffsetVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.RegionSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)
     case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol $sym", sym.loc)

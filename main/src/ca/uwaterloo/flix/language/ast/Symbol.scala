@@ -359,55 +359,6 @@ object Symbol {
   }
 
   /**
-    * Offset Variable Symbol.
-    *
-    * Used in the backend where variables are placed on the local variable stack.
-    * The absolute index of a variable depends on whether it is used in a object instance or a static context,
-    * so the offset is relative to some base number (see [[getIndex]]).
-    *
-    * @param id      the globally unique name of the symbol.
-    * @param text    the original name, as it appears in the source code, of the symbol
-    * @param offset   the index of the variable in the local variable stack.
-    * @param boundBy the way the variable is bound.
-    * @param loc     the source location associated with the symbol.
-    */
-  final class OffsetVarSym(val id: Int, val text: String, val offset: Int, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
-
-    /**
-      * Returns `true` if `this` symbol is a wildcard.
-      */
-    def isWild: Boolean = text.startsWith("_")
-
-    /**
-      * Returns the index of `this` variable symbol in the local variable stack, the sum of the symbol offset and the context offset.
-      */
-    def getIndex(contextOffset: Int): Int = offset + contextOffset
-
-    /**
-      * Returns `true` if this symbol is equal to `that` symbol.
-      */
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case that: VarSym => this.id == that.id
-      case _ => false
-    }
-
-    /**
-      * Returns the hash code of this symbol.
-      */
-    override val hashCode: Int = id
-
-    /**
-      * Return the comparison of `this` symbol to `that` symbol.
-      */
-    override def compare(that: VarSym): Int = this.id.compare(that.id)
-
-    /**
-      * Human readable representation.
-      */
-    override def toString: String = text + Flix.Delimiter + id + Flix.Delimiter + offset
-  }
-
-  /**
     * Kinded type variable symbol.
     */
   final class KindedTypeVarSym(val id: Int, val text: VarText, val kind: Kind, val isSlack: Boolean, val scope: Scope, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {

@@ -343,9 +343,9 @@ object GenFunAndClosureClasses {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getIndex(localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getIndex(localOffset), false, BackendType.toBackendType(cp.tpe), None) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getIndex(localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", JvmOps.getIndex(lp.offset, localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", JvmOps.getIndex(cp.offset, localOffset), false, BackendType.toBackendType(cp.tpe), None) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", JvmOps.getIndex(fp.offset, localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, BackendType, Option[BackendType])]): Unit = {
       params.foreach { case (name, offset, _, fieldType, castTo) => loadFromField(m, className, name, offset, fieldType, castTo) }
