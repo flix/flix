@@ -381,7 +381,7 @@ object Simplifier {
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val targs = tpe.typeArguments
-            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             SimpleType.mkEnum(enumSym, targs.map(visitType))
 
           case TypeConstructor.Native(clazz) => SimpleType.Native(clazz)
@@ -554,7 +554,7 @@ object Simplifier {
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val targs = tpe.typeArguments
-            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             Type.mkEnum(enumSym, targs.map(visitPolyType), loc)
 
           case TypeConstructor.Native(_) => cst
