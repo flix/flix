@@ -107,9 +107,8 @@ object Reducer {
     JvmAst.Case(caze.sym, caze.tpes, caze.loc)
 
   private def visitStruct(struct: ErasedAst.Struct): JvmAst.Struct = {
-    val tparams = struct.tparams.map(visitTypeParam)
     val fields = struct.fields.map(visitStructField)
-    JvmAst.Struct(struct.ann, struct.mod, struct.sym, tparams, fields, struct.loc)
+    JvmAst.Struct(struct.ann, struct.mod, struct.sym, fields, struct.loc)
   }
 
   private def visitStructField(field: ErasedAst.StructField): JvmAst.StructField =

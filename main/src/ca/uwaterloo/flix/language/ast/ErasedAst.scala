@@ -41,7 +41,7 @@ object ErasedAst {
 
   case class Enum(ann: Annotations, mod: Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], loc: SourceLocation)
 
-  case class Struct(ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, tparams: List[TypeParam], fields: List[StructField], loc: SourceLocation)
+  case class Struct(ann: Annotations, mod: Modifiers, sym: Symbol.StructSym, fields: List[StructField], loc: SourceLocation)
 
   case class Effect(ann: Annotations, mod: Modifiers, sym: Symbol.EffSym, ops: List[Op], loc: SourceLocation)
 
@@ -106,8 +106,7 @@ object ErasedAst {
 
   case class Case(sym: Symbol.CaseSym, tpes: List[SimpleType], loc: SourceLocation)
 
-  /** [[Type]] is used here because [[Struct]] declarations are not monomorphized. */
-  case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
+  case class StructField(sym: Symbol.StructFieldSym, tpe: SimpleType, loc: SourceLocation)
 
   case class AnonClass(name: String, clazz: java.lang.Class[?], tpe: SimpleType, methods: List[JvmMethod], loc: SourceLocation)
 

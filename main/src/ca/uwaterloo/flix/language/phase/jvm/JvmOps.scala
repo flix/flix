@@ -139,27 +139,10 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /** Returns the set of erased struct types in `types` without searching recursively. */
-  def getErasedStructTypesOf(root: Root, types: Iterable[SimpleType]): Set[BackendObjType.Struct] =
-    types.foldLeft(Set.empty[BackendObjType.Struct]) {
-      case (acc, SimpleType.Struct(sym, targs)) =>
-        acc + BackendObjType.Struct(instantiateStruct(sym, targs)(root))
-      case (acc, _) => acc
-    }
+  /** Returns the struct type of `struct`. */
+  def getStructsOf(struct: JvmAst.Struct)(implicit root: Root): BackendObjType.Struct =
+    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
 
-  /**
-    * Returns the ordered list of struct fields based on the given type `sym[targs..]`. It is
-    * assumed that both `targs` and the structs in `root` use erased types.
-    *
-    * Example:
-    *   - `instantiateStruct(S, List(Int32, IO)) = List(Int32, Int32, Object)`
-    *     for `struct S[t, r] { mut x: t, y: t, z: Object }`
-    */
-  def instantiateStruct(sym: Symbol.StructSym, targs: List[SimpleType])(implicit root: Root): List[BackendType] = {
-    val struct = root.structs(sym)
-    val map = ListOps.zip(struct.tparams.map(_.sym), targs).toMap
-    struct.fields.map(field => instantiateType(map, field.tpe))
-  }
 
   /** Returns the tag type of each case in `enm`. */
   def getTagsOf(enm: JvmAst.Enum)(implicit root: Root): List[BackendObjType.TagType] = {

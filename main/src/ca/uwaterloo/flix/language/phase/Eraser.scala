@@ -32,11 +32,9 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
   *   - Function
   *     - result type boxing, this includes return types of defs and their applications
   *     - function call return value casting
-  *   - Structs
-  *     - type arguments are erased
-  *     - polymorphic term types in the declaration are polymorphically erased (see [[polymorphicErasure]])
-  *   - Enums
-  *     - Enums are erased and specialized to their uses.
+  *   - Structs & Enums
+  *     - declaration specialization
+  *     - component type erasure and untag/access casting
   */
 object Eraser {
 
@@ -45,8 +43,8 @@ object Eraser {
     implicit val ctx: SharedContext = new SharedContext()
 
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = specializeEnums(ctx.getSpecializations)
-    val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
+    val newEnums = specializeEnums(ctx.getEnumSpecializations)
+    val newStructs = specializeStructs(ctx.getStructSpecializations)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
     ErasedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.entryPoints, root.sources)
   }(DebugNoOp())
@@ -73,21 +71,24 @@ object Eraser {
     ErasedAst.Case(sym, caze.tpes.map(instantiateAndEraseType(subst, _)), caze.loc)
   }
 
+  private def specializeStructs(specializations: Iterable[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.StructSym, ErasedAst.Struct] = {
+    ParOps.parMap(specializations) {
+      case (sym, targs, newSym) =>
+        val struct = root.structs(sym)
+        val subst = ListOps.zip(struct.tparams.map(_.sym), targs).toMap
+        val fields = struct.fields.map(specializeStructField(_, newSym, subst))
+        ErasedAst.Struct(struct.ann, struct.mod, newSym, fields, struct.loc)
+    }.map(enm => enm.sym -> enm).toMap
+  }
+
+  private def specializeStructField(field: ReducedAst.StructField, newSym: Symbol.StructSym, subst: Map[Symbol.KindedTypeVarSym, SimpleType]): ErasedAst.StructField = {
+    val sym = new Symbol.StructFieldSym(newSym, field.sym.name, field.sym.loc)
+    ErasedAst.StructField(sym, instantiateAndEraseType(subst, field.tpe), field.loc)
+  }
+
   private def visitParam(fp: ReducedAst.FormalParam)(implicit ctx: SharedContext, flix: Flix): ErasedAst.FormalParam = fp match {
     case ReducedAst.FormalParam(sym, tpe) =>
       ErasedAst.FormalParam(sym, visitType(tpe))
-  }
-
-  private def visitStruct(struct: ReducedAst.Struct): ErasedAst.Struct = struct match {
-    case ReducedAst.Struct(ann, mod, sym, tparams0, fields0, loc) =>
-      val fields = fields0.map(visitStructField)
-      val tparams = tparams0.map(tp => ErasedAst.TypeParam(tp.name, tp.sym))
-      ErasedAst.Struct(ann, mod, sym, tparams, fields, loc)
-  }
-
-  private def visitStructField(field: ReducedAst.StructField): ErasedAst.StructField = field match {
-    case ReducedAst.StructField(sym, tpe, loc) =>
-      ErasedAst.StructField(sym, polymorphicErasure(tpe), loc)
   }
 
   private def visitBranch(branch: (Symbol.LabelSym, ReducedAst.Expr))(implicit ctx: SharedContext, flix: Flix): (Symbol.LabelSym, ErasedAst.Expr) = branch match {
@@ -123,17 +124,20 @@ object Eraser {
         case AtomicOp.Closure(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unary(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Binary(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Is(sym0) =>
+        case AtomicOp.Is(sym) =>
           val List(e) = es
-          val sym = getSpecializedCaseSym(sym0, e.tpe.asInstanceOf[SimpleType.Enum])
-          ErasedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), es, t, purity, loc)
-        case AtomicOp.Tag(sym0) =>
-          val sym = getSpecializedCaseSym(sym0, t.asInstanceOf[SimpleType.Enum])
-          ErasedAst.Expr.ApplyAtomic(AtomicOp.Tag(sym), es, t, purity, loc)
-        case AtomicOp.Untag(sym0, idx) =>
+          val specializedEnum = e.tpe.asInstanceOf[SimpleType.Enum]
+          val specializedSym = specializedCaseSym(sym, specializedEnum)
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.Is(specializedSym), es, t, purity, loc)
+        case AtomicOp.Tag(sym) =>
+          val specializedEnum = t.asInstanceOf[SimpleType.Enum]
+          val specializedSym = specializedCaseSym(sym, specializedEnum)
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.Tag(specializedSym), es, t, purity, loc)
+        case AtomicOp.Untag(sym, idx) =>
           val List(e) = es
-          val sym = getSpecializedCaseSym(sym0, e.tpe.asInstanceOf[SimpleType.Enum])
-          ErasedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym, idx), es, t, purity, loc)
+          val specializedEnum = e.tpe.asInstanceOf[SimpleType.Enum]
+          val specializedSym = specializedCaseSym(sym, specializedEnum)
+          castExp(ErasedAst.Expr.ApplyAtomic(AtomicOp.Untag(specializedSym, idx), es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Index(_) =>
           castExp(ErasedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -149,9 +153,20 @@ object Eraser {
         case AtomicOp.ArrayLoad => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayStore => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructNew(_, _) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructGet(_) => castExp(ErasedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.StructPut(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructNew(_, fields) =>
+          val specializedStruct = t.asInstanceOf[SimpleType.Struct]
+          val specializedFields = fields.map(fieldSym => specializedFieldSym(fieldSym, specializedStruct))
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.StructNew(specializedStruct.sym, specializedFields), es, t, purity, loc)
+        case AtomicOp.StructGet(sym) =>
+          val List(e) = es
+          val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]
+          val specializedSym = specializedFieldSym(sym, specializedStruct)
+          castExp(ErasedAst.Expr.ApplyAtomic(AtomicOp.StructGet(specializedSym), es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructPut(sym) =>
+          val List(e, _) = es
+          val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]
+          val specializedSym = specializedFieldSym(sym, specializedStruct)
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.StructPut(specializedSym), es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Unbox => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
@@ -208,11 +223,22 @@ object Eraser {
     * Returns a copy of `sym` that refers to the enum of `tpe`.
     *
     * {{{
-    *   getSpecializedCaseSym("Option.Some", "Result") = "Result.Some"
+    *   specializedCaseSym("Option.Some", "Result") = "Result.Some"
     * }}}
     */
-  private def getSpecializedCaseSym(sym0: Symbol.CaseSym, tpe: SimpleType.Enum): Symbol.CaseSym = {
+  private def specializedCaseSym(sym0: Symbol.CaseSym, tpe: SimpleType.Enum): Symbol.CaseSym = {
     new Symbol.CaseSym(tpe.sym, sym0.name, sym0.loc)
+  }
+
+  /**
+    * Returns a copy of `sym` that refers to the enum of `tpe`.
+    *
+    * {{{
+    *   specializedCaseSym("Option.Some", "Result") = "Result.Some"
+    * }}}
+    */
+  private def specializedFieldSym(sym0: Symbol.StructFieldSym, tpe: SimpleType.Struct): Symbol.StructFieldSym = {
+    new Symbol.StructFieldSym(tpe.sym, sym0.name, sym0.loc)
   }
 
   private def castExp(exp: ErasedAst.Expr, t: SimpleType, purity: Purity, loc: SourceLocation): ErasedAst.Expr = {
@@ -258,9 +284,12 @@ object Eraser {
       case Tuple(elms) => SimpleType.mkTuple(elms.map(erase))
       case Enum(sym, targs) =>
         // `Option[String]` erases to `Option[Object]` and is then specialized to `Option$42`.
-        val specializedSym = ctx.getSpecializedName(sym, targs.map(erase))
+        val specializedSym = ctx.getSpecializedEnumName(sym, targs.map(erase))
         SimpleType.mkEnum(specializedSym, Nil)
-      case Struct(sym, tparams) => SimpleType.Struct(sym, tparams.map(erase))
+      case Struct(sym, targs) =>
+        // `MutList[String]` erases to `MutList[Object]` and is then specialized to `MutList$42`.
+        val specializedSym = ctx.getSpecializedStructName(sym, targs.map(erase))
+        SimpleType.Struct(specializedSym, Nil)
       case Arrow(args, result) => SimpleType.mkArrow(args.map(visitType), box(result))
       case RecordEmpty => RecordEmpty
       case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
@@ -317,8 +346,15 @@ object Eraser {
     private val enumSpecializations: ConcurrentHashMap[(Symbol.EnumSym, List[SimpleType]), Symbol.EnumSym] =
       new ConcurrentHashMap()
 
+    /**
+      * `(MutList, List(Int32)) -> MutList$42` means that `MutList` is specialized wrt. `Int32`
+      * under the name `Option$42`.
+      */
+    private val structSpecializations: ConcurrentHashMap[(Symbol.StructSym, List[SimpleType]), Symbol.StructSym] =
+      new ConcurrentHashMap()
+
     /** Specializes the enum if not done already. */
-    def getSpecializedName(sym: Symbol.EnumSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.EnumSym = {
+    def getSpecializedEnumName(sym: Symbol.EnumSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.EnumSym = {
       targs match {
         case Nil =>
           // No specialization required.
@@ -329,8 +365,23 @@ object Eraser {
       }
     }
 
-    def getSpecializations: Iterable[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)] =
+    def getEnumSpecializations: Iterable[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)] =
       toMap(enumSpecializations).toList.map { case (a, b) => (a._1, a._2, b) }
+
+    /** Specializes the struct if not done already. */
+    def getSpecializedStructName(sym: Symbol.StructSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.StructSym = {
+      targs match {
+        case Nil =>
+          // No specialization required.
+          structSpecializations.computeIfAbsent((sym, targs), _ => sym)
+        case _ =>
+          // Do specialization.
+          structSpecializations.computeIfAbsent((sym, targs), _ => Symbol.freshStructSym(sym))
+      }
+    }
+
+    def getStructSpecializations: Iterable[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)] =
+      toMap(structSpecializations).toList.map { case (a, b) => (a._1, a._2, b) }
 
     private def toMap[A, B](map: ConcurrentHashMap[A, B]): Map[A, B] =
       map.asScala.toMap

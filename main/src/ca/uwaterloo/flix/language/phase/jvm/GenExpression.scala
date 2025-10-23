@@ -601,7 +601,6 @@ object GenExpression {
         val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -734,12 +733,11 @@ object GenExpression {
         compileExpr(exp)
         ARRAYLENGTH()
 
-      case AtomicOp.StructNew(_, _) =>
+      case AtomicOp.StructNew(sym, _) =>
         import BytecodeInstructions.*
 
         val region :: fieldExps = exps
-        val SimpleType.Struct(sym, targs) = tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
+        val structType = getStructType(root.structs(sym))
 
         // Evaluate the region and ignore its value
         compileExpr(region)
@@ -753,9 +751,9 @@ object GenExpression {
         import BytecodeInstructions.*
 
         val List(exp) = exps
-        val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
-        val SimpleType.Struct(sym, targs) = exp.tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
+        val struct = root.structs(field.structSym)
+        val structType = getStructType(struct)
+        val idx = struct.fields.indexWhere(_.sym == field)
 
         compileExpr(exp)
         GETFIELD(structType.IndexField(idx))
@@ -764,9 +762,9 @@ object GenExpression {
         import BytecodeInstructions.*
 
         val List(exp1, exp2) = exps
-        val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
-        val SimpleType.Struct(sym, targs) = exp1.tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
+        val struct = root.structs(field.structSym)
+        val idx = struct.fields.indexWhere(_.sym == field)
+        val structType = getStructType(struct)
 
         compileExpr(exp1)
         compileExpr(exp2)
@@ -1463,6 +1461,10 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
+    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
   }
 
   private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
