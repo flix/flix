@@ -299,6 +299,41 @@ object Eraser {
     }
   }
 
+  /**
+    * Instantiates `tpe` given the variable map `subst` and erases the result.
+    *
+    * Examples:
+    *   - `instantiateAndEraseType([x -> Int32], x) = Int32`
+    *   - `instantiateAndEraseType(_, Int32) = Int32`
+    *   - `instantiateAndEraseType(_, Object) = Object`
+    *   - `instantiateAndEraseType([x -> String], x) = Object`
+    *   - `instantiateAndEraseType(_, Option[Int32]) = Object`
+    *   - `instantiateAndEraseType([x -> Int32], y) = crash!`
+    */
+  private def instantiateAndEraseType(subst: Map[Symbol.KindedTypeVarSym, SimpleType], tpe: Type) = tpe match {
+    case Type.Var(sym, _) => erase(subst(sym))
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Bool => SimpleType.Bool
+      case TypeConstructor.Char => SimpleType.Char
+      case TypeConstructor.Float32 => SimpleType.Float32
+      case TypeConstructor.Float64 => SimpleType.Float64
+      case TypeConstructor.Int8 => SimpleType.Int8
+      case TypeConstructor.Int16 => SimpleType.Int16
+      case TypeConstructor.Int32 => SimpleType.Int32
+      case TypeConstructor.Int64 => SimpleType.Int64
+      // All primitive types covered, so lefter types are Object.
+      case _ => SimpleType.Object
+    }
+    // Any type application will result in an Object type.
+    case Type.Apply(_, _, _) => SimpleType.Object
+
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
+  }
+
   private def box(@unused tpe: SimpleType): SimpleType = SimpleType.Object
 
   private final class SharedContext {
@@ -348,41 +383,6 @@ object Eraser {
     private def toMap[A, B](map: ConcurrentHashMap[A, B]): Map[A, B] =
       map.asScala.toMap
 
-  }
-
-  /**
-    * Instantiates `tpe` given the variable map `subst` and erases the result.
-    *
-    * Examples:
-    *   - `instantiateAndEraseType([x -> Int32], x) = Int32`
-    *   - `instantiateAndEraseType(_, Int32) = Int32`
-    *   - `instantiateAndEraseType(_, Object) = Object`
-    *   - `instantiateAndEraseType([x -> String], x) = Object`
-    *   - `instantiateAndEraseType(_, Option[Int32]) = Object`
-    *   - `instantiateAndEraseType([x -> Int32], y) = crash!`
-    */
-  private def instantiateAndEraseType(subst: Map[Symbol.KindedTypeVarSym, SimpleType], tpe: Type) = tpe match {
-    case Type.Var(sym, _) => erase(subst(sym))
-    case Type.Cst(tc, _) => tc match {
-      case TypeConstructor.Bool => SimpleType.Bool
-      case TypeConstructor.Char => SimpleType.Char
-      case TypeConstructor.Float32 => SimpleType.Float32
-      case TypeConstructor.Float64 => SimpleType.Float64
-      case TypeConstructor.Int8 => SimpleType.Int8
-      case TypeConstructor.Int16 => SimpleType.Int16
-      case TypeConstructor.Int32 => SimpleType.Int32
-      case TypeConstructor.Int64 => SimpleType.Int64
-      // All primitive types covered, so lefter types are Object.
-      case _ => SimpleType.Object
-    }
-    // Any type application will result in an Object type.
-    case Type.Apply(_, _, _) => SimpleType.Object
-
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
   }
 
 }
