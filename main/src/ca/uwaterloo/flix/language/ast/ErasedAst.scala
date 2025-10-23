@@ -18,9 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers, Source}
-
-import java.lang.reflect.Method
+import ca.uwaterloo.flix.language.ast.shared.*
 
 object ErasedAst {
 
@@ -59,6 +57,7 @@ object ErasedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
       def tpe: SimpleType = cst.tpe
+
       def purity: Purity = Pure
     }
 
@@ -85,12 +84,14 @@ object ErasedAst {
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
+
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
     case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
+
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 

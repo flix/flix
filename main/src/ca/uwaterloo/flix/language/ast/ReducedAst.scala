@@ -18,13 +18,9 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{EffSymUse, OpSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, Constant, ExpPosition, Modifiers, Source}
-
-import java.lang.reflect.Method
+import ca.uwaterloo.flix.language.ast.shared.*
 
 object ReducedAst {
-
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -34,9 +30,7 @@ object ReducedAst {
                   entryPoints: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
-    val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
-  }
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation)
 
   /** Remember the unboxed return type for test function generation. */
   case class UnboxedType(tpe: SimpleType)
@@ -61,6 +55,7 @@ object ReducedAst {
 
     case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
       def tpe: SimpleType = cst.tpe
+
       def purity: Purity = Pure
     }
 
@@ -87,12 +82,14 @@ object ReducedAst {
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
+
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
     case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
+
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 

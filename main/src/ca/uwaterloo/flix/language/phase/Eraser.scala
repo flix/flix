@@ -32,7 +32,7 @@ import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
   *   - Function
   *     - result type boxing, this includes return types of defs and their applications
   *     - function call return value casting
-  *   - Structs & Enums
+  *   - Enums and Structs
   *     - declaration specialization
   *     - component type erasure and untag/access casting
   */
@@ -41,7 +41,6 @@ object Eraser {
   def run(root: ReducedAst.Root)(implicit flix: Flix): ErasedAst.Root = flix.phase("Eraser") {
     implicit val r: ReducedAst.Root = root
     implicit val ctx: SharedContext = new SharedContext()
-
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEnums = specializeEnums(ctx.getEnumSpecializations)
     val newStructs = specializeStructs(ctx.getStructSpecializations)

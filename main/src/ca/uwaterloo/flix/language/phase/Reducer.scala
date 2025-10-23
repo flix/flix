@@ -226,9 +226,6 @@ object Reducer {
   private def visitFormalParam(fp: ErasedAst.FormalParam): JvmAst.FormalParam =
     JvmAst.FormalParam(fp.sym, fp.tpe)
 
-  private def visitTypeParam(tp: ErasedAst.TypeParam): JvmAst.TypeParam =
-    JvmAst.TypeParam(tp.name, tp.sym)
-
   /**
     * Companion object for [[LocalContext]].
     */
