@@ -129,7 +129,7 @@ object Reducer {
 
       case ReducedAst.Expr.Var(sym, tpe, loc) =>
         val offset = getVarSymReadOffset(sym)
-        JvmAst.Expr.Var(offset, sym, tpe, loc)
+        JvmAst.Expr.Var(sym, offset, tpe, loc)
 
       case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExpr)
@@ -174,10 +174,10 @@ object Reducer {
 
       case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
         val offset = lctx.assignOffset(sym, exp1.tpe)
-        lctx.lparams.addOne(JvmAst.LocalParam(offset, sym, exp1.tpe))
+        lctx.lparams.addOne(JvmAst.LocalParam(sym, offset, exp1.tpe))
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        JvmAst.Expr.Let(offset, sym, e1, e2, loc)
+        JvmAst.Expr.Let(sym, offset, e1, e2, loc)
 
       case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
         val e1 = visitExpr(exp1)
@@ -186,18 +186,18 @@ object Reducer {
 
       case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
         val offset = lctx.assignOffset(sym, SimpleType.Region)
-        lctx.lparams.addOne(JvmAst.LocalParam(offset, sym, SimpleType.Region))
+        lctx.lparams.addOne(JvmAst.LocalParam(sym, offset, SimpleType.Region))
         val e = visitExpr(exp)
-        JvmAst.Expr.Region(offset, sym, e, tpe, purity, loc)
+        JvmAst.Expr.Region(sym, offset, e, tpe, purity, loc)
 
       case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExpr(exp)
         val rs = rules map {
           case ReducedAst.CatchRule(sym, clazz, body) =>
             val offset = lctx.assignOffset(sym, SimpleType.Object)
-            lctx.lparams.addOne(JvmAst.LocalParam(offset, sym, SimpleType.Object))
+            lctx.lparams.addOne(JvmAst.LocalParam(sym, offset, SimpleType.Object))
             val b = visitExpr(body)
-            JvmAst.CatchRule(offset, sym, clazz, b)
+            JvmAst.CatchRule(sym, offset, clazz, b)
         }
         JvmAst.Expr.TryCatch(e, rs, tpe, purity, loc)
 
@@ -231,7 +231,7 @@ object Reducer {
   /** Assigns the next offset to `fp`, mutating `lctx`. */
   private def visitOffsetFormalParam(fp: ReducedAst.FormalParam)(implicit lctx: LocalContext): JvmAst.OffsetFormalParam = {
     val offset = lctx.assignOffset(fp.sym, fp.tpe)
-    JvmAst.OffsetFormalParam(offset, fp.sym, fp.tpe)
+    JvmAst.OffsetFormalParam(fp.sym, offset, fp.tpe)
   }
 
   private def visitFormalParam(fp: ReducedAst.FormalParam): JvmAst.FormalParam =
