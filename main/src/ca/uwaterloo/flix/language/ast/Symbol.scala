@@ -89,19 +89,19 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh def symbol based on the given symbol.
-    */
-  def freshStructSym(sym: StructSym)(implicit flix: Flix): StructSym = {
-    val id = Some(flix.genSym.freshId())
-    new StructSym(id, sym.namespace, sym.text, sym.loc)
-  }
-
-  /**
     * Returns a fresh enum symbol based on the given symbol.
     */
   def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
     val id = Some(flix.genSym.freshId())
     new EnumSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
+    * Returns a fresh def symbol based on the given symbol.
+    */
+  def freshStructSym(sym: StructSym)(implicit flix: Flix): StructSym = {
+    val id = Some(flix.genSym.freshId())
+    new StructSym(id, sym.namespace, sym.text, sym.loc)
   }
 
   /**
