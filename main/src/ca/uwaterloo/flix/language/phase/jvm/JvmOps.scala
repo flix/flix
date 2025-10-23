@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.ast.JvmAst.*
-import ca.uwaterloo.flix.language.ast.{SimpleType, JvmAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -54,7 +54,7 @@ object JvmOps {
     */
   def getErasedClosureAbstractClassType(tpe: SimpleType): BackendObjType.AbstractArrow = tpe match {
     case SimpleType.Arrow(targs, tresult) =>
-     BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
+      BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
@@ -201,7 +201,7 @@ object JvmOps {
     *   - `instantiateType([x -> Int32], y) = throw InternalCompilerException`
     *   - `instantiateType(_, Option[Int32]) =  throw InternalCompilerException`
     *
-    * @param m Decides types for variables, must only contain erased types.
+    * @param m   Decides types for variables, must only contain erased types.
     * @param tpe the type to instantiate, must be a polymorphic erased type
     *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
     */
