@@ -222,7 +222,7 @@ object Eraser {
     * Returns a copy of `sym` that refers to the enum of `tpe`.
     *
     * {{{
-    *   specializedCaseSym("Option.Some", "Result") = "Result.Some"
+    *   specializedCaseSym("Option.Some", "Option$42") = "Option$42.Some"
     * }}}
     */
   private def specializedCaseSym(sym0: Symbol.CaseSym, tpe: SimpleType.Enum): Symbol.CaseSym = {
@@ -230,10 +230,10 @@ object Eraser {
   }
 
   /**
-    * Returns a copy of `sym` that refers to the enum of `tpe`.
+    * Returns a copy of `sym` that refers to the struct of `tpe`.
     *
     * {{{
-    *   specializedCaseSym("Option.Some", "Result") = "Result.Some"
+    *   specializedCaseSym("MutList.length", "MutList$42") = "MutList$42.length"
     * }}}
     */
   private def specializedFieldSym(sym0: Symbol.StructFieldSym, tpe: SimpleType.Struct): Symbol.StructFieldSym = {
