@@ -97,6 +97,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh def symbol based on the given symbol.
+    */
+  def freshStructSym(sym: StructSym)(implicit flix: Flix): StructSym = {
+    val id = Some(flix.genSym.freshId())
+    new StructSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -201,7 +209,7 @@ object Symbol {
     * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkStructSym(ns: NName, ident: Ident): StructSym = {
-    new StructSym(ns.parts, ident.name, ident.loc)
+    new StructSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -549,24 +557,28 @@ object Symbol {
   /**
     * Struct Symbol.
     */
-  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class StructSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+
     /**
       * Returns the name of `this` symbol.
       */
-    def name: String = text
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + Flix.Delimiter + i
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructSym => this.namespace == that.namespace && this.text == that.text
+      case that: StructSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 5 * namespace.hashCode() + 7 * text.hashCode()
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
 
     /**
       * Human readable representation.
