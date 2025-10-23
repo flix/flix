@@ -346,43 +346,9 @@ object Symbol {
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
 
     /**
-      * The internal stack offset. Computed by [[ca.uwaterloo.flix.language.phase.VarOffsets]].
-      *
-      * Note: We do not use an `Option` here because there are many `VarSym`s and this wastes a lot of memory.
-      */
-    private var stackOffset: Int = -1
-
-    /**
       * Returns `true` if `this` symbol is a wildcard.
       */
     def isWild: Boolean = text.startsWith("_")
-
-    /**
-      * Returns the stack offset of `this` variable symbol.
-      *
-      * The local offset should be the number of jvm arguments for static
-      * methods and one higher than that for instance methods.
-      *
-      * Throws [[InternalCompilerException]] if the stack offset has not been set.
-      */
-    def getStackOffset(localOffset: Int): Int = {
-      if (stackOffset == -1) {
-        throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      } else {
-        stackOffset + localOffset
-      }
-    }
-
-    /**
-      * Sets the internal stack offset to given argument.
-      */
-    def setStackOffset(offset: Int): Unit = {
-      if (stackOffset != -1) {
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
-      } else {
-        stackOffset = offset
-      }
-    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -398,7 +364,7 @@ object Symbol {
     override val hashCode: Int = id
 
     /**
-      * Return the comparison of `this` symbol to `that` symol.
+      * Return the comparison of `this` symbol to `that` symbol.
       */
     override def compare(that: VarSym): Int = this.id.compare(that.id)
 

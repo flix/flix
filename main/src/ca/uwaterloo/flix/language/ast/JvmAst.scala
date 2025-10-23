@@ -36,7 +36,7 @@ object JvmAst {
 
   }
 
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[OffsetFormalParam], fparams: List[OffsetFormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
     val arrowType: SimpleType.Arrow = SimpleType.mkArrow(fparams.map(_.tpe), tpe)
   }
 
@@ -67,7 +67,7 @@ object JvmAst {
       def purity: Purity = Pure
     }
 
-    case class Var(sym: Symbol.VarSym, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Var(sym: Symbol.VarSym, offset: Int, tpe: SimpleType, loc: SourceLocation) extends Expr {
       def purity: Purity = Pure
     }
 
@@ -87,7 +87,7 @@ object JvmAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+    case class Let(sym: Symbol.VarSym, offset: Int, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
       // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
       def tpe: SimpleType = exp2.tpe
 
@@ -101,7 +101,7 @@ object JvmAst {
       def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
     }
 
-    case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, offset: Int, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -121,19 +121,15 @@ object JvmAst {
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation)
 
-  case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[?], exp: Expr)
+  case class CatchRule(sym: Symbol.VarSym, offset: Int, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  sealed trait Param {
-    def sym: Symbol.VarSym
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
-    def tpe: SimpleType
-  }
+  case class OffsetFormalParam(sym: Symbol.VarSym, offset: Int, tpe: SimpleType)
 
-  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
-
-  case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType) extends Param
+  case class LocalParam(sym: Symbol.VarSym, offset: Int, tpe: SimpleType)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 
