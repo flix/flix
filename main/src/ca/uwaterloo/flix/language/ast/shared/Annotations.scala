@@ -97,6 +97,11 @@ case class Annotations(annotations: List[Annotation]) {
   def isParallelWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.ParallelWhenPure])
 
   /**
+    * Returns `true` if `this` sequence contains the `@Reachable` annotation.
+    */
+  def isReachable: Boolean = annotations contains Annotation.Reachable
+
+  /**
     * Returns `true` if `this` sequence contains the `@Skip` annotation.
     */
   def isSkip: Boolean = annotations exists (_.isInstanceOf[Annotation.Skip])

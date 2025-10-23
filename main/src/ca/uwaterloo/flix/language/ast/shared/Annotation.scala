@@ -125,6 +125,15 @@ object Annotation {
   }
 
   /**
+    * An annotation that marks a function definition as reachable regardless of whether it is called explicitly.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class Reachable(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@Reachable"
+  }
+
+  /**
     * An annotation that marks a function definition as using lazy evaluation.
     *
     * @param loc the source location of the annotation.
