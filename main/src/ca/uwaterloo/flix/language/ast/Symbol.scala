@@ -571,7 +571,7 @@ object Symbol {
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EnumSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
+      case that: StructSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
