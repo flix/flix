@@ -34,7 +34,7 @@ import scala.collection.mutable
   *     - result type boxing, this includes return types of defs and their applications
   *     - function call return value casting
   *   - Enums and Structs
-  *     - declaration specialization
+  *     - declaration specialization, based on the actual uses of each type (see [[SharedContext]], [[specializeEnums]], and [[specializeStructs]]).
   *     - component type erasure and untag/access casting
   */
 object Eraser {
