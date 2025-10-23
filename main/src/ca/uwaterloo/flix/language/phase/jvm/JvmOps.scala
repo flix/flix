@@ -144,7 +144,7 @@ object JvmOps {
     }
 
   /** Returns the struct type of `struct`. */
-  def getStructsOf(struct: JvmAst.Struct)(implicit root: Root): BackendObjType.Struct =
+  def getStructType(struct: JvmAst.Struct)(implicit root: Root): BackendObjType.Struct =
     BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
 
 

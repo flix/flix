@@ -153,7 +153,7 @@ object BackendType {
       case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
       case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.toTpe
-      case SimpleType.Struct(sym, Nil) => BackendObjType.Struct(root.structs(sym).fields.map(field => toBackendType(field.tpe))).toTpe
+      case SimpleType.Struct(sym, Nil) => JvmOps.getStructType(root.structs(sym)).toTpe
       case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
