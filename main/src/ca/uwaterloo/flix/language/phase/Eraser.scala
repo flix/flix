@@ -233,7 +233,7 @@ object Eraser {
     * Returns a copy of `sym` that refers to the struct of `tpe`.
     *
     * {{{
-    *   specializedCaseSym("MutList.length", "MutList$42") = "MutList$42.length"
+    *   specializedFieldSym("MutList.length", "MutList$42") = "MutList$42.length"
     * }}}
     */
   private def specializedFieldSym(sym0: Symbol.StructFieldSym, tpe: SimpleType.Struct): Symbol.StructFieldSym = {
