@@ -25,6 +25,10 @@ import ca.uwaterloo.flix.util.collection.ListOps
 
 object JvmOps {
 
+  /** Returns the index of `varOffset` combined with the context offset. */
+  def getIndex(varOffset: Int, contextOffset: Int): Int =
+    varOffset + contextOffset
+
   /**
     * Returns the erased arrow type of `tpe`.
     *
