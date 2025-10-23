@@ -81,15 +81,18 @@ mod Fixpoint3.ProvenanceReconstruct {
         match Map.get(makeFakeRelSym(pred), idb) {
             case None           => unreachable!() // No facts for `pred`.
             case Some(fullTree) =>
+                // We are dealing with `Vector[Boxed]` so we cannot use build ordering of `BPlusTree.emptyWithSearch`.
+                // Instead we must manually reorder them to match the `search`.
                 let (search, vals) = Vector.unzip(searchAndVals);
+                let reorderedVals = Vector.init(i -> Vector.get(i, vals), Vector.length(search));
                 let innerMap = BPlusTree.computeIfAbsent(() -> BPlusTree.empty(rc), pred, lookupStruct);
                 match BPlusTree.get(search, innerMap) {
-                    case Some(tree) => BPlusTree.get(vals, tree)
+                    case Some(tree) => BPlusTree.get(reorderedVals, tree)
                     case None =>
                         // We have never encountered this search before. Initialize the `BPlusTree` for it.
                         // Initializing happens by mapping every fact to the search-part and non-search part
                         // and inserting them as key-value pairs in a `BPLookup`.
-                        let tree = BPlusTree.emptyWithSearch(rc, search);
+                        let tree = BPlusTree.empty(rc);
                         let extractSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, search), k), Vector.length(search));
                         let nonSearch = Vector.range(0, arity) |> Vector.filter(v -> not Vector.memberOf(v, search));
                         let extractNonSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, nonSearch), k), Vector.length(nonSearch));
@@ -100,7 +103,7 @@ mod Fixpoint3.ProvenanceReconstruct {
                             BPlusTree.putWith(_ -> old -> newVal :: old, searchPart, newVal :: Nil, tree)
                         };
                         BPlusTree.put(search, tree, innerMap);
-                        BPlusTree.get(vals, tree)
+                        BPlusTree.get(reorderedVals, tree)
                 }
         }
 
