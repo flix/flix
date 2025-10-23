@@ -51,7 +51,7 @@ object Reducer {
     val anonClasses = ctx.anonClasses.asScala.toList
 
     JvmAst.Root(defs, enums, structs, effects, types, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
-  }(DebugNoOp())
+  }
 
   /**
     * Returns all types of `root`.
