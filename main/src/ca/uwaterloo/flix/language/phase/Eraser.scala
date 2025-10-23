@@ -42,9 +42,10 @@ object Eraser {
     implicit val r: ReducedAst.Root = root
     implicit val ctx: SharedContext = new SharedContext()
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
+    val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
+    // Specializations must happen after all other types and expressions are visited.
     val newEnums = specializeEnums(ctx.getEnumSpecializations)
     val newStructs = specializeStructs(ctx.getStructSpecializations)
-    val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
     ErasedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.entryPoints, root.sources)
   }(DebugNoOp())
 
