@@ -11,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiConsumer
 import scala.annotation.unused
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
   * Erase types and introduce corresponding casting
