@@ -43,7 +43,7 @@ object JvmAstPrinter {
   /** Returns the [[DocAst.Expr]] representation of `e`. */
   def print(e: JvmAst.Expr): DocAst.Expr = e match {
     case Expr.Cst(cst, _) => ConstantPrinter.print(cst)
-    case Expr.Var(_, sym, _, _) => printVarSym(sym)
+    case Expr.Var(sym, _, _, _) => printVarSym(sym)
     case Expr.ApplyAtomic(op, exps, tpe, purity, _) => OpPrinter.print(op, exps.map(print), SimpleTypePrinter.print(tpe), PurityPrinter.print(purity))
     case Expr.ApplyClo(exp1, exp2, ct, _, _, _) => DocAst.Expr.ApplyCloWithTail(print(exp1), List(print(exp2)), ct)
     case Expr.ApplyDef(sym, exps, ct, _, _, _) => DocAst.Expr.ApplyDefWithTail(sym, exps.map(print), ct)
@@ -52,11 +52,11 @@ object JvmAstPrinter {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expr.Branch(print(exp), MapOps.mapValues(branches)(print))
     case Expr.JumpTo(sym, _, _, _) => DocAst.Expr.JumpTo(sym)
-    case Expr.Let(_, sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.Let(sym, _, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), Some(SimpleTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.Stmt(exp1, exp2, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
-    case Expr.Region(_, sym, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
+    case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
-      case JvmAst.CatchRule(_, sym, clazz, body) => (sym, clazz, print(body))
+      case JvmAst.CatchRule(sym, _, clazz, body) => (sym, clazz, print(body))
     })
     case Expr.RunWith(exp, effUse, rules, _, _, _, _) => DocAst.Expr.RunWithHandler(print(exp), effUse.sym, rules.map {
       case JvmAst.HandlerRule(op, fparams, body) =>
@@ -73,7 +73,7 @@ object JvmAstPrinter {
 
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printOffsetFormalParam(fp: JvmAst.OffsetFormalParam): DocAst.Expr.AscriptionTpe = {
-    val JvmAst.OffsetFormalParam(_, sym, tpe) = fp
+    val JvmAst.OffsetFormalParam(sym, _, tpe) = fp
     DocAst.Expr.AscriptionTpe(printVarSym(sym), SimpleTypePrinter.print(tpe))
   }
 

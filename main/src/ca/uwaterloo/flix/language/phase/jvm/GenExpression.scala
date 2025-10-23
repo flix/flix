@@ -179,7 +179,7 @@ object GenExpression {
 
     }
 
-    case Expr.Var(offset, _, tpe, _) =>
+    case Expr.Var(_, offset, tpe, _) =>
       BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), JvmOps.getIndex(offset, ctx.localOffset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
@@ -600,7 +600,6 @@ object GenExpression {
         compileTag(sym.name, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
         val SimpleType.Enum(_, targs) = exp.tpe
         val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
@@ -1291,7 +1290,7 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(offset, _, exp1, exp2, _) =>
+    case Expr.Let(_, offset, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
@@ -1305,7 +1304,7 @@ object GenExpression {
       xPop(BackendType.toBackendType(exp1.tpe))
       compileExpr(exp2)
 
-    case Expr.Region(offset, sym, exp, _, _, loc) =>
+    case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging
       BytecodeInstructions.addLoc(loc)
 
@@ -1385,7 +1384,7 @@ object GenExpression {
       mv.visitJumpInsn(GOTO, afterTryAndCatch)
 
       // Emit code for each catch rule.
-      for ((CatchRule(offset, sym, _, body), handlerLabel) <- rulesAndLabels) {
+      for ((CatchRule(_, offset, _, body), handlerLabel) <- rulesAndLabels) {
         // Emit the label.
         mv.visitLabel(handlerLabel)
 
