@@ -114,6 +114,13 @@ object LoweredAstPrinter {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, _, _) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
       DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
+    case Expr.FixpointConstraintSet(_, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointLambda(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointMerge(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithProvenance(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolveWithProject(_, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointInjectInto(_, _, _, _, _) => DocAst.Expr.Unknown
   }
 
   /**
