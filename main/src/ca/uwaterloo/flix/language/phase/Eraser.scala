@@ -8,7 +8,9 @@ import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.BiConsumer
 import scala.annotation.unused
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.ConcurrentMapHasAsScala
 
 /**
@@ -377,11 +379,16 @@ object Eraser {
       }
     }
 
-    def getStructSpecializations: Iterable[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)] =
-      toMap(structSpecializations).toList.map { case (a, b) => (a._1, a._2, b) }
+    def getStructSpecializations: List[(Symbol.StructSym, List[SimpleType], Symbol.StructSym)] =
+      toList(structSpecializations)
 
-    private def toMap[A, B](map: ConcurrentHashMap[A, B]): Map[A, B] =
-      map.asScala.toMap
+    private def toList[A, B](map: ConcurrentHashMap[(A, B), A]): List[(A, B, A)] = {
+      val res = mutable.ListBuffer.empty[(A, B, A)]
+      map.forEach(new BiConsumer[(A, B), A] {
+        override def accept(t: (A, B), u: A): Unit = res.append((t._1, t._2, u))
+      })
+      res.toList
+    }
 
   }
 
