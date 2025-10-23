@@ -364,8 +364,8 @@ object Eraser {
       }
     }
 
-    def getEnumSpecializations: Iterable[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)] =
-      toMap(enumSpecializations).toList.map { case (a, b) => (a._1, a._2, b) }
+    def getEnumSpecializations: List[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)] =
+      toList(enumSpecializations)
 
     /** Specializes the struct if not done already. */
     def getSpecializedStructName(sym: Symbol.StructSym, targs: List[SimpleType])(implicit flix: Flix): Symbol.StructSym = {
