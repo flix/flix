@@ -298,42 +298,6 @@ object Eraser {
     }
   }
 
-  /**
-    * Erases the polymorphic `tpe`. The returned type is either [[Type.Var]], [[Type.Cst]] of a
-    * primitive type, or [[Type.Cst]] of `java.lang.Object`.
-    *
-    *   - `polymorphicErasure(a) = a`
-    *   - `polymorphicErasure(Int32) = Int32`
-    *   - `polymorphicErasure(String) = Object`
-    *   - `polymorphicErasure(Option[a]) = Object`
-    *   - `polymorphicErasure(a[Int32]) = Object`
-    *
-    * We do not have aliases, associated types, and the like, so any [[Type.Apply]] will be
-    * *building* a larger type, and can therefore not be a primitive type.
-    */
-  private def polymorphicErasure(tpe: Type): Type = tpe match {
-    case v@Type.Var(_, _) => v
-    case c@Type.Cst(tc, loc) => tc match {
-      case TypeConstructor.Bool => c
-      case TypeConstructor.Char => c
-      case TypeConstructor.Float32 => c
-      case TypeConstructor.Float64 => c
-      case TypeConstructor.Int8 => c
-      case TypeConstructor.Int16 => c
-      case TypeConstructor.Int32 => c
-      case TypeConstructor.Int64 => c
-      // All primitive types are covered, so the rest can only be erased to Object.
-      case _ => Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
-    }
-    case Type.Apply(_, _, loc) => Type.Cst(TypeConstructor.Native(classOf[Object]), loc)
-
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type $tpe", tpe.loc)
-  }
-
   private def box(@unused tpe: SimpleType): SimpleType = SimpleType.Object
 
   private final class SharedContext {
