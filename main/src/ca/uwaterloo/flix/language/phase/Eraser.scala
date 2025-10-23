@@ -2,12 +2,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimpleType.erase
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.ReducedAst.Expr.*
-import ca.uwaterloo.flix.language.ast.{AtomicOp, SimpleType, Purity, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Purity, ReducedAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugReducedAst
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.unused
 
@@ -38,7 +36,7 @@ import scala.annotation.unused
   */
 object Eraser {
 
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser") {
+  def run(root: ReducedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Eraser") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
@@ -46,162 +44,162 @@ object Eraser {
     root.copy(defs = newDefs, enums = newEnums, structs = newStructs, effects = newEffects)
   }
 
-  private def visitDef(defn: Def): Def = defn match {
-    case Def(ann, mod, sym, cparams, fparams, exp, tpe, originalTpe, loc) =>
+  private def visitDef(defn: ReducedAst.Def): ReducedAst.Def = defn match {
+    case ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, originalTpe, loc) =>
       val eNew = visitExp(exp)
-      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), UnboxedType(erase(originalTpe.tpe)), loc)
+      val e = ReducedAst.Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), exp.purity, loc)
+      ReducedAst.Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), ReducedAst.UnboxedType(erase(originalTpe.tpe)), loc)
   }
 
-  private def visitParam(fp: FormalParam): FormalParam = fp match {
-    case FormalParam(sym, tpe) =>
-      FormalParam(sym, visitType(tpe))
+  private def visitParam(fp: ReducedAst.FormalParam): ReducedAst.FormalParam = fp match {
+    case ReducedAst.FormalParam(sym, tpe) =>
+      ReducedAst.FormalParam(sym, visitType(tpe))
   }
 
-  private def visitEnum(enm: Enum): Enum = enm match {
-    case Enum(ann, mod, sym, tparams, cases0, loc) =>
+  private def visitEnum(enm: ReducedAst.Enum): ReducedAst.Enum = enm match {
+    case ReducedAst.Enum(ann, mod, sym, tparams, cases0, loc) =>
       val cases = MapOps.mapValues(cases0)(visitEnumTag)
-      Enum(ann, mod, sym, tparams, cases, loc)
+      ReducedAst.Enum(ann, mod, sym, tparams, cases, loc)
   }
 
-  private def visitEnumTag(caze: Case): Case = caze match {
-    case Case(sym, tpes, loc) =>
-      Case(sym, tpes.map(polymorphicErasure), loc)
+  private def visitEnumTag(caze: ReducedAst.Case): ReducedAst.Case = caze match {
+    case ReducedAst.Case(sym, tpes, loc) =>
+      ReducedAst.Case(sym, tpes.map(polymorphicErasure), loc)
   }
 
-  private def visitStruct(struct: Struct): Struct = struct match {
-    case Struct(ann, mod, sym, tparams, fields0, loc) =>
+  private def visitStruct(struct: ReducedAst.Struct): ReducedAst.Struct = struct match {
+    case ReducedAst.Struct(ann, mod, sym, tparams, fields0, loc) =>
       val fields = fields0.map(visitStructField)
-      Struct(ann, mod, sym, tparams, fields, loc)
+      ReducedAst.Struct(ann, mod, sym, tparams, fields, loc)
   }
 
-  private def visitStructField(field: StructField): StructField = field match {
-    case StructField(sym, tpe, loc) =>
-      StructField(sym, polymorphicErasure(tpe), loc)
+  private def visitStructField(field: ReducedAst.StructField): ReducedAst.StructField = field match {
+    case ReducedAst.StructField(sym, tpe, loc) =>
+      ReducedAst.StructField(sym, polymorphicErasure(tpe), loc)
   }
 
-  private def visitBranch(branch: (Symbol.LabelSym, Expr)): (Symbol.LabelSym, Expr) = branch match {
+  private def visitBranch(branch: (Symbol.LabelSym, ReducedAst.Expr)): (Symbol.LabelSym, ReducedAst.Expr) = branch match {
     case (sym, exp) =>
       (sym, visitExp(exp))
   }
 
-  private def visitCatchRule(rule: CatchRule): CatchRule = rule match {
-    case CatchRule(sym, clazz, exp) =>
-      CatchRule(sym, clazz, visitExp(exp))
+  private def visitCatchRule(rule: ReducedAst.CatchRule): ReducedAst.CatchRule = rule match {
+    case ReducedAst.CatchRule(sym, clazz, exp) =>
+      ReducedAst.CatchRule(sym, clazz, visitExp(exp))
   }
 
-  private def visitHandlerRule(rule: HandlerRule): HandlerRule = rule match {
-    case HandlerRule(op, fparams, exp) =>
-      HandlerRule(op, fparams.map(visitParam), visitExp(exp))
+  private def visitHandlerRule(rule: ReducedAst.HandlerRule): ReducedAst.HandlerRule = rule match {
+    case ReducedAst.HandlerRule(op, fparams, exp) =>
+      ReducedAst.HandlerRule(op, fparams.map(visitParam), visitExp(exp))
   }
 
-  private def visitJvmMethod(method: JvmMethod): JvmMethod = method match {
-    case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+  private def visitJvmMethod(method: ReducedAst.JvmMethod): ReducedAst.JvmMethod = method match {
+    case ReducedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
       // return type is not erased to maintain class signatures
-      JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
+      ReducedAst.JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
   }
 
-  private def visitExp(exp0: Expr): Expr = exp0 match {
-    case Cst(cst, loc) =>
-      Cst(cst, loc)
-    case Var(sym, tpe, loc) =>
-      Var(sym, visitType(tpe), loc)
-    case ApplyAtomic(op, exps, tpe, purity, loc) =>
+  private def visitExp(exp0: ReducedAst.Expr): ReducedAst.Expr = exp0 match {
+    case ReducedAst.Expr.Cst(cst, loc) =>
+      ReducedAst.Expr.Cst(cst, loc)
+    case ReducedAst.Expr.Var(sym, tpe, loc) =>
+      ReducedAst.Expr.Var(sym, visitType(tpe), loc)
+    case ReducedAst.Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
       op match {
-        case AtomicOp.Closure(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Unary(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Binary(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Untag(_, _) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Closure(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Unary(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Binary(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Is(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Tag(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Untag(_, _) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Index(_) =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
+          castExp(ReducedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.Tuple => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtIs(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtTag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ExtUntag(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ArrayNew => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructNew(_, _) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructGet(_) => castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.StructPut(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Unbox => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Box => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.InvokeConstructor(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.InvokeMethod(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.InvokeStaticMethod(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.GetField(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.PutField(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.GetStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.PutStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Throw => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
+          castExp(ReducedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.RecordExtend(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.RecordRestrict(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtIs(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtTag(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ExtUntag(_, _) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayLit => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayNew => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayLoad => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayStore => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayLength => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructNew(_, _) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.StructGet(_) => castExp(ReducedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.StructPut(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InstanceOf(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Cast => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Unbox => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Box => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeConstructor(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeMethod(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeStaticMethod(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.GetField(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.PutField(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.GetStaticField(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.PutStaticField(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Throw => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Spawn => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Lazy => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
-        case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.CastError(_, _) => ApplyAtomic(op, es, t, purity, loc)
+          castExp(ReducedAst.Expr.ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.HoleError(_) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.MatchError => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.CastError(_, _) => ReducedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
       }
 
-    case ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
-      val ac = ApplyClo(visitExp(exp1), visitExp(exp2), ct, box(tpe), purity, loc)
+    case ReducedAst.Expr.ApplyClo(exp1, exp2, ct, tpe, purity, loc) =>
+      val ac = ReducedAst.Expr.ApplyClo(visitExp(exp1), visitExp(exp2), ct, box(tpe), purity, loc)
       castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
+    case ReducedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      val ad = ReducedAst.Expr.ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplyOp(sym, exps, tpe, purity, loc) =>
-      ApplyOp(sym, exps.map(visitExp), visitType(tpe), purity, loc)
-    case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
-    case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
-    case Branch(exp, branches, tpe, purity, loc) =>
-      Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
-    case JumpTo(sym, tpe, purity, loc) =>
-      JumpTo(sym, visitType(tpe), purity, loc)
-    case Let(sym, exp1, exp2, loc) =>
-      Let(sym, visitExp(exp1), visitExp(exp2), loc)
-    case Stmt(exp1, exp2, loc) =>
-      Stmt(visitExp(exp1), visitExp(exp2), loc)
-    case Region(sym, exp, tpe, purity, loc) =>
-      Region(sym, visitExp(exp), visitType(tpe), purity, loc)
-    case TryCatch(exp, rules, tpe, purity, loc) =>
-      TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
-    case RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
-      val tw = RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
+    case ReducedAst.Expr.ApplyOp(sym, exps, tpe, purity, loc) =>
+      ReducedAst.Expr.ApplyOp(sym, exps.map(visitExp), visitType(tpe), purity, loc)
+    case ReducedAst.Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
+      ReducedAst.Expr.ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
+    case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      ReducedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
+    case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
+      ReducedAst.Expr.Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
+    case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>
+      ReducedAst.Expr.JumpTo(sym, visitType(tpe), purity, loc)
+    case ReducedAst.Expr.Let(sym, exp1, exp2, loc) =>
+      ReducedAst.Expr.Let(sym, visitExp(exp1), visitExp(exp2), loc)
+    case ReducedAst.Expr.Stmt(exp1, exp2, loc) =>
+      ReducedAst.Expr.Stmt(visitExp(exp1), visitExp(exp2), loc)
+    case ReducedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
+      ReducedAst.Expr.Region(sym, visitExp(exp), visitType(tpe), purity, loc)
+    case ReducedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
+      ReducedAst.Expr.TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
+    case ReducedAst.Expr.RunWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val tw = ReducedAst.Expr.RunWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case NewObject(name, clazz, tpe, purity, methods, loc) =>
-      NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
+    case ReducedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      ReducedAst.Expr.NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
   }
 
-  private def castExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
-    Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
+  private def castExp(exp: ReducedAst.Expr, t: SimpleType, purity: Purity, loc: SourceLocation): ReducedAst.Expr = {
+    ReducedAst.Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def unboxExp(exp: Expr, t: SimpleType, purity: Purity, loc: SourceLocation): Expr = {
-    Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
+  private def unboxExp(exp: ReducedAst.Expr, t: SimpleType, purity: Purity, loc: SourceLocation): ReducedAst.Expr = {
+    ReducedAst.Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def visitEffect(eff: Effect): Effect = eff match {
-    case Effect(ann, mod, sym, ops, loc) =>
-      Effect(ann, mod, sym, ops.map(visitOp), loc)
+  private def visitEffect(eff: ReducedAst.Effect): ReducedAst.Effect = eff match {
+    case ReducedAst.Effect(ann, mod, sym, ops, loc) =>
+      ReducedAst.Effect(ann, mod, sym, ops.map(visitOp), loc)
   }
 
-  private def visitOp(op: Op): Op = op match {
-    case Op(sym, ann, mod, fparams, tpe, purity, loc) =>
-      Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
+  private def visitOp(op: ReducedAst.Op): ReducedAst.Op = op match {
+    case ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc) =>
+      ReducedAst.Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
   }
 
   private def visitType(tpe0: SimpleType): SimpleType = {
