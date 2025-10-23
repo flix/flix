@@ -89,6 +89,14 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh enum symbol based on the given symbol.
+    */
+  def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
+    val id = Some(flix.genSym.freshId())
+    new EnumSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -186,7 +194,7 @@ object Symbol {
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
-    new EnumSym(ns.parts, ident.name, ident.loc)
+    new EnumSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -207,8 +215,8 @@ object Symbol {
     * Returns the enum symbol for the given fully qualified name.
     */
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
-    case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
+    case None => new EnumSym(None, Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EnumSym(None, ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -470,25 +478,28 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class EnumSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
       */
-    def name: String = text
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + Flix.Delimiter + i
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EnumSym => this.namespace == that.namespace && this.text == that.text
+      case that: EnumSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 5 * namespace.hashCode() + 7 * text.hashCode()
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
 
     /**
       * Human readable representation.
