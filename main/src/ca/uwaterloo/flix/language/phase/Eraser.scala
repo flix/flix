@@ -321,7 +321,7 @@ object Eraser {
       case TypeConstructor.Int16 => SimpleType.Int16
       case TypeConstructor.Int32 => SimpleType.Int32
       case TypeConstructor.Int64 => SimpleType.Int64
-      // All primitive types covered, so lefter types are Object.
+      // All primitive types covered, so the rest can only be erased to Object.
       case _ => SimpleType.Object
     }
     // Any type application will result in an Object type.
