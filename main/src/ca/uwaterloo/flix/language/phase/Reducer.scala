@@ -121,7 +121,7 @@ object Reducer {
     ctx.addDefType(exp0.tpe)
     exp0 match {
       case ErasedAst.Expr.Cst(cst, loc) =>
-        // We know that visitType(tpe) = tpe for all the constant types, so its okay not to store the new type.
+        // Since `visitType(tpe) = tpe` for all types of constants, its okay not to store the new type.
         visitType(exp0.tpe)
         JvmAst.Expr.Cst(cst, loc)
 
