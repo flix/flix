@@ -288,7 +288,7 @@ object Eraser {
         val specializedSym = ctx.getSpecializedEnumName(sym, targs.map(erase))
         SimpleType.mkEnum(specializedSym, Nil)
       case Struct(sym, targs) =>
-        // `MutList[String]` erases to `MutList[Object]` and is then specialized to `MutList$42`.
+        // `MutList[String, r]` erases to `MutList[Object, Object]` and is then specialized to `MutList$42`.
         val specializedSym = ctx.getSpecializedStructName(sym, targs.map(erase))
         SimpleType.Struct(specializedSym, Nil)
       case Arrow(args, result) => SimpleType.mkArrow(args.map(visitType), box(result))
