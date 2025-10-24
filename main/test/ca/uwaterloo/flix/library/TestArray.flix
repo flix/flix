@@ -735,6 +735,21 @@ mod TestArray {
         let a = Array.indicesOf(1, Array#{1,1} @ rc);
         assertEq(expected = Vector#{0,1}, a)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 0), Array.indices(Array#{} @ rc))
+    }
+
+    @Test
+    def indices02(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 3), Array.indices(Array#{1, 2, 3} @ rc))
+    }
+
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////

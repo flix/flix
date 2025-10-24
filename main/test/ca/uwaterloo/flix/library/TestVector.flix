@@ -627,6 +627,16 @@ mod TestVector {
         assertEq(expected = Vector#{0, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), Vector.indices((Vector#{}: Vector[Int32])))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Vector.indices(Vector#{1, 2, 3}))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

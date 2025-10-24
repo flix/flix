@@ -374,6 +374,16 @@ mod TestChain {
     def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, Chain.indicesOf(1, List.toChain(1 :: 1 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), Chain.indices(Chain.empty()))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Chain.indices(List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

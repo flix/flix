@@ -401,6 +401,16 @@ mod TestNec {
     def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, Nec.indicesOf(1, necOf2(1, 1)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 1), Nec.indices(singleton(1)))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Nec.indices(necOf3(1, 2, 3)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

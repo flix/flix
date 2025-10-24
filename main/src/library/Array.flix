@@ -333,6 +333,11 @@ mod Array {
     }
 
     ///
+    /// Returns a range of all valid indices of the array `arr`.
+    ///
+    pub def indices(arr: Array[a, r]): Range[Int32] = Range.Range(0, length(arr))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } =

@@ -345,6 +345,11 @@ mod Nec {
         loop(0, c, Nil) |> List.reverse |> List.toVector
 
     ///
+    /// Returns a range of all valid indices of the non-empty chain `c`.
+    ///
+    pub def indices(c: Nec[a]): Range[Int32] = Range.Range(0, length(c))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = findLeft(f, c)
