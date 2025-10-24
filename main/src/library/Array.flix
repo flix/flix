@@ -327,8 +327,10 @@ mod Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indices(rc: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ r with Eq[a] =
-        findIndices(rc, b -> a == b, arr)
+    pub def indicesOf(a: a, arr: Array[a, r]): Vector[Int32] \ r with Eq[a] = region rc {
+        let result = findIndices(rc, b -> a == b, arr);
+        Array.toVector(result)
+    }
 
     ///
     /// Alias for `findLeft`.

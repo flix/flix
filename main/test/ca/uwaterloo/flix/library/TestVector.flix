@@ -588,42 +588,42 @@ mod TestVector {
         assertEq(expected = Some(1), Vector.indexOfRight(1, Vector#{1, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // indices                                                                 //
+    // indicesOf                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def indices01(): Unit \ Assert =
-        let v = Vector.indices(0, (Vector#{}: Vector[Int32]));
+    def indicesOf01(): Unit \ Assert =
+        let v = Vector.indicesOf(0, (Vector#{}: Vector[Int32]));
         assertEq(expected = Vector#{}, v)
 
     @Test
-    def indices02(): Unit \ Assert =
-        let v = Vector.indices(0, Vector#{1});
+    def indicesOf02(): Unit \ Assert =
+        let v = Vector.indicesOf(0, Vector#{1});
         assertEq(expected = Vector#{}, v)
 
     @Test
-    def indices03(): Unit \ Assert =
-        let v = Vector.indices(1, Vector#{1});
+    def indicesOf03(): Unit \ Assert =
+        let v = Vector.indicesOf(1, Vector#{1});
         assertEq(expected = Vector#{0}, v)
 
     @Test
-    def indices04(): Unit \ Assert =
-        let v = Vector.indices(0, Vector#{1, 2});
+    def indicesOf04(): Unit \ Assert =
+        let v = Vector.indicesOf(0, Vector#{1, 2});
         assertEq(expected = Vector#{}, v)
 
     @Test
-    def indices05(): Unit \ Assert =
-        let v = Vector.indices(1, Vector#{1, 2});
+    def indicesOf05(): Unit \ Assert =
+        let v = Vector.indicesOf(1, Vector#{1, 2});
         assertEq(expected = Vector#{0}, v)
 
     @Test
-    def indices06(): Unit \ Assert =
-        let v = Vector.indices(2, Vector#{1, 2});
+    def indicesOf06(): Unit \ Assert =
+        let v = Vector.indicesOf(2, Vector#{1, 2});
         assertEq(expected = Vector#{1}, v)
 
     @Test
-    def indices07(): Unit \ Assert =
-        let v = Vector.indices(1, Vector#{1, 1});
+    def indicesOf07(): Unit \ Assert =
+        let v = Vector.indicesOf(1, Vector#{1, 1});
         assertEq(expected = Vector#{0, 1}, v)
 
     /////////////////////////////////////////////////////////////////////////////
