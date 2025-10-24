@@ -691,49 +691,49 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
-    // indices                                                                 //
+    // indicesOf                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def indices01(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 0, ((Array#{} @ rc): Array[Int32, rc]));
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    def indicesOf01(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, ((Array#{} @ rc): Array[Int32, rc]));
+        assertEq(expected = Vector#{}, a)
     }
 
     @Test
-    def indices02(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 0, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    def indicesOf02(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, Array#{1} @ rc);
+        assertEq(expected = Vector#{}, a)
     }
 
     @Test
-    def indices03(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 1, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+    def indicesOf03(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1} @ rc);
+        assertEq(expected = Vector#{0}, a)
     }
 
     @Test
-    def indices04(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 0, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+    def indicesOf04(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{}, a)
     }
 
     @Test
-    def indices05(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 1, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+    def indicesOf05(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{0}, a)
     }
 
     @Test
-    def indices06(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 2, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+    def indicesOf06(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(2, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{1}, a)
     }
 
     @Test
-    def indices07(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 1, Array#{1,1} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0,1} @ rc))
+    def indicesOf07(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1,1} @ rc);
+        assertEq(expected = Vector#{0,1}, a)
     }
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //

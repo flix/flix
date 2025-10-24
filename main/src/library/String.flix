@@ -414,16 +414,16 @@ mod String {
     ///
     /// Returns the positions of the all the occurrences of `substr` in `s`.
     ///
-    /// Returns `Nil` if `substr` is the empty string.
+    /// Returns an empty vector if `substr` is the empty string.
     ///
-    pub def indices(substr: {substr = String}, s: String): List[Int32] =
+    pub def indicesOf(substr: {substr = String}, s: String): Vector[Int32] =
         let sublen = length(substr#substr);
         let step = ix ->
             match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                 case None => None
                 case Some(ix2) => Some((ix2, ix2 + sublen))
             };
-        List.unfold(step, 0)
+        List.unfold(step, 0) |> List.toVector
 
     ///
     /// Alias for `takeLeft`.

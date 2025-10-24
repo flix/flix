@@ -1019,47 +1019,47 @@ mod TestString {
     def findIndices07(): Unit \ Assert = assertEq(expected = 0 :: 1 :: Nil, String.findIndices(Char.isDigit, "12"))
 
     /////////////////////////////////////////////////////////////////////////////
-    // indices                                                                 //
+    // indicesOf                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def indices01(): Unit \ Assert = assertEq(expected = Nil, String.indices({substr = ""}, ""))
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = ""}, ""))
 
     @Test
-    def indices02(): Unit \ Assert = assertEq(expected = Nil, String.indices({substr = ""}, "a::b::c"))
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = ""}, "a::b::c"))
 
     @Test
-    def indices03(): Unit \ Assert = assertEq(expected = Nil, String.indices({substr = "::"}, ""))
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = "::"}, ""))
 
     @Test
-    def indices04(): Unit \ Assert = assertEq(expected = Nil, String.indices({substr = "::"}, "a"))
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = "::"}, "a"))
 
     @Test
-    def indices05(): Unit \ Assert = assertEq(expected = 0 :: Nil, String.indices({substr = "::"}, "::"))
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{0}, String.indicesOf({substr = "::"}, "::"))
 
     @Test
-    def indices06(): Unit \ Assert = assertEq(expected = Nil, String.indices({substr = "::"}, "ab"))
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{}, String.indicesOf({substr = "::"}, "ab"))
 
     @Test
-    def indices07(): Unit \ Assert = assertEq(expected = 0 :: Nil, String.indices({substr = "::"}, "::a"))
+    def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0}, String.indicesOf({substr = "::"}, "::a"))
 
     @Test
-    def indices08(): Unit \ Assert = assertEq(expected = 1 :: Nil, String.indices({substr = "::"}, "a::"))
+    def indicesOf08(): Unit \ Assert = assertEq(expected = Vector#{1}, String.indicesOf({substr = "::"}, "a::"))
 
     @Test
-    def indices09(): Unit \ Assert = assertEq(expected = 1 :: 4 :: Nil, String.indices({substr = "::"}, "a::b::"))
+    def indicesOf09(): Unit \ Assert = assertEq(expected = Vector#{1, 4}, String.indicesOf({substr = "::"}, "a::b::"))
 
     @Test
-    def indices10(): Unit \ Assert = assertEq(expected = 1 :: 4 :: Nil, String.indices({substr = "::"}, "a::b::c"))
+    def indicesOf10(): Unit \ Assert = assertEq(expected = Vector#{1, 4}, String.indicesOf({substr = "::"}, "a::b::c"))
 
     @Test
-    def indices11(): Unit \ Assert = assertEq(expected = 1 :: 4 :: Nil, String.indices({substr = "::"}, "a::b::c:"))
+    def indicesOf11(): Unit \ Assert = assertEq(expected = Vector#{1, 4}, String.indicesOf({substr = "::"}, "a::b::c:"))
 
     @Test
-    def indices12(): Unit \ Assert = assertEq(expected = 2 :: 5 :: Nil, String.indices({substr = "::"}, ":a::b::c"))
+    def indicesOf12(): Unit \ Assert = assertEq(expected = Vector#{2, 5}, String.indicesOf({substr = "::"}, ":a::b::c"))
 
     @Test
-    def indices13(): Unit \ Assert = assertEq(expected = 0 :: 2 :: Nil, String.indices({substr = "::"}, "::::"))
+    def indicesOf13(): Unit \ Assert = assertEq(expected = Vector#{0, 2}, String.indicesOf({substr = "::"}, "::::"))
 
 
     /////////////////////////////////////////////////////////////////////////////

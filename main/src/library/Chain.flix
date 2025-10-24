@@ -308,6 +308,16 @@ mod Chain {
         loop(viewLeft(c), 0)
 
     ///
+    /// Returns the positions of all occurrences of `x` in `c`.
+    ///
+    pub def indicesOf(x: a, c: Chain[a]): Vector[Int32] with Eq[a] =
+        def loop(v, acc, indices) = match v {
+            case ViewLeft.NoneLeft        => indices
+            case ViewLeft.SomeLeft(y, ys) => if (x == y) loop(viewLeft(ys), acc + 1, acc :: indices) else loop(viewLeft(ys), acc + 1, indices)
+        };
+        loop(viewLeft(c), 0, Nil) |> List.reverse |> List.toVector
+
+    ///
     /// Alias for `findLeft`.
     ///
     /// The function `f` must be pure.
