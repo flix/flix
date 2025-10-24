@@ -25,6 +25,7 @@ object JvmAst {
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
+                  erasedFunctionTypes: Set[SimpleType.Arrow],
                   types: Set[SimpleType],
                   anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
