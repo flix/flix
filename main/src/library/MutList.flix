@@ -282,6 +282,18 @@ mod MutList {
         loop(v->length - 1)
 
     ///
+    /// Returns the positions of all occurrences of `x` in `v`.
+    ///
+    pub def indicesOf(x: a, v: MutList[a, r]): Vector[Int32] \ r with Eq[a] =
+        def loop(i, indices) = {
+            if (i >= v->length)
+                indices
+            else
+                if (x == Array.get(i, v->values)) loop(i + 1, i :: indices) else loop(i + 1, indices)
+        };
+        loop(0, Nil) |> List.reverse |> List.toVector
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool, v: MutList[a, r]): Option[a] \ r =
