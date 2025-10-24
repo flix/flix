@@ -4273,44 +4273,44 @@ mod TestArray {
 
     @Test
     def findIndices01(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        let v = Array.findIndices(i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
+        assertEq(expected = Vector#{}, v)
     }
 
     @Test
     def findIndices02(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        let v = Array.findIndices(i -> i > 2, Array#{1} @ rc);
+        assertEq(expected = Vector#{}, v)
     }
 
     @Test
     def findIndices03(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{3} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{3} @ rc);
+        assertEq(expected = Vector#{0}, v)
     }
 
     @Test
     def findIndices04(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        let v = Array.findIndices(i -> i > 2, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{}, v)
     }
 
     @Test
     def findIndices05(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{6,-6} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{6,-6} @ rc);
+        assertEq(expected = Vector#{0}, v)
     }
 
     @Test
     def findIndices06(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{-6,6} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{-6,6} @ rc);
+        assertEq(expected = Vector#{1}, v)
     }
 
     @Test
     def findIndices07(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{6,7} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0,1} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{6,7} @ rc);
+        assertEq(expected = Vector#{0, 1}, v)
     }
 
     /////////////////////////////////////////////////////////////////////////////

@@ -998,25 +998,25 @@ mod TestString {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def findIndices01(): Unit \ Assert = assertEq(expected = Nil, String.findIndices(Char.isDigit, ""))
+    def findIndices01(): Unit \ Assert = assertEq(expected = Vector#{}, String.findIndices(Char.isDigit, ""))
 
     @Test
-    def findIndices02(): Unit \ Assert = assertEq(expected = Nil, String.findIndices(Char.isDigit, "a"))
+    def findIndices02(): Unit \ Assert = assertEq(expected = Vector#{}, String.findIndices(Char.isDigit, "a"))
 
     @Test
-    def findIndices03(): Unit \ Assert = assertEq(expected = 0 :: Nil, String.findIndices(Char.isDigit, "1"))
+    def findIndices03(): Unit \ Assert = assertEq(expected = Vector#{0}, String.findIndices(Char.isDigit, "1"))
 
     @Test
-    def findIndices04(): Unit \ Assert = assertEq(expected = Nil, String.findIndices(Char.isDigit, "ab"))
+    def findIndices04(): Unit \ Assert = assertEq(expected = Vector#{}, String.findIndices(Char.isDigit, "ab"))
 
     @Test
-    def findIndices05(): Unit \ Assert = assertEq(expected = 0 :: Nil, String.findIndices(Char.isDigit, "1b"))
+    def findIndices05(): Unit \ Assert = assertEq(expected = Vector#{0}, String.findIndices(Char.isDigit, "1b"))
 
     @Test
-    def findIndices06(): Unit \ Assert = assertEq(expected = 1 :: Nil, String.findIndices(Char.isDigit, "a2"))
+    def findIndices06(): Unit \ Assert = assertEq(expected = Vector#{1}, String.findIndices(Char.isDigit, "a2"))
 
     @Test
-    def findIndices07(): Unit \ Assert = assertEq(expected = 0 :: 1 :: Nil, String.findIndices(Char.isDigit, "12"))
+    def findIndices07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, String.findIndices(Char.isDigit, "12"))
 
     /////////////////////////////////////////////////////////////////////////////
     // indicesOf                                                               //

@@ -327,10 +327,8 @@ mod Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indicesOf(a: a, arr: Array[a, r]): Vector[Int32] \ r with Eq[a] = region rc {
-        let result = findIndices(rc, b -> a == b, arr);
-        Array.toVector(result)
-    }
+    pub def indicesOf(a: a, arr: Array[a, r]): Vector[Int32] \ r with Eq[a] =
+        findIndices(b -> a == b, arr)
 
     ///
     /// Alias for `findLeft`.
@@ -1289,9 +1287,9 @@ mod Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
+    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Vector[Int32] \ { ef, r } = region rc {
         let len = length(a);
-        let l = MutList.empty(rc2);
+        let l = MutList.empty(rc);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1301,7 +1299,8 @@ mod Array {
             }
         };
         loop(0);
-        MutList.toArray(rc2, l)
+        MutList.toVector(l)
+    }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
