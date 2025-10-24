@@ -397,19 +397,20 @@ mod String {
     ///
     /// Returns the positions of the all the elements in `s` satisfying `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def findIndices(f: Char -> Bool, s: String): List[Int32] =
+    pub def findIndices(f: Char -> Bool \ ef, s: String): Vector[Int32] \ ef = region rc {
         let len = length(s);
-        def loop(i, k) = {
+        let l = MutList.empty(rc);
+        def loop(i) = {
             if (i >= len)
-                k(Nil)
-            else if (f(charAt(i, s)))
-                loop(i + 1, ks -> k(i :: ks))
-            else
-                loop(i + 1, k)
+                ()
+            else {
+                if (f(charAt(i, s))) MutList.push(i, l) else ();
+                loop(i + 1)
+            }
         };
-        loop(0, identity)
+        loop(0);
+        MutList.toVector(l)
+    }
 
     ///
     /// Returns the positions of the all the occurrences of `substr` in `s`.
