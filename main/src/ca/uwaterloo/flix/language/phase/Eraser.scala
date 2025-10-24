@@ -60,11 +60,20 @@ object Eraser {
   private def specializeEnums(specializations: List[(Symbol.EnumSym, List[SimpleType], Symbol.EnumSym)])(implicit root: ReducedAst.Root, flix: Flix): Map[Symbol.EnumSym, ErasedAst.Enum] = {
     ParOps.parMap(specializations) {
       case (sym, targs, newSym) =>
-        val enm = root.enums(sym)
-        val subst = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
-        val cases = enm.cases.values.map(specializeCase(_, newSym, subst)).map(caze => caze.sym -> caze).toMap
-        ErasedAst.Enum(enm.ann, enm.mod, newSym, cases, enm.loc)
-    }.map(enm => enm.sym -> enm).toMap
+        val enm0 = root.enums(sym)
+        val subst = ListOps.zip(enm0.tparams.map(_.sym), targs).toMap
+        val cases = specializeCases(enm0.cases, newSym, subst)
+        val enm = ErasedAst.Enum(enm0.ann, enm0.mod, newSym, cases, enm0.loc)
+        enm.sym -> enm
+    }.toMap
+  }
+
+  private def specializeCases(cases: Map[Symbol.CaseSym, ReducedAst.Case], newSym: Symbol.EnumSym, subst: Map[Symbol.KindedTypeVarSym, SimpleType]): Map[Symbol.CaseSym, ErasedAst.Case] = {
+    cases.values.map {
+      case caze0 =>
+        val caze = specializeCase(caze0, newSym, subst)
+        caze.sym -> caze
+    }.toMap
   }
 
   private def specializeCase(caze: ReducedAst.Case, newSym: Symbol.EnumSym, subst: Map[Symbol.KindedTypeVarSym, SimpleType]): ErasedAst.Case = {
