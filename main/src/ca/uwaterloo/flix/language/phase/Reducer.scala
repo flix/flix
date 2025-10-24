@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.ExpPosition
-import ca.uwaterloo.flix.language.ast.{JvmAst, Purity, ErasedAst, SimpleType, Symbol}
+import ca.uwaterloo.flix.language.ast.{ErasedAst, JvmAst, Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -94,18 +94,16 @@ object Reducer {
   }
 
   private def visitEnum(enm: ErasedAst.Enum): JvmAst.Enum = {
-    val tparams = enm.tparams.map(visitTypeParam)
     val cases = MapOps.mapValues(enm.cases)(visitCase)
-    JvmAst.Enum(enm.ann, enm.mod, enm.sym, tparams, cases, enm.loc)
+    JvmAst.Enum(enm.ann, enm.mod, enm.sym, cases, enm.loc)
   }
 
   private def visitCase(caze: ErasedAst.Case): JvmAst.Case =
     JvmAst.Case(caze.sym, caze.tpes, caze.loc)
 
   private def visitStruct(struct: ErasedAst.Struct): JvmAst.Struct = {
-    val tparams = struct.tparams.map(visitTypeParam)
     val fields = struct.fields.map(visitStructField)
-    JvmAst.Struct(struct.ann, struct.mod, struct.sym, tparams, fields, struct.loc)
+    JvmAst.Struct(struct.ann, struct.mod, struct.sym, fields, struct.loc)
   }
 
   private def visitStructField(field: ErasedAst.StructField): JvmAst.StructField =
@@ -236,9 +234,6 @@ object Reducer {
 
   private def visitFormalParam(fp: ErasedAst.FormalParam): JvmAst.FormalParam =
     JvmAst.FormalParam(fp.sym, fp.tpe)
-
-  private def visitTypeParam(tp: ErasedAst.TypeParam): JvmAst.TypeParam =
-    JvmAst.TypeParam(tp.name, tp.sym)
 
   /**
     * A local non-shared context. Does not need to be thread-safe.

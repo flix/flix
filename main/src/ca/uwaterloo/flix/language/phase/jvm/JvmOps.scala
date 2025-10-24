@@ -143,55 +143,21 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /** Returns the set of erased struct types in `types` without searching recursively. */
-  def getErasedStructTypesOf(root: Root, types: Iterable[SimpleType]): Set[BackendObjType.Struct] =
-    types.foldLeft(Set.empty[BackendObjType.Struct]) {
-      case (acc, SimpleType.Struct(sym, targs)) =>
-        acc + BackendObjType.Struct(instantiateStruct(sym, targs)(root))
-      case (acc, _) => acc
-    }
+  /** Returns the struct type of `struct`. */
+  def getStructType(struct: JvmAst.Struct)(implicit root: Root): BackendObjType.Struct =
+    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
 
-  /**
-    * Returns the ordered list of struct fields based on the given type `sym[targs..]`. It is
-    * assumed that both `targs` and the structs in `root` use erased types.
-    *
-    * Example:
-    *   - `instantiateStruct(S, List(Int32, IO)) = List(Int32, Int32, Object)`
-    *     for `struct S[t, r] { mut x: t, y: t, z: Object }`
-    */
-  def instantiateStruct(sym: Symbol.StructSym, targs: List[SimpleType])(implicit root: Root): List[BackendType] = {
-    val struct = root.structs(sym)
-    val map = ListOps.zip(struct.tparams.map(_.sym), targs).toMap
-    struct.fields.map(field => instantiateType(map, field.tpe))
-  }
 
-  /**
-    * Returns the set of erased tag types in `types` without searching recursively.
-    */
-  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: JvmAst.Root): Set[BackendObjType.TagType] =
-    types.foldLeft(Set.empty[BackendObjType.TagType]) {
-      case (acc0, SimpleType.Enum(sym, targs)) =>
-        val tags = instantiateEnum(root.enums(sym), targs)
-        tags.foldLeft(acc0) {
-          case (acc, (tagSym, Nil)) => acc + BackendObjType.NullaryTag(tagSym.name)
-          case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
-        }
-      case (acc, _) => acc
-    }
-
-  /**
-    * Returns the ordered list of enums terms based on the given type `sym[targs..]`. It is assumed
-    * that both `targs` and the enums in `root` use erased types.
-    *
-    * Example:
-    *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
-    *     for `enum E[t] { case A(t, Object) case B(Int32) }`
-    */
-  def instantiateEnum(enm: JvmAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
-    val map = ListOps.zip(enm.tparams.map(_.sym), targs).toMap
-    enm.cases.map {
-      case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))
-    }
+  /** Returns the tag type of each case in `enm`. */
+  def getTagsOf(enm: JvmAst.Enum)(implicit root: Root): List[BackendObjType.TagType] = {
+    enm.cases.values.map {
+      case caze => caze.tpes match {
+        case Nil =>
+          BackendObjType.NullaryTag(caze.sym.name)
+        case elms =>
+          BackendObjType.Tag(elms.map(BackendType.toBackendType))
+      }
+    }.toList
   }
 
   /**

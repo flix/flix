@@ -97,7 +97,7 @@ object Symbol {
   }
 
   /**
-    * Returns a fresh def symbol based on the given symbol.
+    * Returns a fresh struct symbol based on the given symbol.
     */
   def freshStructSym(sym: StructSym)(implicit flix: Flix): StructSym = {
     val id = Some(flix.genSym.freshId())
