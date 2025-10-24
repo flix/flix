@@ -353,21 +353,21 @@ object Reducer {
 
     private val anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass] = new ConcurrentLinkedQueue()
 
-    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
-
-    private val erasedFunctionTypes: ConcurrentHashMap[SimpleType.Arrow, Unit] = new ConcurrentHashMap()
-
     def addAnonClass(clazz: JvmAst.AnonClass): Unit =
       anonClasses.add(clazz)
 
     def getAnonClasses: List[JvmAst.AnonClass] =
       anonClasses.asScala.toList
 
+    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
+
     def addDefType(tpe: SimpleType): Unit =
       defTypes.putIfAbsent(tpe, ())
 
     def getDefTypes: Set[SimpleType] =
       defTypes.keySet.asScala.toSet
+
+    private val erasedFunctionTypes: ConcurrentHashMap[SimpleType.Arrow, Unit] = new ConcurrentHashMap()
 
     /** The erased arrow type of `tpe` is added. */
     def addArrow(tpe: SimpleType.Arrow): Unit =
