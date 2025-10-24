@@ -40,26 +40,21 @@ object Reducer {
 
   def run(root: ErasedAst.Root)(implicit flix: Flix): JvmAst.Root = flix.phase("Reducer") {
     implicit val r: ErasedAst.Root = root
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentHashMap())
+    implicit val ctx: SharedContext = new SharedContext()
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val structs = ParOps.parMapValues(root.structs)(visitStruct)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    val types = allTypes(root)
-    val anonClasses = ctx.anonClasses.asScala.toList
+    val types = allTypes(root, ctx.getDefTypes)
+    val anonClasses = ctx.getAnonClasses
 
     JvmAst.Root(defs, enums, structs, effects, types, anonClasses, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
-  /**
-    * Returns all types of `root`.
-    *
-    * Must be called after all expressions have been visited
-    */
-  private def allTypes(root: ErasedAst.Root)(implicit ctx: SharedContext): Set[SimpleType] = {
-    val defTypes = ctx.defTypes.keys.asScala.toSet
+  /** Returns all types of `root`. */
+  private def allTypes(root: ErasedAst.Root, defTypes: Set[SimpleType]): Set[SimpleType] = {
     // This is an over approximation of the types in enums and structs since they are erased.
     val enumTypes = SimpleType.ErasedTypes
     val structTypes = SimpleType.ErasedTypes
@@ -81,11 +76,11 @@ object Reducer {
 
       // Add all types.
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
-      ctx.defTypes.put(d.arrowType, ())
-      ctx.defTypes.put(unboxedType.tpe, ())
+      ctx.addDefType(d.arrowType)
+      ctx.addDefType(unboxedType.tpe)
       // Compute the types in the captured formal parameters.
       for (cp <- cparams) {
-        ctx.defTypes.put(cp.tpe, ())
+        ctx.addDefType(cp.tpe)
       }
 
       val pcPoints = lctx.getPcPoints
@@ -120,7 +115,7 @@ object Reducer {
   }
 
   private def visitExpr(exp0: ErasedAst.Expr)(implicit lctx: LocalContext, root: ErasedAst.Root, ctx: SharedContext): JvmAst.Expr = {
-    ctx.defTypes.put(exp0.tpe, ())
+    ctx.addDefType(exp0.tpe)
     exp0 match {
       case ErasedAst.Expr.Cst(cst, loc) =>
         JvmAst.Expr.Cst(cst, loc)
@@ -215,7 +210,7 @@ object Reducer {
             val c = visitExpr(clo)
             JvmAst.JvmMethod(ident, fparams.map(visitFormalParam), c, retTpe, methPurity, methLoc)
         }
-        ctx.anonClasses.add(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
+        ctx.addAnonClass(JvmAst.AnonClass(name, clazz, tpe, specs, loc))
 
         JvmAst.Expr.NewObject(name, clazz, tpe, purity, specs, loc)
 
@@ -298,7 +293,24 @@ object Reducer {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass], defTypes: ConcurrentHashMap[SimpleType, Unit])
+  private final class SharedContext {
+
+    private val anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass] = new ConcurrentLinkedQueue()
+
+    def addAnonClass(clazz: JvmAst.AnonClass): Unit =
+      anonClasses.add(clazz)
+
+    def getAnonClasses: List[JvmAst.AnonClass] =
+      anonClasses.asScala.toList
+
+    private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
+
+    def addDefType(tpe: SimpleType): Unit =
+      defTypes.putIfAbsent(tpe, ())
+
+    def getDefTypes: Set[SimpleType] =
+      defTypes.keySet.asScala.toSet
+  }
 
   /**
     * Returns all types contained in the given `Effect`.
