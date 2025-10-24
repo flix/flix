@@ -281,6 +281,16 @@ mod List {
         loop(l, 0)
 
     ///
+    /// Returns the positions of all occurrences of `x` in `l`.
+    ///
+    pub def indicesOf(x: a, l: List[a]): Vector[Int32] with Eq[a] =
+        def loop(ll, acc, indices) = match ll {
+            case Nil     => indices
+            case y :: ys => if (x == y) loop(ys, acc + 1, acc :: indices) else loop(ys, acc + 1, indices)
+        };
+        loop(l, 0, Nil) |> List.reverse |> List.toVector
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = findLeft(f, l)

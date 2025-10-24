@@ -687,6 +687,49 @@ mod TestMutList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        assertEq(expected = Vector#{}, MutList.indicesOf(0, v))
+    }
+
+    @Test
+    def indicesOf02(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{}, MutList.indicesOf(0, MutList.range(rc, 1, 2)))
+    }
+
+    @Test
+    def indicesOf03(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{0}, MutList.indicesOf(1, MutList.range(rc, 1, 2)))
+    }
+
+    @Test
+    def indicesOf04(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{}, MutList.indicesOf(0, MutList.range(rc, 1, 3)))
+    }
+
+    @Test
+    def indicesOf05(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{0}, MutList.indicesOf(1, MutList.range(rc, 1, 3)))
+    }
+
+    @Test
+    def indicesOf06(): Unit \ Assert = region rc {
+        assertEq(expected = Vector#{1}, MutList.indicesOf(2, MutList.range(rc, 1, 3)))
+    }
+
+    @Test
+    def indicesOf07(): Unit \ Assert = region rc {
+        let v = MutList.empty(rc);
+        MutList.push(1, v);
+        MutList.push(1, v);
+        assertEq(expected = Vector#{0, 1}, MutList.indicesOf(1, v))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
