@@ -55,12 +55,12 @@ object Reducer {
   }
 
   /** Returns all types of `root`. */
-  private def allTypes(effects: Map[Symbol.EffSym, JvmAst.Effect], types: Set[SimpleType]): Set[SimpleType] = {
+  private def allTypes(effects: Map[Symbol.EffSym, JvmAst.Effect], defTypes: Set[SimpleType]): Set[SimpleType] = {
     // This is an over approximation of the types in enums and structs since they are erased.
     val enumTypes = SimpleType.ErasedTypes
     val structTypes = SimpleType.ErasedTypes
     val effectTypes = effects.values.toSet.flatMap(typesOfEffect)
-    nestedTypesOf(Set.empty, Queue.from(types ++ enumTypes ++ structTypes ++ effectTypes))
+    nestedTypesOf(Set.empty, Queue.from(defTypes ++ enumTypes ++ structTypes ++ effectTypes))
   }
 
   private def visitDef(d: ErasedAst.Def)(implicit root: ErasedAst.Root, ctx: SharedContext): JvmAst.Def = d match {
@@ -77,9 +77,8 @@ object Reducer {
 
       // Add all types.
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
-      val arrowType = d.arrowType
-      ctx.addDefType(arrowType)
-      ctx.addArrow(arrowType)
+      ctx.addDefType(d.arrowType)
+      ctx.addArrow(d.arrowType)
       ctx.addDefType(unboxedType.tpe)
       // Compute the types in the captured formal parameters.
       for (cp <- cparams) {
@@ -350,9 +349,9 @@ object Reducer {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private class SharedContext {
+  private final class SharedContext {
 
-    private val anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass] = new ConcurrentLinkedQueue[JvmAst.AnonClass]()
+    private val anonClasses: ConcurrentLinkedQueue[JvmAst.AnonClass] = new ConcurrentLinkedQueue()
 
     private val defTypes: ConcurrentHashMap[SimpleType, Unit] = new ConcurrentHashMap()
 

@@ -424,7 +424,7 @@ mod Vector {
     ///
     /// Return the positions of the all the occurrences of `a` in `v`.
     ///
-    pub def indices(a: a, v: Vector[a]): Vector[Int32] with Eq[a] =
+    pub def indicesOf(a: a, v: Vector[a]): Vector[Int32] with Eq[a] =
         findIndices(b -> a == b, v)
 
     ///

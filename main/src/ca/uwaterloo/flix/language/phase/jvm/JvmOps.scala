@@ -155,43 +155,6 @@ object JvmOps {
     }.toList
   }
 
-  /**
-    * Instantiates `tpe` given the variable map `m`.
-    *
-    * Examples:
-    *   - `instantiateType([x -> Int32], x) = Int32`
-    *   - `instantiateType(_, Int32) = Int32`
-    *   - `instantiateType(_, Object) = Object`
-    *   - `instantiateType([x -> String], x) = throw InternalCompilerException`
-    *   - `instantiateType([x -> Int32], y) = throw InternalCompilerException`
-    *   - `instantiateType(_, Option[Int32]) =  throw InternalCompilerException`
-    *
-    * @param m   Decides types for variables, must only contain erased types.
-    * @param tpe the type to instantiate, must be a polymorphic erased type
-    *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
-    */
-  private def instantiateType(m: Map[Symbol.KindedTypeVarSym, SimpleType], tpe: Type)(implicit root: Root): BackendType = tpe match {
-    case Type.Var(sym, _) => BackendType.toBackendType(m(sym))
-    case Type.Cst(tc, _) => tc match {
-      case TypeConstructor.Bool => BackendType.Bool
-      case TypeConstructor.Char => BackendType.Char
-      case TypeConstructor.Float32 => BackendType.Float32
-      case TypeConstructor.Float64 => BackendType.Float64
-      case TypeConstructor.Int8 => BackendType.Int8
-      case TypeConstructor.Int16 => BackendType.Int16
-      case TypeConstructor.Int32 => BackendType.Int32
-      case TypeConstructor.Int64 => BackendType.Int64
-      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendType.Object
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    }
-    case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-  }
-
   /** Returns the set of extensible tag types in `types` without searching recursively. */
   def getExtensibleTagTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.TagType] =
     types.foldLeft(Set.empty[BackendObjType.TagType]) {
