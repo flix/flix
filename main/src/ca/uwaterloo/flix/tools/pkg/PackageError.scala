@@ -110,13 +110,17 @@ object PackageError {
   /**
     * An error raised when the dependency graph itself is inconsistent w.r.t. trust levels.
     *
-    * @param origDep the dependency that requires more trust than what is allowed by the declaring manifest.
-    * @param trust   the maximum allowed trust level.
+    * @param manifest   the manifest that declares [[dependency]].
+    * @param dependency the dependency that requires more trust than what is allowed by the declaring manifest.
+    * @param trust      the maximum allowed trust level.
     */
-  case class TrustGraphError(origDep: FlixDependency, trust: Trust) extends PackageError {
+  case class TrustGraphError(manifest: Manifest, dependency: FlixDependency, trust: Trust) extends PackageError {
+
+    private val formattedDep = s"${dependency.repo.toString.toLowerCase}:${dependency.username}/${dependency.projectName} (v${dependency.version})"
+
     override def message(f: Formatter): String =
       s"""Found trust inconsistency in the dependency graph:
-         |  Dependency '${origDep}' of package ${???} requires trust '${origDep.trust}' but '${trust}' was given.
+         |  Dependency '$formattedDep' of package ${manifest.name} requires trust '${dependency.trust}' but '$trust' was given.
          |""".stripMargin
   }
 

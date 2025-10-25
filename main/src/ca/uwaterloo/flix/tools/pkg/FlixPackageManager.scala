@@ -271,7 +271,7 @@ object FlixPackageManager {
     */
   private def findTrustViolations(m: Manifest, t: Trust): List[PackageError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
-    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(d, t))
+    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(m, d, t))
     t match {
       case Trust.Plain =>
         // No maven or jar deps allowed
