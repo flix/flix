@@ -23,12 +23,17 @@ object Dependency {
 
   case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, trust: Trust) extends Dependency {
     override def toString: String = {
-      s"${repo.toString.toLowerCase}:$username/$projectName = { version = \"$version\", trust = \"$trust\" }"
+      val r = repo.toString.toLowerCase
+      s"\"$r:$username/$projectName\" = { \"version\" = \"$version\", \"trust\" = \"$trust\" }"
     }
   }
 
-  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency
+  case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency {
+    override def toString: String = s"\"$groupId:$artifactId\" = \"$versionTag\""
+  }
 
-  case class JarDependency(url: URL, fileName: String) extends Dependency
+  case class JarDependency(url: URL, fileName: String) extends Dependency {
+    override def toString: String = s"\"$fileName\" = \"$url\""
+  }
 
 }
