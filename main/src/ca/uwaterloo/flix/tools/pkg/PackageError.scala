@@ -115,6 +115,8 @@ object PackageError {
     * @param trust      the maximum allowed trust level.
     */
   case class TrustGraphError(manifest: Manifest, dependency: FlixDependency, trust: Trust) extends PackageError {
+    // TODO: Show the offending original dependency/-ies (from origin manifest)
+    // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String =
       s"""${f.underline("trust inconsistency in the dependency graph:")}
          |  Dependency '$dependency' of package ${manifest.name} requires trust '${dependency.trust}' but trust '$trust' was given.
@@ -133,6 +135,8 @@ object PackageError {
     * @param trust   the maximum allowed trust level.
     */
   case class IllegalJavaDependencyAtTrustLevel(manifest: Manifest, dependency: Dependency, trust: Trust) extends PackageError {
+    // TODO: Show the offending original dependency/-ies (from origin manifest)
+    // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String =
       s"""Found trust inconsistency in the dependency graph:
          |  Project '${manifest.name}' declares Java dependency '$dependency' which requires trust '${Trust.Unrestricted}' but only $trust was given.
