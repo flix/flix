@@ -538,7 +538,7 @@ mod RichString {
     /// Returns a `RichString` with the given text `x` in red color.
     ///
     pub def red(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
-        withColor(Color.Rgb(205, 49, 49), x)
+        withColor(Color.Rgb(220, 105, 105), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in green color.
@@ -562,7 +562,7 @@ mod RichString {
     /// Returns a `RichString` with the given text `x` in magenta color.
     ///
     pub def magenta(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
-        withColor(Color.Rgb(188, 63, 188), x)
+        withColor(Color.Rgb(210, 125, 210), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in cyan color.
