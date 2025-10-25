@@ -296,6 +296,10 @@ mod RichString {
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + text(", ") + format(x10) + gray(")")
     }
 
+    instance Formattable[a -> b \ ef] {
+        pub def format(_f: a -> b \ ef): RichString = text("<lambda>")
+    }
+
     ///
     /// Returns an empty `RichString`.
     ///
