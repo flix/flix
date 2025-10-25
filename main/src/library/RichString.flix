@@ -189,7 +189,7 @@ mod RichString {
             let pairs = Map.toList(x);
             let entries = joinWith(
                 match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
-                text(", "),
+                gray(", "),
                 pairs
             );
             gray("Map#{") + entries + gray("}")
@@ -199,7 +199,7 @@ mod RichString {
         type Aef = Formattable.Aef[a]
         pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
             let elements = Set.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("Set#{") + entries + gray("}")
     }
 
@@ -207,7 +207,7 @@ mod RichString {
         type Aef = Formattable.Aef[a]
         pub def format(x: Vector[a]): RichString \ Formattable.Aef[a] =
             let elements = Vector.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("Vector#{") + entries + gray(")")
     }
 
@@ -243,7 +243,7 @@ mod RichString {
             let pairs = MultiMap.toList(x);
             let entries = joinWith(
                 match (k, vs) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(vs),
-                text(", "),
+                gray(", "),
                 pairs
             );
             gray("MultiMap#{") + entries + gray("}")
@@ -254,7 +254,7 @@ mod RichString {
         pub def format(t: (a1, a2)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2]) =
             use Formattable.format;
             let (x1, x2) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3)] with Formattable[a1], Formattable[a2], Formattable[a3] {
@@ -262,7 +262,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3]) =
             use Formattable.format;
             let (x1, x2, x3) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4] {
@@ -270,7 +270,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4]) =
             use Formattable.format;
             let (x1, x2, x3, x4) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5] {
@@ -278,7 +278,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6] {
@@ -286,7 +286,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7] {
@@ -294,7 +294,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8] {
@@ -302,7 +302,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9] {
@@ -310,7 +310,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(", ") + format(x9) + gray(")")
     }
 
     // TODO: Check performance here
@@ -319,7 +319,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9] + Formattable.Aef[a10]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t;
-            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + text(", ") + format(x10) + gray(")")
+            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(", ") + format(x9) + gray(", ") + format(x10) + gray(")")
     }
 
     instance Formattable[a -> b \ ef] {
@@ -330,7 +330,7 @@ mod RichString {
         type Aef = Formattable.Aef[a] + r
         pub def format(x: Array[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = Array.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("Array[") + entries + gray("]")
     }
 
@@ -345,7 +345,7 @@ mod RichString {
         type Aef = Formattable.Aef[a] + r
         pub def format(x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = MutList.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("MutList[") + entries + gray("]")
     }
 
@@ -353,7 +353,7 @@ mod RichString {
         type Aef = Formattable.Aef[a] + r
         pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = MutDeque.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("MutDeque[") + entries + gray("]")
     }
 
@@ -361,7 +361,7 @@ mod RichString {
         type Aef = Formattable.Aef[t] + r
         pub def format(x: MutSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
             let elements = MutSet.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("MutSet#{") + entries + gray("}")
     }
 
@@ -369,7 +369,7 @@ mod RichString {
         type Aef = Formattable.Aef[t] + r
         pub def format(x: MutHashSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
             let elements = MutHashSet.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("MutHashSet#{") + entries + gray("}")
     }
 
@@ -377,7 +377,7 @@ mod RichString {
         type Aef = Formattable.Aef[a] + r
         pub def format(x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = MutPriorityQueue.toList(x);
-            let entries = join(text(", "), elements);
+            let entries = join(gray(", "), elements);
             gray("MutPriorityQueue[") + entries + gray("]")
     }
 
@@ -387,7 +387,7 @@ mod RichString {
             let pairs = MutMap.toList(x);
             let entries = joinWith(
                 match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
-                text(", "),
+                gray(", "),
                 pairs
             );
             gray("MutMap#{") + entries + gray("}")
@@ -399,7 +399,7 @@ mod RichString {
             let pairs = MutHashMap.toList(x);
             let entries = joinWith(
                 match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
-                text(", "),
+                gray(", "),
                 pairs
             );
             gray("MutHashMap#{") + entries + gray("}")
