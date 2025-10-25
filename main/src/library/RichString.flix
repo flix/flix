@@ -696,7 +696,7 @@ mod RichString {
     ///
     /// The returned string includes ANSI color and style codes for terminal display.
     ///
-    pub def toAnsiString(rs: RichString): String = match rs {
+    def toAnsiString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> {
                 // Collect all codes in a list
@@ -731,16 +731,21 @@ mod RichString {
     /// - COLORTERM=truecolor indicates 24-bit color support
     /// - WT_SESSION indicates Windows Terminal
     /// - TERM containing "256", "ansi", "xterm", or "screen" indicates ANSI support
+    /// - XPC_SERVICE_NAME containing "intellij" indicates IntelliJ IDEA
     ///
     def isColorTerm(): Bool = unchecked_cast({
-        let isTrueColor = Environment.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
-        let isWindowsTerminal = not (Environment.getVar("WT_SESSION") |> Option.isEmpty);
-        let isAnsiTerminal = Environment.getVar("TERM") |>
-            Option.exists(p ->
-                let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
-                List.exists(s -> String.contains({substr = s}, p), keywords)
-            );
-        isTrueColor or isWindowsTerminal or isAnsiTerminal
+        run {
+            let isTrueColor = Environment.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
+            let isWindowsTerminal = not (Environment.getVar("WT_SESSION") |> Option.isEmpty);
+            let isAnsiTerminal = Environment.getVar("TERM") |>
+                Option.exists(p ->
+                    let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
+                    List.exists(s -> String.contains({substr = s}, p), keywords)
+                );
+            let isIntelliJ = Environment.getVar("XPC_SERVICE_NAME") |>
+                Option.exists(p -> String.contains({substr = "intellij"}, String.toLowerCase(p)));
+            isTrueColor or isWindowsTerminal or isAnsiTerminal or isIntelliJ
+            } with Environment.runWithIO
         } as _ \ {})
 
 }

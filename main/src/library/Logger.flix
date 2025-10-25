@@ -74,7 +74,7 @@ mod Logger {
                     case Severity.Fatal => bold(red("[Fatal]"))
                 };
                 let output = prefix + text(" ") + m;
-                println(RichString.toAnsiString(output));
+                println(RichString.toString(output));
                 k()
             }
         }

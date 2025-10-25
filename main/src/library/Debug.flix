@@ -39,7 +39,7 @@ mod Debug {
     ///
     pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
-        let s = RichString.toAnsiString(rs);
+        let s = RichString.toString(rs);
         unchecked_cast({System.out.print(s)} as _ \ Debug)
 
     ///
@@ -47,7 +47,7 @@ mod Debug {
     ///
     pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
-        let s = RichString.toAnsiString(rs);
+        let s = RichString.toString(rs);
         unchecked_cast({System.out.println(s)} as _ \ Debug)
 
     ///
