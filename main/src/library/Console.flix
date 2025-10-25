@@ -27,22 +27,22 @@ eff Console {
     ///
     /// Prints the given string `s` to the standard out.
     ///
-    def print(s: RichString): Unit
+    def print(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard err.
     ///
-    def eprint(s: RichString): Unit
+    def eprint(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard out followed by a new line.
     ///
-    def println(s: RichString): Unit
+    def println(s: String): Unit
 
     ///
     /// Prints the given string `s` to the standard err followed by a new line.
     ///
-    def eprintln(s: RichString): Unit
+    def eprintln(s: String): Unit
 
 }
 
@@ -60,10 +60,10 @@ mod Console {
             f(x)
         } with handler Console {
             def readln(k)      = { k(System.console().readLine()) }
-            def print(s, k)    = { System.out.print(RichString.toAnsiString(s)); System.out.flush(); k() }
-            def eprint(s, k)   = { System.err.print(RichString.toAnsiString(s)); System.err.flush(); k() }
-            def println(s, k)  = { System.out.println(RichString.toAnsiString(s)); System.out.flush(); k() }
-            def eprintln(s, k) = { System.err.println(RichString.toAnsiString(s)); System.err.flush(); k() }
+            def print(s, k)    = { System.out.print(s); System.out.flush(); k() }
+            def eprint(s, k)   = { System.err.print(s); System.err.flush(); k() }
+            def println(s, k)  = { System.out.println(s); System.out.flush(); k() }
+            def eprintln(s, k) = { System.err.println(s); System.err.flush(); k() }
         }
 
     ///
