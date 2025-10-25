@@ -86,15 +86,15 @@ mod RichString {
     }
 
     instance Formattable[Unit] {
-        pub def format(_x: Unit): RichString = gray("()")
+        pub def format(_x: Unit): RichString = magenta("()")
     }
 
     instance Formattable[Bool] {
-        pub def format(x: Bool): RichString = fromString(ToString.toString(x))
+        pub def format(x: Bool): RichString = magenta(ToString.toString(x))
     }
 
     instance Formattable[Char] {
-        pub def format(x: Char): RichString = fromString(ToString.toString(x))
+        pub def format(x: Char): RichString = magenta(ToString.toString(x))
     }
 
     instance Formattable[Int8] {
@@ -102,7 +102,7 @@ mod RichString {
             if (x == Int8.minValue() or x == Int8.maxValue())
                 red(ToString.toString(x))
             else
-                fromString(ToString.toString(x))
+                magenta(ToString.toString(x))
     }
 
     instance Formattable[Int16] {
@@ -110,7 +110,7 @@ mod RichString {
             if (x == Int16.minValue() or x == Int16.maxValue())
                 red(ToString.toString(x))
             else
-                fromString(ToString.toString(x))
+                magenta(ToString.toString(x))
     }
 
     instance Formattable[Int32] {
@@ -118,7 +118,7 @@ mod RichString {
             if (x == Int32.minValue() or x == Int32.maxValue())
                 red(ToString.toString(x))
             else
-                fromString(ToString.toString(x))
+                magenta(ToString.toString(x))
     }
 
     instance Formattable[Int64] {
@@ -126,7 +126,7 @@ mod RichString {
             if (x == Int64.minValue() or x == Int64.maxValue())
                 red(ToString.toString(x))
             else
-                fromString(ToString.toString(x))
+                magenta(ToString.toString(x))
     }
 
     instance Formattable[Float32] {
@@ -136,7 +136,7 @@ mod RichString {
             else if (Float32.isInfinite(x))
                 yellow(ToString.toString(x))
             else
-                fromString(ToString.toString(x))
+                magenta(ToString.toString(x))
     }
 
     instance Formattable[Float64] {
@@ -146,7 +146,7 @@ mod RichString {
             else if (Float64.isInfinite(x))
                 yellow(ToString.toString(x))
             else
-                fromString(ToString.toString(x))
+                magenta(ToString.toString(x))
     }
 
     instance Formattable[String] {
@@ -154,11 +154,11 @@ mod RichString {
     }
 
     instance Formattable[BigInt] {
-        pub def format(x: BigInt): RichString = fromString(ToString.toString(x))
+        pub def format(x: BigInt): RichString = magenta(ToString.toString(x))
     }
 
     instance Formattable[BigDecimal] {
-        pub def format(x: BigDecimal): RichString = fromString(ToString.toString(x))
+        pub def format(x: BigDecimal): RichString = magenta(ToString.toString(x))
     }
 
     instance Formattable[Option[a]] with Formattable[a] {
