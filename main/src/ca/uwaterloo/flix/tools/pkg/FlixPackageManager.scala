@@ -29,14 +29,36 @@ import scala.util.Using
 
 object FlixPackageManager {
 
+  /**
+    * Represents the dependency resolution of [[origin]].
+    * All fields should be considered private except [[origin]] and [[manifests]].
+    *
+    * @param origin              the manifest that corresponds to the current / local project.
+    * @param manifests           all manifests in the resolution.
+    * @param immediateDependents all immediate dependents / parents of each manifest.
+    * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
+    *                            A manifest is the resource a flix dependency resolves to.
+    */
   case class Resolution(origin: Manifest,
                         manifests: List[Manifest],
                         immediateDependents: Map[Manifest, List[Manifest]],
                         manifestToFlixDeps: ListMap[Manifest, FlixDependency])
 
+  /**
+    * Represents the dependency resolution of [[origin]] where the maximum trust level has been computed
+    * for each manifest.
+    *
+    * @param origin             the manifest that corresponds to the current / local project.
+    * @param trust              the maximum allowed trust level of each manifest.
+    * @param manifestToFlixDeps a mapping from [[Manifest]]s to [[FlixDependency]]s.
+    *                           A manifest is the resource a flix dependency resolves to.
+    */
   case class TrustResolution(origin: Manifest,
                              trust: Map[Manifest, Trust],
                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
+    /**
+      * all manifests in the resolution.
+      */
     val manifests: List[Manifest] = trust.keys.toList
   }
 
