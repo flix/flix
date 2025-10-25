@@ -73,7 +73,12 @@ mod RichString {
     /// A trait for types that can be formatted as a `RichString`.
     ///
     pub trait Formattable[a] {
-        pub def format(x: a): RichString
+        ///
+        /// The associated effect of the Formattable which represents the effect of formatting.
+        ///
+        type Aef[a]: Eff = {}
+
+        pub def format(x: a): RichString \ Formattable.Aef[a]
     }
 
     instance Formattable[RichString] {
@@ -157,26 +162,30 @@ mod RichString {
     }
 
     instance Formattable[Option[a]] with Formattable[a] {
-        pub def format(x: Option[a]): RichString = match x {
+        type Aef = Formattable.Aef[a]
+        pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
             case None    => gray("None")
             case Some(v) => text("Some(") + Formattable.format(v) + text(")")
         }
     }
 
     instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
-        pub def format(x: Result[e, t]): RichString = match x {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+        pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
             case Ok(v)  => text("Ok(") + Formattable.format(v) + text(")")
             case Err(e) => red("Err(") + Formattable.format(e) + red(")")
         }
     }
 
     instance Formattable[List[a]] with Formattable[a] {
-        pub def format(x: List[a]): RichString =
+        type Aef = Formattable.Aef[a]
+        pub def format(x: List[a]): RichString \ Formattable.Aef[a] =
             join(gray(" :: "), x)
     }
 
     instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
-        pub def format(x: Map[k, v]): RichString =
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+        pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
             let pairs = Map.toList(x);
             let entries = joinWith(
                 match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
@@ -187,43 +196,50 @@ mod RichString {
     }
 
     instance Formattable[Set[a]] with Formattable[a] {
-        pub def format(x: Set[a]): RichString =
+        type Aef = Formattable.Aef[a]
+        pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
             let elements = Set.toList(x);
             let entries = join(text(", "), elements);
             gray("Set#{") + entries + gray("}")
     }
 
     instance Formattable[Vector[a]] with Formattable[a] {
-        pub def format(x: Vector[a]): RichString =
+        type Aef = Formattable.Aef[a]
+        pub def format(x: Vector[a]): RichString \ Formattable.Aef[a] =
             let elements = Vector.toList(x);
             let entries = join(text(", "), elements);
-            gray("Vector#{") + entries + gray("}")
+            gray("Vector#{") + entries + gray(")")
     }
 
     instance Formattable[Nel[a]] with Formattable[a] {
-        pub def format(x: Nel[a]): RichString =
+        type Aef = Formattable.Aef[a]
+        pub def format(x: Nel[a]): RichString \ Formattable.Aef[a] =
             join(gray(" :: "), Nel.toList(x))
     }
 
     instance Formattable[Nec[a]] with Formattable[a] {
-        pub def format(x: Nec[a]): RichString =
+        type Aef = Formattable.Aef[a]
+        pub def format(x: Nec[a]): RichString \ Formattable.Aef[a] =
             join(gray(" :: "), Nec.toList(x))
     }
 
     instance Formattable[Chain[a]] with Formattable[a] {
-        pub def format(x: Chain[a]): RichString =
+        type Aef = Formattable.Aef[a]
+        pub def format(x: Chain[a]): RichString \ Formattable.Aef[a] =
             join(gray(" :: "), Chain.toList(x))
     }
 
     instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
-        pub def format(x: Validation[e, t]): RichString = match x {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+        pub def format(x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
             case Validation.Success(v) => text("Success(") + Formattable.format(v) + text(")")
             case Validation.Failure(e) => red("Failure(") + Formattable.format(e) + red(")")
         }
     }
 
     instance Formattable[MultiMap[k, v]] with Formattable[k], Formattable[v] {
-        pub def format(x: MultiMap[k, v]): RichString =
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+        pub def format(x: MultiMap[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
             let pairs = MultiMap.toList(x);
             let entries = joinWith(
                 match (k, vs) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(vs),
@@ -234,63 +250,72 @@ mod RichString {
     }
 
     instance Formattable[(a1, a2)] with Formattable[a1], Formattable[a2] {
-        pub def format(t: (a1, a2)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2]
+        pub def format(t: (a1, a2)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2]) =
             use Formattable.format;
             let (x1, x2) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3)] with Formattable[a1], Formattable[a2], Formattable[a3] {
-        pub def format(t: (a1, a2, a3)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3]
+        pub def format(t: (a1, a2, a3)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3]) =
             use Formattable.format;
             let (x1, x2, x3) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4] {
-        pub def format(t: (a1, a2, a3, a4)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4]
+        pub def format(t: (a1, a2, a3, a4)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4]) =
             use Formattable.format;
             let (x1, x2, x3, x4) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5] {
-        pub def format(t: (a1, a2, a3, a4, a5)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5]
+        pub def format(t: (a1, a2, a3, a4, a5)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6] {
-        pub def format(t: (a1, a2, a3, a4, a5, a6)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6]
+        pub def format(t: (a1, a2, a3, a4, a5, a6)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7] {
-        pub def format(t: (a1, a2, a3, a4, a5, a6, a7)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7]
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8] {
-        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8]
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9] {
-        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9]
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + gray(")")
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9], Formattable[a10] {
-        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): RichString =
+        type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9] + Formattable.Aef[a10]
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9] + Formattable.Aef[a10]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t;
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + text(", ") + format(x10) + gray(")")
@@ -309,7 +334,7 @@ mod RichString {
     ///
     /// Returns a `RichString` with the given text `x` using default colors and normal style.
     ///
-    pub def text(x: a): RichString with Formattable[a] =
+    pub def text(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         Formattable.format(x)
 
     ///
@@ -322,7 +347,7 @@ mod RichString {
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given foreground color `c`.
     ///
-    pub def withColor(c: Color, x: a): RichString with Formattable[a] =
+    pub def withColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
             Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}), rs)
@@ -330,7 +355,7 @@ mod RichString {
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given background color `c`.
     ///
-    pub def withBgColor(c: Color, x: a): RichString with Formattable[a] =
+    pub def withBgColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
             Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}), rs)
@@ -338,7 +363,7 @@ mod RichString {
     ///
     /// Returns a `RichString` from given text `x` with the given `style` in addition to any other styles it already has.
     ///
-    pub def withStyle(style: Style, x: a): RichString with Formattable[a] =
+    pub def withStyle(style: Style, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
             Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}), rs)
@@ -358,121 +383,121 @@ mod RichString {
     ///
     /// Returns a `RichString` with the given text `x` in black color.
     ///
-    pub def black(x: a): RichString with Formattable[a] =
+    pub def black(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(0, 0, 0), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in gray color.
     ///
-    pub def gray(x: a): RichString with Formattable[a] =
+    pub def gray(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(128, 128, 128), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in red color.
     ///
-    pub def red(x: a): RichString with Formattable[a] =
+    pub def red(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(205, 49, 49), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in green color.
     ///
-    pub def green(x: a): RichString with Formattable[a] =
+    pub def green(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(13, 188, 121), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in yellow color.
     ///
-    pub def yellow(x: a): RichString with Formattable[a] =
+    pub def yellow(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(229, 192, 123), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in blue color.
     ///
-    pub def blue(x: a): RichString with Formattable[a] =
+    pub def blue(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(36, 114, 200), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in magenta color.
     ///
-    pub def magenta(x: a): RichString with Formattable[a] =
+    pub def magenta(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(188, 63, 188), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in cyan color.
     ///
-    pub def cyan(x: a): RichString with Formattable[a] =
+    pub def cyan(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(17, 168, 205), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in white color.
     ///
-    pub def white(x: a): RichString with Formattable[a] =
+    pub def white(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(255, 255, 255), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on black background.
     ///
-    pub def bgBlack(x: a): RichString with Formattable[a] =
+    pub def bgBlack(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(0, 0, 0), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on gray background.
     ///
-    pub def bgGray(x: a): RichString with Formattable[a] =
+    pub def bgGray(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(128, 128, 128), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on red background.
     ///
-    pub def bgRed(x: a): RichString with Formattable[a] =
+    pub def bgRed(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(205, 49, 49), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on green background.
     ///
-    pub def bgGreen(x: a): RichString with Formattable[a] =
+    pub def bgGreen(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(13, 188, 121), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on yellow background.
     ///
-    pub def bgYellow(x: a): RichString with Formattable[a] =
+    pub def bgYellow(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(229, 192, 123), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on blue background.
     ///
-    pub def bgBlue(x: a): RichString with Formattable[a] =
+    pub def bgBlue(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(36, 114, 200), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on magenta background.
     ///
-    pub def bgMagenta(x: a): RichString with Formattable[a] =
+    pub def bgMagenta(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(188, 63, 188), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on cyan background.
     ///
-    pub def bgCyan(x: a): RichString with Formattable[a] =
+    pub def bgCyan(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(17, 168, 205), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on white background.
     ///
-    pub def bgWhite(x: a): RichString with Formattable[a] =
+    pub def bgWhite(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(255, 255, 255), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in bold style.
     ///
-    pub def bold(x: a): RichString with Formattable[a] =
+    pub def bold(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Bold, x)
 
     ///
     /// Returns a `RichString` with the given text `x` in underline style.
     ///
-    pub def underline(x: a): RichString with Formattable[a] =
+    pub def underline(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Underline, x)
 
     ///
@@ -490,7 +515,7 @@ mod RichString {
     ///
     /// Uses the Formattable trait to format each element.
     ///
-    pub def join(sep: RichString, xs: t[a]): RichString \ Foldable.Aef[t] with Formattable[a], Foldable[t] =
+    pub def join(sep: RichString, xs: t[a]): RichString \ (Formattable.Aef[a] + Foldable.Aef[t]) with Formattable[a], Foldable[t] =
         joinWith(Formattable.format, sep, xs)
 
     ///
