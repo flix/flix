@@ -313,6 +313,7 @@ mod RichString {
             gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + gray(")")
     }
 
+    // TODO: Check performance here
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9], Formattable[a10] {
         type Aef = Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9] + Formattable.Aef[a10]
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9] + Formattable.Aef[a10]) =
@@ -323,6 +324,85 @@ mod RichString {
 
     instance Formattable[a -> b \ ef] {
         pub def format(_f: a -> b \ ef): RichString = text("<lambda>")
+    }
+
+    instance Formattable[Array[a, r]] with Formattable[a] {
+        type Aef = Formattable.Aef[a] + r
+        pub def format(x: Array[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            let elements = Array.toList(x);
+            let entries = join(text(", "), elements);
+            gray("Array[") + entries + gray("]")
+    }
+
+    instance Formattable[Ref[a, r]] with Formattable[a] {
+        type Aef = Formattable.Aef[a] + r
+        pub def format(x: Ref[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            let value = Ref.get(x);
+            gray("Ref(") + Formattable.format(value) + gray(")")
+    }
+
+    instance Formattable[MutList[a, r]] with Formattable[a] {
+        type Aef = Formattable.Aef[a] + r
+        pub def format(x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            let elements = MutList.toList(x);
+            let entries = join(text(", "), elements);
+            gray("MutList[") + entries + gray("]")
+    }
+
+    instance Formattable[MutDeque[a, r]] with Formattable[a] {
+        type Aef = Formattable.Aef[a] + r
+        pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            let elements = MutDeque.toList(x);
+            let entries = join(text(", "), elements);
+            gray("MutDeque[") + entries + gray("]")
+    }
+
+    instance Formattable[MutSet[t, r]] with Formattable[t] {
+        type Aef = Formattable.Aef[t] + r
+        pub def format(x: MutSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
+            let elements = MutSet.toList(x);
+            let entries = join(text(", "), elements);
+            gray("MutSet#{") + entries + gray("}")
+    }
+
+    instance Formattable[MutHashSet[t, r]] with Formattable[t] {
+        type Aef = Formattable.Aef[t] + r
+        pub def format(x: MutHashSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
+            let elements = MutHashSet.toList(x);
+            let entries = join(text(", "), elements);
+            gray("MutHashSet#{") + entries + gray("}")
+    }
+
+    instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
+        type Aef = Formattable.Aef[a] + r
+        pub def format(x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
+            let elements = MutPriorityQueue.toList(x);
+            let entries = join(text(", "), elements);
+            gray("MutPriorityQueue[") + entries + gray("]")
+    }
+
+    instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+        pub def format(x: MutMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+            let pairs = MutMap.toList(x);
+            let entries = joinWith(
+                match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
+                text(", "),
+                pairs
+            );
+            gray("MutMap#{") + entries + gray("}")
+    }
+
+    instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+        pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+            let pairs = MutHashMap.toList(x);
+            let entries = joinWith(
+                match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
+                text(", "),
+                pairs
+            );
+            gray("MutHashMap#{") + entries + gray("}")
     }
 
     ///
