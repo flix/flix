@@ -164,7 +164,7 @@ mod RichString {
     instance Formattable[Option[a]] with Formattable[a] {
         type Aef = Formattable.Aef[a]
         pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
-            case None    => gray("None")
+            case None    => text("None")
             case Some(v) => text("Some") + lparen() + Formattable.format(v) + rparen()
         }
     }
