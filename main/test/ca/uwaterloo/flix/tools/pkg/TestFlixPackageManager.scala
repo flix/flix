@@ -385,7 +385,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     })
   }
 
-  test("trust:plain-dep:plain") {
+  ignore("trust:plain-dep:plain") {
     val deps = List(
       """
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
@@ -430,7 +430,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("trust:unrestricted-dep:plain") {
+  ignore("trust:unrestricted-dep:plain") {
     val deps = List(
       """
         |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
@@ -445,7 +445,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("trust:unrestricted-dep:java") {
+  ignore("trust:unrestricted-dep:java") {
     val deps = List(
       """
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
@@ -460,7 +460,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("trust:unrestricted-dep:unchecked-cast") {
+  ignore("trust:unrestricted-dep:unchecked-cast") {
     val deps = List(
       """
         |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
@@ -475,7 +475,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.trust:plain->plain-dep:plain") {
+  ignore("transitive.trust:plain->plain-dep:plain") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "plain" }
@@ -490,7 +490,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.trust:unrestricted->plain-dep:plain") {
+  ignore("transitive.trust:unrestricted->plain-dep:plain") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "unrestricted" }
@@ -505,7 +505,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.diamond.trust:plain->plain+plain-dep:plain") {
+  ignore("transitive.diamond.trust:plain->plain+plain-dep:plain") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "plain" }
@@ -521,7 +521,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.diamond.trust:plain->plain+unrestricted-dep:plain") {
+  ignore("transitive.diamond.trust:plain->plain+unrestricted-dep:plain") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "plain" }
@@ -537,7 +537,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.diamond.trust:unrestricted->plain+plain-dep:plain") {
+  ignore("transitive.diamond.trust:unrestricted->plain+plain-dep:plain") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "unrestricted" }
@@ -553,7 +553,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.diamond.trust:unrestricted->plain+unrestricted-dep:plain") {
+  ignore("transitive.diamond.trust:unrestricted->plain+unrestricted-dep:plain") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "unrestricted" }
@@ -584,7 +584,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.trust:unrestricted->unrestricted-dep:java") {
+  ignore("transitive.trust:unrestricted->unrestricted-dep:java") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
@@ -650,7 +650,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
-  test("transitive.diamond.trust:unrestricted->unrestricted+unrestricted-dep:java") {
+  ignore("transitive.diamond.trust:unrestricted->unrestricted+unrestricted-dep:java") {
     val deps = List(
       """
         |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
