@@ -294,6 +294,11 @@ mod MutList {
         loop(0, Nil) |> List.reverse |> List.toVector
 
     ///
+    /// Returns a range of all valid indices of the mutable list `v`.
+    ///
+    pub def indices(v: MutList[a, r]): Range[Int32] \ r = Range.Range(0, v->length)
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool, v: MutList[a, r]): Option[a] \ r =

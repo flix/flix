@@ -212,6 +212,16 @@ mod TestList {
     def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, List.indicesOf(1, 1 :: 1 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), List.indices(Nil))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), List.indices(1 :: 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test

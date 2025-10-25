@@ -291,6 +291,11 @@ mod List {
         loop(l, 0, Nil) |> List.reverse |> List.toVector
 
     ///
+    /// Returns a range of all valid indices of the list `l`.
+    ///
+    pub def indices(l: List[a]): Range[Int32] = Range.Range(0, length(l))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = findLeft(f, l)

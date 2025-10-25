@@ -428,6 +428,11 @@ mod Vector {
         findIndices(b -> a == b, v)
 
     ///
+    /// Returns a range of all valid indices of the vector `v`.
+    ///
+    pub def indices(v: Vector[a]): Range[Int32] = Range.Range(0, length(v))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =

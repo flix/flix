@@ -730,6 +730,20 @@ mod TestMutList {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 0), MutList.indices(MutList.empty(rc)))
+    }
+
+    @Test
+    def indices02(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 3), MutList.indices(MutList.range(rc, 1, 4)))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
