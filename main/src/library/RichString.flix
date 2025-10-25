@@ -364,7 +364,7 @@ mod RichString {
                 gray(", "),
                 pairs
             );
-            blue("MutMap#{") + entries + blue("}")
+            blue("MutMap#{") + bgBlack(entries) + blue("}")
     }
 
     instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
@@ -467,7 +467,7 @@ mod RichString {
             white   = Color.Rgb(255, 255, 255)
         },
         bg = {
-            black   = Color.Rgb(0, 0, 0),
+            black   = Color.Rgb(40, 40, 40),
             gray    = Color.Rgb(128, 128, 128),
             red     = Color.Rgb(205, 49, 49),
             green   = Color.Rgb(13, 188, 121),
