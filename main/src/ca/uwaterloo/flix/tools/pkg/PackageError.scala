@@ -106,11 +106,13 @@ object PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class TrustError(origDep: Dependency, trust: Trust) extends PackageError {
-
-    /**
-      * Returns a human-readable and formatted string representation of this error.
-      */
+  /**
+    * An error raised when the dependency graph itself is inconsistent w.r.t. trust levels.
+    *
+    * @param origDep the dependency that requires more trust than what is allowed by the declaring manifest.
+    * @param trust   the maximum allowed trust level.
+    */
+  case class TrustGraphError(origDep: Dependency, trust: Trust) extends PackageError {
     override def message(f: Formatter): String = s"WIP: $origDep does not respect trust level $trust"
   }
 }

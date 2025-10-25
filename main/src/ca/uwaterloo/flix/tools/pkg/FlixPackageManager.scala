@@ -90,7 +90,7 @@ object FlixPackageManager {
     *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
     *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
     */
-  def checkTrust(resolution: TrustResolution): List[PackageError.TrustError] = {
+  def checkTrust(resolution: TrustResolution): List[PackageError.TrustGraphError] = {
     resolution.trust.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
   }
 
@@ -263,17 +263,22 @@ object FlixPackageManager {
     * A trust error is present if one of the following holds:
     *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
     *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
+    *
+    * Note that the first condition represents an inconsistency in the trust levels of the dependency graph itself.
+    * Such an inconsistency exists if for some path `u ~> v` it holds that `trust(u) >= trust(v)`
+    * and an edge `v -> w` exists where `trust(w) > trust(u)`.
+    * E.g., if an edge with trust `unrestricted` is found on a path with max trust `plain`, then an error exists.
     */
-  private def findTrustViolations(m: Manifest, t: Trust): List[PackageError.TrustError] = {
+  private def findTrustViolations(m: Manifest, t: Trust): List[PackageError.TrustGraphError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
-    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustError(d, t))
+    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(d, t))
     t match {
       case Trust.Plain =>
         // No maven or jar deps allowed
         val dependencyTrustErrors = m.dependencies.collect {
           case d: MavenDependency => d
           case d: JarDependency => d
-        }.map(d => PackageError.TrustError(d, t))
+        }.map(d => PackageError.TrustGraphError(d, t))
         manifestTrustErrors ::: dependencyTrustErrors
 
       case Trust.Unrestricted => manifestTrustErrors
