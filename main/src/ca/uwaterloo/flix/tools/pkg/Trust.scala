@@ -26,7 +26,6 @@ sealed trait Trust {
     * }}}
     */
   def lub(other: Trust): Trust = (this, other) match {
-    // TODO: Add tests
     case (Trust.Plain, Trust.Plain) => Trust.Plain
     case (Trust.Plain, Trust.Unrestricted) => Trust.Unrestricted
     case (Trust.Unrestricted, Trust.Plain) => Trust.Unrestricted
