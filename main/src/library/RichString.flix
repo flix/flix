@@ -26,7 +26,7 @@ instance Add[RichString] {
 }
 
 instance ToString[RichString] {
-    pub def toString(x: RichString): String = RichString.toString(x)
+    pub def toString(x: RichString): String = RichString.toColoredString(x)
 }
 
 instance SemiGroup[RichString] {
@@ -679,14 +679,14 @@ mod RichString {
     /// Otherwise, returns the plain text representation without styling.
     ///
     pub def toColoredString(rs: RichString): String =
-        if (isColorTerm()) toAnsiString(rs) else toString(rs)
+        if (isColorTerm()) toAnsiString(rs) else toPlainString(rs)
 
     ///
     /// Returns the plain text representation of the `RichString` `rs`.
     ///
     /// All styling and color information is discarded.
     ///
-    pub def toString(rs: RichString): String = match rs {
+    def toPlainString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> r#text, "", spans)
     }

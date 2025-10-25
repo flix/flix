@@ -172,7 +172,7 @@ mod Assert {
                     resume()
                 else {
                     println(RichString.toAnsiString(msg));
-                    throw new AssertionError(RichString.toString(msg))
+                    throw new AssertionError(RichString.toColoredString(msg))
                 }
             }
         }
@@ -277,7 +277,7 @@ mod Assert {
                         let input = readln();
                         let trimmed = String.trim(input);
                         if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
-                            throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toString(msg)}")
+                            throw new AssertionError("Execution aborted by user after the following assertion failure: ${RichString.toColoredString(msg)}")
                         else
                             resume()
                     } with Console.runWithIO
