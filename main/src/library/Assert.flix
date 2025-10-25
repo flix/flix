@@ -247,7 +247,7 @@ mod Assert {
                 else {
                     use Console.eprintln;
                     run {
-                        eprintln(RichString.toAnsiString(msg))
+                        eprintln(msg)
                     } with Console.runWithIO;
                     resume()
                 }
@@ -268,12 +268,12 @@ mod Assert {
                 if (cond)
                     resume()
                 else {
-                    use Console.{print, readln};
+                    use Console.{print, readln, println};
                     run {
-                        println("");
-                        println(RichString.toAnsiString(msg));
-                        println("");
-                        print(RichString.toAnsiString(yellow("Continue execution? (Y/n): ")));
+                        println(text(""));
+                        println(msg);
+                        println(text(""));
+                        print(yellow("Continue execution? (Y/n): "));
                         let input = readln();
                         let trimmed = String.trim(input);
                         if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
