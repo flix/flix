@@ -115,12 +115,14 @@ object PackageError {
     * @param trust      the maximum allowed trust level.
     */
   case class TrustGraphError(manifest: Manifest, dependency: FlixDependency, trust: Trust) extends PackageError {
-
-    private val formattedDep = s"${dependency.repo.toString.toLowerCase}:${dependency.username}/${dependency.projectName} (v${dependency.version})"
-
     override def message(f: Formatter): String =
-      s"""Found trust inconsistency in the dependency graph:
-         |  Dependency '$formattedDep' of package ${manifest.name} requires trust '${dependency.trust}' but '$trust' was given.
+      s"""${f.underline("trust inconsistency in the dependency graph:")}
+         |  Dependency '$dependency' of package ${manifest.name} requires trust '${dependency.trust}' but trust '$trust' was given.
+         |
+         |  There are several possible actions:
+         |    - Remove the offending dependency
+         |    - Use a different dependency.
+         |    - Increase trust level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
          |""".stripMargin
   }
 
@@ -130,12 +132,15 @@ object PackageError {
     * @param origDep the dependency that requires more trust than what is allowed by the declaring manifest.
     * @param trust   the maximum allowed trust level.
     */
-  case class IllegalJavaDependencyAtTrustLevel(dep: Dependency, trust: Trust) extends PackageError {
+  case class IllegalJavaDependencyAtTrustLevel(manifest: Manifest, dependency: Dependency, trust: Trust) extends PackageError {
     override def message(f: Formatter): String =
-      s"""Found trust inconsistency in the dependency graph.
+      s"""Found trust inconsistency in the dependency graph:
+         |  Project '${manifest.name}' declares Java dependency '$dependency' which requires trust '${Trust.Unrestricted}' but only $trust was given.
          |
-         |Dependency '${dep}'
-         |
+         |  There are several possible actions:
+         |    - Remove the offending dependency
+         |    - Use a different dependency.
+         |    - Increase trust level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
          |""".stripMargin
   }
 }

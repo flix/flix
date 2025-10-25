@@ -278,7 +278,7 @@ object FlixPackageManager {
         val dependencyTrustErrors = m.dependencies.collect {
           case d: MavenDependency => d
           case d: JarDependency => d
-        }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(d, t))
+        }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(m, d, t))
         manifestTrustErrors ::: dependencyTrustErrors
 
       case Trust.Unrestricted => manifestTrustErrors
