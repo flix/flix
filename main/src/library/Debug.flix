@@ -21,6 +21,8 @@ eff Debug
 
 mod Debug {
 
+    use RichString.Formattable;
+
     import java.lang.Byte
     import java.lang.Double
     import java.lang.Float
@@ -35,20 +37,18 @@ mod Debug {
     ///
     /// Prints `x` to the standard out.
     ///
-    pub def dprint(x: a): Unit \ Debug with ToString[a] =
-        unchecked_cast({
-            let s: String = ToString.toString(x);
-            System.out.print(s)
-        } as _ \ Debug)
+    pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
+        let rs = Formattable.format(x);
+        let s = RichString.toAnsiString(rs);
+        unchecked_cast({System.out.print(s)} as _ \ Debug)
 
     ///
     /// Prints `x` to the standard out followed by a new line.
     ///
-    pub def dprintln(x: a): Unit \ Debug with ToString[a] =
-        unchecked_cast({
-            let s: String = ToString.toString(x);
-            System.out.println(s)
-        } as _ \ Debug)
+    pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
+        let rs = Formattable.format(x);
+        let s = RichString.toAnsiString(rs);
+        unchecked_cast({System.out.println(s)} as _ \ Debug)
 
     ///
     /// Escapes the given string per Flix's escaping rules.
