@@ -165,15 +165,15 @@ mod RichString {
         type Aef = Formattable.Aef[a]
         pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
             case None    => gray("None")
-            case Some(v) => text("Some(") + Formattable.format(v) + text(")")
+            case Some(v) => text("Some") + lparen() + Formattable.format(v) + rparen()
         }
     }
 
     instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
         type Aef = Formattable.Aef[e] + Formattable.Aef[t]
         pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
-            case Ok(v)  => text("Ok(") + Formattable.format(v) + text(")")
-            case Err(e) => red("Err(") + Formattable.format(e) + red(")")
+            case Ok(v)  => green("Ok") + lparen() + Formattable.format(v) + rparen()
+            case Err(e) => red("Err") + lparen() + Formattable.format(e) + rparen()
         }
     }
 
@@ -232,8 +232,8 @@ mod RichString {
     instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
         type Aef = Formattable.Aef[e] + Formattable.Aef[t]
         pub def format(x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
-            case Validation.Success(v) => text("Success(") + Formattable.format(v) + text(")")
-            case Validation.Failure(e) => red("Failure(") + Formattable.format(e) + red(")")
+            case Validation.Success(v) => text("Success") + lparen() + Formattable.format(v) + rparen()
+            case Validation.Failure(e) => red("Failure") + lparen() + Formattable.format(e) + rparen()
         }
     }
 
@@ -254,7 +254,7 @@ mod RichString {
         pub def format(t: (a1, a2)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2]) =
             use Formattable.format;
             let (x1, x2) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + rparen()
     }
 
     instance Formattable[(a1, a2, a3)] with Formattable[a1], Formattable[a2], Formattable[a3] {
@@ -262,7 +262,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3]) =
             use Formattable.format;
             let (x1, x2, x3) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + rparen()
     }
 
     instance Formattable[(a1, a2, a3, a4)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4] {
@@ -270,7 +270,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4]) =
             use Formattable.format;
             let (x1, x2, x3, x4) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + rparen()
     }
 
     instance Formattable[(a1, a2, a3, a4, a5)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5] {
@@ -278,7 +278,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + rparen()
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6] {
@@ -286,7 +286,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + rparen()
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7] {
@@ -294,7 +294,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + rparen()
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8] {
@@ -302,7 +302,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + rparen()
     }
 
     instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9] {
@@ -310,7 +310,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(", ") + format(x9) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(", ") + format(x9) + rparen()
     }
 
     // TODO: Check performance here
@@ -319,7 +319,7 @@ mod RichString {
         pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): RichString \ (Formattable.Aef[a1] + Formattable.Aef[a2] + Formattable.Aef[a3] + Formattable.Aef[a4] + Formattable.Aef[a5] + Formattable.Aef[a6] + Formattable.Aef[a7] + Formattable.Aef[a8] + Formattable.Aef[a9] + Formattable.Aef[a10]) =
             use Formattable.format;
             let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t;
-            gray("(") + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(", ") + format(x9) + gray(", ") + format(x10) + gray(")")
+            lparen() + format(x1) + gray(", ") + format(x2) + gray(", ") + format(x3) + gray(", ") + format(x4) + gray(", ") + format(x5) + gray(", ") + format(x6) + gray(", ") + format(x7) + gray(", ") + format(x8) + gray(", ") + format(x9) + gray(", ") + format(x10) + rparen()
     }
 
     instance Formattable[a -> b \ ef] {
@@ -338,7 +338,7 @@ mod RichString {
         type Aef = Formattable.Aef[a] + r
         pub def format(x: Ref[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let value = Ref.get(x);
-            gray("Ref(") + Formattable.format(value) + gray(")")
+            gray("Ref") + lparen() + Formattable.format(value) + rparen()
     }
 
     instance Formattable[MutList[a, r]] with Formattable[a] {
@@ -428,7 +428,7 @@ mod RichString {
     instance Formattable[IoError] {
         pub def format(x: IoError): RichString =
             let IoError.IoError(kind, msg) = x;
-            red("IoError(") + Formattable.format(kind) + red(", ") + text("\"${msg}\"") + red(")")
+            red("IoError") + lparen() + Formattable.format(kind) + gray(", ") + text("\"${msg}\"") + rparen()
     }
 
     instance Formattable[Ipv4Addr] {
@@ -641,6 +641,18 @@ mod RichString {
     ///
     pub def underline(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Underline, x)
+
+    ///
+    /// Returns a blue left parenthesis.
+    ///
+    def lparen(): RichString =
+        blue("(")
+
+    ///
+    /// Returns a blue right parenthesis.
+    ///
+    def rparen(): RichString =
+        blue(")")
 
     ///
     /// Returns the concatenation of `rs1` and `rs2`.
