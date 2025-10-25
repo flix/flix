@@ -233,6 +233,69 @@ mod RichString {
             gray("MultiMap#{") + entries + gray("}")
     }
 
+    instance Formattable[(a1, a2)] with Formattable[a1], Formattable[a2] {
+        pub def format(t: (a1, a2)): RichString =
+            use Formattable.format;
+            let (x1, x2) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3)] with Formattable[a1], Formattable[a2], Formattable[a3] {
+        pub def format(t: (a1, a2, a3)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4] {
+        pub def format(t: (a1, a2, a3, a4)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4, a5)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5] {
+        pub def format(t: (a1, a2, a3, a4, a5)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4, x5) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4, a5, a6)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6] {
+        pub def format(t: (a1, a2, a3, a4, a5, a6)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4, x5, x6) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4, a5, a6, a7)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7] {
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4, x5, x6, x7) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8] {
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4, x5, x6, x7, x8) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9] {
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4, x5, x6, x7, x8, x9) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + gray(")")
+    }
+
+    instance Formattable[(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)] with Formattable[a1], Formattable[a2], Formattable[a3], Formattable[a4], Formattable[a5], Formattable[a6], Formattable[a7], Formattable[a8], Formattable[a9], Formattable[a10] {
+        pub def format(t: (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)): RichString =
+            use Formattable.format;
+            let (x1, x2, x3, x4, x5, x6, x7, x8, x9, x10) = t;
+            gray("(") + format(x1) + text(", ") + format(x2) + text(", ") + format(x3) + text(", ") + format(x4) + text(", ") + format(x5) + text(", ") + format(x6) + text(", ") + format(x7) + text(", ") + format(x8) + text(", ") + format(x9) + text(", ") + format(x10) + gray(")")
+    }
+
     ///
     /// Returns an empty `RichString`.
     ///
