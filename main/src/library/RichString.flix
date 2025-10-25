@@ -188,7 +188,7 @@ mod RichString {
         pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
             let pairs = Map.toList(x);
             let entries = joinWith(
-                match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
+                match (k, v) -> Formattable.format(k) + gray(" => ") + Formattable.format(v),
                 gray(", "),
                 pairs
             );
@@ -242,7 +242,7 @@ mod RichString {
         pub def format(x: MultiMap[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
             let pairs = MultiMap.toList(x);
             let entries = joinWith(
-                match (k, vs) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(vs),
+                match (k, vs) -> Formattable.format(k) + gray(" => ") + Formattable.format(vs),
                 gray(", "),
                 pairs
             );
@@ -386,7 +386,7 @@ mod RichString {
         pub def format(x: MutMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
             let pairs = MutMap.toList(x);
             let entries = joinWith(
-                match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
+                match (k, v) -> Formattable.format(k) + gray(" => ") + Formattable.format(v),
                 gray(", "),
                 pairs
             );
@@ -398,7 +398,7 @@ mod RichString {
         pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
             let pairs = MutHashMap.toList(x);
             let entries = joinWith(
-                match (k, v) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(v),
+                match (k, v) -> Formattable.format(k) + gray(" => ") + Formattable.format(v),
                 gray(", "),
                 pairs
             );
