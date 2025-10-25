@@ -26,7 +26,7 @@ instance Add[RichString] {
 }
 
 instance ToString[RichString] {
-    pub def toString(x: RichString): String = RichString.toColoredString(x)
+    pub def toString(x: RichString): String = RichString.toString(x)
 }
 
 instance SemiGroup[RichString] {
@@ -678,7 +678,7 @@ mod RichString {
     /// If the terminal supports ANSI colors, returns the string with ANSI escape codes.
     /// Otherwise, returns the plain text representation without styling.
     ///
-    pub def toColoredString(rs: RichString): String =
+    pub def toString(rs: RichString): String =
         if (isColorTerm()) toAnsiString(rs) else toPlainString(rs)
 
     ///
