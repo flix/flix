@@ -57,7 +57,7 @@ object FlixPackageManager {
                              trust: Map[Manifest, Trust],
                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
     /**
-      * all manifests in the resolution.
+      * All manifests in the resolution.
       */
     val manifests: List[Manifest] = trust.keys.toList
   }
