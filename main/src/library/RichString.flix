@@ -673,6 +673,15 @@ mod RichString {
         }
 
     ///
+    /// Returns the string representation of the `RichString` `rs`.
+    ///
+    /// If the terminal supports ANSI colors, returns the string with ANSI escape codes.
+    /// Otherwise, returns the plain text representation without styling.
+    ///
+    pub def toColoredString(rs: RichString): String =
+        if (isColorTerm()) toAnsiString(rs) else toString(rs)
+
+    ///
     /// Returns the plain text representation of the `RichString` `rs`.
     ///
     /// All styling and color information is discarded.
@@ -714,5 +723,24 @@ mod RichString {
                     "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
             }, "", spans)
     }
+
+    ///
+    /// Returns `true` if the terminal supports ANSI colors.
+    ///
+    /// Checks for color support by examining environment variables:
+    /// - COLORTERM=truecolor indicates 24-bit color support
+    /// - WT_SESSION indicates Windows Terminal
+    /// - TERM containing "256", "ansi", "xterm", or "screen" indicates ANSI support
+    ///
+    def isColorTerm(): Bool = unchecked_cast({
+        let isTrueColor = Environment.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
+        let isWindowsTerminal = not (Environment.getVar("WT_SESSION") |> Option.isEmpty);
+        let isAnsiTerminal = Environment.getVar("TERM") |>
+            Option.exists(p ->
+                let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
+                List.exists(s -> String.contains({substr = s}, p), keywords)
+            );
+        isTrueColor or isWindowsTerminal or isAnsiTerminal
+        } as _ \ {})
 
 }
