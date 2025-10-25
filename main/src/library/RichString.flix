@@ -178,8 +178,8 @@ mod RichString {
     instance Formattable[Option[a]] with Formattable[a] {
         type Aef = Formattable.Aef[a]
         pub def formatWithQuote(_quote: Bool, x: Option[a]): RichString \ Formattable.Aef[a] = match x {
-            case None    => text("None")
-            case Some(v) => text("Some") + lparen() + Formattable.formatWithQuote(true, v) + rparen()
+            case None    => blue("None")
+            case Some(v) => blue("Some") + lparen() + Formattable.formatWithQuote(true, v) + rparen()
         }
     }
 
@@ -206,7 +206,7 @@ mod RichString {
                 gray(", "),
                 pairs
             );
-            gray("Map#{") + entries + gray("}")
+            blue("Map#{") + entries + blue("}")
     }
 
     instance Formattable[Set[a]] with Formattable[a] {
@@ -214,7 +214,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: Set[a]): RichString \ Formattable.Aef[a] =
             let elements = Set.toList(x);
             let entries = join(gray(", "), elements);
-            gray("Set#{") + entries + gray("}")
+            blue("Set#{") + entries + blue("}")
     }
 
     instance Formattable[Vector[a]] with Formattable[a] {
@@ -222,7 +222,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: Vector[a]): RichString \ Formattable.Aef[a] =
             let elements = Vector.toList(x);
             let entries = join(gray(", "), elements);
-            gray("Vector#{") + entries + gray(")")
+            blue("Vector#{") + entries + blue(")")
     }
 
     instance Formattable[Nel[a]] with Formattable[a] {
@@ -246,7 +246,7 @@ mod RichString {
     instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
         type Aef = Formattable.Aef[e] + Formattable.Aef[t]
         pub def formatWithQuote(_quote: Bool, x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
-            case Validation.Success(v) => text("Success") + lparen() + Formattable.formatWithQuote(true, v) + rparen()
+            case Validation.Success(v) => blue("Success") + lparen() + Formattable.formatWithQuote(true, v) + rparen()
             case Validation.Failure(e) => red("Failure") + lparen() + Formattable.formatWithQuote(true, e) + rparen()
         }
     }
@@ -260,7 +260,7 @@ mod RichString {
                 gray(", "),
                 pairs
             );
-            gray("MultiMap#{") + entries + gray("}")
+            blue("MultiMap#{") + entries + blue("}")
     }
 
     instance Formattable[(a1, a2)] with Formattable[a1], Formattable[a2] {
@@ -290,14 +290,14 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: Array[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = Array.toList(x);
             let entries = join(gray(", "), elements);
-            gray("Array[") + entries + gray("]")
+            blue("Array[") + entries + blue("]")
     }
 
     instance Formattable[Ref[a, r]] with Formattable[a] {
         type Aef = Formattable.Aef[a] + r
         pub def formatWithQuote(_quote: Bool, x: Ref[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let value = Ref.get(x);
-            gray("Ref") + lparen() + Formattable.formatWithQuote(true, value) + rparen()
+            blue("Ref") + lparen() + Formattable.formatWithQuote(true, value) + rparen()
     }
 
     instance Formattable[MutList[a, r]] with Formattable[a] {
@@ -305,7 +305,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = MutList.toList(x);
             let entries = join(gray(", "), elements);
-            gray("MutList[") + entries + gray("]")
+            blue("MutList[") + entries + blue("]")
     }
 
     instance Formattable[MutDeque[a, r]] with Formattable[a] {
@@ -313,7 +313,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = MutDeque.toList(x);
             let entries = join(gray(", "), elements);
-            gray("MutDeque[") + entries + gray("]")
+            blue("MutDeque[") + entries + blue("]")
     }
 
     instance Formattable[MutSet[t, r]] with Formattable[t] {
@@ -321,7 +321,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: MutSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
             let elements = MutSet.toList(x);
             let entries = join(gray(", "), elements);
-            gray("MutSet#{") + entries + gray("}")
+            blue("MutSet#{") + entries + blue("}")
     }
 
     instance Formattable[MutHashSet[t, r]] with Formattable[t] {
@@ -329,7 +329,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: MutHashSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
             let elements = MutHashSet.toList(x);
             let entries = join(gray(", "), elements);
-            gray("MutHashSet#{") + entries + gray("}")
+            blue("MutHashSet#{") + entries + blue("}")
     }
 
     instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
@@ -337,7 +337,7 @@ mod RichString {
         pub def formatWithQuote(_quote: Bool, x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
             let elements = MutPriorityQueue.toList(x);
             let entries = join(gray(", "), elements);
-            gray("MutPriorityQueue[") + entries + gray("]")
+            blue("MutPriorityQueue[") + entries + blue("]")
     }
 
     instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
@@ -349,7 +349,7 @@ mod RichString {
                 gray(", "),
                 pairs
             );
-            gray("MutMap#{") + entries + gray("}")
+            blue("MutMap#{") + entries + blue("}")
     }
 
     instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
@@ -361,7 +361,7 @@ mod RichString {
                 gray(", "),
                 pairs
             );
-            gray("MutHashMap#{") + entries + gray("}")
+            blue("MutHashMap#{") + entries + blue("}")
     }
 
     instance Formattable[IoError.ErrorKind] {
@@ -515,7 +515,7 @@ mod RichString {
     /// Returns a `RichString` with the given text `x` in blue color.
     ///
     pub def blue(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
-        withColor(Color.Rgb(36, 114, 200), x)
+        withColor(Color.Rgb(100, 130, 160), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in magenta color.
