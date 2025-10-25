@@ -50,13 +50,11 @@ object FlixPackageManager {
     *
     * @param origin              the manifest that corresponds to the current / local project.
     * @param trust               the maximum allowed trust level of each manifest.
-    * @param immediateDependents all immediate dependents / parents of each manifest.
     * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                            A manifest is the resource a flix dependency resolves to.
     */
   case class TrustResolution(origin: Manifest,
                              trust: Map[Manifest, Trust],
-                             immediateDependents: Map[Manifest, List[Manifest]],
                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
     /**
       * All manifests in the resolution.
@@ -83,7 +81,7 @@ object FlixPackageManager {
     implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(resolution.origin -> Trust.Unrestricted)
     implicit val res: Resolution = resolution
     val manifests = resolution.manifests.map(m => (m, minTrustLevel(m))).toMap
-    TrustResolution(resolution.origin, manifests, resolution.immediateDependents, resolution.manifestToFlixDeps)
+    TrustResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
   }
 
   /**
