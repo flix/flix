@@ -405,6 +405,68 @@ mod RichString {
             gray("MutHashMap#{") + entries + gray("}")
     }
 
+    instance Formattable[IoError.ErrorKind] {
+        pub def format(x: IoError.ErrorKind): RichString = match x {
+            case IoError.ErrorKind.AlreadyExists    => red("AlreadyExists")
+            case IoError.ErrorKind.ConnectionFailed => red("ConnectionFailed")
+            case IoError.ErrorKind.Interrupted      => red("Interrupted")
+            case IoError.ErrorKind.InvalidPath      => red("InvalidPath")
+            case IoError.ErrorKind.InvalidInput     => red("InvalidInput")
+            case IoError.ErrorKind.InvalidData      => red("InvalidData")
+            case IoError.ErrorKind.NotFound         => red("NotFound")
+            case IoError.ErrorKind.NotFile          => red("NotFile")
+            case IoError.ErrorKind.NotDirectory     => red("NotDirectory")
+            case IoError.ErrorKind.PermissionDenied => red("PermissionDenied")
+            case IoError.ErrorKind.Timeout          => red("Timeout")
+            case IoError.ErrorKind.UnexpectedEof    => red("UnexpectedEof")
+            case IoError.ErrorKind.Unsupported      => red("Unsupported")
+            case IoError.ErrorKind.UnknownHost      => red("UnknownHost")
+            case IoError.ErrorKind.Other            => red("Other")
+        }
+    }
+
+    instance Formattable[IoError] {
+        pub def format(x: IoError): RichString =
+            let IoError.IoError(kind, msg) = x;
+            red("IoError(") + Formattable.format(kind) + red(", ") + text("\"${msg}\"") + red(")")
+    }
+
+    instance Formattable[Ipv4Addr] {
+        pub def format(x: Ipv4Addr): RichString =
+            fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Ipv6Addr] {
+        pub def format(x: Ipv6Addr): RichString =
+            fromString(ToString.toString(x))
+    }
+
+    instance Formattable[IpAddr] {
+        pub def format(x: IpAddr): RichString = match x {
+            case IpAddr.V4(ip) => Formattable.format(ip)
+            case IpAddr.V6(ip) => Formattable.format(ip)
+        }
+    }
+
+    instance Formattable[SocketAddrV4] {
+        pub def format(x: SocketAddrV4): RichString =
+            let SocketAddrV4.SocketAddrV4(ip, port) = x;
+            Formattable.format(ip) + gray(":") + Formattable.format(port)
+    }
+
+    instance Formattable[SocketAddrV6] {
+        pub def format(x: SocketAddrV6): RichString =
+            let SocketAddrV6.SocketAddrV6(ip, port) = x;
+            gray("[") + Formattable.format(ip) + gray("]:") + Formattable.format(port)
+    }
+
+    instance Formattable[SocketAddr] {
+        pub def format(x: SocketAddr): RichString = match x {
+            case SocketAddr.V4(addr) => Formattable.format(addr)
+            case SocketAddr.V6(addr) => Formattable.format(addr)
+        }
+    }
+
     ///
     /// Returns an empty `RichString`.
     ///
