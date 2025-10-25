@@ -186,6 +186,53 @@ mod RichString {
             gray("Map#{") + entries + gray("}")
     }
 
+    instance Formattable[Set[a]] with Formattable[a] {
+        pub def format(x: Set[a]): RichString =
+            let elements = Set.toList(x);
+            let entries = join(text(", "), elements);
+            gray("Set#{") + entries + gray("}")
+    }
+
+    instance Formattable[Vector[a]] with Formattable[a] {
+        pub def format(x: Vector[a]): RichString =
+            let elements = Vector.toList(x);
+            let entries = join(text(", "), elements);
+            gray("Vector#{") + entries + gray("}")
+    }
+
+    instance Formattable[Nel[a]] with Formattable[a] {
+        pub def format(x: Nel[a]): RichString =
+            join(gray(" :: "), Nel.toList(x))
+    }
+
+    instance Formattable[Nec[a]] with Formattable[a] {
+        pub def format(x: Nec[a]): RichString =
+            join(gray(" :: "), Nec.toList(x))
+    }
+
+    instance Formattable[Chain[a]] with Formattable[a] {
+        pub def format(x: Chain[a]): RichString =
+            join(gray(" :: "), Chain.toList(x))
+    }
+
+    instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
+        pub def format(x: Validation[e, t]): RichString = match x {
+            case Validation.Success(v) => text("Success(") + Formattable.format(v) + text(")")
+            case Validation.Failure(e) => red("Failure(") + Formattable.format(e) + red(")")
+        }
+    }
+
+    instance Formattable[MultiMap[k, v]] with Formattable[k], Formattable[v] {
+        pub def format(x: MultiMap[k, v]): RichString =
+            let pairs = MultiMap.toList(x);
+            let entries = joinWith(
+                match (k, vs) -> underline(Formattable.format(k)) + gray(" => ") + Formattable.format(vs),
+                text(", "),
+                pairs
+            );
+            gray("MultiMap#{") + entries + gray("}")
+    }
+
     ///
     /// Returns an empty `RichString`.
     ///
