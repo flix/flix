@@ -688,7 +688,7 @@ mod Regex {
     def matcherGroup(m: Matcher[r], i:Int32): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((m1.group(i): _ \ IO) as _ \ r)
+            unchecked_cast ((if (not Object.isNull(m1.group(i))) m1.group(i) else "" : _ \ IO) as _ \ r)
         })
 
     ///
