@@ -90,7 +90,7 @@ object FlixPackageManager {
     *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
     *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
     */
-  def checkTrust(resolution: TrustResolution): List[PackageError.TrustGraphError] = {
+  def checkTrust(resolution: TrustResolution): List[PackageError] = {
     resolution.trust.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
   }
 
@@ -269,7 +269,7 @@ object FlixPackageManager {
     * and an edge `v -> w` exists where `trust(w) > trust(u)`.
     * E.g., if an edge with trust `unrestricted` is found on a path with max trust `plain`, then an error exists.
     */
-  private def findTrustViolations(m: Manifest, t: Trust): List[PackageError.TrustGraphError] = {
+  private def findTrustViolations(m: Manifest, t: Trust): List[PackageError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
     val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(d, t))
     t match {
@@ -278,7 +278,7 @@ object FlixPackageManager {
         val dependencyTrustErrors = m.dependencies.collect {
           case d: MavenDependency => d
           case d: JarDependency => d
-        }.map(d => PackageError.TrustGraphError(d, t))
+        }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(d, t))
         manifestTrustErrors ::: dependencyTrustErrors
 
       case Trust.Unrestricted => manifestTrustErrors

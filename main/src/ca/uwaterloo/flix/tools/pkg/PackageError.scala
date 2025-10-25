@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -112,7 +113,25 @@ object PackageError {
     * @param origDep the dependency that requires more trust than what is allowed by the declaring manifest.
     * @param trust   the maximum allowed trust level.
     */
-  case class TrustGraphError(origDep: Dependency, trust: Trust) extends PackageError {
-    override def message(f: Formatter): String = s"WIP: $origDep does not respect trust level $trust"
+  case class TrustGraphError(origDep: FlixDependency, trust: Trust) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""Found trust inconsistency in the dependency graph:
+         |  Dependency '${origDep}' of package ${???} requires trust '${origDep.trust}' but '${trust}' was given.
+         |""".stripMargin
+  }
+
+  /**
+    * An error raised when the dependency graph itself is inconsistent w.r.t. trust levels.
+    *
+    * @param origDep the dependency that requires more trust than what is allowed by the declaring manifest.
+    * @param trust   the maximum allowed trust level.
+    */
+  case class IllegalJavaDependencyAtTrustLevel(dep: Dependency, trust: Trust) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""Found trust inconsistency in the dependency graph.
+         |
+         |Dependency '${dep}'
+         |
+         |""".stripMargin
   }
 }
