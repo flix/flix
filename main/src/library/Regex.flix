@@ -149,11 +149,11 @@ mod Regex {
     /// If `substr` regexp matches the empty string, positions where an empty match
     /// has been recognized will be returned.
     ///
-    pub def indices(substr: Regex, s: String): List[Int32] = region rc {
+    pub def indicesOf(substr: Regex, s: String): Vector[Int32] = region rc {
         let m = newMatcher(rc, substr, s);
         match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
-            case Ok(c)  => Chain.toList(c)
-            case Err(_) => Nil
+            case Ok(c)  => Chain.toList(c) |> List.toVector
+            case Err(_) => Vector.empty()
         }
     }
 
@@ -441,15 +441,15 @@ mod Regex {
     /// If `substr` regexp matches the empty string, positions where an empty match
     /// has been recognized will be returned.
     ///
-    /// Returns `Nil` if there are no matches or the bounds are invalid.
+    /// Returns an empty vector if there are no matches or the bounds are invalid.
     ///
-    pub def indicesWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): List[Int32] = region rc {
+    pub def indicesOfWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Vector[Int32] = region rc {
         match newMatcherWithBounds(rc, substr, start, end, s) {
             case Ok(m)  => match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
-               case Ok(c)  => Chain.toList(c)
-               case Err(_) => Nil
+               case Ok(c)  => Chain.toList(c) |> List.toVector
+               case Err(_) => Vector.empty()
             }
-            case Err(_) => Nil
+            case Err(_) => Vector.empty()
         }
     }
 

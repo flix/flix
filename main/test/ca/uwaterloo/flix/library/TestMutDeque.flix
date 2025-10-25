@@ -162,6 +162,23 @@ mod TestMutDeque {
         assertEq(expected = 0, MutDeque.size(d))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = region rc {
+        assertEq(expected = Range.Range(0, 0), MutDeque.indices(MutDeque.empty(rc)))
+    }
+
+    @Test
+    def indices02(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        MutDeque.pushBack(1, d);
+        MutDeque.pushBack(2, d);
+        MutDeque.pushBack(3, d);
+        assertEq(expected = Range.Range(0, 3), MutDeque.indices(d))
+    }
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //

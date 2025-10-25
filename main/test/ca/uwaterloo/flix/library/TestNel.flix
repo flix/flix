@@ -164,6 +164,16 @@ mod TestNel {
     def memberOf06(): Unit \ Assert = assertTrue(Nel.memberOf(3, Nel(1, 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 1), Nel.indices(Nel(1, Nil)))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Nel.indices(Nel(1, 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

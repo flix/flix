@@ -102,6 +102,11 @@ mod MutDeque {
         computeSize(capacity(d), d->front, d->back)
 
     ///
+    /// Returns a range of all valid indices of the mutable deque `d`.
+    ///
+    pub def indices(d: MutDeque[a, r]): Range[Int32] \ r = Range.Range(0, size(d))
+
+    ///
     /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
     ///
     def computeSize(c: Int32, f: Int32, b: Int32): Int32 =

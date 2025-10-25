@@ -349,6 +349,41 @@ mod TestChain {
     def indexOf06(): Unit \ Assert = assertEq(expected = Some(1), Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, Chain.indicesOf(0, Chain.empty()))
+
+    @Test
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{}, Chain.indicesOf(0, Chain.singleton(1)))
+
+    @Test
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{0}, Chain.indicesOf(1, Chain.singleton(1)))
+
+    @Test
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{}, Chain.indicesOf(0, List.toChain(1 :: 2 :: Nil)))
+
+    @Test
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{0}, Chain.indicesOf(1, List.toChain(1 :: 2 :: Nil)))
+
+    @Test
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{1}, Chain.indicesOf(2, List.toChain(1 :: 2 :: Nil)))
+
+    @Test
+    def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, Chain.indicesOf(1, List.toChain(1 :: 1 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), Chain.indices(Chain.empty()))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Chain.indices(List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
