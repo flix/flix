@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
@@ -85,7 +85,7 @@ import scala.collection.mutable
   *   - Case set formulas are a single CaseSet literal or a complement thererof.
   *
   */
-object Monomorpher {
+object Specialization {
 
   /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
