@@ -24,6 +24,7 @@ mod Fixpoint3.Boxable {
     ///
     @Internal
     @Inline
+    @LoweringTarget
     pub def box(x: a): Boxed with Order[a] = {
         use Reflect.JvmValue;
         match Reflect.reflect(x) {
@@ -45,6 +46,7 @@ mod Fixpoint3.Boxable {
     /// Unboxes the given `x`.
     ///
     @Internal
+    @LoweringTarget
     pub def unbox(x: Boxed): a = match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
         case Reflect.JvmType.JvmBool => match x {
             case Boxed.BoxedBool(v) => unchecked_cast(v as a)
