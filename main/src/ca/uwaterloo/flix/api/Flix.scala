@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
+import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -720,7 +721,7 @@ class Flix {
     var treeShaker1Ast = TreeShaker1.run(loweringAst)
     loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    var monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    var monomorpherAst = Specialization.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     var lambdaDropAst = LambdaDrop.run(monomorpherAst)
