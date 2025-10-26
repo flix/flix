@@ -175,16 +175,16 @@ mod Regex {
     ///
     /// Returns `Nil` if `substr` is the empty string or regex contains no groups.
     ///
-    pub def capture(substr: Regex, s: String): List[String] = region rc {
-        let m = newMatcher(rc, substr, s);
+    pub def capture(rgx: Regex, s: String): List[String] = region rc {
+        let m = newMatcher(rc, rgx, s);
         if (find(m))
             let cnt = groupCount(m);
             match List.foldRight((a,x) -> forM(x2 <- x; a2 <- a) yield a2 :: x2, Ok(Nil), List.map(matcherGroup(m),List.range(1,cnt + 1))) {
                 case Ok(l) => l
-                case Err(_) => Nil    
+                case Err(_) => Nil
             }
         else
-            Nil        
+            Nil
     }
 
     ///
