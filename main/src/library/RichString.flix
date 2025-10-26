@@ -359,13 +359,43 @@ mod RichString {
         type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
         pub def formatWithQuote(_quote: Bool, x: MutMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
             let pairs = MutMap.toList(x);
-            let entries = joinWith(
-                match (k, v) -> Formattable.formatWithQuote(true, k) + gray(" => ") + Formattable.formatWithQuote(true, v),
-                gray(", "),
-                pairs
-            );
-            blue("MutMap#{") + entries + blue("}")
+            let prefix = blue("MutMap#{");
+            let suffix = blue("}");
+            let entries = formatKeyValues(pairs);
+            match pairs {
+                case Nil => prefix + suffix
+                case _ :: Nil => prefix + entries + suffix
+                case _ => prefix + fromString("\n") + entries + fromString("\n") + suffix
+            }
     }
+
+    ///
+    /// Formats a list of key-value pairs as entries.
+    ///
+    /// Returns the formatted entries content without prefix/suffix or outer newlines.
+    ///
+    def formatKeyValues(pairs: List[(k, v)]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) with Formattable[k], Formattable[v] =
+        match pairs {
+            case Nil => empty()
+            case _ :: Nil =>
+                joinWith(
+                    match (k, v) -> Formattable.formatWithQuote(true, k) + gray(" => ") + Formattable.formatWithQuote(true, v),
+                    gray(", "),
+                    pairs
+                )
+            case _ =>
+                // Multi-line format
+                let formattedPairs = List.map(match (k, v) -> (Formattable.formatWithQuote(true, k), v), pairs);
+                let maxKeyLength = List.foldLeft((acc, pair) -> {
+                    let (key, _) = pair;
+                    Int32.max(acc, length(key))
+                }, 0, formattedPairs);
+                let lines = List.map(match (formattedKey, v) -> {
+                    let padding = maxKeyLength - length(formattedKey);
+                    fromString("  ") + formattedKey + fromString(String.repeat(padding, " ")) + gray(" => ") + Formattable.formatWithQuote(true, v)
+                }, formattedPairs);
+                joinWith(line -> line, gray(",") + fromString("\n"), lines)
+        }
 
     instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
         type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
@@ -527,6 +557,16 @@ mod RichString {
     ///
     pub def fromString(s: String): RichString =
         RichString(Chain.singleton(Span.Span({text = s, fgColor = Color.Default, bgColor = Color.Default, styles = Set.empty()})))
+
+    ///
+    /// Returns the length of the plain text content of `RichString` `rs`, ignoring all formatting.
+    ///
+    pub def length(rs: RichString): Int32 = match rs {
+        case RichString(spans) =>
+            Chain.foldLeft((acc, span) -> match span {
+                case Span.Span(r) => acc + String.length(r#text)
+            }, 0, spans)
+    }
 
     ///
     /// Returns a `RichString` with the given text `x` in black color.
