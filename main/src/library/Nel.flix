@@ -238,6 +238,11 @@ mod Nel {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
+    /// Returns a range of all valid indices of the non-empty list `l`.
+    ///
+    pub def indices(l: Nel[a]): Range[Int32] = Range.Range(0, length(l))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = findLeft(f, l)

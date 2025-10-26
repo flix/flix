@@ -63,11 +63,11 @@ object JvmBackend {
     }.map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = JvmOps.getErasedTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
     val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
-    val structClasses = JvmOps.getErasedStructTypesOf(root, allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val structClasses = root.structs.values.map(JvmOps.getStructType).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val recordInterfaces = List(JvmClass(BackendObjType.Record.jvmName, BackendObjType.Record.genByteCode()))
     val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.jvmName, BackendObjType.RecordEmpty.genByteCode()))

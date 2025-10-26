@@ -397,33 +397,34 @@ mod String {
     ///
     /// Returns the positions of the all the elements in `s` satisfying `f`.
     ///
-    /// The function `f` must be pure.
-    ///
-    pub def findIndices(f: Char -> Bool, s: String): List[Int32] =
+    pub def findIndices(f: Char -> Bool \ ef, s: String): Vector[Int32] \ ef = region rc {
         let len = length(s);
-        def loop(i, k) = {
+        let l = MutList.empty(rc);
+        def loop(i) = {
             if (i >= len)
-                k(Nil)
-            else if (f(charAt(i, s)))
-                loop(i + 1, ks -> k(i :: ks))
-            else
-                loop(i + 1, k)
+                ()
+            else {
+                if (f(charAt(i, s))) MutList.push(i, l) else ();
+                loop(i + 1)
+            }
         };
-        loop(0, identity)
+        loop(0);
+        MutList.toVector(l)
+    }
 
     ///
     /// Returns the positions of the all the occurrences of `substr` in `s`.
     ///
-    /// Returns `Nil` if `substr` is the empty string.
+    /// Returns an empty vector if `substr` is the empty string.
     ///
-    pub def indices(substr: {substr = String}, s: String): List[Int32] =
+    pub def indicesOf(substr: {substr = String}, s: String): Vector[Int32] =
         let sublen = length(substr#substr);
         let step = ix ->
             match indexOfLeftWithOffset({substr = substr#substr}, {offset = ix}, s) {
                 case None => None
                 case Some(ix2) => Some((ix2, ix2 + sublen))
             };
-        List.unfold(step, 0)
+        List.unfold(step, 0) |> List.toVector
 
     ///
     /// Alias for `takeLeft`.

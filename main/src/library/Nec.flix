@@ -335,6 +335,21 @@ mod Nec {
         loop(0, c)
 
     ///
+    /// Returns the positions of all occurrences of `x` in `c`.
+    ///
+    pub def indicesOf(x: a, c: Nec[a]): Vector[Int32] with Eq[a] =
+        def loop(acc: Int32, c1: Nec[a], indices: List[Int32]) = match viewLeft(c1) {
+            case ViewLeft.OneLeft(y)      => if (x == y) acc :: indices else indices
+            case ViewLeft.SomeLeft(y, c2) => if (x == y) loop(acc + 1, c2, acc :: indices) else loop(acc + 1, c2, indices)
+        };
+        loop(0, c, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the non-empty chain `c`.
+    ///
+    pub def indices(c: Nec[a]): Range[Int32] = Range.Range(0, length(c))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, c: Nec[a]): Option[a] \ ef = findLeft(f, c)

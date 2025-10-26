@@ -11,6 +11,7 @@ import java.io.PrintStream
 import java.nio.file.Files
 
 class TestTrust extends AnyFunSuite {
+
   test("toString-ofString-plain") {
     val perm = Trust.Plain
     val res = Trust.fromString(perm.toString) match {
@@ -29,153 +30,35 @@ class TestTrust extends AnyFunSuite {
     assertResult(perm)(res)
   }
 
-  test("trust:plain-dep:plain") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'plain' and dependency plain")
-    } else {
-      succeed
-    }
+  test("lub.01") {
+    assertResult(Trust.Plain)(Trust.Plain.lub(Trust.Plain))
   }
 
-  test("trust:plain-dep:java") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using Java")
-    }
+  test("lub.02") {
+    assertResult(Trust.Unrestricted)(Trust.Plain.lub(Trust.Unrestricted))
   }
 
-  test("trust:plain-dep:unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using unchecked cast")
-    }
+  test("lub.03") {
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.lub(Trust.Plain))
   }
 
-  test("trust:unrestricted-dep:plain") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency plain")
-    } else {
-      succeed
-    }
+  test("lub.04") {
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.lub(Trust.Unrestricted))
   }
 
-  test("trust:unrestricted-dep:java") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using java")
-    } else {
-      succeed
-    }
+  test("glb.01") {
+    assertResult(Trust.Plain)(Trust.Plain.glb(Trust.Plain))
   }
 
-  test("trust:unrestricted-dep:unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using unchecked cast")
-    } else {
-      succeed
-    }
+  test("glb.02") {
+    assertResult(Trust.Plain)(Trust.Plain.glb(Trust.Unrestricted))
   }
 
-  /**
-    * Returns `true` if a [[SafetyError.Forbidden]] error is found.
-    * Always returns all compiler messages in the second entry of the tuple.
-    */
-  private def checkForbidden(deps: List[String]): (Boolean, String) = {
-    implicit val out: PrintStream = System.out
-    implicit val formatter: Formatter = Formatter.NoFormatter
-    val path = Files.createTempDirectory("")
-    val toml =
-      s"""
-         |[package]
-         |name = "test"
-         |description = "test"
-         |version = "0.1.0"
-         |flix = "0.65.0"
-         |authors = ["flix"]
-         |
-         |[dependencies]
-         |${deps.mkString(System.lineSeparator())}
-         |""".stripMargin
+  test("glb.03") {
+    assertResult(Trust.Plain)(Trust.Unrestricted.glb(Trust.Plain))
+  }
 
-    val manifest = ManifestParser.parse(toml, null) match {
-      case Ok(m) => m
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-      case Ok(ms) => ms
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val pkgs = FlixPackageManager.installAll(allManifests, path, None) match {
-      case Ok(ps) => ps
-      case Err(e) => fail(e.message(formatter))
-    }
-
-    val main: String =
-      """
-        |pub def main(): Unit \ IO =
-        |    TestPkgTrust.entry()
-        |""".stripMargin
-
-    val flix = new Flix()
-    flix.setOptions(flix.options.copy(checkTrust = true))
-
-    flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
-
-    for ((path, trust) <- pkgs) {
-      flix.addPkg(path)(SecurityContext.fromTrust(trust))
-    }
-
-    val (_, errors) = flix.check()
-    val forbidden = errors.exists {
-      case _: SafetyError.Forbidden => true
-      case _ => false
-    }
-
-    (forbidden, flix.mkMessages(errors).mkString(System.lineSeparator()))
+  test("glb.04") {
+    assertResult(Trust.Unrestricted)(Trust.Unrestricted.glb(Trust.Unrestricted))
   }
 }

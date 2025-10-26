@@ -796,11 +796,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *   1. Paths to `.jar` dependencies in `lib/cache` (maven).
       *   1. Paths to `.jar` dependencies in `lib/external` (urls).
       */
-    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[List[Path]], BootstrapError] = {
+    def installDependencies(resolution: FlixPackageManager.TrustResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[List[Path]], BootstrapError] = {
       for {
-        flixPaths <- installFlixDependencies(dependencyManifests)
-        mavenPaths <- installMavenDependencies(dependencyManifests)
-        jarPaths <- installJarDependencies(dependencyManifests)
+        flixPaths <- installFlixDependencies(resolution)
+        mavenPaths <- installMavenDependencies(resolution.manifests)
+        jarPaths <- installJarDependencies(resolution.manifests)
       } yield {
         out.println("Dependency resolution completed.")
         List(flixPaths, mavenPaths, jarPaths)
@@ -812,8 +812,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
-      FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
+    private def installFlixDependencies(resolution: FlixPackageManager.TrustResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
+      FlixPackageManager.installAll(resolution, projectPath, apiKey) match {
         case Ok(result: List[(Path, Trust)]) =>
           trustLevels = result.toMap
           flixPackagePaths = result.map { case (path, _) => path }
@@ -870,8 +870,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
       * Requires network access.
       */
-    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], BootstrapError] = {
-      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).mapErr(BootstrapError.FlixPackageError(_))
+    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.TrustResolution, BootstrapError] = {
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.resolveTrust) match {
+        case Err(e) => Err(BootstrapError.FlixPackageError(e))
+        case Ok(trustMap) =>
+          val trustResolutionErrors = FlixPackageManager.checkTrust(trustMap)
+          if (trustResolutionErrors.isEmpty) {
+            Ok(trustMap)
+          } else {
+            Err(BootstrapError.GeneralError(trustResolutionErrors.map(_.toString)))
+          }
+      }
     }
 
     /**

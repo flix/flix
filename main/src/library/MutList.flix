@@ -53,17 +53,6 @@ instance IndexableMut[MutList[a, r]] {
         MutList.put(v, i, t)
 }
 
-instance MutCollectable[MutList[a, r]] {
-    type Elm = a
-    type Aef = r
-    type Reg = r
-    pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
-        let l = MutList.empty(rc);
-        Iterator.forEach(x -> MutList.push(x, l), iter);
-        l
-
-}
-
 mod MutList {
 
     ///
@@ -291,6 +280,23 @@ mod MutList {
                 if (x == Array.get(i, v->values)) Some(i) else loop(i - 1)
         };
         loop(v->length - 1)
+
+    ///
+    /// Returns the positions of all occurrences of `x` in `v`.
+    ///
+    pub def indicesOf(x: a, v: MutList[a, r]): Vector[Int32] \ r with Eq[a] =
+        def loop(i, indices) = {
+            if (i >= v->length)
+                indices
+            else
+                if (x == Array.get(i, v->values)) loop(i + 1, i :: indices) else loop(i + 1, indices)
+        };
+        loop(0, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the mutable list `v`.
+    ///
+    pub def indices(v: MutList[a, r]): Range[Int32] \ r = Range.Range(0, v->length)
 
     ///
     /// Alias for `findLeft`.

@@ -379,6 +379,38 @@ mod TestNec {
     def indexOf06(): Unit \ Assert = assertEq(expected = Some(2), Nec.indexOf(3, necOf3(1, 2, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, Nec.indicesOf(0, singleton(1)))
+
+    @Test
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{0}, Nec.indicesOf(1, singleton(1)))
+
+    @Test
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{}, Nec.indicesOf(0, necOf2(1, 2)))
+
+    @Test
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{0}, Nec.indicesOf(1, necOf2(1, 2)))
+
+    @Test
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{1}, Nec.indicesOf(2, necOf2(1, 2)))
+
+    @Test
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, Nec.indicesOf(1, necOf2(1, 1)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 1), Nec.indices(singleton(1)))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Nec.indices(necOf3(1, 2, 3)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

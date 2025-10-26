@@ -16,7 +16,8 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType}
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.annotation.tailrec
 
@@ -151,14 +152,16 @@ object BackendType {
       case SimpleType.Array(tpe) => Array(toBackendType(tpe))
       case SimpleType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
       case SimpleType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
-      case SimpleType.Enum(_, _) => BackendObjType.Tagged.toTpe
-      case SimpleType.Struct(sym, targs) => BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs)).toTpe
+      case SimpleType.Enum(_, Nil) => BackendObjType.Tagged.toTpe
+      case SimpleType.Struct(sym, Nil) => JvmOps.getStructType(root.structs(sym)).toTpe
       case SimpleType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
       case SimpleType.RecordEmpty => BackendObjType.Record.toTpe
       case SimpleType.RecordExtend(_, _, _) => BackendObjType.Record.toTpe
       case SimpleType.ExtensibleEmpty => BackendObjType.Tagged.toTpe
       case SimpleType.ExtensibleExtend(_, _, _) => BackendObjType.Tagged.toTpe
       case SimpleType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
+      case SimpleType.Enum(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
+      case SimpleType.Struct(_, _) => throw InternalCompilerException(s"Unexpected type '$tpe0'", SourceLocation.Unknown)
     }
   }
 
