@@ -125,12 +125,15 @@ object Annotation {
   }
 
   /**
-    * An annotation that marks a function definition as reachable regardless of whether it is called explicitly.
+    * An annotation that marks a function definition as a target for lowering.
+    *
+    * A function annotated with `LoweringTarget` may not be discarded until lowering has
+    * been performed.
     *
     * @param loc the source location of the annotation.
     */
-  case class Reachable(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@Reachable"
+  case class LoweringTarget(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@LoweringTarget"
   }
 
   /**

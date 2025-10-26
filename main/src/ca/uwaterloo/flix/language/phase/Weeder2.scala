@@ -701,7 +701,7 @@ object Weeder2 {
         case "@Internal" => Internal(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
-        case "@Reachable" => Reachable(loc)
+        case "@LoweringTarget" => LoweringTarget(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@MustUse" => MustUse(loc)

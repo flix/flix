@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.ParOps
   *   - Is an entry point (main / test / export).
   *   - Appears in a function which itself is reachable.
   *   - Is an instance of a trait whose signature(s) appear in a reachable function.
-  *   - Is annotated with `@Reachable`.
+  *   - Is annotated with `@LoweringTarget`.
   */
 object TreeShaker1 {
 
@@ -42,7 +42,7 @@ object TreeShaker1 {
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
-      case (sym, defn) => defn.spec.ann.isReachable || allReachable.contains(ReachableSym.DefnSym(sym))
+      case (sym, defn) => defn.spec.ann.isLoweringTarget || allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
     root.copy(defs = reachableDefs)
