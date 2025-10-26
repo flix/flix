@@ -364,7 +364,7 @@ mod RichString {
                 gray(", "),
                 pairs
             );
-            blue("MutMap#{") + bgBlack(entries) + blue("}")
+            blue("MutMap#{") + entries + blue("}")
     }
 
     instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
