@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.LoweredAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -2259,6 +2260,18 @@ object Lowering {
       LoweredAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
+
+    case Expr.NewChannel(_, _, _, _) =>
+      ???
+
+    case Expr.GetChannel(_, _, _, _) =>
+      ???
+
+    case Expr.PutChannel(_, _, _, _, _) =>
+      ???
+
+    case Expr.SelectChannel(_, _, _, _, _) =>
+      ???
 
   }
 

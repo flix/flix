@@ -144,6 +144,19 @@ object TreeShaker1 {
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+    case Expr.NewChannel(_, _, _, _) =>
+      ???
+
+    case Expr.GetChannel(_, _, _, _) =>
+      ???
+
+    case Expr.PutChannel(_, _, _, _, _) =>
+      ???
+
+    case Expr.SelectChannel(_, _, _, _, _) =>
+      ???
+
   }
 
   /** Returns the symbols reachable from `exps`. */

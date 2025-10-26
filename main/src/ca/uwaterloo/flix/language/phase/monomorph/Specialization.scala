@@ -636,6 +636,18 @@ object Specialization {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
 
+    case LoweredAst.Expr.NewChannel(_, _, _, _) =>
+      ???
+
+    case LoweredAst.Expr.GetChannel(_, _, _, _) =>
+      ???
+
+    case LoweredAst.Expr.PutChannel(_, _, _, _, _) =>
+      ???
+
+    case LoweredAst.Expr.SelectChannel(_, _, _, _, _) =>
+      ???
+
   }
 
   /**
