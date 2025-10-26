@@ -106,7 +106,7 @@ class TestMavenPackageManager extends AnyFunSuite {
 
       val path = Files.createTempDirectory("")
       val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l
+        case Ok(resolution) => resolution.manifests
         case Err(e) => fail(e.message(f))
       }
       MavenPackageManager.installAll(manifests, path)(Formatter.getDefault, System.out) match {
