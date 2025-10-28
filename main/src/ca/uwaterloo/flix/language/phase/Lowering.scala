@@ -2261,17 +2261,17 @@ object Lowering {
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
 
-    case Expr.NewChannel(_, _, _, _) =>
-      ???
+    case Expr.NewChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
-    case Expr.GetChannel(_, _, _, _) =>
-      ???
+    case Expr.GetChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
-    case Expr.PutChannel(_, _, _, _, _) =>
-      ???
+    case Expr.PutChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
-    case Expr.SelectChannel(_, _, _, _, _) =>
-      ???
+    case Expr.SelectChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
   }
 
