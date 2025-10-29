@@ -345,7 +345,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val jarFile = Bootstrap.getJarFile(projectPath)
     Steps.updateStaleSources(flix)
     for {
-      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.configureBuildOutput(flix)
       _ <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       contents = (zip: ZipOutputStream) => {
@@ -366,7 +366,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val libDir = Bootstrap.getLibraryDirectory(projectPath)
     Steps.updateStaleSources(flix)
     for {
-      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.configureBuildOutput(flix)
       _ <- Steps.compile(flix)
       _ <- Steps.validateJarFile(jarFile)
       _ <- Steps.validateDirectory(libDir)
@@ -404,7 +404,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
     Steps.updateStaleSources(flix)
     for {
-      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.configureBuildOutput(flix)
       _ <- Steps.compile(flix)
     } yield {
       // Copy the `flix.toml` to the artifact directory.
@@ -755,7 +755,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * @see [[Bootstrap.getBuildDirectory]]
       * @see [[Build.Production]]
       */
-    def configureJarOutput(flix: Flix): Result[Unit, BootstrapError] = {
+    def configureBuildOutput(flix: Flix): Result[Unit, BootstrapError] = {
       val buildDir = Bootstrap.getBuildDirectory(projectPath)
       for {
         _ <- validateDirectory(buildDir)
