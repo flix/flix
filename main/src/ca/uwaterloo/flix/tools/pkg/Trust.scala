@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 sealed trait Trust {
+
   /**
     * Returns the least upper bound of `this` and `other` according to the following lattice:
     * {{{
@@ -67,6 +68,7 @@ sealed trait Trust {
     * @see [[lessThanEq]]
     */
   def greaterThan(other: Trust): Boolean = !this.lessThanEq(other)
+
 }
 
 /**
