@@ -87,7 +87,6 @@ object Main {
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubToken = githubToken,
-      includeTests = Options.Default.includeTests,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
