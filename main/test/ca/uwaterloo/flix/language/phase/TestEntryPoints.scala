@@ -189,6 +189,222 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin.copy(entryPoint = Some(Symbol.mkDefnSym("f"))))
     expectError[EntryPointError.MainEntryPointNotFound](result, allowUnknown = true)
   }
+  test("Test.DefaultHandlerNotInEffectModule.01") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |@DefaultHandler
+        |pub def _func(f: Unit -> a \ ef): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.DefaultHandlerNotInEffectModule](result)
+  }
+
+  test("Test.WrongSignatureForDefaultHandler.01") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+  }
+  test("Test.WrongSignatureForDefaultHandler.02") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ ef, u: a): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+  }
+
+  test("Test.WrongSignatureForDefaultHandler.03") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: a): a \ (ef - TestEff) + IO =
+        |            checked_ecast(f)
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+  }
+
+  test("Test.WrongSignatureForDefaultHandler.04") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ ef): Bool \ (ef - TestEff) + IO =
+        |            run {
+        |                true
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+  }
+
+  test("Test.WrongSignatureForDefaultHandler.05") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ {}): a \ IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+  }
+
+  test("Test.WrongSignatureForDefaultHandler.06") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Bool -> a \ ef, u: a): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f(true)
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+  }
+  test("Test.NonPrimitiveEffectForDefaultHandler.01") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |pub eff TestEff2{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ ef): a \ (ef - TestEff) + IO + TestEff2 =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.NonPrimitiveEffectForDefaultHandler](result)
+  }
+  test("Test.DuplicatedDefaultHandlers.01") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ ef): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |    @DefaultHandler
+        |    pub def _func2(f: Unit -> a \ ef): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour 2");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[EntryPointError.DuplicatedDefaultHandlers](result)
+  }
 
   test("Test.ValidEntryPoint.Main.01") {
     val input =
@@ -238,6 +454,51 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.LibNix.01") {
     val input =
       """
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectSuccess(result)
+  }
+  test("Test.ValidEntryPoint.DefaultHandler.01") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ ef): a \ (ef - TestEff) + IO =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    println("Default behaviour");
+        |                    resume()
+        |                }
+        |            }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+  test("Test.ValidEntryPoint.DefaultHandler.02") {
+    val input =
+      """
+        |pub eff TestEff{
+        |   def doSomething(): Unit
+        |}
+        |mod TestEff {
+        |    @DefaultHandler
+        |    pub def _func(f: Unit -> a \ ef): a \ (ef - TestEff) =
+        |            run {
+        |                f()
+        |            } with handler TestEff {
+        |                def doSomething(resume) = {
+        |                    resume()
+        |                }
+        |            }
+        |}
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
