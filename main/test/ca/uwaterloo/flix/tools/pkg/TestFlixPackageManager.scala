@@ -385,6 +385,21 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     })
   }
 
+  test("trust:paranoid-dep:plain") {
+    val deps = List(
+      """
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "paranoid" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, Main)
+
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'paranoid' and dependency plain")
+    }
+  }
+
   ignore("trust:plain-dep:plain") {
     val deps = List(
       """
