@@ -407,29 +407,26 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       _ <- Steps.configureJarOutput(flix)
       _ <- Steps.compile(flix)
     } yield {
-      ()
-    }
+      // Copy the `flix.toml` to the artifact directory.
+      Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
 
+      // Construct a new zip file.
+      Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
+        // Add required resources.
+        FileOps.addToZip(zip, FLIX_TOML, Bootstrap.getManifestFile(projectPath))
+        FileOps.addToZip(zip, LICENSE, Bootstrap.getLicenseFile(projectPath))
+        FileOps.addToZip(zip, README, Bootstrap.getReadmeFile(projectPath))
 
-    // Copy the `flix.toml` to the artifact directory.
-    Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
-
-    // Construct a new zip file.
-    Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
-      // Add required resources.
-      FileOps.addToZip(zip, FLIX_TOML, Bootstrap.getManifestFile(projectPath))
-      FileOps.addToZip(zip, LICENSE, Bootstrap.getLicenseFile(projectPath))
-      FileOps.addToZip(zip, README, Bootstrap.getReadmeFile(projectPath))
-
-      // Add all source files.
-      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      val srcFiles = FileOps.getFlixFilesIn(Bootstrap.getSourceDirectory(projectPath), Int.MaxValue)
-      for ((sourceFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(projectPath, srcFiles)) {
-        FileOps.addToZip(zip, fileNameWithSlashes, sourceFile)
+        // Add all source files.
+        // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+        val srcFiles = FileOps.getFlixFilesIn(Bootstrap.getSourceDirectory(projectPath), Int.MaxValue)
+        for ((sourceFile, fileNameWithSlashes) <- FileOps.sortPlatformIndependently(projectPath, srcFiles)) {
+          FileOps.addToZip(zip, fileNameWithSlashes, sourceFile)
+        }
+      } match {
+        case Success(()) => ()
+        case Failure(e) => return Result.Err(BootstrapError.FileError(e.getMessage))
       }
-    } match {
-      case Success(()) => Result.Ok(())
-      case Failure(e) => Result.Err(BootstrapError.FileError(e.getMessage))
     }
   }
 
