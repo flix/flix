@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
 import ca.uwaterloo.flix.util.collection.CofiniteSet
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.{Build, InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -110,10 +110,10 @@ object EntryPoints {
     *   - It is the main function (called `main` by default, but can configured
     *     to an arbitrary name).
     *   - It is an exported function (annotated with `@Export`).
-    *   - It is a test (annotated with `@Test`) and tests are included in the output (flix options, default is `true`).
+    *   - It is a test (annotated with `@Test`) the build mode is not production.
     */
   private def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Boolean =
-    isMain(defn) || isExport(defn) || (isTest(defn) && flix.options.includeTests)
+    isMain(defn) || isExport(defn) || (isTest(defn) && flix.options.build != Build.Production)
 
   /** Returns `true` if `defn` is a test. */
   private def isTest(defn: TypedAst.Def): Boolean =
@@ -646,9 +646,9 @@ object EntryPoints {
   }
 
   /** Returns a new root where [[TypedAst.Root.entryPoints]] contains all entry points (main/test/export). */
-  private def findEntryPoints(root: TypedAst.Root): TypedAst.Root = {
+  private def findEntryPoints(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
     val s = mutable.Set.empty[Symbol.DefnSym]
-    for ((sym, defn) <- root.defs if isEntryPoint(defn)(root)) {
+    for ((sym, defn) <- root.defs if isEntryPoint(defn)(root, flix)) {
       s += sym
     }
     val entryPoints = s.toSet
