@@ -76,6 +76,9 @@ sealed trait Trust {
   */
 object Trust {
 
+  /**
+    * Returns the greatest lower bound of `ts`.
+    */
   def glb(ts: List[Trust]): Trust = ts match {
     case Nil => throw new IllegalArgumentException("unexpected empty list")
     case x :: xs => xs.foldLeft(x)((acc, y) => acc.glb(y))
