@@ -357,42 +357,6 @@ mod TestFoldable {
     /////////////////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////////////////
-    // toMutSet                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutSet01(): Unit \ Assert = region rc {
-        let s1 = (Set#{}: Set[Int32]);
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    @Test
-    def toMutSet02(): Unit \ Assert = region rc {
-        let s1 = Set#{1, 2};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    @Test
-    def toMutSet03(): Unit \ Assert = region rc {
-        let s1 = Set#{1, 2, 3};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    @Test
-    def toMutSet04(): Unit \ Assert = region rc {
-        let s1 = Set#{'a', 'b', 'c'};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        assertEq(expected = s1, MutSet.toSet(s2))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -415,42 +379,6 @@ mod TestFoldable {
     @Test
     def toMapWith05(): Unit \ Assert =
         assertEq(expected = Map#{"a" => "ab", "aa" => "aab"}, Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutMap                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutMap01(): Unit \ Assert = region rc {
-        let l = (Nil: List[(Unit, Unit)]);
-        let m = Foldable.toMutMap(rc, l);
-
-        assertEq(expected = l, MutMap.toList(m))
-    }
-
-    @Test
-    def toMutMap02(): Unit \ Assert = region rc {
-        let l = (1, 2) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(rc, l);
-
-        assertEq(expected = l, MutMap.toList(m))
-    }
-
-    @Test
-    def toMutMap03(): Unit \ Assert = region rc {
-        let l = (1, 4) :: (2, 3) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(rc, l);
-
-        assertEq(expected = l, MutMap.toList(m))
-    }
-
-    @Test
-    def toMutMap04(): Unit \ Assert = region rc {
-        let l = (1, 'a') :: (2, 'b') :: (3, 'c') :: Nil;
-        let m = Foldable.toMutMap(rc, l);
-
-        assertEq(expected = l, MutMap.toList(m))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toNec                                                                   //

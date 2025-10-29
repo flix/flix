@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase.*
 import ca.uwaterloo.flix.language.phase.jvm.{JvmBackend, JvmLoader, JvmWriter}
+import ca.uwaterloo.flix.language.phase.monomorph.Specialization
 import ca.uwaterloo.flix.language.phase.optimizer.{LambdaDrop, Optimizer}
 import ca.uwaterloo.flix.language.{CompilationMessage, GenSym}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -207,7 +208,7 @@ class Flix {
     "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
     "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
-    "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
+    "Env.flix" -> LocalResource.get("/src/library/Env.flix"),
 
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
     "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
@@ -232,14 +233,12 @@ class Flix {
     "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
     "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
-    "MutCollectable.flix" -> LocalResource.get("/src/library/MutCollectable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
 
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-    "Chalk.flix" -> LocalResource.get("/src/library/Chalk.flix"),
 
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
@@ -258,7 +257,7 @@ class Flix {
     "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
     "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
     "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
-    "Fixpoint3/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Provenance.flix"),
+    "Fixpoint3/ProvenanceReconstruct.flix" -> LocalResource.get("/src/library/Fixpoint3/ProvenanceReconstruct.flix"),
     "Fixpoint3/ReadWriteLock.flix" -> LocalResource.get("/src/library/Fixpoint3/ReadWriteLock.flix"),
     "Fixpoint3/Solver.flix" -> LocalResource.get("/src/library/Fixpoint3/Solver.flix"),
     "Fixpoint3/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint3/SubstitutePredSym.flix"),
@@ -275,7 +274,7 @@ class Flix {
     "Fixpoint3/Phase/Hoisting.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Hoisting.flix"),
     "Fixpoint3/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/IndexSelection.flix"),
     "Fixpoint3/Phase/Lowering.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Lowering.flix"),
-    "Fixpoint3/Phase/Provenance.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Provenance.flix"),
+    "Fixpoint3/Phase/ProvenanceAugment.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/ProvenanceAugment.flix"),
     "Fixpoint3/Phase/RenamePredSyms.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/RenamePredSyms.flix"),
     "Fixpoint3/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Simplifier.flix"),
     "Fixpoint3/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase/Stratifier.flix"),
@@ -720,7 +719,7 @@ class Flix {
     var treeShaker1Ast = TreeShaker1.run(loweringAst)
     loweringAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    var monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    var monomorpherAst = Specialization.run(treeShaker1Ast)
     treeShaker1Ast = null // Explicitly null-out such that the memory becomes eligible for GC.
 
     var lambdaDropAst = LambdaDrop.run(monomorpherAst)
@@ -755,11 +754,10 @@ class Flix {
     var reducerAst = Reducer.run(eraserAst)
     eraserAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    var varOffsetsAst = VarOffsets.run(reducerAst)
+    // Generate JVM classes.
+    val bytecodeAst = JvmBackend.run(reducerAst)
     reducerAst = null // Explicitly null-out such that the memory becomes eligible for GC.
 
-    // Generate JVM classes.
-    val bytecodeAst = JvmBackend.run(varOffsetsAst)
     val totalTime = flix.getTotalTime
 
     JvmWriter.run(bytecodeAst)

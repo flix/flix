@@ -379,6 +379,38 @@ mod TestNec {
     def indexOf06(): Unit \ Assert = assertEq(expected = Some(2), Nec.indexOf(3, necOf3(1, 2, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, Nec.indicesOf(0, singleton(1)))
+
+    @Test
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{0}, Nec.indicesOf(1, singleton(1)))
+
+    @Test
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{}, Nec.indicesOf(0, necOf2(1, 2)))
+
+    @Test
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{0}, Nec.indicesOf(1, necOf2(1, 2)))
+
+    @Test
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{1}, Nec.indicesOf(2, necOf2(1, 2)))
+
+    @Test
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, Nec.indicesOf(1, necOf2(1, 1)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 1), Nec.indices(singleton(1)))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Nec.indices(necOf3(1, 2, 3)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -789,20 +821,6 @@ mod TestNec {
     def foldRight03(): Unit \ Assert = assertEq(expected = -6, Nec.foldRight((x, acc) -> acc - x, 0, necOf3(1, 2, 3)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = -1, Nec.foldRightWithCont((x, k) -> k() - x, 0, singleton(1)))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = -3, Nec.foldRightWithCont((x, k) -> k() - x, 0, necOf2(1, 2)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = -6, Nec.foldRightWithCont((x, k) -> k() - x, 0, necOf3(1, 2, 3)))
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1031,31 +1049,6 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        let m1 = Nec.toMutList(rc, singleton(1));
-        let m2 = MutList.range(rc, 1, 2);
-        assertTrue(MutList.sameElements(m1, m2))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let m1 = Nec.toMutList(rc, necOf2(1, 2));
-        let m2 = MutList.range(rc, 1, 3);
-        assertTrue(MutList.sameElements(m1, m2))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let m1 = Nec.toMutList(rc, necOf3(1, 2, 3));
-        let m2 = MutList.range(rc, 1, 4);
-        assertTrue(MutList.sameElements(m1, m2))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //

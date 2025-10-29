@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.LoweredAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -283,7 +284,7 @@ object Lowering {
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
   private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
-    new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+    new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
 
   /**
     * Lowers the given `effect`.
@@ -2259,6 +2260,18 @@ object Lowering {
       LoweredAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
+
+    case Expr.NewChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.GetChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.PutChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.SelectChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
   }
 

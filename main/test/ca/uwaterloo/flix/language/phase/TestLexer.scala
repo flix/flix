@@ -594,24 +594,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.ExpectedHexDigit](result)
   }
 
-  test("LexerError.UnterminatedInfixFunction.01") {
-    val input = "1 `add 2"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedInfixFunction](result)
-  }
-
-  test("LexerError.UnterminatedInfixFunction.02") {
-    val input = "1 `add/*this is a block comment*/` 2"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedInfixFunction](result)
-  }
-
-  test("LexerError.UnterminatedInfixFunction.03") {
-    val input = "1 `add 2"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedInfixFunction](result)
-  }
-
   test("LexerError.UnterminatedRegex.01") {
     val input = """ regex" """
     val result = compile(input, Options.TestWithLibNix)

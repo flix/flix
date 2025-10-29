@@ -187,6 +187,41 @@ mod TestList {
     def indexOf06(): Unit \ Assert = assertEq(expected = Some(1), List.indexOf(2, 1 :: 2 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, List.indicesOf(0, Nil))
+
+    @Test
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{}, List.indicesOf(0, 1 :: Nil))
+
+    @Test
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{0}, List.indicesOf(1, 1 :: Nil))
+
+    @Test
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{}, List.indicesOf(0, 1 :: 2 :: Nil))
+
+    @Test
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{0}, List.indicesOf(1, 1 :: 2 :: Nil))
+
+    @Test
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{1}, List.indicesOf(2, 1 :: 2 :: Nil))
+
+    @Test
+    def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, List.indicesOf(1, 1 :: 1 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), List.indices(Nil))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), List.indices(1 :: 2 :: 3 :: Nil))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
     @Test
@@ -1120,33 +1155,6 @@ mod TestList {
 
     @Test
     def foldRight08(): Unit \ Assert = assertEq(expected = 382, List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = 100, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = 198, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = 194, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = assertEq(expected = 382, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
-
-    @Test
-    def foldRightWithCont05(): Unit \ Assert = assertEq(expected = 100, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil))
-
-    @Test
-    def foldRightWithCont06(): Unit \ Assert = assertEq(expected = 198, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil))
-
-    @Test
-    def foldRightWithCont07(): Unit \ Assert = assertEq(expected = 194, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil))
-
-    @Test
-    def foldRightWithCont08(): Unit \ Assert = assertEq(expected = 382, List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //

@@ -46,7 +46,7 @@ object TailPos {
 
   /** Identifies expressions in tail position in `defn`. */
   private def visitDef(defn: Def): Def = {
-    defn.copy(expr = visitExp(defn.expr)(defn))
+    defn.copy(exp = visitExp(defn.exp)(defn))
   }
 
   /**

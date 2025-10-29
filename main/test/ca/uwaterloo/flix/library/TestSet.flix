@@ -560,26 +560,6 @@ mod TestSet {
         assertEq(expected = 382, Set.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Set#{3, 2, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-        assertEq(expected = 100, Set.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Set#{}))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-        assertEq(expected = 198, Set.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Set#{1}))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-        assertEq(expected = 194, Set.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Set#{2, 1}))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-        assertEq(expected = 382, Set.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Set#{3, 2, 1}))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 

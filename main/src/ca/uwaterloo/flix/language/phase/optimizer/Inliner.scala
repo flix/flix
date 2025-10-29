@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, FormalParam, Occur, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.Constant
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoAst, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -300,14 +302,15 @@ object Inliner {
       Expr.Region(freshVarSym, rvar, e, tpe, eff, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      visitExp(exp1, ctx0) match {
-        case Expr.Cst(Constant.Bool(true), _, _) =>
+      val e1 = visitExp(exp1, ctx0)
+      evalBoolExpression(e1) match {
+        case FuzzyBool.True =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp2, ctx0)
-        case Expr.Cst(Constant.Bool(false), _, _) =>
+        case FuzzyBool.False =>
           sctx.changed.putIfAbsent(sym0, ())
           visitExp(exp3, ctx0)
-        case e1 =>
+        case FuzzyBool.Unknown =>
           val e2 = visitExp(exp2, ctx0)
           val e3 = visitExp(exp3, ctx0)
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
@@ -332,7 +335,7 @@ object Inliner {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
       val rs = rules.map(visitMatchRule(_, ctx0))
-      Expr.Match(e, rs, tpe, eff, loc)
+      reduceMatch(e, rs, tpe, eff, loc)
 
     case Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp, ctx0)
@@ -369,6 +372,244 @@ object Inliner {
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, ctx0))
       Expr.NewObject(name, clazz, tpe, eff, methods, loc)
+  }
+
+  /**
+    * Evaluate match if possible. The logic is rule based, for example `case _ => ` is always chosen no matter how
+    * complicated the scrutinee is. If the pattern says `case Some(..) => ..` then the scrutinee is inspected to see if
+    * it matches, does not match, or may match.
+    *
+    * The match rules are iterated top to bottom, at each step either:
+    *   - Remove the rule if it can never match (either the patten cannot match or the guard is guaranteed false)
+    *     and continue the rule iteration.
+    *   - Remove the rule if it is known to match (either `Some(12)` matching `Some(x)` or a lenient pattern like `_`)
+    *   - Otherwise, leave the rules as is.
+    *
+    * It is assumed that patterns do not contain duplicate variables (e.g. `case (x, x) => x`)
+    * and that tuples and enums do not have mismatched arity (e.g. `case Some(x, y) => x + y`).
+    */
+  @tailrec
+  private def reduceMatch(exp: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, eff: Type, loc: SourceLocation)(implicit sym0: Symbol.DefnSym, sctx: SharedContext): Expr = {
+    rules match {
+      case MonoAst.MatchRule(pat, guardOpt, ruleExp) :: rest =>
+        matchRule(exp, pat, guardOpt) match {
+          case MatchResult.Match(binders) =>
+            // Guaranteed match - convert to let binders.
+            sctx.changed.putIfAbsent(sym0, ())
+            bindPatterns(binders.toSeq, ruleExp, loc)
+          case MatchResult.NoMatch =>
+            // Impossible match - delete and continue.
+            sctx.changed.putIfAbsent(sym0, ())
+            reduceMatch(exp, rest, tpe, eff, loc)
+          case MatchResult.Unknown =>
+            // Unknown match - do nothing.
+            Expr.Match(exp, rules, tpe, eff, loc)
+        }
+      case Nil =>
+        // Do nothing.
+        Expr.Match(exp, rules, tpe, eff, loc)
+    }
+  }
+
+  private sealed trait FuzzyBool
+
+  private object FuzzyBool {
+
+    case object True extends FuzzyBool
+
+    case object False extends FuzzyBool
+
+    case object Unknown extends FuzzyBool
+
+  }
+
+  /** Returns the fuzzy evaluation of `exp` as a boolean. */
+  private def evalBoolExpression(exp: MonoAst.Expr): FuzzyBool = exp match {
+    case Expr.Cst(Constant.Bool(true), _, _) => FuzzyBool.True
+    case Expr.Cst(Constant.Bool(false), _, _) => FuzzyBool.False
+    case _ => FuzzyBool.Unknown
+  }
+
+  private sealed trait MatchResult
+
+  private object MatchResult {
+
+    /**
+      * An expression matches a pattern, corresponding to the given binders.
+      *
+      * {{{
+      *   match Cons(12, tail) {
+      *     case Cons(x, _) => ..
+      *   }
+      * }}}
+      *
+      * This would return `Match(Chain(Some(x) => 12), None => tail)`
+      */
+    case class Match(binders: Chain[(Option[Pattern.Var], MonoAst.Expr)]) extends MatchResult
+
+    /** An expression does not match a pattern. */
+    case object NoMatch extends MatchResult
+
+    /** An expression might match a pattern - it cannot be determined at compile time. */
+    case object Unknown extends MatchResult
+
+    /**
+      * A match without any binders. E.g.:
+      *
+      * {{{
+      *   match 12 {
+      *     case 12 => ..
+      *   }
+      * }}}
+      */
+    def emptyMatch(): MatchResult =
+      Match(Chain.empty)
+
+    /**
+      * A match of a single binder. E.g.:
+      *
+      * {{{
+      *   match 12 {
+      *     case x => ..
+      *   }
+      * }}}
+      */
+    def singleMatch(pat: Option[Pattern.Var], exp: MonoAst.Expr): MatchResult =
+      Match(Chain((pat, exp)))
+
+    /**
+      * Returns a match with no binder if `b` is true (see [[emptyMatch]]).
+      *
+      * Returns [[NoMatch]] if `b` is false.
+      */
+    def matchFromBool(b: Boolean): MatchResult =
+      if (b) emptyMatch() else NoMatch
+
+    /**
+      * Concatenates two match results.
+      *
+      * If either result is [[NoMatch]], the output is [[NoMatch]].
+      *
+      * Then if either result is [[Unknown]], the output is [[Unknown]].
+      *
+      * Then (both results now being [[Match]]) the binders are concatenated.
+      */
+    def concat(mr1: MatchResult, mr2: MatchResult): MatchResult = (mr1, mr2) match {
+      case (MatchResult.NoMatch, _) | (_, MatchResult.NoMatch) =>
+        MatchResult.NoMatch
+      case (MatchResult.Unknown, _) | (_, MatchResult.Unknown) =>
+        MatchResult.Unknown
+      case (MatchResult.Match(binders1), MatchResult.Match(binders2)) =>
+        MatchResult.Match(binders1 ++ binders2)
+    }
+
+  }
+
+  /** Returns the match result of `exp` against `pat` with the guard `guardOpt`. */
+  private def matchRule(exp: MonoAst.Expr, pat: Pattern, guardOpt: Option[MonoAst.Expr]): MatchResult = {
+    val guardVal = guardOpt.map(evalBoolExpression).getOrElse(FuzzyBool.True)
+    (matchPat(exp, pat), guardVal) match {
+      case (_, FuzzyBool.False) | (MatchResult.NoMatch, _) =>
+        MatchResult.NoMatch
+      case (MatchResult.Unknown, _) | (MatchResult.Match(_), FuzzyBool.Unknown) =>
+        MatchResult.Unknown
+      case (resultMatch@MatchResult.Match(_), FuzzyBool.True) =>
+        resultMatch
+    }
+  }
+
+  /** Returns the match result of `exp` against `pat`. */
+  private def matchPat(exp: MonoAst.Expr, pat: MonoAst.Pattern): MatchResult = pat match {
+    case Pattern.Wild(_, _) =>
+      // Preserve the expression in case it is impure.
+      MatchResult.singleMatch(None, exp)
+
+    case v@Pattern.Var(_, _, _, _) =>
+      MatchResult.singleMatch(Some(v), exp)
+
+    case Pattern.Cst(cst, _, _) => exp match {
+      case Expr.Cst(expCst, _, _) =>
+        matchConstant(cst, expCst)
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Tag(symUse, pats, _, _) => exp match {
+      case Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, _, _, _) =>
+        if (symUse.sym != caseSym) MatchResult.NoMatch
+        else {
+          // `exps` and `pats` have same length for well-typed programs.
+          matchPatterns(exps, pats)
+        }
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Tuple(pats, _, _) => exp match {
+      case Expr.ApplyAtomic(AtomicOp.Tuple, exps, _, _, _) =>
+        // `exps` and `pats` have same length for well-typed programs.
+        matchPatterns(exps, pats.toList)
+      case _ =>
+        MatchResult.Unknown
+    }
+
+    case Pattern.Record(_, _, _, _) =>
+      MatchResult.Unknown
+
+  }
+
+  /**
+    * Returns the match result for matching `exps` to the patterns of `pats`.
+    *
+    * If the two lists are of different lengths, [[MatchResult.Unknown]] is returned.
+    *
+    * N.B.: `exps` and `pats` must have the same length, otherwise [[InternalCompilerException]] is thrown.
+    */
+  private def matchPatterns(exps: List[MonoAst.Expr], pats: List[MonoAst.Pattern]): MatchResult = {
+    if (exps.lengthCompare(pats) != 0) {
+      throw InternalCompilerException(
+        s"Match rule has arity ${pats.size} against ${exps.size} expressions.",
+        exps.headOption.map(_.loc).getOrElse(SourceLocation.Unknown)
+      )
+    } else {
+      // Keep the order of `exps` to maintain evaluation order.
+      val res = pats.zip(exps).foldLeft(MatchResult.emptyMatch()) {
+        case (acc, (innerPat, innerExp)) =>
+          MatchResult.concat(acc, matchPat(innerExp, innerPat))
+      }
+      res
+    }
+  }
+
+  /**
+    * Returns the match result for two constants.
+    *
+    * Constants contain no binders so the function is symmetric.
+    */
+  private def matchConstant(cst1: Constant, cst2: Constant): MatchResult = {
+    import Constant.*
+    import MatchResult.*
+    (cst1, cst2) match {
+      case (Unit, Unit) => emptyMatch()
+      case (Null, Null) => emptyMatch()
+      case (Bool(v1), Bool(v2)) => matchFromBool(v1 == v2)
+      case (Char(v1), Char(v2)) => matchFromBool(v1 == v2)
+      case (Float32(v1), Float32(v2)) => matchFromBool(v1 == v2)
+      case (Float64(v1), Float64(v2)) => matchFromBool(v1 == v2)
+      case (BigDecimal(_), BigDecimal(_)) => Unknown // Avoiding static checking of object types.
+      case (Int8(v1), Int8(v2)) => matchFromBool(v1 == v2)
+      case (Int16(v1), Int16(v2)) => matchFromBool(v1 == v2)
+      case (Int32(v1), Int32(v2)) => matchFromBool(v1 == v2)
+      case (Int64(v1), Int64(v2)) => matchFromBool(v1 == v2)
+      case (BigInt(_), BigInt(_)) => Unknown // Avoiding static checking of object types.
+      case (Str(_), Str(_)) => Unknown // Avoiding static checking of object types.
+      case (Regex(_), Regex(_)) => Unknown // Avoiding static checking of object types.
+      case (RecordEmpty, RecordEmpty) => emptyMatch()
+      case _ =>
+        // Unrelated constants are impossible for well-typed programs.
+        // Returning unknown is the safe "do nothing" choice.
+        Unknown
+    }
   }
 
   /**
@@ -519,10 +760,22 @@ object Inliner {
     *
     */
   private def bindArgs(exp: Expr, fparams: List[FormalParam], exps: List[Expr], loc: SourceLocation): Expr = {
-    fparams.zip(exps).foldRight(exp) {
+    ListOps.zip(fparams, exps).foldRight(exp) {
       case ((fparam, arg), acc) =>
         val eff = Type.mkUnion(arg.eff, acc.eff, loc)
         Expr.Let(fparam.sym, arg, acc, acc.tpe, eff, fparam.occur, loc)
+    }
+  }
+
+  /** Returns a nested let expression where the leftmost binder is the outermost let. */
+  private def bindPatterns(binders: Iterable[(Option[Pattern.Var], MonoAst.Expr)], exp: MonoAst.Expr, loc: SourceLocation): MonoAst.Expr = {
+    binders.foldRight(exp) {
+      case ((Some(v), binderExp), acc) =>
+        val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
+        Expr.Let(v.sym, binderExp, acc, acc.tpe, eff, v.occur, loc)
+      case ((None, binderExp), acc) =>
+        val eff = Type.mkUnion(binderExp.eff, acc.eff, loc)
+        Expr.Stm(binderExp, acc, acc.tpe, eff, loc)
     }
   }
 
@@ -620,12 +873,14 @@ object Inliner {
     *
     * A trivial expression is one of the following:
     *   - [[Expr.Var]]
+    *   - Is a [[Expr.Cast]] of a trivial expression.
     *   - Any expression where [[isCst]] holds.
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Var(_, _, _) => true
+    case Expr.Cast(exp, _, _, _) => isTrivial(exp)
     case exp => isCst(exp)
   }
 

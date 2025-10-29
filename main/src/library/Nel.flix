@@ -238,6 +238,11 @@ mod Nel {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
+    /// Returns a range of all valid indices of the non-empty list `l`.
+    ///
+    pub def indices(l: Nel[a]): Range[Int32] = Range.Range(0, length(l))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = findLeft(f, l)
@@ -378,16 +383,6 @@ mod Nel {
     ///
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = match l {
         case Nel(x, xs) => f(x, List.foldRight(f, s, xs))
-    }
-
-    ///
-    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Nel[a]): b \ ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRightWithCont(f, z, xs))
     }
 
     ///

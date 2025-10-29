@@ -29,6 +29,7 @@ import ca.uwaterloo.flix.util.ParOps
   *   - Is an entry point (main / test / export).
   *   - Appears in a function which itself is reachable.
   *   - Is an instance of a trait whose signature(s) appear in a reachable function.
+  *   - Is annotated with `@LoweringTarget`.
   */
 object TreeShaker1 {
 
@@ -41,7 +42,7 @@ object TreeShaker1 {
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
-      case (sym, _) => allReachable.contains(ReachableSym.DefnSym(sym))
+      case (sym, defn) => defn.spec.ann.isLoweringTarget || allReachable.contains(ReachableSym.DefnSym(sym))
     }
 
     root.copy(defs = reachableDefs)
@@ -143,6 +144,19 @@ object TreeShaker1 {
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.SelectChannel(selects, optExp, _, _, _) =>
+      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(Set())
+
   }
 
   /** Returns the symbols reachable from `exps`. */

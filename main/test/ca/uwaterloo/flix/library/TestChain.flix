@@ -349,6 +349,41 @@ mod TestChain {
     def indexOf06(): Unit \ Assert = assertEq(expected = Some(1), Chain.indexOf(2, List.toChain(1 :: 2 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = assertEq(expected = Vector#{}, Chain.indicesOf(0, Chain.empty()))
+
+    @Test
+    def indicesOf02(): Unit \ Assert = assertEq(expected = Vector#{}, Chain.indicesOf(0, Chain.singleton(1)))
+
+    @Test
+    def indicesOf03(): Unit \ Assert = assertEq(expected = Vector#{0}, Chain.indicesOf(1, Chain.singleton(1)))
+
+    @Test
+    def indicesOf04(): Unit \ Assert = assertEq(expected = Vector#{}, Chain.indicesOf(0, List.toChain(1 :: 2 :: Nil)))
+
+    @Test
+    def indicesOf05(): Unit \ Assert = assertEq(expected = Vector#{0}, Chain.indicesOf(1, List.toChain(1 :: 2 :: Nil)))
+
+    @Test
+    def indicesOf06(): Unit \ Assert = assertEq(expected = Vector#{1}, Chain.indicesOf(2, List.toChain(1 :: 2 :: Nil)))
+
+    @Test
+    def indicesOf07(): Unit \ Assert = assertEq(expected = Vector#{0, 1}, Chain.indicesOf(1, List.toChain(1 :: 1 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), Chain.indices(Chain.empty()))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Chain.indices(List.toChain(1 :: 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -896,22 +931,6 @@ mod TestChain {
     def foldRight04(): Unit \ Assert = assertEq(expected = 382, Chain.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = 100, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Chain.empty()))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = 198, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Chain.singleton(1)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = 194, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, List.toChain(1 :: 2 :: Nil)))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = assertEq(expected = 382, Chain.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, List.toChain(1 :: 2 :: 3 :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1436,30 +1455,6 @@ mod TestChain {
     @Test
     def toList04(): Unit \ Assert =
         assertEq(expected = 1 :: 2 :: 3 :: Nil, Chain.toList(List.toChain(1 :: 2 :: 3 :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, (Chain.empty(): Chain[Int32])) `MutList.sameElements` (List.toMutList(rc, Nil): MutList[Int32, rc]))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, Chain.singleton(1)) `MutList.sameElements` List.toMutList(rc, 1 :: Nil))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, List.toChain(1 :: 2 :: Nil)) `MutList.sameElements` List.toMutList(rc, 1 :: 2 :: Nil))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(Chain.toMutList(rc, List.toChain(1 :: 2 :: 3 :: Nil)) `MutList.sameElements` List.toMutList(rc, 1 :: 2 :: 3 :: Nil))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //

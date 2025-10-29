@@ -227,6 +227,7 @@ mod TestBPlusTree {
         assertFalse(BPlusTree.memberOfPair(1, 3, tree))
     }
 
+
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
     /////////////////////////////////////////////////////////////////////////////
@@ -274,6 +275,107 @@ mod TestBPlusTree {
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
         assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeft                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    pub def foldLeft01(): Unit \ Assert = region rc{
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+        BPlusTree.put(3, "c", t);
+        let res = BPlusTree.foldLeft(acc -> v -> acc + v, "", t);
+        Assert.assertEq(expected = "abc", res)
+    }
+
+    @Test
+    pub def foldLeft02(): Unit \ Assert = region rc{
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 6, t);
+        BPlusTree.put(2, 3, t);
+        BPlusTree.put(3, 5, t);
+        BPlusTree.put(4, 8, t);
+        BPlusTree.put(5, 9, t);
+        BPlusTree.put(6, 11, t);
+        BPlusTree.put(7, 15, t);
+        BPlusTree.put(8, 12, t);
+        BPlusTree.put(9, 2, t);
+        BPlusTree.put(10, -1, t);
+        let res = BPlusTree.foldLeft(acc -> v -> v :: acc, List.empty(), t);
+        Assert.assertEq(expected = List#{-1, 2, 12, 15, 11, 9, 8, 5, 3, 6}, res)
+    }
+
+    @Test
+    pub def foldLeft03(): Unit \ Assert = region rc{
+        let t: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        let res = BPlusTree.foldLeft(acc -> v -> v :: acc, List.empty(), t);
+        Assert.assertEq(expected = List.empty(), res)
+    }
+
+    @Test
+    pub def foldLeft04(): Unit \ Assert = region rc{
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 1, t);
+        BPlusTree.put(2, 2, t);
+        BPlusTree.put(3, 3, t);
+        let res = BPlusTree.foldLeft(acc -> v -> "(${acc} + ${v})", "0", t);
+        Assert.assertEq(expected = "(((0 + 1) + 2) + 3)", res)
+    }
+
+    @Test
+    pub def foldLeft05(): Unit \ Assert = region rc{
+        let t: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
+        let list = MutList.empty(rc);
+        let res = (0, t) ||> BPlusTree.foldLeft(acc -> v -> { 
+            MutList.push(v, list); 
+            v + acc 
+        });
+        Assert.assertEq(expected = 0, res);
+        Assert.assertTrue(MutList.isEmpty(list))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // foldLeftWithKey                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    pub def foldLeftWithKey01(): Unit \ Assert = region rc{
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(-1, 1, t);
+        BPlusTree.put(5, 2, t);
+        BPlusTree.put(8, 3, t);
+        BPlusTree.put(13, 3, t);
+        BPlusTree.put(-6, 3, t);
+        let res = BPlusTree.foldLeftWithKey(acc -> k -> _ -> Set.insert(k, acc), Set.empty(), t);
+        Assert.assertEq(expected = BPlusTree.keysOf(t), res)
+    }
+
+    @Test
+    pub def foldLeftWithKey02(): Unit \ Assert = region rc{
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+        BPlusTree.put(3, "c", t);
+        BPlusTree.put(4, "d", t);
+        BPlusTree.put(5, "e", t);
+        let res = BPlusTree.foldLeftWithKey(acc -> _ -> v -> v :: acc, List.empty(), t);
+        Assert.assertEq(expected = "e" :: "d" :: "c" :: "b" :: "a" :: Nil, res)
+    }
+
+    @Test
+    pub def foldLeftWithKey03(): Unit \ Assert = region rc{
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+        BPlusTree.put(3, "c", t);
+        BPlusTree.put(4, "d", t);
+        BPlusTree.put(5, "e", t);
+        let res = BPlusTree.foldLeftWithKey(acc -> k -> v -> acc + "${(k, v)}", "", t);
+        Assert.assertEq(expected = "(1, a)(2, b)(3, c)(4, d)(5, e)", res)
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // getWithDefault                                                          //
@@ -349,6 +451,60 @@ mod TestBPlusTree {
         assertFalse(empty2);
         assertFalse(empty3);
         assertFalse(empty4)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // keysOf                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    pub def keysOf01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(2, 5, t);
+        BPlusTree.put(1, 4, t);
+        BPlusTree.put(3, 6, t);
+        let res = BPlusTree.keysOf(t);
+        Assert.assertEq(expected = Set#{1, 2, 3}, res)
+    }
+
+    @Test
+    pub def keysOf02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 11, t);
+        BPlusTree.put(5, 15, t);
+        BPlusTree.put(3, 13, t);
+        BPlusTree.put(6, 16, t);
+        BPlusTree.put(2, 12, t);
+        BPlusTree.put(4, 14, t);
+        let res = BPlusTree.keysOf(t);
+        Assert.assertEq(expected = Set#{1, 2, 3, 4, 5, 6}, res)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // valuesOf                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    pub def valuesOf01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(3, 5, t);
+        BPlusTree.put(1, 7, t);
+        BPlusTree.put(2, 6, t);
+        let res = BPlusTree.valuesOf(t);
+        Assert.assertEq(expected = List#{7, 6, 5}, res)
+    }
+
+    @Test
+    pub def valuesOf02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 7, t);
+        BPlusTree.put(6, 5, t);
+        BPlusTree.put(2, 6, t);
+        BPlusTree.put(5, 3, t);
+        BPlusTree.put(3, 1, t);
+        BPlusTree.put(4, 5, t);
+        let res = BPlusTree.valuesOf(t);
+        Assert.assertEq(expected = List#{7, 6, 1, 5, 3, 5}, res)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -575,6 +731,97 @@ mod TestBPlusTree {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(0, 1, tree);
         assertTrue(BPlusTree.getKeyAndValue(1, tree) |> Option.isEmpty)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // adjust                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def plusOne(v: Int32): Int32 = v + 1
+
+    @Test
+    def adjust01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 2, t);
+        BPlusTree.adjust(plusOne, 1, t);
+        Assert.assertEq(expected = Some(3), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, 2, t);
+        BPlusTree.adjust(identity, 1, t);
+        Assert.assertEq(expected = Some(2), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(1, "foo", t);
+        BPlusTree.adjust(String.toUpperCase, 1, t);
+        Assert.assertEq(expected = Some("FOO"), BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.adjust(plusOne, 1, t);
+        Assert.assertNone(BPlusTree.get(1, t))
+    }
+
+    @Test
+    def adjust05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(2, 2, t);
+        BPlusTree.put(5, 2, t);
+        BPlusTree.put(6, 2, t);
+        BPlusTree.put(-1, 2, t);
+        BPlusTree.put(-5, 2, t);
+        BPlusTree.put(20, 2, t);
+        BPlusTree.adjust(plusOne, 6, t);
+        Assert.assertEq(expected = Some(3), BPlusTree.get(6, t))
+    }
+
+    @Test
+    def adjust06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 300)) 
+            BPlusTree.put(k, k * 100, t);
+        BPlusTree.adjust(plusOne, 150, t);
+        Assert.assertEq(expected = Some(15001), BPlusTree.get(150, t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // adjustWithKey                                                           //
+    /////////////////////////////////////////////////////////////////////////////
+
+    def addKeyToValue(k: Int32, v: Int32): Int32 = k + v
+
+    @Test
+    def adjustWithKey01(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(5, 12, t);
+        BPlusTree.adjustWithKey(addKeyToValue, 5, t);
+        Assert.assertEq(expected = Some(17), BPlusTree.get(5, t))
+    }
+
+    @Test
+    def adjustWithKey02(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        BPlusTree.put(5, 12, t);
+        BPlusTree.adjustWithKey(addKeyToValue, -3, t);
+        Assert.assertEq(expected = Some(12), BPlusTree.get(5, t));
+        Assert.assertNone(BPlusTree.get(-3, t))
+    }
+    
+    @Test
+    def adjustWithKey03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 300)) 
+            BPlusTree.put(k, k * 100, t);
+        BPlusTree.adjustWithKey(addKeyToValue, 150, t);
+        Assert.assertEq(expected = Some(15150), BPlusTree.get(150, t))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1127,4 +1374,179 @@ mod TestBPlusTree {
         let res = Vector#{(0, 12), (1, 12), (2, 13), (3, 14)};
         assertTrue(MutList.toVector(list) `Vector.equals` res)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // find / findLeft                                                         //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def find01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertNone(BPlusTree.find(_ -> _ -> false, t))
+    }
+
+    @Test
+    def find02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertNone(BPlusTree.find(_ -> _ -> true, t))
+    }
+
+    @Test
+    def find03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 20);
+        Assert.assertEq(expected = Some((10, 20)), BPlusTree.find(k -> _ -> k == 10, t))
+    }
+
+    @Test
+    def find04(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 20);
+        Assert.assertNone(BPlusTree.find(k -> _ -> k == 0, t))
+    }
+
+    @Test
+    def find05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, k + 1, t);
+        Assert.assertEq(expected = Some((50, 51)), BPlusTree.find(k -> _ -> k == 50, t))
+    }
+
+    @Test
+    def find06(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, k + 1, t);
+        Assert.assertNone(BPlusTree.find(k -> v -> k > v, t))
+    }
+
+    @Test
+    def find07(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, k + 1, t);
+        Assert.assertEq(expected = Some((0, 1)), BPlusTree.find(k -> v -> k < v, t))
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def nonEmpty01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertFalse(BPlusTree.nonEmpty(t))
+    }
+
+    @Test
+    def nonEmpty02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(1, 10);
+        Assert.assertTrue(BPlusTree.nonEmpty(t))
+    }
+
+    @Test
+    def nonEmpty03(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        Assert.assertTrue(BPlusTree.nonEmpty(t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // forAll                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def forAll01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertTrue(BPlusTree.forAll(_ -> _ -> false, t))
+    }
+
+    @Test
+    def forAll02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertTrue(BPlusTree.forAll(_ -> _ -> true, t))
+    }
+
+    @Test
+    def forAll03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(4, 2);
+        Assert.assertTrue(BPlusTree.forAll(k -> v -> k > v, t))
+    }
+
+    @Test
+    def forAll04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        Assert.assertTrue(BPlusTree.forAll(k -> _ -> k < 100, t))
+    }
+
+    @Test
+    def forAll05(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        BPlusTree.put(105, (), t);
+        Assert.assertFalse(BPlusTree.forAll(k -> _ -> k < 105, t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // exists                                                                  //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def exists01(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertFalse(BPlusTree.exists(_ -> _ -> true, t))
+    }
+
+    @Test
+    def exists02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        Assert.assertFalse(BPlusTree.exists(_ -> _ -> false, t))
+    }
+
+
+    @Test
+    def exists03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5);
+        Assert.assertFalse(BPlusTree.exists(_ -> _ -> false, t))
+    }
+
+    @Test
+    def exists04(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5);
+        Assert.assertTrue(BPlusTree.exists(k -> v -> k + v == 15, t))
+    }
+
+    @Test
+    def exists05(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5);
+        Assert.assertFalse(BPlusTree.exists(k -> v -> k + v == 0, t))
+    }
+
+    @Test
+    def exists06(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc) !> BPlusTree.put(10, 5) !> BPlusTree.put(20, 5);
+        Assert.assertTrue(BPlusTree.exists(_ -> v -> v == 5, t))
+    }
+
+    @Test
+    def exists07(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        Assert.assertTrue(BPlusTree.exists(k -> _ -> k == 99, t))
+    }
+
+    @Test
+    def exists08(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 3);
+        foreach (k <- Range.Range(0, 100))
+            BPlusTree.put(k, (), t);
+        let f = k -> _ -> k == 99;
+        Assert.assertEq(expected = not BPlusTree.forAll(k -> v -> not f(k, v), t), BPlusTree.exists(f, t))
+    }
+
 }

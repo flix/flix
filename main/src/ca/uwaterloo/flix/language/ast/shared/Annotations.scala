@@ -82,6 +82,11 @@ case class Annotations(annotations: List[Annotation]) {
   def isLazyWhenPure: Boolean = annotations exists (_.isInstanceOf[Annotation.LazyWhenPure])
 
   /**
+    * Returns `true` if `this` sequence contains the `@LoweringTarget` annotation.
+    */
+  def isLoweringTarget: Boolean = annotations contains Annotation.LoweringTarget
+
+  /**
     * Returns `true` if `this` sequence contains the `@MustUse` annotation.
     */
   def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])

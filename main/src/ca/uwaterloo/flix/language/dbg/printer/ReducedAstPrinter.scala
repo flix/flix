@@ -28,7 +28,7 @@ object ReducedAstPrinter {
     */
   def print(root: ReducedAst.Root): DocAst.Program = {
     val defs = root.defs.values.map {
-      case ReducedAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, _) =>
+      case ReducedAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, _, _) =>
         DocAst.Def(
           ann,
           mod,

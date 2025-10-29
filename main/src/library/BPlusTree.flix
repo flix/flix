@@ -46,8 +46,9 @@
 /// `rc` is the region for the tree.
 ///
 /// `search` is only used internally within the Fixpoint module where keys are of type
-/// `Vector[Int64]`. A `Search` describes the order in which elements should be
-/// compared. E.g. [0, 1, 2, ..., n] is the natural order.
+/// `Vector[Int64]`. A `search` describes the order in which elements should be
+/// compared. E.g. [0, 1, 2, ..., n] is the natural order. A `search` may only be used
+/// when using `Vector[Int64]` as keys.
 ///
 /// `counter` is used for keeping track of the number of inserted elements.
 ///
@@ -252,6 +253,27 @@ mod BPlusTree {
     }
 
     ///
+    /// Updates `t` with `k => f(v)` if `k => v` is in `t`.
+    ///
+    /// Otherwise, `t` is unchanged.
+    ///
+    /// Thread-safe.
+    ///
+    pub def adjust(f: v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
+        adjustWithKey(_ -> v -> f(v), k, t)
+
+    ///
+    /// Updates `t` with `k => f(k, v)` if `k => v` is in `t`.
+    ///
+    /// Otherwise, `t` is unchanged.
+    ///
+    /// Thread-safe.
+    ///
+    pub def adjustWithKey(f: k -> v -> v \ ef, k: k, t: BPlusTree[k, v, r]): Unit \ ef + r with Order[k] =
+        let (node, stamp) = findLeaf(k, t);
+        Node.adjustWithKey(f, k, stamp, t, node)
+
+    ///
     /// Returns true if and only if `t` is a structurally correct tree.
     ///
     /// Only used for internal testing.
@@ -289,6 +311,38 @@ mod BPlusTree {
                     v
                 }
         }
+
+    ///
+    /// Returns `true` if and only if for all `k => v` in `t`, `f(k, v) == true`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def forAll(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r =
+        not exists(k -> v -> not f(k, v), t)
+
+    ///
+    /// Returns `true` if and only if there exists `k => v` in `t` such that `f(k, v) == true`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def exists(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Bool \ ef + r =
+        Node.exists(f, 0, Node.leftMostChild(t->root))
+
+    ///
+    /// Alias for `findLeft`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def find(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r =
+        findLeft(f, t)
+
+    ///
+    /// Optionally returns the first mapping in `t` satisfying the function `f`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def findLeft(f: k -> v -> Bool \ ef, t: BPlusTree[k, v, r]): Option[(k, v)] \ ef + r =
+        Node.findLeft(f, 0, Node.leftMostChild(t->root))
 
     ///
     /// Increments the stored size of `t`.
@@ -372,6 +426,18 @@ mod BPlusTree {
     }
 
     ///
+    /// Applies `f` to a start value `i` and all values in `t` going from left to right.
+    ///
+    pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
+        List.foldLeft(f, i, valuesOf(t))
+
+    ///
+    /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
+    ///
+    pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
+        List.foldLeft(b -> match (k, v) -> f(b, k, v), i, toList(t))
+
+    ///
     /// Applies `f` to all mappings `k => v` in `t`.
     ///
     /// Not thread-safe.
@@ -417,6 +483,25 @@ mod BPlusTree {
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.getWithDefault(k, stamp, d, leaf, t)
+
+
+    ///
+    /// Returns the set of keys in `t`.
+    ///
+    pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] = region rc {
+        let set = MutSet.empty(rc);
+        forEach(k -> _ -> MutSet.add(k, set), t);
+        MutSet.toSet(set)
+    }
+
+    ///
+    /// Returns the list of values in `t`.
+    ///
+    pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] = region rc {
+        let list = MutList.empty(rc);
+        forEach(_ -> v -> MutList.push(v, list), t);
+        MutList.toList(list)
+    }
 
     ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
@@ -469,7 +554,6 @@ mod BPlusTree {
         else
             parForEach(f2, t)
 
-
     ///
     /// Updates the tree `t` with the mapping `k => v`. Replaces any
     /// existing mapping.
@@ -489,7 +573,6 @@ mod BPlusTree {
     ///
     pub def putIf(decider: k -> v -> k -> v -> Bool, k: k, v: v, t: BPlusTree[k, v, r]): Unit \ r with Order[k] =
         fixRoot(putIfInternal(decider, k, v, t), t)
-
 
     ///
     /// Internal method for `putIf`.
@@ -530,6 +613,14 @@ mod BPlusTree {
             Lock.yieldBasedOn(Node.getLock(root));
             isEmpty(t)
         }
+
+    ///
+    /// Returns `true` if and only if `t` contains at least one mapping.
+    ///
+    /// Thread-safe.
+    ///
+    pub def nonEmpty(t: BPlusTree[k, v, r]): Bool \ r =
+        not BPlusTree.isEmpty(t)
 
     ///
     /// Returns `true` if and only if `t` contains the key `k`.
@@ -756,6 +847,35 @@ mod BPlusTree {
             node->size = size + 1
 
         ///
+        /// Internal method to update the leaf `node` with `key => f(key, val)` if `key => val` is in `node`.
+        ///
+        /// Otherwise, `node` is unchanged.
+        ///
+        /// Thread-safe.
+        ///
+        /// Lock invariant:
+        ///
+        /// - On invocation, the thread has a lock on `node`.
+        ///
+        @Internal
+        pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
+            let index = binarySearch(key, BPlusTree.search(t), node);
+            if (index >= 0) {
+                let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
+                if (not Lock.valid(writeStamp, node->lock)) {
+                    Lock.yieldBasedOn(node->lock);
+                    BPlusTree.adjustWithKey(f, key, t)
+                } else {
+                    let val = Array.get(index, node->values);
+                    Array.put(f(key, val), index, node->values);
+                    Lock.unlockWrite(writeStamp, node->lock)
+                }
+            } else if (not Lock.valid(stamp, node->lock))
+                BPlusTree.adjustWithKey(f, key, t)
+            else ()
+        }
+
+        ///
         /// Applies the predicate `f` to all pairs of direcly subsequent elements of `v` and returns the and.
         /// E.g. f(v[0], v[1]) and f(v[1], v[2]) and ... and f(v[n-1], v[n])
         /// Only used by the testing functions
@@ -868,31 +988,22 @@ mod BPlusTree {
             f(0, length - 1)
 
         ///
-        /// Compare `val1` to `val2`. If `search` has non-zero length and `val1` and `val2` are of type `Vector[Int64]`
-        /// compare the lements in the order defined by `search`.
+        /// Compare `val1` to `val2`. If `search` has length zero then the order on `k` is used for the comparison.
+        ///
+        /// If `search` has non-zero length `val1` and `val2` is assumed to be of type `Vector[Int64]`.
+        /// The elements will be compared in the order given by `search`.
         ///
         def comparison(val1: k, val2: k, search: Search): Int32 with Order[k] = {
             let len = Vector.length(search);
             // If the values are of type Vector[Int64] check whether a specific search is given.
             // If so use the custom compare function for that search.
-            typematch val1 {
-                case val_1: Vector[Int64] =>
-                    if (len == 0) {
-                        let comp = val1 <=> val2;
-                        if (comp == Comparison.GreaterThan) 1
-                        else if (comp == Comparison.LessThan) -1
-                        else 0
-                    } else {
-                        typematch val2 {
-                            case val_2: Vector[Int64] => vectorComp(val_1, val_2, len, 0, search)
-                            case _: _ => unreachable!()
-                        }
-                    }
-                case _: _ =>
-                    let comp = val1 <=> val2;
-                    if (comp == Comparison.GreaterThan) 1
-                    else if (comp == Comparison.LessThan) -1
-                    else 0
+            if (len == 0) {
+                let comp = val1 <=> val2;
+                if (comp == Comparison.GreaterThan) 1
+                else if (comp == Comparison.LessThan) -1
+                else 0
+            } else {
+                vectorComp(unchecked_cast(val1 as Vector[Int64]), unchecked_cast(val2 as Vector[Int64]), len, 0, search)
             }
         }
 
@@ -947,6 +1058,54 @@ mod BPlusTree {
             let obj2 = unchecked_cast(o2 as JObject);
             // Unchecked cast is here used to remove the IO effect from interacting with Java.
             unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
+
+        ///
+        /// Optionally returns the first mapping satisfying the function `f` in `node` and
+        /// to the right of `node`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def findLeft(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Option[(k, v)] \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v))
+                    Some((k, v))
+                else
+                    findLeft(f, index + 1, node)
+            } else match node->next {
+                case None => None
+                case Some(next) => findLeft(f, 0, next)
+            }
+
+        ///
+        /// Returns `true` if and only if there exists mappings in `node` or to the right of `node`
+        /// satisfying `f`.
+        ///
+        /// Not thread-safe.
+        ///
+        @Internal
+        pub def exists(
+            f: k -> v -> Bool \ ef,
+            index: Int32,
+            node: Node[k, v, r]
+        ): Bool \ ef + r =
+            if (index < node->size) {
+                let k = Array.get(index, node->keys);
+                let v = Array.get(index, node->values);
+                if (f(k, v))
+                    true
+                else
+                    exists(f, index + 1, node)
+            } else match node->next {
+                case None => false
+                case Some(next) => exists(f, 0, next)
+            }
 
         ///
         /// Provides access to the `lock` field of `node`.

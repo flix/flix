@@ -281,6 +281,21 @@ mod List {
         loop(l, 0)
 
     ///
+    /// Returns the positions of all occurrences of `x` in `l`.
+    ///
+    pub def indicesOf(x: a, l: List[a]): Vector[Int32] with Eq[a] =
+        def loop(ll, acc, indices) = match ll {
+            case Nil     => indices
+            case y :: ys => if (x == y) loop(ys, acc + 1, acc :: indices) else loop(ys, acc + 1, indices)
+        };
+        loop(l, 0, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the list `l`.
+    ///
+    pub def indices(l: List[a]): Range[Int32] = Range.Range(0, length(l))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: List[a]): Option[a] \ ef = findLeft(f, l)
@@ -723,17 +738,6 @@ mod List {
         loop(reverse(l), s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: List[a]): b \ ef = match l {
-        case Nil     => z
-        case x :: xs => f(x, _ -> foldRightWithCont(f, z, xs))
-    }
-
-    ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained. Returns `Some(v)`.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(x1, x2), x3)..., xn))`
@@ -1153,13 +1157,6 @@ mod List {
     ///
     pub def toChain(l: List[a]): Chain[a] =
         List.foldLeft(Chain.snoc, Chain.empty(), l)
-
-    ///
-    /// Returns `l` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], l: List[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
-    }
 
     ///
     /// Returns the list `l` as a set.

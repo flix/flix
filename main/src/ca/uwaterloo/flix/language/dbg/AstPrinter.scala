@@ -101,6 +101,11 @@ object AstPrinter {
       printDocProgram(phase, ReducedAstPrinter.print(root))
   }
 
+  implicit object DebugJvmAst extends Debug[JvmAst.Root] {
+    override def emit(phase: String, root: JvmAst.Root)(implicit flix: Flix): Unit =
+      printDocProgram(phase, JvmAstPrinter.print(root))
+  }
+
   case class DebugValidation[T, E]()(implicit d: Debug[T]) extends Debug[Validation[T, E]] {
     override val hasAst: Boolean = d.hasAst
 
