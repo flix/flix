@@ -109,11 +109,11 @@ object EntryPoints {
     * A function is an entry point if:
     *   - It is the main function (called `main` by default, but can configured
     *     to an arbitrary name).
-    *   - It is a test (annotated with `@Test`).
     *   - It is an exported function (annotated with `@Export`).
+    *   - It is a test (annotated with `@Test`) and tests are included in the output (flix options, default is `true`).
     */
-  private def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    isMain(defn) || isTest(defn) || isExport(defn)
+  private def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): Boolean =
+    isMain(defn) || isExport(defn) || (isTest(defn) && flix.options.includeTests)
 
   /** Returns `true` if `defn` is a test. */
   private def isTest(defn: TypedAst.Def): Boolean =
