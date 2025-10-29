@@ -34,6 +34,11 @@ object Safety {
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
+    val ioIsProhibited = defn.loc.security == SecurityContext.Paranoid
+    val hasIO = defn.spec.eff.effects.contains(Symbol.IO)
+    if (ioIsProhibited && hasIO) {
+      checkPermissions(defn.loc.security, defn.loc)
+    }
     visitExp(defn.exp)
     defn
   }
