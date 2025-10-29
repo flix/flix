@@ -404,8 +404,8 @@ object Safety {
   /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
   private def checkPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
-      case SecurityContext.Paranoid => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
-      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+      case SecurityContext.Plain | SecurityContext.Paranoid =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
       case SecurityContext.Unrestricted => ()
     }
   }
