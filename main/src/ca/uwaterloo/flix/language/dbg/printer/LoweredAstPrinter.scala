@@ -114,6 +114,15 @@ object LoweredAstPrinter {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, _, _) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
       DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
+
+    case LoweredAst.Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+
   }
 
   /**
