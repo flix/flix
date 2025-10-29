@@ -301,7 +301,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(projectPath)
-    val result = for {
+    for {
       manifest <- Steps.parseManifest(tomlPath)
       deps <- Steps.resolveFlixDependencies(manifest)
       _ <- Steps.installDependencies(deps)
@@ -309,7 +309,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       ()
     }
-    result
   }
 
   /**

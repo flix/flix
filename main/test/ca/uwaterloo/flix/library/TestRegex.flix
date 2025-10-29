@@ -1412,4 +1412,23 @@ mod TestRegex {
     def getLastWithBounds09(): Unit \ Assert =
         assertEq(expected = None, Regex.getLastWithBounds(regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c"))
 
+    /////////////////////////////////////////////////////////////////////////////
+    // capture                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def capture01(): Unit \ Assert =
+        assertEq(expected = List#{}, Regex.capture(Regex.unmatchable(), ""))
+
+    @Test
+    def capture02(): Unit \ Assert =
+        assertEq(expected = List#{"2025","01","02"}, Regex.capture(regex"(-?\\d{4,})-(\\d{2})-(\\d{2})", "2025-01-02"))
+
+    @Test
+    def capture03(): Unit \ Assert =
+        assertEq(expected = List#{"2025","01","01","02"}, Regex.capture(regex"(-?\\d{4,})-((\\d{2}))-(\\d{2})", "2025-01-02"))
+    @Test
+    def capture04(): Unit \ Assert =
+        assertEq(expected = List#{"2025","01",""}, Regex.capture(regex"(\\d{4,})-(\\d{2})-(\\d{2})?", "2025-01-"))
+
 }

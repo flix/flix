@@ -26,7 +26,7 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
     val arg = "Correct"
     val input =
       s"""
-         |def main(): Unit = match Environment.getArgs() {
+         |def main(): Unit = match Env.getArgs() {
          |    case "$arg" :: Nil => ()
          |    case _ :: Nil => ?wrongArgumentValue
          |    case _ => ?incorrectNumberOfArgs

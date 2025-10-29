@@ -712,8 +712,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val flix = new Flix()
-    flix.setOptions(flix.options.copy(checkTrust = true))
-
     flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
 
     for ((path, trust) <- pkgs) {
