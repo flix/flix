@@ -31,8 +31,9 @@ object Options {
     entryPoint = None,
     explain = false,
     githubToken = None,
-    installDeps = false,
+    includeTests = true,
     incremental = true,
+    installDeps = false,
     json = false,
     outputJvm = false,
     outputPath = Path.of("./build/"),
@@ -83,6 +84,7 @@ object Options {
   * @param entryPoint     specifies the main entry point.
   * @param explain        enables additional explanations.
   * @param githubToken    the API key to use for GitHub dependency resolution.
+  * @param includeTests   includes functions with the test annotation in the build output.
   * @param incremental    enables incremental compilation.
   * @param installDeps    enables automatic installation of dependencies.
   * @param json           enable json output.
@@ -100,6 +102,7 @@ case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    githubToken: Option[String],
+                   includeTests: Boolean,
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,
