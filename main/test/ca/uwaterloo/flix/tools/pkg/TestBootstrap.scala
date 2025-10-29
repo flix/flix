@@ -96,7 +96,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(new Flix())(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
@@ -109,7 +109,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(new Flix())(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
@@ -128,11 +128,11 @@ class TestBootstrap extends AnyFunSuite {
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(new Flix())(Formatter.getDefault)
 
     def hash1 = calcHash(packagePath)
 
-    b.buildPkg()(Formatter.getDefault)
+    b.buildPkg(new Flix())(Formatter.getDefault)
 
     def hash2 = calcHash(packagePath)
 

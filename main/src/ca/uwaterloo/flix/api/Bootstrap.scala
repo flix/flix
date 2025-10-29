@@ -385,7 +385,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def buildPkg(flix: Flix)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
 
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
@@ -402,6 +402,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
       return Result.Err(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a $EXT_FPKG-file. Refusing to overwrite."))
     }
+    Steps.updateStaleSources(flix)
+    for {
+      _ <- Steps.configureJarOutput(flix)
+      _ <- Steps.compile(flix)
+    } yield {
+      ()
+    }
+
 
     // Copy the `flix.toml` to the artifact directory.
     Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
@@ -515,7 +523,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Build artifacts
     out.println("Building project...")
-    buildPkg() match {
+    buildPkg(flix) match {
       case Ok(_) => // Continue
       case Err(e) => return Result.Err(e)
     }

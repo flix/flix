@@ -201,7 +201,9 @@ object Main {
 
         case Command.BuildPkg =>
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap => bootstrap.buildPkg()
+            val flix = new Flix().setFormatter(formatter)
+            flix.setOptions(options.copy(loadClassFiles = false))
+            bootstrap => bootstrap.buildPkg(flix)
           } match {
             case Result.Ok(_) =>
               System.exit(0)

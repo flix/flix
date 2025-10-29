@@ -169,7 +169,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Build => execBootstrap(bootstrap.build(flix).toValidation)
       case Command.BuildJar => execBootstrap(bootstrap.buildJar(flix).toValidation)
       case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar(flix).toValidation)
-      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg().toValidation)
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg(flix).toValidation)
       case Command.Release => execBootstrap(bootstrap.release(flix).toValidation)
       case Command.Check => execBootstrap(bootstrap.check(flix).toValidation)
       case Command.Doc => execBootstrap(bootstrap.doc(flix).toValidation)
