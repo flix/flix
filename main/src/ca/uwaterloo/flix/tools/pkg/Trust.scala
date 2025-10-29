@@ -111,6 +111,7 @@ object Trust {
   }
 
   def fromString(s: String): Option[Trust] = s match {
+    case "paranoid" => Some(Paranoid)
     case "plain" => Some(Plain)
     case "unrestricted" => Some(Unrestricted)
     case _ => None
