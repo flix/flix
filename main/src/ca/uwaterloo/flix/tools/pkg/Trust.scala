@@ -23,6 +23,8 @@ sealed trait Trust {
     *     Unrestricted
     *          |
     *        Plain
+    *          |
+    *       Paranoid
     * }}}
     */
   def lub(other: Trust): Trust = (this, other) match {
@@ -48,6 +50,8 @@ sealed trait Trust {
     *     Unrestricted
     *          |
     *        Plain
+    *          |
+    *       Paranoid
     * }}}
     */
   def lessThanEq(other: Trust): Boolean = this.lub(other) == other
@@ -68,6 +72,16 @@ object Trust {
   def glb(ts: List[Trust]): Trust = ts match {
     case Nil => throw new IllegalArgumentException("unexpected empty list")
     case x :: xs => xs.foldLeft(x)((acc, y) => acc.glb(y))
+  }
+
+  /**
+    * Paranoid Flix must not have any unsafe features.
+    *   1. No unsafe casts
+    *   1. No Java interop
+    *   1. No `IO` effect
+    */
+  case object Paranoid extends Trust {
+    override def toString: String = "paranoid"
   }
 
   /**
