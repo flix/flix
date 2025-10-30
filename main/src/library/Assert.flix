@@ -31,6 +31,30 @@ mod Assert {
 
     use RichString.{blue, red, text, yellow};
     import java.lang.AssertionError;
+    use Assert.FnInfo.FnInfo
+    use Assert.SourceLocation.SourceLocation
+    use Assert.SourcePosition.SourcePosition
+    pub enum SourcePosition({lineOneIndexed = Int32, colOneIndexed = Int32})
+    pub enum SourceLocation({source = String, sp1 = SourcePosition, sp2= SourcePosition})
+    pub enum FnInfo[ef: Eff]({name = String, sourceLocation = SourceLocation, fn = Unit -> Unit \ Assert + ef})
+    pub def getTests() : Vector[FnInfo[IO]] =
+        Vector#{mkFnInfo("ExampleTest", "ExampleFile", 0, 0, 0, 0, _ -> checked_ecast(Assert.assertTrue(true)))}
+
+    def mkSourceLocation(source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32) : SourceLocation =
+        SourceLocation(
+            {
+                source=source,
+                sp1 = SourcePosition({lineOneIndexed=line1, colOneIndexed=col1}),
+                sp2 = SourcePosition({lineOneIndexed=line2, colOneIndexed=col2})
+            }
+                )
+
+    def mkFnInfo(name: String, source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32, fn: Unit -> Unit \ Assert + ef) : FnInfo[ef] =
+        FnInfo({name=name, sourceLocation=mkSourceLocation(source, line1, col1, line2, col2), fn = fn})
+
+    pub def getTestsIO() : Vector[FnInfo[IO]] = Vector#{}
+    pub def getTestsPure() : Vector[FnInfo[{}]] = Vector#{}
+
 
     ///
     /// Asserts that the given condition `cond` is `true`.
