@@ -74,6 +74,14 @@ sealed trait SecurityContext {
 object SecurityContext {
 
   /**
+    * Returns the greatest lower bound of `sctxs`.
+    */
+  def glb(sctxs: List[SecurityContext]): SecurityContext = sctxs match {
+    case Nil => throw new IllegalArgumentException("unexpected empty list")
+    case x :: xs => xs.foldLeft(x)((acc, y) => acc.glb(y))
+  }
+
+  /**
     * A security context where everything is permitted.
     */
   case object Unrestricted extends SecurityContext {

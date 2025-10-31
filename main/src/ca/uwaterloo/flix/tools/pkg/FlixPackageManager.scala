@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.Bootstrap
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
@@ -45,21 +46,21 @@ object FlixPackageManager {
                         manifestToFlixDeps: ListMap[Manifest, FlixDependency])
 
   /**
-    * Represents the dependency resolution of [[origin]] where the maximum trust level has been computed
+    * Represents the dependency resolution of [[origin]] where the maximum security level has been computed
     * for each manifest.
     *
     * @param origin             the manifest that corresponds to the current / local project.
-    * @param trust              the maximum allowed trust level of each manifest.
+    * @param security           the maximum allowed security level of each manifest.
     * @param manifestToFlixDeps a mapping from [[Manifest]]s to [[FlixDependency]]s.
     *                           A manifest is the resource a flix dependency resolves to.
     */
-  case class TrustResolution(origin: Manifest,
-                             trust: Map[Manifest, Trust],
-                             manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
+  case class SecureResolution(origin: Manifest,
+                              security: Map[Manifest, SecurityContext],
+                              manifestToFlixDeps: ListMap[Manifest, FlixDependency]) {
     /**
       * All manifests in the resolution.
       */
-    val manifests: List[Manifest] = trust.keys.toList
+    val manifests: List[Manifest] = security.keys.toList
   }
 
   /**
@@ -75,13 +76,13 @@ object FlixPackageManager {
   }
 
   /**
-    * Resolves the maximal allowed trust level for all dependencies in `resolution`.
+    * Resolves the maximal allowed security level for all dependencies in `resolution`.
     */
-  def resolveTrust(resolution: Resolution): TrustResolution = {
-    implicit val trustLevels: mutable.Map[Manifest, Trust] = mutable.Map(resolution.origin -> Trust.Unrestricted)
+  def resolveSecurityLevels(resolution: Resolution): SecureResolution = {
+    implicit val trustLevels: mutable.Map[Manifest, SecurityContext] = mutable.Map(resolution.origin -> SecurityContext.Unrestricted)
     implicit val res: Resolution = resolution
-    val manifests = resolution.manifests.map(m => (m, minTrustLevel(m))).toMap
-    TrustResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
+    val manifests = resolution.manifests.map(m => (m, minSecurityLevel(m))).toMap
+    SecureResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
   }
 
   /**
@@ -90,8 +91,8 @@ object FlixPackageManager {
     *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
     *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
     */
-  def checkTrust(resolution: TrustResolution): List[PackageError] = {
-    resolution.trust.flatMap { case (m, t) => findTrustViolations(m, t) }.toList
+  def checkTrust(resolution: SecureResolution): List[PackageError] = {
+    resolution.security.flatMap { case (m, t) => findSecurityViolations(m, t) }.toList
   }
 
   /**
@@ -118,13 +119,13 @@ object FlixPackageManager {
   }
 
   /**
-    * Installs all the Flix dependencies a [[TrustResolution]] into the `lib/` directory
+    * Installs all the Flix dependencies a [[SecureResolution]] into the `lib/` directory
     * of `path` and returns a list of paths to all the dependencies along with their allowed trust level.
     */
-  def installAll(resolution: TrustResolution, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, Trust)], PackageError] = {
+  def installAll(resolution: SecureResolution, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
-    val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map { case (manifest, flixDep) => resolution.trust(manifest) -> flixDep })
+    val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map { case (manifest, flixDep) => resolution.security(manifest) -> flixDep })
 
     val flixPaths = allFlixDeps.map { case (trust, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
@@ -242,68 +243,67 @@ object FlixPackageManager {
   }
 
   /**
-    * Computes the maximum allowed trust level for `manifest` which is the minimum / greatest lower bound of both
-    *   1. the [[minTrustLevel]] of all (transitive) dependent / parent manifests and
-    *   1. the trust levels with which `manifest` is depended upon,
-    *      i.e., when `trust = "..."` occurs in a manifest and that dependency points to `manifest`.
+    * Computes the maximum allowed security level for `manifest` which is the minimum / greatest lower bound of both
+    *   1. the [[minSecurityLevel]] of all (transitive) dependent / parent manifests and
+    *   1. the security levels with which `manifest` is depended upon,
+    *      i.e., when `"security" = "..."` occurs in a manifest and that dependency points to `manifest`.
     */
-  private def minTrustLevel(manifest: Manifest)(implicit resolution: Resolution, trustLevels: mutable.Map[Manifest, Trust]): Trust = {
-    trustLevels.get(manifest) match {
+  private def minSecurityLevel(manifest: Manifest)(implicit resolution: Resolution, securityLevels: mutable.Map[Manifest, SecurityContext]): SecurityContext = {
+    securityLevels.get(manifest) match {
       case Some(t) => t
       case None =>
-        val incomingTrusts = resolution.manifestToFlixDeps(manifest).map(_.trust)
-        val parentTrusts = resolution.immediateDependents(manifest).map(minTrustLevel)
-        val glb = Trust.glb(parentTrusts ::: incomingTrusts)
-        trustLevels.put(manifest, glb)
+        val incomingSctxs = resolution.manifestToFlixDeps(manifest).map(_.sctx)
+        val parentSctxs = resolution.immediateDependents(manifest).map(minSecurityLevel)
+        val glb = SecurityContext.glb(parentSctxs ::: incomingSctxs)
+        securityLevels.put(manifest, glb)
         glb
     }
   }
 
   /**
-    * A trust error is present if one of the following holds:
-    *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
-    *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
+    * A security error is present if one of the following holds:
+    *   1. A manifest `m0` has allowed security context `t0` and `m0` contains a dependency with security context `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
+    *   1. A manifest `m0` has security context `plain` or lower and contains at least one jar or maven dependency.
     *
-    * Note that the first condition represents an inconsistency in the trust levels of the dependency graph itself.
-    * Such an inconsistency exists if for some path `u ~> v` it holds that `trust(u) >= trust(v)`
-    * and an edge `v -> w` exists where `trust(w) > trust(u)`.
-    * E.g., if an edge with trust `unrestricted` is found on a path with max trust `plain`, then an error exists.
+    * Note that the first condition represents an inconsistency in the security levels of the dependency graph itself.
+    * Such an inconsistency exists if for some path `u ~> v` it holds that `security(u) >= security(v)`
+    * and an edge `v -> w` exists where `security(w) > security(u)`.
+    * E.g., if an edge with security context `unrestricted` is found on a path with max security context `plain`, then an error exists.
     */
-  private def findTrustViolations(m: Manifest, t: Trust): List[PackageError] = {
-    val manifestTrustErrors = checkGraphErrors(m, t)
-    val dependencyTrustErrors = checkJavaDependencies(m, t)
-    dependencyTrustErrors ::: manifestTrustErrors
+  private def findSecurityViolations(m: Manifest, sctx: SecurityContext): List[PackageError] = {
+    val graphErrors = checkGraphErrors(m, sctx)
+    val dependencyErrors = checkJavaDependencies(m, sctx)
+    dependencyErrors ::: graphErrors
   }
 
   /**
-    * Checks condition 1 of [[findTrustViolations]] and returns all trust inconsistencies.
+    * Checks condition 1 of [[findSecurityViolations]] and returns all security inconsistencies.
     */
-  private def checkGraphErrors(m: Manifest, t: Trust): List[PackageError.TrustGraphError] = {
+  private def checkGraphErrors(m: Manifest, sctx: SecurityContext): List[PackageError.DepGraphSecurityError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
-    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(m, d, t))
-    manifestTrustErrors
+    flixDeps.filter(d => d.sctx.greaterThan(sctx)).map(d => PackageError.DepGraphSecurityError(m, d, sctx))
   }
 
   /**
-    * Checks condition 2 of [[findTrustViolations]] and returns all illegal dependencies.
+    * Checks condition 2 of [[findSecurityViolations]] and returns all illegal dependencies.
     */
-  private def checkJavaDependencies(m: Manifest, t: Trust): List[PackageError.IllegalJavaDependencyAtTrustLevel] = t match {
-    case Trust.Unrestricted =>
+  private def checkJavaDependencies(m: Manifest, sctx: SecurityContext): List[PackageError.IllegalJavaDependencyForSctx] = sctx match {
+    case SecurityContext.Unrestricted =>
       List.empty
 
-    case Trust.Plain =>
+    case SecurityContext.Plain =>
       // No maven or jar deps allowed
       m.dependencies.collect {
         case d: MavenDependency => d
         case d: JarDependency => d
-      }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(m, d, t))
+      }.map(d => PackageError.IllegalJavaDependencyForSctx(m, d, sctx))
 
-    case Trust.Paranoid =>
+    case SecurityContext.Paranoid =>
       // No maven or jar deps allowed
       m.dependencies.collect {
         case d: MavenDependency => d
         case d: JarDependency => d
-      }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(m, d, t))
+      }.map(d => PackageError.IllegalJavaDependencyForSctx(m, d, sctx))
   }
 
   /**
