@@ -385,10 +385,10 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     })
   }
 
-  test("trust:paranoid-dep:plain") {
+  test("security:paranoid-dep:plain") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "paranoid" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "paranoid" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
@@ -396,44 +396,29 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'paranoid' and dependency plain")
+      fail(message + System.lineSeparator() + "expected failure with security 'paranoid' and dependency plain")
     }
   }
 
-  ignore("trust:plain-dep:plain") {
+  ignore("security:plain-dep:plain") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'plain' and dependency plain")
+      fail(message + System.lineSeparator() + "expected ok with security 'plain' and dependency plain")
     } else {
       succeed
     }
   }
 
-  test("trust:plain-dep:java") {
+  test("security:plain-dep:java") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps, Main)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using Java")
-    }
-  }
-
-  test("trust:plain-dep:unchecked-cast") {
-    val deps = List(
-      """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "plain" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
@@ -441,169 +426,137 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain' and dependency using unchecked cast")
+      fail(message + System.lineSeparator() + "expected failure with security 'plain' and dependency using Java")
     }
   }
 
-  ignore("trust:unrestricted-dep:plain") {
+  test("security:plain-dep:unchecked-cast") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency plain")
-    } else {
       succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with security 'plain' and dependency using unchecked cast")
     }
   }
 
-  ignore("trust:unrestricted-dep:java") {
+  ignore("security:unrestricted-dep:plain") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using java")
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted' and dependency plain")
     } else {
       succeed
     }
   }
 
-  ignore("trust:unrestricted-dep:unchecked-cast") {
+  ignore("security:unrestricted-dep:java") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted' and dependency using unchecked cast")
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted' and dependency using java")
     } else {
       succeed
     }
   }
 
-  ignore("transitive.trust:plain->plain-dep:plain") {
+  ignore("security:unrestricted-dep:unchecked-cast") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "plain" }
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", security = "unrestricted" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, Main)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted' and dependency using unchecked cast")
+    } else {
+      succeed
+    }
+  }
+
+  ignore("transitive.security:plain->plain-dep:plain") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'plain->plain' and dependency plain")
+      fail(message + System.lineSeparator() + "expected ok with security 'plain->plain' and dependency plain")
     } else {
       succeed
     }
   }
 
-  ignore("transitive.trust:unrestricted->plain-dep:plain") {
+  ignore("transitive.security:unrestricted->plain-dep:plain") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->plain' and dependency plain")
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->plain' and dependency plain")
     } else {
       succeed
     }
   }
 
-  ignore("transitive.diamond.trust:plain->plain+plain-dep:plain") {
+  ignore("transitive.diamond.security:plain->plain+plain-dep:plain") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "plain" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "plain" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'plain->plain+plain' and dependency plain")
+      fail(message + System.lineSeparator() + "expected ok with security 'plain->plain+plain' and dependency plain")
     } else {
       succeed
     }
   }
 
-  ignore("transitive.diamond.trust:plain->plain+unrestricted-dep:plain") {
+  ignore("transitive.diamond.security:plain->plain+unrestricted-dep:plain") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "plain" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "plain" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'plain->plain+unrestricted' and dependency plain")
+      fail(message + System.lineSeparator() + "expected ok with security 'plain->plain+unrestricted' and dependency plain")
     } else {
       succeed
     }
   }
 
-  test("transitive.diamond.trust:paranoid->plain+plain-dep:plain") {
+  test("transitive.diamond.security:paranoid->plain+plain-dep:plain") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "paranoid" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      succeed
-    } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'paranoid->plain+plain' and dependency plain")
-    }
-  }
-
-  ignore("transitive.diamond.trust:unrestricted->plain+plain-dep:plain") {
-    val deps = List(
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "unrestricted" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->plain+plain' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  ignore("transitive.diamond.trust:unrestricted->plain+unrestricted-dep:plain") {
-    val deps = List(
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "unrestricted" }
-        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "unrestricted" }
-        |""".stripMargin
-    )
-    val (forbidden, message) = checkForbidden(deps, MainTransitive)
-
-    if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->plain+unrestricted' and dependency plain")
-    } else {
-      succeed
-    }
-  }
-
-  test("transitive.trust:plain->unrestricted-dep:java") {
-    val deps = List(
-      """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "plain" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "paranoid" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
@@ -611,33 +564,80 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain->unrestricted' and dependency using java")
+      fail(message + System.lineSeparator() + "expected failure with security 'paranoid->plain+plain' and dependency plain")
     }
   }
 
-  ignore("transitive.trust:unrestricted->unrestricted-dep:java") {
+  ignore("transitive.diamond.security:unrestricted->plain+plain-dep:plain") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->unrestricted' and dependency using java")
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->plain+plain' and dependency plain")
     } else {
       succeed
     }
   }
 
-  test("transitive.diamond.trust:plain->unrestricted+plain-dep:java") {
+  ignore("transitive.diamond.security:unrestricted->plain+unrestricted-dep:plain") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", security = "unrestricted" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->plain+unrestricted' and dependency plain")
+    } else {
+      succeed
+    }
+  }
+
+  test("transitive.security:plain->unrestricted-dep:java") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", security = "plain" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
+
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with security 'plain->unrestricted' and dependency using java")
+    }
+  }
+
+  ignore("transitive.security:unrestricted->unrestricted-dep:java") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", security = "unrestricted" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
+
+    if (forbidden) {
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->unrestricted' and dependency using java")
+    } else {
+      succeed
+    }
+  }
+
+  test("transitive.diamond.security:plain->unrestricted+plain-dep:java") {
     // Dep `jaschdoc/flix-test-pkg-trust-transitive-java` depends on `flix/test-pkg-trust-java` with unrestricted trust.
     // Here `flix/test-pkg-trust-java` is depended upon with plain trust.
     // This should result in an error, since `flix/test-pkg-trust-java` uses java
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "plain" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", security = "plain" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
@@ -645,15 +645,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain->unrestricted+plain' and dependency using java")
+      fail(message + System.lineSeparator() + "expected failure with security 'plain->unrestricted+plain' and dependency using java")
     }
   }
 
-  test("transitive.diamond.trust:plain->unrestricted+unrestricted-dep:java") {
+  test("transitive.diamond.security:plain->unrestricted+unrestricted-dep:java") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "plain" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", security = "plain" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
@@ -661,15 +661,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'plain->unrestricted+unrestricted' and dependency using java")
+      fail(message + System.lineSeparator() + "expected failure with security 'plain->unrestricted+unrestricted' and dependency using java")
     }
   }
 
-  test("transitive.diamond.trust:unrestricted->unrestricted+plain-dep:java") {
+  test("transitive.diamond.security:unrestricted->unrestricted+plain-dep:java") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "plain" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
@@ -677,21 +677,21 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     if (forbidden) {
       succeed
     } else {
-      fail(message + System.lineSeparator() + "expected failure with trust 'unrestricted->unrestricted+plain' and dependency using java")
+      fail(message + System.lineSeparator() + "expected failure with security 'unrestricted->unrestricted+plain' and dependency using java")
     }
   }
 
-  ignore("transitive.diamond.trust:unrestricted->unrestricted+unrestricted-dep:java") {
+  ignore("transitive.diamond.security:unrestricted->unrestricted+unrestricted-dep:java") {
     val deps = List(
       """
-        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", trust = "unrestricted" }
-        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", trust = "unrestricted" }
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-java" = { version = "0.1.0", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, MainTransitive)
 
     if (forbidden) {
-      fail(message + System.lineSeparator() + "expected ok with trust 'unrestricted->unrestricted+unrestricted' and dependency using java")
+      fail(message + System.lineSeparator() + "expected ok with security 'unrestricted->unrestricted+unrestricted' and dependency using java")
     } else {
       succeed
     }
@@ -728,15 +728,15 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
     }
 
-    val manifestsWithTrust = FlixPackageManager.resolveSecurityLevels(allManifests)
+    val manifestsWithSecurity = FlixPackageManager.resolveSecurityLevels(allManifests)
 
-    val trustResolutionErrors = FlixPackageManager.checkSecurity(manifestsWithTrust)
-    if (trustResolutionErrors.nonEmpty) {
-      return (true, trustResolutionErrors.mkString(System.lineSeparator()))
+    val securityResolutionErrors = FlixPackageManager.checkSecurity(manifestsWithSecurity)
+    if (securityResolutionErrors.nonEmpty) {
+      return (true, securityResolutionErrors.mkString(System.lineSeparator()))
     }
 
     val pkgs = throttle {
-      FlixPackageManager.installAll(manifestsWithTrust, path, None) match {
+      FlixPackageManager.installAll(manifestsWithSecurity, path, None) match {
         case Ok(ps) => ps
         case Err(e) => fail(e.message(formatter))
       }
