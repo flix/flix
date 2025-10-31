@@ -346,7 +346,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
   }
-  test("Test.NonPrimitiveEffectForDefaultHandler.01") {
+  test("Test.WrongSignatureForDefaultHandler.07") {
     val input =
       """
         |pub eff TestEff{
@@ -370,7 +370,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.NonPrimitiveEffectForDefaultHandler](result)
+    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
   }
   test("Test.DuplicatedDefaultHandlers.01") {
     val input =
