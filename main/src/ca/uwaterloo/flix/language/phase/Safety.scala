@@ -26,9 +26,9 @@ object Safety {
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
-    changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: shared.UseOrImport, uoi2: shared.UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
+    val uses = changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: UseOrImport, uoi2: UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
 
-    (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
+    (root.copy(defs = defs, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
   }
 
   /** Checks the safety and well-formedness of `defn`. */
