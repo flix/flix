@@ -839,7 +839,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -848,7 +848,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -857,7 +857,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(g: Unit -> Unit \ IO): Unit = g()
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -868,7 +868,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -879,7 +879,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(g: t -> Unit \ IO, x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -891,7 +891,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def g(h: Unit -> Unit \ IO, x: t): Unit \ IO = h(f(x))
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -900,7 +900,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(): Unit = unchecked_cast(() as _ \ {})
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -912,7 +912,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): Unit = ()
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -924,7 +924,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(): StringBuilder = new StringBuilder()
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -939,7 +939,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    }
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 }
