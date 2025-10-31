@@ -246,11 +246,11 @@ object Safety {
 
     case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
       verifyUncheckedCast(cast)
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.Unsafe(exp, _, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
@@ -259,13 +259,13 @@ object Safety {
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
       rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
-          checkPermissions(loc.security, loc)
+        checkPermissions(loc.security, loc)
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }
 
     case Expr.Throw(exp, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
       checkThrow(exp)
 
@@ -281,36 +281,36 @@ object Safety {
       visitExp(exp2)
 
     case Expr.InvokeConstructor(_, args, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.GetField(_, exp, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.PutField(_, exp1, exp2, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp1)
       visitExp(exp2)
 
     case Expr.GetStaticField(_, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
 
     case Expr.PutStaticField(_, exp, _, _, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
-        checkPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
 
@@ -380,9 +380,13 @@ object Safety {
   /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
   private def checkPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
-      case SecurityContext.Plain | SecurityContext.Paranoid =>
-        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
       case SecurityContext.Unrestricted => ()
+
+      case SecurityContext.Plain =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+
+      case SecurityContext.Paranoid =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
     }
   }
 
