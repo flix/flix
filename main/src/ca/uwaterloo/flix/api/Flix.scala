@@ -208,7 +208,7 @@ class Flix {
     "Readable.flix" -> LocalResource.get("/src/library/Readable.flix"),
     "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
-    "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
+    "Env.flix" -> LocalResource.get("/src/library/Env.flix"),
 
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
     "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
@@ -239,7 +239,6 @@ class Flix {
     "StringBuilder.flix" -> LocalResource.get("/src/library/StringBuilder.flix"),
     "RedBlackTree.flix" -> LocalResource.get("/src/library/RedBlackTree.flix"),
     "GetOpt.flix" -> LocalResource.get("/src/library/GetOpt.flix"),
-    "Chalk.flix" -> LocalResource.get("/src/library/Chalk.flix"),
 
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
