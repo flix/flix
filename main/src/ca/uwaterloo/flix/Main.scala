@@ -209,6 +209,17 @@ object Main {
               System.exit(1)
           }
 
+        case Command.Clean =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap => bootstrap.clean().toValidation
+          }.toResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
         case Command.Doc =>
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
@@ -389,6 +400,8 @@ object Main {
 
     case object BuildPkg extends Command
 
+    object Clean extends Command
+
     case object Doc extends Command
 
     case object Run extends Command
@@ -450,6 +463,8 @@ object Main {
       cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
 
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
+
+      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
