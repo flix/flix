@@ -85,13 +85,10 @@ object Trust {
   }
 
   /**
-    * Paranoid Flix must not have any unsafe features.
-    *   1. No unsafe casts
-    *   1. No Java interop
-    *   1. No `IO` effect
+    * May use unchecked casts and Java interop.
     */
-  case object Paranoid extends Trust {
-    override def toString: String = "paranoid"
+  case object Unrestricted extends Trust {
+    override def toString: String = "unrestricted"
   }
 
   /**
@@ -104,10 +101,13 @@ object Trust {
   }
 
   /**
-    * May use unchecked casts and Java interop.
+    * Paranoid Flix must not have any unsafe features.
+    *   1. No unsafe casts
+    *   1. No Java interop
+    *   1. No `IO` effect
     */
-  case object Unrestricted extends Trust {
-    override def toString: String = "unrestricted"
+  case object Paranoid extends Trust {
+    override def toString: String = "paranoid"
   }
 
   def fromString(s: String): Option[Trust] = s match {

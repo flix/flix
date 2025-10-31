@@ -25,9 +25,9 @@ sealed trait SecurityContext
 object SecurityContext {
 
   /**
-    * A security context where no unsafe features are permitted along with the IO effect.
+    * A security context where everything is permitted.
     */
-  case object Paranoid extends SecurityContext
+  case object Unrestricted extends SecurityContext
 
   /**
     * A security context where no unsafe features are permitted.
@@ -35,9 +35,9 @@ object SecurityContext {
   case object Plain extends SecurityContext
 
   /**
-    * A security context where everything is permitted.
+    * A security context where no unsafe features are permitted along with the IO effect.
     */
-  case object Unrestricted extends SecurityContext
+  case object Paranoid extends SecurityContext
 
   /**
     * Converts a `Trust` type to a `SecurityContext`
