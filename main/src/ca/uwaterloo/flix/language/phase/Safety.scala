@@ -388,7 +388,7 @@ object Safety {
     }
   }
 
-  /** Emits an error if `eff` contains [[Symbol.IO]] and its security context is [[SecurityContext.Paranoid]] */
+  /** Emits an error if `effects` contains [[Symbol.IO]] and the security context of `loc` is [[SecurityContext.Paranoid]] */
   private def checkIOPermissions(effects: Set[Symbol.EffSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = loc.security match {
     case SecurityContext.Unrestricted =>
       ()
