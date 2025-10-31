@@ -32,7 +32,7 @@
 ///
 /// The current implementation does not output the negative atoms. They can be derived from the positive.
 ///
-mod Fixpoint3.Provenance {
+mod Fixpoint3.ProvenanceReconstruct {
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Ram.{makeFakeRelSym, RelSym}
@@ -81,15 +81,18 @@ mod Fixpoint3.Provenance {
         match Map.get(makeFakeRelSym(pred), idb) {
             case None           => unreachable!() // No facts for `pred`.
             case Some(fullTree) =>
+                // We are dealing with `Vector[Boxed]` so we cannot use build ordering of `BPlusTree.emptyWithSearch`.
+                // Instead we must manually reorder them to match the `search`.
                 let (search, vals) = Vector.unzip(searchAndVals);
+                let reorderedVals = Vector.init(i -> Vector.get(i, vals), Vector.length(search));
                 let innerMap = BPlusTree.computeIfAbsent(() -> BPlusTree.empty(rc), pred, lookupStruct);
                 match BPlusTree.get(search, innerMap) {
-                    case Some(tree) => BPlusTree.get(vals, tree)
+                    case Some(tree) => BPlusTree.get(reorderedVals, tree)
                     case None =>
                         // We have never encountered this search before. Initialize the `BPlusTree` for it.
                         // Initializing happens by mapping every fact to the search-part and non-search part
                         // and inserting them as key-value pairs in a `BPLookup`.
-                        let tree = BPlusTree.emptyWithSearch(rc, search);
+                        let tree = BPlusTree.empty(rc);
                         let extractSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, search), k), Vector.length(search));
                         let nonSearch = Vector.range(0, arity) |> Vector.filter(v -> not Vector.memberOf(v, search));
                         let extractNonSearchPart = k -> Vector.init(i -> Vector.get(Vector.get(i, nonSearch), k), Vector.length(nonSearch));
@@ -100,7 +103,7 @@ mod Fixpoint3.Provenance {
                             BPlusTree.putWith(_ -> old -> newVal :: old, searchPart, newVal :: Nil, tree)
                         };
                         BPlusTree.put(search, tree, innerMap);
-                        BPlusTree.get(vals, tree)
+                        BPlusTree.get(reorderedVals, tree)
                 }
         }
 
@@ -476,7 +479,8 @@ mod Fixpoint3.Provenance {
         matchedFact: Vector[Boxed],
         varSymToVal: Map[VarSym, Boxed]
     ): Map[VarSym, Boxed] = region rc {
-        let result = Map.toMutMap(rc, varSymToVal);
+        let result = MutMap.empty(rc);
+        Map.forEach((k, v) -> MutMap.put(k, v, result), varSymToVal);
         foreach ((i, v) <- ForEach.withIndex(varNames)) {
             MutMap.put(v, Vector.get(i, matchedFact), result)
         };

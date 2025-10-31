@@ -164,6 +164,16 @@ mod TestNel {
     def memberOf06(): Unit \ Assert = assertTrue(Nel.memberOf(3, Nel(1, 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indices                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 1), Nel.indices(Nel(1, Nil)))
+
+    @Test
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Nel.indices(Nel(1, 2 :: 3 :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -395,19 +405,6 @@ mod TestNel {
 
     @Test
     def foldRight03(): Unit \ Assert = assertEq(expected = -6, Nel.foldRight((x, acc) -> acc - x, 0, Nel(1, 2 :: 3 :: Nil)))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = assertEq(expected = -1, Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, Nil)))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = assertEq(expected = -3, Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: Nil)))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = assertEq(expected = -6, Nel.foldRightWithCont((x, k) -> k() - x, 0, Nel(1, 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //

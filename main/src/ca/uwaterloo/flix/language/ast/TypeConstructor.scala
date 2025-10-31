@@ -1,7 +1,8 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.shared.ScalaAnnotations.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Monomorpher, Simplifier}
+import ca.uwaterloo.flix.language.phase.monomorph.Specialization
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, Simplifier}
 
 import java.lang.reflect.{Constructor, Field, Method}
 import scala.collection.immutable.SortedSet
@@ -27,7 +28,7 @@ object TypeConstructor {
   /**
     * A type constructor that represent an unconstrained type after monomorphization.
     */
-  @IntroducedBy(Monomorpher.getClass)
+  @IntroducedBy(Specialization.getClass)
   case object AnyType extends TypeConstructor {
     override def kind: Kind = Kind.Star
   }

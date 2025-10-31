@@ -279,6 +279,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum Foo()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("IllegalEqualityConstraint.01") {
     val input =
       """
@@ -636,6 +645,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  test("IllegalForFragment.13") {
+    val input =
+      """
+        |def f(x: Int32): List[Int32] =
+        | foreach () yield 1
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyForFragment](result)
+  }
+
   test("IllegalFormalParamAscription.01") {
     val input =
       """
@@ -760,6 +780,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("MissingTypematchBody.01") {
+    val input =
+      s"""
+         |def f(): Int32 = typematch
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
   }
 
   test("IllegalNullPattern.01") {
@@ -1550,24 +1579,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
-  test("UnexpectedNonLowerCaseName.01") {
-    val input =
-      """
-        |def F(): Int32 = 123
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnexpectedNonLowerCaseName](result)
-  }
-
-  test("UnexpectedNonLowerCaseName.02") {
-    val input =
-      """
-        |def Map(): Int32 = 123
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnexpectedNonLowerCaseName](result)
-  }
-
   test("UnqualifiedUse.01") {
     val input =
       """
@@ -1741,6 +1752,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  test("MissingCatchRules.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    try { true } catch {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("MissingTypeParameter.Enum.01") {
     val input =
       """
@@ -1819,6 +1840,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[ParseError.NeedAtleastOne](result)
   }
 
+  test("EmptyParPatterns.01") {
+    val input =
+      """
+        |def f(): Int32 = par () yield 1
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
   test("EmptyTypeParamList.01") {
     val input =
       """
@@ -1826,6 +1856,26 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyTypeParamList](result)
+  }
+
+  test("EmptyEffectSet.01") {
+    val input =
+      """
+        |def without01(): Bool = ??? without { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
+  test("EmptyEnumCaseType.01") {
+    val input =
+      """
+        |enum E {
+        |    case C()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
   }
 
 }

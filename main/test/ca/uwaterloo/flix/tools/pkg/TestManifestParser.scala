@@ -1,13 +1,10 @@
-package ca.uwaterloo.flix.tools
+package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, ManifestError, ManifestParser, PackageModules, Repository, SemVer}
-import ca.uwaterloo.flix.util.{Formatter, Result}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
-import ca.uwaterloo.flix.tools.pkg.Manifest
-import ca.uwaterloo.flix.tools.pkg.Trust
 
 import java.io.File
 import java.net.URI
@@ -331,7 +328,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
+        |"github:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
     }
     assertResult(expected = Trust.Plain)(actual =
@@ -357,7 +354,7 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "plain" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
         |""".stripMargin
     }
     assertResult(expected = Trust.Plain)(actual =
@@ -383,10 +380,10 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "trust-javaclass" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "plain" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.TrustJavaClass)(actual =
+    assertResult(expected = Trust.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
@@ -489,15 +486,15 @@ class TestManifestParser extends AnyFunSuite {
   //Description
   test("ManifestError.MissingRequiredProperty.02") {
     val toml = {
-    """
-      |[package]
-      |name = "hello-world"
-      |version = "0.1.0"
-      |flix = "0.33.0"
-      |license = "Apache-2.0"
-      |authors = ["John Doe <john@example.com>"]
-      |
-      |""".stripMargin
+      """
+        |[package]
+        |name = "hello-world"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.MissingRequiredProperty](result)
@@ -522,17 +519,17 @@ class TestManifestParser extends AnyFunSuite {
 
   test("ManifestError.RequiredPropertyHasWrongType.02") {
     val toml = {
-    """
-      |[package]
-      |name = "hello-world"
-      |description = 2
-      |version = "0.1.0"
-      |flix = "0.33.0"
-      |license = "Apache-2.0"
-      |authors = ["John Doe <john@example.com>"]
-      |
-      |""".stripMargin
-  }
+      """
+        |[package]
+        |name = "hello-world"
+        |description = 2
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
   }
@@ -573,16 +570,16 @@ class TestManifestParser extends AnyFunSuite {
 
   test("ManifestError.RequiredPropertyHasWrongType.03") {
     val toml = {
-    """
-      |[package]
-      |name = "hello-world"
-      |description = "A simple program"
-      |version = ["0.1.0"]
-      |flix = "0.33.0"
-      |license = "Apache-2.0"
-      |authors = ["John Doe <john@example.com>"]
-      |
-      |""".stripMargin
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = ["0.1.0"]
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
     }
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.RequiredPropertyHasWrongType](result)
@@ -1574,49 +1571,52 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("ManifestError.FlixUnknownTrustValue.01") {
-    val toml = """[package]
-                 |name = "hello-world"
-                 |description = "A simple program"
-                 |version = "0.1.0"
-                 |flix = "0.33.0"
-                 |license = "Apache-2.0"
-                 |authors = ["John Doe <john@example.com>"]
-                 |
-                 |[dependencies]
-                 |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "" }
-                 |""".stripMargin
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "" }
+        |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.FlixUnknownTrustValue](result)
   }
 
   test("ManifestError.FlixUnknownTrustValue.02") {
-    val toml = """[package]
-                 |name = "hello-world"
-                 |description = "A simple program"
-                 |version = "0.1.0"
-                 |flix = "0.33.0"
-                 |license = "Apache-2.0"
-                 |authors = ["John Doe <john@example.com>"]
-                 |
-                 |[dependencies]
-                 |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "abc" }
-                 |""".stripMargin
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "abc" }
+        |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.FlixUnknownTrustValue](result)
   }
 
   test("ManifestError.FlixDependencyTrustType.01") {
-    val toml = """[package]
-                 |name = "hello-world"
-                 |description = "A simple program"
-                 |version = "0.1.0"
-                 |flix = "0.33.0"
-                 |license = "Apache-2.0"
-                 |authors = ["John Doe <john@example.com>"]
-                 |
-                 |[dependencies]
-                 |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = [] }
-                 |""".stripMargin
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = [] }
+        |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.FlixDependencyTrustType](result)
   }
@@ -1673,17 +1673,18 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("ManifestError.UnsupportedRepository.01") {
-    val toml = """[package]
-                 |name = "hello-world"
-                 |description = "A simple program"
-                 |version = "0.1.0"
-                 |flix = "0.33.0"
-                 |license = "Apache-2.0"
-                 |authors = ["John Doe <john@example.com>"]
-                 |
-                 |[dependencies]
-                 |"hubgit:jls/tic-tac-toe" = "1.2.3"
-                 |""".stripMargin
+    val toml =
+      """[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"hubgit:jls/tic-tac-toe" = "1.2.3"
+        |""".stripMargin
     val result = ManifestParser.parse(toml, null)
     expectError[ManifestError.UnsupportedRepository](result)
   }

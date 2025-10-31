@@ -336,10 +336,6 @@ object Weeder2 {
         Types.tryPickEffect(tree)
       ) {
         (doc, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-          if (ident.isUpper) {
-            val error = WeederError.UnexpectedNonLowerCaseName(ident.name, ident.loc)
-            sctx.errors.add(error)
-          }
           Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
       }
     }
@@ -401,9 +397,9 @@ object Weeder2 {
       ) {
         (doc, ident, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Empty singleton enum
+            // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
-              // Fall back on no cases, parser has already reported an error
+              // Fall back on no cases. Whoever generated the error must have reported it.
               Validation.Success(List.empty)
             // Singleton enum
             case (Some(ts), cs) =>
@@ -459,9 +455,9 @@ object Weeder2 {
       ) {
         (doc, ident, rParam, tparams, tpe, cases) =>
           val casesVal = (tpe, cases) match {
-            // Empty singleton enum
+            // Illegal empty singleton enum (`enum A()`)
             case (Some(List(Type.Error(_))), Nil) =>
-              // Fall back on no cases, parser has already reported an error
+              // Fall back on no cases. Whoever generated the error must have reported it.
               Validation.Success(List.empty)
             // Singleton enum
             case (Some(ts), cs) =>
@@ -705,6 +701,7 @@ object Weeder2 {
         case "@Internal" => Internal(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
+        case "@LoweringTarget" => LoweringTarget(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
         case "@MustUse" => MustUse(loc)
@@ -1077,8 +1074,8 @@ object Weeder2 {
           case TokenKind.LiteralFloat64 => Validation.Success(Constants.toFloat64(token))
           case TokenKind.LiteralBigDecimal => Validation.Success(Constants.toBigDecimal(token))
           case TokenKind.LiteralRegex => Validation.Success(Constants.toRegex(token))
-          case TokenKind.NameLowerCase
-               | TokenKind.NameUpperCase
+          case TokenKind.NameLowercase
+               | TokenKind.NameUppercase
                | TokenKind.NameMath => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), tree.loc))
           case _ =>
             val error = UnexpectedToken(expected = NamedTokenSet.Literal, actual = None, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
@@ -1255,69 +1252,61 @@ object Weeder2 {
       val op0 = pick(TreeKind.Operator, tree)
       flatMapN(op0, traverse(exprs)(visitExpr)) {
         case (op, e1 :: e2 :: Nil) =>
-          val isInfix = op.children.head match {
-            case Token(kind, _, _, _, _, _) => kind == TokenKind.InfixFunction
-            case _ => false
-          }
-
-          if (isInfix) {
-            val infixName = text(op).head.stripPrefix("`").stripSuffix("`")
-            val infixNameParts = infixName.split('.').toList
-            val lastName = infixNameParts.lastOption.getOrElse("")
-            val qname = Name.mkQName(infixNameParts.init, lastName, op.loc)
-            val opExpr = Expr.Ambiguous(qname, op.loc)
-            return Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
-          }
-
           def mkApply(name: String): Expr.Apply = Expr.Apply(
             Expr.Ambiguous(Name.mkQName(name, op.loc), op.loc), List(e1, e2),
             tree.loc
           )
 
-          text(op).head match {
-            // BUILTINS
-            case "+" => Validation.Success(mkApply("Add.add"))
-            case "-" => Validation.Success(mkApply("Sub.sub"))
-            case "*" => Validation.Success(mkApply("Mul.mul"))
-            case "/" => Validation.Success(mkApply("Div.div"))
-            case "<" => Validation.Success(mkApply("Order.less"))
-            case "<=" => Validation.Success(mkApply("Order.lessEqual"))
-            case ">" => Validation.Success(mkApply("Order.greater"))
-            case ">=" => Validation.Success(mkApply("Order.greaterEqual"))
-            case "==" => Validation.Success(mkApply("Eq.eq"))
-            case "!=" => Validation.Success(mkApply("Eq.neq"))
-            case "<=>" => Validation.Success(mkApply("Order.compare"))
-            // SEMANTIC OPS
-            case "and" => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-            case "or" => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-            // SPECIAL
-            case "::" => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-            case ":::" => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
-            case "<+>" => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" =>
-              tryPickQName(exprs(1)) match {
-                case Some(qname) =>
-                  if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
-                  else {
-                    val error = IllegalQualifiedName(exprs(1).loc)
-                    sctx.errors.add(error)
-                    Validation.Success(Expr.Error(error))
+          tryPickQName(op) match {
+            case Some(name) =>
+              // Infix Operator.
+              val opExpr = Expr.Ambiguous(name, op.loc)
+              Validation.Success(Expr.Infix(e1, opExpr, e2, tree.loc))
+            case None =>
+              // Single Token Operator.
+              op.children.head match {
+                case Token(TokenKind.Plus, _, _, _, _, _) => Validation.Success(mkApply("Add.add"))
+                case Token(TokenKind.Minus, _, _, _, _, _) => Validation.Success(mkApply("Sub.sub"))
+                case Token(TokenKind.Star, _, _, _, _, _) => Validation.Success(mkApply("Mul.mul"))
+                case Token(TokenKind.Slash, _, _, _, _, _) => Validation.Success(mkApply("Div.div"))
+                case Token(TokenKind.AngleL, _, _, _, _, _) => Validation.Success(mkApply("Order.less"))
+                case Token(TokenKind.AngleLEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.lessEqual"))
+                case Token(TokenKind.AngleR, _, _, _, _, _) => Validation.Success(mkApply("Order.greater"))
+                case Token(TokenKind.AngleREqual, _, _, _, _, _) => Validation.Success(mkApply("Order.greaterEqual"))
+                case Token(TokenKind.EqualEqual, _, _, _, _, _) => Validation.Success(mkApply("Eq.eq"))
+                case Token(TokenKind.BangEqual, _, _, _, _, _) => Validation.Success(mkApply("Eq.neq"))
+                case Token(TokenKind.AngledEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.compare"))
+                case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+                case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+                case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
+                case Token(TokenKind.ColonColonColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
+                case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
+                case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
+                  tryPickQName(exprs(1)) match {
+                    case Some(qname) =>
+                      if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
+                      else {
+                        val error = IllegalQualifiedName(exprs(1).loc)
+                        sctx.errors.add(error)
+                        Validation.Success(Expr.Error(error))
+                      }
+                    case None =>
+                      val error = UnexpectedToken(
+                        NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
+                        None,
+                        SyntacticContext.Expr.OtherExpr,
+                        hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
+                        loc = exprs(1).loc
+                      )
+                      sctx.errors.add(error)
+                      Validation.Success(Expr.Error(error))
                   }
-                case None =>
-                  val error = UnexpectedToken(
-                    NamedTokenSet.FromTreeKinds(Set(TreeKind.QName)),
-                    None,
-                    SyntacticContext.Expr.OtherExpr,
-                    hint = Some("Use a single unqualified Java type like 'Object' instead of 'java.lang.object'."),
-                    loc = exprs(1).loc
-                  )
-                  sctx.errors.add(error)
-                  Validation.Success(Expr.Error(error))
+                case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+                  val ident = Name.Ident(token.text, op.loc)
+                  Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
+                case _ =>
+                  throw InternalCompilerException(s"Expr.Binary operator not recognized", tree.loc)
               }
-            // UNRECOGNIZED
-            case id =>
-              val ident = Name.Ident(id, op.loc)
-              Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
@@ -1390,7 +1379,8 @@ object Weeder2 {
         // Case: no valid match rule found in match expr
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          // Fall back on Expr.Error. Parser has reported an error here.
+          sctx.errors.add(error)
+          // Fall back on Expr.Error.
           Validation.Success(Expr.Error(error))
         case (expr, rules) => Validation.Success(Expr.Match(expr, rules, tree.loc))
       }
@@ -1413,9 +1403,13 @@ object Weeder2 {
 
     private def visitTypeMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.TypeMatch)
-      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(visitTypeMatchRule)) {
-        (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
+      val rules0 = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules0)(visitTypeMatchRule)) {
+        case (_, Nil) =>
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, loc = tree.loc)
+          sctx.errors.add(error)
+          Expr.Error(error)
+        case (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
       }
     }
 
@@ -1429,9 +1423,14 @@ object Weeder2 {
     private def visitRestrictableChooseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expectAny(tree, List(TreeKind.Expr.RestrictableChoose, TreeKind.Expr.RestrictableChooseStar))
       val isStar = tree.kind == TreeKind.Expr.RestrictableChooseStar
-      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
-      mapN(pickExpr(tree), traverse(rules)(t => visitRestrictableChooseRule(isStar, t))) {
-        (expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
+      val rules0 = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules0)(t => visitRestrictableChooseRule(isStar, t))) {
+        case (expr, Nil) =>
+          val error = NeedAtleastOne(NamedTokenSet.MatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
+          sctx.errors.add(error)
+          val rules = RestrictableChooseRule(WeededAst.RestrictableChoosePattern.Error(tree.loc.asSynthetic), Expr.Error(error)) :: Nil
+          Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
+        case (expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
       }
     }
 
@@ -1585,9 +1584,9 @@ object Weeder2 {
         // Case: no valid match rule found in ematch expr
         case (expr, Nil) =>
           val error = NeedAtleastOne(NamedTokenSet.ExtMatchRule, SyntacticContext.Expr.OtherExpr, loc = expr.loc)
-          // Parser has reported an error here so do not add to sctx.
-          Validation.Failure(error)
-
+          sctx.errors.add(error)
+          val defaultRule = ExtMatchRule(ExtPattern.Error(expr.loc), Expr.Error(error), tree.loc)
+          Validation.Success(Expr.ExtMatch(expr, defaultRule :: Nil, tree.loc))
         case (expr, rules) =>
           Validation.Success(Expr.ExtMatch(expr, rules.flatten, tree.loc))
       }
@@ -1670,11 +1669,12 @@ object Weeder2 {
     }
 
     private def visitRecordOperationOrLiteralExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      hasToken(TokenKind.Bar, tree) match {
+      if (hasToken(TokenKind.Bar, tree)) {
         // { +x = expr | expr }
-        case true => visitRecordOperationExpr(tree)
+        visitRecordOperationExpr(tree)
+      } else {
         // { x = expr }
-        case false => visitLiteralRecordExpr(tree)
+        visitLiteralRecordExpr(tree)
       }
     }
 
@@ -1685,7 +1685,7 @@ object Weeder2 {
       val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
       val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
       if (ops.isEmpty) {
-        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
+        val error = NeedAtleastOne(NamedTokenSet.FromKinds(Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowercase)), SyntacticContext.Expr.OtherExpr, hint = Some("Record operations must contain at least one operation"), tree.loc)
         sctx.errors.add(error)
       }
       Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
@@ -1808,8 +1808,15 @@ object Weeder2 {
 
     private def visitWithoutExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Without)
-      val effectSet = pick(TreeKind.Type.EffectSet, tree)
-      val effects = mapN(effectSet)(effectSetTree => pickAll(TreeKind.QName, effectSetTree).map(visitQName))
+      val effects = mapN(pick(TreeKind.Type.EffectSet, tree)) {
+        effectSetTree =>
+          val effects = pickAll(TreeKind.QName, effectSetTree).map(visitQName)
+          // Handle empty here where we have access to `effectSetTree.loc`
+          if (effects.isEmpty) {
+            sctx.errors.add(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, effectSetTree.loc))
+          }
+          effects
+      }
       mapN(pickExpr(tree), effects) {
         case (expr, effect :: effects0) =>
           val base = Expr.Without(expr, effect, tree.loc)
@@ -1817,8 +1824,8 @@ object Weeder2 {
             case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
           }
         case (_, Nil) =>
-          // Fall back on Expr.Error, Parser has already reported this
-          Expr.Error(Malformed(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
+          // Fall back on Expr.Error
+          Expr.Error(NeedAtleastOne(NamedTokenSet.Effect, SyntacticContext.Expr.OtherExpr, None, tree.loc))
       }
     }
 
@@ -1860,13 +1867,9 @@ object Weeder2 {
         traverse(maybeCatch)(visitTryCatchBody),
       ) {
         // Bad case: try expr
-        case (_, Nil) =>
+        case (_, Nil) | (_, Nil :: Nil) =>
           // Fall back on Expr.Error
-          val error = UnexpectedToken(
-            expected = NamedTokenSet.FromKinds(Set(TokenKind.KeywordCatch, TokenKind.KeywordWith)),
-            actual = None,
-            SyntacticContext.Expr.OtherExpr,
-            loc = tree.loc)
+          val error = NeedAtleastOne(NamedTokenSet.CatchRule, SyntacticContext.Expr.OtherExpr, None, tree.loc)
           sctx.errors.add(error)
           Validation.Success(Expr.Error(error))
         // Case: try expr catch { rules... }
@@ -2086,8 +2089,14 @@ object Weeder2 {
     private def visitParYieldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.ParYield)
       val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
-      mapN(traverse(fragments)(visitParYieldFragment), pickExpr(tree)) {
-        (fragments, expr) => Expr.ParYield(fragments, expr, tree.loc)
+      if (fragments.isEmpty) {
+        val error = NeedAtleastOne(NamedTokenSet.Pattern, SyntacticContext.Expr.OtherExpr, Some("Valid par-yield syntax looks like `par (x <- e) yield x` "), loc = tree.loc)
+        sctx.errors.add(error)
+        Validation.Success(Expr.Error(error))
+      } else {
+        mapN(traverse(fragments)(visitParYieldFragment), pickExpr(tree)) {
+          (fragments, expr) => Expr.ParYield(fragments, expr, tree.loc)
+        }
       }
     }
 
@@ -2982,19 +2991,14 @@ object Weeder2 {
       */
     def visitCaseType(tree: Tree)(implicit sctx: SharedContext): Validation[List[Type], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Type.Type, TreeKind.Type.Effect))
-      // Visit first child and match its kind to know what to to
+      // Visit all types of the tuple
       val inner = unfold(tree)
-      inner.kind match {
-        case TreeKind.Type.Tuple =>
-          expect(inner, TreeKind.Type.Tuple)
-          mapN(traverse(pickAll(TreeKind.Type.Type, inner))(visitType)) {
-            case Nil => List(Type.Unit(inner.loc))
-            case types => types
-          }
-        case _ => visitType(tree) match {
-          case Success(t) => Success(List(t))
-          case Failure(errors) => Failure(errors)
-        }
+      val innerTypes = pickAll(TreeKind.Type.Type, inner)
+      mapN(traverse(innerTypes)(visitType)) {
+        case Nil =>
+          sctx.errors.add(NeedAtleastOne(NamedTokenSet.Type, SyntacticContext.Decl.Enum, loc = inner.loc))
+          List(Type.Error(inner.loc))
+        case types => types
       }
     }
 

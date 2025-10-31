@@ -308,6 +308,21 @@ mod Chain {
         loop(viewLeft(c), 0)
 
     ///
+    /// Returns the positions of all occurrences of `x` in `c`.
+    ///
+    pub def indicesOf(x: a, c: Chain[a]): Vector[Int32] with Eq[a] =
+        def loop(v, acc, indices) = match v {
+            case ViewLeft.NoneLeft        => indices
+            case ViewLeft.SomeLeft(y, ys) => if (x == y) loop(viewLeft(ys), acc + 1, acc :: indices) else loop(viewLeft(ys), acc + 1, indices)
+        };
+        loop(viewLeft(c), 0, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the chain `c`.
+    ///
+    pub def indices(c: Chain[a]): Range[Int32] = Range.Range(0, length(c))
+
+    ///
     /// Alias for `findLeft`.
     ///
     /// The function `f` must be pure.
@@ -527,17 +542,6 @@ mod Chain {
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = match viewRight(c) {
         case ViewRight.NoneRight        => s
         case ViewRight.SomeRight(xs, x) => foldRight(f, f(x, s), xs)
-    }
-
-    ///
-    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Chain[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft        => z
-        case ViewLeft.SomeLeft(x, xs) => f(x, _ -> foldRightWithCont(f, z, xs))
     }
 
     ///
@@ -770,13 +774,6 @@ mod Chain {
     ///
     pub def toList(c: Chain[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, c)
-
-    ///
-    /// Returns `c` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
-    }
 
     ///
     /// Returns the list `c` as a set.

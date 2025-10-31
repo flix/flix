@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Instance
@@ -85,7 +85,7 @@ import scala.collection.mutable
   *   - Case set formulas are a single CaseSet literal or a complement thererof.
   *
   */
-object Monomorpher {
+object Specialization {
 
   /** The effect that all [[TypeConstructor.Region]] are instantiated to. */
   private val RegionInstantiation: TypeConstructor.Effect =
@@ -635,6 +635,18 @@ object Monomorpher {
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+
+    case LoweredAst.Expr.NewChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.GetChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.PutChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case LoweredAst.Expr.SelectChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
   }
 

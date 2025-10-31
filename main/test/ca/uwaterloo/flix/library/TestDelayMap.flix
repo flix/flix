@@ -1220,56 +1220,6 @@ mod TestDelayMap {
             DelayMap.foldRightWithKey((k, v, acc) -> k + acc + v, 0))
 
     /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-        assertEq(expected = 0, Map#{} |> toDelayMap |>
-            DelayMap.foldRightWithCont((v, c) -> c() + v, 0))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-        assertEq(expected = 2, Map#{1 => 2} |> toDelayMap |>
-            DelayMap.foldRightWithCont((v, c) -> c() + v, 0))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-        assertEq(expected = 6, Map#{1 => 2, 3 => 4} |> toDelayMap |>
-            DelayMap.foldRightWithCont((v, c) -> c() + v, 0))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-        assertEq(expected = 12, Map#{1 => 2, 3 => 4, 5 => 6} |> toDelayMap |>
-            DelayMap.foldRightWithCont((v, c) -> c() + v, 0))
-
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithKeyCont                                                    //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithKeyCont01(): Unit \ Assert =
-        assertEq(expected = 0, Map#{} |> toDelayMap |>
-            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0))
-
-    @Test
-    def foldRightWithKeyCont02(): Unit \ Assert =
-        assertEq(expected = 3, Map#{1 => 2} |> toDelayMap |>
-            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0))
-
-    @Test
-    def foldRightWithKeyCont03(): Unit \ Assert =
-        assertEq(expected = 10, Map#{1 => 2, 3 => 4} |> toDelayMap |>
-            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0))
-
-    @Test
-    def foldRightWithKeyCont04(): Unit \ Assert =
-        assertEq(expected = 21, Map#{1 => 2, 3 => 4, 5 => 6} |> toDelayMap |>
-            DelayMap.foldRightWithKeyCont((k, v, c) -> k + c() + v, 0))
-
-
-    /////////////////////////////////////////////////////////////////////////////
     // reduceLeft                                                              //
     /////////////////////////////////////////////////////////////////////////////
 

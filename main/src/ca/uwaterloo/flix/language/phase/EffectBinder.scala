@@ -57,7 +57,7 @@ object EffectBinder {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newStructs = ParOps.parMapValues(root.structs)(visitStruct)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, Set.empty, Nil, root.mainEntryPoint, root.entryPoints, root.sources)
+    ReducedAst.Root(newDefs, newEnums, newStructs, newEffects, root.mainEntryPoint, root.entryPoints, root.sources)
   }
 
   private sealed trait Binder
@@ -74,9 +74,8 @@ object EffectBinder {
     case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, loc) =>
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
-      val lparams = Nil
       val exp = visitExpr(exp0)
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
+      ReducedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, ReducedAst.UnboxedType(tpe), loc)
   }
 
   private def visitEnum(enm: LiftedAst.Enum): ReducedAst.Enum = enm match {

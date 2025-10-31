@@ -588,43 +588,53 @@ mod TestVector {
         assertEq(expected = Some(1), Vector.indexOfRight(1, Vector#{1, 1}))
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert =
+        let v = Vector.indicesOf(0, (Vector#{}: Vector[Int32]));
+        assertEq(expected = Vector#{}, v)
+
+    @Test
+    def indicesOf02(): Unit \ Assert =
+        let v = Vector.indicesOf(0, Vector#{1});
+        assertEq(expected = Vector#{}, v)
+
+    @Test
+    def indicesOf03(): Unit \ Assert =
+        let v = Vector.indicesOf(1, Vector#{1});
+        assertEq(expected = Vector#{0}, v)
+
+    @Test
+    def indicesOf04(): Unit \ Assert =
+        let v = Vector.indicesOf(0, Vector#{1, 2});
+        assertEq(expected = Vector#{}, v)
+
+    @Test
+    def indicesOf05(): Unit \ Assert =
+        let v = Vector.indicesOf(1, Vector#{1, 2});
+        assertEq(expected = Vector#{0}, v)
+
+    @Test
+    def indicesOf06(): Unit \ Assert =
+        let v = Vector.indicesOf(2, Vector#{1, 2});
+        assertEq(expected = Vector#{1}, v)
+
+    @Test
+    def indicesOf07(): Unit \ Assert =
+        let v = Vector.indicesOf(1, Vector#{1, 1});
+        assertEq(expected = Vector#{0, 1}, v)
+
+    /////////////////////////////////////////////////////////////////////////////
     // indices                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def indices01(): Unit \ Assert =
-        let v = Vector.indices(0, (Vector#{}: Vector[Int32]));
-        assertEq(expected = Vector#{}, v)
+    def indices01(): Unit \ Assert = assertEq(expected = Range.Range(0, 0), Vector.indices((Vector#{}: Vector[Int32])))
 
     @Test
-    def indices02(): Unit \ Assert =
-        let v = Vector.indices(0, Vector#{1});
-        assertEq(expected = Vector#{}, v)
-
-    @Test
-    def indices03(): Unit \ Assert =
-        let v = Vector.indices(1, Vector#{1});
-        assertEq(expected = Vector#{0}, v)
-
-    @Test
-    def indices04(): Unit \ Assert =
-        let v = Vector.indices(0, Vector#{1, 2});
-        assertEq(expected = Vector#{}, v)
-
-    @Test
-    def indices05(): Unit \ Assert =
-        let v = Vector.indices(1, Vector#{1, 2});
-        assertEq(expected = Vector#{0}, v)
-
-    @Test
-    def indices06(): Unit \ Assert =
-        let v = Vector.indices(2, Vector#{1, 2});
-        assertEq(expected = Vector#{1}, v)
-
-    @Test
-    def indices07(): Unit \ Assert =
-        let v = Vector.indices(1, Vector#{1, 1});
-        assertEq(expected = Vector#{0, 1}, v)
+    def indices02(): Unit \ Assert = assertEq(expected = Range.Range(0, 3), Vector.indices(Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
@@ -2010,26 +2020,6 @@ mod TestVector {
     @Test
     def foldRight04(): Unit \ Assert =
         assertEq(expected = 382, Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert =
-        assertEq(expected = 100, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}))
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert =
-        assertEq(expected = 198, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}))
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert =
-        assertEq(expected = 194, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}))
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert =
-        assertEq(expected = 382, Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -4380,54 +4370,6 @@ mod TestVector {
         let s = Vector.joinWith(Int32.toString, "..", v);
         assertEq(expected = "1..2..3", s)
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, (Vector#{}: Vector[Int32])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let l = MutList.empty(rc);
-        MutList.push(1, l);
-        MutList.push(2, l);
-        MutList.push(3, l);
-        assertTrue(MutList.sameElements(Vector.toMutList(rc, Vector#{1, 2, 3}), l))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Vector.range(0, 100) |> Vector.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{1, 2, 3, 4}))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let l = Vector.toMutList(rc, Vector#{1, 2, 3});
-        MutList.push(4, l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        discard MutList.pop(l);
-        assertTrue(Vector.equals(MutList.toVector(l), Vector#{}))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

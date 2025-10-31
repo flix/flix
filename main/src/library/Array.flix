@@ -327,8 +327,13 @@ mod Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indices(rc: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ r with Eq[a] =
-        findIndices(rc, b -> a == b, arr)
+    pub def indicesOf(a: a, arr: Array[a, r]): Vector[Int32] \ r with Eq[a] =
+        findIndices(b -> a == b, arr)
+
+    ///
+    /// Returns a range of all valid indices of the array `arr`.
+    ///
+    pub def indices(arr: Array[a, r]): Range[Int32] = Range.Range(0, length(arr))
 
     ///
     /// Alias for `findLeft`.
@@ -794,21 +799,6 @@ mod Array {
         loop(length(arr) - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i == length(arr))
-                z
-            else
-                f(get(i, arr), _ -> loop(i + 1))
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, arr: Array[a, r]): b \ { ef, r } with Monoid[b] =
@@ -1257,16 +1247,6 @@ mod Array {
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
-        let minCap = MutList.minCapacity();
-        let len = length(a);
-        let c = Order.max(len, minCap);
-        let copy = copyOfRange(rc1, 0, c, a);
-        new MutList @ rc1 {r = rc1, values = copy, length = len}
-
-    ///
     /// Alias for `findIndexOfLeft`.
     ///
     pub def findIndexOf(f: a -> Bool \ ef, a: Array[a, r]): Option[Int32] \ { ef, r } =
@@ -1312,9 +1292,9 @@ mod Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
+    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Vector[Int32] \ { ef, r } = region rc {
         let len = length(a);
-        let l = MutList.empty(rc2);
+        let l = MutList.empty(rc);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1324,7 +1304,8 @@ mod Array {
             }
         };
         loop(0);
-        MutList.toArray(rc2, l)
+        MutList.toVector(l)
+    }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1576,32 +1557,40 @@ mod Array {
     /// If the range is valid and greater than the length of `a`, the resulting array will have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } = {
+        use Reflect.JvmType;
         // All of the below casts are required to cast the type to `Array[a, ...]`.
-        typematch a {
+        match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
             // The casts here are used to both modify the java method type and to simulate GADT typing
-            case arr: Array[Bool, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Char, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int8, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int16, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[a, r1] =>
-                // `a` must be non-primitive now
-                let arrObj = unchecked_cast(arr as Array[Object, r1]);
-                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
-            case _: _ => unreachable!()
+            case JvmType.JvmBool =>
+                let arr = unchecked_cast(a as Array[Bool, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmChar =>
+                let arr = unchecked_cast(a as Array[Char, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt8 =>
+                let arr = unchecked_cast(a as Array[Int8, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt16 =>
+                let arr = unchecked_cast(a as Array[Int16, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt32 =>
+                let arr = unchecked_cast(a as Array[Int32, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt64 =>
+                let arr = unchecked_cast(a as Array[Int64, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmFloat32 =>
+                let arr = unchecked_cast(a as Array[Float32, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmFloat64 =>
+                let arr = unchecked_cast(a as Array[Float64, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmObject =>
+                let arr = unchecked_cast(a as Array[Object, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
         }
+    }
 
     ///
     /// Shuffles `a` using a random permutation.

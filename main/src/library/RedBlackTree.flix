@@ -331,17 +331,6 @@ mod RedBlackTree {
         foldLeft((acc, k, v) -> Monoid.combine(acc, f(k, v)), Monoid.empty(), t)
 
     ///
-    /// Applies `f` to a start value `z` and all key-value pairs in `t` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, s)))`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, t: RedBlackTree[k, v]): b \ ef = match t {
-        case Node(_, a, k, v, b) => foldRightWithCont(f, f(k, v, _ -> foldRightWithCont(f, z, b)), a)
-        case _                   => z
-    }
-
-    ///
     /// Applies `f` to all key-value pairs in `tree` going from left to right until a single pair `(k, v)` is obtained.
     ///
     /// That is, the result is of the form: `Some(f(...f(f(k1, v1, k2, v2), k3, v3)..., kn, vn))`

@@ -102,6 +102,11 @@ mod MutDeque {
         computeSize(capacity(d), d->front, d->back)
 
     ///
+    /// Returns a range of all valid indices of the mutable deque `d`.
+    ///
+    pub def indices(d: MutDeque[a, r]): Range[Int32] \ r = Range.Range(0, size(d))
+
+    ///
     /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
     ///
     def computeSize(c: Int32, f: Int32, b: Int32): Int32 =
@@ -162,22 +167,6 @@ mod MutDeque {
                 loop(j, e, f(Array.get(j, d->values), acc))
             };
         loop(d->back, d->front, s)
-
-    ///
-    /// Applies `f` to a start value `z` and all elements in `d` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, s: b, d: MutDeque[a, r]): b \ { ef, r } =
-        let c = capacity(d) - 1;
-        def loop(i, e) =
-            if (i == e)
-                s
-            else {
-                f(Array.get(i, d->values), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
-            };
-        loop(d->front, d->back)
 
     ///
     /// Returns the result of mapping each element and combining the results.

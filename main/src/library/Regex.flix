@@ -149,11 +149,11 @@ mod Regex {
     /// If `substr` regexp matches the empty string, positions where an empty match
     /// has been recognized will be returned.
     ///
-    pub def indices(substr: Regex, s: String): List[Int32] = region rc {
+    pub def indicesOf(substr: Regex, s: String): Vector[Int32] = region rc {
         let m = newMatcher(rc, substr, s);
         match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
-            case Ok(c)  => Chain.toList(c)
-            case Err(_) => Nil
+            case Ok(c)  => Chain.toList(c) |> List.toVector
+            case Err(_) => Vector.empty()
         }
     }
 
@@ -168,6 +168,23 @@ mod Regex {
             case Ok(c)  => Chain.toList(c)
             case Err(_) => Nil
         }
+    }
+
+    ///
+    /// Returns the contents of the all the capture groups of `substr` in `s`.
+    ///
+    /// Returns `Nil` if `substr` is the empty string or regex contains no groups.
+    ///
+    pub def capture(rgx: Regex, s: String): List[String] = region rc {
+        let m = newMatcher(rc, rgx, s);
+        if (find(m))
+            let cnt = groupCount(m);
+            match List.foldRight((a,x) -> forM(x2 <- x; a2 <- a) yield a2 :: x2, Ok(Nil), List.map(matcherGroup(m),List.range(1,cnt + 1))) {
+                case Ok(l) => l
+                case Err(_) => Nil
+            }
+        else
+            Nil
     }
 
     ///
@@ -441,15 +458,15 @@ mod Regex {
     /// If `substr` regexp matches the empty string, positions where an empty match
     /// has been recognized will be returned.
     ///
-    /// Returns `Nil` if there are no matches or the bounds are invalid.
+    /// Returns an empty vector if there are no matches or the bounds are invalid.
     ///
-    pub def indicesWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): List[Int32] = region rc {
+    pub def indicesOfWithBounds(substr: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Vector[Int32] = region rc {
         match newMatcherWithBounds(rc, substr, start, end, s) {
             case Ok(m)  => match foldSubmatches(Chain.snoc, Chain.empty(), matcherStart, m) {
-               case Ok(c)  => Chain.toList(c)
-               case Err(_) => Nil
+               case Ok(c)  => Chain.toList(c) |> List.toVector
+               case Err(_) => Vector.empty()
             }
-            case Err(_) => Nil
+            case Err(_) => Vector.empty()
         }
     }
 
@@ -664,6 +681,22 @@ mod Regex {
             let Matcher(m1) = m;
             unchecked_cast ((m1.group(): _ \ IO) as _ \ r)
         })
+
+    ///
+    /// Return the text content of the current groups in matcher `m`.
+    ///
+    def matcherGroup(m: Matcher[r], i:Int32): Result[String, String] \ r =
+        Result.tryCatch(_ -> {
+            let Matcher(m1) = m;
+            unchecked_cast ((if (not Object.isNull(m1.group(i))) m1.group(i) else "" : _ \ IO) as _ \ r)
+        })
+
+    ///
+    /// Return the number of groups in matcher `m`.
+    ///
+    def groupCount(m: Matcher[r]): Int32 \ r =
+            let Matcher(m1) = m;
+            unchecked_cast ((m1.groupCount(): _ \ IO) as _ \ r)
 
     ///
     /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.

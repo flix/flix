@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
 import ca.uwaterloo.flix.language.fmt.FormatConstant
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
@@ -550,11 +551,7 @@ object PatMatch {
       case TypedAst.Pattern.Record(pats, tail, _, _) => ctor match {
         case TyCon.Record(_, _) =>
           val ps = pats.map(_.pat)
-          val p = tail match {
-            case TypedAst.Pattern.Cst(Constant.RecordEmpty, _, _) => Nil
-            case _ => List(tail)
-          }
-          Some(ps ::: p ::: pat.tail)
+          Some(ps ::: List(tail) ::: pat.tail)
         case _ => None
       }
       // Also handle the non tag constructors
@@ -672,9 +669,10 @@ object PatMatch {
           }.toList
         }
 
-      // For Unit and Bool constants are enumerable
+      // For Unit, Bool and empty record, constants are enumerable
       case TyCon.Cst(Constant.Unit) => List(TyCon.Cst(Constant.Unit))
       case TyCon.Cst(Constant.Bool(_)) => List(TyCon.Cst(Constant.Bool(true)), TyCon.Cst(Constant.Bool(false)))
+      case TyCon.Cst(Constant.RecordEmpty) => List(TyCon.Cst(Constant.RecordEmpty))
 
       /* For numeric types, we consider them as "infinite" types union
        * Int = ...| -1 | 0 | 1 | 2 | 3 | ...
@@ -707,10 +705,7 @@ object PatMatch {
     case TyCon.Array => 0
     case TyCon.Vector => 0
     case TyCon.Enum(_, args) => args.length
-    case TyCon.Record(labels, tail) => tail match {
-      case TyCon.Cst(Constant.RecordEmpty) => labels.length
-      case _ => labels.length + 1
-    }
+    case TyCon.Record(labels, _) => labels.length + 1
   }
 
   /**
@@ -751,7 +746,7 @@ object PatMatch {
     // Everything else is the same constructor if they are the same type
     case (_: TyCon.Tuple, _: TyCon.Tuple) => true
     case (_: TyCon.Record, _: TyCon.Record) => true
-    case (a, b) => a == b;
+    case (a, b) => a == b
   }
 
   /**
@@ -792,11 +787,8 @@ object PatMatch {
       val rebuiltArgs = lst.take(args.length)
       TyCon.Enum(sym, rebuiltArgs) :: lst.drop(args.length)
     case TyCon.Record(labels, _) =>
-      val all = lst.take(labels.length + 1)
-      val ls = labels.map {
-        case (l, _) => l
-      }.zip(all.take(labels.length))
-      val t = all.takeRight(1).head
+      val ls = ListOps.zip(labels.map { case (l, _) => l }, lst.take(labels.length))
+      val t = lst.slice(labels.length, labels.length + 1).head
       TyCon.Record(ls, t) :: lst.drop(labels.length + 1)
     case a => a :: lst
   }
