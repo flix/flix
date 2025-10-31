@@ -27,7 +27,7 @@ object SafetyError {
       import formatter.*
       s""">> Operation not permitted in security context: $sctx
          |
-         |${code(loc, "forbidden")}
+         |${code(loc, s"forbidden in security context $sctx")}
          |""".stripMargin
     }
 
