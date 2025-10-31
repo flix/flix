@@ -11,7 +11,6 @@ import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
 import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
 
-import java.lang.reflect
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.annotation.tailrec
@@ -34,13 +33,9 @@ object Safety {
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    val ioIsProhibited = defn.loc.security == SecurityContext.Paranoid
-    val hasIO = defn.spec.eff.effects.contains(Symbol.IO)
-    if (ioIsProhibited && hasIO) {
-      checkPermissions(defn.loc.security, defn.loc)
-    }
-    visitExp(defn.exp)
-    defn
+    checkIOPermissions(defn.spec.eff) // N.B.: We do not need to check arguments since if a function parameter has `IO`,
+    visitExp(defn.exp) // this will have `IO` too or the parameter is unused in which case an error is also emitted.
+    defn // Note, however, this allows for `_: a -> b \ IO`
   }
 
   /** Checks the safety and well-formedness of `trt`. */
@@ -58,6 +53,7 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    checkIOPermissions(sig.spec.eff)
     sig.exp.foreach(visitExp(_))
   }
 
@@ -388,6 +384,20 @@ object Safety {
       case SecurityContext.Paranoid =>
         sctx.errors.add(SafetyError.Forbidden(ctx, loc))
     }
+  }
+
+  /** Emits an error if `eff` contains [[Symbol.IO]] and its security context is [[SecurityContext.Paranoid]] */
+  private def checkIOPermissions(eff: Type)(implicit sctx: SharedContext): Unit = eff.loc.security match {
+    case SecurityContext.Unrestricted =>
+      ()
+
+    case SecurityContext.Plain =>
+      ()
+
+    case SecurityContext.Paranoid =>
+      if (eff.effects.contains(Symbol.IO)) {
+        sctx.errors.add(SafetyError.Forbidden(eff.loc.security, eff.loc))
+      }
   }
 
   /** Checks if `cast` is legal. */
