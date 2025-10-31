@@ -66,7 +66,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
       val resolution = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveTrust) match {
+        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
           case Ok(res) => res
           case Err(e) => fail(e.message(formatter))
         }
@@ -109,7 +109,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val path = Files.createTempDirectory("")
       val manifests = throttle {
         FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-          case Ok(resolution) => FlixPackageManager.resolveTrust(resolution)
+          case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
           case Err(e) => fail(e.message(formatter))
         }
       }
@@ -171,18 +171,18 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val path = Files.createTempDirectory("")
 
       val resolution1 = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest1, path, None).map(FlixPackageManager.resolveTrust) match {
+        FlixPackageManager.findTransitiveDependencies(manifest1, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
           case Ok(res) => res
           case Err(e) => fail(e.message(formatter))
         }
       }
       val resolution2 = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest2, path, None).map(FlixPackageManager.resolveTrust) match {
+        FlixPackageManager.findTransitiveDependencies(manifest2, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
           case Ok(res) => res
           case Err(e) => fail(e.message(formatter))
         }
       }
-      val resolution = FlixPackageManager.TrustResolution(origin = manifest1, trust = resolution1.trust ++ resolution2.trust, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
+      val resolution = FlixPackageManager.SecureResolution(origin = manifest1, security = resolution1.security ++ resolution2.security, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
 
       throttle {
         FlixPackageManager.installAll(resolution, path, None)
@@ -221,7 +221,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       val path = Files.createTempDirectory("")
 
       val resolution = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveTrust) match {
+        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
           case Ok(res) => res
           case Err(e) => fail(e.message(formatter))
         }
@@ -298,7 +298,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
     val path = Files.createTempDirectory("")
     throttle {
-      FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveTrust)
+      FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels)
     } match {
       case Ok(res) => fail(res.toString)
       case Err(e) =>
@@ -333,7 +333,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
       throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveTrust)
+        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels)
       } match {
         case Ok(res) => res
         case Err(e) => e.message(formatter)
@@ -367,7 +367,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val manifests = throttle {
         FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-          case Ok(resolution) => FlixPackageManager.resolveTrust(resolution)
+          case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
           case Err(e) => fail(e.message(formatter))
         }
       }
@@ -728,11 +728,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
     }
 
-    val manifestsWithSecurity = FlixPackageManager.resolveTrust(allManifests)
+    val manifestsWithSecurity = FlixPackageManager.resolveSecurityLevels(allManifests)
 
-    val trustResolutionErrors = FlixPackageManager.checkTrust(manifestsWithSecurity)
-    if (trustResolutionErrors.nonEmpty) {
-      return (true, trustResolutionErrors.mkString(System.lineSeparator()))
+    val securityResolutionErrors = FlixPackageManager.checkSecurity(manifestsWithSecurity)
+    if (securityResolutionErrors.nonEmpty) {
+      return (true, securityResolutionErrors.mkString(System.lineSeparator()))
     }
 
     val pkgs = throttle {
@@ -745,8 +745,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val flix = new Flix()
     flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
 
-    for ((path, trust) <- pkgs) {
-      flix.addPkg(path)(SecurityContext.fromTrust(trust))
+    for ((path, sctx) <- pkgs) {
+      flix.addPkg(path)(sctx)
     }
 
     val (_, errors) = flix.check()

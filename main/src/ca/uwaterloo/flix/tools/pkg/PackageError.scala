@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.Formatter
@@ -108,18 +109,18 @@ object PackageError {
   }
 
   /**
-    * An error raised when the dependency graph itself is inconsistent w.r.t. trust levels.
+    * An error raised when the dependency graph itself is inconsistent w.r.t. security contexts.
     *
     * @param manifest   the manifest that declares [[dependency]].
     * @param dependency the dependency that requires more trust than what is allowed by the declaring manifest.
-    * @param trust      the maximum allowed trust level.
+    * @param sctx       the maximum allowed security context.
     */
-  case class TrustGraphError(manifest: Manifest, dependency: FlixDependency, trust: Trust) extends PackageError {
+  case class DepGraphSecurityError(manifest: Manifest, dependency: FlixDependency, sctx: SecurityContext) extends PackageError {
     // TODO: Show the offending original dependency/-ies (from origin manifest)
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String =
       s"""${f.underline("trust inconsistency in the dependency graph:")}
-         |  Dependency '$dependency' of package ${manifest.name} requires trust '${dependency.security}' but trust '$trust' was given.
+         |  Dependency '$dependency' of package ${manifest.name} requires security context '${dependency.sctx}' but context '$sctx' was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency
@@ -129,17 +130,17 @@ object PackageError {
   }
 
   /**
-    * An error raised when the dependency graph itself is inconsistent w.r.t. trust levels.
+    * An error raised when the dependency graph itself is inconsistent w.r.t. security contexts.
     *
-    * @param origDep the dependency that requires more trust than what is allowed by the declaring manifest.
-    * @param trust   the maximum allowed trust level.
+    * @param manifest the dependency that requires a stronger security context than what is allowed by the declaring manifest.
+    * @param sctx     the maximum allowed trust level.
     */
-  case class IllegalJavaDependencyAtTrustLevel(manifest: Manifest, dependency: Dependency, trust: Trust) extends PackageError {
+  case class IllegalJavaDependencyForSctx(manifest: Manifest, dependency: Dependency, sctx: SecurityContext) extends PackageError {
     // TODO: Show the offending original dependency/-ies (from origin manifest)
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String =
       s"""Found trust inconsistency in the dependency graph:
-         |  Project '${manifest.name}' declares Java dependency '$dependency' which requires trust '${Trust.Unrestricted}' but only $trust was given.
+         |  Project '${manifest.name}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency

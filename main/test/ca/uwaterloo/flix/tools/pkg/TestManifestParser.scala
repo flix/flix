@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Formatter, Result}
@@ -185,8 +186,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), Trust.Plain),
-      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), Trust.Plain),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), SecurityContext.Plain),
+      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), SecurityContext.Plain),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
@@ -331,13 +332,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
     }
-    assertResult(expected = Trust.Plain)(actual =
+    assertResult(expected = SecurityContext.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .security
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -357,13 +358,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Plain)(actual =
+    assertResult(expected = SecurityContext.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .security
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -383,13 +384,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Paranoid)(actual =
+    assertResult(expected = SecurityContext.Paranoid)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .security
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -409,13 +410,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Plain)(actual =
+    assertResult(expected = SecurityContext.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .security
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -435,13 +436,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Unrestricted)(actual =
+    assertResult(expected = SecurityContext.Unrestricted)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .security
+            .sctx
         case Err(e) => e.message(f)
       }
     )

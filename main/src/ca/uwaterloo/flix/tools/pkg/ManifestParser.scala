@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
@@ -360,7 +361,7 @@ object ManifestParser {
         // If the dependency maps to a string, parse the version.
         if (deps.isString(depKey)) {
           getFlixVersion(deps, depKey, p).map {
-            Dependency.FlixDependency(repo, username, projectName, _, Trust.Plain)
+            Dependency.FlixDependency(repo, username, projectName, _, SecurityContext.Plain)
           }
 
 
@@ -398,20 +399,20 @@ object ManifestParser {
   }
 
   /**
-    * Retrieve the given security from a [[TomlTable]] `depTbl` at `key`.
+    * Retrieve the given security context from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getSecurity(depTbl: TomlTable, key: String, path: Path): Result[Trust, ManifestError] = {
+  private def getSecurity(depTbl: TomlTable, key: String, path: Path): Result[SecurityContext, ManifestError] = {
     // Ensure the security value is a string.
     if (!depTbl.contains(key)) {
-      return Ok(Trust.Plain)
+      return Ok(SecurityContext.Plain)
     }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
       Err(ManifestError.FlixDependencySecurityType(Option.apply(path), key, perms))
     } else {
       val value = depTbl.getString(key)
-      Trust.fromString(value) match {
-        case Some(trust) => Ok(trust)
+      SecurityContext.fromString(value) match {
+        case Some(sctx) => Ok(sctx)
         case None => Err(ManifestError.FlixUnknownSecurityValue(path, key, value))
       }
     }
