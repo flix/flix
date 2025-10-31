@@ -47,6 +47,13 @@ trait TestUtils {
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
   }
 
+  /**
+    * Compiles the given input string `s` with the given compilation options `o` and security context `sctx`.
+    */
+  def compileWithSecurityContext(s: String, sctx: SecurityContext, o: Options): Validation[CompilationResult, CompilationMessage] = {
+    new Flix().setOptions(o).addSourceCode("<test>", s)(sctx).compile()
+  }
+
   private def errorString(errors: Seq[CompilationMessage]): String = {
     errors.map(_.messageWithLoc(Formatter.NoFormatter)).mkString("\n\n")
   }

@@ -385,6 +385,21 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     })
   }
 
+  test("trust:paranoid-dep:plain") {
+    val deps = List(
+      """
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "paranoid" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, Main)
+
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'paranoid' and dependency plain")
+    }
+  }
+
   ignore("trust:plain-dep:plain") {
     val deps = List(
       """
@@ -534,6 +549,22 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       fail(message + System.lineSeparator() + "expected ok with trust 'plain->plain+unrestricted' and dependency plain")
     } else {
       succeed
+    }
+  }
+
+  test("transitive.diamond.trust:paranoid->plain+plain-dep:plain") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-trust-transitive-plain" = { version = "0.1.0", trust = "paranoid" }
+        |"github:flix/test-pkg-trust-plain" = { version = "0.1.0", trust = "plain" }
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, MainTransitive)
+
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected failure with trust 'paranoid->plain+plain' and dependency plain")
     }
   }
 

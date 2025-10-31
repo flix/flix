@@ -380,6 +380,32 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "paranoid" }
+        |""".stripMargin
+    }
+    assertResult(expected = Trust.Paranoid)(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) =>
+          m.dependencies
+            .head
+            .asInstanceOf[Dependency.FlixDependency]
+            .trust
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.flix-dependency-permission.04") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "plain" }
         |""".stripMargin
     }
@@ -395,7 +421,7 @@ class TestManifestParser extends AnyFunSuite {
     )
   }
 
-  test("Ok.flix-dependency-permission.04") {
+  test("Ok.flix-dependency-permission.05") {
     val toml = {
       """
         |[package]

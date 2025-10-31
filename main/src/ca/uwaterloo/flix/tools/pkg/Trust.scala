@@ -17,19 +17,22 @@
 package ca.uwaterloo.flix.tools.pkg
 
 sealed trait Trust {
+
   /**
     * Returns the least upper bound of `this` and `other` according to the following lattice:
     * {{{
     *     Unrestricted
     *          |
     *        Plain
+    *          |
+    *       Paranoid
     * }}}
     */
   def lub(other: Trust): Trust = (this, other) match {
-    case (Trust.Plain, Trust.Plain) => Trust.Plain
+    case (Trust.Paranoid, _) => other
     case (Trust.Plain, Trust.Unrestricted) => Trust.Unrestricted
-    case (Trust.Unrestricted, Trust.Plain) => Trust.Unrestricted
-    case (Trust.Unrestricted, Trust.Unrestricted) => Trust.Unrestricted
+    case (Trust.Plain, _) => Trust.Plain
+    case (Trust.Unrestricted, _) => Trust.Unrestricted
   }
 
   /**
@@ -38,6 +41,8 @@ sealed trait Trust {
     *     Unrestricted
     *          |
     *        Plain
+    *          |
+    *       Paranoid
     * }}}
     */
   def glb(other: Trust): Trust = if (this.lessThanEq(other)) this else other
@@ -48,6 +53,8 @@ sealed trait Trust {
     *     Unrestricted
     *          |
     *        Plain
+    *          |
+    *       Paranoid
     * }}}
     */
   def lessThanEq(other: Trust): Boolean = this.lub(other) == other
@@ -58,6 +65,7 @@ sealed trait Trust {
     * @see [[lessThanEq]]
     */
   def greaterThan(other: Trust): Boolean = !this.lessThanEq(other)
+
 }
 
 /**
@@ -65,9 +73,19 @@ sealed trait Trust {
   */
 object Trust {
 
+  /**
+    * Returns the greatest lower bound of `ts`.
+    */
   def glb(ts: List[Trust]): Trust = ts match {
     case Nil => throw new IllegalArgumentException("unexpected empty list")
     case x :: xs => xs.foldLeft(x)((acc, y) => acc.glb(y))
+  }
+
+  /**
+    * May use unchecked casts and Java interop.
+    */
+  case object Unrestricted extends Trust {
+    override def toString: String = "unrestricted"
   }
 
   /**
@@ -80,13 +98,15 @@ object Trust {
   }
 
   /**
-    * May use unchecked casts and Java interop.
+    * Has all the same restrictions as [[Plain]] in addition to the following:
+    *   1. No `IO` effect
     */
-  case object Unrestricted extends Trust {
-    override def toString: String = "unrestricted"
+  case object Paranoid extends Trust {
+    override def toString: String = "paranoid"
   }
 
   def fromString(s: String): Option[Trust] = s match {
+    case "paranoid" => Some(Paranoid)
     case "plain" => Some(Plain)
     case "unrestricted" => Some(Unrestricted)
     case _ => None

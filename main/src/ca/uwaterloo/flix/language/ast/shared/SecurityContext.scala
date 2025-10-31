@@ -25,19 +25,28 @@ sealed trait SecurityContext
 object SecurityContext {
 
   /**
-    * A security context where no unsafe features are permitted.
-    */
-  case object Plain extends SecurityContext
-
-  /**
     * A security context where everything is permitted.
     */
   case object Unrestricted extends SecurityContext
 
   /**
+    * A security context where no unsafe features are permitted:
+    *   1. No unsafe casts
+    *   1. No Java interop
+    */
+  case object Plain extends SecurityContext
+
+  /**
+    * A security context where the same restrictions as [[Plain]] apply
+    * and also prohibits the use of the IO effect.
+    */
+  case object Paranoid extends SecurityContext
+
+  /**
     * Converts a `Trust` type to a `SecurityContext`
     */
   def fromTrust(t: Trust): SecurityContext = t match {
+    case Trust.Paranoid => Paranoid
     case Trust.Plain => Plain
     case Trust.Unrestricted => Unrestricted
   }

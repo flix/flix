@@ -17,8 +17,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.{EntryPointError, SafetyError}
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType}
+import ca.uwaterloo.flix.language.errors.SafetyError.{Forbidden, IllegalCatchType, IllegalMethodEffect, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar, IllegalThrowType}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -831,5 +832,114 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalMethodEffect](result)
+  }
+
+  test("Trust.Paranoid.00") {
+    val input =
+      """
+        |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.01") {
+    val input =
+      """
+        |pub def f(_: Unit -> Unit \ IO): Unit = ()
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.02") {
+    val input =
+      """
+        |pub def f(g: Unit -> Unit \ IO): Unit = g()
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.03") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    pub def f(x: t): Unit \ IO
+        |}
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.04") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    pub def f(g: t -> Unit \ IO, x: t): Unit \ IO
+        |}
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.05") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    pub def f(x: t): Unit
+        |    pub def g(h: Unit -> Unit \ IO, x: t): Unit \ IO = h(f(x))
+        |}
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.06") {
+    val input =
+      """
+        |pub def f(): Unit = unchecked_cast(() as _ \ {})
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.07") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(): Unit = ()
+        |}
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.08") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(): StringBuilder = new StringBuilder()
+        |}
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    expectError[Forbidden](result)
+  }
+
+  test("Trust.Paranoid.09") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(sb: StringBuilder): Unit = {
+        |        sb.append("hello");
+        |        ()
+        |    }
+        |}
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    expectError[Forbidden](result)
   }
 }
