@@ -39,7 +39,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   private var flix: Flix = _
 
   // The default security context.
-  private implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+  override implicit val sctx: SecurityContext = SecurityContext.Unrestricted
 
   before {
     flix = new Flix()
