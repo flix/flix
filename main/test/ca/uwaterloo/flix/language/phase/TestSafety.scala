@@ -837,9 +837,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("Trust.Paranoid.01") {
     val input =
       """
-        |pub def f(_: Unit -> Unit \ Static): Unit = ()
+        |pub def f(_: Unit -> Unit \ IO): Unit = ()
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
     expectError[Forbidden](result)
   }
 
@@ -848,7 +848,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |pub def f(g: Unit -> Unit \ IO): Unit = g()
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
     expectError[Forbidden](result)
   }
 
@@ -859,7 +859,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
     expectError[Forbidden](result)
   }
 
@@ -870,7 +870,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(g: t -> Unit \ IO, x: t): Unit \ IO
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
     expectError[Forbidden](result)
   }
 
@@ -882,7 +882,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def g(h: Unit -> Unit \ IO, x: t): Unit \ IO = h(f(x))
         |}
       """.stripMargin
-    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
     expectError[Forbidden](result)
   }
 
