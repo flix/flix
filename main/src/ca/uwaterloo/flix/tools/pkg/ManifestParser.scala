@@ -368,12 +368,12 @@ object ManifestParser {
         } else if (deps.isTable(depKey)) {
           val depTbl = deps.getTable(depKey)
           val verKey = "version"
-          val trustKey = "trust"
+          val securityKey = "security"
 
           for (
             ver <- getFlixVersion(depTbl, verKey, p);
-            perm <- getTrust(depTbl, trustKey, p)
-          ) yield FlixDependency(repo, username, projectName, ver, perm)
+            security <- getSecurity(depTbl, securityKey, p)
+          ) yield FlixDependency(repo, username, projectName, ver, security)
         } else {
           Err(ManifestError.VersionTypeError(Option.apply(p), depKey, deps.get(depKey)))
         }
@@ -398,21 +398,21 @@ object ManifestParser {
   }
 
   /**
-    * Retrieve the given trust from a [[TomlTable]] `depTbl` at `key`.
+    * Retrieve the given security from a [[TomlTable]] `depTbl` at `key`.
     */
-  private def getTrust(depTbl: TomlTable, key: String, path: Path): Result[Trust, ManifestError] = {
-    // Ensure the trust value is a string.
+  private def getSecurity(depTbl: TomlTable, key: String, path: Path): Result[Trust, ManifestError] = {
+    // Ensure the security value is a string.
     if (!depTbl.contains(key)) {
       return Ok(Trust.Plain)
     }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencyTrustType(Option.apply(path), key, perms))
+      Err(ManifestError.FlixDependencySecurityType(Option.apply(path), key, perms))
     } else {
       val value = depTbl.getString(key)
       Trust.fromString(value) match {
         case Some(trust) => Ok(trust)
-        case None => Err(ManifestError.FlixUnknownTrustValue(path, key, value))
+        case None => Err(ManifestError.FlixUnknownSecurityValue(path, key, value))
       }
     }
   }

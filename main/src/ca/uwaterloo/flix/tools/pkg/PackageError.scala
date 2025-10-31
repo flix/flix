@@ -119,7 +119,7 @@ object PackageError {
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
     override def message(f: Formatter): String =
       s"""${f.underline("trust inconsistency in the dependency graph:")}
-         |  Dependency '$dependency' of package ${manifest.name} requires trust '${dependency.trust}' but trust '$trust' was given.
+         |  Dependency '$dependency' of package ${manifest.name} requires trust '${dependency.security}' but trust '$trust' was given.
          |
          |  There are several possible actions:
          |    - Remove the offending dependency

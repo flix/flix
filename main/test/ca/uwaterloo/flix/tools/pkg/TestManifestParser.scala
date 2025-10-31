@@ -337,7 +337,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .security
         case Err(e) => e.message(f)
       }
     )
@@ -363,7 +363,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .security
         case Err(e) => e.message(f)
       }
     )
@@ -389,7 +389,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .security
         case Err(e) => e.message(f)
       }
     )
@@ -415,7 +415,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .security
         case Err(e) => e.message(f)
       }
     )
@@ -441,7 +441,7 @@ class TestManifestParser extends AnyFunSuite {
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .security
         case Err(e) => e.message(f)
       }
     )
@@ -1610,7 +1610,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixUnknownTrustValue](result)
+    expectError[ManifestError.FlixUnknownSecurityValue](result)
   }
 
   test("ManifestError.FlixUnknownTrustValue.02") {
@@ -1627,7 +1627,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "abc" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixUnknownTrustValue](result)
+    expectError[ManifestError.FlixUnknownSecurityValue](result)
   }
 
   test("ManifestError.FlixDependencyTrustType.01") {
@@ -1644,7 +1644,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = [] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
   test("ManifestError.FlixDependencyTrustType.02") {
@@ -1661,7 +1661,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = ["plain"] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
   test("ManifestError.FlixDependencyTrustType.03") {
@@ -1678,7 +1678,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = true }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
   test("ManifestError.FlixDependencyTrustType.04") {
@@ -1695,7 +1695,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = 42 }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
   test("ManifestError.UnsupportedRepository.01") {

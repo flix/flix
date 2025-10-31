@@ -251,7 +251,7 @@ object FlixPackageManager {
     trustLevels.get(manifest) match {
       case Some(t) => t
       case None =>
-        val incomingTrusts = resolution.manifestToFlixDeps(manifest).map(_.trust)
+        val incomingTrusts = resolution.manifestToFlixDeps(manifest).map(_.security)
         val parentTrusts = resolution.immediateDependents(manifest).map(minTrustLevel)
         val glb = Trust.glb(parentTrusts ::: incomingTrusts)
         trustLevels.put(manifest, glb)
@@ -280,7 +280,7 @@ object FlixPackageManager {
     */
   private def checkGraphErrors(m: Manifest, t: Trust): List[PackageError.TrustGraphError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
-    val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(m, d, t))
+    val manifestTrustErrors = flixDeps.filter(d => d.security.greaterThan(t)).map(d => PackageError.TrustGraphError(m, d, t))
     manifestTrustErrors
   }
 

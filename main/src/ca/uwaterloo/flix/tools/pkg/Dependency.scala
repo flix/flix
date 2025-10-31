@@ -21,10 +21,10 @@ sealed trait Dependency
 
 object Dependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, trust: Trust) extends Dependency {
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, security: Trust) extends Dependency {
     override def toString: String = {
       val r = repo.toString.toLowerCase
-      s"\"$r:$username/$projectName\" = { \"version\" = \"$version\", \"trust\" = \"$trust\" }"
+      s"\"$r:$username/$projectName\" = { \"version\" = \"$version\", \"security\" = \"$security\" }"
     }
   }
 
