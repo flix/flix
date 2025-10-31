@@ -907,8 +907,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("Trust.Paranoid.07") {
     val input =
       """
-        |import java.lang.StringBuilder
-        |pub def f(): Unit = ()
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(): Unit = ()
+        |}
       """.stripMargin
     val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
     expectError[Forbidden](result)
@@ -917,8 +919,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("Trust.Paranoid.08") {
     val input =
       """
-        |import java.lang.StringBuilder
-        |pub def f(): StringBuilder = new StringBuilder()
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(): StringBuilder = new StringBuilder()
+        |}
       """.stripMargin
     val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
     expectError[Forbidden](result)
@@ -927,10 +931,12 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("Trust.Paranoid.09") {
     val input =
       """
-        |import java.lang.StringBuilder
-        |pub def f(sb: StringBuilder): Unit = {
-        |    sb.append("hello");
-        |    ()
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(sb: StringBuilder): Unit = {
+        |        sb.append("hello");
+        |        ()
+        |    }
         |}
       """.stripMargin
     val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibNix)
