@@ -127,13 +127,8 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /** Returns the set of erased function types in `types` without searching recursively. */
-  def getErasedArrowsOf(types: Iterable[SimpleType]): Set[BackendObjType.Arrow] =
-    types.foldLeft(Set.empty[BackendObjType.Arrow]) {
-      case (acc, SimpleType.Arrow(args, result)) =>
-        acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
-      case (acc, _) => acc
-    }
+  def backendArrowType(tpe: SimpleType.Arrow)(implicit root: Root): BackendObjType.Arrow =
+    BackendObjType.Arrow(tpe.targs.map(BackendType.toBackendType), BackendType.toBackendType(tpe.result))
 
   /** Returns the set of tuple types in `types` without searching recursively. */
   def getTupleTypesOf(types: Iterable[SimpleType])(implicit root: Root): Set[BackendObjType.Tuple] =

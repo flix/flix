@@ -41,6 +41,7 @@ object JvmBackend {
       SimpleType.Arrow(List(SimpleType.Float64), SimpleType.Object), // by resumptionWrappers
       SimpleType.Arrow(List(SimpleType.Object), SimpleType.Object), // by resumptionWrappers
     )
+    val erasedFunctionTypes0 = root.erasedFunctionTypes.union(requiredTypes)
     val allTypes = root.types ++ requiredTypes
 
     val mainClass = root.getMain.map(
@@ -56,7 +57,7 @@ object JvmBackend {
 
     // Generate function classes.
     val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs).values.toList
-    val erasedFunctionTypes = JvmOps.getErasedArrowsOf(allTypes)
+    val erasedFunctionTypes = erasedFunctionTypes0.map(JvmOps.backendArrowType)
     val functionInterfaces = erasedFunctionTypes.map(bt => JvmClass(bt.jvmName, bt.genByteCode()))
     val closureAbstractClasses = erasedFunctionTypes.map {
       case BackendObjType.Arrow(args, result) => BackendObjType.AbstractArrow(args, result)
