@@ -101,9 +101,7 @@ object Trust {
   }
 
   /**
-    * Paranoid Flix must not have any unsafe features.
-    *   1. No unsafe casts
-    *   1. No Java interop
+    * Has all the same restrictions as [[Plain]] in addition to the following:
     *   1. No `IO` effect
     */
   case object Paranoid extends Trust {

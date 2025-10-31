@@ -30,12 +30,15 @@ object SecurityContext {
   case object Unrestricted extends SecurityContext
 
   /**
-    * A security context where no unsafe features are permitted.
+    * A security context where no unsafe features are permitted:
+    *   1. No unsafe casts
+    *   1. No Java interop
     */
   case object Plain extends SecurityContext
 
   /**
-    * A security context where no unsafe features are permitted along with the IO effect.
+    * A security context where the same restrictions as [[Plain]] apply
+    * and also prohibits the use of the IO effect.
     */
   case object Paranoid extends SecurityContext
 
