@@ -834,6 +834,15 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[IllegalMethodEffect](result)
   }
 
+  test("Trust.Paranoid.00") {
+    val input =
+      """
+        |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
+      """.stripMargin
+    val result = compileWithSecurityContext(input, SecurityContext.Paranoid, Options.TestWithLibMin)
+    expectError[Forbidden](result)
+  }
+
   test("Trust.Paranoid.01") {
     val input =
       """

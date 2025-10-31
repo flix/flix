@@ -33,9 +33,10 @@ object Safety {
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    checkIOPermissions(defn.spec.eff) // N.B.: We do not need to check arguments since if a function parameter has `IO`,
-    visitExp(defn.exp) // this will have `IO` too or the parameter is unused in which case an error is also emitted.
-    defn // Note, however, this allows for `_: a -> b \ IO`
+    checkIOPermissions(defn.spec.eff.effects, defn.spec.eff.loc)
+    defn.spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
+    visitExp(defn.exp)
+    defn
   }
 
   /** Checks the safety and well-formedness of `trt`. */
@@ -53,7 +54,8 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    checkIOPermissions(sig.spec.eff)
+    checkIOPermissions(sig.spec.eff.effects, sig.spec.eff.loc)
+    sig.spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.loc))
     sig.exp.foreach(visitExp(_))
   }
 
@@ -387,7 +389,7 @@ object Safety {
   }
 
   /** Emits an error if `eff` contains [[Symbol.IO]] and its security context is [[SecurityContext.Paranoid]] */
-  private def checkIOPermissions(eff: Type)(implicit sctx: SharedContext): Unit = eff.loc.security match {
+  private def checkIOPermissions(effects: Set[Symbol.EffSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = loc.security match {
     case SecurityContext.Unrestricted =>
       ()
 
@@ -395,8 +397,8 @@ object Safety {
       ()
 
     case SecurityContext.Paranoid =>
-      if (eff.effects.contains(Symbol.IO)) {
-        sctx.errors.add(SafetyError.Forbidden(eff.loc.security, eff.loc))
+      if (effects.contains(Symbol.IO)) {
+        sctx.errors.add(SafetyError.Forbidden(loc.security, loc))
       }
   }
 
