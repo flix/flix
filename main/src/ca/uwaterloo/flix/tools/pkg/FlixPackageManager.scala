@@ -79,19 +79,19 @@ object FlixPackageManager {
     * Resolves the maximal allowed security level for all dependencies in `resolution`.
     */
   def resolveSecurityLevels(resolution: Resolution): SecureResolution = {
-    implicit val trustLevels: mutable.Map[Manifest, SecurityContext] = mutable.Map(resolution.origin -> SecurityContext.Unrestricted)
+    implicit val securityContexts: mutable.Map[Manifest, SecurityContext] = mutable.Map(resolution.origin -> SecurityContext.Unrestricted)
     implicit val res: Resolution = resolution
     val manifests = resolution.manifests.map(m => (m, minSecurityLevel(m))).toMap
     SecureResolution(resolution.origin, manifests, resolution.manifestToFlixDeps)
   }
 
   /**
-    * Finds all trust errors at the package level if any.
-    * A trust error exists if at least one of the following holds:
-    *   1. A manifest `m0` has allowed trust `t0` and `m0` contains a dependency with trust `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
-    *   1. A manifest `m0` has trust `plain` or lower and contains at least one jar or maven dependency.
+    * Finds all security errors at the package level if any.
+    * A security error exists if at least one of the following holds:
+    *   1. A manifest `m0` has allowed security context `t0` and `m0` contains a dependency with security context `t1` where `t1 > t0`. E.g., `unrestricted > plain`.
+    *   1. A manifest `m0` has security context `plain` or lower and contains at least one jar or maven dependency.
     */
-  def checkTrust(resolution: SecureResolution): List[PackageError] = {
+  def checkSecurity(resolution: SecureResolution): List[PackageError] = {
     resolution.security.flatMap { case (m, t) => findSecurityViolations(m, t) }.toList
   }
 

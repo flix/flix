@@ -730,7 +730,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
     val manifestsWithTrust = FlixPackageManager.resolveSecurityLevels(allManifests)
 
-    val trustResolutionErrors = FlixPackageManager.checkTrust(manifestsWithTrust)
+    val trustResolutionErrors = FlixPackageManager.checkSecurity(manifestsWithTrust)
     if (trustResolutionErrors.nonEmpty) {
       return (true, trustResolutionErrors.mkString(System.lineSeparator()))
     }
