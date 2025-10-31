@@ -48,10 +48,10 @@ object FlixPackageManager {
     * Represents the dependency resolution of [[origin]] where the maximum trust level has been computed
     * for each manifest.
     *
-    * @param origin              the manifest that corresponds to the current / local project.
-    * @param trust               the maximum allowed trust level of each manifest.
-    * @param manifestToFlixDeps  a mapping from [[Manifest]]s to [[FlixDependency]]s.
-    *                            A manifest is the resource a flix dependency resolves to.
+    * @param origin             the manifest that corresponds to the current / local project.
+    * @param trust              the maximum allowed trust level of each manifest.
+    * @param manifestToFlixDeps a mapping from [[Manifest]]s to [[FlixDependency]]s.
+    *                           A manifest is the resource a flix dependency resolves to.
     */
   case class TrustResolution(origin: Manifest,
                              trust: Map[Manifest, Trust],
@@ -270,19 +270,40 @@ object FlixPackageManager {
     * E.g., if an edge with trust `unrestricted` is found on a path with max trust `plain`, then an error exists.
     */
   private def findTrustViolations(m: Manifest, t: Trust): List[PackageError] = {
+    val manifestTrustErrors = checkGraphErrors(m, t)
+    val dependencyTrustErrors = checkJavaDependencies(m, t)
+    dependencyTrustErrors ::: manifestTrustErrors
+  }
+
+  /**
+    * Checks condition 1 of [[findTrustViolations]] and returns all trust inconsistencies.
+    */
+  private def checkGraphErrors(m: Manifest, t: Trust): List[PackageError.TrustGraphError] = {
     val flixDeps = m.dependencies.collect { case d: FlixDependency => d }
     val manifestTrustErrors = flixDeps.filter(d => d.trust.greaterThan(t)).map(d => PackageError.TrustGraphError(m, d, t))
-    t match {
-      case Trust.Plain | Trust.Paranoid =>
-        // No maven or jar deps allowed
-        val dependencyTrustErrors = m.dependencies.collect {
-          case d: MavenDependency => d
-          case d: JarDependency => d
-        }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(m, d, t))
-        manifestTrustErrors ::: dependencyTrustErrors
+    manifestTrustErrors
+  }
 
-      case Trust.Unrestricted => manifestTrustErrors
-    }
+  /**
+    * Checks condition 2 of [[findTrustViolations]] and returns all illegal dependencies.
+    */
+  private def checkJavaDependencies(m: Manifest, t: Trust): List[PackageError.IllegalJavaDependencyAtTrustLevel] = t match {
+    case Trust.Unrestricted =>
+      List.empty
+
+    case Trust.Plain =>
+      // No maven or jar deps allowed
+      m.dependencies.collect {
+        case d: MavenDependency => d
+        case d: JarDependency => d
+      }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(m, d, t))
+
+    case Trust.Paranoid =>
+      // No maven or jar deps allowed
+      m.dependencies.collect {
+        case d: MavenDependency => d
+        case d: JarDependency => d
+      }.map(d => PackageError.IllegalJavaDependencyAtTrustLevel(m, d, t))
   }
 
   /**
