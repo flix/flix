@@ -17,15 +17,15 @@ object SafetyError {
   /**
     * An error raised to indicate a forbidden operation.
     *
-    * @param ctx the security context of the location where the error occurred.
+    * @param sctx the security context of the location where the error occurred.
     * @param loc the source location of the forbidden operation.
     */
-  case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError {
+  case class Forbidden(sctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Operation not permitted"
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Operation not permitted in security context: $ctx
+      s""">> Operation not permitted in security context: $sctx
          |
          |${code(loc, "forbidden")}
          |""".stripMargin
