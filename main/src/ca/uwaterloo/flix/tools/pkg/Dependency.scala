@@ -24,7 +24,7 @@ object Dependency {
   case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, security: Trust) extends Dependency {
     override def toString: String = {
       val r = repo.toString.toLowerCase
-      s"\"$r:$username/$projectName\" = { \"version\" = \"$version\", \"security\" = \"$security\" }"
+      s"\"$r:$username/$projectName\" = { version = \"$version\", security = \"$security\" }"
     }
   }
 
