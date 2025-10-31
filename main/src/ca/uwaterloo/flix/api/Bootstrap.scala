@@ -873,11 +873,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.resolveSecurityLevels) match {
         case Err(e) => Err(BootstrapError.FlixPackageError(e))
         case Ok(securityMap) =>
-          val trustResolutionErrors = FlixPackageManager.checkTrust(securityMap)
-          if (trustResolutionErrors.isEmpty) {
+          val securityResolutionErrors = FlixPackageManager.checkTrust(securityMap)
+          if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(trustResolutionErrors.map(_.toString)))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
           }
       }
     }
