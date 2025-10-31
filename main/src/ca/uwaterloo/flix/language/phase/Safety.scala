@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst, shared}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -26,6 +26,7 @@ object Safety {
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
+    changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: shared.UseOrImport, uoi2: shared.UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
 
     (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
   }
@@ -373,6 +374,16 @@ object Safety {
     case Expr.Error(_, _, _) =>
       ()
 
+  }
+
+  /** Emits an error if `useOrImport` is an [[UseOrImport.Import]] and its security context does not permit it. */
+  private def visitUseOrImport(useOrImport: UseOrImport)(implicit sctx: SharedContext): UseOrImport = useOrImport match {
+    case UseOrImport.Use(_, _, _) =>
+      useOrImport
+
+    case UseOrImport.Import(_, _, loc) =>
+      checkPermissions(loc.security, loc)
+      useOrImport
   }
 
   /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
