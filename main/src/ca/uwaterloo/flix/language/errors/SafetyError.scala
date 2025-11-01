@@ -17,17 +17,35 @@ object SafetyError {
   /**
     * An error raised to indicate a forbidden operation.
     *
+    * @param sctx the security context of the location where the error occurred.
     * @param loc the source location of the forbidden operation.
     */
-  case class Forbidden(ctx: SecurityContext, loc: SourceLocation) extends SafetyError {
+  case class Forbidden(sctx: SecurityContext, loc: SourceLocation) extends SafetyError {
     override def summary: String = "Operation not permitted"
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Operation not permitted in security context: $ctx
+      s""">> Operation not permitted in security context: $sctx
          |
-         |${code(loc, "forbidden")}
+         |${code(loc, s"forbidden in security context $sctx")}
          |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = {
+      Some(
+        s"""Tip: Remove or replace the dependency with one that respects the security context.
+           |
+           |  The security contexts are defined as follows:
+           |    - paranoid: prohibits any use of Java, unchecked casts, and the IO effect.
+           |    - plain (default): same as paranoid, except it permits the IO effect.
+           |    - unrestricted: permits everything.
+           |
+           |  Alternatively, you can give your dependency broader permissions but in doing so
+           |  you may risk exposing yourself to a supply-chain attack.
+           |
+           |  Learn more at https://doc.flix.dev/packages.html
+           |""".stripMargin
+      )
     }
   }
 
@@ -177,10 +195,10 @@ object SafetyError {
   }
 
   /**
-   * An error raised to indicate that the object in a `throw` expression is not a Throwable.
-   *
-   * @param loc the location of the object
-   */
+    * An error raised to indicate that the object in a `throw` expression is not a Throwable.
+    *
+    * @param loc the location of the object
+    */
   case class IllegalThrowType(loc: SourceLocation) extends SafetyError {
     def summary: String = s"Exception type is not a subclass of Throwable."
 
