@@ -179,7 +179,7 @@ object Specialization {
     *
     * This class is thread-safe.
     */
-  private class Context {
+  protected[monomorph] class Context {
 
     /**
       * A queue of pending (fresh symbol, function definition, and substitution)-triples.
@@ -636,8 +636,9 @@ object Specialization {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, Lowering.lowerType(subst(tpe)), subst(eff), methods, loc)
 
-    case LoweredAst.Expr.NewChannel(_, _, _, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
+      val exp = specializeExp(innerExp, env0, subst)
+      Lowering.visitNewChannel(exp, subst(tpe), eff, loc)
 
     case LoweredAst.Expr.GetChannel(_, _, _, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
@@ -794,7 +795,7 @@ object Specialization {
     *
     * N.B.: `tpe` must be normalized.
     */
-  private def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  protected[monomorph] def specializeDefnSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val defn = root.defs(sym)
 
     if (defn.spec.tparams.isEmpty) {
