@@ -569,7 +569,7 @@ object EntryPoints {
       * @param handlerSym The symbol of the handler function
       * @param handlerDef The definition of the handler function
       * @param root       The typed AST root
-      * @return Either a valid DefaultHandler or a list of entry point errors
+      * @return [[Validation]] of [[DefaultHandler]] or [[EntryPointError]]
       */
     private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[DefaultHandler, EntryPointError] = {
       // The Default Handler must reside in the companion module of the effect.
