@@ -475,30 +475,48 @@ object EntryPoints {
   }
 
   private object WrapInDefaultHandlers {
-    private case class HandlerInfo(
-                                    handlerSym: Symbol.DefnSym,
-                                    handlerDef: TypedAst.Def,
-                                    handlerDefSymUse: SymUse.DefSymUse,
-                                    handledEff: Type,
-                                    handledSym: Symbol.EffSym,
-                                    generatedPrimitiveEffs: List[Type]
-                                  )
+    /**
+      * Default handler components
+      *
+      * Given:
+      * {{{
+      *     eff E
+      *     mod E {
+      *         @DefaultHandler
+      *         def handle(f: Unit -> a \ ef): a \ (ef - E) + IO = exp
+      *     }
+      * }}}
+      *
+      *   - handlerSym: handle's [[Symbol.DefnSym]].
+      *   - handlerDef: handle's [[TypedAst.Def]].
+      *   - handlerDef: E's [[Type]].
+      *   - handlerDef: E's [[Symbol.EffSym]].
+      * */
+    private case class DefaultHandler(
+                                       handlerSym: Symbol.DefnSym,
+                                       handlerDef: TypedAst.Def,
+                                       handledEff: Type,
+                                       handledSym: Symbol.EffSym,
+                                     )
 
     /**
       * WrapInDefaultHandlers takes a root and returns a new root where the entry points' definitions
-      * have been wrapped in a default handler for any extra non-primitive effects
-      * (eg. Assert)
+      * have been wrapped in a default handler for any extra non-primitive effects.
+      *
+      * It handles multiple effects with default handlers by nesting these handlers.
+      * The nesting order is unspecified and should not be relied upon.
+      *
       *
       * Takes
       * {{{
-      * def f(arg1: tpe1, ...): tpe \ ef = exp
+      *     def f(...): tpe \ ef = exp
       * }}}
       * Returns
       * {{{
-      * def f(arg1: tpe1, ...): tpe \ efHandlers + (ef - efsDefault) = efDefault1.handle(_ -> efDefault2.handle(... -> exp))
+      *     def f(...): tpe \ efHandler + (ef - efDefault) = E.handle(_ ->  exp)
       * }}}
       *
-      * From previous phases we know that each entry point function:
+      * The [[EntryPoints]] and [[Typer]] phases ensure that every entry point:
       *   - Takes Unit as an argument
       *   - Has a valid signature (without type variables, etc.)
       *
@@ -509,91 +527,98 @@ object EntryPoints {
       }
       val (validHandlers, errors) = defaultHandlers.map {
         case (sym, defn) => checkHandler(sym, defn, root)
-      }.partitionMap  {
+      }.partitionMap {
         case Validation.Success(validHandler) => Left(validHandler)
         case Validation.Failure(err) => Right(err)
       }
       val duplicateHandlersErrs = validHandlers.groupBy(_.handledSym).flatMap {
-          case (eff, handlers) =>
-            handlers.zipWithIndex.flatMap {
-              case (handler1, i) => handlers.drop(i+1).map
-              {
-                case handler2 => EntryPointError.DuplicatedDefaultHandlers(eff, handler1.handlerDef.loc, handler2.handlerDef.loc)
-              }
+        case (eff, handlers) =>
+          handlers.zipWithIndex.flatMap {
+            case (handler1, i) => handlers.drop(i + 1).map {
+              case handler2 => EntryPointError.DuplicatedDefaultHandlers(eff, handler1.handlerDef.loc, handler2.handlerDef.loc)
             }
-        }
+          }
+      }
       (root, errors.toList.flatMap(_.toList) ++ duplicateHandlersErrs)
     }
 
     /**
-      * Validates that a function marked with @DefaultHandler has the correct signature and structure.
+      * Validates that a function marked with @DefaultHandler has the correct signature.
       *
       * A valid default handler must:
-      * - Be in the companion module of an existing effect
-      * - Take exactly one argument of function type: Unit -> a \ ef
-      * - Return the same type variable 'a' as the function argument
-      * - Have an effect signature of the form: (ef - HandledEffect) + PrimitiveEffect1 + ...
+      *   - Be in the companion module of an existing effect
+      *   - Take exactly one argument of function type: Unit -> a \ ef
+      *   - Return the same type variable 'a' as the function argument
+      *   - Have an effect signature of the form: (ef - HandledEffect) + IO
       *
       * Valid handler example
       * {{{
-      * eff efHandle
-      * mod efHandle {
-      *   @DefaultHandler
-      *   def handle(f: Unit -> a \ ef): a \ (ef - efHandle) + PrimitiveEffect1 + ... = exp
-      * }
+      *     eff E
+      *     mod E {
+      *         @DefaultHandler
+      *         def handle(f: Unit -> a \ ef): a \ (ef - E) + IO = exp
+      *     }
       * }}}
       *
       * Invalid handler example
       * {{{
-      * @DefaultHandler
-      * def handle(f: Unit -> a \ ef, arg: tpe): Bool \ (ef - ef2) + PrimitiveEffect1 + ... = exp
+      *     @DefaultHandler
+      *     def handle(f: Unit -> a \ ef, arg: tpe): Bool \ (ef - ef2) + Environment = exp
       * }}}
       *
       * @param handlerSym The symbol of the handler function
       * @param handlerDef The definition of the handler function
       * @param root       The typed AST root
-      * @return Either a valid HandlerInfo or a list of entry point errors
+      * @return Either a valid DefaultHandler or a list of entry point errors
       */
-    private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[HandlerInfo, EntryPointError] = {
-      // First we obtain the effect corresponding to the handler
+    private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[DefaultHandler, EntryPointError] = {
+      // The Default Handler must reside in the companion module of the effect.
+      // Hence we use the namespace of the handler to construct the expected
+      // effect symbol and look it up in the AST.
       val effFqn = handlerSym.namespace.mkString(".")
       val effSymbol = Symbol.mkEffSym(effFqn)
       val companionEffect = root.effects.get(effSymbol)
       companionEffect match {
-        // There is a valid effect to wrap
-        case Some(_) =>
-          // Check that handler has a signature like
-          // def handle(f: Unit -> a \ ef): a \ (ef - efHandle) + PrimitiveEffect1 + ...
-          val efHandle = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), SourceLocation.Unknown)
-          val a = Type.freshVar(Kind.Star, SourceLocation.Unknown)
-          val ef = Type.freshVar(Kind.Eff, SourceLocation.Unknown)
-          // Create (IO & opt1) to make it optional
-          val opt1 = Type.freshVar(Kind.Eff, SourceLocation.Unknown)
-          val optionalIO = Type.mkIntersection(Type.IO, opt1, SourceLocation.Unknown)
-          // Create (NonDet & opt2) to make it optional
-          val opt2 = Type.freshVar(Kind.Eff, SourceLocation.Unknown)
-          val optionalNonDet = Type.mkIntersection(Type.NonDet, opt2, SourceLocation.Unknown)
-          val schemeToCheckAgainst = Scheme(
-              quantifiers=List(a.sym, ef.sym, opt1.sym, opt2.sym),
-              tconstrs = Nil,
-              econstrs = Nil,
-              base = Type.mkArrowWithEffect(
-                a=Type.mkArrowWithEffect(Type.Unit, ef, a, SourceLocation.Unknown),
-                // (ef - HandledEff) + (IO & opt1) + (NonDet & opt2)
-                p= Type.mkUnion(Type.mkDifference(ef, efHandle, SourceLocation.Unknown), optionalIO, optionalNonDet, SourceLocation.Unknown),
-                b=a,
-                loc=SourceLocation.Unknown
-              )
-          )
-          // Check if handler's scheme is valid
-          if(Scheme.lessThanEqual(schemeToCheckAgainst, handlerDef.spec.declaredScheme, root.traitEnv, root.eqEnv, Nil)){
-              Validation.Success(HandlerInfo(handlerSym, handlerDef, DefSymUse(handlerDef.sym, handlerDef.loc), efHandle, effSymbol, Nil))
-          } else {
-              Validation.Failure(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
-          }
-        // The default handler is not in the companion module of an effect
         case None => Validation.Failure(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc))
+        // The default handler is NOT in the companion module of an effect
+        case Some(_) =>
+          // There is a valid effect to wrap
+          val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), SourceLocation.Unknown)
+          val expectedScheme = getDefaultHandlerTypeScheme(handledEff)
+          val declaredScheme = handlerDef.spec.declaredScheme
+          // Check if handler's scheme is valid
+          if (Scheme.equal(expectedScheme, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
+            Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSymbol))
+          } else {
+            Validation.Failure(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
+          }
       }
+    }
+
+    /**
+      * Returns the type scheme of
+      * {{{
+      *     def handle(f: Unit -> a \ ef): a \ (ef - handledEff) + IO
+      * }}}
+      *
+      * @param handledEff The type of the effect associated with the default handler
+      * @return The expected scheme of the default handler
+      */
+    private def getDefaultHandlerTypeScheme(handledEff: Type)(implicit flix: Flix): Scheme = {
+      val a = Type.freshVar(Kind.Star, SourceLocation.Unknown)
+      val ef = Type.freshVar(Kind.Eff, SourceLocation.Unknown)
+      Scheme(
+        quantifiers = List(a.sym, ef.sym),
+        tconstrs = Nil,
+        econstrs = Nil,
+        base = Type.mkArrowWithEffect(
+          a = Type.mkArrowWithEffect(Type.Unit, ef, a, SourceLocation.Unknown),
+          // (ef - HandledEff) + IO
+          p = Type.mkUnion(Type.mkDifference(ef, handledEff, SourceLocation.Unknown), Type.IO, SourceLocation.Unknown),
+          b = a,
+          loc = SourceLocation.Unknown
+        )
+      )
     }
   }
 
