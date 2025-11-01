@@ -309,7 +309,7 @@ object EntryPointError {
          |
          | The default handler must have this exact signature (names can be chosen arbitrarily):
          |
-         | 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${sym.name}) + PrimEf1 + ...'
+         | 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${sym.name}) + IO'
          |
          |${code(loc, "illegal handler signature.")}
          |
