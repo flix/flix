@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Formatter, Result}
@@ -185,8 +186,8 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), Trust.Plain),
-      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), Trust.Plain),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, 3), SecurityContext.Plain),
+      Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, 1), SecurityContext.Plain),
       Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
       Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
       Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
@@ -331,13 +332,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
     }
-    assertResult(expected = Trust.Plain)(actual =
+    assertResult(expected = SecurityContext.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -357,13 +358,13 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Plain)(actual =
+    assertResult(expected = SecurityContext.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -380,16 +381,16 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "plain" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Plain)(actual =
+    assertResult(expected = SecurityContext.Paranoid)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -406,16 +407,42 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "unrestricted" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
         |""".stripMargin
     }
-    assertResult(expected = Trust.Unrestricted)(actual =
+    assertResult(expected = SecurityContext.Plain)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) =>
           m.dependencies
             .head
             .asInstanceOf[Dependency.FlixDependency]
-            .trust
+            .sctx
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.flix-dependency-permission.05") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |""".stripMargin
+    }
+    assertResult(expected = SecurityContext.Unrestricted)(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) =>
+          m.dependencies
+            .head
+            .asInstanceOf[Dependency.FlixDependency]
+            .sctx
         case Err(e) => e.message(f)
       }
     )
@@ -1570,7 +1597,7 @@ class TestManifestParser extends AnyFunSuite {
     expectError[ManifestError.WrongUrlFormat](result)
   }
 
-  test("ManifestError.FlixUnknownTrustValue.01") {
+  test("ManifestError.FlixUnknownSecurityValue.01") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1581,13 +1608,13 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixUnknownTrustValue](result)
+    expectError[ManifestError.FlixUnknownSecurityValue](result)
   }
 
-  test("ManifestError.FlixUnknownTrustValue.02") {
+  test("ManifestError.FlixUnknownSecurityValue.02") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1598,13 +1625,13 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = "abc" }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "abc" }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixUnknownTrustValue](result)
+    expectError[ManifestError.FlixUnknownSecurityValue](result)
   }
 
-  test("ManifestError.FlixDependencyTrustType.01") {
+  test("ManifestError.FlixDependencySecurityType.01") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1615,13 +1642,13 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = [] }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = [] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
-  test("ManifestError.FlixDependencyTrustType.02") {
+  test("ManifestError.FlixDependencySecurityType.02") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1632,13 +1659,13 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = ["plain"] }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = ["plain"] }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
-  test("ManifestError.FlixDependencyTrustType.03") {
+  test("ManifestError.FlixDependencySecurityType.03") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1649,13 +1676,13 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = true }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = true }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
-  test("ManifestError.FlixDependencyTrustType.04") {
+  test("ManifestError.FlixDependencySecurityType.04") {
     val toml =
       """[package]
         |name = "hello-world"
@@ -1666,10 +1693,10 @@ class TestManifestParser extends AnyFunSuite {
         |authors = ["John Doe <john@example.com>"]
         |
         |[dependencies]
-        |"github:jls/tic-tac-toe" = { version = "1.2.3", trust = 42 }
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = 42 }
         |""".stripMargin
     val result = ManifestParser.parse(toml, null)
-    expectError[ManifestError.FlixDependencyTrustType](result)
+    expectError[ManifestError.FlixDependencySecurityType](result)
   }
 
   test("ManifestError.UnsupportedRepository.01") {

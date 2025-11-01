@@ -15,16 +15,18 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+
 import java.net.URL
 
 sealed trait Dependency
 
 object Dependency {
 
-  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, trust: Trust) extends Dependency {
+  case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext) extends Dependency {
     override def toString: String = {
       val r = repo.toString.toLowerCase
-      s"\"$r:$username/$projectName\" = { \"version\" = \"$version\", \"trust\" = \"$trust\" }"
+      s"\"$r:$username/$projectName\" = { version = \"$version\", security = \"$sctx\" }"
     }
   }
 

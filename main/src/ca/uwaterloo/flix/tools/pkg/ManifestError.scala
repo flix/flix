@@ -75,19 +75,19 @@ object ManifestError {
     }
   }
 
-  case class FlixDependencyTrustType(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
+  case class FlixDependencySecurityType(path: Option[Path], lib: String, perm: AnyRef) extends ManifestError {
     override def message(f: Formatter): String = {
       val pStr = path.map(_.toString).getOrElse("\"unknown\"")
       val typ = perm.getClass
-      s"""Unexpected trust format of Flix dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
-         |Expected one of the following strings: "plain", "trust-javaclass", or "unrestricted" but got: ${f.bold(f.red(typ.toString))}.
+      s"""Unexpected security format of Flix dependency ${f.bold(lib)} in file ${f.cyan(pStr)}.
+         |Expected one of the following strings: "paranoid", "plain", or "unrestricted" but got: ${f.bold(f.red(typ.toString))}.
          |""".stripMargin
     }
   }
 
-  case class FlixUnknownTrustValue(path: Path, lib: String, perm: String) extends ManifestError {
+  case class FlixUnknownSecurityValue(path: Path, lib: String, perm: String) extends ManifestError {
     override def message(f: Formatter): String = {
-      s"Unknown trust in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}."
+      s"Unknown security value in dependency ${f.bold(lib)}: ${f.red(f.bold(perm))}."
     }
   }
 
