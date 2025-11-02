@@ -1007,9 +1007,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("SecurityContext.Paranoid.UncheckedCast.01") {
     val input =
       """
-        |pub def f(): Unit = unchecked_cast(() as _ \ {})
+        |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -1030,10 +1030,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(): StringBuilder = new StringBuilder()
+        |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -1042,13 +1042,13 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(sb: StringBuilder): Unit = {
+        |    pub def f(sb: StringBuilder): Unit \ IO = {
         |        sb.append("hello");
         |        ()
         |    }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
   }
 
@@ -1225,9 +1225,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("SecurityContext.Plain.UncheckedCast.01") {
     val input =
       """
-        |pub def f(): Unit = unchecked_cast(() as _ \ {})
+        |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Plain)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1248,10 +1248,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(): StringBuilder = new StringBuilder()
+        |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Plain)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1260,13 +1260,13 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(sb: StringBuilder): Unit = {
+        |    pub def f(sb: StringBuilder): Unit \ IO = {
         |        sb.append("hello");
         |        ()
         |    }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Plain)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Plain)
     expectError[Forbidden](result)
   }
 
@@ -1443,9 +1443,9 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("SecurityContext.Unrestricted.UncheckedCast.01") {
     val input =
       """
-        |pub def f(): Unit = unchecked_cast(() as _ \ {})
+        |pub def f(): Unit = unchecked_cast(println(42) as _ \ {})
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1466,10 +1466,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(): StringBuilder = new StringBuilder()
+        |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 
@@ -1478,13 +1478,13 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(sb: StringBuilder): Unit = {
+        |    pub def f(sb: StringBuilder): Unit \ IO = {
         |        sb.append("hello");
         |        ()
         |    }
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 }
