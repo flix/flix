@@ -34,7 +34,7 @@ object Safety {
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    checkSpecPemissions(defn.spec)
+    checkSpecPermissions(defn.spec)
     visitExp(defn.exp)
     defn
   }
@@ -60,7 +60,7 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    checkSpecPemissions(sig.spec)
+    checkSpecPermissions(sig.spec)
     sig.exp.foreach(visitExp(_))
   }
 
@@ -408,7 +408,7 @@ object Safety {
     *
     * @see [[checkIOPermissions]]
     */
-  private def checkSpecPemissions(spec: Spec)(implicit sctx: SharedContext): Unit = {
+  private def checkSpecPermissions(spec: Spec)(implicit sctx: SharedContext): Unit = {
     spec.econstrs.foreach { constr =>
       checkIOPermissions(constr.tpe1.effects, constr.loc)
       checkIOPermissions(constr.tpe2.effects, constr.loc)
