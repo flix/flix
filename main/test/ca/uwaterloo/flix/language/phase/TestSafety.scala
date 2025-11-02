@@ -900,7 +900,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |trait A[t: Type] {
         |    type Aef: Eff = IO
-        |    pub def f(x: t): Unit \ Aef
+        |    pub def f(x: t): Unit \ A.Aef[t]
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
@@ -924,7 +924,29 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    case N,
         |    case C(a, B[a])
         |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    expectError[Forbidden](result)
+  }
+
+  ignore("SecurityContext.Paranoid.Sig.06") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    type Aef: Eff = IO
+        |    pub def f(x: t): String
+        |    pub def g(x: t): Unit \ A.Aef[t] = f(x) |> println
+        |}
         |
+        |instance A[B[a]] {
+        |    type Aef = IO
+        |    pub def f(x: B[a]): Unit = ToString.toString(x)
+        |}
+        |
+        |pub enum B[a] with ToString[a] {
+        |    case N,
+        |    case C(a, B[a])
+        |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
     expectError[Forbidden](result)
