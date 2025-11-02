@@ -34,8 +34,7 @@ object Safety {
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
-    checkIOPermissions(defn.spec.eff.effects, defn.spec.eff.loc)
-    defn.spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
+    checkSpecPemissions(defn.spec)
     visitExp(defn.exp)
     defn
   }
@@ -49,7 +48,11 @@ object Safety {
 
   /** Checks the safety and well-formedness of `inst`. */
   private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
-    // inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
+    inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
+    inst.econstrs.foreach { constr =>
+      checkIOPermissions(constr.tpe1.effects, constr.loc)
+      checkIOPermissions(constr.tpe2.effects, constr.loc)
+    }
     inst.defs.foreach(visitDef)
     inst
   }
@@ -57,8 +60,7 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
-    checkIOPermissions(sig.spec.eff.effects, sig.spec.eff.loc)
-    sig.spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.loc))
+    checkSpecPemissions(sig.spec)
     sig.exp.foreach(visitExp(_))
   }
 
@@ -399,6 +401,21 @@ object Safety {
       case SecurityContext.Paranoid =>
         sctx.errors.add(SafetyError.Forbidden(ctx, loc))
     }
+  }
+
+  /**
+    * Emits an error if `IO` is prohibited w.r.t. the security context of `spec`.
+    *
+    * @see [[checkIOPermissions]]
+    */
+  private def checkSpecPemissions(spec: Spec)(implicit sctx: SharedContext): Unit = {
+    spec.econstrs.foreach { constr =>
+      checkIOPermissions(constr.tpe1.effects, constr.loc)
+      checkIOPermissions(constr.tpe2.effects, constr.loc)
+    }
+    checkIOPermissions(spec.eff.effects, spec.eff.loc)
+    checkIOPermissions(spec.retTpe.effects, spec.retTpe.loc)
+    spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
   }
 
   /** Emits an error if `effects` contains [[Symbol.IO]] and the security context of `loc` is [[SecurityContext.Paranoid]] */
