@@ -907,6 +907,29 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
+  test("SecurityContext.Paranoid.Sig.05") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    type Aef: Eff = {}
+        |    pub def f(x: t): Unit \ A.Aef[t]
+        |}
+        |
+        |instance A[B[a]] {
+        |    type Aef = IO
+        |    pub def f(x: B[a]): Unit \ IO = println(x)
+        |}
+        |
+        |pub enum B[a] with ToString[a] {
+        |    case N,
+        |    case C(a, B[a])
+        |}
+        |
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    expectError[Forbidden](result)
+  }
+
   test("SecurityContext.Paranoid.UncheckedCast.01") {
     val input =
       """
