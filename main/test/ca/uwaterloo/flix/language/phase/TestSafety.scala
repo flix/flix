@@ -1042,6 +1042,18 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
+        |    pub def f(): StringBuilder = unsafe new StringBuilder()
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Paranoid)
+    expectError[Forbidden](result)
+  }
+
+  test("SecurityContext.Paranoid.Java.04") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuilder
         |    pub def f(sb: StringBuilder): Unit \ IO = {
         |        sb.append("hello");
         |        ()
@@ -1260,6 +1272,18 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
+        |    pub def f(): StringBuilder = unsafe new StringBuilder()
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Plain)
+    expectError[Forbidden](result)
+  }
+
+  test("SecurityContext.Plain.Java.04") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuilder
         |    pub def f(sb: StringBuilder): Unit \ IO = {
         |        sb.append("hello");
         |        ()
@@ -1474,6 +1498,18 @@ class TestSafety extends AnyFunSuite with TestUtils {
   }
 
   test("SecurityContext.Unrestricted.Java.03") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuilder
+        |    pub def f(): StringBuilder = unsafe new StringBuilder()
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
+    expectSuccess(result)
+  }
+
+  test("SecurityContext.Unrestricted.Java.04") {
     val input =
       """
         |mod A {
