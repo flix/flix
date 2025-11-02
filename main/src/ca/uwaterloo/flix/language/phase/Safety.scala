@@ -42,12 +42,14 @@ object Safety {
 
   /** Checks the safety and well-formedness of `trt`. */
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+    trt.assocs.foreach(as => as.tpe.foreach(t => checkIOPermissions(t.effects, as.loc)))
     trt.sigs.foreach(visitSig)
     trt
   }
 
   /** Checks the safety and well-formedness of `inst`. */
   private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
+    // inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
     inst.defs.foreach(visitDef)
     inst
   }
