@@ -834,7 +834,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[IllegalMethodEffect](result)
   }
 
-  test("SecurityContext.Paranoid.00") {
+  test("SecurityContext.Paranoid.Def.01") {
     val input =
       """
         |pub def f(_: (Unit -> Unit \ IO) -> Unit \ IO): Unit = ()
@@ -843,7 +843,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.01") {
+  test("SecurityContext.Paranoid.Def.02") {
     val input =
       """
         |pub def f(_: Unit -> Unit \ IO): Unit = ()
@@ -852,7 +852,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.02") {
+  test("SecurityContext.Paranoid.Def.03") {
     val input =
       """
         |pub def f(g: Unit -> Unit \ IO): Unit = g()
@@ -861,7 +861,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.03") {
+  test("SecurityContext.Paranoid.Sig.01") {
     val input =
       """
         |trait A[t: Type] {
@@ -872,7 +872,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.04") {
+  test("SecurityContext.Paranoid.Sig.02") {
     val input =
       """
         |trait A[t: Type] {
@@ -883,7 +883,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.05") {
+  test("SecurityContext.Paranoid.Sig.03") {
     val input =
       """
         |trait A[t: Type] {
@@ -895,7 +895,19 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.06") {
+  test("SecurityContext.Paranoid.Sig.04") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    type Aef: Eff = IO
+        |    pub def f(x: t): Unit \ Aef
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    expectError[Forbidden](result)
+  }
+
+  test("SecurityContext.Paranoid.UncheckedCast.01") {
     val input =
       """
         |pub def f(): Unit = unchecked_cast(() as _ \ {})
@@ -904,7 +916,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.07") {
+  test("SecurityContext.Paranoid.Java.01") {
     val input =
       """
         |mod A {
@@ -916,7 +928,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.08") {
+  test("SecurityContext.Paranoid.Java.02") {
     val input =
       """
         |mod A {
@@ -928,7 +940,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  test("SecurityContext.Paranoid.09") {
+  test("SecurityContext.Paranoid.Java.03") {
     val input =
       """
         |mod A {
