@@ -929,7 +929,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def f(x: B[a]): Unit \ IO = println(x)
         |}
         |
-        |pub enum B[a] with ToString[a] {
+        |pub enum B[a] with ToString {
         |    case N,
         |    case C(a, B[a])
         |}
@@ -938,23 +938,67 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[Forbidden](result)
   }
 
-  ignore("SecurityContext.Paranoid.Sig.06") {
+  test("SecurityContext.Paranoid.Sig.06") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    type Aef: Eff
+        |    pub def f(x: t): String
+        |    pub def g(x: t, h: String -> Unit \ A.Aef[t]): Unit \ A.Aef[t] = A.f(x) |> h
+        |}
+        |
+        |instance A[B[a]] {
+        |    type Aef = IO
+        |    pub def f(x: B[a]): String = match x { case B.N(_) => "B.N" }
+        |}
+        |
+        |pub enum B[a] {
+        |    case N(a)
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    expectError[Forbidden](result)
+  }
+
+  test("SecurityContext.Paranoid.Sig.07") {
     val input =
       """
         |trait A[t: Type] {
         |    type Aef: Eff = IO
         |    pub def f(x: t): String
-        |    pub def g(x: t): Unit \ A.Aef[t] = f(x) |> println
+        |    pub def g(x: t, h: String -> Unit \ A.Aef[t]): Unit \ A.Aef[t] = A.f(x) |> h
         |}
         |
         |instance A[B[a]] {
         |    type Aef = IO
-        |    pub def f(x: B[a]): Unit = ToString.toString(x)
+        |    pub def f(x: B[a]): String = match x { case B.N(_) => "B.N" }
         |}
         |
-        |pub enum B[a] with ToString[a] {
-        |    case N,
-        |    case C(a, B[a])
+        |pub enum B[a] {
+        |    case N(a)
+        |}
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
+    expectError[Forbidden](result)
+  }
+
+  test("SecurityContext.Paranoid.Sig.08") {
+    val input =
+      """
+        |trait A[t: Type] {
+        |    type Aef: Eff = IO
+        |    pub def f(x: t): String
+        |    pub def g(x: t, h: String -> Unit \ A.Aef[t]): Unit \ A.Aef[t] = A.f(x) |> h
+        |    pub def q(x: t, h: String -> Unit \ A.Aef[t]): (Unit -> Unit \ A.Aef[t]) = _ -> g(x, h)
+        |}
+        |
+        |instance A[B[a]] {
+        |    type Aef = {}
+        |    pub def f(x: B[a]): String = match x { case B.N(_) => "B.N" }
+        |}
+        |
+        |pub enum B[a] {
+        |    case N(a)
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)(SecurityContext.Paranoid)
