@@ -413,9 +413,9 @@ object Safety {
       checkIOPermissions(constr.tpe1.effects, constr.loc)
       checkIOPermissions(constr.tpe2.effects, constr.loc)
     }
+    spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
     checkIOPermissions(spec.eff.effects, spec.eff.loc)
     checkIOPermissions(spec.retTpe.effects, spec.retTpe.loc)
-    spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
   }
 
   /** Emits an error if `effects` contains [[Symbol.IO]] and the security context of `loc` is [[SecurityContext.Paranoid]] */
