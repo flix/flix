@@ -103,7 +103,7 @@ package object serialization {
 
   case class Native(clazz: String) extends STC
 
-  case class JvmConstructor(name: String, args: List[String]) extends STC
+  case class JvmConstructor(name: String) extends STC
 
   case class JvmMethod(method: String) extends STC
 

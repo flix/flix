@@ -53,9 +53,9 @@ object Serialize {
     case TypeConstructor.Struct(sym, kind) => Struct(serializeStructSym(sym), serializeKind(kind))
     case TypeConstructor.RestrictableEnum(sym, kind) => RestrictableEnum(serializeRestrictableEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Native(clazz) => Native(clazz.descriptorString())
-    case TypeConstructor.JvmConstructor(constructor) => JvmConstructor(???, ???)
-    case TypeConstructor.JvmMethod(method) => JvmMethod(???)
-    case TypeConstructor.JvmField(field) => JvmField(???)
+    case TypeConstructor.JvmConstructor(constructor) => JvmConstructor(constructor.toGenericString)
+    case TypeConstructor.JvmMethod(method) => JvmMethod(method.toGenericString)
+    case TypeConstructor.JvmField(field) => JvmField(field.toGenericString)
     case TypeConstructor.Array => Array
     case TypeConstructor.ArrayWithoutRegion => ArrayWithoutRegion
     case TypeConstructor.Vector => Vector
