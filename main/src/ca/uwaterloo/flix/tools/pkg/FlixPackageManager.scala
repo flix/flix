@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
-import ca.uwaterloo.flix.tools.pkg.PackageError.MismatchedVersions
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
@@ -250,7 +249,7 @@ object FlixPackageManager {
         if (m.version == flixDep.version) {
           Ok(m)
         } else {
-          Err(MismatchedVersions(m, flixDep))
+          Err(PackageError.MismatchedVersions(m, flixDep))
         }
     }
   }
