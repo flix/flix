@@ -77,7 +77,7 @@ package object serialization {
 
   case object RecordRowEmpty extends STC
 
-  case class RecordRowExtend(label: LabelName) extends STC
+  case class RecordRowExtend(label: String) extends STC
 
   case object Record extends STC
 
@@ -85,7 +85,7 @@ package object serialization {
 
   case object SchemaRowEmpty extends STC
 
-  case class SchemaRowExtend(pred: PredName) extends STC
+  case class SchemaRowExtend(pred: String) extends STC
 
   case object Schema extends STC
 
@@ -101,13 +101,13 @@ package object serialization {
 
   case class RestrictableEnum(sym: RestrictableEnumSym, kind: SKind) extends STC
 
-  case class Native(clazz: SClass) extends STC
+  case class Native(clazz: String) extends STC
 
-  case class JvmConstructor(constructor: SConstructor) extends STC
+  case class JvmConstructor(name: String, args: List[String]) extends STC
 
-  case class JvmMethod(method: SMethod) extends STC
+  case class JvmMethod(method: String) extends STC
 
-  case class JvmField(field: SField) extends STC
+  case class JvmField(field: String) extends STC
 
   case object Array extends STC
 
@@ -155,7 +155,7 @@ package object serialization {
 
   case class CaseSymmetricDiff(sym: RestrictableEnumSym) extends STC
 
-  case class CaseSet(syms: Set[RestrictableCaseSym], enumSym: RestrictableEnumSym) extends STC
+  case class CaseSet(syms: List[RestrictableCaseSym], enumSym: RestrictableEnumSym) extends STC
 
   case class Region(sym: RegionSym) extends STC
 
@@ -199,7 +199,7 @@ package object serialization {
 
   case class TraitSym(namespace: List[String], name: String) extends SSym
 
-  case class EnumSym(namespace: List[String], text: String) extends SSym
+  case class EnumSym(id: Option[Int], namespace: List[String], text: String) extends SSym
 
   case class CaseSym(enumSym: EnumSym, name: String) extends SSym
 
@@ -207,33 +207,11 @@ package object serialization {
 
   case class RegionSym(id: Int, text: String) extends SSym
 
-  case class RestrictableEnumSym(namespace: List[String], name: String,
-                                 cases: List[IdentName]) extends SSym
+  case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[String]) extends SSym
 
   case class RestrictableCaseSym(enumSym: RestrictableEnumSym, name: String) extends SSym
 
   case class StructSym(id: Option[Int], namespace: List[String], text: String) extends SSym
-
-  /** Represents a serializable name. */
-  sealed trait SName
-
-  case class IdentName(name: String) extends SName
-
-  case class LabelName(name: String) extends SName
-
-  case class PredName(name: String) extends SName
-
-  /** Represents a serializable Java class. */
-  case class SClass()
-
-  /** Represents a serializable Java constructor. */
-  case class SConstructor()
-
-  /** Represents a serializable Java method. */
-  case class SMethod()
-
-  /** Represents a serializable Java field. */
-  case class SField()
 
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit object TypeHints {
@@ -331,13 +309,6 @@ package object serialization {
           classOf[RestrictableEnumSym],
           classOf[RestrictableCaseSym],
           classOf[StructSym],
-          classOf[IdentName],
-          classOf[LabelName],
-          classOf[PredName],
-          classOf[SClass],
-          classOf[SConstructor],
-          classOf[SMethod],
-          classOf[SField]
         )))
   }
 }
