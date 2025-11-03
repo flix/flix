@@ -733,13 +733,14 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
     val manifest = ManifestParser.parse(toml, null) match {
       case Ok(m) => m
-      case Err(e) => fail(e.message(formatter))
+      case Err(e) => return (false, e.message(formatter))
     }
 
     val allManifests = throttle {
       FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
         case Ok(ms) => ms
-        case Err(e) => fail(e.message(formatter))
+        case Err(e: PackageError.MismatchedVersions) => return (true, e.message(formatter))
+        case Err(e) => return (false, e.message(formatter))
       }
     }
 
@@ -753,7 +754,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val pkgs = throttle {
       FlixPackageManager.installAll(manifestsWithSecurity, path, None) match {
         case Ok(ps) => ps
-        case Err(e) => fail(e.message(formatter))
+        case Err(e) => return (false, e.message(formatter))
       }
     }
 
