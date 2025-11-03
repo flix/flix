@@ -697,6 +697,21 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
+  test("mismatched-versions") {
+    val deps = List(
+      """
+        |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
+        |""".stripMargin
+    )
+    val (forbidden, message) = checkForbidden(deps, Main)
+
+    if (forbidden) {
+      succeed
+    } else {
+      fail(message + System.lineSeparator() + "expected error with mismatched versions (required '0.1.0', declared '0.2.0'")
+    }
+  }
+
   /**
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
