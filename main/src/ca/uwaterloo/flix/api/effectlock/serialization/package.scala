@@ -15,6 +15,12 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
+/**
+  * Package object for the serialization package.
+  * The serializable AST is defined in this package object, so it becomes
+  * available to the entire package while keeping names short, i.e., they
+  * do not have to be qualified via their parent objects, e.g., `SType$Var`.
+  */
 package object serialization {
 
   /** Represents a serializable def. */
