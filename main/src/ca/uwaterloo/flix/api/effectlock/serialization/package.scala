@@ -340,6 +340,5 @@ package object serialization {
           classOf[SField]
         )))
   }
-
 }
 
