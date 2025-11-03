@@ -27,7 +27,6 @@ object Options {
   val Default: Options = Options(
     lib = LibLevel.All,
     build = Build.Development,
-    checkTrust = false,
     entryPoint = None,
     explain = false,
     githubToken = None,
@@ -96,7 +95,6 @@ object Options {
   */
 case class Options(lib: LibLevel,
                    build: Build,
-                   checkTrust: Boolean,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
                    githubToken: Option[String],
