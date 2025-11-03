@@ -17,9 +17,26 @@ package ca.uwaterloo.flix.api.effectlock
 
 package object serialization {
 
-  /**
-    * Represents a serializable type constructor (STC).
-    */
+  /** Represents a serializable def. */
+  case class SDef(namespace: List[String], text: String, scheme: SScheme)
+
+  /** Represents a serializable scheme. */
+  case class SScheme(quantifiers: List[VarSym], base: SType)
+
+  /** Represents a serializable type. */
+  sealed trait SType
+
+  case class Var(sym: VarSym) extends SType
+
+  case class Cst(tc: STC) extends SType
+
+  case class Apply(tpe1: SType, tpe2: SType) extends SType
+
+  case class Alias(symUse: TypeAliasSym, args: List[SType], tpe: SType) extends SType
+
+  case class AssocType(symUse: AssocTypeSym, arg: SType, kind: SKind) extends SType
+
+  /** Represents a serializable type constructor (STC). */
   sealed trait STC
 
   case object Void extends STC
@@ -60,7 +77,7 @@ package object serialization {
 
   case object RecordRowEmpty extends STC
 
-  case class RecordRowExtend(label: Name.Label) extends STC
+  case class RecordRowExtend(label: LabelName) extends STC
 
   case object Record extends STC
 
@@ -68,7 +85,7 @@ package object serialization {
 
   case object SchemaRowEmpty extends STC
 
-  case class SchemaRowExtend(pred: Name.Pred) extends STC
+  case class SchemaRowExtend(pred: PredName) extends STC
 
   case object Schema extends STC
 
@@ -78,19 +95,19 @@ package object serialization {
 
   case object Lazy extends STC
 
-  case class Enum(sym: Symbol.EnumSym, kind: Kind) extends TypeConstructor
+  case class Enum(sym: EnumSym, kind: SKind) extends STC
 
-  case class Struct(sym: Symbol.StructSym, kind: Kind) extends TypeConstructor
+  case class Struct(sym: StructSym, kind: SKind) extends STC
 
-  case class RestrictableEnum(sym: Symbol.RestrictableEnumSym, kind: Kind) extends TypeConstructor
+  case class RestrictableEnum(sym: RestrictableEnumSym, kind: SKind) extends STC
 
-  case class Native(clazz: Class[?]) extends STC
+  case class Native(clazz: SClass) extends STC
 
-  case class JvmConstructor(constructor: Constructor[?]) extends STC
+  case class JvmConstructor(constructor: SConstructor) extends STC
 
-  case class JvmMethod(method: Method) extends STC
+  case class JvmMethod(method: SMethod) extends STC
 
-  case class JvmField(field: Field) extends STC
+  case class JvmField(field: SField) extends STC
 
   case object Array extends STC
 
@@ -128,24 +145,298 @@ package object serialization {
 
   case object SymmetricDiff extends STC
 
-  case class Effect(sym: Symbol.EffSym, kind: Kind) extends TypeConstructor
+  case class Effect(sym: EffSym, kind: SKind) extends STC
 
-  case class CaseComplement(sym: Symbol.RestrictableEnumSym) extends STC
+  case class CaseComplement(sym: RestrictableEnumSym) extends STC
 
-  case class CaseUnion(sym: Symbol.RestrictableEnumSym) extends STC
+  case class CaseUnion(sym: RestrictableEnumSym) extends STC
 
-  case class CaseIntersection(sym: Symbol.RestrictableEnumSym) extends STC
+  case class CaseIntersection(sym: RestrictableEnumSym) extends STC
 
-  case class CaseSymmetricDiff(sym: Symbol.RestrictableEnumSym) extends STC
+  case class CaseSymmetricDiff(sym: RestrictableEnumSym) extends STC
 
-  case class CaseSet(syms: SortedSet[Symbol.RestrictableCaseSym], enumSym: Symbol.RestrictableEnumSym) extends STC
+  case class CaseSet(syms: Set[RestrictableCaseSym], enumSym: RestrictableEnumSym) extends STC
 
-  case class Region(sym: Symbol.RegionSym) extends STC
+  case class Region(sym: RegionSym) extends STC
 
   case object RegionToStar extends STC
 
   case object RegionWithoutRegion extends STC
 
-  case class Error(id: Int, kind: Kind) extends TypeConstructor
+  /** Represents a serializable kind. */
+  sealed trait SKind
+
+  case object WildKind extends SKind
+
+  case object WildCaseSetKind extends SKind
+
+  case object StarKind extends SKind
+
+  case object EffKind extends SKind
+
+  case object BoolKind extends SKind
+
+  case object RecordRowKind extends SKind
+
+  case object SchemaRowKind extends SKind
+
+  case object PredicateKind extends SKind
+
+  case object JvmKind extends SKind
+
+  case class CaseSetKind(sym: RestrictableEnumSym) extends SKind
+
+  case class ArrowKind(k1: SKind, k2: SKind) extends SKind
+
+  /** Represents a serializable symbol. */
+  sealed trait SSym
+
+  case class VarSym(id: Int, text: String, kind: SKind) extends SSym
+
+  case class TypeAliasSym(namespace: List[String], name: String) extends SSym
+
+  case class AssocTypeSym(trt: TraitSym, name: String) extends SSym
+
+  case class TraitSym(namespace: List[String], name: String) extends SSym
+
+  case class EnumSym(namespace: List[String], text: String) extends SSym
+
+  case class CaseSym(enumSym: EnumSym, name: String) extends SSym
+
+  case class EffSym(namespace: List[String], name: String) extends SSym
+
+  case class RegionSym(id: Int, text: String) extends SSym
+
+  case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[IdentName]) extends SSym
+
+  case class RestrictableCaseSym(enumSym: RestrictableEnumSym, name: String) extends SSym
+
+  case class StructSym(id: Option[Int], namespace: List[String], text: String) extends SSym
+
+  /** Represents a serializable name. */
+  sealed trait SName
+
+  case class IdentName(name: String) extends SName
+
+  case class LabelName(name: String) extends SName
+
+  case class PredName(name: String) extends SName
+
+  /** Represents a serializable Java class. */
+  case class SClass()
+
+  /** Represents a serializable Java constructor. */
+  case class SConstructor()
+
+  /** Represents a serializable Java method. */
+  case class SMethod()
+
+  /** Represents a serializable Java field. */
+  case class SField()
+
+  /** Implicitly defines type hints for json4s for each of the serializable constructors. */
+  implicit object TypeHints {
+    implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(
+      org.json4s.ShortTypeHints(
+        List(
+
+          classOf[SDef],
+
+          classOf[SScheme],
+
+          classOf[Var],
+
+          classOf[Cst],
+
+          classOf[Apply],
+
+          classOf[Alias],
+
+          classOf[AssocType],
+
+          Void.getClass,
+
+          AnyType.getClass,
+
+          Unit.getClass,
+
+          Null.getClass,
+
+          Bool.getClass,
+
+          Char.getClass,
+
+          Float32.getClass,
+
+          Float64.getClass,
+
+          BigDecimal.getClass,
+
+          Int8.getClass,
+
+          Int16.getClass,
+
+          Int32.getClass,
+
+          Int64.getClass,
+
+          BigInt.getClass,
+
+          Str.getClass,
+
+          Regex.getClass,
+
+          classOf[Arrow],
+
+          classOf[ArrowWithoutEffect],
+
+          RecordRowEmpty.getClass,
+
+          classOf[RecordRowExtend],
+
+          Record.getClass,
+
+          Extensible.getClass,
+
+          SchemaRowEmpty.getClass,
+
+          classOf[SchemaRowExtend],
+
+          Schema.getClass,
+
+          Sender.getClass,
+
+          Receiver.getClass,
+
+          Lazy.getClass,
+
+          classOf[Enum],
+
+          classOf[Struct],
+
+          classOf[RestrictableEnum],
+
+          classOf[Native],
+
+          classOf[JvmConstructor],
+
+          classOf[JvmMethod],
+
+          classOf[JvmField],
+
+          Array.getClass,
+
+          ArrayWithoutRegion.getClass,
+
+          Vector.getClass,
+
+          classOf[Tuple],
+
+          classOf[Relation],
+
+          classOf[Lattice],
+
+          True.getClass,
+
+          False.getClass,
+
+          Not.getClass,
+
+          And.getClass,
+
+          Or.getClass,
+
+          Pure.getClass,
+
+          Univ.getClass,
+
+          Complement.getClass,
+
+          Union.getClass,
+
+          Intersection.getClass,
+
+          Difference.getClass,
+
+          SymmetricDiff.getClass,
+
+          classOf[Effect],
+
+          classOf[CaseComplement],
+
+          classOf[CaseUnion],
+
+          classOf[CaseIntersection],
+
+          classOf[CaseSymmetricDiff],
+
+          classOf[CaseSet],
+
+          classOf[Region],
+
+          RegionToStar.getClass,
+
+          RegionWithoutRegion.getClass,
+
+          WildKind.getClass,
+
+          WildCaseSetKind.getClass,
+
+          StarKind.getClass,
+
+          EffKind.getClass,
+
+          BoolKind.getClass,
+
+          RecordRowKind.getClass,
+
+          SchemaRowKind.getClass,
+
+          PredicateKind.getClass,
+
+          JvmKind.getClass,
+
+          classOf[CaseSetKind],
+
+          classOf[ArrowKind],
+
+          classOf[VarSym],
+
+          classOf[TypeAliasSym],
+
+          classOf[AssocTypeSym],
+
+          classOf[TraitSym],
+
+          classOf[EnumSym],
+
+          classOf[CaseSym],
+
+          classOf[EffSym],
+
+          classOf[RegionSym],
+
+          classOf[RestrictableEnumSym],
+
+          classOf[RestrictableCaseSym],
+
+          classOf[StructSym],
+
+          classOf[IdentName],
+
+          classOf[LabelName],
+
+          classOf[PredName],
+
+          classOf[SClass],
+          classOf[SConstructor],
+
+          classOf[SMethod],
+
+          classOf[SField],
+
+        )))
+  }
+
 }
 
