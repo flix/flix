@@ -1,6 +1,6 @@
 # Changelog
 
-Version 0.66.0
+Version 0.66.0:
 - Package Manager: Add support for security trust levels (thanks Jakob!)
 
 Version 0.65.0:
