@@ -122,7 +122,7 @@ object Specialization {
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     */
-  private case class StrictSubstitution(s: Substitution) {
+  protected[monomorph] case class StrictSubstitution(s: Substitution) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
@@ -636,6 +636,11 @@ object Specialization {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, Lowering.lowerType(subst(tpe)), subst(eff), methods, loc)
 
+    // New channel expressions are rewritten as follows:
+    //     %%CHANNEL_NEW%%(m)
+    // becomes a call to the standard library function:
+    //     Concurrent/Channel.newChannel(10)
+    //
     case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val exp = specializeExp(innerExp, env0, subst)
       Lowering.visitNewChannel(exp, subst(tpe), eff, loc)
