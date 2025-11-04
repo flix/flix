@@ -712,7 +712,7 @@ object Lowering {
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkNewChannelTuple(e, t, eff, loc)
+      LoweredAst.Expr.NewChannel(e, t, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -1518,15 +1518,6 @@ object Lowering {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
     val (targ, _) = extractChannelTpe(tpe)
     LoweredAst.Expr.ApplyDef(Defs.ChannelNew, exp :: Nil, List(targ), itpe, tpe, eff, loc)
-  }
-
-  /**
-    * Make a new channel tuple (sender, receiver) expression
-    */
-  private def mkNewChannelTuple(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    val (targ, _) = extractChannelTpe(tpe.typeArguments.head) // TODO make helper
-    LoweredAst.Expr.ApplyDef(Defs.ChannelNewTuple, exp :: Nil, List(targ), itpe, tpe, eff, loc)
   }
 
   /**
