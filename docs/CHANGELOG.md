@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.66.1:
+- Compiler: Target Java 21
+
 Version 0.66.0:
 - Package Manager: Add support for security trust levels (thanks Jakob!)
 
