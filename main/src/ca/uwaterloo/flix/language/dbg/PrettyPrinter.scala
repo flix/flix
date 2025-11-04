@@ -10,7 +10,7 @@ object PrettyPrinter {
     * @param root the syntax tree root
     * @return the "pretty-printed" string representation
     */
-  def prettyPrint(root: SyntaxTree.Root): String = {
+  def printPretty(root: SyntaxTree.Root): String = {
     root.units.values.map(renderTree).mkString
   }
 
