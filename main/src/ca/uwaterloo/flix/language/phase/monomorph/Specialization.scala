@@ -387,7 +387,7 @@ object Specialization {
   def visitStructField(field: LoweredAst.StructField)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.StructField = {
     field match {
       case LoweredAst.StructField(fieldSym, tpe, loc) =>
-        MonoAst.StructField(fieldSym, simplify(tpe, isGround = false), loc)
+        MonoAst.StructField(fieldSym, simplify(Lowering.lowerType(tpe), isGround = false), loc)
     }
   }
 
@@ -395,7 +395,7 @@ object Specialization {
   def visitEnumCase(caze: LoweredAst.Case)(implicit root: LoweredAst.Root, flix: Flix): MonoAst.Case = {
     caze match {
       case LoweredAst.Case(sym, tpes, _, loc) =>
-        MonoAst.Case(sym, tpes.map(simplify(_, isGround = false)), loc)
+        MonoAst.Case(sym, tpes.map(Lowering.lowerType).map(simplify(_, isGround = false)), loc)
     }
   }
 
@@ -430,8 +430,8 @@ object Specialization {
       spec0.ann,
       spec0.mod,
       specializedFparams,
-      subst(defn.spec.declaredScheme.base),
-      subst(spec0.retTpe),
+      Lowering.lowerType(subst(defn.spec.declaredScheme.base)),
+      Lowering.lowerType(subst(spec0.retTpe)),
       subst(spec0.eff),
       DefContext.Unknown
     )
@@ -449,7 +449,7 @@ object Specialization {
     */
   private def specializeExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, instances: Map[(Symbol.TraitSym, TypeConstructor), Instance], root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
-      MonoAst.Expr.Var(env0(sym), subst(tpe), loc)
+      MonoAst.Expr.Var(env0(sym), Lowering.lowerType(subst(tpe)), loc)
 
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
       MonoAst.Expr.Cst(cst, subst(tpe), loc)
@@ -457,7 +457,7 @@ object Specialization {
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
       val e = specializeExp(exp, env0 ++ env1, subst)
-      MonoAst.Expr.Lambda(p, e, subst(tpe), loc)
+      MonoAst.Expr.Lambda(p, e, Lowering.lowerType(subst(tpe)), loc)
 
     case LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), exps, tpe, eff, loc) =>
       // In bytecode, instanceof can only be called on reference types
@@ -468,47 +468,47 @@ object Specialization {
         MonoAst.Expr.Stm(e, MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc), Type.Bool, e.eff, loc)
       } else {
         // If it's a reference type, then do the instanceof check
-        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, subst(tpe), subst(eff), loc)
+        MonoAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), es, Lowering.lowerType(subst(tpe)), subst(eff), loc)
       }
 
     case LoweredAst.Expr.ApplyAtomic(op, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyAtomic(op, es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyAtomic(op, es, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyClo(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      MonoAst.Expr.ApplyClo(e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyClo(e1, e2, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyDef(sym, exps, _, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyDef(newSym, es, it, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
       val es = exps.map(specializeExp(_, env0, subst))
-      val t = subst(tpe)
+      val t = Lowering.lowerType(subst(tpe))
       val ef = subst(eff)
       MonoAst.Expr.ApplyLocalDef(newSym, es, t, ef, loc)
 
     case LoweredAst.Expr.ApplyOp(sym, exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyOp(sym, es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyOp(sym, es, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplySig(sym, exps, _, _, itpe, tpe, eff, loc) =>
       val it = subst(itpe)
       val newSym = specializeSigSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ApplyDef(newSym, es, Lowering.lowerType(it), Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Let(sym, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      MonoAst.Expr.Let(freshSym, e1, e2, subst(tpe), subst(eff), Occur.Unknown, loc)
+      MonoAst.Expr.Let(freshSym, e1, e2, Lowering.lowerType(subst(tpe)), subst(eff), Occur.Unknown, loc)
 
     case LoweredAst.Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
@@ -516,25 +516,25 @@ object Specialization {
       val (fps, env2) = specializeFormalParams(fparams, subst)
       val e1 = specializeExp(exp1, env1 ++ env2, subst)
       val e2 = specializeExp(exp2, env1, subst)
-      val t = subst(tpe)
+      val t = Lowering.lowerType(subst(tpe))
       val ef = subst(eff)
       MonoAst.Expr.LocalDef(freshSym, fps, e1, e2, t, ef, Occur.Unknown, loc)
 
     case LoweredAst.Expr.Region(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      MonoAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Region(freshSym, regionVar, specializeExp(exp, env1, subst), Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
       val e3 = specializeExp(exp3, env0, subst)
-      MonoAst.Expr.IfThenElse(e1, e2, e3, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.IfThenElse(e1, e2, e3, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      MonoAst.Expr.Stm(e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Stm(e1, e2, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Discard(exp, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -549,7 +549,7 @@ object Specialization {
           val b = specializeExp(body, extendedEnv, subst)
           MonoAst.MatchRule(p, g, b)
       }
-      MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.Match(specializeExp(exp, env0, subst), rs, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ExtMatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -560,7 +560,7 @@ object Specialization {
           val e1 = specializeExp(exp1, extendedEnv, subst)
           MonoAst.ExtMatchRule(p, e1, loc1)
       }
-      MonoAst.Expr.ExtMatch(e, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.ExtMatch(e, rs, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.TypeMatch(exp, rules, tpe, _, loc) =>
       // Use the non-strict substitution to allow free type variables to match with anything.
@@ -585,18 +585,18 @@ object Specialization {
               // Visit the body under the extended environment.
               val body = specializeExp(body0, env1, subst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, e, body, subst1(tpe), subst1(eff), Occur.Unknown, loc))
+              Some(MonoAst.Expr.Let(freshSym, e, body, Lowering.lowerType(subst1(tpe)), subst1(eff), Occur.Unknown, loc))
           }
       }.get // This is safe since the last case can always match.
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.VectorLit(es, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.VectorLit(es, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.VectorLoad(exp1, exp2, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      MonoAst.Expr.VectorLoad(e1, e2, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.VectorLoad(e1, e2, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.VectorLength(exp, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -608,7 +608,7 @@ object Specialization {
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
-      mkCast(e, subst(tpe), subst(eff), loc)
+      mkCast(e, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -619,7 +619,7 @@ object Specialization {
           val b = specializeExp(body, env1, subst)
           MonoAst.CatchRule(freshSym, clazz, b)
       }
-      MonoAst.Expr.TryCatch(e, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.TryCatch(e, rs, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.RunWith(exp, effSymUse, rules, tpe, eff, loc) =>
       val e = specializeExp(exp, env0, subst)
@@ -630,11 +630,11 @@ object Specialization {
           val body = specializeExp(body0, env1, subst)
           MonoAst.HandlerRule(opSymUse, fparams, body)
       }
-      MonoAst.Expr.RunWith(e, effSymUse, rs, subst(tpe), subst(eff), loc)
+      MonoAst.Expr.RunWith(e, effSymUse, rs, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
-      MonoAst.Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)
+      MonoAst.Expr.NewObject(name, clazz, Lowering.lowerType(subst(tpe)), subst(eff), methods, loc)
 
     case LoweredAst.Expr.NewChannel(_, _, _, loc) =>
       throw InternalCompilerException("not implemented yet", loc)
@@ -905,7 +905,7 @@ object Specialization {
   private def specializeFormalParam(fparam0: LoweredAst.FormalParam, subst0: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val LoweredAst.FormalParam(sym, tpe, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (MonoAst.FormalParam(freshSym, subst0(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
+    (MonoAst.FormalParam(freshSym, Lowering.lowerType(subst0(tpe)), Occur.Unknown, loc), Map(sym -> freshSym))
   }
 
   /** Unifies `tpe1` and `tpe2` which must be unifiable. */
