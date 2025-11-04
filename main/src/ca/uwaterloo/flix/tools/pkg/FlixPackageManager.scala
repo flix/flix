@@ -215,12 +215,7 @@ object FlixPackageManager {
       }
 
       // parse manifests
-      transitiveManifests <- traverse(tomlPaths) { case (p, d) => parseManifest(p).map {
-        m =>
-          manifestToDep.put(m, d :: manifestToDep.getOrElse(m, List.empty))
-          m
-      }
-      }
+      transitiveManifests <- traverse(tomlPaths) { case (p, d) => validateManifest(p, d) }
 
     } yield {
       for (m <- transitiveManifests) {
@@ -239,6 +234,23 @@ object FlixPackageManager {
         }
       }
       newRes
+    }
+  }
+
+  /** Parses and validates the manifest at `p`
+    * w.r.t. `d` by checking that declared and required versions match.
+    *
+    * Also mutates `manifestToDep` by adding or updating the mapping `m -> ds` to `m -> d :: ds`.
+    */
+  private def validateManifest(p: Path, flixDep: FlixDependency)(implicit manifestToDep: mutable.Map[Manifest, List[Dependency.FlixDependency]]): Result[Manifest, PackageError] = {
+    parseManifest(p).flatMap {
+      m =>
+        manifestToDep.put(m, flixDep :: manifestToDep.getOrElse(m, List.empty))
+        if (m.version == flixDep.version) {
+          Ok(m)
+        } else {
+          Err(PackageError.MismatchedVersions(m, flixDep))
+        }
     }
   }
 
