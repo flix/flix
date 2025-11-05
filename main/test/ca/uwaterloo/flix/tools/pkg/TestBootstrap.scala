@@ -162,7 +162,7 @@ class TestBootstrap extends AnyFunSuite {
     b.build(new Flix())
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
-    if (buildFiles.isEmpty || buildFiles.forall(FileOps.checkExt(_, "class"))) {
+    if (buildFiles.isEmpty || buildFiles.exists(!FileOps.checkExt(_, "class"))) {
       fail(
         s"""build output is not as expected:
            |${buildFiles.mkString(System.lineSeparator())}
