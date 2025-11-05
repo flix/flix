@@ -29,7 +29,7 @@ object FormatType {
     *
     * Performs alpha renaming if the rigidity environment is present.
     */
-  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false, amb : SymbolSet = SymbolSet.empty)(implicit flix: Flix): String = {
+  def formatType(tpe: Type, renv: Option[RigidityEnv] = None, minimizeEffs: Boolean = false, amb: SymbolSet = SymbolSet.empty)(implicit flix: Flix): String = {
     val renamed = renv match {
       case None => tpe
       case Some(env) => alphaRename(tpe, env)
@@ -68,9 +68,9 @@ object FormatType {
   /**
     * Transforms the given well-kinded type into a string, using the given format options.
     */
-  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions, amb : SymbolSet = SymbolSet.empty): String = {
+  def formatTypeWithOptions(tpe: Type, fmt: FormatOptions, amb: SymbolSet = SymbolSet.empty): String = {
     try {
-      format(DisplayType.fromWellKindedType(tpe,amb = amb))(fmt)
+      format(DisplayType.fromWellKindedType(tpe, amb = amb))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
