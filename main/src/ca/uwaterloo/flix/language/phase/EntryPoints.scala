@@ -531,15 +531,21 @@ object EntryPoints {
         case Validation.Success(validHandler) => Left(validHandler)
         case Validation.Failure(err) => Right(err)
       }
-      val duplicateHandlersErrs = validHandlers.groupBy(_.handledSym).flatMap {
-        case (eff, handlers) =>
-          handlers.zipWithIndex.flatMap {
-            case (handler1, i) => handlers.drop(i + 1).map {
-              case handler2 => EntryPointError.DuplicatedDefaultHandlers(eff, handler1.handlerDef.loc, handler2.handlerDef.loc)
-            }
-          }
+
+      // Check for [[EntryPointError.DuplicatedDefaultHandlers]].
+      val seen = mutable.Map.empty[Symbol.EffSym, SourceLocation]
+      val duplicatedHandlerErrors = mutable.ArrayBuffer.empty[EntryPointError]
+      for (DefaultHandler(handlerSym, _, _, handledSym) <- validHandlers) {
+        val loc1 = handlerSym.loc
+        seen.get(handledSym) match {
+          case None =>
+            seen.put(handledSym, loc1)
+          case Some(loc2) =>
+            duplicatedHandlerErrors += EntryPointError.DuplicatedDefaultHandlers(handledSym, loc1, loc2)
+        }
       }
-      (root, errors.toList.flatMap(_.toList) ++ duplicateHandlersErrs)
+
+      (root, errors.toList.flatMap(_.toList) ++ duplicatedHandlerErrors)
     }
 
     /**
@@ -572,6 +578,11 @@ object EntryPoints {
       * @return [[Validation]] of [[DefaultHandler]] or [[EntryPointError]]
       */
     private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[DefaultHandler, EntryPointError] = {
+      var errs: Chain[EntryPointError] = Chain.empty
+      // All default handlers must be public
+      if (!handlerDef.spec.mod.isPublic) {
+        errs = errs ++ Chain(EntryPointError.NonPublicDefaultHandler(handlerSym.loc))
+      }
       // The Default Handler must reside in the companion module of the effect.
       // Hence we use the namespace of the handler to construct the expected
       // effect symbol and look it up in the AST.
@@ -579,18 +590,32 @@ object EntryPoints {
       val effSymbol = Symbol.mkEffSym(effFqn)
       val companionEffect = root.effects.get(effSymbol)
       companionEffect match {
-        case None => Validation.Failure(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc))
+        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc)))
         // The default handler is NOT in the companion module of an effect
         case Some(_) =>
+          // Synthetic location of our handler
+          val loc = handlerSym.loc.asSynthetic
           // There is a valid effect to wrap
-          val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), SourceLocation.Unknown)
-          val expectedScheme = getDefaultHandlerTypeScheme(handledEff)
+          val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), loc)
           val declaredScheme = handlerDef.spec.declaredScheme
-          // Check if handler's scheme is valid
-          if (Scheme.equal(expectedScheme, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
+          // Generate scheme variations for possible generated primitive effects
+          val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
+          val expectedSchemePure = getDefaultHandlerTypeScheme(handledEff, Type.Pure, loc)
+          val expectedSchemeNonDet = getDefaultHandlerTypeScheme(handledEff, Type.NonDet, loc)
+          val expectedSchemeIONonDet = getDefaultHandlerTypeScheme(handledEff, Type.mkUnion(Type.IO, Type.NonDet, loc), loc)
+          // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
+          if (!(
+            Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil) ||
+              Scheme.equal(expectedSchemePure, declaredScheme, root.traitEnv, root.eqEnv, Nil) ||
+              Scheme.equal(expectedSchemeNonDet, declaredScheme, root.traitEnv, root.eqEnv, Nil) ||
+              Scheme.equal(expectedSchemeIONonDet, declaredScheme, root.traitEnv, root.eqEnv, Nil)
+            )) {
+            errs = errs ++ Chain(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
+          }
+          if (errs.isEmpty) {
             Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSymbol))
           } else {
-            Validation.Failure(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
+            Validation.Failure(errs)
           }
       }
     }
@@ -601,22 +626,24 @@ object EntryPoints {
       *     def handle(f: Unit -> a \ ef): a \ (ef - handledEff) + IO
       * }}}
       *
-      * @param handledEff The type of the effect associated with the default handler
+      * @param handledEff                The type of the effect associated with the default handler
+      * @param generatedPrimitiveEffects The type of the generated primitive effects by the default handler
+      * @param loc                       The source location to be used for members of the scheme
       * @return The expected scheme of the default handler
       */
-    private def getDefaultHandlerTypeScheme(handledEff: Type)(implicit flix: Flix): Scheme = {
-      val a = Type.freshVar(Kind.Star, SourceLocation.Unknown)
-      val ef = Type.freshVar(Kind.Eff, SourceLocation.Unknown)
+    private def getDefaultHandlerTypeScheme(handledEff: Type, generatedPrimitiveEffects: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = {
+      val a = Type.freshVar(Kind.Star, loc)
+      val ef = Type.freshVar(Kind.Eff, loc)
       Scheme(
         quantifiers = List(a.sym, ef.sym),
         tconstrs = Nil,
         econstrs = Nil,
         base = Type.mkArrowWithEffect(
-          a = Type.mkArrowWithEffect(Type.Unit, ef, a, SourceLocation.Unknown),
+          a = Type.mkArrowWithEffect(Type.Unit, ef, a, loc),
           // (ef - HandledEff) + IO
-          p = Type.mkUnion(Type.mkDifference(ef, handledEff, SourceLocation.Unknown), Type.IO, SourceLocation.Unknown),
+          p = Type.mkUnion(Type.mkDifference(ef, handledEff, loc), generatedPrimitiveEffects, loc),
           b = a,
-          loc = SourceLocation.Unknown
+          loc = loc
         )
       )
     }

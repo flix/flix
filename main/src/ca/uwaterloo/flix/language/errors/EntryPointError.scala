@@ -257,20 +257,18 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that a default handler has non-primitive effects.
+    * An error raised to indicate that a default handler is not public.
     *
-    * @param sym the symbol of the effect associated with this default handler
-    * @param wrongSym the symbol of the non-primitive effect produced
-    * @param loc the location of the default handler.
+    * @param loc the location of the defn.
     */
-  case class NonPrimitiveEffectForDefaultHandler(sym: Symbol.EffSym, wrongSym: Symbol.EffSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Illegal signature for '$sym's default handler."
+  case class NonPublicDefaultHandler(loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Default handlers must be public"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal signature for '$sym's default handler. Handler has non primitive effect '$wrongSym'.
+      s""">> Default handlers must be public.
          |
-         |${code(loc, "illegal handler signature.")}
+         |${code(loc, "default handler.")}
          |
          |""".stripMargin
     }
