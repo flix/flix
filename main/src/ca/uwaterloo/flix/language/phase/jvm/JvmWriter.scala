@@ -76,7 +76,7 @@ object JvmWriter {
   private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
 
   /** Returns `true` if the given `path` exists and is a Java Virtual Machine class file. */
-  private def isClassFile(path: Path): Boolean = {
+  def isClassFile(path: Path): Boolean = {
     if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
       // Read the first four bytes of the file.
       val is = Files.newInputStream(path)

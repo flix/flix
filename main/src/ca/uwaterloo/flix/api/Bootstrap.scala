@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML,
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
+import ca.uwaterloo.flix.language.phase.jvm.JvmWriter
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
@@ -433,7 +434,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val buildDir = getBuildDirectory(projectPath)
     traverse(FileOps.getFilesIn(buildDir, Int.MaxValue)) {
       f =>
-        if (FileOps.checkExt(f, "class")) {
+        if (FileOps.checkExt(f, "class") && JvmWriter.isClassFile(f)) {
           Ok(f)
         } else {
           Err(BootstrapError.FileError(s"unexpected file in build directory: '${buildDir.relativize(f)}'"))
