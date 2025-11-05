@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{FileOps, Formatter}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
@@ -153,6 +153,17 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.test(new Flix())
+  }
+
+  test("clean") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.build(new Flix())
+    val buildDir = p.resolve("./build/").normalize()
+    val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
+
+    b.clean()
   }
 
   def calcHash(p: Path): String = {
