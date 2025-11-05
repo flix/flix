@@ -162,8 +162,13 @@ class TestBootstrap extends AnyFunSuite {
     b.build(new Flix())
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
-
+    if (buildFiles.isEmpty || buildFiles.forall(FileOps.checkExt(_, "class"))) {
+      fail("build output is not as expected")
+    }
     b.clean()
+    if (FileOps.getFilesIn(buildDir, Int.MaxValue).nonEmpty) {
+      fail("at least one fail was not cleaned from build dir")
+    }
   }
 
   def calcHash(p: Path): String = {
