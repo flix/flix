@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
+import java.io.IOException
 import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
@@ -26,6 +27,24 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
 object FileOps {
+
+  /**
+    * Deletes `file` if it exists. Wraps any error `e` in `Result.Err(e)`.
+    *
+    * @param file the file to delete
+    * @return `OK(())` if `file` was successfully deleted, `Err(e)` otherwise
+    */
+  def delete(file: Path): Result[Unit, Exception] = {
+    try {
+      if (Files.deleteIfExists(file)) {
+        Result.Ok(())
+      } else {
+        Result.Err(new RuntimeException(s"file $file does not exist"))
+      }
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
 
   /**
     * Reads the first line of the file at the given path `p` if it is possible.

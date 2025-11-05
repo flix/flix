@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getBuildDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -424,8 +424,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  /**
+    * Sequentially deletes all `.class` files in the build directory if ALL files (recursively) in the build directory
+    * are `.class` files.
+    * Aborts if any other file was found.
+    */
   def clean(): Result[Unit, BootstrapError] = {
-    ???
+    val buildDir = getBuildDirectory(projectPath)
+    traverse(FileOps.getFilesIn(buildDir, Int.MaxValue)) {
+      f =>
+        if (FileOps.checkExt(f, "class")) {
+          Ok(f)
+        } else {
+          Err(BootstrapError.FileError(s"unexpected file in build directory: '${buildDir.relativize(f)}'"))
+        }
+    }.flatMap(traverse(_)(FileOps.delete)
+      .mapErr(e => BootstrapError.FileError(e.getMessage))
+    ).map(_ => ())
   }
 
   /**
