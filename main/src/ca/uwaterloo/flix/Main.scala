@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
-import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
@@ -210,13 +209,13 @@ object Main {
           }
 
         case Command.Clean =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap => bootstrap.clean().toValidation
-          }.toResult match {
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap => bootstrap.clean()
+          } match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
+              println(errors.message(formatter))
               System.exit(1)
           }
 
