@@ -39,7 +39,7 @@ object FileOps {
       if (Files.deleteIfExists(file)) {
         Result.Ok(())
       } else {
-        Result.Err(new RuntimeException(s"file $file does not exist"))
+        Result.Err(new RuntimeException(s"file '$file' does not exist"))
       }
     } catch {
       case e: Exception => Result.Err(e)
