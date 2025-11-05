@@ -170,7 +170,7 @@ class TestBootstrap extends AnyFunSuite {
     }
     b.clean()
     val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
-    if (newBuildFiles.nonEmpty) {
+    if (newBuildFiles.nonEmpty || Files.notExists(buildDir)) {
       fail(
         s"""at least one file was not cleaned from build dir:
            |${newBuildFiles.mkString(System.lineSeparator())}
