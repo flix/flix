@@ -399,7 +399,7 @@ object Main {
 
     case object BuildPkg extends Command
 
-    object Clean extends Command
+    case object Clean extends Command
 
     case object Doc extends Command
 
