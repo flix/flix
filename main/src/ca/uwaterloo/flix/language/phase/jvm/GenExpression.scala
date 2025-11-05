@@ -746,11 +746,10 @@ object GenExpression {
         fieldExps.foreach(compileExpr)
         INVOKESPECIAL(structType.Constructor)
 
-      case AtomicOp.PureStructNew(_, _) =>
+      case AtomicOp.PureStructNew(sym, _) =>
         import BytecodeInstructions.*
 
-        val SimpleType.Struct(sym, targs) = tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
+        val structType = getStructType(root.structs(sym))
 
         NEW(structType.jvmName)
         DUP()
