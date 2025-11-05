@@ -443,7 +443,7 @@ object ManifestParser {
       try {
         if (url.startsWith("url:")) {
           val removeTag = url.substring(4)
-          Ok(removeTag)
+          Ok(new URI(removeTag).toURL.toString)
         } else {
           Err(ManifestError.JarUrlFormatError(p, url))
         }
