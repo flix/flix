@@ -191,6 +191,20 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
+  test("clean-should-do-nothing-on-empty-build-dir") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val buildDir = p.resolve("./build/").normalize()
+    if (Files.exists(buildDir)) {
+      fail("did not expected build directory to exist")
+    }
+    b.clean() match {
+      case Result.Ok(_) => succeed
+      case Result.Err(_) => fail("expected success")
+    }
+  }
+
   def calcHash(p: Path): String = {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
