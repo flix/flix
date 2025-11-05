@@ -2,6 +2,9 @@ name: Package Manager
 
 on: [ pull_request, merge_group ]
 
+permissions:
+  contents: read
+
 # Cancel previous runs if the PR is updated
 concurrency:
   cancel-in-progress: true
