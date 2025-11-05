@@ -92,4 +92,46 @@ mod Reflect {
             case _: _               => false
         }
 
+    ///
+    /// Represents a zero-width position within a source, identified by line and column coordinates.
+    ///
+    /// Both line and column numbers use one-based indexing.
+    /// (e.g., the first character of a source is at line 1, column 1).
+    ///
+    /// Fields:
+    ///
+    /// 1. `line`: The line number (1-based). Must be >= 1.
+    /// 2. `column`: The column number (1-based) within the specified line. Must be >= 1.
+    ///
+    pub enum SourcePosition with Coerce {
+        case SourcePosition(Int32, Int32)
+    }
+
+    ///
+    /// Represents a span or range within a source, defined by a source identifier and
+    /// start/end source positions.
+    ///
+    /// Fields:
+    ///
+    /// 1. `source`: The source identifier (typically a file path)
+    /// 2. `start`: The beginning position of the span (inclusive)
+    /// 3. `end`: The ending position of the span (inclusive)
+    ///
+    pub enum SourceLocation with Coerce {
+        case SourceLocation(String, SourcePosition, SourcePosition)
+    }
+
+    ///
+    /// Creates a `SourceLocation` from a source identifier and raw line/column coordinates.
+    ///
+    /// Returns a `SourceLocation` spanning from (`line1`, `col1`) to (`line2`, `col2`) in the given source.
+    ///
+    pub def mkSourceLocation(source: String, line1: Int32, col1: Int32, line2: Int32, col2: Int32) : SourceLocation =
+        use SourceLocation.SourceLocation;
+        use SourcePosition.SourcePosition;
+        SourceLocation(
+                source,
+                SourcePosition(line1, col1),
+                SourcePosition(line2, col2)
+        )
 }
