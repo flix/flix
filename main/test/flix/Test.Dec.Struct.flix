@@ -8,6 +8,8 @@ def foo(): Unit = ()
 mod Test.Dec.Struct {
     pub struct Empty[r] {}
 
+    pub struct ShortEmpty[r]
+
     pub struct Singleton[r] {
         singletonfield: Int32
     }

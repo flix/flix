@@ -319,16 +319,6 @@ mod Set {
         RedBlackTree.foldRight((k, _, c) -> f(k, c), s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `s` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, s: Set[a]): b \ ef =
-        let Set(t) = s;
-        RedBlackTree.foldRightWithCont((k, _, c) -> f(k, c), z, t)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with Monoid[b] =
@@ -523,12 +513,6 @@ mod Set {
     ///
     pub def toMapWith(f: a -> b, s: Set[a]): Map[a, b] with Order[a] =
         Set.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), s)
-
-    ///
-    /// Returns the set `s` as a `MutSet`.
-    ///
-    pub def toMutSet(rc: Region[r], s: Set[a]): MutSet[a, r] \ r =
-        new MutSet @ rc { rc = rc, inner = s }
 
     ///
     /// Applies `f` to every element of `s`.

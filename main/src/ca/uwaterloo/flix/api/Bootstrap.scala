@@ -292,6 +292,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private var mavenPackagePaths: List[Path] = List.empty
   private var jarPackagePaths: List[Path] = List.empty
 
+  private var securityLevels: Map[Path, SecurityContext] = Map.empty
+
   /**
     * Parses `flix.toml` to a Manifest and downloads all required files.
     * Then makes a list of all flix source files, flix packages
@@ -299,7 +301,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     val tomlPath = getManifestFile(projectPath)
-    val result = for {
+    for {
       manifest <- Steps.parseManifest(tomlPath)
       deps <- Steps.resolveFlixDependencies(manifest)
       _ <- Steps.installDependencies(deps)
@@ -307,7 +309,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       ()
     }
-    result
   }
 
   /**
@@ -798,11 +799,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       *   1. Paths to `.jar` dependencies in `lib/cache` (maven).
       *   1. Paths to `.jar` dependencies in `lib/external` (urls).
       */
-    def installDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[List[Path]], BootstrapError] = {
+    def installDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[List[Path]], BootstrapError] = {
       for {
-        flixPaths <- installFlixDependencies(dependencyManifests)
-        mavenPaths <- installMavenDependencies(dependencyManifests)
-        jarPaths <- installJarDependencies(dependencyManifests)
+        flixPaths <- installFlixDependencies(resolution)
+        mavenPaths <- installMavenDependencies(resolution.manifests)
+        jarPaths <- installJarDependencies(resolution.manifests)
       } yield {
         out.println("Dependency resolution completed.")
         List(flixPaths, mavenPaths, jarPaths)
@@ -814,11 +815,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Requires network access.
       * Returns the paths to the installed dependencies.
       */
-    private def installFlixDependencies(dependencyManifests: List[Manifest])(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
-      FlixPackageManager.installAll(dependencyManifests, projectPath, apiKey) match {
-        case Ok(paths: List[Path]) =>
-          flixPackagePaths = paths
-          Ok(paths)
+    private def installFlixDependencies(resolution: FlixPackageManager.SecureResolution)(implicit formatter: Formatter, out: PrintStream): Result[List[Path], BootstrapError] = {
+      FlixPackageManager.installAll(resolution, projectPath, apiKey) match {
+        case Ok(result: List[(Path, SecurityContext)]) =>
+          securityLevels = result.toMap
+          flixPackagePaths = result.map { case (path, _) => path }
+          Ok(flixPackagePaths)
         case Err(e) =>
           Err(BootstrapError.FlixPackageError(e))
       }
@@ -871,8 +873,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * Returns flix manifests of all dependencies of `manifest`. This includes transitive dependencies.
       * Requires network access.
       */
-    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[List[Manifest], BootstrapError] = {
-      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).mapErr(BootstrapError.FlixPackageError(_))
+    def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
+      FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.resolveSecurityLevels) match {
+        case Err(e) => Err(BootstrapError.FlixPackageError(e))
+        case Ok(securityMap) =>
+          val securityResolutionErrors = FlixPackageManager.checkSecurity(securityMap)
+          if (securityResolutionErrors.isEmpty) {
+            Ok(securityMap)
+          } else {
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
+          }
+      }
     }
 
     /**
@@ -883,14 +894,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     def updateStaleSources(flix: Flix): Unit = {
       val previousSources = timestamps.keySet
 
-      implicit val defaultSctx: SecurityContext = SecurityContext.Unrestricted
-
       for (path <- sourcePaths if hasChanged(path)) {
-        flix.addFlix(path)
+        flix.addFlix(path)(SecurityContext.Unrestricted)
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
-        flix.addPkg(path)
+        flix.addPkg(path)(securityLevels.getOrElse(path, SecurityContext.Plain))
       }
 
       for (path <- mavenPackagePaths if hasChanged(path)) {

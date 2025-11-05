@@ -64,7 +64,7 @@ object GitHub {
       val stream = conn.getInputStream
       StreamOps.readAll(stream)
     } catch {
-      case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
+      case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
     }
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]

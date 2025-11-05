@@ -188,16 +188,6 @@ mod Result {
     }
 
     ///
-    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, _ -> checked_ecast(z))
-        case Err(_) => z
-    }
-
-    ///
     /// Returns `Ok(v1 :: v2 :: ... :: vn)` if each of `l_i` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///

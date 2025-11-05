@@ -691,50 +691,65 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // indicesOf                                                               //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def indicesOf01(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, ((Array#{} @ rc): Array[Int32, rc]));
+        assertEq(expected = Vector#{}, a)
+    }
+
+    @Test
+    def indicesOf02(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, Array#{1} @ rc);
+        assertEq(expected = Vector#{}, a)
+    }
+
+    @Test
+    def indicesOf03(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1} @ rc);
+        assertEq(expected = Vector#{0}, a)
+    }
+
+    @Test
+    def indicesOf04(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(0, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{}, a)
+    }
+
+    @Test
+    def indicesOf05(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{0}, a)
+    }
+
+    @Test
+    def indicesOf06(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(2, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{1}, a)
+    }
+
+    @Test
+    def indicesOf07(): Unit \ Assert = region rc {
+        let a = Array.indicesOf(1, Array#{1,1} @ rc);
+        assertEq(expected = Vector#{0,1}, a)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // indices                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
     def indices01(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 0, ((Array#{} @ rc): Array[Int32, rc]));
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        assertEq(expected = Range.Range(0, 0), Array.indices(Array#{} @ rc))
     }
 
     @Test
     def indices02(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 0, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        assertEq(expected = Range.Range(0, 3), Array.indices(Array#{1, 2, 3} @ rc))
     }
 
-    @Test
-    def indices03(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 1, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
-    }
-
-    @Test
-    def indices04(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 0, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
-    }
-
-    @Test
-    def indices05(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 1, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
-    }
-
-    @Test
-    def indices06(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 2, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1} @ rc))
-    }
-
-    @Test
-    def indices07(): Unit \ Assert = region rc {
-        let a = Array.indices(rc, 1, Array#{1,1} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0,1} @ rc))
-    }
     /////////////////////////////////////////////////////////////////////////////
     // find                                                                    //
     /////////////////////////////////////////////////////////////////////////////
@@ -2404,30 +2419,6 @@ mod TestArray {
     @Test
     def foldRight04(): Unit \ Assert = region rc {
         assertEq(expected = 382, Array.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2,3} @ rc))
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // foldRightWithCont                                                       //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def foldRightWithCont01(): Unit \ Assert = region rc {
-        assertEq(expected = 100, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont02(): Unit \ Assert = region rc {
-        assertEq(expected = 198, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont03(): Unit \ Assert = region rc {
-        assertEq(expected = 194, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2} @ rc))
-    }
-
-    @Test
-    def foldRightWithCont04(): Unit \ Assert = region rc {
-        assertEq(expected = 382, Array.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Array#{1,2,3} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -4297,44 +4288,44 @@ mod TestArray {
 
     @Test
     def findIndices01(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        let v = Array.findIndices(i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
+        assertEq(expected = Vector#{}, v)
     }
 
     @Test
     def findIndices02(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{1} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        let v = Array.findIndices(i -> i > 2, Array#{1} @ rc);
+        assertEq(expected = Vector#{}, v)
     }
 
     @Test
     def findIndices03(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{3} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{3} @ rc);
+        assertEq(expected = Vector#{0}, v)
     }
 
     @Test
     def findIndices04(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{1,2} @ rc);
-        assertTrue(Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc])))
+        let v = Array.findIndices(i -> i > 2, Array#{1,2} @ rc);
+        assertEq(expected = Vector#{}, v)
     }
 
     @Test
     def findIndices05(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{6,-6} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{6,-6} @ rc);
+        assertEq(expected = Vector#{0}, v)
     }
 
     @Test
     def findIndices06(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{-6,6} @ rc);
-        assertTrue(Array.sameElements(a, Array#{1} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{-6,6} @ rc);
+        assertEq(expected = Vector#{1}, v)
     }
 
     @Test
     def findIndices07(): Unit \ Assert = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, Array#{6,7} @ rc);
-        assertTrue(Array.sameElements(a, Array#{0,1} @ rc))
+        let v = Array.findIndices(i -> i > 2, Array#{6,7} @ rc);
+        assertEq(expected = Vector#{0, 1}, v)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -5586,54 +5577,6 @@ mod TestArray {
         assertEq(expected = "1..2..3", s)
     }
 
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutList                                                               //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @Test
-    def toMutList01(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])), MutList.empty(rc)))
-    }
-
-    @Test
-    def toMutList02(): Unit \ Assert = region rc {
-        let v = MutList.empty(rc);
-        MutList.push(1, v);
-        assertTrue(MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v))
-    }
-
-    @Test
-    def toMutList03(): Unit \ Assert = region rc {
-        let v = MutList.empty(rc);
-        MutList.push(1, v);
-        MutList.push(2, v);
-        MutList.push(3, v);
-        assertTrue(MutList.sameElements(Array.toMutList(rc, Array#{1, 2, 3} @ rc), v))
-    }
-
-    @Test
-    def toMutList04(): Unit \ Assert = region rc {
-        assertTrue(MutList.sameElements((Array.range(rc, 0, 100) |> Array.toMutList(rc)), MutList.range(rc, 0, 100)))
-    }
-
-    @Test
-    def toMutList05(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push(4, v);
-        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{1, 2, 3, 4} @ rc))
-    }
-
-    @Test
-    def toMutList06(): Unit \ Assert = region rc {
-        let v = Array.toMutList(rc, Array#{1, 2, 3} @ rc);
-        MutList.push(4, v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        discard MutList.pop(v);
-        assertTrue(Array.sameElements(MutList.toArray(rc, v), Array#{} @ rc))
-    }
 
     /////////////////////////////////////////////////////////////////////////////
     // shuffle                                                                 //

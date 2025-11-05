@@ -89,6 +89,22 @@ object Symbol {
   }
 
   /**
+    * Returns a fresh enum symbol based on the given symbol.
+    */
+  def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
+    val id = Some(flix.genSym.freshId())
+    new EnumSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
+    * Returns a fresh struct symbol based on the given symbol.
+    */
+  def freshStructSym(sym: StructSym)(implicit flix: Flix): StructSym = {
+    val id = Some(flix.genSym.freshId())
+    new StructSym(id, sym.namespace, sym.text, sym.loc)
+  }
+
+  /**
     * Returns a fresh hole symbol associated with the given source location `loc`.
     */
   def freshHoleSym(loc: SourceLocation)(implicit flix: Flix): HoleSym = {
@@ -186,14 +202,14 @@ object Symbol {
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
-    new EnumSym(ns.parts, ident.name, ident.loc)
+    new EnumSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
     * Returns the struct symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkStructSym(ns: NName, ident: Ident): StructSym = {
-    new StructSym(ns.parts, ident.name, ident.loc)
+    new StructSym(None, ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -207,8 +223,8 @@ object Symbol {
     * Returns the enum symbol for the given fully qualified name.
     */
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
-    case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
+    case None => new EnumSym(None, Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EnumSym(None, ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -330,43 +346,9 @@ object Symbol {
   final class VarSym(val id: Int, val text: String, val tvar: Type.Var, val boundBy: BoundBy, val loc: SourceLocation) extends Ordered[VarSym] with Symbol {
 
     /**
-      * The internal stack offset. Computed by [[ca.uwaterloo.flix.language.phase.VarOffsets]].
-      *
-      * Note: We do not use an `Option` here because there are many `VarSym`s and this wastes a lot of memory.
-      */
-    private var stackOffset: Int = -1
-
-    /**
       * Returns `true` if `this` symbol is a wildcard.
       */
     def isWild: Boolean = text.startsWith("_")
-
-    /**
-      * Returns the stack offset of `this` variable symbol.
-      *
-      * The local offset should be the number of jvm arguments for static
-      * methods and one higher than that for instance methods.
-      *
-      * Throws [[InternalCompilerException]] if the stack offset has not been set.
-      */
-    def getStackOffset(localOffset: Int): Int = {
-      if (stackOffset == -1) {
-        throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      } else {
-        stackOffset + localOffset
-      }
-    }
-
-    /**
-      * Sets the internal stack offset to given argument.
-      */
-    def setStackOffset(offset: Int): Unit = {
-      if (stackOffset != -1) {
-        throw InternalCompilerException(s"Offset already set for variable symbol: '$toString'.", loc)
-      } else {
-        stackOffset = offset
-      }
-    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
@@ -382,7 +364,7 @@ object Symbol {
     override val hashCode: Int = id
 
     /**
-      * Return the comparison of `this` symbol to `that` symol.
+      * Return the comparison of `this` symbol to `that` symbol.
       */
     override def compare(that: VarSym): Int = this.id.compare(that.id)
 
@@ -504,25 +486,28 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class EnumSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
 
     /**
       * Returns the name of `this` symbol.
       */
-    def name: String = text
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + Flix.Delimiter + i
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EnumSym => this.namespace == that.namespace && this.text == that.text
+      case that: EnumSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 5 * namespace.hashCode() + 7 * text.hashCode()
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
 
     /**
       * Human readable representation.
@@ -538,24 +523,28 @@ object Symbol {
   /**
     * Struct Symbol.
     */
-  final class StructSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+  final class StructSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Sourceable with Symbol with QualifiedSym {
+
     /**
       * Returns the name of `this` symbol.
       */
-    def name: String = text
+    def name: String = id match {
+      case None => text
+      case Some(i) => text + Flix.Delimiter + i
+    }
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: StructSym => this.namespace == that.namespace && this.text == that.text
+      case that: StructSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 5 * namespace.hashCode() + 7 * text.hashCode()
+    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
 
     /**
       * Human readable representation.

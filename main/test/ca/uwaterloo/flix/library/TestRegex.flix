@@ -129,60 +129,60 @@ mod TestRegex {
         assertTrue(Regex.isSubmatch(regex"b+", "aabbbc"))
 
     /////////////////////////////////////////////////////////////////////////////
-    // indices                                                                 //
+    // indicesOf                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def indices01(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indices(Regex.unmatchable(), ""))
+    def indicesOf01(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOf(Regex.unmatchable(), ""))
 
     @Test
-    def indices02(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indices(Regex.unmatchable(), "a::b::c"))
+    def indicesOf02(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOf(Regex.unmatchable(), "a::b::c"))
 
     @Test
-    def indices03(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indices(regex":{2}", ""))
+    def indicesOf03(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOf(regex":{2}", ""))
 
     @Test
-    def indices04(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indices(regex":{2}", "a"))
+    def indicesOf04(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOf(regex":{2}", "a"))
 
     @Test
-    def indices05(): Unit \ Assert =
-        assertEq(expected = List#{0}, Regex.indices(regex":{2}", "::"))
+    def indicesOf05(): Unit \ Assert =
+        assertEq(expected = Vector#{0}, Regex.indicesOf(regex":{2}", "::"))
 
     @Test
-    def indices06(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indices(regex":{2}", "ab"))
+    def indicesOf06(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOf(regex":{2}", "ab"))
 
     @Test
-    def indices07(): Unit \ Assert =
-        assertEq(expected = List#{0}, Regex.indices(regex":{2}", "::a"))
+    def indicesOf07(): Unit \ Assert =
+        assertEq(expected = Vector#{0}, Regex.indicesOf(regex":{2}", "::a"))
 
     @Test
-    def indices08(): Unit \ Assert =
-        assertEq(expected = List#{1}, Regex.indices(regex":{2}", "a::"))
+    def indicesOf08(): Unit \ Assert =
+        assertEq(expected = Vector#{1}, Regex.indicesOf(regex":{2}", "a::"))
 
     @Test
-    def indices09(): Unit \ Assert =
-        assertEq(expected = List#{1, 4}, Regex.indices(regex":{2}", "a::b::"))
+    def indicesOf09(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 4}, Regex.indicesOf(regex":{2}", "a::b::"))
 
     @Test
-    def indices10(): Unit \ Assert =
-        assertEq(expected = List#{1, 4}, Regex.indices(regex":{2}", "a::b::c"))
+    def indicesOf10(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 4}, Regex.indicesOf(regex":{2}", "a::b::c"))
 
     @Test
-    def indices11(): Unit \ Assert =
-        assertEq(expected = List#{1, 4}, Regex.indices(regex":{2}", "a::b::c:"))
+    def indicesOf11(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 4}, Regex.indicesOf(regex":{2}", "a::b::c:"))
 
     @Test
-    def indices12(): Unit \ Assert =
-        assertEq(expected = List#{2, 5}, Regex.indices(regex":{2}", ":a::b::c"))
+    def indicesOf12(): Unit \ Assert =
+        assertEq(expected = Vector#{2, 5}, Regex.indicesOf(regex":{2}", ":a::b::c"))
 
     @Test
-    def indices13(): Unit \ Assert =
-        assertEq(expected = List#{0, 2}, Regex.indices(regex":{2}", "::::"))
+    def indicesOf13(): Unit \ Assert =
+        assertEq(expected = Vector#{0, 2}, Regex.indicesOf(regex":{2}", "::::"))
 
     /////////////////////////////////////////////////////////////////////////////
     // submatches                                                              //
@@ -1113,32 +1113,32 @@ mod TestRegex {
         assertTrue(Regex.isSubmatchWithBounds(regex"b+", start = 0, end = 5, "aabbbc"))
 
     /////////////////////////////////////////////////////////////////////////////
-    // indicesWithBounds                                                       //
+    // indicesOfWithBounds                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def indicesWithBounds01(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indicesWithBounds(regex":{2}", start = 0, end = 1, ""))
+    def indicesOfWithBounds01(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOfWithBounds(regex":{2}", start = 0, end = 1, ""))
 
     @Test
-    def indicesWithBounds02(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indicesWithBounds(regex":{2}", start = -1, end = 10, "a::b::c"))
+    def indicesOfWithBounds02(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOfWithBounds(regex":{2}", start = -1, end = 10, "a::b::c"))
 
     @Test
-    def indicesWithBounds03(): Unit \ Assert =
-        assertEq(expected = List#{1, 4}, Regex.indicesWithBounds(regex":{2}", start = 0, end = 7, "a::b::c"))
+    def indicesOfWithBounds03(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 4}, Regex.indicesOfWithBounds(regex":{2}", start = 0, end = 7, "a::b::c"))
 
     @Test
-    def indicesWithBounds04(): Unit \ Assert =
-        assertEq(expected = List#{1}, Regex.indicesWithBounds(regex":{2}", start = 0, end = 3, "a::b::c"))
+    def indicesOfWithBounds04(): Unit \ Assert =
+        assertEq(expected = Vector#{1}, Regex.indicesOfWithBounds(regex":{2}", start = 0, end = 3, "a::b::c"))
 
     @Test
-    def indicesWithBounds05(): Unit \ Assert =
-        assertEq(expected = List#{4}, Regex.indicesWithBounds(regex":{2}", start = 3, end = 7, "a::b::c"))
+    def indicesOfWithBounds05(): Unit \ Assert =
+        assertEq(expected = Vector#{4}, Regex.indicesOfWithBounds(regex":{2}", start = 3, end = 7, "a::b::c"))
 
     @Test
-    def indicesWithBounds06(): Unit \ Assert =
-        assertEq(expected = List#{}, Regex.indicesWithBounds(regex":{2}", start = 0, end = 3, "a:b"))
+    def indicesOfWithBounds06(): Unit \ Assert =
+        assertEq(expected = Vector#{}, Regex.indicesOfWithBounds(regex":{2}", start = 0, end = 3, "a:b"))
 
     /////////////////////////////////////////////////////////////////////////////
     // submatchesWithBounds                                                    //
@@ -1411,5 +1411,24 @@ mod TestRegex {
     @Test
     def getLastWithBounds09(): Unit \ Assert =
         assertEq(expected = None, Regex.getLastWithBounds(regex"\\p{Alpha}+", start = 0, end = 2, "::a::b::c"))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // capture                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def capture01(): Unit \ Assert =
+        assertEq(expected = List#{}, Regex.capture(Regex.unmatchable(), ""))
+
+    @Test
+    def capture02(): Unit \ Assert =
+        assertEq(expected = List#{"2025","01","02"}, Regex.capture(regex"(-?\\d{4,})-(\\d{2})-(\\d{2})", "2025-01-02"))
+
+    @Test
+    def capture03(): Unit \ Assert =
+        assertEq(expected = List#{"2025","01","01","02"}, Regex.capture(regex"(-?\\d{4,})-((\\d{2}))-(\\d{2})", "2025-01-02"))
+    @Test
+    def capture04(): Unit \ Assert =
+        assertEq(expected = List#{"2025","01",""}, Regex.capture(regex"(\\d{4,})-(\\d{2})-(\\d{2})?", "2025-01-"))
 
 }

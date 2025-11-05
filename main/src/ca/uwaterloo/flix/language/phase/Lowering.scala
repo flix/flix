@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.LoweredAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
@@ -283,7 +284,7 @@ object Lowering {
     * Lowers `sym` from a restrictable enum sym into a regular enum sym.
     */
   private def visitRestrictableEnumSym(sym: Symbol.RestrictableEnumSym): Symbol.EnumSym =
-    new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+    new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
 
   /**
     * Lowers the given `effect`.
@@ -711,7 +712,7 @@ object Lowering {
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkNewChannelTuple(e, t, eff, loc)
+      LoweredAst.Expr.NewChannel(e, t, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -1520,15 +1521,6 @@ object Lowering {
   }
 
   /**
-    * Make a new channel tuple (sender, receiver) expression
-    */
-  private def mkNewChannelTuple(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    val (targ, _) = extractChannelTpe(tpe.typeArguments.head) // TODO make helper
-    LoweredAst.Expr.ApplyDef(Defs.ChannelNewTuple, exp :: Nil, List(targ), itpe, tpe, eff, loc)
-  }
-
-  /**
     * Make a channel get expression
     */
   private def mkGetChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
@@ -2259,6 +2251,18 @@ object Lowering {
       LoweredAst.Expr.RunWith(e, effSymUse, rs, tpe, eff, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
+
+    case Expr.NewChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.GetChannel(_, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.PutChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
+
+    case Expr.SelectChannel(_, _, _, _, loc) =>
+      throw InternalCompilerException("not implemented yet", loc)
 
   }
 

@@ -1,6 +1,5 @@
-package ca.uwaterloo.flix.tools
+package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, ManifestParser, MavenPackageManager, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
@@ -107,7 +106,7 @@ class TestMavenPackageManager extends AnyFunSuite {
 
       val path = Files.createTempDirectory("")
       val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None)(Formatter.getDefault, System.out) match {
-        case Ok(l) => l
+        case Ok(resolution) => resolution.manifests
         case Err(e) => fail(e.message(f))
       }
       MavenPackageManager.installAll(manifests, path)(Formatter.getDefault, System.out) match {

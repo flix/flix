@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst, shared}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
@@ -26,25 +26,33 @@ object Safety {
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
     val instances = changeSet.updateStaleValueLists(root.instances, oldRoot.instances, (i1: TypedAst.Instance, i2: TypedAst.Instance) => i1.tpe.typeConstructor == i2.tpe.typeConstructor)(ParOps.parMapValueList(_)(visitInstance))
+    val uses = changeSet.updateStaleValueLists(root.uses, oldRoot.uses, (uoi1: UseOrImport, uoi2: UseOrImport) => uoi1 == uoi2)(ParOps.parMapValueList(_)(visitUseOrImport))
 
-    (root.copy(defs = defs, traits = traits, instances = instances), sctx.errors.asScala.toList)
+    (root.copy(defs = defs, traits = traits, instances = instances, uses = uses), sctx.errors.asScala.toList)
   }
 
   /** Checks the safety and well-formedness of `defn`. */
   private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
+    checkSpecPermissions(defn.spec)
     visitExp(defn.exp)
     defn
   }
 
   /** Checks the safety and well-formedness of `trt`. */
   private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+    trt.assocs.foreach(as => as.tpe.foreach(t => checkIOPermissions(t.effects, as.loc)))
     trt.sigs.foreach(visitSig)
     trt
   }
 
   /** Checks the safety and well-formedness of `inst`. */
   private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
+    inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
+    inst.econstrs.foreach { constr =>
+      checkIOPermissions(constr.tpe1.effects, constr.loc)
+      checkIOPermissions(constr.tpe2.effects, constr.loc)
+    }
     inst.defs.foreach(visitDef)
     inst
   }
@@ -52,6 +60,7 @@ object Safety {
   /** Checks the safety and well-formedness of `sig`. */
   private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
+    checkSpecPermissions(sig.spec)
     sig.exp.foreach(visitExp(_))
   }
 
@@ -240,11 +249,11 @@ object Safety {
 
     case cast@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
       verifyUncheckedCast(cast)
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.Unsafe(exp, _, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
@@ -252,13 +261,14 @@ object Safety {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       visitExp(exp)
-      rules.foreach { case CatchRule(bnd, clazz, e, _) =>
+      rules.foreach { case CatchRule(bnd, clazz, e, loc) =>
+        checkPermissions(loc.security, loc)
         checkCatchClass(clazz, bnd.sym.loc)
         visitExp(e)
       }
 
     case Expr.Throw(exp, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
       checkThrow(exp)
 
@@ -274,36 +284,36 @@ object Safety {
       visitExp(exp2)
 
     case Expr.InvokeConstructor(_, args, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
       args.foreach(visitExp)
 
     case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       args.foreach(visitExp)
 
     case Expr.GetField(_, exp, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case Expr.PutField(_, exp1, exp2, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp1)
       visitExp(exp2)
 
     case Expr.GetStaticField(_, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
 
     case Expr.PutStaticField(_, exp, _, _, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       visitExp(exp)
 
     case newObject@Expr.NewObject(_, _, _, _, methods, loc) =>
-      checkAllPermissions(loc.security, loc)
+      checkPermissions(loc.security, loc)
       checkObjectImplementation(newObject)
       methods.foreach(method => visitExp(method.exp))
 
@@ -370,12 +380,56 @@ object Safety {
 
   }
 
-  /** Checks that `ctx` is [[SecurityContext.Unrestricted]]. */
-  private def checkAllPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
+  /** Emits an error if `useOrImport` is an [[UseOrImport.Import]] and its security context does not permit it. */
+  private def visitUseOrImport(useOrImport: UseOrImport)(implicit sctx: SharedContext): UseOrImport = useOrImport match {
+    case UseOrImport.Use(_, _, _) =>
+      useOrImport
+
+    case UseOrImport.Import(_, _, loc) =>
+      checkPermissions(loc.security, loc)
+      useOrImport
+  }
+
+  /** Emits an error if `ctx` is not [[SecurityContext.Unrestricted]]. */
+  private def checkPermissions(ctx: SecurityContext, loc: SourceLocation)(implicit sctx: SharedContext): Unit = {
     ctx match {
-      case SecurityContext.Plain => sctx.errors.add(SafetyError.Forbidden(ctx, loc))
       case SecurityContext.Unrestricted => ()
+
+      case SecurityContext.Plain =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
+
+      case SecurityContext.Paranoid =>
+        sctx.errors.add(SafetyError.Forbidden(ctx, loc))
     }
+  }
+
+  /**
+    * Emits an error if `IO` is prohibited w.r.t. the security context of `spec`.
+    *
+    * @see [[checkIOPermissions]]
+    */
+  private def checkSpecPermissions(spec: Spec)(implicit sctx: SharedContext): Unit = {
+    spec.econstrs.foreach { constr =>
+      checkIOPermissions(constr.tpe1.effects, constr.loc)
+      checkIOPermissions(constr.tpe2.effects, constr.loc)
+    }
+    spec.fparams.foreach(fp => checkIOPermissions(fp.tpe.effects, fp.tpe.loc))
+    checkIOPermissions(spec.eff.effects, spec.eff.loc)
+    checkIOPermissions(spec.retTpe.effects, spec.retTpe.loc)
+  }
+
+  /** Emits an error if `effects` contains [[Symbol.IO]] and the security context of `loc` is [[SecurityContext.Paranoid]] */
+  private def checkIOPermissions(effects: Set[Symbol.EffSym], loc: SourceLocation)(implicit sctx: SharedContext): Unit = loc.security match {
+    case SecurityContext.Unrestricted =>
+      ()
+
+    case SecurityContext.Plain =>
+      ()
+
+    case SecurityContext.Paranoid =>
+      if (effects.contains(Symbol.IO)) {
+        sctx.errors.add(SafetyError.Forbidden(loc.security, loc))
+      }
   }
 
   /** Checks if `cast` is legal. */

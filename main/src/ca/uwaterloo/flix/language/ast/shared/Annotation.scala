@@ -107,30 +107,24 @@ object Annotation {
   }
 
   /**
-    * An annotation that marks a function definition as using parallel evaluation.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class Parallel(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@Parallel"
-  }
-
-  /**
-    * An annotation that marks a function definition as using parallel evaluation when given a pure function argument.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@ParallelWhenPure"
-  }
-
-  /**
     * An annotation that marks a function definition as using lazy evaluation.
     *
     * @param loc the source location of the annotation.
     */
   case class Lazy(loc: SourceLocation) extends Annotation {
     override def toString: String = "@Lazy"
+  }
+
+  /**
+    * An annotation that marks a function definition as a target for lowering.
+    *
+    * A function annotated with `LoweringTarget` may not be discarded until lowering has
+    * been performed.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class LoweringTarget(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@LoweringTarget"
   }
 
   /**
@@ -149,6 +143,24 @@ object Annotation {
     */
   case class MustUse(loc: SourceLocation) extends Annotation {
     override def toString: String = "@MustUse"
+  }
+
+  /**
+    * An annotation that marks a function definition as using parallel evaluation.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class Parallel(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@Parallel"
+  }
+
+  /**
+    * An annotation that marks a function definition as using parallel evaluation when given a pure function argument.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@ParallelWhenPure"
   }
 
   /**
