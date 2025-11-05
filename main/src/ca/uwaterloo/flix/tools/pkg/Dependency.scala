@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 
-import java.net.URL
+import java.net.{URI, URL}
 
 sealed trait Dependency
 
@@ -42,10 +42,20 @@ object Dependency {
     }
   }
 
-  case class JarDependency(url: URL, fileName: String) extends Dependency {
+  case class JarDependency(url: String, fileName: String) extends Dependency {
     val identifier: String = fileName
 
-    override def toString: String = s"\"$identifier\" = \"$url\""
+    override def toString: String = s"\"$identifier\" = \"url:$url\""
+
+    private var cachedUrl: Option[URL] = None
+
+    def getUrl: URL = cachedUrl match {
+      case Some(cached) => cached
+      case None =>
+        val res = new URI(url).toURL
+        cachedUrl = Some(res)
+        res
+    }
   }
 
 }
