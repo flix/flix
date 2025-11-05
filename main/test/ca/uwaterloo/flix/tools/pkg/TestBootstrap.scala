@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
-import ca.uwaterloo.flix.util.{FileOps, Formatter}
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
@@ -175,6 +175,19 @@ class TestBootstrap extends AnyFunSuite {
         s"""at least one file was not cleaned from build dir:
            |${newBuildFiles.mkString(System.lineSeparator())}
            |""".stripMargin)
+    }
+  }
+
+  test("clean-should-error-on-unexpected-file") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.build(new Flix())
+    val buildDir = p.resolve("./build/").normalize()
+    FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
+    b.clean() match {
+      case Result.Ok(_) => fail("expected clean to abort")
+      case Result.Err(_) => succeed
     }
   }
 
