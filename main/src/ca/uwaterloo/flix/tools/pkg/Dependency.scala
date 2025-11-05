@@ -47,15 +47,7 @@ object Dependency {
 
     override def toString: String = s"\"$identifier\" = \"url:$url\""
 
-    private var cachedUrl: Option[URL] = None
-
-    def getUrl: URL = cachedUrl match {
-      case Some(cached) => cached
-      case None =>
-        val res = new URI(url).toURL
-        cachedUrl = Some(res)
-        res
-    }
+    def getUrl: URL = new URI(url).toURL
   }
 
 }
