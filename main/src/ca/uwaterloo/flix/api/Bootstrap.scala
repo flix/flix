@@ -432,16 +432,45 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def clean(): Result[Unit, BootstrapError] = {
     val buildDir = getBuildDirectory(projectPath)
-    traverse(FileOps.getFilesIn(buildDir, Int.MaxValue)) {
-      f =>
-        if (FileOps.checkExt(f, "class") && JvmWriter.isClassFile(f)) {
-          Ok(f)
-        } else {
-          Err(BootstrapError.FileError(s"unexpected file in build directory: '${buildDir.relativize(f)}'"))
+    val root = Path.of("/").normalize()
+
+    if (buildDir == root) {
+      return Err(BootstrapError.FileError("unexpected build dir"))
+    }
+
+    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    for (file <- files) {
+      if (!FileOps.checkExt(file, "class")) {
+        return Err(BootstrapError.FileError(s"unexpected file extension in build directory: '${buildDir.relativize(file)}'"))
+      }
+      if (!JvmWriter.isClassFile(file)) {
+        return Err(BootstrapError.FileError(s"invalid class file in build directory: '${buildDir.relativize(file)}'"))
+      }
+    }
+
+    // Collect dirs in list, so they can be successfully deleted after deleting all their contents.
+    var dirs = List.empty[Path]
+    for (file <- files) {
+      if (Files.isDirectory(file)) {
+        dirs = file :: dirs
+      } else {
+        FileOps.delete(file) match {
+          case Ok(_) => ()
+          case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
         }
-    }.flatMap(traverse(_)(FileOps.delete)
-      .mapErr(e => BootstrapError.FileError(e.getMessage))
-    ).map(_ => ())
+      }
+
+      for (dir <- dirs) {
+        if (dir == root) {
+          return Err(BootstrapError.FileError("tried to delete unexpected directory"))
+        }
+        FileOps.delete(dir) match {
+          case Ok(_) => ()
+          case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+        }
+      }
+
+      Ok(())
   }
 
   /**
