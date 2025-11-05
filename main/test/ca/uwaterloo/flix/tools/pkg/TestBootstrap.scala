@@ -163,11 +163,18 @@ class TestBootstrap extends AnyFunSuite {
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (buildFiles.isEmpty || buildFiles.forall(FileOps.checkExt(_, "class"))) {
-      fail("build output is not as expected")
+      fail(
+        s"""build output is not as expected:
+           |${buildFiles.mkString(System.lineSeparator())}
+           |""".stripMargin)
     }
     b.clean()
-    if (FileOps.getFilesIn(buildDir, Int.MaxValue).nonEmpty) {
-      fail("at least one fail was not cleaned from build dir")
+    val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    if (newBuildFiles.nonEmpty) {
+      fail(
+        s"""at least one file was not cleaned from build dir:
+           |${newBuildFiles.mkString(System.lineSeparator())}
+           |""".stripMargin)
     }
   }
 
