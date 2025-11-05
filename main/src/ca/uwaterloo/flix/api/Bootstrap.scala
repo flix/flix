@@ -459,18 +459,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
         }
       }
+    }
 
-      for (dir <- dirs) {
-        if (dir == root) {
-          return Err(BootstrapError.FileError("tried to delete unexpected directory"))
-        }
-        FileOps.delete(dir) match {
-          case Ok(_) => ()
-          case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
-        }
+    for (dir <- dirs) {
+      if (dir == root) {
+        return Err(BootstrapError.FileError("tried to delete unexpected directory"))
       }
+      FileOps.delete(dir) match {
+        case Ok(_) => ()
+        case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+      }
+    }
 
-      Ok(())
+    Ok(())
   }
 
   /**
