@@ -54,6 +54,8 @@ tasks.withType(ScalaCompile).configureEach {
             "-Xsource:3",                       // Scala 3 migration flag
             "-Ytasty-reader"                    // Scala 3 migration flag
     ]
+    // Configure javac options for .java files compiled by scalac via Zinc
+    options.compilerArgs += ["--release", "21"]
 }
 
 sourceSets {

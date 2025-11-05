@@ -1,7 +1,10 @@
 # Changelog
 
+Version 0.66.1:
+- Compiler: Fixed build to target Java 21 (thanks Magnus!)
+
 Version 0.66.0:
-- Package Manager: Add support for security trust levels (thanks Jakob!)
+- Package Manager: Added support for security trust levels (thanks Jakob!)
 
 Version 0.65.0:
 - Compiler: Added `MagicDefCompleter` (thanks Magnus!)
