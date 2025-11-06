@@ -525,11 +525,11 @@ object EntryPoints {
       val defaultHandlers = root.defs.filter {
         case (_, defn) => defn.spec.ann.isDefaultHandler
       }
-      val (validHandlers, errors) = defaultHandlers.map {
+      val (errors, validHandlers) = defaultHandlers.map {
         case (sym, defn) => checkHandler(sym, defn, root)
       }.partitionMap {
-        case Validation.Success(validHandler) => Left(validHandler)
-        case Validation.Failure(err) => Right(err)
+        case Validation.Failure(err) => Left(err)
+        case Validation.Success(validHandler) => Right(validHandler)
       }
 
       // Check for [[EntryPointError.DuplicatedDefaultHandlers]].
@@ -598,18 +598,10 @@ object EntryPoints {
           // There is a valid effect to wrap
           val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), loc)
           val declaredScheme = handlerDef.spec.declaredScheme
-          // Generate scheme variations for possible generated primitive effects
+          // Generate expected scheme for generating IO
           val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
-          val expectedSchemePure = getDefaultHandlerTypeScheme(handledEff, Type.Pure, loc)
-          val expectedSchemeNonDet = getDefaultHandlerTypeScheme(handledEff, Type.NonDet, loc)
-          val expectedSchemeIONonDet = getDefaultHandlerTypeScheme(handledEff, Type.mkUnion(Type.IO, Type.NonDet, loc), loc)
           // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
-          if (!(
-            Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil) ||
-              Scheme.equal(expectedSchemePure, declaredScheme, root.traitEnv, root.eqEnv, Nil) ||
-              Scheme.equal(expectedSchemeNonDet, declaredScheme, root.traitEnv, root.eqEnv, Nil) ||
-              Scheme.equal(expectedSchemeIONonDet, declaredScheme, root.traitEnv, root.eqEnv, Nil)
-            )) {
+          if (!Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
             errs = errs ++ Chain(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
           }
           if (errs.isEmpty) {
@@ -640,7 +632,7 @@ object EntryPoints {
         econstrs = Nil,
         base = Type.mkArrowWithEffect(
           a = Type.mkArrowWithEffect(Type.Unit, ef, a, loc),
-          // (ef - HandledEff) + IO
+          // (ef - HandledEff) + generatedPrimitiveEffects
           p = Type.mkUnion(Type.mkDifference(ef, handledEff, loc), generatedPrimitiveEffects, loc),
           b = a,
           loc = loc
