@@ -8,7 +8,7 @@ concurrency:
   group: ide-tests-${{ github.ref }}
 
 jobs:
-  build-and-test:
+  build-and-test-vscode:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
