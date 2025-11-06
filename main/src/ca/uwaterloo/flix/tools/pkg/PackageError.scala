@@ -148,4 +148,23 @@ object PackageError {
          |    - Increase trust level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
          |""".stripMargin
   }
+
+  /**
+    * An error raised to indicate that the version number declared in `manifest`
+    * does not match the targeted version in `dependency`.
+    *
+    * @param manifest   the manifest which [[dependency]] resolves to.
+    * @param dependency a valid flix dependency.
+    */
+  case class MismatchedVersions(manifest: Manifest, dependency: FlixDependency) extends PackageError {
+    override def message(f: Formatter): String = {
+      s"""Mismatched versions:
+         |  Dependency ${dependency.identifier} required version ${dependency.version}
+         |  but the manifest declared version ${manifest.version}
+         |
+         |  Required: ${dependency.version}
+         |  Declared: ${manifest.version}
+         |""".stripMargin
+    }
+  }
 }
