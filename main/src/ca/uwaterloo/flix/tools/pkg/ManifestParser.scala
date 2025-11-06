@@ -437,13 +437,13 @@ object ManifestParser {
     * Converts `depUrl` to a String and retrieves the URL for a jar dependency.
     * Returns an error if it is not formatted correctly.
     */
-  private def getUrl(depUrl: AnyRef, p: Path): Result[URL, ManifestError] = {
+  private def getUrl(depUrl: AnyRef, p: Path): Result[String, ManifestError] = {
     try {
       val url = depUrl.asInstanceOf[String]
       try {
         if (url.startsWith("url:")) {
           val removeTag = url.substring(4)
-          Ok(new URI(removeTag).toURL)
+          Ok(new URI(removeTag).toURL.toString)
         } else {
           Err(ManifestError.JarUrlFormatError(p, url))
         }
