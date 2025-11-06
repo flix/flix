@@ -432,6 +432,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Aborts if any other file was found.
     */
   def clean()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    // Ensure project mode
     if (optManifest.isEmpty) {
       return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set up project mode."))
     }
