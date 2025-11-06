@@ -71,9 +71,61 @@ object EntryPoints {
     val root4 = WrapMain.run(root3)
     // WrapMain might change main, so findEntryPoints must be after.
     val root5 = findEntryPoints(root4)
-    (root5, errs1 ++ errs2)
+    val root6 = mkModuleTestFns(root5)
+    (root6, errs1 ++ errs2)
   }
 
+  /** Returns a new root where Assert.getTests contains all test functions. */
+  private def mkModuleTestFns(root: TypedAst.Root)(implicit flix: Flix): TypedAst.Root = {
+    val getTestSym = Symbol.mkDefnSym("Assert.getTests")
+    val getTestsDefn = root.defs(getTestSym)
+    val fnVec = getTestsDefn.exp.asInstanceOf[TypedAst.Expr.VectorLit]
+    val blueprint = fnVec.exps.head.asInstanceOf[TypedAst.Expr.ApplyDef]
+    val mkStringArg = (str: String) => TypedAst.Expr.Cst(Constant.Str(str), Type.Str, SourceLocation.Unknown)
+    val mkIntArg = (int: Int) => TypedAst.Expr.Cst(Constant.Int32(int), Type.Int32, SourceLocation.Unknown)
+    val unionIOAssert = Type.mkUnion(Type.IO, Type.Assert, SourceLocation.Unknown)
+    val mkFnArg = (defnSym : Symbol.DefnSym) => {
+      val fbind = Symbol.freshVarSym("arg0", FormalParam, SourceLocation.Unknown)
+      TypedAst.Expr.Lambda(TypedAst.FormalParam(
+        TypedAst.Binder(fbind, Type.Unit),
+        Type.Unit,
+        TypeSource.Inferred,
+        SourceLocation.Unknown
+      ),
+        TypedAst.Expr.ApplyDef(
+          DefSymUse(defnSym, SourceLocation.Unknown),
+          TypedAst.Expr.Var(
+              fbind,
+              Type.Unit,
+              SourceLocation.Unknown
+          ) :: Nil,
+          Nil,
+          Type.mkArrowWithEffect(Type.Unit,  unionIOAssert, Type.Unit, SourceLocation.Unknown),
+          Type.Unit,
+          unionIOAssert,
+          SourceLocation.Unknown
+        ),
+        Type.mkArrowWithEffect(Type.Unit,  unionIOAssert, Type.Unit, SourceLocation.Unknown),
+        SourceLocation.Unknown
+      )
+    }
+
+    val allTests = root.defs.filter{ case (_, defn) => isTest(defn) }
+    val allTestsFnInfo = ParOps.parMap(allTests){
+      case (sym, _) => blueprint.copy(exps=List(
+                                                mkStringArg(sym.toString),
+                                                mkStringArg(sym.loc.source.toString),
+                                                mkIntArg(sym.loc.sp1.lineOneIndexed),
+                                                mkIntArg(sym.loc.sp1.colOneIndexed),
+                                                mkIntArg(sym.loc.sp2.lineOneIndexed),
+                                                mkIntArg(sym.loc.sp2.colOneIndexed),
+                                                mkFnArg(sym)
+                                            )
+      )
+    }
+    val newGetTests = getTestsDefn.copy(exp = fnVec.copy(exps = allTestsFnInfo.toList))
+    root.copy(defs = root.defs + (getTestSym -> newGetTests))
+  }
   /**
     * Converts [[TypedAst.Root.mainEntryPoint]] to be explicit instead of implicit and checks that a
     * given entry point exists.
