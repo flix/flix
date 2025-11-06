@@ -878,6 +878,7 @@ object Inliner {
     *
     * A pure and trivial expression can always be inlined even without duplicating work.
     */
+  @tailrec
   private def isTrivial(exp0: Expr): Boolean = exp0 match {
     case Expr.Var(_, _, _) => true
     case Expr.Cast(exp, _, _, _) => isTrivial(exp)
@@ -903,11 +904,22 @@ object Inliner {
   }
 
   /**
+    * Returns `true` if `rule0` is a simple match rule.
+    *
+    * A match rule is simple if both the guard (if present) and expression are simple.
+    */
+  private def isSimpleMatchRule(rule0: MonoAst.MatchRule): Boolean = rule0 match {
+    case MonoAst.MatchRule(_, guard, exp) =>
+      guard.forall(isSimple) && isSimple(exp)
+  }
+
+  /**
     * Returns `true` if `exp0` is a single action expression.
     *
     * An expression is a single action if it performs one computational step. For example:
     * - A single call with simple arguments.
     * - A single arithmetic operation with simple arguments.
+    * - A single match expression with simple scrutinee and only simple match rules.
     * - A single array operation with simple arguments.
     * - A single JVM operation with simple arguments.
     */
@@ -917,6 +929,7 @@ object Inliner {
     case Expr.ApplyDef(_, exps, _, _, _, _) => exps.forall(isSimple)
     case Expr.LocalDef(_, _, _, Expr.ApplyLocalDef(_, exps, _, _, _), _, _, _, _) => exps.forall(isSimple)
     case Expr.Cast(exp, _, _, _) => isSingleAction(exp)
+    case Expr.Match(exp, rules, _, _, _) => isSimple(exp) && rules.forall(isSimpleMatchRule)
     case Expr.ApplyAtomic(op, exps, _, _, _) => op match {
       case AtomicOp.ArrayNew => exps.forall(isSimple)
       case AtomicOp.ArrayLoad => exps.forall(isSimple)
