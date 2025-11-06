@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
-import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
