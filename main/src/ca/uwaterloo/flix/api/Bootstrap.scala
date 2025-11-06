@@ -438,22 +438,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     val buildDir = Bootstrap.getBuildDirectory(projectPath)
-    val root = Path.of("/").normalize()
-    val home = Path.of("~/").normalize()
 
-    // Ensure `buildDir` is NOT the root directory.
-    if (root == buildDir) {
-      return Err(BootstrapError.FileError(formatter.red("Found root directory. Aborting...")))
-    }
-
-    // Ensure `buildDir` is NOT the home directory.
-    if (home == buildDir) {
-      return Err(BootstrapError.FileError(formatter.red("Found home directory. Aborting...")))
-    }
-
-    // Ensure `buildDir` is NOT an ancestor of `projectPath`
-    if (projectPath.startsWith(buildDir)) {
-      return Err(BootstrapError.FileError(formatter.yellow(s"Build directory '${buildDir.normalize()}' is an ancestor of the project directory. Aborting...")))
+    checkForDangerousPath(buildDir) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
     }
 
     // Ensure all files in `buildDir` are valid class files.
@@ -476,34 +464,59 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (Files.isDirectory(path)) {
         dirs.addOne(path)
       } else {
+        checkForDangerousPath(path) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+
         FileOps.delete(path) match {
-          case Ok(_) => ()
           case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+          case Ok(_) => ()
         }
       }
     }
 
     // Delete empty directories
     for (dir <- dirs) {
-      // Ensure `dir` is NOT the root directory.
-      if (root == dir) {
-        return Err(BootstrapError.FileError(formatter.red("Found root directory. Aborting...")))
-      }
-
-      // Ensure `buildDir` is NOT the home directory.
-      if (home == dir) {
-        return Err(BootstrapError.FileError(formatter.red("Found home directory. Aborting...")))
-      }
-
-      // Ensure `dir` is NOT an ancestor of `projectPath`
-      if (projectPath.startsWith(dir)) {
-        return Err(BootstrapError.FileError(formatter.yellow(s"Directory '${dir.normalize()}' is an ancestor of the project directory. Aborting...")))
+      checkForDangerousPath(dir) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
       }
 
       FileOps.delete(dir) match {
-        case Ok(_) => ()
         case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+        case Ok(_) => ()
       }
+    }
+
+    Ok(())
+  }
+
+  /**
+    * Returns `Err` if `path` is one of the follwing:
+    *   1. The root directory of the system
+    *   1. The user's home directory (`~/`)
+    *   1. Any ancestor of [[projectPath]]
+    *
+    * Returns `Ok(())` otherwise.
+    */
+  private def checkForDangerousPath(path: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    val root = Path.of("/").normalize()
+    val home = Path.of("~/").normalize()
+
+    // Ensure `buildDir` is NOT the root directory.
+    if (root == path) {
+      return Err(BootstrapError.FileError(formatter.red("Found root directory. Aborting...")))
+    }
+
+    // Ensure `buildDir` is NOT the home directory.
+    if (home == path) {
+      return Err(BootstrapError.FileError(formatter.red("Found home directory. Aborting...")))
+    }
+
+    // Ensure `buildDir` is NOT an ancestor of `projectPath`
+    if (projectPath.startsWith(path)) {
+      return Err(BootstrapError.FileError(formatter.yellow(s"Directory '${path.normalize()}' is an ancestor of the project directory. Aborting...")))
     }
 
     Ok(())
