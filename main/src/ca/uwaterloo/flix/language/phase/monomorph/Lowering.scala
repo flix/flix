@@ -18,10 +18,14 @@
 package ca.uwaterloo.flix.language.phase.monomorph
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{LoweredAst, MonoAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.MonoAst.Occur
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Scope}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LoweredAst, MonoAst, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.monomorph.Specialization.Context
-import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Types}
+import ca.uwaterloo.flix.language.phase.monomorph.Symbols.{Defs, Enums, Types}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -74,9 +78,7 @@ object Lowering {
      case Type.Alias(sym, args, t, loc) =>
        Type.Alias(sym, args.map(lowerType), lowerType(t), loc)
 
-     case Type.AssocType(cst, args, kind, loc) =>
-       // TODO: It appears that substitution (`reduceAssocType`) removes `AssocTypes`, so this should be an `InternalCompilerError`, right?
-       Type.AssocType(cst, args.map(lowerType), kind, loc)
+     case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
 
      case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
 
@@ -89,7 +91,7 @@ object Lowering {
   /**
     * Returns the definition associated with the given symbol `sym`.
     *
-    * @param tpe must be subst. Can be visited, if the underlying function can handle that
+    * @param tpe must be specialized. Can be visited, if the underlying function can handle that
     */
   private def lookup(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym =
     Specialization.specializeDefnSym(sym, tpe)
@@ -99,10 +101,180 @@ object Lowering {
     *
     * @param tpe The specialized type of the result
     */
-  def visitNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+  protected[monomorph] def visitNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
     val defnSym = lookup(Defs.ChannelNewTuple, itpe)
     MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, lowerType(itpe), lowerType(tpe), eff, loc)
+  }
+
+  /**
+    * Make a channel get expression
+    */
+  protected[monomorph] def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
+    val defnSym = lookup(Defs.ChannelGet, itpe)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, lowerType(itpe), lowerType(tpe), eff, loc)
+  }
+
+  /**
+    * Make a channel put expression
+    */
+  protected[monomorph] def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
+    val defnSym = lookup(Defs.ChannelPut, itpe)
+    MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), lowerType(itpe), Type.Unit, eff, loc)
+  }
+
+  /**
+    * Make a channel select expression
+    */
+  protected[monomorph] def mkSelectChannel(rules: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], default: Option[MonoAst.Expr], tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+//    val rs = rules.map(visitSelectChannelRule)
+    val t = lowerType(tpe)
+
+    val channels = rules.map { case (_, c, _) => (mkLetSym("chan", loc), c) }
+    val admins = mkChannelAdminList(rules, channels, loc)
+    val selectExp = mkChannelSelect(admins, default, loc)
+    val cases = mkChannelCases(rules, channels, eff, loc)
+    val defaultCase = mkSelectDefaultCase(default, loc)
+    val matchExp = MonoAst.Expr.Match(selectExp, cases ++ defaultCase, t, eff, loc)
+
+    channels.foldRight[MonoAst.Expr](matchExp) {
+      case ((sym, c), e) => MonoAst.Expr.Let(sym, c, e, t, eff, Occur.Unknown, loc)
+    }
+  }
+
+
+  /**
+    * Make the list of MpmcAdmin objects which will be passed to `selectFrom`
+    */
+  private def mkChannelAdminList(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val admins = ListOps.zip(rs, channels) map {
+      case ((_, c, _), (chanSym, _)) =>
+        val itpe = Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc)
+        val defnSym = lookup(Defs.ChannelMpmcAdmin, itpe)
+        MonoAst.Expr.ApplyDef(defnSym, List(MonoAst.Expr.Var(chanSym, lowerType(c.tpe), loc)), lowerType(itpe), Types.ChannelMpmcAdmin, Type.Pure, loc)
+    }
+    mkList(admins, Types.ChannelMpmcAdmin, loc)
+  }
+
+  /**
+    * Construct a call to `selectFrom` given a list of MpmcAdmin objects and optional default
+    */
+  private def mkChannelSelect(admins: MonoAst.Expr, default: Option[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+    val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
+    val itpe = Type.mkIoUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
+    val blocking = default match {
+      case Some(_) => MonoAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc)
+      case None => MonoAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
+    }
+    val defnSym = lookup(Defs.ChannelSelectFrom, itpe)
+    MonoAst.Expr.ApplyDef(defnSym, List(admins, blocking), lowerType(itpe), selectRetTpe, Type.IO, loc)
+  }
+
+  /**
+    * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
+    */
+  private def mkChannelCases(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): List[MonoAst.MatchRule] = {
+    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+
+    ListOps.zip(rs, channels).zipWithIndex map {
+      case (((sym, chan, exp), (chSym, _)), i) =>
+        val locksSym = mkLetSym("locks", loc)
+        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc))), loc)
+        val getTpe = extractChannelTpe(chan.tpe)
+        val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
+        val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
+        val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
+        val getExp = MonoAst.Expr.ApplyDef(defnSym, args, lowerType(itpe), lowerType(getTpe), eff, loc)
+        val e = MonoAst.Expr.Let(sym, getExp, exp, lowerType(exp.tpe), eff, Occur.Unknown, loc)
+        MonoAst.MatchRule(pat, None, e)
+    }
+  }
+
+  /**
+    * Construct additional MatchRule to handle the (optional) default case
+    * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
+    */
+  private def mkSelectDefaultCase(default: Option[MonoAst.Expr], loc: SourceLocation): List[MonoAst.MatchRule] = {
+    default match {
+      case Some(defaultExp) =>
+        val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
+        val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(MonoAst.Pattern.Wild(locksType, loc))), loc)
+        val defaultMatch = MonoAst.MatchRule(pat, None, defaultExp)
+        List(defaultMatch)
+      case _ =>
+        List()
+    }
+  }
+
+  /**
+    * Returns a list expression constructed from the given `exps` with type list of `elmType`.
+    *
+    * @param elmType is assumed to be specialized and lowered.
+    */
+  private def mkList(exps: List[MonoAst.Expr], elmType: Type, loc: SourceLocation): MonoAst.Expr = {
+    val nil = mkNil(elmType, loc)
+    exps.foldRight(nil) {
+      case (e, acc) => mkCons(e, acc, loc)
+    }
+  }
+
+  /**
+    * Returns a `Nil` expression with type list of `elmType`.
+    *
+    * @param elmType is assumed to be specialized and lowered.
+    */
+  private def mkNil(elmType: Type, loc: SourceLocation): MonoAst.Expr = {
+    mkTag(Enums.FList, "Nil", Nil, Types.mkList(elmType, loc), loc)
+  }
+
+  /**
+    * returns a `Cons(hd, tail)` expression with type `tail.tpe`.
+    */
+  private def mkCons(hd: MonoAst.Expr, tail: MonoAst.Expr, loc: SourceLocation): MonoAst.Expr = {
+    mkTag(Enums.FList, "Cons", List(hd, tail), lowerType(tail.tpe), loc)
+  }
+
+  /**
+    * Returns a pure tag expression for the given `sym` and given `tag` with the given inner expression `exp`.
+    *
+    * @param tpe is assumed to be specialized and lowered.
+    */
+  private def mkTag(sym: Symbol.EnumSym, tag: String, exps: List[MonoAst.Expr], tpe: Type, loc: SourceLocation): MonoAst.Expr = {
+    val caseSym = new Symbol.CaseSym(sym, tag, loc.asSynthetic)
+    MonoAst.Expr.ApplyAtomic(AtomicOp.Tag(caseSym), exps, tpe, Type.Pure, loc)
+  }
+
+  /**
+    * Returns `(t1, t2)` where `tpe = Concurrent.Channel.Mpmc[t1, t2]`.
+    *
+    * @param tpe is assumed to be specialized, but not lowered.
+    */
+  private def extractChannelTpe(tpe: Type): Type = eraseAliases(tpe) match {
+    case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), _, _) => elmType
+    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
+  }
+
+  /**
+    * Returns a TypedAst.Pattern representing a tuple of patterns.
+    *
+    * @param patterns are assumed to contain specialized and lowered types.
+    */
+  private def mkTuplePattern(patterns: Nel[MonoAst.Pattern], loc: SourceLocation): MonoAst.Pattern = {
+    MonoAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
+  }
+
+  /**
+    * Returns a new `VarSym` for use in a let-binding.
+    *
+    * This function is called `mkLetSym` to avoid confusion with [[mkVarSym]].
+    */
+  private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
+    val name = prefix + Flix.Delimiter + flix.genSym.freshId()
+    Symbol.freshVarSym(name, BoundBy.Let, loc)(Scope.Top, flix)
   }
 
   /**
