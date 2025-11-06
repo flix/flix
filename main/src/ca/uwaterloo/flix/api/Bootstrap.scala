@@ -432,6 +432,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Aborts if any other file was found.
     */
   def clean()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+    if (optManifest.isEmpty) {
+      return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set up project mode."))
+    }
+
     val buildDir = Bootstrap.getBuildDirectory(projectPath)
     val root = Path.of("/").normalize()
     val home = Path.of("~/").normalize()
