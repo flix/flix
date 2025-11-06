@@ -443,12 +443,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (!FileOps.checkExt(file, "class")) {
         return Err(BootstrapError.FileError(s"unexpected file extension in build directory: '${buildDir.relativize(file)}'"))
       }
-      if (!JvmWriter.isClassFile(file)) {
+
+      if (!FileOps.isClassFile(file)) {
         return Err(BootstrapError.FileError(s"invalid class file in build directory: '${buildDir.relativize(file)}'"))
       }
     }
 
-    // Collect dirs in list, so they can be successfully deleted after deleting all their contents.
+    // Collect dirs in list, so they can be deleted after deleting all their contents.
     var dirs = List.empty[Path]
     for (file <- files) {
       if (Files.isDirectory(file)) {

@@ -178,6 +178,26 @@ object FileOps {
       List.empty
   }
 
+  /** Returns `true` if the given `path` exists and is a Java Virtual Machine class file. */
+  def isClassFile(path: Path): Boolean = {
+    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
+      // Read the first four bytes of the file.
+      val is = Files.newInputStream(path)
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      is.close()
+
+      // Check if the four first bytes match CAFE BABE.
+      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
+    }
+    false
+  }
+
+  /** Returns `true` if the given `path` exists and has 0 bytes of data. */
+  def isEmpty(path: Path): Boolean = Files.size(path) == 0L
+
   /**
     * Checks if the given path is a regular file with the expected extension.
     *
