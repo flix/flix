@@ -31,6 +31,7 @@ import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
+import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
 
@@ -430,42 +431,70 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * are `.class` files.
     * Aborts if any other file was found.
     */
-  def clean(): Result[Unit, BootstrapError] = {
+  def clean()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
     val buildDir = Bootstrap.getBuildDirectory(projectPath)
     val root = Path.of("/").normalize()
+    val home = Path.of("~/").normalize()
 
-    if (buildDir == root) {
-      return Err(BootstrapError.FileError("unexpected build dir"))
+    // Ensure `buildDir` is NOT the root directory.
+    if (root == buildDir) {
+      return Err(BootstrapError.FileError(formatter.red("Found root directory. Aborting...")))
     }
 
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
-    for (file <- files) {
-      if (!FileOps.checkExt(file, "class")) {
-        return Err(BootstrapError.FileError(s"unexpected file extension in build directory: '${buildDir.relativize(file)}'"))
+    // Ensure `buildDir` is NOT the home directory.
+    if (home == buildDir) {
+      return Err(BootstrapError.FileError(formatter.red("Found home directory. Aborting...")))
+    }
+
+    // Ensure `buildDir` is NOT an ancestor of `projectPath`
+    if (projectPath.startsWith(buildDir)) {
+      return Err(BootstrapError.FileError(formatter.yellow(s"Build directory '${buildDir.normalize()}' is an ancestor of the project directory. Aborting...")))
+    }
+
+    // Ensure all files in `buildDir` are valid class files.
+    val paths = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    for (path <- paths) {
+      if (!FileOps.checkExt(path, "class")) {
+        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${buildDir.relativize(path)}'"))
       }
 
-      if (!FileOps.isClassFile(file)) {
-        return Err(BootstrapError.FileError(s"invalid class file in build directory: '${buildDir.relativize(file)}'"))
+      if (!FileOps.isClassFile(path)) {
+        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${buildDir.relativize(path)}'"))
       }
     }
 
     // Collect dirs in list, so they can be deleted after deleting all their contents.
-    var dirs = List.empty[Path]
-    for (file <- files) {
-      if (Files.isDirectory(file)) {
-        dirs = file :: dirs
+    val dirs = mutable.ArrayBuffer.empty[Path]
+
+    // Delete non-directory paths
+    for (path <- paths) {
+      if (Files.isDirectory(path)) {
+        dirs.addOne(path)
       } else {
-        FileOps.delete(file) match {
+        FileOps.delete(path) match {
           case Ok(_) => ()
           case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
         }
       }
     }
 
+    // Delete empty directories
     for (dir <- dirs) {
-      if (dir == root) {
-        return Err(BootstrapError.FileError("tried to delete unexpected directory"))
+      // Ensure `dir` is NOT the root directory.
+      if (root == dir) {
+        return Err(BootstrapError.FileError(formatter.red("Found root directory. Aborting...")))
       }
+
+      // Ensure `buildDir` is NOT the home directory.
+      if (home == dir) {
+        return Err(BootstrapError.FileError(formatter.red("Found home directory. Aborting...")))
+      }
+
+      // Ensure `dir` is NOT an ancestor of `projectPath`
+      if (projectPath.startsWith(dir)) {
+        return Err(BootstrapError.FileError(formatter.yellow(s"Directory '${dir.normalize()}' is an ancestor of the project directory. Aborting...")))
+      }
+
       FileOps.delete(dir) match {
         case Ok(_) => ()
         case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
