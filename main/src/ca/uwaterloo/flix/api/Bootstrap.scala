@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getBuildDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -301,7 +301,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * and .jar files that this project uses.
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val tomlPath = getManifestFile(projectPath)
+    val tomlPath = Bootstrap.getManifestFile(projectPath)
     for {
       manifest <- Steps.parseManifest(tomlPath)
       deps <- Steps.resolveFlixDependencies(manifest)
@@ -388,12 +388,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildPkg()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
 
     // Check that there is a `flix.toml` file.
-    if (!Files.exists(getManifestFile(projectPath))) {
+    if (!Files.exists(Bootstrap.getManifestFile(projectPath))) {
       return Result.Err(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red(FLIX_TOML)}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
+    Files.createDirectories(Bootstrap.getArtifactDirectory(projectPath))
 
     // The path to the fpkg file.
     val pkgFile = Bootstrap.getPkgFile(projectPath)
@@ -404,7 +404,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Copy the `flix.toml` to the artifact directory.
-    Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
+    Files.copy(Bootstrap.getManifestFile(projectPath), Bootstrap.getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
 
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
@@ -431,7 +431,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Aborts if any other file was found.
     */
   def clean(): Result[Unit, BootstrapError] = {
-    val buildDir = getBuildDirectory(projectPath)
+    val buildDir = Bootstrap.getBuildDirectory(projectPath)
     val root = Path.of("/").normalize()
 
     if (buildDir == root) {
@@ -571,7 +571,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Publish to GitHub
     out.println("Publishing a new release...")
-    val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
+    val artifacts = List(Bootstrap.getPkgFile(projectPath), Bootstrap.getManifestFile(projectPath))
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
       case Ok(()) => // Continue
