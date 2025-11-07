@@ -19,12 +19,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
-import ca.uwaterloo.flix.util.collection.CofiniteSet
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
+import ca.uwaterloo.flix.util.collection.{Chain, CofiniteSet}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
@@ -63,15 +63,16 @@ object EntryPoints {
 
   def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = flix.phaseNew("EntryPoints") {
     val (root1, errs1) = resolveMain(root)
-
-    val (root2, errs2) = CheckEntryPoints.run(root1)
+    // Wrap entry points to handle non-primitive effects with defaultHandlers
+    val (rootWithWrappedEntryPoints, errsDefaultHandlers) = WrapInDefaultHandlers.run(root1)
+    val (root2, errs2) = CheckEntryPoints.run(rootWithWrappedEntryPoints)
     // WrapTest and WrapMain assumes sensible tests, so CheckEntryPoints must run first.
     // Notice that a main function with test annotation will be wrapped twice.
     val root3 = WrapTest.run(root2)
     val root4 = WrapMain.run(root3)
     // WrapMain might change main, so findEntryPoints must be after.
     val root5 = findEntryPoints(root4)
-    (root5, errs1 ++ errs2)
+    (root5, errs1 ++ errs2 ++ errsDefaultHandlers)
   }
 
   /**
@@ -471,6 +472,173 @@ object EntryPoints {
       */
     private case class SharedContext(errors: ConcurrentLinkedQueue[EntryPointError], invalidMain: AtomicBoolean)
 
+  }
+
+  private object WrapInDefaultHandlers {
+    /**
+      * Default handler components
+      *
+      * Given:
+      * {{{
+      *     eff E
+      *     mod E {
+      *         @DefaultHandler
+      *         def handle(f: Unit -> a \ ef): a \ (ef - E) + IO = exp
+      *     }
+      * }}}
+      *
+      *   - handlerSym: handle's [[Symbol.DefnSym]].
+      *   - handlerDef: handle's [[TypedAst.Def]].
+      *   - handlerDef: E's [[Type]].
+      *   - handlerDef: E's [[Symbol.EffSym]].
+      * */
+    private case class DefaultHandler(
+                                       handlerSym: Symbol.DefnSym,
+                                       handlerDef: TypedAst.Def,
+                                       handledEff: Type,
+                                       handledSym: Symbol.EffSym,
+                                     )
+
+    /**
+      * WrapInDefaultHandlers takes a root and returns a new root where the entry points' definitions
+      * have been wrapped in a default handler for any extra non-primitive effects.
+      *
+      * It handles multiple effects with default handlers by nesting these handlers.
+      * The nesting order is unspecified and should not be relied upon.
+      *
+      *
+      * Takes
+      * {{{
+      *     def f(...): tpe \ ef = exp
+      * }}}
+      * Returns
+      * {{{
+      *     def f(...): tpe \ efHandler + (ef - efDefault) = E.handle(_ ->  exp)
+      * }}}
+      *
+      * The [[EntryPoints]] and [[Typer]] phases ensure that every entry point:
+      *   - Takes Unit as an argument
+      *   - Has a valid signature (without type variables, etc.)
+      *
+      */
+    def run(root: TypedAst.Root)(implicit flix: Flix): (TypedAst.Root, List[EntryPointError]) = {
+      val defaultHandlers = root.defs.filter {
+        case (_, defn) => defn.spec.ann.isDefaultHandler
+      }
+      val (errors, validHandlers) = defaultHandlers.map {
+        case (sym, defn) => checkHandler(sym, defn, root)
+      }.partitionMap {
+        case Validation.Failure(err) => Left(err)
+        case Validation.Success(validHandler) => Right(validHandler)
+      }
+
+      // Check for [[EntryPointError.DuplicatedDefaultHandlers]].
+      val seen = mutable.Map.empty[Symbol.EffSym, SourceLocation]
+      val duplicatedHandlerErrors = mutable.ArrayBuffer.empty[EntryPointError]
+      for (DefaultHandler(handlerSym, _, _, handledSym) <- validHandlers) {
+        val loc1 = handlerSym.loc
+        seen.get(handledSym) match {
+          case None =>
+            seen.put(handledSym, loc1)
+          case Some(loc2) =>
+            duplicatedHandlerErrors += EntryPointError.DuplicatedDefaultHandlers(handledSym, loc1, loc2)
+        }
+      }
+
+      (root, errors.toList.flatMap(_.toList) ++ duplicatedHandlerErrors)
+    }
+
+    /**
+      * Validates that a function marked with @DefaultHandler has the correct signature.
+      *
+      * A valid default handler must:
+      *   - Be in the companion module of an existing effect
+      *   - Take exactly one argument of function type: Unit -> a \ ef
+      *   - Return the same type variable 'a' as the function argument
+      *   - Have an effect signature of the form: (ef - HandledEffect) + IO
+      *
+      * Valid handler example
+      * {{{
+      *     eff E
+      *     mod E {
+      *         @DefaultHandler
+      *         def handle(f: Unit -> a \ ef): a \ (ef - E) + IO = exp
+      *     }
+      * }}}
+      *
+      * Invalid handler example
+      * {{{
+      *     @DefaultHandler
+      *     def handle(f: Unit -> a \ ef, arg: tpe): Bool \ (ef - ef2) + Environment = exp
+      * }}}
+      *
+      * @param handlerSym The symbol of the handler function
+      * @param handlerDef The definition of the handler function
+      * @param root       The typed AST root
+      * @return [[Validation]] of [[DefaultHandler]] or [[EntryPointError]]
+      */
+    private def checkHandler(handlerSym: Symbol.DefnSym, handlerDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): Validation[DefaultHandler, EntryPointError] = {
+      var errs: Chain[EntryPointError] = Chain.empty
+      // All default handlers must be public
+      if (!handlerDef.spec.mod.isPublic) {
+        errs = errs ++ Chain(EntryPointError.NonPublicDefaultHandler(handlerSym.loc))
+      }
+      // The Default Handler must reside in the companion module of the effect.
+      // Hence we use the namespace of the handler to construct the expected
+      // effect symbol and look it up in the AST.
+      val effFqn = handlerSym.namespace.mkString(".")
+      val effSymbol = Symbol.mkEffSym(effFqn)
+      val companionEffect = root.effects.get(effSymbol)
+      companionEffect match {
+        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc)))
+        // The default handler is NOT in the companion module of an effect
+        case Some(_) =>
+          // Synthetic location of our handler
+          val loc = handlerSym.loc.asSynthetic
+          // There is a valid effect to wrap
+          val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), loc)
+          val declaredScheme = handlerDef.spec.declaredScheme
+          // Generate expected scheme for generating IO
+          val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
+          // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
+          if (!Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
+            errs = errs ++ Chain(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
+          }
+          if (errs.isEmpty) {
+            Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSymbol))
+          } else {
+            Validation.Failure(errs)
+          }
+      }
+    }
+
+    /**
+      * Returns the type scheme of
+      * {{{
+      *     def handle(f: Unit -> a \ ef): a \ (ef - handledEff) + IO
+      * }}}
+      *
+      * @param handledEff                The type of the effect associated with the default handler
+      * @param generatedPrimitiveEffects The type of the generated primitive effects by the default handler
+      * @param loc                       The source location to be used for members of the scheme
+      * @return The expected scheme of the default handler
+      */
+    private def getDefaultHandlerTypeScheme(handledEff: Type, generatedPrimitiveEffects: Type, loc: SourceLocation)(implicit flix: Flix): Scheme = {
+      val a = Type.freshVar(Kind.Star, loc)
+      val ef = Type.freshVar(Kind.Eff, loc)
+      Scheme(
+        quantifiers = List(a.sym, ef.sym),
+        tconstrs = Nil,
+        econstrs = Nil,
+        base = Type.mkArrowWithEffect(
+          a = Type.mkArrowWithEffect(Type.Unit, ef, a, loc),
+          // (ef - HandledEff) + generatedPrimitiveEffects
+          p = Type.mkUnion(Type.mkDifference(ef, handledEff, loc), generatedPrimitiveEffects, loc),
+          b = a,
+          loc = loc
+        )
+      )
+    }
   }
 
   private object WrapMain {
