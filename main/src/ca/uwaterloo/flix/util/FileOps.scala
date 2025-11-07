@@ -132,27 +132,43 @@ object FileOps {
     * }}}
     */
   def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
-    if (Files.exists(path) && Files.isDirectory(path))
-      Files.walk(path, depth)
-        .iterator().asScala
-        .filter(checkExt(_, "flix"))
-        .toList.sorted
-    else
-      List.empty
+    walkTree(path, depth).filterNot(checkExt(_, "flix"))
   }
 
   /**
-    * Returns a list of all files in the given path, visited recursively.
+    * Returns a list of all files (excluding directories) in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
+    walkTree(path, depth).filter(Files.isRegularFile(_))
+  }
+
+
+  /**
+    * Returns a list of all directories in the given path, visited recursively.
+    * The depth parameter is the maximum number of levels of directories to visit.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  def getDirectoriesIn(path: Path, depth: Int): List[Path] = {
+    walkTree(path, depth).filter(Files.isDirectory(_))
+  }
+
+  /**
+    * Returns a list of all paths in the given path (including `path`), visited recursively.
+    * The depth parameter is the maximum number of levels of directories to visit.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  private def walkTree(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
       Files.walk(path, depth)
         .iterator().asScala
-        .filter(Files.isRegularFile(_))
         .toList.sorted
     else
       List.empty
