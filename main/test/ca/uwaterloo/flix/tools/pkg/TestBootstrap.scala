@@ -155,7 +155,7 @@ class TestBootstrap extends AnyFunSuite {
     b.test(new Flix())
   }
 
-  test("clean") {
+  test("clean-command-should-remove-class-files-and-directories-if-compiled-previously") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
