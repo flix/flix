@@ -132,7 +132,7 @@ object FileOps {
     * }}}
     */
   def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
-    walkTree(path, depth).filterNot(checkExt(_, "flix"))
+    walkTree(path, depth).filter(checkExt(_, "flix"))
   }
 
   /**
