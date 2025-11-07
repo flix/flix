@@ -430,7 +430,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * are `.class` files.
     * Aborts if any other file was found.
     */
-  def clean()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
       return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set up project mode."))
@@ -444,38 +444,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Ensure all files in `buildDir` are valid class files.
-    val paths = FileOps.getFilesIn(buildDir, Int.MaxValue)
-    for (path <- paths) {
-      if (!FileOps.checkExt(path, "class")) {
-        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${buildDir.relativize(path)}'"))
+    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    for (file <- files) {
+      if (!FileOps.checkExt(file, "class")) {
+        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${buildDir.relativize(file)}'"))
       }
 
-      if (!FileOps.isClassFile(path)) {
-        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${buildDir.relativize(path)}'"))
+      if (!FileOps.isClassFile(file)) {
+        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${buildDir.relativize(file)}'"))
       }
     }
 
-    // Collect dirs in list, so they can be deleted after deleting all their contents.
-    val dirs = mutable.ArrayBuffer.empty[Path]
+    // Delete files paths
+    for (file <- files) {
+      checkForDangerousPath(file) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
 
-    // Delete non-directory paths
-    for (path <- paths) {
-      if (Files.isDirectory(path)) {
-        dirs.addOne(path)
-      } else {
-        checkForDangerousPath(path) match {
-          case Err(e) => return Err(e)
-          case Ok(()) => ()
-        }
-
-        FileOps.delete(path) match {
-          case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
-          case Ok(_) => ()
-        }
+      FileOps.delete(file) match {
+        case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+        case Ok(_) => ()
       }
     }
 
     // Delete empty directories
+    val dirs = List.empty[Path]
     for (dir <- dirs) {
       checkForDangerousPath(dir) match {
         case Err(e) => return Err(e)
@@ -499,23 +493,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     *
     * Returns `Ok(())` otherwise.
     */
-  private def checkForDangerousPath(path: Path)(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
+  private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
     val root = Path.of("/").normalize()
     val home = Path.of("~/").normalize()
 
     // Ensure `buildDir` is NOT the root directory.
     if (root == path) {
-      return Err(BootstrapError.FileError(formatter.red("Found root directory. Aborting...")))
+      return Err(BootstrapError.FileError("Found root directory. Aborting..."))
     }
 
     // Ensure `buildDir` is NOT the home directory.
     if (home == path) {
-      return Err(BootstrapError.FileError(formatter.red("Found home directory. Aborting...")))
+      return Err(BootstrapError.FileError("Found home directory. Aborting..."))
     }
 
     // Ensure `buildDir` is NOT an ancestor of `projectPath`
     if (projectPath.startsWith(path)) {
-      return Err(BootstrapError.FileError(formatter.yellow(s"Directory '${path.normalize()}' is an ancestor of the project directory. Aborting...")))
+      return Err(BootstrapError.FileError(s"Directory '${path.normalize()}' is an ancestor of the project directory. Aborting..."))
     }
 
     Ok(())
