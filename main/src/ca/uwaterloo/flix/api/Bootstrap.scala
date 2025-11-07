@@ -30,7 +30,6 @@ import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
-import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
 
@@ -453,15 +452,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       if (!FileOps.isClassFile(file)) {
         return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${buildDir.relativize(file)}'"))
       }
-    }
 
-    // Delete files paths
-    for (file <- files) {
       checkForDangerousPath(file) match {
         case Err(e) => return Err(e)
         case Ok(()) => ()
       }
+    }
 
+    // Delete files paths
+    for (file <- files) {
       FileOps.delete(file) match {
         case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
         case Ok(_) => ()
@@ -469,8 +468,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Delete empty directories
-    val dirs = List.empty[Path]
-    for (dir <- dirs) {
+    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue)
+    for (dir <- directories) {
       checkForDangerousPath(dir) match {
         case Err(e) => return Err(e)
         case Ok(()) => ()
