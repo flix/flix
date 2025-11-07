@@ -511,4 +511,28 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
   }
+
+  test("Test.ValidEntryPoint.DefaultHandler.02") {
+    val input =
+      """
+        |pub eff E{
+        |   def op(): Unit
+        |}
+        |mod E {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
+        |            run {
+        |                f()
+        |            } with handler E {
+        |                def op(k) = {
+        |                    println("Default behaviour");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |def main(): Unit \ E = E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
 }
