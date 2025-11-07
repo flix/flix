@@ -485,16 +485,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Returns `Err` if `path` is one of the follwing:
+    * Returns `Err` if `path` is one of the following:
     *   1. The root directory of the system
-    *   1. The user's home directory (`~/`)
+    *   1. The user's home directory (`"user.home` system property, using [[System.getProperty]])
     *   1. Any ancestor of [[projectPath]]
     *
     * Returns `Ok(())` otherwise.
     */
   private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
     val root = Path.of("/").normalize()
-    val home = Path.of("~/").normalize()
+    val home = Path.of(System.getProperty("user.home"))
 
     // Ensure `buildDir` is NOT the root directory.
     if (root == path) {
