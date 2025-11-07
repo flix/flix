@@ -146,7 +146,6 @@ object FileOps {
     walkTree(path, depth).filter(Files.isRegularFile(_))
   }
 
-
   /**
     * Returns a list of all directories in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
