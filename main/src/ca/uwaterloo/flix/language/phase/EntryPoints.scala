@@ -542,6 +542,7 @@ object EntryPoints {
             seen.put(handledSym, loc1)
           case Some(loc2) =>
             duplicatedHandlerErrors += EntryPointError.DuplicateDefaultHandler(handledSym, loc1, loc2)
+            duplicatedHandlerErrors += EntryPointError.DuplicateDefaultHandler(handledSym, loc2, loc1)
         }
       }
 
