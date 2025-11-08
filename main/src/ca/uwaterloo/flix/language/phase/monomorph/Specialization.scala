@@ -636,55 +636,19 @@ object Specialization {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, Lowering.lowerType(subst(tpe)), subst(eff), methods, loc)
 
-    // New channel expressions are rewritten as follows:
-    //     %%CHANNEL_NEW%%(m)
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.newChannel(10)
-    //
     case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val exp = specializeExp(innerExp, env0, subst)
       Lowering.visitNewChannel(exp, subst(tpe), eff, loc)
 
-    // Channel get expressions are rewritten as follows:
-    //     <- c
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.get(c)
-    //
     case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
       val exp = specializeExp(innerExp, env0, subst)
       Lowering.mkGetChannel(exp, subst(tpe), eff, loc)
 
-    // Channel put expressions are rewritten as follows:
-    //     c <- 42
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.put(42, c)
-    //
     case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
       val exp1 = specializeExp(innerExp1, env0, subst)
       val exp2 = specializeExp(innerExp2, env0, subst)
       Lowering.mkPutChannel(exp1, exp2, eff, loc)
 
-    // Channel select expressions are rewritten as follows:
-    //     select {
-    //         case x <- ?ch1 => ?handlech1
-    //         case y <- ?ch2 => ?handlech2
-    //         case _ => ?default
-    //     }
-    // becomes:
-    //     let ch1 = ?ch1;
-    //     let ch2 = ?ch2;
-    //     match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default
-    //         case (0, locks) =>
-    //             let x = unsafeGetAndUnlock(ch1, locks);
-    //             ?handlech1
-    //         case (1, locks) =>
-    //             let y = unsafeGetAndUnlock(ch2, locks);
-    //             ?handlech2
-    //         case (-1, _) =>                                                  // Omitted if no default
-    //             ?default                                                     // Unlock is handled by selectFrom
-    //     }
-    // Note: match is not exhaustive: we're relying on the simplifier to handle this for us
-    //
     case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
       val rules = rules0.map {
         case LoweredAst.SelectChannelRule(sym, chan, exp, _) =>

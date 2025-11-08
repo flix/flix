@@ -99,6 +99,11 @@ object Lowering {
   /**
     * Make a new channel tuple (sender, receiver) expression
     *
+    * New channel expressions are rewritten as follows:<br>
+    * &emsp; %%CHANNEL_NEW%%(m)<br>
+    * becomes a call to the standard library function:<br>
+    * &emsp; Concurrent/Channel.newChannel(10)
+    *
     * @param tpe The specialized type of the result
     */
   protected[monomorph] def visitNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
@@ -109,6 +114,11 @@ object Lowering {
 
   /**
     * Make a channel get expression
+    *
+    * Channel get expressions are rewritten as follows:<br>
+    * &emsp; <- c<br>
+    * becomes a call to the standard library function:<br>
+    * &emsp; Concurrent/Channel.get(c)<br>
     */
   protected[monomorph] def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
@@ -118,6 +128,11 @@ object Lowering {
 
   /**
     * Make a channel put expression
+    *
+    * Channel put expressions are rewritten as follows:<br>
+    * &emsp; c <- 42<br>
+    * becomes a call to the standard library function:<br>
+    * &emsp; Concurrent/Channel.put(42, c)
     */
   protected[monomorph] def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
@@ -127,9 +142,30 @@ object Lowering {
 
   /**
     * Make a channel select expression
+    *
+    * Channel select expressions are rewritten as follows:<br>
+    * &emsp; select {<br>
+    * &emsp;&emsp; case x <- ?ch1 => ?handlech1<br>
+    * &emsp;&emsp; case y <- ?ch2 => ?handlech2<br>
+    * &emsp;&emsp; case _ => ?default<br>
+    * &emsp; }<br>
+    * becomes:<br>
+    * &emsp; let ch1 = ?ch1;<br>
+    * &emsp; let ch2 = ?ch2;<br>
+    * &emsp; match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default<br>
+    * &emsp;&emsp; case (0, locks) =><br>
+    * &emsp;&emsp;&emsp; let x = unsafeGetAndUnlock(ch1, locks);<br>
+    * &emsp;&emsp;&emsp; ?handlech1<br>
+    * &emsp;&emsp; case (1, locks) =><br>
+    * &emsp;&emsp;&emsp; let y = unsafeGetAndUnlock(ch2, locks);<br>
+    * &emsp;&emsp;&emsp; ?handlech2<br>
+    * &emsp;&emsp; case (-1, _) =>                                                  // Omitted if no default<br>
+    * &emsp;&emsp;&emsp; ?default                                                   // Unlock is handled by selectFrom<br>
+    * &emsp; }<br>
+    * Note: match is not exhaustive: we're relying on the simplifier to handle this for us
+    *
     */
   protected[monomorph] def mkSelectChannel(rules: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], default: Option[MonoAst.Expr], tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
-//    val rs = rules.map(visitSelectChannelRule)
     val t = lowerType(tpe)
 
     val channels = rules.map { case (_, c, _) => (mkLetSym("chan", loc), c) }

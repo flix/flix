@@ -38,12 +38,8 @@ object TreeShaker1 {
     val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
     val loweringTargets: Set[ReachableSym] = root.defs.foldLeft(Set[ReachableSym]()) {
-      case (acc, (_, defn)) =>
-        if(defn.spec.ann.isLoweringTarget) {
-          acc + ReachableSym.DefnSym(defn.sym)
-        } else {
-          acc
-        }
+      case (acc, (_, defn)) if defn.spec.ann.isLoweringTarget => acc + ReachableSym.DefnSym(defn.sym)
+      case (acc, _) => acc
     }
 
     // Compute the symbols that are transitively reachable.
