@@ -1167,8 +1167,6 @@ object Resolver {
                   ResolvedAst.Expr.StructNew(st0.sym, fields, Some(region), loc)
               }
           }
-
-
           // Potential errors
           val providedFieldNames = fields0.map { case (k, _) => Name.Label(k.name, k.loc) }
           val expectedFieldNames = st0.fields.map(field => Name.Label(field.sym.name, field.sym.loc))
