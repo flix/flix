@@ -209,7 +209,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.DefaultHandlerNotInEffectModule](result)
+    expectError[EntryPointError.DefaultHandlerNotInModule](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.01") {
@@ -431,7 +431,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.DuplicatedDefaultHandlers](result)
+    expectError[EntryPointError.DuplicateDefaultHandler](result)
   }
 
   test("Test.ValidEntryPoint.Main.01") {

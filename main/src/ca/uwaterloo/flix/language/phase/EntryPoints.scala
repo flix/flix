@@ -541,7 +541,7 @@ object EntryPoints {
           case None =>
             seen.put(handledSym, loc1)
           case Some(loc2) =>
-            duplicatedHandlerErrors += EntryPointError.DuplicatedDefaultHandlers(handledSym, loc1, loc2)
+            duplicatedHandlerErrors += EntryPointError.DuplicateDefaultHandler(handledSym, loc1, loc2)
         }
       }
 
@@ -581,7 +581,7 @@ object EntryPoints {
       var errs: Chain[EntryPointError] = Chain.empty
       // All default handlers must be public
       if (!handlerDef.spec.mod.isPublic) {
-        errs = errs ++ Chain(EntryPointError.NonPublicDefaultHandler(handlerSym.loc))
+        errs = errs ++ Chain(EntryPointError.NonPublicDefaultHandler(handlerSym, handlerSym.loc))
       }
       // The Default Handler must reside in the companion module of the effect.
       // Hence we use the namespace of the handler to construct the expected
@@ -590,7 +590,7 @@ object EntryPoints {
       val effSymbol = Symbol.mkEffSym(effFqn)
       val companionEffect = root.effects.get(effSymbol)
       companionEffect match {
-        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc)))
+        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc)))
         // The default handler is NOT in the companion module of an effect
         case Some(_) =>
           // Synthetic location of our handler

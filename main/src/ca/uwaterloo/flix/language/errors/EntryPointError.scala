@@ -31,25 +31,50 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
-    * An error raised to indicate that a default handler is not in the
-    * companion module of an effect.
+    * An error raised to indicate that a default handler is not in the companion module of its effect.
     *
-    * @param sym the symbol of the module containing the default handler.
+    * @param sym the symbol of the module.
     * @param loc the location of the default handler.
     */
-  case class DefaultHandlerNotInEffectModule(sym: Symbol.ModuleSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Default handler's module '$sym' is not an effect's companion module."
+  case class DefaultHandlerNotInModule(sym: Symbol.ModuleSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"The default handler for $sym' is not in the companion module."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Default handler's module '$sym' is not an effect's companion module.
+      s""">> The default handler for $sym' is not in the companion module.
          |
-         | Default handlers must be in the companion module of the effect they handle.
+         |A default handler for an effect must be in the companion module of that effect.
          |
          |${code(loc, "default handler.")}
          |
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate that there are multiple default handlers for the same effect.
+    *
+    * @param sym  the symbol of the effect.
+    * @param loc1 the location of the first default handler.
+    * @param loc2 the location of the second default handler.
+    */
+  case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends EntryPointError {
+    def summary: String = s"Duplicate default handler for '$sym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Duplicate default handler for '$sym'.
+         |
+         |${code(loc1, "the first default handler was here.")}
+         |
+         |${code(loc2, "the second default handler was here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def loc: SourceLocation = loc1
+
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -130,7 +155,7 @@ object EntryPointError {
   /**
     * An error raised to indicate that an exported function uses an illegal type.
     *
-    * @param t the type that is not allowed.
+    * @param t   the type that is not allowed.
     * @param loc the location of the type.
     */
   case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {
@@ -228,47 +253,19 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that there are duplicated default handlers for the same effect.
-    *
-    * @param sym the symbol of the effect associated with this default handler
-    * @param loc1 the location of the first default handler definition.
-    * @param loc2 the location of the second default handler definition.
-    */
-  case class DuplicatedDefaultHandlers(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends EntryPointError {
-    def summary: String = s"Duplicated default handlers for '$sym'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Duplicated default handlers for '$sym'.
-         |
-         |${code(loc1, "the first default handler is here.")}
-         |
-         |${code(loc2, "the second default handler is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def loc: SourceLocation = loc1
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the default handlers."
-    })
-  }
-
-  /**
     * An error raised to indicate that a default handler is not public.
     *
-    * @param loc the location of the defn.
+    * @param sym the symbol of the handler.
+    * @param loc the location of the handler.
     */
-  case class NonPublicDefaultHandler(loc: SourceLocation) extends EntryPointError {
+  case class NonPublicDefaultHandler(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
     def summary: String = s"Default handlers must be public"
 
     def message(formatter: Formatter): String = {
       import formatter.*
       s""">> Default handlers must be public.
          |
-         |${code(loc, "default handler.")}
+         |${code(loc, "non-public default handler.")}
          |
          |""".stripMargin
     }
