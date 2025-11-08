@@ -878,6 +878,7 @@ object Weeder2 {
         case TreeKind.Expr.Literal => visitLiteralExpr(tree)
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
+        case TreeKind.Expr.LambdaPlus => visitLambdaPlus(tree)
         case TreeKind.Expr.LambdaExtMatch => visitLambdaExtMatchExpr(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatchExpr(tree)
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
@@ -1188,6 +1189,12 @@ object Weeder2 {
           }
         }
       }
+    }
+
+    private def visitLambdaPlus(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      val loc = tree.loc
+      val e = Expr.Ambiguous(Name.mkQName("Add.add", loc), loc)
+      Success(e)
     }
 
     private def visitLambdaExtMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {

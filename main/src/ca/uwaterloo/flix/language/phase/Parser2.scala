@@ -1929,6 +1929,14 @@ object Parser2 {
             close(mark, TreeKind.Expr.Tuple)
           }
 
+        case (TokenKind.ParenL, TokenKind.Plus) =>
+          // TODO: check nth2 is ParenR
+          val mark = open()
+          advance()
+          advance()
+          advance()
+          close(mark, TreeKind.Expr.LambdaPlus)
+
         case (TokenKind.ParenL, _) =>
           // Detect lambda function declaration.
           val isLambda = {
