@@ -33,18 +33,15 @@ object EntryPointError {
   /**
     * An error raised to indicate that a default handler is not in the companion module of its effect.
     *
-    * @param modSym     the symbol of the module.
     * @param handlerSym the symbol of the default handler.
     * @param loc        the location of the default handler.
     */
-  case class DefaultHandlerNotInModule(modSym: Symbol.ModuleSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"The default handler '$handlerSym' is not in the companion module '$modSym'."
+  case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"The default handler '${handlerSym.name}' is not in the companion module of an effect."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The default handler '${red(handlerSym.toString)}' is not in the companion module '${modSym.toString}'.
-         |
-         |A default handler for an effect must be in the companion module of that effect.
+      s""">> The default handler '${red(handlerSym.name)}' is not in the companion module of an effect.
          |
          |${code(loc, "default handler.")}
          |

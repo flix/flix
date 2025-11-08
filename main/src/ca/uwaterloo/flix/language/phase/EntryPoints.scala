@@ -587,25 +587,25 @@ object EntryPoints {
       // Hence we use the namespace of the handler to construct the expected
       // effect symbol and look it up in the AST.
       val effFqn = handlerSym.namespace.mkString(".")
-      val effSymbol = Symbol.mkEffSym(effFqn)
-      val companionEffect = root.effects.get(effSymbol)
+      val effSym = Symbol.mkEffSym(effFqn)
+      val companionEffect = root.effects.get(effSym)
       companionEffect match {
-        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym, handlerSym.loc)))
+        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc)))
         // The default handler is NOT in the companion module of an effect
         case Some(_) =>
           // Synthetic location of our handler
           val loc = handlerSym.loc.asSynthetic
           // There is a valid effect to wrap
-          val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), loc)
+          val handledEff = Type.Cst(TypeConstructor.Effect(effSym, Kind.Eff), loc)
           val declaredScheme = handlerDef.spec.declaredScheme
           // Generate expected scheme for generating IO
           val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
           // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
           if (!Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
-            errs = errs ++ Chain(EntryPointError.IllegalDefaultHandlerSignature(effSymbol, handlerSym, handlerSym.loc))
+            errs = errs ++ Chain(EntryPointError.IllegalDefaultHandlerSignature(effSym, handlerSym, handlerSym.loc))
           }
           if (errs.isEmpty) {
-            Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSymbol))
+            Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSym))
           } else {
             Validation.Failure(errs)
           }
