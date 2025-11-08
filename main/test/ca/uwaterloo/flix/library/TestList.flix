@@ -2039,32 +2039,29 @@ mod TestList {
     @Test
     def toMap03(): Unit \ Assert = assertEq(expected = Map#{1 => true, 2 => false}, List.toMap((1, true) :: (2, false) :: Nil))
 
-    @Test
-    def toMap04(): Unit \ Assert = assertEq(expected = Map#{1 => true}, List.toMap((1, true) :: (1, false) :: Nil))
-
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
     def toMapWith01(): Unit \ Assert =
-        assertEq(expected = Map#{}, List.toMapWith(x -> 2 * x, Nil))
+        assertEq(expected = Map#{}, List.toMapWith(x -> (x, 2 * x), Nil))
 
     @Test
     def toMapWith02(): Unit \ Assert =
-        assertEq(expected = Map#{1 => 0, 3 => 0, 6 => 0}, List.toMapWith(x -> 0 * x, 1 :: 3 :: 6 :: Nil))
+        assertEq(expected = Map#{1 => 0, 3 => 0, 6 => 0}, List.toMapWith(x -> (x, 0 * x), 1 :: 3 :: 6 :: Nil))
 
     @Test
     def toMapWith03(): Unit \ Assert =
-        assertEq(expected = Map#{1 => 2, 3 => 6, 6 => 12}, List.toMapWith(x -> 2 * x, 1 :: 3 :: 6 :: Nil))
+        assertEq(expected = Map#{1 => 2, 3 => 6, 6 => 12}, List.toMapWith(x -> (x, 2 * x), 1 :: 3 :: 6 :: Nil))
 
     @Test
     def toMapWith04(): Unit \ Assert =
-        assertEq(expected = Map#{1 => 11, 3 => 13, 6 => 16}, List.toMapWith(x -> x + 10, 1 :: 3 :: 6 :: Nil))
+        assertEq(expected = Map#{0 => 11, 2 => 13, 5 => 16}, List.toMapWith(x -> (x - 1, x + 10), 1 :: 3 :: 6 :: Nil))
 
     @Test
     def toMapWith05(): Unit \ Assert =
-        assertEq(expected = Map#{1 => 11, 3 => 13, 6 => 16}, List.toMapWith(x -> x + 10, 3 :: 6 :: 1 :: Nil))
+        assertEq(expected = Map#{2 => 11, 4 => 13, 7 => 16}, List.toMapWith(x -> (x + 1, x + 10), 3 :: 6 :: 1 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //

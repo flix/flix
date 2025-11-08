@@ -1162,7 +1162,7 @@ mod List {
     /// Returns the list `l` as a set.
     ///
     pub def toSet(l: List[a]): Set[a] with Order[a] =
-        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), l)
+        foldLeft((acc, x) -> Set.insert(x, acc), Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
@@ -1171,7 +1171,7 @@ mod List {
     /// make any guarantees about which mapping will be in the resulting map.
     ///
     pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
+        foldLeft((acc, x) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
 
     ///
     /// Returns a map with elements of `s` as keys and `f` applied as values.
@@ -1179,8 +1179,11 @@ mod List {
     /// If `s` contains multiple mappings with the same key, `toMapWith` does not
     /// make any guarantees about which mapping will be in the resulting map.
     ///
-    pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-        List.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
+    pub def toMapWith(f: a -> (k, v), l: List[a]): Map[k, v] with Order[k] =
+        foldLeft((acc, x) -> {
+            let (key, val) = f(x);
+            Map.insert(key, val, acc)
+        }, Map.empty(), l)
 
     ///
     /// Applies `f` to every element of `l`.
