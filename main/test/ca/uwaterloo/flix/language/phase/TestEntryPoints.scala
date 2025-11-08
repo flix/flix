@@ -233,7 +233,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.02") {
@@ -257,7 +257,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.03") {
@@ -274,7 +274,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.04") {
@@ -298,7 +298,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.05") {
@@ -322,7 +322,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.06") {
@@ -346,7 +346,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.WrongSignatureForDefaultHandler.07") {
@@ -373,7 +373,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[EntryPointError.WrongSignatureForDefaultHandler](result)
+    expectError[EntryPointError.IllegalDefaultHandlerSignature](result)
   }
 
   test("Test.NonPublicDefaultHandler.01") {

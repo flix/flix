@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
@@ -602,7 +602,7 @@ object EntryPoints {
           val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
           // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
           if (!Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
-            errs = errs ++ Chain(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
+            errs = errs ++ Chain(EntryPointError.IllegalDefaultHandlerSignature(effSymbol, handlerSym, handlerSym.loc))
           }
           if (errs.isEmpty) {
             Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSymbol))

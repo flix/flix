@@ -78,6 +78,30 @@ object EntryPointError {
   }
 
   /**
+    * An error raised to indicate that the signature of a default handler is illegal.
+    *
+    * @param effSym     the symbol of the effect.
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the default handler.
+    */
+  case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Illegal signature for '$effSym's default handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal default effect handler signature for '${magenta(effSym.toString)}'.
+         |
+         |The default handler for ${magenta(effSym.toString)} should have the signature:
+         |
+         |  def $handlerSym(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
+         |
+         |${code(loc, "illegal signature.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Error indicating an illegal effect of an entry point function.
     *
     * @param eff the effect.
@@ -284,29 +308,6 @@ object EntryPointError {
       s""">> Exported functions must be public.
          |
          |${code(loc, "exported function.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that the signature of a default handler is wrong.
-    *
-    * @param sym the symbol of the effect associated with this default handler
-    * @param loc the location of the default handler.
-    */
-  case class WrongSignatureForDefaultHandler(sym: Symbol.EffSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Illegal signature for '$sym's default handler."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Illegal signature for '$sym's default handler.
-         |
-         | The default handler must have this exact signature (names can be chosen arbitrarily):
-         |
-         | 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${sym.name}) + IO'
-         |
-         |${code(loc, "illegal handler signature.")}
          |
          |""".stripMargin
     }
