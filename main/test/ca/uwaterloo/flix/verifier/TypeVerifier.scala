@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.verifier
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, Mutable}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, Mutability}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, SemanticOp, SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -225,7 +225,7 @@ object TypeVerifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(sym0, _, Mutable.Immutable) =>
+        case AtomicOp.StructNew(sym0, Mutability.Immutable, _) =>
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
@@ -234,7 +234,7 @@ object TypeVerifier {
             case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
           }
 
-        case AtomicOp.StructNew(sym0, _, Mutable.Mutable) =>
+        case AtomicOp.StructNew(sym0, Mutability.Mutable, _) =>
           checkStructType(tpe, sym0, loc)
           tpe
 

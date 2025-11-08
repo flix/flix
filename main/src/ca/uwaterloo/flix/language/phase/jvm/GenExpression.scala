@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutable}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
@@ -732,28 +732,21 @@ object GenExpression {
         compileExpr(exp)
         ARRAYLENGTH()
 
-      case AtomicOp.StructNew(sym, _, Mutable.Mutable) =>
+      case AtomicOp.StructNew(sym, mutability, _) =>
         import BytecodeInstructions.*
-
-        val region :: fieldExps = exps
         val structType = getStructType(root.structs(sym))
-
-        // Evaluate the region and ignore its value
-        compileExpr(region)
-        xPop(BackendType.toBackendType(region.tpe))
+        val fieldExps = mutability match {
+          case Mutability.Immutable => exps
+          case Mutability.Mutable =>
+            val region :: fields = exps
+            // Evaluate the region and ignore its value
+            compileExpr(region)
+            xPop(BackendType.toBackendType(region.tpe))
+            fields
+        }
         NEW(structType.jvmName)
         DUP()
         fieldExps.foreach(compileExpr)
-        INVOKESPECIAL(structType.Constructor)
-
-      case AtomicOp.StructNew(sym, _, Mutable.Immutable) =>
-        import BytecodeInstructions.*
-
-        val structType = getStructType(root.structs(sym))
-
-        NEW(structType.jvmName)
-        DUP()
-        exps.foreach(compileExpr)
         INVOKESPECIAL(structType.Constructor)
 
       case AtomicOp.StructGet(field) =>

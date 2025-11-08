@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutable, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
@@ -159,11 +159,11 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es, t, Purity.Impure, loc)
 
-        case AtomicOp.StructNew(sym, givenFields, Mutable.Mutable) =>
+        case AtomicOp.StructNew(sym, Mutability.Mutable, givenFields) =>
           val regExp :: fieldExps = es
           visitStructNew(sym, givenFields, Some(regExp), fieldExps, tpe, loc)
 
-        case AtomicOp.StructNew(sym, givenFields, Mutable.Immutable) =>
+        case AtomicOp.StructNew(sym, Mutability.Immutable, givenFields) =>
           visitStructNew(sym, givenFields, None, es, tpe, loc)
 
         case _ =>
@@ -1046,8 +1046,8 @@ object Simplifier {
     }
 
     val (exps, atomicOp) = regVarOpt match {
-      case Some(regVar) => (regVar :: fieldVars, AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym), Mutable.Mutable))
-      case None => (fieldVars, AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym), Mutable.Immutable))
+      case Some(regVar) => (regVar :: fieldVars, AtomicOp.StructNew(sym, Mutability.Mutable, fieldsDeclaredOrder.map(_.sym)))
+      case None => (fieldVars, AtomicOp.StructNew(sym, Mutability.Immutable, fieldsDeclaredOrder.map(_.sym)))
     }
 
     // Construct the full expression.

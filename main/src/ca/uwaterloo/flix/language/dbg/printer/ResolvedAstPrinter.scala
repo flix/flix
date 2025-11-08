@@ -84,16 +84,9 @@ object ResolvedAstPrinter {
     case Expr.ArrayStore(base, index, elm, _) => DocAst.Expr.ArrayStore(print(base), print(index), print(elm))
     case Expr.ArrayLength(base, _) => DocAst.Expr.ArrayLength(print(base))
     case Expr.StructNew(sym, exps, regionOpt, _) =>
-      regionOpt match {
-        case Some(region) =>
-          DocAst.Expr.StructNew(sym, exps.map {
-            case (symUse, exp) => (symUse.sym, print(exp))
-          }, print(region))
-        case None =>
-          DocAst.Expr.PureStructNew(sym, exps.map {
-            case (symUse, exp) => (symUse.sym, print(exp))
-          })
-      }
+      DocAst.Expr.StructNew(sym, exps.map {
+        case (symUse, exp) => (symUse.sym, print(exp))
+      }, regionOpt.map(print))
     case Expr.StructGet(exp, symUse, _) => DocAst.Expr.StructGet(print(exp), symUse.sym)
     case Expr.StructPut(exp1, symUse, exp2, _) => DocAst.Expr.StructPut(print(exp1), symUse.sym, print(exp2))
     case Expr.VectorLit(exps, _) => DocAst.Expr.VectorLit(exps.map(print))

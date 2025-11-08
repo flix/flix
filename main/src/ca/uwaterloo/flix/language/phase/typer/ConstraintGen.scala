@@ -695,7 +695,10 @@ object ConstraintGen {
         val (mutable, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.unifyType(fieldTpe, tvar, loc)
         // If the field is mutable, then it emits a region effect, otherwise not.
-        val accessEffect = if (mutable) regionVarOpt.get else Type.mkPure(loc)
+        val accessEffect = if (!mutable) Type.mkPure(loc) else regionVarOpt match {
+          case Some(value) => value
+          case None => throw InternalCompilerException(s"Unexpected missing region var in struct get near ${exp}", loc)
+        }
         c.unifyType(Type.mkUnion(eff, accessEffect, loc), evar, exp.loc)
         val resTpe = tvar
         val resEff = evar
@@ -1359,18 +1362,22 @@ object ConstraintGen {
 
   /**
     * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
-    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's optional region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
     * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
     * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    * The third element of the return tuple would be `r'`
+    * The third element of the return tuple would be `Some(r')`
+    *
+    * For a immutable struct `struct S [v] { a: v, b: Int32 }` the third element would be `None`.
     */
   private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Option[Type.Var]) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
     if (struct.mod.isMutable) {
-      assert(struct.tparams.last.sym.kind == Kind.Eff)
+      if (struct.tparams.last.sym.kind != Kind.Eff) {
+        throw InternalCompilerException(s"Unexpected kind ${struct.tparams.last.sym.kind} in struct. Expected `${Kind.Eff}`", struct.loc)
+      }
     }
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)

@@ -574,9 +574,9 @@ object Lowering {
       val names = names0.map(_.sym)
       region0.map(visitExp) match {
         case Some(region) =>
-          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names, Mutable.Mutable), region :: es, tpe, eff, loc)
+          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Mutable, names), region :: es, tpe, eff, loc)
         case None =>
-          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names, Mutable.Immutable), es, tpe, eff, loc)
+          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Immutable, names), es, tpe, eff, loc)
       }
 
     case TypedAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
