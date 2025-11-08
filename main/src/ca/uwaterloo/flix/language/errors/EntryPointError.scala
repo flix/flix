@@ -89,9 +89,9 @@ object EntryPointError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal default effect handler signature for '${magenta(effSym.toString)}'.
+      s""">> Illegal default effect handler signature for '${red(effSym.toString)}'.
          |
-         |The default handler for ${magenta(effSym.toString)} should have the signature:
+         |The default handler for ${red(effSym.toString)} should have the exact signature:
          |
          |  def $handlerSym(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
          |
