@@ -194,6 +194,7 @@ object LspServer {
       serverCapabilities.setDocumentSymbolProvider(true)
       serverCapabilities.setWorkspaceSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
+      serverCapabilities.setDocumentFormattingProvider(true)
 
       serverCapabilities
     }
@@ -418,6 +419,26 @@ object LspServer {
       val uri = params.getTextDocument.getUri
       val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
       CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
+    }
+
+    /**
+      * Formats the given document.
+      *
+      * @param params the document formatting parameters
+      * @return a future containing the list of text edits
+      */
+    override def formatting(params: DocumentFormattingParams): CompletableFuture[util.List[? <: TextEdit]] = {
+      val uri = params.getTextDocument.getUri
+      val options = {
+        params.getOptions
+      }
+
+      val editsJava: util.List[TextEdit] =
+        FormattingProvider.formatDocument(uri, options)(flixLanguageServer.flix)
+          .map(_.toLsp4j)
+          .asJava
+
+      java.util.concurrent.CompletableFuture.completedFuture(editsJava.asInstanceOf[util.List[? <: TextEdit]])
     }
   }
 

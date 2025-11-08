@@ -13,23 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.dbg
+package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
 
-import java.nio.file.Path
+import java.net.URI
+import java.nio.file.{Path, Paths}
 
 object PrettyPrinter {
 
   /**
-    * Returns a "pretty-printed" string representation of the given syntax tree `root`.
+    * Returns a "pretty-printed" string representation of the syntax tree corresponding
+    * to the given URI.
     *
     * @param root the syntax tree root
-    * @return the "pretty-printed" string representation
+    * @param uri  the URI of the source to print
+    * @return the "pretty-printed" string, or empty if not found
     */
   def printPretty(root: SyntaxTree.Root, uri: Path): String = {
-    Console.println(s"Pretty printing syntax tree for: $uri")
-    root.units.values.map(renderTree).mkString
+
+    def toPath(s: String): Option[Path] = {
+      def tryPaths(strings: String*): Option[Path] =
+        strings.to(LazyList).flatMap { str =>
+          try Some(Paths.get(str).toAbsolutePath.normalize)
+          catch { case _: Exception => None }
+        }.headOption
+
+      tryPaths(new URI(s).toString, s)
+    }
+
+    val maybeSource: Option[Source] = root.units.keys.find { source =>
+      toPath(source.name) match {
+        case None => false
+        case Some(path) => path == uri.toAbsolutePath.normalize
+      }
+    }
+
+    maybeSource match {
+      case None => ""
+      case Some(source) =>
+        root.units.get(source).map(renderTree).getOrElse("")
+    }
   }
 
   private def renderTree(tree: SyntaxTree.Tree): String = {
