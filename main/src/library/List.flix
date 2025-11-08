@@ -1167,17 +1167,15 @@ mod List {
     ///
     /// Returns the association list `l` as a map.
     ///
-    /// If `l` contains multiple mappings with the same key, `toMap` does not
-    /// make any guarantees about which mapping will be in the resulting map.
+    /// If `l` contains multiple mappings with the same key the last occurrence is kept.
     ///
     pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] =
         foldLeft((acc, x) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
 
     ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    /// Returns a map with mappings `k => v` where `(k, v) = f(x)` for some `x` in `l`.
     ///
-    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
-    /// make any guarantees about which mapping will be in the resulting map.
+    /// If multiple mappings with the same key are produced only the last occurrence is kept.
     ///
     pub def toMapWith(f: a -> (k, v), l: List[a]): Map[k, v] with Order[k] =
         foldLeft((acc, x) -> {

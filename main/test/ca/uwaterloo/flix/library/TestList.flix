@@ -2039,6 +2039,9 @@ mod TestList {
     @Test
     def toMap03(): Unit \ Assert = assertEq(expected = Map#{1 => true, 2 => false}, List.toMap((1, true) :: (2, false) :: Nil))
 
+    @Test
+    def toMap04(): Unit \ Assert = assertEq(expected = Map#{1 => false}, List.toMap((1, true) :: (1, false) :: Nil))
+
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
@@ -2062,6 +2065,10 @@ mod TestList {
     @Test
     def toMapWith05(): Unit \ Assert =
         assertEq(expected = Map#{2 => 11, 4 => 13, 7 => 16}, List.toMapWith(x -> (x + 1, x + 10), 3 :: 6 :: 1 :: Nil))
+
+    @Test
+    def toMapWith06(): Unit \ Assert =
+        assertEq(expected = Map#{3 => 5}, List.toMapWith(match (_, x) -> (3, x), (3, 4) :: (4, 5) :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // forEach                                                                 //
