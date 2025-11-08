@@ -732,7 +732,7 @@ object GenExpression {
         compileExpr(exp)
         ARRAYLENGTH()
 
-      case AtomicOp.StructNew(sym, _) =>
+      case AtomicOp.StructNew(sym, _, false) =>
         import BytecodeInstructions.*
 
         val region :: fieldExps = exps
@@ -746,7 +746,7 @@ object GenExpression {
         fieldExps.foreach(compileExpr)
         INVOKESPECIAL(structType.Constructor)
 
-      case AtomicOp.PureStructNew(sym, _) =>
+      case AtomicOp.StructNew(sym, _, true) =>
         import BytecodeInstructions.*
 
         val structType = getStructType(root.structs(sym))

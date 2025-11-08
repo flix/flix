@@ -184,7 +184,7 @@ object OpPrinter {
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
-    case (AtomicOp.StructNew(sym, fields), d :: rs) =>
+    case (AtomicOp.StructNew(sym, fields, _), d :: rs) =>
       ListOps.zipOption(fields, rs) match {
         case None => Expr.Unknown
         case Some(fs) => Expr.StructNew(sym, fs, d)

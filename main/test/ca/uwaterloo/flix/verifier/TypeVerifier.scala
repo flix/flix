@@ -225,7 +225,7 @@ object TypeVerifier {
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
-        case AtomicOp.StructNew(sym0, _) =>
+        case AtomicOp.StructNew(sym0, _, false) =>
           ts match {
             case region :: _ =>
               checkStructType(tpe, sym0, loc)
@@ -234,7 +234,7 @@ object TypeVerifier {
             case _ => throw InternalCompilerException(s"Struct $sym0 missing region tparam", loc)
           }
 
-        case AtomicOp.PureStructNew(sym0, _) =>
+        case AtomicOp.StructNew(sym0, _, true) =>
           checkStructType(tpe, sym0, loc)
           tpe
 

@@ -159,11 +159,11 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es, t, Purity.Impure, loc)
 
-        case AtomicOp.StructNew(sym, givenFields) =>
+        case AtomicOp.StructNew(sym, givenFields, false) =>
           val regExp :: fieldExps = es
           visitStructNew(sym, givenFields, Some(regExp), fieldExps, tpe, loc)
 
-        case AtomicOp.PureStructNew(sym, givenFields) =>
+        case AtomicOp.StructNew(sym, givenFields, true) =>
           visitStructNew(sym, givenFields, None, es, tpe, loc)
 
         case _ =>
@@ -1046,8 +1046,8 @@ object Simplifier {
     }
 
     val (exps, atomicOp) = regVarOpt match {
-      case Some(regVar) => (regVar :: fieldVars, AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym)))
-      case None => (fieldVars, AtomicOp.PureStructNew(sym, fieldsDeclaredOrder.map(_.sym)))
+      case Some(regVar) => (regVar :: fieldVars, AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym), pure = false))
+      case None => (fieldVars, AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym), pure = true))
     }
 
     // Construct the full expression.
