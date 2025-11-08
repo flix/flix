@@ -1188,9 +1188,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordStruct))
       expect(TokenKind.KeywordStruct)
       nameUnqualified(NAME_TYPE)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
+      Type.parameters()
       if (at(TokenKind.CurlyL)) {
         zeroOrMore(
           namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
@@ -2794,18 +2792,25 @@ object Parser2 {
       expect(TokenKind.KeywordNew)
       Type.ttype()
 
-      // Either pure NewStruct, NewStruct, NewObject, or InvokeConstructor.
-      if (at(TokenKind.Dollar)) {
-        // Temp syntax
-        expect(TokenKind.Dollar)
-        structFieldsInit()
-        close(mark, TreeKind.Expr.NewStruct)
-      } else if (at(TokenKind.At)) {
+      // Either NewStruct, NewObject, or InvokeConstructor.
+      if (at(TokenKind.At)) {
         // Either `new Struct @ rc {field1 = expr1, field2 = expr2, ...}`
         //     or `new Struct @ rc {}`.
         expect(TokenKind.At)
         expression()
-        structFieldsInit()
+        if (!at(TokenKind.CurlyL)) {
+          expect(TokenKind.CurlyL)
+        } else {
+          zeroOrMore(
+            namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
+            checkForItem = NAME_FIELD.contains,
+            getItem = structFieldInit,
+            breakWhen = _.isRecoverInExpr,
+            separation = Separation.Required(TokenKind.Comma),
+            delimiterL = TokenKind.CurlyL,
+            delimiterR = TokenKind.CurlyR
+          )
+        }
         close(mark, TreeKind.Expr.NewStruct)
       } else if (at(TokenKind.CurlyL)) {
         // `new Type { ... }`.
@@ -2823,23 +2828,6 @@ object Parser2 {
         // `new Type(exps...)`.
         arguments()
         close(mark, TreeKind.Expr.InvokeConstructor)
-      }
-    }
-
-    private def structFieldsInit()(implicit s: State): Unit = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      if (!at(TokenKind.CurlyL)) {
-        expect(TokenKind.CurlyL)
-      } else {
-        zeroOrMore(
-          namedTokenSet = NamedTokenSet.FromKinds(NAME_FIELD),
-          checkForItem = NAME_FIELD.contains,
-          getItem = structFieldInit,
-          breakWhen = _.isRecoverInExpr,
-          separation = Separation.Required(TokenKind.Comma),
-          delimiterL = TokenKind.CurlyL,
-          delimiterR = TokenKind.CurlyR
-        )
       }
     }
 

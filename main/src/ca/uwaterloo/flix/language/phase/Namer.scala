@@ -760,9 +760,9 @@ object Namer {
       NamedAst.Expr.ArrayLength(e, loc)
 
     case DesugaredAst.Expr.StructNew(qname, exps, regionOpt, loc) =>
-      val e = regionOpt.map(visitExp)
+      val e = visitExp(regionOpt)
       val es = exps.map(visitStructField)
-      NamedAst.Expr.StructNew(qname, es, e, loc)
+      NamedAst.Expr.StructNew(qname, es, Some(e), loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)

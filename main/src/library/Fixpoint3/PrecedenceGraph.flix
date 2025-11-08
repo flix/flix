@@ -81,7 +81,7 @@ mod Fixpoint3.PrecedenceGraph {
     /// A mutable graph.
     ///
     @Internal
-    pub struct MutGraph[r: Region] {
+    pub struct MutGraph[r] {
         vertices: MutSet[Vertex, r],
         adjList: MutMap[Vertex, Set[Vertex], r]
     }

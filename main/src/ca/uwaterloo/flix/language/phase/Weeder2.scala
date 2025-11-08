@@ -497,7 +497,7 @@ object Weeder2 {
       expect(tree, TreeKind.Decl.Struct)
       val fields = pickAll(TreeKind.StructField, tree)
       val ann = pickAnnotations(tree)
-      val mod0 = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
+      val mod = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       flatMapN(
         pickDocumentation(tree),
         pickNameIdent(tree),
@@ -511,11 +511,9 @@ object Weeder2 {
           }
           errors.foreach(sctx.errors.add)
           // For each field, only keep the first occurrence of the name
-          val isMutable = fields.exists(_.mod.isMutable)
-          val mod = if (!isMutable) mod0 else Modifiers(Modifier.Mutable :: mod0.mod)
           val groupedByName = fields.groupBy(_.name.name)
           val filteredFields = groupedByName.values.map(_.head).toList
-          Validation.Success(Declaration.Struct(doc, ann, mod, ident, tparams, filteredFields.sortBy(_.loc), tree.loc))
+          Validation.Success(Declaration.Struct(doc, ann, Modifiers(Modifier.Mutable :: mod.mod), ident, tparams, filteredFields.sortBy(_.loc), tree.loc))
       }
     }
 
@@ -2019,11 +2017,11 @@ object Weeder2 {
     private def visitNewStructExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.NewStruct)
       val fields = pickAll(TreeKind.Expr.LiteralStructFieldFragment, tree)
-      flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), traverseOpt(tryPick(TreeKind.Expr.Expr, tree))(visitExpr)) {
-        (tpe, fields, regionOpt) =>
+      flatMapN(Types.pickType(tree), traverse(fields)(visitNewStructField), pickExpr(tree)) {
+        (tpe, fields, region) =>
           tpe match {
             case WeededAst.Type.Ambiguous(qname, _) =>
-              Validation.Success(Expr.StructNew(qname, fields, regionOpt, tree.loc))
+              Validation.Success(Expr.StructNew(qname, fields, region, tree.loc))
             case _ =>
               val error = IllegalQualifiedName(tree.loc)
               sctx.errors.add(error)

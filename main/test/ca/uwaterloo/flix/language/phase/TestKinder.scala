@@ -222,7 +222,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct D[r] {
-        |    mut d1: r
+        |    d1: r
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -232,7 +232,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.08") {
     val input =
       """
-        |struct D[r] { mut x: Int32 }
+        |struct D[r] { }
         |def f(d: D[Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -242,7 +242,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("MismatchedTypeParamKind.Struct.09") {
     val input =
       """
-        |struct D[a, r] { mut x: Int32 }
+        |struct D[a, r] { }
         |def f(d: D[Int32, Int32]): Int32 = 123
         |""".stripMargin
     val result = compile(input, DefaultOptions)
@@ -1168,7 +1168,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val input =
       """
         |struct S[a: Type, r: Type] {
-        |    mut c: a
+        |    c: a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)
