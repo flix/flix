@@ -94,7 +94,7 @@ object EntryPointError {
          |
          |The default handler for '${red(effSym.toString)}' should have the exact signature:
          |
-         |  def $handlerSym(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
+         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
          |
          |The default handler was declared here:
          |
@@ -282,15 +282,15 @@ object EntryPointError {
   /**
     * An error raised to indicate that a default handler is not public.
     *
-    * @param sym the symbol of the handler.
-    * @param loc the location of the handler.
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the handler.
     */
-  case class NonPublicDefaultHandler(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Default handlers must be public"
+  case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"The default handler '${handlerSym.name}' must be public (`pub`)"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Default handler ${red(sym.toString)} must be public (`${cyan("pub")}`).
+      s""">> The default handler '${red(handlerSym.name)}' must be public (`${cyan("pub")}`).
          |
          |${code(loc, "non-public default handler.")}
          |
