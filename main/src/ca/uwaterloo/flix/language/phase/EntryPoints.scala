@@ -590,7 +590,7 @@ object EntryPoints {
       val effSymbol = Symbol.mkEffSym(effFqn)
       val companionEffect = root.effects.get(effSymbol)
       companionEffect match {
-        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc)))
+        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym, handlerSym.loc)))
         // The default handler is NOT in the companion module of an effect
         case Some(_) =>
           // Synthetic location of our handler

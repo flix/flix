@@ -33,15 +33,16 @@ object EntryPointError {
   /**
     * An error raised to indicate that a default handler is not in the companion module of its effect.
     *
-    * @param sym the symbol of the module.
-    * @param loc the location of the default handler.
+    * @param modSym     the symbol of the module.
+    * @param handlerSym the symbol of the default handler.
+    * @param loc        the location of the default handler.
     */
-  case class DefaultHandlerNotInModule(sym: Symbol.ModuleSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"The default handler for $sym' is not in the companion module."
+  case class DefaultHandlerNotInModule(modSym: Symbol.ModuleSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"The default handler '$handlerSym' is not in the companion module '$modSym'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> The default handler for $sym' is not in the companion module.
+      s""">> The default handler '${red(handlerSym.toString)}' is not in the companion module '${modSym.toString}'.
          |
          |A default handler for an effect must be in the companion module of that effect.
          |
@@ -63,7 +64,7 @@ object EntryPointError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicate default handler for '$sym'.
+      s""">> Duplicate default handler for '${red(sym.toString)}'.
          |
          |${code(loc1, "the first default handler was here.")}
          |
@@ -91,9 +92,11 @@ object EntryPointError {
       import formatter.*
       s""">> Illegal default effect handler signature for '${red(effSym.toString)}'.
          |
-         |The default handler for ${red(effSym.toString)} should have the exact signature:
+         |The default handler for '${red(effSym.toString)}' should have the exact signature:
          |
          |  def $handlerSym(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
+         |
+         |The default handler was declared here:
          |
          |${code(loc, "illegal signature.")}
          |
@@ -287,7 +290,7 @@ object EntryPointError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Default handlers must be public.
+      s""">> Default handler ${red(sym.toString)} must be public (`${cyan("pub")}`).
          |
          |${code(loc, "non-public default handler.")}
          |
