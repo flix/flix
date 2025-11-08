@@ -95,7 +95,7 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   /**
-    * A getter for the cached ParsedAST.
+    * Returns the parsed ast.
     */
   def getCachedParserCst: SyntaxTree.Root = cachedParserCst
 
