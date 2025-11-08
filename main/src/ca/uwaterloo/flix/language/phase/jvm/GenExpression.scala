@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutable}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
@@ -732,7 +732,7 @@ object GenExpression {
         compileExpr(exp)
         ARRAYLENGTH()
 
-      case AtomicOp.StructNew(sym, _, false) =>
+      case AtomicOp.StructNew(sym, _, Mutable.Mutable) =>
         import BytecodeInstructions.*
 
         val region :: fieldExps = exps
@@ -746,7 +746,7 @@ object GenExpression {
         fieldExps.foreach(compileExpr)
         INVOKESPECIAL(structType.Constructor)
 
-      case AtomicOp.StructNew(sym, _, true) =>
+      case AtomicOp.StructNew(sym, _, Mutable.Immutable) =>
         import BytecodeInstructions.*
 
         val structType = getStructType(root.structs(sym))
