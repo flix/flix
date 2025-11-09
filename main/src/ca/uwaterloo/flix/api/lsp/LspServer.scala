@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range}
+import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range, FormattingOptions}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -429,9 +429,7 @@ object LspServer {
       */
     override def formatting(params: DocumentFormattingParams): CompletableFuture[util.List[? <: TextEdit]] = {
       val uri = params.getTextDocument.getUri
-      val options = {
-        params.getOptions
-      }
+      val options = FormattingOptions.fromLsp4j(params.getOptions)
 
       val editsJava: util.List[TextEdit] =
         FormattingProvider.formatDocument(uri, options)(flixLanguageServer.flix)

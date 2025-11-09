@@ -332,8 +332,8 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
 
     case Request.Formatting(id, uri, options) =>
-      val editsJson = FormattingProvider.formatDocument(uri, options)(flix).map(_.toJSON)
-      ("id" -> id) ~ ("uri" -> uri) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(editsJson))
+      val edits = FormattingProvider.formatDocument(uri, options)(flix).map(_.toJSON)
+      ("id" -> id) ~ ("uri" -> uri) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(edits))
 
   }
 

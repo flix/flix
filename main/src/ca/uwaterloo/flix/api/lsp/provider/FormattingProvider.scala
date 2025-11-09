@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gwydd
+ * Copyright 2025 Din Jakupi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,13 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.{Position, PrettyPrinter, Range, TextEdit}
-import org.eclipse.lsp4j.FormattingOptions
-
-import java.nio.file.Path
-
+import ca.uwaterloo.flix.api.lsp.{FormattingOptions, TextEdit}
+import scala.annotation.unused
 
 object FormattingProvider {
 
-  def formatDocument(uri: String, options: FormattingOptions)(implicit flix: Flix): List[TextEdit] = {
-    val _ = options // TODO: Implement logic to use formatting options.
-
-    val oldOpts = flix.options
-    flix.setOptions(oldOpts.copy(incremental = true))
-    flix.compile()
-    val parsedAst = flix.getCachedParserCst
-
-    val formattedDocument = PrettyPrinter.printPretty(parsedAst, Path.of(uri))
-    val fullRange = Range(Position(1, 1), Position(Int.MaxValue, 1))
-    val edit = TextEdit(fullRange, formattedDocument)
-
-    flix.setOptions(oldOpts)
-    List(edit)
+  def formatDocument(@unused uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
+    List() // TODO: Implement document formatting
   }
 
 }

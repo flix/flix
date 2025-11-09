@@ -163,7 +163,10 @@ object Request {
     */
   case class CodeAction(requestId: String, uri: String, range: Range, context: CodeActionContext) extends Request
 
-  case class Formatting(requestId: String, uri: String, options: Lsp4jFormattingOptions) extends Request
+  /**
+    * A request to format a file.
+    */
+  case class Formatting(requestId: String, uri: String, options: FormattingOptions) extends Request
 
   /**
     * Tries to parse the given `json` value as a [[AddUri]] request.
@@ -485,11 +488,10 @@ object Request {
     * @return the formatting request
     */
   def parseFormatting(json: json4s.JValue): Result[Request, String] = {
-    Console.println("FORMATTING REQUEST JSON: " + json)
     for {
       id <- parseId(json)
       uri <- parseUri(json)
-      options = FormattingOptions.fromJSON(json \ "options")
+      options = FormattingOptions.parse(json \ "options")
     } yield Request.Formatting(id, uri, options)
   }
 

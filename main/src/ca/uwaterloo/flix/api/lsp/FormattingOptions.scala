@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gwydd
+ * Copyright 2025 Din Jakupi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,36 @@
 package ca.uwaterloo.flix.api.lsp
 
 import org.json4s.MonadicJValue.jvalueToMonadic
-import org.json4s.JObject
 import org.json4s.JsonAST.{JBool, JInt, JValue}
-import org.json4s.JsonDSL._
-
 import org.eclipse.lsp4j
 
-case class FormattingOptions(
-                              tabSize: Int,
+/**
+  * Represents `FormattingOptions` in LSP.
+  *
+  * @param tabSize                  Size of a tab in spaces.
+  * @param insertSpaces             Prefer spaces over tabs.
+  * @param trimTrailingWhitespace   Trim trailing whitespace on a line.
+  * @param insertFinalNewline       Insert a newline character at the end of the file if one does not exist.
+  * @param trimFinalNewlines        Trim all newlines after the final newline at the end of the file.
+  */
+case class FormattingOptions(tabSize: Int,
                               insertSpaces: Boolean,
                               trimTrailingWhitespace: Option[Boolean] = None,
                               insertFinalNewline: Option[Boolean] = None,
-                              trimFinalNewlines: Option[Boolean] = None
-                            ) {
-
-  def toJSON: JObject = {
-    var obj: JObject = ("tabSize" -> tabSize) ~ ("insertSpaces" -> insertSpaces)
-
-    // FormattingOptions that are optional and were introduced in version 3.15 (unused)
-    trimTrailingWhitespace.foreach(v => obj = obj ~ ("trimTrailingWhitespace" -> v))
-    insertFinalNewline.foreach(v => obj = obj ~ ("insertFinalNewline" -> v))
-    trimFinalNewlines.foreach(v => obj = obj ~ ("trimFinalNewlines" -> v))
-
-    obj
-  }
-
-  def toLsp4j: lsp4j.FormattingOptions = new lsp4j.FormattingOptions(tabSize, insertSpaces)
-}
+                              trimFinalNewlines: Option[Boolean] = None) {}
 
 object FormattingOptions {
-  def fromJSON(jv: JValue): lsp4j.FormattingOptions = {
+  def fromLsp4j(options: lsp4j.FormattingOptions): FormattingOptions = {
+    FormattingOptions(
+      tabSize = options.getTabSize,
+      insertSpaces = options.isInsertSpaces,
+      trimTrailingWhitespace = Some(options.isTrimTrailingWhitespace),
+      insertFinalNewline = Some(options.isInsertFinalNewline),
+      trimFinalNewlines = Some(options.isTrimFinalNewlines)
+    )
+  }
+
+  def parse(jv: JValue): FormattingOptions = {
     val tabSize: Int = jv \ "tabSize" match {
       case JInt(n) => n.toInt
       case _ => 4
@@ -67,6 +67,6 @@ object FormattingOptions {
       trimTrailingWhitespace = optBool("trimTrailingWhitespace"),
       insertFinalNewline = optBool("insertFinalNewline"),
       trimFinalNewlines = optBool("trimFinalNewlines")
-    ).toLsp4j
+    )
   }
 }
