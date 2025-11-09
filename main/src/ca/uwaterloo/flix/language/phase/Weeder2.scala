@@ -1319,10 +1319,12 @@ object Weeder2 {
           mapN(visitExpr(exprCondition), visitExpr(exprThen), visitExpr(exprElse)) {
             (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
-        case _ =>
-          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
-          sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+        case exprCondition :: exprThen :: Nil =>
+          mapN(visitExpr(exprCondition), visitExpr(exprThen)) {
+            (condition, tthen) => Expr.IfThen(condition, tthen, tree.loc)
+          }
+        case exprs =>
+          throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
       }
     }
 

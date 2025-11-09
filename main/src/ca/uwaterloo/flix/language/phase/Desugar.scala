@@ -533,6 +533,11 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.Binary(sop, e1, e2, loc)
 
+    case WeededAst.Expr.IfThen(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      desugarIfThen(e1, e2, loc)
+
     case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -1458,6 +1463,42 @@ object Desugar {
     val fparam = DesugaredAst.FormalParam(ident, None, loc0.asSynthetic)
     val body = DesugaredAst.Expr.Match(paramVarExpr, List(rule), loc0.asSynthetic)
     DesugaredAst.Expr.Lambda(fparam, body, loc0.asSynthetic)
+  }
+
+  /**
+    * Desugars [[WeededAst.Expr.IfThen]] to [[Expr.IfThenElse]]
+    * {{{
+    * if (exp1) {
+    *   exp2
+    * }
+    * }}}
+    * desugars to
+    * {{{
+    * if (exp1) {
+    *   exp2;
+    *   ()
+    * } else {
+    *  ()
+    * }
+    * }}}
+    */
+  private def desugarIfThen(guard: DesugaredAst.Expr, then0: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
+    val unitExp = Expr.Cst(Constant.Unit, loc.asSynthetic)
+    val thenExp = appendToStm(then0, unitExp)
+    Expr.IfThenElse(guard, thenExp, unitExp, loc.asSynthetic)
+  }
+
+  /**
+    * Appends `inserted` to `exp`. If `exp` is an `Expr.Stm(exp1, exp2)` then `inserted` is appended to `exp2`
+    *
+    * This is needed as Flix ([[ Redundancy ]]) expects `Stm` to be nested like
+    * {{{ Stm(exp, Stm(...)) }}}
+    * not like
+    * {{{ Stm(Stm(...), exp) }}}
+    */
+  private def appendToStm(exp: DesugaredAst.Expr, inserted: Expr): DesugaredAst.Expr = exp match {
+    case Expr.Stm(exp1, exp2, loc) => Expr.Stm(exp1, appendToStm(exp2, inserted), loc.asSynthetic)
+    case _ => Expr.Stm(exp, inserted, inserted.loc.asSynthetic)
   }
 
   /**
