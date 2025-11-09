@@ -55,7 +55,8 @@ sealed trait CompilationMessageKind {
     case StratificationError => Some(PatternMatchError)
     case PatternMatchError => Some(RedundancyError)
     case RedundancyError => Some(SafetyError)
-    case _ => None
+    case SafetyError => None
+    case TestError => None
   }
 }
 
