@@ -1344,10 +1344,6 @@ object Weeder2 {
       case TokenKind.EqualEqual => Some("Eq.eq")
       case TokenKind.BangEqual => Some("Eq.neq")
 
-      // List operators
-      case TokenKind.ColonColon => Some("List.cons")
-      case TokenKind.ColonColonColon => Some("List.append")
-
       // Unsupported operators
       case _ => None
     }

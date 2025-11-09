@@ -316,10 +316,6 @@ sealed trait TokenKind {
     case TokenKind.EqualEqual => true
     case TokenKind.BangEqual => true
 
-    // List/Append operators
-    case TokenKind.ColonColon => true
-    case TokenKind.ColonColonColon => true
-
     // User-defined operators
     case TokenKind.GenericOperator => true
 
