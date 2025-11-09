@@ -205,6 +205,23 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
+  test("clean-should-do-nothing-in-directory-mode") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    FileOps.writeString(p.resolve("./Main.flix").normalize(),
+      """
+        |def main(): Unit = ()
+        |""".stripMargin)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val buildDir = p.resolve("./build/").normalize()
+    if (Files.exists(buildDir)) {
+      fail("did not expected build directory to exist")
+    }
+    b.clean() match {
+      case Result.Ok(_) => fail("expected failure in directory mode")
+      case Result.Err(_) => succeed
+    }
+  }
+
   def calcHash(p: Path): String = {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
