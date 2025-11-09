@@ -662,12 +662,11 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+      case Expr.StructNew(sym, fields, regionOpt, tvar, evar, loc) =>
         // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
         // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(sym, root.structs)
         val visitedFields = fields.map { case (_, v) => visitExp(v) }
-        val (regionTpe, regionEff) = visitExp(region)
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
@@ -678,34 +677,42 @@ object ConstraintGen {
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
-        c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)
-        c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
+        (regionOpt, regionVarOpt) match {
+          case (Some(region), Some(regionVar)) =>
+            val (regionTpe, regionEff) = visitExp(region)
+            c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)
+            c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
+          case _ => ()
+        }
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.StructGet(exp, symUse, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
         val (mutable, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.unifyType(fieldTpe, tvar, loc)
         // If the field is mutable, then it emits a region effect, otherwise not.
-        val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
+        val accessEffect = if (!mutable) Type.mkPure(loc) else regionVarOpt match {
+          case Some(value) => value
+          case None => throw InternalCompilerException(s"Unexpected missing region var in struct get near ${exp}", loc)
+        }
         c.unifyType(Type.mkUnion(eff, accessEffect, loc), evar, exp.loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.StructPut(exp1, symUse, exp2, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(structTpe, tpe1, exp1.loc)
         val (_, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
-        c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
+        c.unifyType(Type.mkUnion(eff1, eff2, regionVarOpt.get, loc), evar, loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -1355,17 +1362,23 @@ object ConstraintGen {
 
   /**
     * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
-    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's optional region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
     * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
     * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    * The third element of the return tuple would be `r'`
+    * The third element of the return tuple would be `Some(r')`
+    *
+    * For a immutable struct `struct S [v] { a: v, b: Int32 }` the third element would be `None`.
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Option[Type.Var]) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
-    assert(struct.tparams.last.sym.kind == Kind.Eff)
+    if (struct.mod.isMutable) {
+      if (struct.tparams.last.sym.kind != Kind.Eff) {
+        throw InternalCompilerException(s"Unexpected kind ${struct.tparams.last.sym.kind} in struct. Expected `${Kind.Eff}`", struct.loc)
+      }
+    }
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
@@ -1373,7 +1386,8 @@ object ConstraintGen {
       case KindedAst.StructField(mod, fieldSym, fieldTpe, _) =>
         fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
-    (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
+    val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
+    (instantiatedFields.toMap, tpe, regionOpt)
   }
 
   /** Returns a fresh variable with a synthetic location. */

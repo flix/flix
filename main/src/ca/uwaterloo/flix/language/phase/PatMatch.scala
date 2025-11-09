@@ -231,7 +231,7 @@ object PatMatch {
       case Expr.ArrayLength(base, _, _) => visitExp(base)
 
       case Expr.StructNew(_, fields, region, _, _, _) =>
-        visitExp(region)
+        region.foreach(visitExp)
         fields.foreach { case (_, v) => visitExp(v) }
 
       case Expr.StructGet(exp, _, _, _, _) => visitExp(exp)

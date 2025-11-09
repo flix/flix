@@ -218,7 +218,7 @@ object PredDeps {
       visitExp(elm)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
-      visitExp(region)
+      region.foreach(visitExp)
       fields.foreach { case (_, e) => visitExp(e) }
 
     case Expr.StructGet(e, _, _, _, _) =>

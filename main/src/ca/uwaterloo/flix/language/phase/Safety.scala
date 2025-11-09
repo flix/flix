@@ -215,7 +215,7 @@ object Safety {
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
       fields.foreach { case (_, exp) => visitExp(exp) }
-      visitExp(region)
+      region.foreach(visitExp)
 
     case Expr.StructGet(e, _, _, _, _) =>
       visitExp(e)

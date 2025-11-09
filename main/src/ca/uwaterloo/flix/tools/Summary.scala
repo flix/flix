@@ -228,7 +228,7 @@ object Summary {
     case Expr.ArrayLoad(exp1, exp2, _, _, _) => List(exp1, exp2).map(countCheckedEcasts).sum
     case Expr.ArrayLength(exp, _, _) => countCheckedEcasts(exp)
     case Expr.ArrayStore(exp1, exp2, exp3, _, _) => List(exp1, exp2, exp3).map(countCheckedEcasts).sum
-    case Expr.StructNew(_, fields, region, _, _, _) => countCheckedEcasts(region) + fields.map {
+    case Expr.StructNew(_, fields, region, _, _, _) => region.map(countCheckedEcasts).getOrElse(0) + fields.map {
       case (_, exp) => countCheckedEcasts(exp)
     }.sum
     case Expr.StructGet(exp, _, _, _, _) => countCheckedEcasts(exp)
