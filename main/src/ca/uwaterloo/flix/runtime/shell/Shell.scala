@@ -65,7 +65,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     s match {
       // First, check for a string with two backslashes at start and end
-      case twoBackslashes(s) => s
+      case twoBackslashes(s1) => s1
 
       // If not, then replace all escaped line endings with \n
       case _ =>
