@@ -138,15 +138,15 @@ object Serialize {
   }
 
   private def serializeEnumSym(sym0: Symbol.EnumSym): EnumSym = {
-    EnumSym(sym0.id, sym0.namespace, sym0.text)
+    EnumSym(sym0.namespace, sym0.text)
   }
 
   private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {
-    VarSym(sym0.id, serializeVarText(sym0.text), serializeKind(sym0.kind))
+    VarSym(serializeVarText(sym0.text), serializeKind(sym0.kind))
   }
 
   private def serializeRegionSym(sym0: Symbol.RegionSym): RegionSym = {
-    RegionSym(sym0.id, sym0.text)
+    RegionSym(sym0.text)
   }
 
   private def serializeRestrictableCaseSym(sym0: Symbol.RestrictableCaseSym): RestrictableCaseSym = {
@@ -158,7 +158,7 @@ object Serialize {
   }
 
   private def serializeStructSym(sym0: Symbol.StructSym): StructSym = {
-    StructSym(sym0.id, sym0.namespace, sym0.text)
+    StructSym(sym0.namespace, sym0.text)
   }
 
   private def serializeTraitSym(sym0: Symbol.TraitSym): TraitSym = {

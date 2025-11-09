@@ -197,7 +197,7 @@ package object serialization {
   /** Represents a serializable symbol. */
   sealed trait SSym
 
-  case class VarSym(id: Int, text: SVarText, kind: SKind) extends SSym
+  case class VarSym(text: SVarText, kind: SKind) extends SSym
 
   case class TypeAliasSym(namespace: List[String], name: String) extends SSym
 
@@ -205,19 +205,19 @@ package object serialization {
 
   case class TraitSym(namespace: List[String], name: String) extends SSym
 
-  case class EnumSym(id: Option[Int], namespace: List[String], text: String) extends SSym
+  case class EnumSym(namespace: List[String], text: String) extends SSym
 
   case class CaseSym(enumSym: EnumSym, name: String) extends SSym
 
   case class EffSym(namespace: List[String], name: String) extends SSym
 
-  case class RegionSym(id: Int, text: String) extends SSym
+  case class RegionSym(text: String) extends SSym
 
   case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[String]) extends SSym
 
   case class RestrictableCaseSym(enumSym: RestrictableEnumSym, name: String) extends SSym
 
-  case class StructSym(id: Option[Int], namespace: List[String], text: String) extends SSym
+  case class StructSym(namespace: List[String], text: String) extends SSym
 
   /** Represents serializable VarText. */
   sealed trait SVarText
