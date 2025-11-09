@@ -1,126 +1,127 @@
 mod Test.Exp.Lambda.Op {
 
+    use Assert.{assertEq, assertTrue, assertFalse};
+
     //
     // Arithmetic Operators
     //
 
     @Test
-    def testLambdaOpPlus01(): Bool =
+    def testLambdaOpPlus01(): Unit \ Assert =
         let f = (+);
-        f(2, 3) == 5
+        assertEq(expected = 5, f(2, 3))
 
     @Test
-    def testLambdaOpPlus02(): Bool =
-        List.foldLeft((+), 0, 1 :: 2 :: 3 :: 4 :: Nil) == 10
+    def testLambdaOpPlus02(): Unit \ Assert =
+        assertEq(expected = 10, List.foldLeft((+), 0, 1 :: 2 :: 3 :: 4 :: Nil))
 
     @Test
-    def testLambdaOpMinus01(): Bool =
+    def testLambdaOpMinus01(): Unit \ Assert =
         let f = (-);
-        f(10, 3) == 7
+        assertEq(expected = 7, f(10, 3))
 
     @Test
-    def testLambdaOpMinus02(): Bool =
-        List.map(x -> (-)(10, x), 1 :: 2 :: 3 :: Nil) == (9 :: 8 :: 7 :: Nil)
+    def testLambdaOpMinus02(): Unit \ Assert =
+        assertEq(expected = 4, List.foldLeft((-), 10, 1 :: 2 :: 3 :: Nil))
 
     @Test
-    def testLambdaOpStar01(): Bool =
+    def testLambdaOpStar01(): Unit \ Assert =
         let f = (*);
-        f(3, 4) == 12
+        assertEq(expected = 12, f(3, 4))
 
     @Test
-    def testLambdaOpStar02(): Bool =
-        List.foldLeft((*), 1, 2 :: 3 :: 4 :: Nil) == 24
+    def testLambdaOpStar02(): Unit \ Assert =
+        assertEq(expected = 24, List.foldLeft((*), 1, 2 :: 3 :: 4 :: Nil))
 
     @Test
-    def testLambdaOpSlash01(): Bool =
+    def testLambdaOpSlash01(): Unit \ Assert =
         let f = (/);
-        f(12, 3) == 4
+        assertEq(expected = 4, f(12, 3))
 
     @Test
-    def testLambdaOpSlash02(): Bool =
-        let f = ((/) : (Float64, Float64) -> Float64);
-        f(10.0, 4.0) == 2.5
+    def testLambdaOpSlash02(): Unit \ Assert =
+        assertEq(expected = 2, List.foldLeft((/), 24, 3 :: 2 :: 2 :: Nil))
 
     //
     // Comparison Operators
     //
 
     @Test
-    def testLambdaOpLess01(): Bool =
+    def testLambdaOpLess01(): Unit \ Assert =
         let f = (<);
-        f(2, 3) == true
+        assertTrue(f(2, 3))
 
     @Test
-    def testLambdaOpLess02(): Bool =
-        List.filter((<)(5), 1 :: 3 :: 5 :: 7 :: 9 :: Nil) == (7 :: 9 :: Nil)
+    def testLambdaOpLess02(): Unit \ Assert =
+        assertEq(expected = 7 :: 9 :: Nil, List.filter((<)(5), 1 :: 3 :: 5 :: 7 :: 9 :: Nil))
 
     @Test
-    def testLambdaOpLessEqual01(): Bool =
+    def testLambdaOpLessEqual01(): Unit \ Assert =
         let f = (<=);
-        f(3, 3) == true
+        assertTrue(f(3, 3))
 
     @Test
-    def testLambdaOpLessEqual02(): Bool =
+    def testLambdaOpLessEqual02(): Unit \ Assert =
         let f = (<=);
-        f(4, 3) == false
+        assertFalse(f(4, 3))
 
     @Test
-    def testLambdaOpGreater01(): Bool =
+    def testLambdaOpGreater01(): Unit \ Assert =
         let f = (>);
-        f(5, 3) == true
+        assertTrue(f(5, 3))
 
     @Test
-    def testLambdaOpGreater02(): Bool =
+    def testLambdaOpGreater02(): Unit \ Assert =
         let f = (>);
-        f(3, 3) == false
+        assertFalse(f(3, 3))
 
     @Test
-    def testLambdaOpGreaterEqual01(): Bool =
+    def testLambdaOpGreaterEqual01(): Unit \ Assert =
         let f = (>=);
-        f(5, 3) == true
+        assertTrue(f(5, 3))
 
     @Test
-    def testLambdaOpGreaterEqual02(): Bool =
+    def testLambdaOpGreaterEqual02(): Unit \ Assert =
         let f = (>=);
-        f(2, 3) == false
+        assertFalse(f(2, 3))
 
     @Test
-    def testLambdaOpCompare01(): Bool =
+    def testLambdaOpCompare01(): Unit \ Assert =
         let f = (<=>);
-        f(2, 3) == Comparison.LessThan
+        assertEq(expected = Comparison.LessThan, f(2, 3))
 
     @Test
-    def testLambdaOpCompare02(): Bool =
+    def testLambdaOpCompare02(): Unit \ Assert =
         let f = (<=>);
-        f(3, 3) == Comparison.EqualTo
+        assertEq(expected = Comparison.EqualTo, f(3, 3))
 
     @Test
-    def testLambdaOpCompare03(): Bool =
+    def testLambdaOpCompare03(): Unit \ Assert =
         let f = (<=>);
-        f(5, 3) == Comparison.GreaterThan
+        assertEq(expected = Comparison.GreaterThan, f(5, 3))
 
     //
     // Equality Operators
     //
 
     @Test
-    def testLambdaOpEqual01(): Bool =
+    def testLambdaOpEqual01(): Unit \ Assert =
         let f = (==);
-        f(3, 3) == true
+        assertTrue(f(3, 3))
 
     @Test
-    def testLambdaOpEqual02(): Bool =
+    def testLambdaOpEqual02(): Unit \ Assert =
         let f = (==);
-        f(3, 5) == false
+        assertFalse(f(3, 5))
 
     @Test
-    def testLambdaOpNotEqual01(): Bool =
+    def testLambdaOpNotEqual01(): Unit \ Assert =
         let f = (!=);
-        f(3, 5) == true
+        assertTrue(f(3, 5))
 
     @Test
-    def testLambdaOpNotEqual02(): Bool =
-        List.filter((!=)(2), 1 :: 2 :: 3 :: 2 :: 4 :: Nil) == (1 :: 3 :: 4 :: Nil)
+    def testLambdaOpNotEqual02(): Unit \ Assert =
+        assertEq(expected = 1 :: 3 :: 4 :: Nil, List.filter((!=)(2), 1 :: 2 :: 3 :: 2 :: 4 :: Nil))
 
     //
     // User-Defined Operators
@@ -129,17 +130,17 @@ mod Test.Exp.Lambda.Op {
     def +++(x: Int32, y: Int32): Int32 = x + y + 1
 
     @Test
-    def testLambdaOpUserDefined01(): Bool =
+    def testLambdaOpUserDefined01(): Unit \ Assert =
         let f = (+++);
-        f(2, 3) == 6
+        assertEq(expected = 6, f(2, 3))
 
     @Test
-    def testLambdaOpUserDefined02(): Bool =
-        (+++)(5, 10) == 16
+    def testLambdaOpUserDefined02(): Unit \ Assert =
+        assertEq(expected = 16, (+++)(5, 10))
 
     @Test
-    def testLambdaOpUserDefined03(): Bool =
-        List.foldLeft((+++), 0, 1 :: 2 :: 3 :: Nil) == 9
+    def testLambdaOpUserDefined03(): Unit \ Assert =
+        assertEq(expected = 9, List.foldLeft((+++), 0, 1 :: 2 :: 3 :: Nil))
 
     //
     // Higher-Order & Type Tests
@@ -149,8 +150,8 @@ mod Test.Exp.Lambda.Op {
     def testLambdaOpType01(): (Int32, Int32) -> Int32 = (+)
 
     @Test
-    def testLambdaOpHigherOrder01(): Bool =
+    def testLambdaOpHigherOrder01(): Unit \ Assert =
         let sum = List.foldLeft((+), 0);
-        sum(1 :: 2 :: 3 :: 4 :: Nil) == 10
+        assertEq(expected = 10, sum(1 :: 2 :: 3 :: 4 :: Nil))
 
 }
