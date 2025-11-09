@@ -182,7 +182,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Unit = {
+  private def execReload()(implicit terminal: Terminal): Result[Unit, Unit] = {
 
     // Scan the disk to find changes, and add source to the flix object
     bootstrap.reconfigureFlix(flix)
@@ -190,8 +190,12 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
 
-    compile(progress = isFirstCompile)
+    val compilation = compile(progress = isFirstCompile)
     isFirstCompile = false
+    compilation.toResult match {
+      case Result.Ok(_) => Result.Ok(())
+      case Result.Err(_) => Result.Err(())
+    }
   }
 
   /**
@@ -332,8 +336,11 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Reloads and evaluates the given source code.
     */
   private def execReloadAndEval(s: String)(implicit terminal: Terminal): Unit = {
-    execReload()
-    execEval(s)
+    // Only eval if reload was successful
+    execReload() match {
+      case Result.Ok(()) => execEval(s)
+      case Result.Err(()) => ()
+    }
   }
 
   /**
@@ -364,7 +371,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
     */
   private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
-    terminal.writer().println("compile called")
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
@@ -388,7 +394,6 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Prints the list of errors using the `flix` instance to the implicit terminal.
     */
   private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
-    terminal.writer().println(s"messages: ${errors.length}")
     for (msg <- flix.mkMessages(errors)) {
       terminal.writer().print(msg)
     }
