@@ -97,7 +97,7 @@ class Flix {
   /**
     * Returns the parsed ast.
     */
-  def getCachedParserCst: SyntaxTree.Root = cachedParserCst
+  def getParsedAst: SyntaxTree.Root = cachedParserCst
 
   /**
     * A cache of error messages for incremental compilation.
