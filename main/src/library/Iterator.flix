@@ -164,7 +164,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toChain(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } =
-        foldLeft((acc, a) -> Chain.snoc(acc, a), Chain.empty(), iter)
+        foldLeft(Chain.snoc, Chain.empty(), iter)
 
     ///
     /// Returns the contents of `iter` as a map.
@@ -188,7 +188,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, r } = match next(iter) {
-        case Some(a) => foldLeft((acc, x) -> Nec.snoc(acc, x), Nec.singleton(a), iter) |> Some
+        case Some(a) => foldLeft(Nec.snoc, Nec.singleton(a), iter) |> Some
         case None    => None
     }
 
