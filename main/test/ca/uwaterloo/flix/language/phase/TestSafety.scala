@@ -86,7 +86,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |import java.io.IOException
         |
-        |pub def f(): String \ IO = throw None
+        |pub def f(): String \ IO = throw Comparison.LessThan
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalThrowType](result)
@@ -608,17 +608,6 @@ class TestSafety extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalCastFromVar.01") {
-    val input =
-      """
-        |def f(): String = g("ABC")
-        |
-        |def g(x: a): a = checked_cast(x)
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalCheckedCastFromVar](result)
-  }
-
-  test("IllegalCastFromVar.02") {
     val input =
       """
         |def f(x: a): String = checked_cast(x)
