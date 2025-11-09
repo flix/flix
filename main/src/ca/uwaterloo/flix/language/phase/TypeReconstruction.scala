@@ -330,7 +330,7 @@ object TypeReconstruction {
       TypedAst.Expr.ArrayLength(e, eff, loc)
 
     case KindedAst.Expr.StructNew(sym, fields0, region0, tvar, evar, loc) =>
-      val region = visitExp(region0)
+      val region = region0.map(visitExp)
       val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
       val tpe = subst(tvar)
       val eff = subst(evar)

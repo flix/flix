@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
@@ -732,15 +732,22 @@ object GenExpression {
         compileExpr(exp)
         ARRAYLENGTH()
 
-      case AtomicOp.StructNew(sym, _) =>
+      case AtomicOp.StructNew(sym, mutability, _) =>
         import BytecodeInstructions.*
-
-        val region :: fieldExps = exps
         val structType = getStructType(root.structs(sym))
-
-        // Evaluate the region and ignore its value
-        compileExpr(region)
-        xPop(BackendType.toBackendType(region.tpe))
+        val (fieldExps, regionOpt) = mutability match {
+          case Mutability.Immutable => (exps, None)
+          case Mutability.Mutable =>
+            val region :: fields = exps
+            (fields, Some(region))
+        }
+        // If we have a region evaluate it and remove the result from the stack.
+        regionOpt match {
+          case None => ()
+          case Some(region) =>
+            compileExpr(region)
+            xPop(BackendType.toBackendType(region.tpe))
+        }
         NEW(structType.jvmName)
         DUP()
         fieldExps.foreach(compileExpr)

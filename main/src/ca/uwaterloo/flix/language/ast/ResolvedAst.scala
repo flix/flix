@@ -161,7 +161,7 @@ object ResolvedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(sym: Symbol.StructSym, exps: List[(StructFieldSymUse, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, exps: List[(StructFieldSymUse, Expr)], region: Option[Expr], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, symUse: StructFieldSymUse, loc: SourceLocation) extends Expr
 

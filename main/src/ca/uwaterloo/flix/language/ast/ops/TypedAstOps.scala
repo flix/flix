@@ -74,7 +74,7 @@ object TypedAstOps {
     case Expr.ArrayLoad(base, index, _, _, _) => sigSymsOf(base) ++ sigSymsOf(index)
     case Expr.ArrayLength(base, _, _) => sigSymsOf(base)
     case Expr.ArrayStore(base, index, elm, _, _) => sigSymsOf(base) ++ sigSymsOf(index) ++ sigSymsOf(elm)
-    case Expr.StructNew(_, fields, region, _, _, _) => sigSymsOf(region) ++ fields.flatMap { case (_, v) => sigSymsOf(v) }
+    case Expr.StructNew(_, fields, region, _, _, _) => region.map(sigSymsOf).getOrElse(Set()) ++ fields.flatMap { case (_, v) => sigSymsOf(v) }
     case Expr.StructGet(e, _, _, _, _) => sigSymsOf(e)
     case Expr.StructPut(e1, _, e2, _, _, _) => sigSymsOf(e1) ++ sigSymsOf(e2)
     case Expr.VectorLit(exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
@@ -265,7 +265,7 @@ object TypedAstOps {
       freeVars(base) ++ freeVars(index) ++ freeVars(elm)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
-      freeVars(region) ++ fields.flatMap { case (_, v) => freeVars(v) }
+      region.map(freeVars).getOrElse(Map()) ++ fields.flatMap { case (_, v) => freeVars(v) }
 
     case Expr.StructGet(e, _, _, _, _) =>
       freeVars(e)

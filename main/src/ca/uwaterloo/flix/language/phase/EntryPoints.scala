@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.DefSymUse
-import ca.uwaterloo.flix.language.ast.{Kind, Name, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.EntryPointError
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, SubstitutionTree, TypeConstraint}
@@ -541,7 +541,8 @@ object EntryPoints {
           case None =>
             seen.put(handledSym, loc1)
           case Some(loc2) =>
-            duplicatedHandlerErrors += EntryPointError.DuplicatedDefaultHandlers(handledSym, loc1, loc2)
+            duplicatedHandlerErrors += EntryPointError.DuplicateDefaultHandler(handledSym, loc1, loc2)
+            duplicatedHandlerErrors += EntryPointError.DuplicateDefaultHandler(handledSym, loc2, loc1)
         }
       }
 
@@ -581,31 +582,31 @@ object EntryPoints {
       var errs: Chain[EntryPointError] = Chain.empty
       // All default handlers must be public
       if (!handlerDef.spec.mod.isPublic) {
-        errs = errs ++ Chain(EntryPointError.NonPublicDefaultHandler(handlerSym.loc))
+        errs = errs ++ Chain(EntryPointError.NonPublicDefaultHandler(handlerSym, handlerSym.loc))
       }
       // The Default Handler must reside in the companion module of the effect.
       // Hence we use the namespace of the handler to construct the expected
       // effect symbol and look it up in the AST.
       val effFqn = handlerSym.namespace.mkString(".")
-      val effSymbol = Symbol.mkEffSym(effFqn)
-      val companionEffect = root.effects.get(effSymbol)
+      val effSym = Symbol.mkEffSym(effFqn)
+      val companionEffect = root.effects.get(effSym)
       companionEffect match {
-        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInEffectModule(Symbol.mkModuleSym(handlerSym.namespace), handlerSym.loc)))
+        case None => Validation.Failure(errs ++ Chain(EntryPointError.DefaultHandlerNotInModule(handlerSym, handlerSym.loc)))
         // The default handler is NOT in the companion module of an effect
         case Some(_) =>
           // Synthetic location of our handler
           val loc = handlerSym.loc.asSynthetic
           // There is a valid effect to wrap
-          val handledEff = Type.Cst(TypeConstructor.Effect(effSymbol, Kind.Eff), loc)
+          val handledEff = Type.Cst(TypeConstructor.Effect(effSym, Kind.Eff), loc)
           val declaredScheme = handlerDef.spec.declaredScheme
           // Generate expected scheme for generating IO
           val expectedSchemeIO = getDefaultHandlerTypeScheme(handledEff, Type.IO, loc)
           // Check if handler's scheme fits any of the valid handler's schemes and if not generate an error
           if (!Scheme.equal(expectedSchemeIO, declaredScheme, root.traitEnv, root.eqEnv, Nil)) {
-            errs = errs ++ Chain(EntryPointError.WrongSignatureForDefaultHandler(effSymbol, handlerSym.loc))
+            errs = errs ++ Chain(EntryPointError.IllegalDefaultHandlerSignature(effSym, handlerSym, handlerSym.loc))
           }
           if (errs.isEmpty) {
-            Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSymbol))
+            Validation.Success(DefaultHandler(handlerSym, handlerDef, handledEff, effSym))
           } else {
             Validation.Failure(errs)
           }

@@ -163,10 +163,10 @@ object Eraser {
         case AtomicOp.ArrayLoad => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayStore => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLength => ErasedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.StructNew(_, fields) =>
+        case AtomicOp.StructNew(_, mutability, fields) =>
           val specializedStruct = t.asInstanceOf[SimpleType.Struct]
           val specializedFields = fields.map(fieldSym => specializedFieldSym(fieldSym, specializedStruct))
-          ErasedAst.Expr.ApplyAtomic(AtomicOp.StructNew(specializedStruct.sym, specializedFields), es, t, purity, loc)
+          ErasedAst.Expr.ApplyAtomic(AtomicOp.StructNew(specializedStruct.sym, mutability, specializedFields), es, t, purity, loc)
         case AtomicOp.StructGet(sym) =>
           val List(e) = es
           val specializedStruct = e.tpe.asInstanceOf[SimpleType.Struct]
