@@ -15,11 +15,11 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
-sealed trait Mutability
-
 /**
   * Represents whether a struct is mutable.
   */
+sealed trait Mutability
+
 object Mutability {
 
   /**

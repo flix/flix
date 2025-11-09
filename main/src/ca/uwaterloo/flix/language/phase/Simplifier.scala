@@ -1005,23 +1005,34 @@ object Simplifier {
       SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)
   }
 
+  /**
+    * Simplifies `new MyStruct ...` expressions.
+    *
+    * Re-arrange the fields to be given in the declared order.
+    * Change the order by let-binding the field and region values.
+    *
+    * Example (mutable struct):
+    *
+    * struct MyStruct[r: Region] { x: Int32, y: Int32 }
+    *
+    * new MyStruct @ rc { y = 21, x = 42 }
+    *
+    * This becomes:
+    *
+    * let rc$tmp = rc;<br>
+    * let y$tmp = 21;<br>
+    * let x$tmp = 42;<br>
+    * new MyStruct @ rc$tmp { x = x$tmp, y = y$tmp }
+    *
+    * For immutable datastructures (`regExpOpt` is `None`) there is no region and the code would be:
+    *
+    * let y$tmp = 21;<br>
+    * let x$tmp = 42;<br>
+    * new MyStruct { x = x$tmp, y = y$tmp }
+    *
+    * @param regExpOpt the optional region expression.
+    */
   private def visitStructNew(sym: Symbol.StructSym, givenFields: List[Symbol.StructFieldSym], regExpOpt: Option[SimplifiedAst.Expr], fieldExps: List[SimplifiedAst.Expr], tpe: Type, loc: SourceLocation)(implicit root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
-    // Re-arrange the fields to be given in the declared order.
-    // Change the order by let-binding the field and region values.
-    //
-    // Example:
-    //
-    // struct MyStruct[r: Region] { x: Int32, y: Int32 }
-    //
-    // new MyStruct @ rc { y = 21, x = 42 }
-    //
-    // This becomes:
-    //
-    // let rc$tmp = rc;
-    // let y$tmp = 21;
-    // let x$tmp = 42;
-    // new MyStruct @ rc$tmp { x = x$tmp, y = y$tmp }
-    //
     val synthLoc = loc.asSynthetic
     val fieldsDeclaredOrder = root.structs(sym).fields
     val fieldInitializations = ListOps.zip(givenFields, fieldExps)

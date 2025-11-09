@@ -195,8 +195,10 @@ object Redundancy {
           acc ++ field.tpe.typeVars.map(_.sym)
       }
       val mustBeUsed = if (decl.tparams.nonEmpty && decl.mod.isMutable) {
+        // The struct is mutable: All type parameters except the region parameter must be used.
         decl.tparams.init
       } else {
+        // The struct is immutable (or have 0 type parameters): All type parameters must be used.
         decl.tparams
       }
       val unusedTypeParams = mustBeUsed.filter { // the last tparam is implicitly used for the region

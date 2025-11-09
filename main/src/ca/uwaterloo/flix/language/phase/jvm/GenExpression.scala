@@ -735,14 +735,18 @@ object GenExpression {
       case AtomicOp.StructNew(sym, mutability, _) =>
         import BytecodeInstructions.*
         val structType = getStructType(root.structs(sym))
-        val fieldExps = mutability match {
-          case Mutability.Immutable => exps
+        val (fieldExps, regionOpt) = mutability match {
+          case Mutability.Immutable => (exps, None)
           case Mutability.Mutable =>
             val region :: fields = exps
-            // Evaluate the region and ignore its value
+            (fields, Some(region))
+        }
+        // If we have a region evaluate it and remove the result from the stack.
+        regionOpt match {
+          case None => ()
+          case Some(region) =>
             compileExpr(region)
             xPop(BackendType.toBackendType(region.tpe))
-            fields
         }
         NEW(structType.jvmName)
         DUP()
