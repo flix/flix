@@ -369,9 +369,9 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     flix.check() match {
-      case (Some(root), Nil) =>
-        this.root = Some(root)
-        val result = flix.codeGen(root)
+      case (Some(r), Nil) =>
+        this.root = Some(r)
+        val result = flix.codeGen(r)
         result.toResult match {
           case Result.Ok(_) => result
           case Result.Err(errors) =>
