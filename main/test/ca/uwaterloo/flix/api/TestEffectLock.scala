@@ -184,4 +184,22 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("serialization.09") {
+    val input =
+      """
+        |type alias Num = Int32
+        |pub def fun(x: Num): Num = x + x
+        |""".stripMargin
+
+    val alias = Alias(TypeAliasSym(List.empty, "Num"), List.empty, Cst(Int32))
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), alias), alias)
+    val scheme = SScheme(List.empty, List.empty, tpe)
+    val expected = SDef(List.empty, "fun", scheme, "<test>")
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val actual = Serialize.serializeDef(defs.head)
+    assert(actual == expected)
+  }
+
 }
