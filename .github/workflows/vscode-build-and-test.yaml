@@ -8,7 +8,7 @@ concurrency:
   group: ide-tests-${{ github.ref }}
 
 jobs:
-  build-and-test:
+  build-and-test-vscode:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: "-Xms128m -Xmx4g"
@@ -30,7 +30,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20.x'
 

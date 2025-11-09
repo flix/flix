@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2025 Casper Dalgaard Nielsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ca.uwaterloo.flix.api
-
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 66, revision = 1)
-}
+package ca.uwaterloo.flix.language.ast.shared
 
 /**
-  * A case class to represent versions.
+  * Represents whether a struct is mutable.
   */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+sealed trait Mutability
+
+object Mutability {
+
+  /**
+    * The struct is immutable.
+    */
+  case object Immutable extends Mutability
+
+  /**
+    * The struct is mutable.
+    */
+  case object Mutable extends Mutability
+
 }

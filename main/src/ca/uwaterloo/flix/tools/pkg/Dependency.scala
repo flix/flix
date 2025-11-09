@@ -17,25 +17,37 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 
-import java.net.URL
+import java.net.{URI, URL}
 
 sealed trait Dependency
 
 object Dependency {
 
   case class FlixDependency(repo: Repository, username: String, projectName: String, version: SemVer, sctx: SecurityContext) extends Dependency {
-    override def toString: String = {
+    val identifier: String = {
       val r = repo.toString.toLowerCase
-      s"\"$r:$username/$projectName\" = { version = \"$version\", security = \"$sctx\" }"
+      s"$r:$username/$projectName"
+    }
+
+    override def toString: String = {
+      s"\"$identifier\" = { version = \"$version\", security = \"$sctx\" }"
     }
   }
 
   case class MavenDependency(groupId: String, artifactId: String, versionTag: String) extends Dependency {
-    override def toString: String = s"\"$groupId:$artifactId\" = \"$versionTag\""
+    val identifier = s"$groupId:$artifactId"
+
+    override def toString: String = {
+      s"\"$identifier\" = \"$versionTag\""
+    }
   }
 
-  case class JarDependency(url: URL, fileName: String) extends Dependency {
-    override def toString: String = s"\"$fileName\" = \"$url\""
+  case class JarDependency(url: String, fileName: String) extends Dependency {
+    val identifier: String = fileName
+
+    override def toString: String = s"\"$identifier\" = \"url:$url\""
+
+    def getUrl: URL = new URI(url).toURL
   }
 
 }

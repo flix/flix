@@ -570,10 +570,14 @@ object Lowering {
 
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
-      val region = visitExp(region0)
       val (names0, es) = fields.unzip
       val names = names0.map(_.sym)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
+      region0.map(visitExp) match {
+        case Some(region) =>
+          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Mutable, names), region :: es, tpe, eff, loc)
+        case None =>
+          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Immutable, names), es, tpe, eff, loc)
+      }
 
     case TypedAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -712,7 +716,7 @@ object Lowering {
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkNewChannelTuple(e, t, eff, loc)
+      LoweredAst.Expr.NewChannel(e, t, eff, loc)
 
     // Channel get expressions are rewritten as follows:
     //     <- c
@@ -1518,15 +1522,6 @@ object Lowering {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
     val (targ, _) = extractChannelTpe(tpe)
     LoweredAst.Expr.ApplyDef(Defs.ChannelNew, exp :: Nil, List(targ), itpe, tpe, eff, loc)
-  }
-
-  /**
-    * Make a new channel tuple (sender, receiver) expression
-    */
-  private def mkNewChannelTuple(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
-    val (targ, _) = extractChannelTpe(tpe.typeArguments.head) // TODO make helper
-    LoweredAst.Expr.ApplyDef(Defs.ChannelNewTuple, exp :: Nil, List(targ), itpe, tpe, eff, loc)
   }
 
   /**

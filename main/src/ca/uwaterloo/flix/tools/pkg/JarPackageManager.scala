@@ -54,7 +54,7 @@ object JarPackageManager {
       out.print(s"  Downloading `${dep.fileName}` from `${dep.url.toString}`... ")
       out.flush()
       try {
-        Using(dep.url.openStream()) {
+        Using(dep.getUrl.openStream()) {
           stream => Files.copy(stream, assetPath, StandardCopyOption.REPLACE_EXISTING)
         }
       } catch {

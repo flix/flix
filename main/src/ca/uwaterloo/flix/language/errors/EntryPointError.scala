@@ -31,22 +31,71 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
-    * An error raised to indicate that a default handler is not in the
-    * companion module of an effect.
+    * An error raised to indicate that a default handler is not in the companion module of its effect.
     *
-    * @param sym the symbol of the module containing the default handler.
-    * @param loc the location of the default handler.
+    * @param handlerSym the symbol of the default handler.
+    * @param loc        the location of the default handler.
     */
-  case class DefaultHandlerNotInEffectModule(sym: Symbol.ModuleSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Default handler's module '$sym' is not an effect's companion module."
+  case class DefaultHandlerNotInModule(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"The default handler '${handlerSym.name}' is not in the companion module of an effect."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Default handler's module '$sym' is not an effect's companion module.
-         |
-         | Default handlers must be in the companion module of the effect they handle.
+      s""">> The default handler '${red(handlerSym.name)}' is not in the companion module of an effect.
          |
          |${code(loc, "default handler.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that there are multiple default handlers for the same effect.
+    *
+    * @param sym  the symbol of the effect.
+    * @param loc1 the location of the first default handler.
+    * @param loc2 the location of the second default handler.
+    */
+  case class DuplicateDefaultHandler(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends EntryPointError {
+    def summary: String = s"Duplicate default handler for '$sym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Duplicate default handler for '${red(sym.toString)}'.
+         |
+         |${code(loc1, "the first default handler was here.")}
+         |
+         |${code(loc2, "the second default handler was here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def loc: SourceLocation = loc1
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that the signature of a default handler is illegal.
+    *
+    * @param effSym     the symbol of the effect.
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the default handler.
+    */
+  case class IllegalDefaultHandlerSignature(effSym: Symbol.EffSym, handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"Illegal signature for '$effSym's default handler."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal default effect handler signature for '${red(effSym.toString)}'.
+         |
+         |The default handler for '${red(effSym.toString)}' should have the exact signature:
+         |
+         |  pub def ${handlerSym.name}(f: Unit -> a \\ ef) : a \\ (ef - ${effSym.name}) + IO
+         |
+         |The default handler was declared here:
+         |
+         |${code(loc, "illegal signature.")}
          |
          |""".stripMargin
     }
@@ -130,7 +179,7 @@ object EntryPointError {
   /**
     * An error raised to indicate that an exported function uses an illegal type.
     *
-    * @param t the type that is not allowed.
+    * @param t   the type that is not allowed.
     * @param loc the location of the type.
     */
   case class IllegalExportType(t: Type, loc: SourceLocation) extends EntryPointError {
@@ -228,49 +277,19 @@ object EntryPointError {
   }
 
   /**
-    * An error raised to indicate that there are duplicated default handlers for the same effect.
+    * An error raised to indicate that a default handler is not public.
     *
-    * @param sym the symbol of the effect associated with this default handler
-    * @param loc1 the location of the first default handler definition.
-    * @param loc2 the location of the second default handler definition.
+    * @param handlerSym the symbol of the handler.
+    * @param loc        the location of the handler.
     */
-  case class DuplicatedDefaultHandlers(sym: Symbol.EffSym, loc1: SourceLocation, loc2: SourceLocation) extends EntryPointError {
-    def summary: String = s"Duplicated default handlers for '$sym'."
+  case class NonPublicDefaultHandler(handlerSym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError {
+    def summary: String = s"The default handler '${handlerSym.name}' must be public (`pub`)"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Duplicated default handlers for '$sym'.
+      s""">> The default handler '${red(handlerSym.name)}' must be public (`${cyan("pub")}`).
          |
-         |${code(loc1, "the first default handler is here.")}
-         |
-         |${code(loc2, "the second default handler is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def loc: SourceLocation = loc1
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter.*
-      s"${underline("Tip:")} Remove one of the default handlers."
-    })
-  }
-
-  /**
-    * An error raised to indicate that a default handler has non-primitive effects.
-    *
-    * @param sym the symbol of the effect associated with this default handler
-    * @param wrongSym the symbol of the non-primitive effect produced
-    * @param loc the location of the default handler.
-    */
-  case class NonPrimitiveEffectForDefaultHandler(sym: Symbol.EffSym, wrongSym: Symbol.EffSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Illegal signature for '$sym's default handler."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Illegal signature for '$sym's default handler. Handler has non primitive effect '$wrongSym'.
-         |
-         |${code(loc, "illegal handler signature.")}
+         |${code(loc, "non-public default handler.")}
          |
          |""".stripMargin
     }
@@ -289,29 +308,6 @@ object EntryPointError {
       s""">> Exported functions must be public.
          |
          |${code(loc, "exported function.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that the signature of a default handler is wrong.
-    *
-    * @param sym the symbol of the effect associated with this default handler
-    * @param loc the location of the default handler.
-    */
-  case class WrongSignatureForDefaultHandler(sym: Symbol.EffSym, loc: SourceLocation) extends EntryPointError {
-    def summary: String = s"Illegal signature for '$sym's default handler."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Illegal signature for '$sym's default handler.
-         |
-         | The default handler must have this exact signature (names can be chosen arbitrarily):
-         |
-         | 'def handler(f: Unit -> a \\ ef) : a \\ (ef - ${sym.name}) + PrimEf1 + ...'
-         |
-         |${code(loc, "illegal handler signature.")}
          |
          |""".stripMargin
     }

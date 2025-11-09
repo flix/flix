@@ -194,7 +194,14 @@ object Redundancy {
         case (acc, (_, field)) =>
           acc ++ field.tpe.typeVars.map(_.sym)
       }
-      val unusedTypeParams = decl.tparams.init.filter { // the last tparam is implicitly used for the region
+      val mustBeUsed = if (decl.tparams.nonEmpty && decl.mod.isMutable) {
+        // The struct is mutable: All type parameters except the region parameter must be used.
+        decl.tparams.init
+      } else {
+        // The struct is immutable (or have 0 type parameters): All type parameters must be used.
+        decl.tparams
+      }
+      val unusedTypeParams = mustBeUsed.filter { // the last tparam is implicitly used for the region
         tparam =>
           !usedTypeVars.contains(tparam.sym) &&
             !tparam.name.name.startsWith("_")
@@ -697,7 +704,7 @@ object Redundancy {
 
     case Expr.StructNew(sym, fields, region, _, _, _) =>
       sctx.structSyms.put(sym, ())
-      visitExps(fields.map { case (_, v) => v }, env0, rc) ++ visitExp(region, env0, rc)
+      visitExps(fields.map { case (_, v) => v }, env0, rc) ++ region.map(visitExp(_, env0, rc)).getOrElse(Used.empty)
 
     case Expr.StructGet(e, field, _, _, _) =>
       sctx.structFieldSyms.put(field.sym, ())
@@ -1201,6 +1208,7 @@ object Redundancy {
     !decl.spec.ann.isTest &&
       !decl.spec.mod.isPublic &&
       !decl.spec.ann.isExport &&
+      !decl.spec.ann.isDefaultHandler &&
       !isMain(decl.sym) &&
       !decl.sym.name.startsWith("_") &&
       !sctx.defSyms.containsKey(decl.sym)

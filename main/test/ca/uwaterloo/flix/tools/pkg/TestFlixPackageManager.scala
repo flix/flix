@@ -697,24 +697,34 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
   }
 
+  test("mismatched-versions") {
+    val toml = mkToml(List(
+      """
+        |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
+        |""".stripMargin
+    ))
+    val manifest = ManifestParser.parse(toml, null) match {
+      case Ok(m) => m
+      case Err(e) => fail(e.message(formatter))
+    }
+
+    val path = Files.createTempDirectory("")
+    throttle {
+      FlixPackageManager.findTransitiveDependencies(manifest, path, None)
+    } match {
+      case Ok(_) => fail("expected error, got success")
+      case Err(_: PackageError.MismatchedVersions) => succeed
+      case Err(e) => fail(e.message(formatter))
+    }
+  }
+
   /**
     * Returns `true` if a [[SafetyError.Forbidden]] error is found.
     * Always returns all compiler messages in the second entry of the tuple.
     */
   private def checkForbidden(deps: List[String], main: String): (Boolean, String) = {
     val path = Files.createTempDirectory("")
-    val toml =
-      s"""
-         |[package]
-         |name = "test"
-         |description = "test"
-         |version = "0.1.0"
-         |flix = "0.65.0"
-         |authors = ["flix"]
-         |
-         |[dependencies]
-         |${deps.mkString(System.lineSeparator())}
-         |""".stripMargin
+    val toml = mkToml(deps)
 
     val manifest = ManifestParser.parse(toml, null) match {
       case Ok(m) => m
@@ -722,10 +732,10 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val allManifests = throttle {
-      FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-        case Ok(ms) => ms
-        case Err(e) => fail(e.message(formatter))
-      }
+      FlixPackageManager.findTransitiveDependencies(manifest, path, None)
+    } match {
+      case Ok(ms) => ms
+      case Err(e) => fail(e.message(formatter))
     }
 
     val manifestsWithSecurity = FlixPackageManager.resolveSecurityLevels(allManifests)
@@ -736,10 +746,10 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val pkgs = throttle {
-      FlixPackageManager.installAll(manifestsWithSecurity, path, None) match {
-        case Ok(ps) => ps
-        case Err(e) => fail(e.message(formatter))
-      }
+      FlixPackageManager.installAll(manifestsWithSecurity, path, None)
+    } match {
+      case Ok(ps) => ps
+      case Err(e) => fail(e.message(formatter))
     }
 
     val flix = new Flix()
@@ -756,5 +766,19 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     (forbidden, flix.mkMessages(errors).mkString(System.lineSeparator()))
+  }
+
+  private def mkToml(deps: List[String]): String = {
+    s"""
+       |[package]
+       |name = "test"
+       |description = "test"
+       |version = "0.1.0"
+       |flix = "0.65.0"
+       |authors = ["flix"]
+       |
+       |[dependencies]
+       |${deps.mkString(System.lineSeparator())}
+       |""".stripMargin
   }
 }
