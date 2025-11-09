@@ -606,7 +606,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |import java.io.File
            |
            |def foo(): Unit =
-           |    let _ = _ -> new File();
+           |    let _ = new File();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
