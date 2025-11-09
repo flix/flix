@@ -27,7 +27,7 @@ package object serialization {
   case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
 
   /** Represents a serializable scheme. */
-  case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitSym], base: SType)
+  case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)
 
   /** Represents a serializable type. */
   sealed trait SType
@@ -226,6 +226,10 @@ package object serialization {
 
   case class Text(s: String) extends SVarText
 
+  case class TraitConstr(sym: TraitSym, tpe: SType)
+
+  case class EqConstr(sym: AssocTypeSym, tpe1: SType, tpe2: SType)
+
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit object TypeHints {
     implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(
@@ -323,7 +327,9 @@ package object serialization {
           classOf[RestrictableCaseSym],
           classOf[StructSym],
           Absent.getClass,
-          classOf[Text]
+          classOf[Text],
+          classOf[TraitConstr],
+          classOf[EqConstr],
         )))
   }
 }
