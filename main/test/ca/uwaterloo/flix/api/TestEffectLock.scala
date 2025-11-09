@@ -77,7 +77,22 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
         |""".stripMargin
 
-    val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(0, Text("a"), StarKind))), Cst(Int32))), Var(VarSym(0, Text("a"), StarKind))), Cst(Int32))
+    val tpe = Apply(
+      Apply(
+        Apply(
+          Apply(
+            Cst(Arrow(3)), Cst(Pure)
+          ),
+          Apply(
+            Apply(
+              Apply(
+                Cst(Arrow(2)), Cst(Pure)
+              ), Var(VarSym(0, Text("a"), StarKind))
+            ), Cst(Int32)
+          )
+        ), Var(VarSym(0, Text("a"), StarKind))
+      ), Cst(Int32)
+    )
     val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), tpe)
     val expected = SDef(List(), "toInt32", scheme, "<test>")
 
