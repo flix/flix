@@ -310,6 +310,7 @@ sealed trait TokenKind {
     // Comparison operators
     case TokenKind.AngleL => true
     case TokenKind.AngleR => true
+    case TokenKind.AngledEqual => true
     case TokenKind.AngleLEqual => true
     case TokenKind.AngleREqual => true
     case TokenKind.EqualEqual => true

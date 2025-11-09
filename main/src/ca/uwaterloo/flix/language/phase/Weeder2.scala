@@ -1199,13 +1199,13 @@ object Weeder2 {
           case t @ Token(TokenKind.GenericOperator, _, _, _, _, _) =>
             Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
 
-          // Built-in operators - lookup in map
+          // Built-in operators - lookup
           case Token(kind, _, _, _, _, _) =>
             tokenOperatorToName(kind) match {
               case Some(funcName) =>
                 Validation.Success(Expr.Ambiguous(Name.mkQName(funcName, loc), loc))
               case None =>
-                throw InternalCompilerException(s"Unsupported operator: ${kind}", loc)
+                throw InternalCompilerException(s"Unsupported operator: $kind", loc)
             }
         }
       }
@@ -1291,7 +1291,6 @@ object Weeder2 {
                   Validation.Success(mkApply(tokenOperatorToName(kind).get))
 
                 // Special cases that create different AST nodes
-                case Token(TokenKind.AngledEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.compare"))
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
@@ -1340,6 +1339,7 @@ object Weeder2 {
       case TokenKind.AngleL => Some("Order.less")
       case TokenKind.AngleLEqual => Some("Order.lessEqual")
       case TokenKind.AngleR => Some("Order.greater")
+      case TokenKind.AngledEqual => Some("Order.compare")
       case TokenKind.AngleREqual => Some("Order.greaterEqual")
       case TokenKind.EqualEqual => Some("Eq.eq")
       case TokenKind.BangEqual => Some("Eq.neq")
