@@ -878,7 +878,7 @@ object Weeder2 {
         case TreeKind.Expr.Literal => visitLiteralExpr(tree)
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
-        case TreeKind.Expr.LambdaPlus => visitLambdaPlus(tree)
+        case TreeKind.Expr.LambdaOp => visitLambdaOp(tree)
         case TreeKind.Expr.LambdaExtMatch => visitLambdaExtMatchExpr(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatchExpr(tree)
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
@@ -1191,10 +1191,36 @@ object Weeder2 {
       }
     }
 
-    private def visitLambdaPlus(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def visitLambdaOp(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = tree.loc
-      val e = Expr.Ambiguous(Name.mkQName("Add.add", loc), loc)
-      Success(e)
+      flatMapN(pick(TreeKind.Operator, tree)) {
+        case op =>
+          op.children.head match {
+            // Arithmetic operators
+            case Token(TokenKind.Plus, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Add.add", loc), loc))
+            case Token(TokenKind.Minus, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Sub.sub", loc), loc))
+            case Token(TokenKind.Star, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Mul.mul", loc), loc))
+            case Token(TokenKind.Slash, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Div.div", loc), loc))
+
+            // Comparison operators
+            case Token(TokenKind.AngleL, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Order.less", loc), loc))
+            case Token(TokenKind.AngleLEqual, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Order.lessEqual", loc), loc))
+            case Token(TokenKind.AngleR, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Order.greater", loc), loc))
+            case Token(TokenKind.AngleREqual, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Order.greaterEqual", loc), loc))
+            case Token(TokenKind.EqualEqual, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Eq.eq", loc), loc))
+            case Token(TokenKind.BangEqual, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("Eq.neq", loc), loc))
+
+            // List/Append operators
+            case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("List.cons", loc), loc))
+            case Token(TokenKind.ColonColonColon, _, _, _, _, _) => Validation.Success(Expr.Ambiguous(Name.mkQName("List.concat", loc), loc))
+
+            // User-defined operators - use the operator text directly
+            case t @ Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+              Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
+
+            case t => throw InternalCompilerException(s"Unexpected token: $t", loc)
+          }
+      }
     }
 
     private def visitLambdaExtMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {

@@ -266,7 +266,7 @@ object SyntaxTree {
 
       case object Lambda extends Expr
 
-      case object LambdaPlus extends Expr
+      case object LambdaOp extends Expr
 
       case object LambdaExtMatch extends Expr
 
