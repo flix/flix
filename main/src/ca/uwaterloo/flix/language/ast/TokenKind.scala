@@ -319,8 +319,8 @@ sealed trait TokenKind {
     // User-defined operators
     case TokenKind.GenericOperator => true
 
-    // Note: `KeywordAnd` and `KeywordAnd` are explicitly
-    // unsupported since they are lazy.
+    // Note: `KeywordAnd` and `KeywordAnd` are explicitly not supported due to laziness.
+    // Note: `ColonColon` and `ColonColonColon` are not supported due to desugaring of long lists.
 
     case _ => false
   }
