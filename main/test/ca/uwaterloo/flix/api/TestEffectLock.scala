@@ -14,7 +14,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def main(): Unit = ()
         |""".stripMargin
 
-    val tpe = serialization.Apply(serialization.Apply(serialization.Cst(serialization.Arrow(1)), serialization.Cst(serialization.Unit)), serialization.Cst(serialization.Unit))
+    val tpe = serialization.Apply(serialization.Apply(serialization.Apply(serialization.Cst(serialization.Arrow(2)), serialization.Cst(serialization.Pure)), serialization.Cst(serialization.Unit)), serialization.Cst(serialization.Unit))
     val scheme = serialization.SScheme(List.empty, tpe)
     val expected = serialization.SDef(List.empty, "main", scheme, "<test>")
 
