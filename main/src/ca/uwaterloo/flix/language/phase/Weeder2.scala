@@ -3004,7 +3004,7 @@ object Weeder2 {
 
     private def visitNameType(tree: Tree)(implicit sctx: SharedContext): Type.Ambiguous = {
       val qname = visitQName(tree)
-      Type.Ambiguous(qname, tree.loc)
+      Type.Ambiguous(qname, qname.loc)
     }
 
     private def visitIdentType(tree: Tree)(implicit sctx: SharedContext): Type = {
