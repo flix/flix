@@ -3357,7 +3357,6 @@ object Parser2 {
       Array(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub),
       Array(TokenKind.KeywordRvand),
       Array(TokenKind.Plus, TokenKind.Minus),
-      Array(TokenKind.Ampersand),
       Array(TokenKind.KeywordXor),
       Array(TokenKind.KeywordOr),
       Array(TokenKind.KeywordAnd),

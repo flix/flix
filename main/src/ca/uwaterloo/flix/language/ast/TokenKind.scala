@@ -24,7 +24,6 @@ sealed trait TokenKind {
     */
   def display: String = {
     this match {
-      case TokenKind.Ampersand => "'&'"
       case TokenKind.AngleL => "'<'"
       case TokenKind.AngleLEqual => "'<='"
       case TokenKind.AngleR => "'>'"
@@ -611,8 +610,6 @@ sealed trait TokenKind {
   *   - Tokens are conceptually grouped by prefix, so 'LiteralInt32' is preferred over 'Int32Literal'.
   */
 object TokenKind {
-
-  case object Ampersand extends TokenKind
 
   case object AngleL extends TokenKind
 

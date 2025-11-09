@@ -171,7 +171,6 @@ object Lexer {
     val simpleTokens = Array(
       ("!", TokenKind.Bang),
       ("!=", TokenKind.BangEqual),
-      ("&", TokenKind.Ampersand),
       ("*", TokenKind.Star),
       ("+", TokenKind.Plus),
       ("-", TokenKind.Minus),
