@@ -364,7 +364,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
     */
   private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
-
+    terminal.writer().println("compile called")
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
@@ -388,6 +388,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Prints the list of errors using the `flix` instance to the implicit terminal.
     */
   private def printErrors(errors: List[CompilationMessage])(implicit terminal: Terminal): Unit = {
+    terminal.writer().println(s"messages: ${errors.length}")
     for (msg <- flix.mkMessages(errors)) {
       terminal.writer().print(msg)
     }
