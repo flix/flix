@@ -14,7 +14,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Unit))
-    val scheme = SScheme(List.empty, tpe)
+    val scheme = SScheme(List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "fun", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
@@ -30,7 +30,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Int32))
-    val scheme = SScheme(List.empty, tpe)
+    val scheme = SScheme(List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "fun", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
@@ -46,7 +46,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Unit))
-    val scheme = SScheme(List.empty, tpe)
+    val scheme = SScheme(List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "toUnit", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
@@ -62,7 +62,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
-    val scheme = SScheme(List.empty, tpe)
+    val scheme = SScheme(List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "answer", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
@@ -93,7 +93,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         ), Var(VarSym(Text("a"), StarKind))
       ), Cst(Int32)
     )
-    val scheme = SScheme(List(VarSym(Text("a"), StarKind)), tpe)
+    val scheme = SScheme(List(VarSym(Text("a"), StarKind)), List.empty, tpe)
     val expected = SDef(List(), "toInt32", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
@@ -112,8 +112,8 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def pretty(x: a): String with ToString[a] = ToString.toString(x)
         |""".stripMargin
 
-    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
-    val scheme = SScheme(List(VarSym(Text("a"), StarKind)), tpe)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(Text("a"), StarKind))), Cst(Str))
+    val scheme = SScheme(List(VarSym(Text("a"), StarKind)), List(TraitSym(List.empty, "ToString")), tpe)
     val expected = SDef(List.empty, "pretty", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)

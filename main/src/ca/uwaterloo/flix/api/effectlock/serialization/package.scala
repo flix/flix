@@ -27,7 +27,7 @@ package object serialization {
   case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
 
   /** Represents a serializable scheme. */
-  case class SScheme(quantifiers: List[VarSym], base: SType)
+  case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitSym], base: SType)
 
   /** Represents a serializable type. */
   sealed trait SType

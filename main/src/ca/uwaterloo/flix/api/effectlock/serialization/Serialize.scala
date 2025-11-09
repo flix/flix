@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.effectlock.serialization
 
-import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.ast.shared.{TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -31,10 +31,11 @@ object Serialize {
   }
 
   private def serializeSpec(spec0: TypedAst.Spec): SScheme = spec0 match {
-    case TypedAst.Spec(_, _, _, _, _, Scheme(quantifiers, _, _, base), _, _, _, _) =>
+    case TypedAst.Spec(_, _, _, _, _, Scheme(quantifiers, tconstrs, _, base), _, _, _, _) =>
       val qs = quantifiers.map(serializeKindedTypeVarSym)
+      val tcs = tconstrs.map(serializeTraitConstraint)
       val b = serializeType(base)
-      SScheme(qs, b)
+      SScheme(qs, tcs, b)
   }
 
   private def serializeType(tpe0: Type): SType = tpe0 match {
@@ -127,6 +128,10 @@ object Serialize {
     case Kind.CaseSet(sym) => CaseSetKind(serializeRestrictableEnumSym(sym))
     case Kind.Arrow(k1, k2) => ArrowKind(serializeKind(k1), serializeKind(k2))
     case Kind.Error => throw InternalCompilerException("unexpected error kind in serialization", SourceLocation.Unknown)
+  }
+
+  private def serializeTraitConstraint(tconstr0: TraitConstraint): TraitSym = {
+    serializeTraitSym(tconstr0.symUse.sym)
   }
 
   private def serializeAssocTypeSym(sym0: Symbol.AssocTypeSym): AssocTypeSym = {
