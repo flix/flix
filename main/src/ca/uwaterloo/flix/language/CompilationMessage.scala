@@ -117,7 +117,7 @@ object CompilationMessage {
     * @param l the list of compilation messages to filter
     * @return the filtered list containing only the earliest relevant error for each location
     */
-  def filter(l: List[CompilationMessage]): List[CompilationMessage] = {
+  def filterShadowedMessages(l: List[CompilationMessage]): List[CompilationMessage] = {
     // Accumulator for messages that pass the filter
     val result = mutable.ArrayBuffer.empty[CompilationMessage]
 

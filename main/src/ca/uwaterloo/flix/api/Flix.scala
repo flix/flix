@@ -793,7 +793,7 @@ class Flix {
     if (errors.isEmpty) {
       codeGen(result.get)
     } else {
-      val errs = CompilationMessage.filter(errors)
+      val errs = CompilationMessage.filterShadowedMessages(errors)
       Validation.Failure(Chain.from(errs))
     }
   }
