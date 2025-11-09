@@ -112,6 +112,7 @@ object CompilationMessage {
     * 2. For each phase, we include messages whose locations don't overlap with
     *    messages already included from earlier phases
     * 3. A location A "overlaps" with location B if A is contained within B
+    * 4. Messages from the same phase never shadow each other, even if they overlap
     *
     * @param l the list of compilation messages to filter
     * @return the filtered list containing only the earliest relevant error for each location
@@ -130,6 +131,9 @@ object CompilationMessage {
     while (current.isDefined) {
       val c = current.get
 
+      // Messages to include from this phase.
+      val acc = mutable.ArrayBuffer.empty[CompilationMessage]
+
       // Check if there are any messages for this phase
       msgByKind.get(c) match {
         case None => // No messages for this phase, continue to next
@@ -138,10 +142,13 @@ object CompilationMessage {
           for (msg <- msgs) {
             // Only include if no earlier message contains this location
             if (!result.exists(m => m.loc.contains(msg.loc))) {
-              result += msg
+              acc += msg
             }
           }
       }
+
+      // Add messages from this phase.
+      result ++= acc
 
       // Move to the next phase in the pipeline
       current = c.next
