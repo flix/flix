@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Serialize {
 
-  private def serializeDef(defn0: TypedAst.Def): SDef = defn0 match {
+  def serializeDef(defn0: TypedAst.Def): SDef = defn0 match {
     case TypedAst.Def(sym, spec, _, loc) =>
       val ns = sym.namespace
       val text = sym.name
