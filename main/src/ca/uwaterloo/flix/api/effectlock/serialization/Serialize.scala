@@ -15,10 +15,38 @@
  */
 package ca.uwaterloo.flix.api.effectlock.serialization
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 object Serialize {
+
+  private def serializeDef(defn0: TypedAst.Def): SDef = defn0 match {
+    case TypedAst.Def(sym, spec, _, loc) =>
+      val ns = sym.namespace
+      val text = sym.name
+      val sscheme = serializeSpec(spec)
+      val source = loc.source.name
+      SDef(ns, text, sscheme, source)
+  }
+
+  private def serializeSpec(spec0: TypedAst.Spec): SScheme = spec0 match {
+    case TypedAst.Spec(_, _, _, _, _, Scheme(quantifiers, _, _, base), _, _, _, _) =>
+      val qs = quantifiers.map(serializeKindedTypeVarSym)
+      val b = serializeType(base)
+      SScheme(qs, b)
+  }
+
+  private def serializeType(tpe0: Type): SType = tpe0 match {
+    case Type.Var(sym, _) => Var(serializeKindedTypeVarSym(sym))
+    case Type.Cst(tc, _) => Cst(serializeTypeConstructor(tc))
+    case Type.Apply(tpe1, tpe2, _) => Apply(serializeType(tpe1), serializeType(tpe2))
+    case Type.Alias(symUse, args, tpe, _) => Alias(serializeTypeAliasSym(symUse.sym), args.map(serializeType), serializeType(tpe))
+    case Type.AssocType(symUse, arg, kind, _) => AssocType(serializeAssocTypeSym(symUse.sym), serializeType(arg), serializeKind(kind))
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JvmToType", loc)
+    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JvmToEff", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected UnresolvedJvmType", loc)
+  }
 
   private def serializeTypeConstructor(tc0: TypeConstructor): STC = tc0 match {
     case TypeConstructor.Void => Void
@@ -101,12 +129,20 @@ object Serialize {
     case Kind.Error => throw InternalCompilerException("unexpected error kind in serialization", SourceLocation.Unknown)
   }
 
+  private def serializeAssocTypeSym(sym0: Symbol.AssocTypeSym): AssocTypeSym = {
+    AssocTypeSym(serializeTraitSym(sym0.trt), sym0.name)
+  }
+
   private def serializeEffSym(sym0: Symbol.EffSym): EffSym = {
     EffSym(sym0.namespace, sym0.name)
   }
 
   private def serializeEnumSym(sym0: Symbol.EnumSym): EnumSym = {
     EnumSym(sym0.id, sym0.namespace, sym0.text)
+  }
+
+  private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {
+    VarSym(sym0.id, serializeVarText(sym0.text), serializeKind(sym0.kind))
   }
 
   private def serializeRegionSym(sym0: Symbol.RegionSym): RegionSym = {
@@ -123,6 +159,19 @@ object Serialize {
 
   private def serializeStructSym(sym0: Symbol.StructSym): StructSym = {
     StructSym(sym0.id, sym0.namespace, sym0.text)
+  }
+
+  private def serializeTraitSym(sym0: Symbol.TraitSym): TraitSym = {
+    TraitSym(sym0.namespace, sym0.name)
+  }
+
+  private def serializeTypeAliasSym(sym0: Symbol.TypeAliasSym): TypeAliasSym = {
+    TypeAliasSym(sym0.namespace, sym0.name)
+  }
+
+  private def serializeVarText(text0: VarText): SVarText = text0 match {
+    case VarText.Absent => Absent
+    case VarText.SourceText(s) => Text(s)
   }
 
 }

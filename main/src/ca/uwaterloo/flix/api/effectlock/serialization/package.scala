@@ -24,7 +24,7 @@ package ca.uwaterloo.flix.api.effectlock
 package object serialization {
 
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme)
+  case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], base: SType)
@@ -197,7 +197,7 @@ package object serialization {
   /** Represents a serializable symbol. */
   sealed trait SSym
 
-  case class VarSym(id: Int, text: String, kind: SKind) extends SSym
+  case class VarSym(id: Int, text: SVarText, kind: SKind) extends SSym
 
   case class TypeAliasSym(namespace: List[String], name: String) extends SSym
 
@@ -218,6 +218,13 @@ package object serialization {
   case class RestrictableCaseSym(enumSym: RestrictableEnumSym, name: String) extends SSym
 
   case class StructSym(id: Option[Int], namespace: List[String], text: String) extends SSym
+
+  /** Represents serializable VarText. */
+  sealed trait SVarText
+
+  case object Absent extends SVarText
+
+  case class Text(s: String) extends SVarText
 
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit object TypeHints {
@@ -315,6 +322,8 @@ package object serialization {
           classOf[RestrictableEnumSym],
           classOf[RestrictableCaseSym],
           classOf[StructSym],
+          Absent.getClass,
+          classOf[Text]
         )))
   }
 }
