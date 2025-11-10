@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.effectlock.serialization.*
 import ca.uwaterloo.flix.util.Options
+import org.json4s
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestEffectLock extends AnyFunSuite with TestUtils {
@@ -222,6 +223,23 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val actual = Serialize.serializeDef(defs.head)
+    assert(actual == expected)
+  }
+
+  test("serialization.json.01") {
+    val input =
+      """
+        |pub def fun(): Unit = ()
+        |pub def g(): Int32 = 42
+        |""".stripMargin
+
+    val expected = """{"fun":null}"""
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val serialized = defs.map(Serialize.serializeDef)
+    val actual = json4s.native.Serialization.write(serialized)
+    println(actual)
     assert(actual == expected)
   }
 
