@@ -19,8 +19,7 @@ class TestTypedAstTreeShaker extends AnyFunSuite with TestUtils {
   test("Reachable.02") {
     val input =
       """
-        |def main(): Unit =
-        |    f()
+        |def main(): Unit = f()
         |
         |def f(): Unit = g()
         |
@@ -33,8 +32,7 @@ class TestTypedAstTreeShaker extends AnyFunSuite with TestUtils {
   test("Reachable.03") {
     val input =
       """
-        |def main(): Unit =
-        |    A.f()
+        |def main(): Unit = A.f()
         |
         |mod A {
         |    pub def f(): Unit = ()
@@ -51,8 +49,7 @@ class TestTypedAstTreeShaker extends AnyFunSuite with TestUtils {
   test("Reachable.04") {
     val input =
       """
-        |def main(): Unit =
-        |    A.f()
+        |def main(): Unit = A.f()
         |
         |mod A {
         |    pub def f(): Unit = B.g()
