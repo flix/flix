@@ -35,6 +35,6 @@ class PhaseSuite extends Suites(
   new TestStratifier,
   new TestTyper,
   new TestWeeder,
-
+  new TestTypedAstTreeShaker,
   new UnificationSuite,
 )
