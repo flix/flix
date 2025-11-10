@@ -194,7 +194,7 @@ mod MutList {
     /// Returns the sum of all elements in the MutList `v`.
     ///
     pub def sum(v: MutList[Int32, r]): Int32 \ r =
-        foldLeft((acc, x) -> acc + x, 0, v)
+        foldLeft((+), 0, v)
 
     ///
     /// Returns the sum of all elements in the MutList `v` according to the function `f`.

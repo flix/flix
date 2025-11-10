@@ -179,6 +179,11 @@ mod List {
     pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
 
     ///
+    /// Returns a new list with element `x` added to the front of list `l`.
+    ///
+    pub def cons(x: a, l: List[a]): List[a] = Cons(x, l)
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
     ///
     /// Returns `None` if `l` is empty.
