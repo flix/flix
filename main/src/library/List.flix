@@ -1162,7 +1162,7 @@ mod List {
     /// Returns the list `l` as a set.
     ///
     pub def toSet(l: List[a]): Set[a] with Order[a] =
-        foldLeft((acc, x) -> Set.insert(x, acc), Set.empty(), l)
+        foldRight(Set.insert, Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.

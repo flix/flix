@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2025 Din Jakupi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.lsp.provider
 
-package ca.uwaterloo.flix.api
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.{FormattingOptions, TextEdit}
+import scala.annotation.unused
 
-object Version {
-  /**
-    * Represents the current version of Flix.
-    */
-  val CurrentVersion: Version = Version(major = 0, minor = 66, revision = 2)
-}
+object FormattingProvider {
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
+  def formatDocument(@unused uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
+    List() // TODO: Implement document formatting
+  }
+
 }

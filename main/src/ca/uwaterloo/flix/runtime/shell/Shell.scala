@@ -65,7 +65,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     s match {
       // First, check for a string with two backslashes at start and end
-      case twoBackslashes(s) => s
+      case twoBackslashes(s1) => s1
 
       // If not, then replace all escaped line endings with \n
       case _ =>
@@ -182,7 +182,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Reloads every source path.
     */
-  private def execReload()(implicit terminal: Terminal): Unit = {
+  private def execReload()(implicit terminal: Terminal): Result[Unit, Unit] = {
 
     // Scan the disk to find changes, and add source to the flix object
     bootstrap.reconfigureFlix(flix)
@@ -190,8 +190,12 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     // Remove any previous definitions, as they may no longer be valid against the new source
     clearFragments()
 
-    compile(progress = isFirstCompile)
+    val compilation = compile(progress = isFirstCompile)
     isFirstCompile = false
+    compilation.toResult match {
+      case Result.Ok(_) => Result.Ok(())
+      case Result.Err(_) => Result.Err(())
+    }
   }
 
   /**
@@ -332,8 +336,11 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Reloads and evaluates the given source code.
     */
   private def execReloadAndEval(s: String)(implicit terminal: Terminal): Unit = {
-    execReload()
-    execEval(s)
+    // Only eval if reload was successful
+    execReload() match {
+      case Result.Ok(()) => execEval(s)
+      case Result.Err(()) => ()
+    }
   }
 
   /**
@@ -364,14 +371,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Compiles the current files and packages (first time from scratch, subsequent times incrementally)
     */
   private def compile(entryPoint: Option[Symbol.DefnSym] = None, progress: Boolean = true)(implicit terminal: Terminal): Validation[CompilationResult, CompilationMessage] = {
-
     // Set the main entry point if there is one (i.e. if the programmer wrote an expression)
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     flix.check() match {
-      case (Some(root), Nil) =>
-        this.root = Some(root)
-        val result = flix.codeGen(root)
+      case (Some(r), Nil) =>
+        this.root = Some(r)
+        val result = flix.codeGen(r)
         result.toResult match {
           case Result.Ok(_) => result
           case Result.Err(errors) =>

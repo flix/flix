@@ -779,7 +779,7 @@ mod Chain {
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Chain[a]): Set[a] with Order[a] =
-        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
+        foldRight(Set.insert, Set.empty(), c)
 
     ///
     /// Returns the chain of pairs `c` that represents an association list as a map.

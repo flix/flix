@@ -1,5 +1,8 @@
 # Changelog
 
+Version 0.66.2:
+- LSP: Added infrastructure for code formatting (thanks Din!)
+
 Version 0.66.1:
 - Compiler: Fixed build to target Java 21 (thanks Magnus!)
 
