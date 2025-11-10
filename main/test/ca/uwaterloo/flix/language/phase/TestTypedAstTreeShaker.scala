@@ -30,6 +30,7 @@ class TestTypedAstTreeShaker extends AnyFunSuite with TestUtils {
     expectReachable(input, expected)
   }
 
+  /** Asserts that the program contains exactly the functions `expected` after running [[Flix.treeshake]] */
   private def expectReachable(input: String, expected: Set[String], options: Options = Options.TestWithLibNix): Unit = {
     val (optRoot, errors) = check(input, options)
 
