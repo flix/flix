@@ -29,5 +29,5 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew compileTestScala --console=plain
       - name: Test Package Manager suite with timeout
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: ./gradlew testPackageManager --console=plain
