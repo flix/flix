@@ -802,6 +802,36 @@ class Flix {
     }
   }
 
+  /** Performs tree shaking on `root`. */
+  def treeshake(root: TypedAst.Root): TypedAst.Root = try {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+
+    // Reset the phase information.
+    phaseTimers = ListBuffer.empty
+
+    val result = TypedAstTreeShaker.run(root)
+
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
+
+    // Reset the progress bar.
+    progressBar.complete()
+
+    result
+
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+  }
+
   /**
     * Clears all caches used for incremental compilation.
     */
