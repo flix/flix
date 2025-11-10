@@ -462,7 +462,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Delete files paths
     for (file <- files) {
       FileOps.delete(file) match {
-        case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+        case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}"))
         case Ok(_) => ()
       }
     }
@@ -476,7 +476,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
 
       FileOps.delete(dir) match {
-        case Err(e) => return Err(BootstrapError.FileError(e.getMessage))
+        case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}"))
         case Ok(_) => ()
       }
     }
