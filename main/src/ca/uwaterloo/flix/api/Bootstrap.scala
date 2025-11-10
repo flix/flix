@@ -497,7 +497,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Returns `Err` if `path` is one of the following:
     *   1. The root directory of the system
-    *   1. The user's home directory (`"user.home` system property, using [[System.getProperty]])
+    *   1. The user's home directory (`"user.home"` system property, using [[System.getProperty]])
     *   1. Any ancestor of [[projectPath]]
     *
     * Returns `Ok(())` otherwise.
