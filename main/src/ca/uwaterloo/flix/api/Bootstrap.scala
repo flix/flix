@@ -435,23 +435,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (optManifest.isEmpty) {
       return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set a Flix project. Aborting..."))
     }
+
     // Ensure `cwd` is not dangerous
     val cwd = Path.of(System.getProperty("user.dir"))
-    checkForRootDir(cwd) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    checkForHomeDir(cwd) match {
+    checkForCriticallyDangerousPath(cwd) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
 
     // Ensure `projectPath` is not dangerous
-    checkForRootDir(projectPath) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-    checkForHomeDir(projectPath) match {
+    checkForCriticallyDangerousPath(projectPath) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
@@ -516,21 +509,31 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns `Ok(())` otherwise.
     */
   private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
-    checkForRootDir(path) match {
+    checkForCriticallyDangerousPath(path) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
-
-    checkForHomeDir(path) match {
-      case Err(e) => return Err(e)
-      case Ok(()) => ()
-    }
-
     checkForAncestor(path) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
+    Ok(())
+  }
 
+  /** Returns `Err` if `path` is either a root directory or the user's home directory.
+    *
+    * @see [[checkForRootDir]]
+    * @see [[checkForHomeDir]]
+    */
+  private def checkForCriticallyDangerousPath(path: Path): Result[Unit, BootstrapError] = {
+    checkForRootDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForHomeDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
     Ok(())
   }
 
