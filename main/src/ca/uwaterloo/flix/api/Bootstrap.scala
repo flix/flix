@@ -446,11 +446,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
     for (file <- files) {
       if (!FileOps.checkExt(file, "class")) {
-        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${buildDir.relativize(file)}'"))
+        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
       }
 
       if (!FileOps.isClassFile(file)) {
-        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${buildDir.relativize(file)}'"))
+        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
       }
 
       checkForDangerousPath(file) match {
@@ -461,6 +461,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Delete files paths
     for (file <- files) {
+      println(s"deleting '${projectPath.relativize(file)}'")
       FileOps.delete(file) match {
         case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
         case Ok(_) => ()
@@ -475,10 +476,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Ok(()) => ()
       }
 
-      FileOps.delete(dir) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
-        case Ok(_) => ()
+
+      try {
+        println(s"deleting '${projectPath.relativize(dir)}'")
+        Files.delete(dir)
+      } catch {
+        case e: Exception => return Err(BootstrapError.FileError(e.toString))
       }
+      // FileOps.delete(dir) match {
+      //  case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
+      //  case Ok(_) => ()
+      // }
     }
 
     Ok(())
