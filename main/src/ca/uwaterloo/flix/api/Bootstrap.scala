@@ -31,6 +31,7 @@ import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
+import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.{Failure, Success, Using}
 
 
@@ -496,18 +497,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Returns `Err` if `path` is one of the following:
-    *   1. The root directory of the system
+    *   1. A root directory of the system
     *   1. The user's home directory (`"user.home"` system property, using [[System.getProperty]])
     *   1. Any ancestor of [[projectPath]]
     *
     * Returns `Ok(())` otherwise.
     */
   private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
-    val root = Path.of("/").normalize()
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
     val home = Path.of(System.getProperty("user.home"))
 
     // Ensure `buildDir` is NOT the root directory.
-    if (root == path) {
+    if (roots.contains(path)) {
       return Err(BootstrapError.FileError("Found root directory. Aborting..."))
     }
 
