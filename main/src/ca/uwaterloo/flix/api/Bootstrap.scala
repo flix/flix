@@ -427,7 +427,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
-    * directories. Performs safety checks to ensure:
+    * directories (including the `build` directory itself). Performs safety checks to ensure:
     *  - the current directory is a Flix project (manifest present),
     *  - no root or home directories are targeted,
     *  - no ancestor of the project directory is targeted,
