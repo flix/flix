@@ -469,24 +469,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Delete empty directories
+    // Visit in reverse order to delete the innermost directories first
     val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue)
-    for (dir <- directories) {
+    for (dir <- directories.reverse) {
       checkForDangerousPath(dir) match {
         case Err(e) => return Err(e)
         case Ok(()) => ()
       }
 
-
-      try {
-        println(s"deleting '${projectPath.relativize(dir)}'")
-        Files.delete(dir)
-      } catch {
-        case e: Exception => return Err(BootstrapError.FileError(e.toString))
+      println(s"deleting '${projectPath.relativize(dir)}'")
+      FileOps.delete(dir) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
+        case Ok(_) => ()
       }
-      // FileOps.delete(dir) match {
-      //  case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
-      //  case Ok(_) => ()
-      // }
     }
 
     Ok(())
