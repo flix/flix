@@ -426,9 +426,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
-    * Sequentially deletes all `.class` files in the build directory if ALL files (recursively) in the build directory
-    * are `.class` files.
-    * Aborts if any other file was found.
+    * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
+    * directories. Performs safety checks to ensure:
+    *  - the current directory is a Flix project (manifest present),
+    *  - no root or home directories are targeted,
+    *  - no ancestor of the project directory is targeted,
+    *  - every file in the build directory has a `.class` extension and is a valid class file.
+    *
+    * Returns `Ok(())` on success or `Err(BootstrapError.FileError(...))` on validation or IO failures.
     */
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
