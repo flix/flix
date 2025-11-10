@@ -1294,7 +1294,6 @@ object Weeder2 {
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.ColonColonColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
                 case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
                   tryPickQName(exprs(1)) match {
@@ -1343,6 +1342,9 @@ object Weeder2 {
       case TokenKind.AngleREqual => Some("Order.greaterEqual")
       case TokenKind.EqualEqual => Some("Eq.eq")
       case TokenKind.BangEqual => Some("Eq.neq")
+
+      // List operators
+      case TokenKind.ColonColonColon => Some("List.append")
 
       // Unsupported operators
       case _ => None
