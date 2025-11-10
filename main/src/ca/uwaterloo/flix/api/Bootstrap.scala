@@ -461,7 +461,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Delete files paths
     for (file <- files) {
-      println(s"deleting '${projectPath.relativize(file)}'")
+      println(s"Deleting '${projectPath.relativize(file)}'")
       FileOps.delete(file) match {
         case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
         case Ok(_) => ()
@@ -477,7 +477,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Ok(()) => ()
       }
 
-      println(s"deleting '${projectPath.relativize(dir)}'")
+      println(s"Deleting '${projectPath.relativize(dir)}'")
       FileOps.delete(dir) match {
         case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
         case Ok(_) => ()
