@@ -134,6 +134,28 @@ class TestTypedAstTreeShaker extends AnyFunSuite with TestUtils {
     expectReachable(input, expected)
   }
 
+  test("Reachable.10") {
+    val input =
+      """
+        |def main(): Unit = A.f(())
+        |
+        |mod A {
+        |    pub def f(x: a): Unit with T[a] = T.g(x)
+        |}
+        |
+        |instance T[Unit] {
+        |    pub def g(x: Unit): Unit = x
+        |}
+        |
+        |trait T[a: Type] {
+        |   pub def g(x: a): Unit
+        |}
+        |
+        |""".stripMargin
+    val expected = Set("main", "A.f", "T.g")
+    expectReachable(input, expected)
+  }
+
   /** Asserts that the program contains exactly the functions `expected` after running [[Flix.treeshake]] */
   private def expectReachable(input: String, expected: Set[String], options: Options = Options.TestWithLibNix): Unit = {
     val (optRoot, errors) = check(input, options)
