@@ -418,7 +418,7 @@ mod Nel {
     /// Applies `combine` to all elements in `l` until a single value is obtained.
     ///
     pub def reduce(l: Nel[a]): a with SemiGroup[a] = match l {
-        case Nel(x, xs) => Foldable.foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
+        case Nel(x, xs) => Foldable.foldLeft(SemiGroup.combine, x, xs)
     }
 
     ///
