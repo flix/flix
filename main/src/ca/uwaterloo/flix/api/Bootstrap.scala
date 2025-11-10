@@ -435,9 +435,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (optManifest.isEmpty) {
       return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set a Flix project. Aborting..."))
     }
+    // Ensure `cwd` is not dangerous
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForRootDir(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForHomeDir(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
 
     // Ensure `projectPath` is not dangerous
-    checkForDangerousPath(projectPath) match {
+    checkForRootDir(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForHomeDir(projectPath) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
@@ -504,24 +518,47 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns `Ok(())` otherwise.
     */
   private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
-    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
-    val home = Path.of(System.getProperty("user.home"))
-
-    // Ensure `buildDir` is NOT the root directory.
-    if (roots.contains(path)) {
-      return Err(BootstrapError.FileError("Found root directory. Aborting..."))
+    checkForRootDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
     }
 
-    // Ensure `buildDir` is NOT the home directory.
+    checkForHomeDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    checkForAncestor(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is the user's home directory. */
+  private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
+    val home = Path.of(System.getProperty("user.home"))
     if (home == path) {
       return Err(BootstrapError.FileError("Found home directory. Aborting..."))
     }
+    Ok(())
+  }
 
-    // Ensure `buildDir` is NOT an ancestor of `projectPath`
+  /** Returns `Err` if `path` is a root directory. */
+  private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
+    if (roots.contains(path)) {
+      return Err(BootstrapError.FileError("Found root directory. Aborting..."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is an ancestor of `projectPath`. */
+  private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
     if (projectPath.startsWith(path)) {
       return Err(BootstrapError.FileError(s"Directory '${path.normalize()}' is an ancestor of the project directory. Aborting..."))
     }
-
     Ok(())
   }
 
