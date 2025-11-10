@@ -22,7 +22,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   private def throttle[A](action: => A): A = {
-    Thread.sleep(1500)
+    Thread.sleep(3000)
     val result = action
     Thread.sleep(1500)
     result
