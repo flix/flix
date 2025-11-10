@@ -432,7 +432,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set up project mode."))
+      return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set a Flix project. Aborting..."))
     }
 
     checkForDangerousPath(projectPath) match {
