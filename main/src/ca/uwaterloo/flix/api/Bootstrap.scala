@@ -470,7 +470,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for (file <- files) {
       println(s"Deleting '${projectPath.relativize(file)}'")
       FileOps.delete(file) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file '$file': $e"))
         case Ok(_) => ()
       }
     }
@@ -486,7 +486,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       println(s"Deleting '${projectPath.relativize(dir)}'")
       FileOps.delete(dir) match {
-        case Err(e) => return Err(BootstrapError.FileError(s"exception in deletion: ${e.getMessage}\n$e"))
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$dir': $e"))
         case Ok(_) => ()
       }
     }
