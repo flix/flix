@@ -79,7 +79,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Alexander Dybdahl Troelsen](https://github.com/LoZander)
 - [Chenhao Gao](https://github.com/stormckey)
 - [Maksim Gusev](https://github.com/emaisty)
-- [gwydd](https://github.com/gwydd12)
+- [Din Jakupi](https://github.com/gwydd12)
 - [Adam Yasser Tallouzi](https://github.com/JumpTwiice)
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
 - [Gagan Chandan](https://github.com/gaganchandan)

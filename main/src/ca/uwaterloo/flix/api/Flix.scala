@@ -95,6 +95,11 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   /**
+    * Returns the parsed ast.
+    */
+  def getParsedAst: SyntaxTree.Root = cachedParserCst
+
+  /**
     * A cache of error messages for incremental compilation.
     */
   private var cachedErrors: List[CompilationMessage] = Nil
