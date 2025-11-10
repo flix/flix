@@ -148,6 +148,8 @@ object FileOps {
 
   /**
     * Returns a list of all directories in the given path, visited recursively.
+    * The list contains the directories in order of outermost to innermost, e.g., `a :: a/b :: a/b/c :: Nil`.
+    *
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
