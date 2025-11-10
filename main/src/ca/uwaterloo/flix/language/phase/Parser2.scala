@@ -1936,7 +1936,7 @@ object Parser2 {
           advance()
           close(opMark, TreeKind.Operator)
           advance()
-          close(mark, TreeKind.Expr.LambdaOp)
+          close(mark, TreeKind.Expr.OperatorAsLambda)
 
         case (TokenKind.ParenL, _, _) =>
           // Detect lambda function declaration.

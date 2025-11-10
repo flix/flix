@@ -872,13 +872,13 @@ object Weeder2 {
         case TreeKind.Expr.StringInterpolation => visitStringInterpolationExpr(tree)
         case TreeKind.Expr.OpenVariant => visitOpenVariantExpr(tree)
         case TreeKind.Expr.OpenVariantAs => visitOpenVariantAsExpr(tree)
+        case TreeKind.Expr.OperatorAsLambda => visitOperatorAsLambda(tree)
         case TreeKind.Expr.Hole => Validation.Success(visitHoleExpr(tree))
         case TreeKind.Expr.HoleVariable => visitHoleWithExpExpr(tree)
         case TreeKind.Expr.Use => visitExprUseExpr(tree)
         case TreeKind.Expr.Literal => visitLiteralExpr(tree)
         case TreeKind.Expr.Apply => visitApplyExpr(tree)
         case TreeKind.Expr.Lambda => visitLambdaExpr(tree)
-        case TreeKind.Expr.LambdaOp => visitLambdaOp(tree)
         case TreeKind.Expr.LambdaExtMatch => visitLambdaExtMatchExpr(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatchExpr(tree)
         case TreeKind.Expr.Unary => visitUnaryExpr(tree)
@@ -1191,7 +1191,7 @@ object Weeder2 {
       }
     }
 
-    private def visitLambdaOp(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+    private def visitOperatorAsLambda(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       val loc = tree.loc
       flatMapN(pick(TreeKind.Operator, tree)) { op =>
         op.children.head match {
