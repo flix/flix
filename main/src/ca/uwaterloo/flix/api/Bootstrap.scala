@@ -546,7 +546,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
     val home = Path.of(System.getProperty("user.home"))
     if (home == path) {
-      return Err(BootstrapError.FileError("Found home directory. Aborting..."))
+      return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
     }
     Ok(())
   }
@@ -555,7 +555,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
     val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
     if (roots.contains(path)) {
-      return Err(BootstrapError.FileError("Found root directory. Aborting..."))
+      return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
     }
     Ok(())
   }
@@ -563,7 +563,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
     if (projectPath.startsWith(path)) {
-      return Err(BootstrapError.FileError(s"Directory '${path.normalize()}' is an ancestor of the project directory. Aborting..."))
+      return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
   }
