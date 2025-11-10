@@ -152,7 +152,7 @@ class TestTypedAstTreeShaker extends AnyFunSuite with TestUtils {
         |}
         |
         |""".stripMargin
-    val expected = Set("main", "A.f", "T.g")
+    val expected = Set("main", "A.f")
     expectReachable(input, expected)
   }
 
