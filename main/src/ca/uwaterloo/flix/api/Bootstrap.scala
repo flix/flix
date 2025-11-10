@@ -464,7 +464,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    // Delete files paths
+    // Delete files
     for (file <- files) {
       println(s"Deleting '${projectPath.relativize(file)}'")
       FileOps.delete(file) match {
