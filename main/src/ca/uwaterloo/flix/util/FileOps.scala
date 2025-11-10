@@ -29,17 +29,17 @@ import scala.util.Using
 object FileOps {
 
   /**
-    * Deletes `file` if it exists. Wraps any error `e` in `Result.Err(e)`.
+    * Deletes `path` if it exists. Wraps any error `e` in `Result.Err(e)`.
     *
-    * @param file the file to delete
-    * @return `OK(())` if `file` was successfully deleted, `Err(e)` otherwise
+    * @param path the file to delete
+    * @return `OK(())` if `path` was successfully deleted, `Err(e)` otherwise
     */
-  def delete(file: Path): Result[Unit, Exception] = {
+  def delete(path: Path): Result[Unit, Exception] = {
     try {
-      if (Files.deleteIfExists(file)) {
+      if (Files.deleteIfExists(path)) {
         Result.Ok(())
       } else {
-        Result.Err(new RuntimeException(s"file '$file' does not exist"))
+        Result.Err(new RuntimeException(s"path '$path' does not exist"))
       }
     } catch {
       case e: Exception => Result.Err(e)
