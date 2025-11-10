@@ -170,7 +170,7 @@ class TestBootstrap extends AnyFunSuite {
     }
     b.clean()
     val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
-    if (newBuildFiles.nonEmpty || Files.notExists(buildDir)) {
+    if (newBuildFiles.nonEmpty || Files.exists(buildDir)) {
       fail(
         s"""at least one file was not cleaned from build dir:
            |${newBuildFiles.mkString(System.lineSeparator())}
@@ -191,7 +191,7 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  test("clean-should-do-nothing-on-empty-build-dir") {
+  test("clean-should-succeed-on-non-existent-build-dir") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
