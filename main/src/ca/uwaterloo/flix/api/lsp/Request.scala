@@ -20,8 +20,6 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.json4s
 import org.json4s.JsonAST.{JString, JValue}
 import org.json4s.jvalue2monadic
-import org.eclipse.lsp4j.FormattingOptions as Lsp4jFormattingOptions
-
 import java.util.Base64
 
 /**
