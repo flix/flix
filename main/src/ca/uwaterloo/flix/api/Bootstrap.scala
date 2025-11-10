@@ -435,6 +435,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Err(BootstrapError.FileError("No manifest found. Run 'flix init' to set up project mode."))
     }
 
+    checkForDangerousPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
     val buildDir = Bootstrap.getBuildDirectory(projectPath)
 
     checkForDangerousPath(buildDir) match {
