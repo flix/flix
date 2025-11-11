@@ -16,7 +16,9 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Scheme
+import ca.uwaterloo.flix.language.ast.{Scheme, Type, Symbol}
+
+import scala.collection.mutable
 
 object EffectUpgrade {
 
@@ -30,6 +32,45 @@ object EffectUpgrade {
 
   private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = ???
 
-  private def alpha(sc0: Scheme): Scheme = ???
+  private def alpha(sc0: Scheme): Scheme = {
+    val seen = mutable.Map.empty[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]
+
+    def visit(tpe0: Type): Type = tpe0 match {
+      case Type.Var(sym, loc) => seen.get(sym) match {
+        case Some(subst) => Type.Var(subst, loc)
+        case None =>
+          val subst = new Symbol.KindedTypeVarSym(seen.size, sym.text, sym.kind, sym.isSlack, sym.scope, sym.loc)
+          seen += sym -> subst
+          Type.Var(subst, loc)
+      }
+
+      case Type.Cst(_, _) =>
+        tpe0
+
+      case Type.Apply(tpe1, tpe2, loc) =>
+        Type.Apply(visit(tpe1), visit(tpe2), loc)
+
+      case Type.Alias(symUse, args, tpe, loc) =>
+        Type.Alias(symUse, args.map(visit), visit(tpe), loc)
+
+      case Type.AssocType(symUse, arg, kind, loc) =>
+        Type.AssocType(symUse, visit(arg), kind, loc)
+
+      case Type.JvmToType(tpe, loc) =>
+        Type.JvmToType(visit(tpe), loc)
+
+      case Type.JvmToEff(tpe, loc) =>
+        Type.JvmToEff(visit(tpe), loc)
+
+      case Type.UnresolvedJvmType(_, _) =>
+        tpe0
+    }
+
+    val base = visit(sc0.base)
+    val tconstrs = sc0.tconstrs.map(tc => tc.copy(arg = visit(tc.arg)))
+    val econstrs = sc0.econstrs.map(ec => ec.copy(tpe1 = visit(ec.tpe1), tpe2 = visit(ec.tpe2)))
+    val qs = sc0.quantifiers.map(q => seen.getOrElse(q, q))
+    Scheme(qs, tconstrs, econstrs, base)
+  }
 
 }
