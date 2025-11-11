@@ -443,13 +443,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Ensure `cwd` is not dangerous
     val cwd = Path.of(System.getProperty("user.dir"))
-    checkForCriticallyDangerousPath(cwd) match {
+    checkForSystemPath(cwd) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
 
     // Ensure `projectPath` is not dangerous
-    checkForCriticallyDangerousPath(projectPath) match {
+    checkForSystemPath(projectPath) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
@@ -514,7 +514,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Returns `Ok(())` otherwise.
     */
   private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
-    checkForCriticallyDangerousPath(path) match {
+    checkForSystemPath(path) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
     }
@@ -530,7 +530,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * @see [[checkForRootDir]]
     * @see [[checkForHomeDir]]
     */
-  private def checkForCriticallyDangerousPath(path: Path): Result[Unit, BootstrapError] = {
+  private def checkForSystemPath(path: Path): Result[Unit, BootstrapError] = {
     checkForRootDir(path) match {
       case Err(e) => return Err(e)
       case Ok(()) => ()
