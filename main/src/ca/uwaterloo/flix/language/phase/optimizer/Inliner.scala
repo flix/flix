@@ -309,10 +309,10 @@ object Inliner {
           visitExp(exp2, ctx0)
         case FuzzyBool.False =>
           sctx.changed.putIfAbsent(sym0, ())
-          visitExp(exp3, ctx0)
+          exp3.map(visitExp(_, ctx0)).getOrElse(Expr.Cst(Constant.Unit, Type.Pure, loc.asSynthetic))
         case FuzzyBool.Unknown =>
           val e2 = visitExp(exp2, ctx0)
-          val e3 = visitExp(exp3, ctx0)
+          val e3 = exp3.map(visitExp(_, ctx0))
           Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
       }
 

@@ -486,13 +486,13 @@ object TypeVerifier {
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, _) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
-      val elseType = visitExpr(exp3)
+      val elseType = exp3.map(visitExpr).getOrElse(SimpleType.Unit)
       check(expected = SimpleType.Bool)(actual = condType, exp1.loc)
       checkEq(tpe, thenType, exp2.loc)
-      checkEq(tpe, elseType, exp3.loc)
+      checkEq(tpe, elseType, exp3.map(_.loc).getOrElse(loc.asSynthetic))
 
     case Expr.Branch(_, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {

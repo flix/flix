@@ -220,7 +220,7 @@ object Simplifier {
 
     case MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), e3.map(visitExp), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
@@ -850,7 +850,7 @@ object Simplifier {
         g match {
           case SimplifiedAst.Expr.Cst(Constant.Bool(true), _, _) => succ
           case SimplifiedAst.Expr.Cst(Constant.Bool(false), _, _) => fail
-          case e => SimplifiedAst.Expr.IfThenElse(e, succ, fail, succ.tpe, g.purity, g.loc)
+          case e => SimplifiedAst.Expr.IfThenElse(e, succ, Some(fail), succ.tpe, g.purity, g.loc)
         }
 
       /**
@@ -888,7 +888,7 @@ object Simplifier {
         val t = visitType(lit.tpe)
         val cond = mkEqual(pat2exp(lit), SimplifiedAst.Expr.Var(v, t, lit.loc), lit.loc)
         val purity = Purity.combine3(cond.purity, exp.purity, fail.purity)
-        SimplifiedAst.Expr.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
+        SimplifiedAst.Expr.IfThenElse(cond, exp, Some(fail), succ.tpe, purity, lit.loc)
 
       /**
         * Matching a tag may succeed or fail.
@@ -933,7 +933,7 @@ object Simplifier {
             SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
         }
         val purity2 = Purity.combine3(cond.purity, consequent.purity, fail.purity)
-        SimplifiedAst.Expr.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
+        SimplifiedAst.Expr.IfThenElse(cond, consequent, Some(fail), succ.tpe, purity2, loc)
 
       /**
         * Matching a tuple may succeed or fail.
@@ -1039,7 +1039,7 @@ object Simplifier {
             SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
           case ((MonoAst.ExtTagPattern.Unit(_, _), _), acc1) => acc1
         }
-        SimplifiedAst.Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
+        SimplifiedAst.Expr.IfThenElse(is, branch1, Some(branch2), branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
     }
     SimplifiedAst.Expr.Let(extName, exp, iftes, tpe, eff, loc)
   }

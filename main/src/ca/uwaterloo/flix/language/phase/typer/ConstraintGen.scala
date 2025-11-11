@@ -385,11 +385,18 @@ object ConstraintGen {
       case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        val (tpe3, eff3) = visitExp(exp3)
+        val (tpe3Opt, eff3Opt) = exp3.map(visitExp).unzip
         c.expectType(expected = Type.Bool, actual = tpe1, exp1.loc)
-        c.unifyType(tpe2, tpe3, loc)
-        val resTpe = tpe3
-        val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
+        // Must be unit if no else branch.
+        tpe3Opt match {
+          case Some(tpe3) => c.unifyType(tpe2, tpe3, loc)
+          case None => c.unifyType(tpe2, Type.Unit, loc)
+        }
+        val resTpe = tpe2
+        val resEff = eff3Opt match {
+          case Some(eff3) => Type.mkUnion(eff1, eff2, eff3, loc)
+          case None => Type.mkUnion(eff1, eff2, loc)
+        }
         (resTpe, resEff)
 
       case Expr.Stm(exp1, exp2, loc) =>

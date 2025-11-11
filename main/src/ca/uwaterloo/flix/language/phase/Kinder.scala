@@ -467,7 +467,7 @@ object Kinder {
       case ResolvedAst.Expr.IfThenElse(exp10, exp20, exp30, loc) =>
         val exp1 = visitExp(exp10, kenv0, root)
         val exp2 = visitExp(exp20, kenv0, root)
-        val exp3 = visitExp(exp30, kenv0, root)
+        val exp3 = exp30.map(visitExp(_, kenv0, root))
         KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc)
 
       case ResolvedAst.Expr.Stm(exp10, exp20, loc) =>

@@ -101,11 +101,15 @@ object DocAstFormatter {
       case IfThenElse(cond, thn, els) =>
         val condf = aux(cond, paren = false, inBlock = true)
         val thnf = aux(thn, paren = false, inBlock = true)
-        val elsf = aux(els, paren = false, inBlock = true)
-        group(
-          text("if") +: parens(condf) +:
-            curlyOpen(thnf) +: text("else") +: curlyOpen(elsf)
-        )
+        val elsfOpt = els.map(aux(_, paren = false, inBlock = true))
+        val ifThen = text("if") +: parens(condf) +:
+          curlyOpen(thnf)
+        elsfOpt match {
+          case None => group(ifThen)
+          case Some(elsf) => group(
+            ifThen +: text("else") +: curlyOpen(elsf)
+          )
+        }
       case Branch(d, branches) =>
         val branchHead = aux(d, paren = false, inBlock = true)
         val delimitedBranches = branches.toList.map { case (sym, dd) =>

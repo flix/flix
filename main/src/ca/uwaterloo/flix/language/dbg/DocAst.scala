@@ -87,7 +87,7 @@ object DocAst {
 
     case class Binary(d1: Expr, op: String, d2: Expr) extends Composite
 
-    case class IfThenElse(cond: Expr, thn: Expr, els: Expr) extends Composite
+    case class IfThenElse(cond: Expr, thn: Expr, els: Option[Expr]) extends Composite
 
     case class Branch(d: Expr, branches: Map[Symbol.LabelSym, Expr]) extends Atom
 

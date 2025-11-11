@@ -475,8 +475,8 @@ object Redundancy {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)
-      val us3 = visitExp(exp3, env0, rc)
-      us1 ++ us2 ++ us3
+      val us3 = exp3.map(visitExp(_, env0, rc))
+      us1 ++ us2 ++ us3.getOrElse(Used.empty)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)

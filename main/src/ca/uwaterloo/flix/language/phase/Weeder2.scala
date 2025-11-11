@@ -1317,11 +1317,11 @@ object Weeder2 {
       pickAll(TreeKind.Expr.Expr, tree) match {
         case exprCondition :: exprThen :: exprElse :: Nil =>
           mapN(visitExpr(exprCondition), visitExpr(exprThen), visitExpr(exprElse)) {
-            (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
+            (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, Some(eelse), tree.loc)
           }
         case exprCondition :: exprThen :: Nil =>
           mapN(visitExpr(exprCondition), visitExpr(exprThen)) {
-            (condition, tthen) => Expr.IfThen(condition, tthen, tree.loc)
+            (condition, tthen) => Expr.IfThenElse(condition, tthen, None, tree.loc)
           }
         case exprs =>
           throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)

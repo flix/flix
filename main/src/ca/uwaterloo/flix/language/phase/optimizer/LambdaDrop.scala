@@ -163,7 +163,7 @@ object LambdaDrop {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-      visitExp(exp3)
+      exp3.foreach(visitExp)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1)
@@ -288,7 +288,7 @@ object LambdaDrop {
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = rewriteExp(exp1)
       val e2 = rewriteExp(exp2)
-      val e3 = rewriteExp(exp3)
+      val e3 = exp3.map(rewriteExp)
       Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
 
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>

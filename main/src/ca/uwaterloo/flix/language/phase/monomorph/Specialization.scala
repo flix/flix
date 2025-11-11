@@ -528,7 +528,7 @@ object Specialization {
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = specializeExp(exp1, env0, subst)
       val e2 = specializeExp(exp2, env0, subst)
-      val e3 = specializeExp(exp3, env0, subst)
+      val e3 = exp3.map(specializeExp(_, env0, subst))
       MonoAst.Expr.IfThenElse(e1, e2, e3, Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.Stm(exp1, exp2, tpe, eff, loc) =>
