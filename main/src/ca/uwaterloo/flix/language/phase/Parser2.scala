@@ -2140,7 +2140,7 @@ object Parser2 {
         expression()
       } else if (!thenIsBlockish) {
         // `if (exp1) exp2` is illegal, but `if (exp1) { exp2 }` is not
-        val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, sctx, hint = Some("the else-branch is required in Flix if the then branch is not enclosed in brackets."), currentSourceLocation())
+        val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, sctx, hint = Some("an if expression without an else branch must be enclosed in braces."), currentSourceLocation())
         closeWithError(open(), error)
       }
       close(mark, TreeKind.Expr.IfThenElse)
