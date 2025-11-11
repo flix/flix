@@ -46,7 +46,9 @@ object EffectUpgrade {
     }
   }
 
-  private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = ???
+  private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
+    ???
+  }
 
   private def alpha(sc0: Scheme): Scheme = {
     val seen = mutable.Map.empty[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]
