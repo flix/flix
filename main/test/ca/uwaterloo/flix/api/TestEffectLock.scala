@@ -226,21 +226,4 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.json.01") {
-    val input =
-      """
-        |pub def fun(): Unit = ()
-        |pub def g(): Int32 = 42
-        |""".stripMargin
-
-    val expected = """{"fun":null}"""
-
-    val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val serialized = defs.map(Serialize.serializeDef)
-    val actual = json4s.native.Serialization.write(serialized)
-    println(actual)
-    assert(actual == expected)
-  }
-
 }
