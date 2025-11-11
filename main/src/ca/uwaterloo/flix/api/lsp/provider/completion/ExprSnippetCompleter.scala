@@ -21,6 +21,9 @@ object ExprSnippetCompleter {
 
   def getCompletions(range: Range): Iterable[Completion] = List(
     // NB: Please keep the list alphabetically sorted.
+    Completion.SnippetCompletion("default handler", range, Priority.Low(0),
+      "@DefaultHandler\npub def runWithIO(f: Unit -> a \\ ef): a \\ (ef - Eff) + IO = \n    run {\n        f()\n    } with ?HandlerForEff",
+      "snippet for a default handler for Eff"),
     Completion.SnippetCompletion("main", range, Priority.High(0),
       "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
       "snippet for Hello World Program"),
