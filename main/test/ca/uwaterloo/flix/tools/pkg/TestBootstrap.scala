@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
-import ca.uwaterloo.flix.util.Formatter
+import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path}
@@ -153,6 +153,73 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.test(new Flix())
+  }
+
+  test("clean-command-should-remove-class-files-and-directories-if-compiled-previously") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.build(new Flix())
+    val buildDir = p.resolve("./build/").normalize()
+    val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    if (buildFiles.isEmpty || buildFiles.exists(!FileOps.checkExt(_, "class"))) {
+      fail(
+        s"""build output is not as expected:
+           |${buildFiles.mkString(System.lineSeparator())}
+           |""".stripMargin)
+    }
+    b.clean()
+    val newBuildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    if (newBuildFiles.nonEmpty || Files.exists(buildDir)) {
+      fail(
+        s"""at least one file was not cleaned from build dir:
+           |${newBuildFiles.mkString(System.lineSeparator())}
+           |""".stripMargin)
+    }
+  }
+
+  test("clean-should-error-on-unexpected-file") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.build(new Flix())
+    val buildDir = p.resolve("./build/").normalize()
+    FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
+    b.clean() match {
+      case Result.Ok(_) => fail("expected clean to abort")
+      case Result.Err(_) => succeed
+    }
+  }
+
+  test("clean-should-succeed-on-non-existent-build-dir") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    Bootstrap.init(p)(System.out).unsafeGet
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val buildDir = p.resolve("./build/").normalize()
+    if (Files.exists(buildDir)) {
+      fail("did not expected build directory to exist")
+    }
+    b.clean() match {
+      case Result.Ok(_) => succeed
+      case Result.Err(_) => fail("expected success")
+    }
+  }
+
+  test("clean-should-do-nothing-in-directory-mode") {
+    val p = Files.createTempDirectory(ProjectPrefix)
+    FileOps.writeString(p.resolve("./Main.flix").normalize(),
+      """
+        |def main(): Unit = ()
+        |""".stripMargin)
+    val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    val buildDir = p.resolve("./build/").normalize()
+    if (Files.exists(buildDir)) {
+      fail("did not expected build directory to exist")
+    }
+    b.clean() match {
+      case Result.Ok(_) => fail("expected failure in directory mode")
+      case Result.Err(_) => succeed
+    }
   }
 
   def calcHash(p: Path): String = {

@@ -20,7 +20,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{BytecodeAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException}
 
 import java.nio.file.{Files, LinkOption, Path}
 
@@ -63,33 +63,13 @@ object JvmWriter {
       }
 
       // Check that the file is empty or a class file.
-      if (!(isEmpty(path) || isClassFile(path))) {
+      if (!(FileOps.isEmpty(path) || FileOps.isClassFile(path))) {
         throw InternalCompilerException(s"Refusing to overwrite non-empty, non-class file: '$path'.", SourceLocation.Unknown)
       }
     }
 
     // Write the bytecode.
     Files.write(path, clazz.bytecode)
-  }
-
-  /** Returns `true` if the given `path` is non-empty (i.e. contains data). */
-  private def isEmpty(path: Path): Boolean = Files.size(path) == 0L
-
-  /** Returns `true` if the given `path` exists and is a Java Virtual Machine class file. */
-  private def isClassFile(path: Path): Boolean = {
-    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
-      // Read the first four bytes of the file.
-      val is = Files.newInputStream(path)
-      val b1 = is.read()
-      val b2 = is.read()
-      val b3 = is.read()
-      val b4 = is.read()
-      is.close()
-
-      // Check if the four first bytes match CAFE BABE.
-      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
-    }
-    false
   }
 
 }

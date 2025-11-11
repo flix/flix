@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -31,6 +31,7 @@ import java.io.PrintStream
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
+import scala.jdk.CollectionConverters.IterableHasAsScala
 import scala.util.{Failure, Success, Using}
 
 
@@ -300,7 +301,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * and .jar files that this project uses.
     */
   private def projectMode()(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
-    val tomlPath = getManifestFile(projectPath)
+    val tomlPath = Bootstrap.getManifestFile(projectPath)
     for {
       manifest <- Steps.parseManifest(tomlPath)
       deps <- Steps.resolveFlixDependencies(manifest)
@@ -387,12 +388,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def buildPkg()(implicit formatter: Formatter): Result[Unit, BootstrapError] = {
 
     // Check that there is a `flix.toml` file.
-    if (!Files.exists(getManifestFile(projectPath))) {
+    if (!Files.exists(Bootstrap.getManifestFile(projectPath))) {
       return Result.Err(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red(FLIX_TOML)}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
-    Files.createDirectories(getArtifactDirectory(projectPath))
+    Files.createDirectories(Bootstrap.getArtifactDirectory(projectPath))
 
     // The path to the fpkg file.
     val pkgFile = Bootstrap.getPkgFile(projectPath)
@@ -403,7 +404,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Copy the `flix.toml` to the artifact directory.
-    Files.copy(getManifestFile(projectPath), getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
+    Files.copy(Bootstrap.getManifestFile(projectPath), Bootstrap.getArtifactDirectory(projectPath).resolve(FLIX_TOML), StandardCopyOption.REPLACE_EXISTING)
 
     // Construct a new zip file.
     Using(new ZipOutputStream(Files.newOutputStream(pkgFile))) { zip =>
@@ -422,6 +423,149 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Success(()) => Result.Ok(())
       case Failure(e) => Result.Err(BootstrapError.FileError(e.getMessage))
     }
+  }
+
+  /**
+    * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
+    * directories (including the `build` directory itself). Performs safety checks to ensure:
+    *  - the current directory is a Flix project (manifest present),
+    *  - no root or home directories are targeted,
+    *  - no ancestor of the project directory is targeted,
+    *  - every file in the build directory has a `.class` extension and is a valid class file.
+    *
+    * Returns `Ok(())` on success or `Err(BootstrapError.FileError(...))` on validation or IO failures.
+    */
+  def clean(): Result[Unit, BootstrapError] = {
+    // Ensure project mode
+    if (optManifest.isEmpty) {
+      return Err(BootstrapError.FileError("No manifest found (flix.toml). Refusing to run 'clean' in a non-project directory."))
+    }
+
+    // Ensure `cwd` is not dangerous
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForSystemPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `projectPath` is not dangerous
+    checkForSystemPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    val buildDir = Bootstrap.getBuildDirectory(projectPath)
+
+    // Ensure `buildDir` is not dangerous
+    checkForDangerousPath(buildDir) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure all files in `buildDir` are valid class files.
+    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    for (file <- files) {
+      if (!FileOps.checkExt(file, "class")) {
+        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
+      }
+
+      if (!FileOps.isClassFile(file)) {
+        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
+      }
+
+      checkForDangerousPath(file) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+    }
+
+    // Delete files
+    for (file <- files) {
+      FileOps.delete(file) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file '$file': $e"))
+        case Ok(_) => ()
+      }
+    }
+
+    // Delete empty directories
+    // Visit in reverse order to delete the innermost directories first
+    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue)
+    for (dir <- directories.reverse) {
+      checkForDangerousPath(dir) match {
+        case Err(e) => return Err(e)
+        case Ok(()) => ()
+      }
+
+      FileOps.delete(dir) match {
+        case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete directory '$dir': $e"))
+        case Ok(_) => ()
+      }
+    }
+
+    Ok(())
+  }
+
+  /**
+    * Returns `Err` if `path` is one of the following:
+    *   - A root directory of the system
+    *   - The user's home directory (`"user.home"` system property, using [[System.getProperty]])
+    *   - Any ancestor of [[projectPath]]
+    *
+    * Returns `Ok(())` otherwise.
+    */
+  private def checkForDangerousPath(path: Path): Result[Unit, BootstrapError] = {
+    checkForSystemPath(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForAncestor(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is either a root directory or the user's home directory.
+    *
+    * @see [[checkForRootDir]]
+    * @see [[checkForHomeDir]]
+    */
+  private def checkForSystemPath(path: Path): Result[Unit, BootstrapError] = {
+    checkForRootDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    checkForHomeDir(path) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is the user's home directory. */
+  private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
+    val home = Path.of(System.getProperty("user.home"))
+    if (home == path) {
+      return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is a root directory. */
+  private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
+    if (roots.contains(path)) {
+      return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
+    }
+    Ok(())
+  }
+
+  /** Returns `Err` if `path` is an ancestor of `projectPath`. */
+  private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
+    if (projectPath.startsWith(path)) {
+      return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
+    }
+    Ok(())
   }
 
   /**
@@ -521,7 +665,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Publish to GitHub
     out.println("Publishing a new release...")
-    val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
+    val artifacts = List(Bootstrap.getPkgFile(projectPath), Bootstrap.getManifestFile(projectPath))
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
       case Ok(()) => // Continue
