@@ -117,7 +117,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def sum(iter: Iterator[Int32, ef, r]): Int32 \ { ef, r } =
-        foldLeft((acc, x) -> acc + x, 0, iter)
+        foldLeft((+), 0, iter)
 
     ///
     /// Returns the sum of all elements in the iterator `iter` according to the function `f`.
