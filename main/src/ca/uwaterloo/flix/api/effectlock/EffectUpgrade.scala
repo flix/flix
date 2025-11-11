@@ -16,8 +16,12 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Scheme, Type, Symbol}
+import ca.uwaterloo.flix.language.ast.shared.Scope
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
+import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 object EffectUpgrade {
@@ -28,7 +32,19 @@ object EffectUpgrade {
     isGeneralizable(sc1, sc2) || isSubset(sc1, sc2)
   }
 
-  private def isGeneralizable(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = ???
+  private def isGeneralizable(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
+    implicit val eqEnv: EqualityEnv = EqualityEnv.empty
+    val renv = RigidityEnv.apply(SortedSet.from(sc02.quantifiers))
+    val unification = ConstraintSolver2.fullyUnify(sc01.base, sc02.base, Scope.Top, renv)
+
+    unification match {
+      case Some(subst) =>
+        subst(sc01.base) == sc02.base
+
+      case None =>
+        false
+    }
+  }
 
   private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = ???
 
