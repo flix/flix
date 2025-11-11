@@ -32,7 +32,7 @@ object FileOps {
     * Deletes `path` if it exists. Wraps any error `e` in `Result.Err(e)`.
     *
     * @param path the path to delete
-    * @return `OK(())` if `path` was successfully deleted, `Err(e)` otherwise
+    * @return `Ok(())` if `path` was successfully deleted, `Err(e)` otherwise
     */
   def delete(path: Path): Result[Unit, Exception] = {
     try {
