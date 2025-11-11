@@ -968,7 +968,7 @@ mod Vector {
     /// Returns the sum of all elements in the vector `v`.
     ///
     pub def sum(v: Vector[Int32]): Int32 =
-        foldLeft((acc, x) -> acc + x, 0, v)
+        foldLeft((+), 0, v)
 
     ///
     /// Returns the sum of all elements in the vector `v` according to the function `f`.
