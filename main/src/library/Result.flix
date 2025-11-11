@@ -153,7 +153,7 @@ mod Result {
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
     pub def sum(r: Result[e, Int32]): Int32 =
-        foldLeft((acc, x) -> acc + x, 0, r)
+        foldLeft((+), 0, r)
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
