@@ -1249,12 +1249,12 @@ object GenExpression {
         mv.visitJumpInsn(GOTO, ctx.entryPoint)
     }
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       import BytecodeInstructions.*
       compileExpr(exp1)
       branch(Condition.Bool) {
         case Branch.TrueBranch => compileExpr(exp2)
-        case Branch.FalseBranch => exp3.map(compileExpr).getOrElse(compileExpr(Expr.Cst(Constant.Unit, loc.asSynthetic)))
+        case Branch.FalseBranch => compileExpr(exp3)
       }
 
     case Expr.Branch(exp, branches, _, _, _) =>

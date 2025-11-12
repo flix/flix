@@ -152,7 +152,7 @@ object Reducer {
       case ErasedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExpr(exp1)
         val e2 = visitExpr(exp2)
-        val e3 = exp3.map(visitExpr)
+        val e3 = visitExpr(exp3)
         JvmAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
       case ErasedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>

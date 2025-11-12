@@ -209,7 +209,7 @@ object Eraser {
     case ReducedAst.Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ErasedAst.Expr.ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case ReducedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      ErasedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), exp3.map(visitExp), visitType(tpe), purity, loc)
+      ErasedAst.Expr.IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
     case ReducedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>
       ErasedAst.Expr.Branch(visitExp(exp), branches.map(visitBranch), visitType(tpe), purity, loc)
     case ReducedAst.Expr.JumpTo(sym, tpe, purity, loc) =>

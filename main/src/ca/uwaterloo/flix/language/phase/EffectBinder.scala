@@ -259,7 +259,7 @@ object EffectBinder {
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
-      val e3 = exp3.map(visitExpr)
+      val e3 = visitExpr(exp3)
       ReducedAst.Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case LiftedAst.Expr.Branch(exp, branches, tpe, purity, loc) =>

@@ -74,7 +74,7 @@ object ReducedAst {
 
     case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Option[Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Branch(exp: Expr, branches: Map[Symbol.LabelSym, Expr], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 

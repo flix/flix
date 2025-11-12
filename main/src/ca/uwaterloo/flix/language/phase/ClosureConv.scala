@@ -85,7 +85,7 @@ object ClosureConv {
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val e3 = exp3.map(visitExp)
+      val e3 = visitExp(exp3)
       Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
     case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
@@ -212,7 +212,7 @@ object ClosureConv {
       freeVarsExps(exps)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2) ++ exp3.map(freeVars).getOrElse(SortedSet.empty[FreeVar])
+      freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
@@ -332,7 +332,7 @@ object ClosureConv {
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visitExp(exp1)
         val e2 = visitExp(exp2)
-        val e3 = exp3.map(visitExp)
+        val e3 = visitExp(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
       case Expr.Stm(exp1, exp2, tpe, purity, loc) =>
@@ -561,7 +561,7 @@ object ClosureConv {
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         val e1 = visit(exp1)
         val e2 = visit(exp2)
-        val e3 = exp3.map(visit)
+        val e3 = visit(exp3)
         Expr.IfThenElse(e1, e2, e3, tpe, purity, loc)
 
       case Expr.Stm(exp1, exp2, tpe, purity, loc) =>

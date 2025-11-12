@@ -69,7 +69,7 @@ object TailPos {
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       // The branches are in tail position.
       val e2 = visitExp(exp2)
-      val e3 = exp3.map(visitExp)
+      val e3 = visitExp(exp3)
       Expr.IfThenElse(exp1, e2, e3, tpe, purity, loc)
 
     case Expr.Branch(e0, br0, tpe, purity, loc) =>

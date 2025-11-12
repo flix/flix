@@ -1152,7 +1152,7 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        DesugaredAst.Expr.IfThenElse(e1, acc, Some(DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
+        DesugaredAst.Expr.IfThenElse(e1, acc, None, loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match
