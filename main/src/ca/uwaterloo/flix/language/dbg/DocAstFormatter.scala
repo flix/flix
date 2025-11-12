@@ -102,8 +102,7 @@ object DocAstFormatter {
         val condf = aux(cond, paren = false, inBlock = true)
         val thnf = aux(thn, paren = false, inBlock = true)
         val elsfOpt = els.map(aux(_, paren = false, inBlock = true))
-        val ifThen = text("if") +: parens(condf) +:
-          curlyOpen(thnf)
+        val ifThen = text("if") +: parens(condf) +: curlyOpen(thnf)
         elsfOpt match {
           case None => group(ifThen)
           case Some(elsf) => group(

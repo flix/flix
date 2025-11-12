@@ -390,7 +390,7 @@ object ConstraintGen {
         // Must be unit if no else branch.
         tpe3Opt match {
           case Some(tpe3) => c.unifyType(tpe2, tpe3, loc)
-          case None => c.unifyType(tpe2, Type.Unit, loc)
+          case None => c.expectType(Type.Unit, tpe2, loc)
         }
         val resTpe = tpe2
         val resEff = eff3Opt match {
