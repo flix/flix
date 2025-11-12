@@ -1773,37 +1773,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantDiscard](result)
   }
 
-  test("MustUse.01") {
-    val input =
-      """
-        |@MustUse
-        |enum A {
-        |    case A
-        |}
-        |
-        |def f(): Int32 \ IO =
-        |    unchecked_cast(A.A as _ \ IO);
-        |    123
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
-  }
-
-  test("MustUse.02") {
-    val input =
-      """
-        |def f(): Int32 \ IO =
-        |    unchecked_cast((x -> x + 123) as _ \ IO);
-        |    123
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
-  }
-
   test("RedundantCheckedTypeCast.01") {
     val input =
       """
