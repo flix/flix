@@ -636,23 +636,28 @@ object Specialization {
       val methods = methods0.map(specializeJvmMethod(_, env0, subst))
       MonoAst.Expr.NewObject(name, clazz, Lowering.lowerType(subst(tpe)), subst(eff), methods, loc)
 
-    // New channel expressions are rewritten as follows:
-    //     %%CHANNEL_NEW%%(m)
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.newChannel(10)
-    //
     case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val exp = specializeExp(innerExp, env0, subst)
       Lowering.visitNewChannel(exp, subst(tpe), eff, loc)
 
-    case LoweredAst.Expr.GetChannel(_, _, _, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
+      val exp = specializeExp(innerExp, env0, subst)
+      Lowering.mkGetChannel(exp, subst(tpe), eff, loc)
 
-    case LoweredAst.Expr.PutChannel(_, _, _, _, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
+      val exp1 = specializeExp(innerExp1, env0, subst)
+      val exp2 = specializeExp(innerExp2, env0, subst)
+      Lowering.mkPutChannel(exp1, exp2, eff, loc)
 
-    case LoweredAst.Expr.SelectChannel(_, _, _, _, loc) =>
-      throw InternalCompilerException("not implemented yet", loc)
+    case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
+      val rules = rules0.map {
+        case LoweredAst.SelectChannelRule(sym, chan, exp, _) =>
+          val freshSym = Symbol.freshVarSym(sym)
+          val env1 = env0 + (sym -> freshSym)
+          (freshSym, specializeExp(chan, env1, subst), specializeExp(exp, env1, subst))
+      }
+      val default = default0.map { d => specializeExp(d, env0, subst) }
+      Lowering.mkSelectChannel(rules, default, subst(tpe), eff, loc)
 
   }
 
