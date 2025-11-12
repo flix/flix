@@ -99,10 +99,10 @@ object Lowering {
   /**
     * Make a new channel tuple (sender, receiver) expression
     *
-    * New channel expressions are rewritten as follows:<br>
-    * &emsp; %%CHANNEL_NEW%%(m)<br>
-    * becomes a call to the standard library function:<br>
-    * &emsp; Concurrent/Channel.newChannel(10)
+    * New channel expressions are rewritten as follows:
+    * {{{ %%CHANNEL_NEW%%(m) }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.newChannel(10) }}}
     *
     * @param tpe The specialized type of the result
     */
@@ -115,10 +115,10 @@ object Lowering {
   /**
     * Make a channel get expression
     *
-    * Channel get expressions are rewritten as follows:<br>
-    * &emsp; <- c<br>
-    * becomes a call to the standard library function:<br>
-    * &emsp; Concurrent/Channel.get(c)<br>
+    * Channel get expressions are rewritten as follows:
+    * {{{ <- c }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.get(c) }}}
     */
   protected[monomorph] def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
@@ -129,10 +129,10 @@ object Lowering {
   /**
     * Make a channel put expression
     *
-    * Channel put expressions are rewritten as follows:<br>
-    * &emsp; c <- 42<br>
-    * becomes a call to the standard library function:<br>
-    * &emsp; Concurrent/Channel.put(42, c)
+    * Channel put expressions are rewritten as follows:
+    * {{{ c <- 42 }}}
+    * becomes a call to the standard library function:
+    * {{{ Concurrent/Channel.put(42, c) }}}
     */
   protected[monomorph] def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
@@ -143,27 +143,29 @@ object Lowering {
   /**
     * Make a channel select expression
     *
-    * Channel select expressions are rewritten as follows:<br>
-    * &emsp; select {<br>
-    * &emsp;&emsp; case x <- ?ch1 => ?handlech1<br>
-    * &emsp;&emsp; case y <- ?ch2 => ?handlech2<br>
-    * &emsp;&emsp; case _ => ?default<br>
-    * &emsp; }<br>
-    * becomes:<br>
-    * &emsp; let ch1 = ?ch1;<br>
-    * &emsp; let ch2 = ?ch2;<br>
-    * &emsp; match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default<br>
-    * &emsp;&emsp; case (0, locks) =><br>
-    * &emsp;&emsp;&emsp; let x = unsafeGetAndUnlock(ch1, locks);<br>
-    * &emsp;&emsp;&emsp; ?handlech1<br>
-    * &emsp;&emsp; case (1, locks) =><br>
-    * &emsp;&emsp;&emsp; let y = unsafeGetAndUnlock(ch2, locks);<br>
-    * &emsp;&emsp;&emsp; ?handlech2<br>
-    * &emsp;&emsp; case (-1, _) =>                                                  // Omitted if no default<br>
-    * &emsp;&emsp;&emsp; ?default                                                   // Unlock is handled by selectFrom<br>
-    * &emsp; }<br>
+    * Channel select expressions are rewritten as follows:
+    * {{{
+    *  select {
+    *    case x <- ?ch1 => ?handlech1
+    *    case y <- ?ch2 => ?handlech2
+    *    case _ => ?default
+    *  }
+    * }}}
+    * becomes
+    * {{{
+    *   let ch1 = ?ch1;
+    *   let ch2 = ?ch2;
+    *   match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default
+    *     case (0, locks) =>
+    *       let x = unsafeGetAndUnlock(ch1, locks);
+    *       ?handlech1
+    *     case (1, locks) =>
+    *       let y = unsafeGetAndUnlock(ch2, locks);
+    *       ?handlech2
+    *     case (-1, _) =>                                                  // Omitted if no default
+    *      ?default                                                   // Unlock is handled by selectFrom
+    * }}}
     * Note: match is not exhaustive: we're relying on the simplifier to handle this for us
-    *
     */
   protected[monomorph] def mkSelectChannel(rules: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], default: Option[MonoAst.Expr], tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val t = lowerType(tpe)
@@ -182,7 +184,12 @@ object Lowering {
 
 
   /**
-    * Make the list of MpmcAdmin objects which will be passed to `selectFrom`
+    * Make the list of MpmcAdmin objects which will be passed to `selectFrom`.
+    *
+    * For each case like
+    * {{{ x <- ?ch1 => ?handlech1 }}}
+    * we generate
+    * {{{ mpmcAdmin(x) }}}
     */
   private def mkChannelAdminList(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val admins = ListOps.zip(rs, channels) map {
@@ -195,7 +202,14 @@ object Lowering {
   }
 
   /**
-    * Construct a call to `selectFrom` given a list of MpmcAdmin objects and optional default
+    * Construct a call to `selectFrom` given a list of MpmcAdmin objects and optional default.
+    *
+    * Transforms
+    * {{{ mpmcAdmin(ch1), mpmcAdmin(ch1), ... }}}
+    * Into
+    * {{{ selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: ... :: Nil, false) }}}
+    *
+    * When `default` is `Some` the second parameter will be `true`.
     */
   private def mkChannelSelect(admins: MonoAst.Expr, default: Option[MonoAst.Expr], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
@@ -212,6 +226,15 @@ object Lowering {
 
   /**
     * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
+    *
+    * Transforms the `i`'th
+    * {{{ case x <- ?ch1 => ?handlech1 }}}
+    * into
+    * {{{
+    * case (i, locks) =>
+    *   let x = unsafeGetAndUnlock(ch1, locks);
+    *   ?handlech1
+    * }}}
     */
   private def mkChannelCases(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): List[MonoAst.MatchRule] = {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
@@ -233,6 +256,9 @@ object Lowering {
   /**
     * Construct additional MatchRule to handle the (optional) default case
     * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
+    *
+    * If `default` is `None` returns an empty list. Otherwise produces
+    * {{{ case (-1, _) => ?default }}}
     */
   private def mkSelectDefaultCase(default: Option[MonoAst.Expr], loc: SourceLocation): List[MonoAst.MatchRule] = {
     default match {
