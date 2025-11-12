@@ -496,7 +496,7 @@ mod Vector {
                         cur
                     }
                 })
-            }
+            };
             MutList.toVector(l)
         }
     }
