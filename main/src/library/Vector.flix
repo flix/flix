@@ -487,14 +487,16 @@ mod Vector {
             let l = MutList.empty(rc);
             // We handle the first element twice.
             MutList.push(Vector.get(0, v), l);
-            (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
-                if (f(head, cur)) {
-                    head
-                } else {
-                    MutList.push(cur, l);
-                    cur
-                }
-            });
+            discard {
+                (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
+                    if (f(head, cur)) {
+                        head
+                    } else {
+                        MutList.push(cur, l);
+                        cur
+                    }
+                })
+            }
             MutList.toVector(l)
         }
     }

@@ -119,8 +119,7 @@ mod Fixpoint3.Phase.IndexSelection {
                 let indexState = UniqueInts.empty(rc2);
                 let indexedStmt = indexStmt(newStmt, indexes, indexState);
                 foreach ((relSym, _) <- indexes) {
-                    UniqueInts.createIndex((relSym, 0), indexState);
-                    ()
+                    discard UniqueInts.createIndex((relSym, 0), indexState)
                 };
                 let finalState = UniqueInts.toMap(indexState);
                 (indexedStmt, finalState)
