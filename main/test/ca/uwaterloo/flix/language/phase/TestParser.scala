@@ -1436,4 +1436,16 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("NeedAtleastOne.01") {
+    val input =
+      """
+        |trait A[] {
+        |    def f(x: a): a
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
+  }
+
 }
