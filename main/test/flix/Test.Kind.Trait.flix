@@ -76,7 +76,7 @@ mod Test.Kind.Trait {
 
             mod Exp {
                 trait CStar1[a] {
-                    law star: forall(x: a) { (???: a); ??? }
+                    law star: forall(x: a) { discard (???: a); ??? }
                 }
             }
         }
