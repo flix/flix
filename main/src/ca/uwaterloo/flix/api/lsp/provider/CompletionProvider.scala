@@ -47,7 +47,7 @@ object CompletionProvider {
     else
       errorsAt(uri, pos, currentErrors).flatMap {
         case err: WeederError.UndefinedAnnotation =>
-          ExprSnippetCompleter.DefaultHandlerSnippetGenerator("@DefaultHandler template", Range.from(err.loc)) ::
+          ExprSnippetCompleter.generateDefaultHandlerSnippet("@DefaultHandler template", Range.from(err.loc)) ::
             AnnotationCompleter.getAnnotations(err.name, Range.from(err.loc))
 
         case err: WeederError.UnqualifiedUse => UseCompleter.getCompletions(err.qn, Range.from(err.loc))

@@ -18,14 +18,18 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.lsp.Range
 
 object ExprSnippetCompleter {
-  val DefaultHandlerSnippetGenerator =  (label, range) =>
+  def generateDefaultHandlerSnippet(label: String, range: Range) : Completion =
     Completion.SnippetCompletion(label, range, Priority.Low(0),
-      "@DefaultHandler\npub def runWithIO(f: Unit -> a \\ ef): a \\ (ef - ${1:Eff}) + IO = \n    run {\n        f()\n    } with ${0:?HandlerForEff}",
+      """@DefaultHandler
+        |pub def runWithIO(f: Unit -> a \\ ef): a \ (ef - ${1:Eff}) + IO =
+        |    run {
+        |            f()
+        |    } with ${0:?HandlerForEff}""".stripMargin,
       "snippet for a default handler for Eff")
 
   def getCompletions(range: Range): Iterable[Completion] = List(
     // NB: Please keep the list alphabetically sorted.
-    DefaultHandlerSnippetGenerator("default handler", range),
+    generateDefaultHandlerSnippet("default handler", range),
     Completion.SnippetCompletion("main", range, Priority.High(0),
       "def main(): Unit \\ IO = \n    println(\"Hello World!\")",
       "snippet for Hello World Program"),
