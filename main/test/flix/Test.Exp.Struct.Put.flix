@@ -220,9 +220,10 @@ mod Nested {
     def nestedPut01(): Bool =
         region rc {
             let nested = new Nested @ rc { v = new Nested @ rc { v = new Nested @ rc {v = new Nested @ rc {v = 15} }} };
-            nested->v->v->v->v == 15;
+            let before = nested->v->v->v->v;
             nested->v->v->v->v = 37;
-            nested->v->v->v->v == 37
+            let after = nested->v->v->v->v;
+            before == 15 and after == 37
         }
 }
 
