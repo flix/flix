@@ -535,4 +535,244 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectSuccess(result)
   }
+
+  test("Test.ValidEntryPoint.DefaultHandler.03") {
+    val input =
+      """
+        |pub eff E1{
+        |   def op(): Unit
+        |}
+        |pub eff E2{
+        |   def op(): Unit
+        |}
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour 1");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E2 {
+        |    @DefaultHandler
+        |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
+        |            run {
+        |                g()
+        |            } with handler E2 {
+        |                def op(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |def main(): Unit \ E1 + E2 = E1.op();E2.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.DefaultHandler.04") {
+    val input =
+      """
+        |pub eff E1{
+        |   def op(): Unit
+        |}
+        |pub eff E2{
+        |   def op(): Unit
+        |}
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op(k) = {
+        |                    println("Default behaviour 1");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E2 {
+        |    @DefaultHandler
+        |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
+        |            run {
+        |                g()
+        |            } with handler E2 {
+        |                def op(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |def main(): Unit \ E2 + E1 = E2.op();E1.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.DefaultHandler.05") {
+    val input =
+      """
+        |pub eff E1{
+        |   def op1(): Unit
+        |}
+        |pub eff E2{
+        |   def op2(): Unit
+        |}
+        |pub eff E3{
+        |   def op3(): Unit
+        |}
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op1(k) = {
+        |                    println("Default behaviour 1");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E2 {
+        |    @DefaultHandler
+        |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
+        |            run {
+        |                g()
+        |            } with handler E2 {
+        |                def op2(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E3 {
+        |    @DefaultHandler
+        |    pub def runWithIO(h: Unit -> c \ ef): c \ (ef - E3) + IO =
+        |            run {
+        |                h()
+        |            } with handler E3 {
+        |                def op3(k) = {
+        |                    println("Default behaviour 3");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |def main(): Unit \ E1 + E2 + E3 = E1.op1();E2.op2();E3.op3()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.DefaultHandler.06") {
+    val input =
+      """
+        |pub eff E1{
+        |   def op1(): Unit
+        |}
+        |pub eff E2{
+        |   def op2(): Unit
+        |}
+        |pub eff E3{
+        |   def op3(): Unit
+        |}
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op1(k) = {
+        |                    println("Default behaviour 1");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E2 {
+        |    @DefaultHandler
+        |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
+        |            run {
+        |                g()
+        |            } with handler E2 {
+        |                def op2(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E3 {
+        |    @DefaultHandler
+        |    pub def runWithIO(h: Unit -> c \ ef): c \ (ef - E3) + IO =
+        |            run {
+        |                h()
+        |            } with handler E3 {
+        |                def op3(k) = {
+        |                    println("Default behaviour 3");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |def main(): Unit \ E1 + E3 = E1.op1();E3.op3()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
+
+  test("Test.ValidEntryPoint.DefaultHandler.07") {
+    val input =
+      """
+        |pub eff E1{
+        |   def op1(): Unit
+        |}
+        |pub eff E2{
+        |   def op2(): Unit
+        |}
+        |pub eff E3{
+        |   def op3(): Unit
+        |}
+        |mod E1 {
+        |    @DefaultHandler
+        |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
+        |            run {
+        |                f()
+        |            } with handler E1 {
+        |                def op1(k) = {
+        |                    println("Default behaviour 1");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E2 {
+        |    @DefaultHandler
+        |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
+        |            run {
+        |                g()
+        |            } with handler E2 {
+        |                def op2(k) = {
+        |                    println("Default behaviour 2");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |mod E3 {
+        |    @DefaultHandler
+        |    pub def runWithIO(h: Unit -> c \ ef): c \ (ef - E3) + IO =
+        |            run {
+        |                h()
+        |            } with handler E3 {
+        |                def op3(k) = {
+        |                    println("Default behaviour 3");
+        |                    k()
+        |                }
+        |            }
+        |}
+        |def main(): Unit \ E1 + E2 + E3 + IO = E1.op1();E2.op2();E3.op3();println("Hello World")
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectSuccess(result)
+  }
 }
