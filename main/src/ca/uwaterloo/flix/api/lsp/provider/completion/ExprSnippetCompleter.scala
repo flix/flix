@@ -23,7 +23,7 @@ object ExprSnippetCompleter {
       """@DefaultHandler
         |pub def runWithIO(f: Unit -> a \\ ef): a \ (ef - ${1:Eff}) + IO =
         |    run {
-        |            f()
+        |        f()
         |    } with ${0:?HandlerForEff}""".stripMargin,
       "snippet for a default handler for Eff")
 
