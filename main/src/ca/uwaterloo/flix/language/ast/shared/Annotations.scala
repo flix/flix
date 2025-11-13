@@ -87,11 +87,6 @@ case class Annotations(annotations: List[Annotation]) {
   def isLoweringTarget: Boolean = annotations exists (_.isInstanceOf[Annotation.LoweringTarget])
 
   /**
-    * Returns `true` if `this` sequence contains the `@MustUse` annotation.
-    */
-  def isMustUse: Boolean = annotations exists (_.isInstanceOf[Annotation.MustUse])
-
-  /**
     * Returns `true` if `this` sequence contains the `@Parallel` annotation.
     */
   def isParallel: Boolean = annotations exists (_.isInstanceOf[Annotation.Parallel])

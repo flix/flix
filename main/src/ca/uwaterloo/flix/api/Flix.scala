@@ -794,11 +794,12 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
-    val (result, errors) = check()
-    if (errors.isEmpty) {
+    val (result, allErrors) = check()
+    if (allErrors.isEmpty) {
       codeGen(result.get)
     } else {
-      Validation.Failure(Chain.from(errors))
+      val nonShadowedErrors = CompilationMessage.filterShadowedMessages(allErrors)
+      Validation.Failure(Chain.from(nonShadowedErrors))
     }
   }
 

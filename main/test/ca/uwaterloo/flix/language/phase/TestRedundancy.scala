@@ -102,7 +102,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("HiddenVarSym.Select.01") {
     val input =
       raw"""
-           |def f(): Int32 = region rc {
+           |def f(): Int32 \ Chan = region rc {
            |    let (_, rx) = Channel.buffered(rc, 1);
            |    select {
            |        case _x <- recv(rx) => _x
@@ -110,7 +110,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
            |}
            |
        """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.HiddenVarSym](result)
   }
 
@@ -375,7 +375,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.Select.01") {
     val input =
       """
-        |def f(): Int32 = region rc {
+        |def f(): Int32 \ Chan = region rc {
         |    let x = 123;
         |    let (tx, rx) = Channel.buffered(rc, 1);
         |    Channel.send(456, tx);
@@ -386,7 +386,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
         |}
         |
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[RedundancyError.ShadowedName](result)
     expectError[RedundancyError.ShadowingName](result)
   }
@@ -1771,37 +1771,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantDiscard](result)
-  }
-
-  test("MustUse.01") {
-    val input =
-      """
-        |@MustUse
-        |enum A {
-        |    case A
-        |}
-        |
-        |def f(): Int32 \ IO =
-        |    unchecked_cast(A.A as _ \ IO);
-        |    123
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
-  }
-
-  test("MustUse.02") {
-    val input =
-      """
-        |def f(): Int32 \ IO =
-        |    unchecked_cast((x -> x + 123) as _ \ IO);
-        |    123
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
   test("RedundantCheckedTypeCast.01") {
