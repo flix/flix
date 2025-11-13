@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.api.effectlock.serialization
 
-import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol}
 
 object Deserialize {
 
