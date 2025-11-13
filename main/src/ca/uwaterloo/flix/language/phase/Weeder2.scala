@@ -872,6 +872,7 @@ object Weeder2 {
         case TreeKind.Expr.StringInterpolation => visitStringInterpolationExpr(tree)
         case TreeKind.Expr.OpenVariant => visitOpenVariantExpr(tree)
         case TreeKind.Expr.OpenVariantAs => visitOpenVariantAsExpr(tree)
+        case TreeKind.Expr.OperatorAsLambda => visitOperatorAsLambda(tree)
         case TreeKind.Expr.Hole => Validation.Success(visitHoleExpr(tree))
         case TreeKind.Expr.HoleVariable => visitHoleWithExpExpr(tree)
         case TreeKind.Expr.Use => visitExprUseExpr(tree)
@@ -1190,6 +1191,26 @@ object Weeder2 {
       }
     }
 
+    private def visitOperatorAsLambda(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
+      val loc = tree.loc
+      flatMapN(pick(TreeKind.Operator, tree)) { op =>
+        op.children.head match {
+          // User-defined operators - use the operator text directly
+          case t @ Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+            Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
+
+          // Built-in operators - lookup
+          case Token(kind, _, _, _, _, _) =>
+            tokenOperatorToName(kind) match {
+              case Some(funcName) =>
+                Validation.Success(Expr.Ambiguous(Name.mkQName(funcName, loc), loc))
+              case None =>
+                throw InternalCompilerException(s"Unsupported operator: $kind", loc)
+            }
+        }
+      }
+    }
+
     private def visitLambdaExtMatchExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.LambdaExtMatch)
       mapN(Patterns.pickExtPattern(tree), pickExpr(tree)) {
@@ -1265,21 +1286,14 @@ object Weeder2 {
             case None =>
               // Single Token Operator.
               op.children.head match {
-                case Token(TokenKind.Plus, _, _, _, _, _) => Validation.Success(mkApply("Add.add"))
-                case Token(TokenKind.Minus, _, _, _, _, _) => Validation.Success(mkApply("Sub.sub"))
-                case Token(TokenKind.Star, _, _, _, _, _) => Validation.Success(mkApply("Mul.mul"))
-                case Token(TokenKind.Slash, _, _, _, _, _) => Validation.Success(mkApply("Div.div"))
-                case Token(TokenKind.AngleL, _, _, _, _, _) => Validation.Success(mkApply("Order.less"))
-                case Token(TokenKind.AngleLEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.lessEqual"))
-                case Token(TokenKind.AngleR, _, _, _, _, _) => Validation.Success(mkApply("Order.greater"))
-                case Token(TokenKind.AngleREqual, _, _, _, _, _) => Validation.Success(mkApply("Order.greaterEqual"))
-                case Token(TokenKind.EqualEqual, _, _, _, _, _) => Validation.Success(mkApply("Eq.eq"))
-                case Token(TokenKind.BangEqual, _, _, _, _, _) => Validation.Success(mkApply("Eq.neq"))
-                case Token(TokenKind.AngledEqual, _, _, _, _, _) => Validation.Success(mkApply("Order.compare"))
+                // Standard operators.
+                case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
+                  Validation.Success(mkApply(tokenOperatorToName(kind).get))
+
+                // Special cases that create different AST nodes
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.ColonColonColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
                 case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
                   tryPickQName(exprs(1)) match {
@@ -1310,6 +1324,30 @@ object Weeder2 {
           }
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
+    }
+
+    /* Optionally returns the function name of the given operator. */
+    private def tokenOperatorToName(kind: TokenKind): Option[String] = kind match {
+      // Arithmetic operators
+      case TokenKind.Plus => Some("Add.add")
+      case TokenKind.Minus => Some("Sub.sub")
+      case TokenKind.Star => Some("Mul.mul")
+      case TokenKind.Slash => Some("Div.div")
+
+      // Comparison operators
+      case TokenKind.AngleL => Some("Order.less")
+      case TokenKind.AngleLEqual => Some("Order.lessEqual")
+      case TokenKind.AngleR => Some("Order.greater")
+      case TokenKind.AngledEqual => Some("Order.compare")
+      case TokenKind.AngleREqual => Some("Order.greaterEqual")
+      case TokenKind.EqualEqual => Some("Eq.eq")
+      case TokenKind.BangEqual => Some("Eq.neq")
+
+      // List operators
+      case TokenKind.ColonColonColon => Some("List.append")
+
+      // Unsupported operators
+      case _ => None
     }
 
     private def visitIfThenElseExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {

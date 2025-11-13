@@ -51,7 +51,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns the sum of all elements in `t`.
     ///
     pub def sum(t: t[Int32]): Int32 \ Foldable.Aef[t] =
-        Foldable.foldLeft((acc, x) -> acc + x, 0, t)
+        Foldable.foldLeft((+), 0, t)
 
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
