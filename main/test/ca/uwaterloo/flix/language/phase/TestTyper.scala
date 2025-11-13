@@ -2321,7 +2321,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
-  test("TypeError.Seq.Jvm.01") {
+  test("TypeError.Seq.Jvm.02") {
     val input =
       """
         |import java.lang.Object
