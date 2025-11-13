@@ -9,7 +9,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestCompilationMessage extends AnyFunSuite with TestUtils {
 
-
   test("TestCompilationMessage") {
     val expected =
       s"""-- ${TestCompilationMessage.kind} -------------------------------------------------- ${TestCompilationMessage.source.name}

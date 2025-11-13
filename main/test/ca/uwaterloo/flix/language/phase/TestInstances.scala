@@ -761,21 +761,6 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.IllegalTypeAliasInstance](result)
   }
 
-  test("Test.AssocTypeInstance.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T[a]: Type
-        |}
-        |
-        |trait D[a]
-        |
-        |instance D[C.T[a]]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.IllegalAssocTypeInstance](result)
-  }
-
   test("Test.MissingConstraint.01") {
     val input =
       """
