@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.language.ast.Kind.Eff
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 
 
@@ -22,6 +23,11 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
   * A constraint generated via type inference.
   */
 sealed trait TypeConstraint {
+
+  def isEff: Boolean = this match {
+    case TypeConstraint.Equality(tpe1, _, _) => tpe1.kind == Eff
+    case _ => false
+  }
 
   /**
     * Returns the sum of the sizes of all the types in this constraint.

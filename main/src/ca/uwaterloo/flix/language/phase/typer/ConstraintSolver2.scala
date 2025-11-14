@@ -56,6 +56,22 @@ object ConstraintSolver2 {
     }
 
     /**
+      * Transforms the constraint set by applying a many-to-many constraint function.
+      */
+    def mapAll(f: List[TypeConstraint] => List[TypeConstraint]): Soup = {
+      renew(f(constrs), tree)
+    }
+
+    /**
+      * Transforms the constraint set by applying a many-to-many constraint function,
+      * composing the result with the substitution tree.
+      */
+    def mapSubst(f: List[TypeConstraint] => (List[TypeConstraint], SubstitutionTree)): Soup = {
+      val (newConstrs, moreTree) = f(constrs)
+      renew(newConstrs, moreTree @@ tree)
+    }
+
+    /**
       * Transforms the constraint set by applying a one-to-many constraint function,
       * composing the result with the substitution tree.
       */
@@ -163,22 +179,12 @@ object ConstraintSolver2 {
       .exhaustively(progress) {
         (soup, progress) =>
           soup
-            .exhaustively(progress) {
-              (s, p) => s.flatMap(breakDownConstraints(_, p))
-            }
-            .flatMap(eliminateIdentities(_, progress))
-            .flatMap(eliminateErrors(_, progress))
+            .mapAll(breakDownAll(_, progress))
             .map(reduceTypes(_, progress))
+            .mapSubst(makeAllVarSubst(_, progress))
             .flatMapSubst(makeSubstitution(_, progress))
-            .exhaustively(progress) {
-              (s, p) => s.flatMap(breakDownConstraints(_, p))
-            }
-            .flatMap(eliminateIdentities(_, progress))
-            .flatMap(eliminateErrors(_, progress))
+            .mapAll(breakDownAll(_, progress))
             .map(reduceTypes(_, progress))
-            .exhaustively(progress) {
-              (s, p) => s.flatMap(breakDownConstraints(_, p))
-            }
             .flatMap(eliminateIdentities(_, progress))
             .flatMap(eliminateErrors(_, progress))
             .map(reduceTypes(_, progress))
@@ -219,7 +225,7 @@ object ConstraintSolver2 {
   }
 
   /**
-    * Breaks down equality constraints over syntactic types.
+    * Breaks down all equality constraints over syntactic types.
     *
     * {{{
     *   τ₁[τ₂] ~ τ₃[τ₄]
@@ -232,16 +238,33 @@ object ConstraintSolver2 {
     * }}}
     */
   // (appU)
-  private def breakDownConstraints(constr: TypeConstraint, progress: Progress): List[TypeConstraint] = constr match {
-    case TypeConstraint.Equality(t1@Type.Apply(tpe11, tpe12, _), t2@Type.Apply(tpe21, tpe22, _), prov) if isSyntactic(t1.kind) && isSyntactic(t2.kind) =>
-      progress.markProgress()
-      List(TypeConstraint.Equality(tpe11, tpe21, prov), TypeConstraint.Equality(tpe12, tpe22, prov))
+  private def breakDownAll(constrs: List[TypeConstraint], progress: Progress): List[TypeConstraint] = {
+    val result = scala.collection.mutable.ArrayBuffer.empty[TypeConstraint]
 
-    case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
-      val nested = nested0.flatMap(breakDownConstraints(_, progress))
-      List(TypeConstraint.Purification(sym, eff1, eff2, prov, nested))
+    def visit(tpe1: Type, tpe2: Type, prov: Provenance): Unit = (tpe1, tpe2) match {
+      case (Type.Apply(tpe11, tpe12, _), Type.Apply(tpe21, tpe22, _)) if isSyntactic(tpe1.kind) && isSyntactic(tpe2.kind) =>
+        progress.markProgress()
+        visit(tpe11, tpe21, prov)
+        visit(tpe12, tpe22, prov)
+      case _ =>
+        if (tpe1 != tpe2) {
+          val constr = TypeConstraint.Equality(tpe1, tpe2, prov)
+          result += constr
+        }
+    }
 
-    case c => List(c)
+    for (constr <- constrs) {
+      constr match {
+        case TypeConstraint.Equality(tpe1, tpe2, prov) =>
+          visit(tpe1, tpe2, prov)
+        case TypeConstraint.Purification(sym, eff1, eff2, prov, nested) =>
+          result += TypeConstraint.Purification(sym, eff1, eff2, prov, breakDownAll(nested, progress))
+        case _ =>
+          result += constr
+      }
+    }
+
+    result.toList
   }
 
   /**
@@ -585,6 +608,52 @@ object ConstraintSolver2 {
 
     case c => (List(c), SubstitutionTree.empty)
   }
+
+  /**
+    * Builds a substitution from constraints where both sides are free variables.
+    *
+    * {{{
+    *   α1 ~ α2
+    * }}}
+    *
+    * becomes
+    *
+    * {{{
+    *   α1 ↦ α2
+    * }}}
+    */
+  // (varU)
+  private def makeAllVarSubst(constr: List[TypeConstraint], progress: Progress)(implicit scope: Scope, renv: RigidityEnv): (List[TypeConstraint], SubstitutionTree) = {
+    var subst = Substitution.empty
+    val rest = scala.collection.mutable.ArrayBuffer.empty[TypeConstraint]
+
+    for (constr <- constr) {
+      constr match {
+        case TypeConstraint.Equality(tx, ty, _) =>
+          val s = SubstitutionTree.mk(subst, Map.empty)
+
+          // Apply the current substitution to the rhs and lhs.
+          (s(tx), s(ty)) match {
+            case (Type.Var(sym1, _), t2@Type.Var(_, _)) if canSubstitute(sym1, t2) =>
+              // We only act if both sides are variables. The idea is to avoid descending deeply into large types.
+              subst = Substitution.singleton(sym1, t2) @@ subst
+
+            case _ => rest += constr
+          }
+        case _ => rest += constr
+      }
+    }
+
+    // If the substitution grew there was progress.
+    if (subst.m.nonEmpty) {
+      progress.markProgress()
+    }
+
+    val tree = SubstitutionTree.mk(subst, Map.empty)
+
+    (rest.toList.map(tree.apply), tree)
+  }
+
 
   /**
     * Returns true if it is valid to create a substitution from the given type variable to the given type.

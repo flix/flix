@@ -2223,7 +2223,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedType](result)
+    expectError[TypeError.MismatchedTypes](result)
   }
 
   test("TypeError.MismatchedPredicateArity.01") {
