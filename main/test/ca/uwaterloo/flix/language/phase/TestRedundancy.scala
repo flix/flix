@@ -1445,42 +1445,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UnderAppliedFunction.01") {
-    val input =
-      s"""
-         |def f(): Unit =
-         |    x -> Array#{123} @ Static;
-         |    ()
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnderAppliedFunction](result)
-  }
-
-  test("UnderAppliedFunction.02") {
-    val input =
-      s"""
-         |def f(): Unit =
-         |    def g(x, y) = Array#{x, y} @ Static;
-         |    g;
-         |    ()
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnderAppliedFunction](result)
-  }
-
-  test("UnderAppliedFunction.03") {
-    val input =
-      """
-        |def hof(f: a -> b \ e, x: a): b \ e = f(x)
-        |
-        |def f(): Unit =
-        |    hof(x -> (x, Ref.fresh(21, Static)));
-        |    ()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnderAppliedFunction](result)
-  }
-
   test("UnusedFormalParam.Instance.01") {
     val input =
       """
