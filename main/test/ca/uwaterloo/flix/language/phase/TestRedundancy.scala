@@ -1414,7 +1414,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    123;
+         |    ();
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1424,8 +1424,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessExpression.02") {
     val input =
       s"""
+         |def foo(): Unit = ()
          |def f(): Unit =
-         |    (21, 42);
+         |    foo();
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1435,10 +1436,21 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessExpression.03") {
     val input =
       """
-        |def hof(f: a -> b \ e, x: a): b \ e = f(x)
+        |def hof(f: a -> Unit \ e, x: a): Unit \ e = f(x)
         |
         |def f(): Unit =
-        |    hof(x -> (x, 21), 42);
+        |    hof(x -> (), 42);
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessExpression](result)
+  }
+
+  test("UselessExpression.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    discard 123;
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
