@@ -273,6 +273,114 @@ object Lowering {
   }
 
   /**
+    * Returns a desugared [[LoweredAst.Expr.ParYield]] expression as a nested match-expression.
+    */
+  def mkParYield(frags: List[(MonoAst.Pattern, MonoAst.Expr, SourceLocation)], exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit flix: Flix, ctx: Context, root: LoweredAst.Root): MonoAst.Expr = {
+    // Only generate channels for n-1 fragments. We use the current thread for the last fragment.
+    val fs = frags.init
+    val last = frags.last
+
+    // Generate symbols for each channel.
+    val chanSymsWithPatAndExp = fs.map { case (p, e, l) => (p, mkLetSym("channel", l.asSynthetic), e) }
+
+    // Make `GetChannel` exps for the spawnable exps.
+    val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)
+
+    // Evaluate the last expression in the current thread (so just make let-binding)
+    val desugaredYieldExp = mkLetMatch(last._1, last._2, waitExps)
+
+    // Generate channels and spawn exps.
+    val chanSymsWithExp = chanSymsWithPatAndExp.map { case (_, s, e) => (s, e) }
+    val blockExp = mkParChannels(desugaredYieldExp, chanSymsWithExp)
+
+    // Wrap everything in a purity cast,
+    MonoAst.Expr.Cast(blockExp, lowerType(tpe), eff, loc.asSynthetic)
+  }
+
+  /**
+    * Returns a full `par yield` expression.
+    */
+  private def mkParChannels(exp: MonoAst.Expr, chanSymsWithExps: List[(Symbol.VarSym, MonoAst.Expr)])(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    // Make spawn expressions `spawn ch <- exp`.
+    val spawns = chanSymsWithExps.foldRight(exp: MonoAst.Expr) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
+        val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
+        val e3 = MonoAst.Expr.Cst(Constant.Static, Type.mkRegionToStar(Type.IO, loc), loc)
+        val e4 = MonoAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        MonoAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
+    }
+
+    // Make let bindings `let ch = chan 1;`.
+    chanSymsWithExps.foldRight(spawns: MonoAst.Expr) {
+      case ((sym, e), acc) =>
+        val loc = e.loc.asSynthetic
+        val chan = mkNewChannel(MonoAst.Expr.Cst(Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.IO, loc) // The channel exp `chan 1`
+        MonoAst.Expr.Let(sym, chan, acc, acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), Occur.Unknown, loc) // The let-binding `let ch = chan 1`
+    }
+  }
+
+  /**
+    * Make a new channel expression
+    */
+  private def mkNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
+    val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
+    val defnSym = lookup(Defs.ChannelNew, itpe)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, tpe, eff, loc)
+  }
+
+  /**
+    * Returns an expression where the pattern variables used in `exp` are
+    * bound to [[LoweredAst.Expr.GetChannel]] expressions,
+    * i.e.
+    * {{{
+    *   let pat1 = <- ch1;
+    *   let pat2 = <- ch2;
+    *   let pat3 = <- ch3;
+    *   ...
+    *   let patn = <- chn;
+    *   exp
+    * }}}
+    */
+  private def mkBoundParWaits(patSymExps: List[(MonoAst.Pattern, Symbol.VarSym, MonoAst.Expr)], exp: MonoAst.Expr)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr =
+    patSymExps.map {
+      case (p, sym, e) =>
+        val loc = e.loc.asSynthetic
+        val chExp = mkChannelExp(sym, e.tpe, loc)
+        (p, mkGetChannel(chExp, e.tpe, Type.IO, loc))
+    }.foldRight(exp) {
+      case ((pat, chan), e) => mkLetMatch(pat, chan, e)
+    }
+
+  /**
+    * Returns a desugared let-match expression, i.e.
+    * {{{
+    *   let pattern = exp;
+    *   body
+    * }}}
+    * is desugared to
+    * {{{
+    *   match exp {
+    *     case pattern => body
+    *   }
+    * }}}
+    */
+  private def mkLetMatch(pat: MonoAst.Pattern, exp: MonoAst.Expr, body: MonoAst.Expr): MonoAst.Expr = {
+    val loc = exp.loc.asSynthetic
+    val rule = List(MonoAst.MatchRule(pat, None, body))
+    val eff = Type.mkUnion(exp.eff, body.eff, loc)
+    MonoAst.Expr.Match(exp, rule, body.tpe, eff, loc)
+  }
+
+  /**
+    * An expression for a channel variable called `sym`
+    */
+  private def mkChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): MonoAst.Expr = {
+    MonoAst.Expr.Var(sym, mkChannelTpe(tpe, loc), loc)
+  }
+
+  /**
     * Returns a list expression constructed from the given `exps` with type list of `elmType`.
     *
     * @param elmType is assumed to be specialized and lowered.
