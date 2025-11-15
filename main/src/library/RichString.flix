@@ -298,7 +298,7 @@ mod RichString {
     }
 
     ///
-    /// Returns the string representation of the `RichString` `rs`.
+    /// Returns a string representation of the given `rs`.
     ///
     /// If the terminal supports ANSI colors, returns the string with ANSI escape codes.
     /// Otherwise, returns the plain text representation without styling.
