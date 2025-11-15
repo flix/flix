@@ -454,7 +454,7 @@ mod Fixpoint3.Phase.Lowering {
                 let sPos = getOrCrash(Map.get((s, 0), placements));
                 Some(ExecutableRam.BoolExp.NotMemberOf(Vector.map(lowerT, terms), sPos, den))
             case Ram.BoolExp.NotBot(t1, _, _) =>
-                lowerMeet(t1, idToIndex, meetWithMap);
+                discard lowerMeet(t1, idToIndex, meetWithMap);
                 None
             case Ram.BoolExp.Leq(box, rv, relSym) =>
                 let leq = match toDenotation(relSym) {

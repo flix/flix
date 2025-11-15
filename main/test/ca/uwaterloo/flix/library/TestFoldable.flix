@@ -481,7 +481,7 @@ mod TestFoldable {
         let xs = Vector#{1, 2, 3, 4};
         let effects = MutList.empty(rc);
         def f(x) = if (x > 2) {
-            Capture.capture(x);
+            discard Capture.capture(x);
             false
         } else {
             true
