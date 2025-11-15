@@ -944,8 +944,7 @@ object Resolver {
     case NamedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1Val = resolveExp(exp1, scp0)
       val e2Val = resolveExp(exp2, scp0)
-      val e3Val = resolveExp(exp3, scp0)
-      mapN(e1Val, e2Val, e3Val) {
+      mapN(e1Val, e2Val, traverseOpt(exp3)(resolveExp(_, scp0))) {
         case (e1, e2, e3) => ResolvedAst.Expr.IfThenElse(e1, e2, e3, loc)
       }
 

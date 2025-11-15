@@ -171,9 +171,15 @@ object Simplifier {
           SimplifiedAst.Expr.ApplyAtomic(op, es, t, purity, loc)
       }
 
-    case MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc) =>
+    case MonoAst.Expr.IfThenElse(e1, e2, e3, tpe, eff0, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.IfThenElse(visitExp(e1), visitExp(e2), visitExp(e3), t, simplifyEffect(eff), loc)
+      val exp1 = visitExp(e1)
+      val exp2 = visitExp(e2)
+      val eff = simplifyEffect(eff0)
+      e3.map(visitExp) match {
+        case Some(exp3) => SimplifiedAst.Expr.IfThenElse(exp1, exp2, exp3, t, eff, loc)
+        case None => SimplifiedAst.Expr.IfThenElse(exp1, exp2, SimplifiedAst.Expr.Cst(Constant.Unit, SimpleType.Unit, loc.asSynthetic), t, eff, loc)
+      }
 
     case MonoAst.Expr.Stm(e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)

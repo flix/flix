@@ -134,7 +134,7 @@ object Safety {
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1)
       visitExp(exp2)
-      visitExp(exp3)
+      exp3.foreach(visitExp)
 
     case Expr.Stm(exp1, exp2, _, _, _) =>
       visitExp(exp1)

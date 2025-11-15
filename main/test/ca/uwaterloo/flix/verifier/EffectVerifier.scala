@@ -138,11 +138,14 @@ object EffectVerifier {
       val expected = Type.purifyRegion(exp.eff, regSym)
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3Opt, tpe, eff, loc) =>
       visitExp(exp1)
       visitExp(exp2)
-      visitExp(exp3)
-      val expected = Type.mkUnion(exp1.eff, exp2.eff, exp3.eff, loc)
+      exp3Opt.foreach(visitExp)
+      val expected = exp3Opt match {
+        case Some(exp3) => Type.mkUnion(exp1.eff, exp2.eff, exp3.eff, loc)
+        case None => Type.mkUnion(exp1.eff, exp2.eff, loc)
+      }
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Stm(exp1, exp2, tpe, eff, loc) =>

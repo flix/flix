@@ -163,8 +163,9 @@ object OccurrenceAnalyzer {
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
         val (e1, ctx1) = visitExp(exp1)
         val (e2, ctx2) = visitExp(exp2)
-        val (e3, ctx3) = visitExp(exp3)
-        val ctx4 = combineSeq(ctx1, combineBranch(ctx2, ctx3))
+        val (e3, ctx3Opt) = exp3.map(visitExp).unzip
+        val combinedBranches = ctx3Opt.map(ctx3 => combineBranch(ctx2, ctx3)).getOrElse(ctx2)
+        val ctx4 = combineSeq(ctx1, combinedBranches)
         if ((e1 eq exp1) && (e2 eq exp2) && (e3 eq exp3)) {
           (exp0, ctx4) // Reuse exp0.
         } else {

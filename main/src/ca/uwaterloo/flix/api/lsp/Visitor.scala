@@ -388,7 +388,7 @@ object Visitor {
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visitExpr(exp1)
         visitExpr(exp2)
-        visitExpr(exp3)
+        exp3.foreach(visitExpr)
 
       case Expr.Stm(exp1, exp2, _, _, _) =>
         visitExpr(exp1)

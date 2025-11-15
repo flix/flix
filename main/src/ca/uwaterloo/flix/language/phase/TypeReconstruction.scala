@@ -159,10 +159,13 @@ object TypeReconstruction {
     case KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
+      val e3Opt = exp3.map(visitExp)
       val tpe = e2.tpe
-      val eff = Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
-      TypedAst.Expr.IfThenElse(e1, e2, e3, tpe, eff, loc)
+      val eff = e3Opt match {
+        case Some(e3) => Type.mkUnion(e1.eff, e2.eff, e3.eff, loc)
+        case None => Type.mkUnion(e1.eff, e2.eff, loc)
+      }
+      TypedAst.Expr.IfThenElse(e1, e2, e3Opt, tpe, eff, loc)
 
     case KindedAst.Expr.Stm(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)

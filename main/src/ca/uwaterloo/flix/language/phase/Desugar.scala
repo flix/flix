@@ -536,7 +536,7 @@ object Desugar {
     case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
+      val e3 = exp3.map(visitExp)
       Expr.IfThenElse(e1, e2, e3, loc)
 
     case WeededAst.Expr.Stm(exp1, exp2, loc) =>
@@ -1149,7 +1149,7 @@ object Desugar {
 
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
-        DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
+        DesugaredAst.Expr.IfThenElse(e1, acc, None, loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match
@@ -1191,7 +1191,7 @@ object Desugar {
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
         val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
-        DesugaredAst.Expr.IfThenElse(e1, acc, zero, loc1.asSynthetic)
+        DesugaredAst.Expr.IfThenElse(e1, acc, Some(zero), loc1.asSynthetic)
 
       case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
         // Rewrite to pattern match

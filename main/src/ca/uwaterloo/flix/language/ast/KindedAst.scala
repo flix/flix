@@ -101,7 +101,7 @@ object KindedAst {
 
     case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
+    case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Option[Expr], loc: SourceLocation) extends Expr
 
     case class Stm(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 

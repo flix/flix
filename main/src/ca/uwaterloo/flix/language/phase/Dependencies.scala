@@ -206,7 +206,7 @@ object Dependencies {
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, _) =>
       visitExp(exp1)
       visitExp(exp2)
-      visitExp(exp3)
+      exp3.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
