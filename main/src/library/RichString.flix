@@ -297,12 +297,22 @@ mod RichString {
             RichString(Chain.append(spans1, spans2))
     }
 
+
+    ///
+    /// Returns the string representation of the `RichString` `rs`.
+    ///
+    /// If the terminal supports ANSI colors, returns the string with ANSI escape codes.
+    /// Otherwise, returns the plain text representation without styling.
+    ///
+    pub def toString(rs: RichString): String =
+        if (isColorTerm()) toAnsiString(rs) else toPlainString(rs)
+
     ///
     /// Returns the plain text representation of the `RichString` `rs`.
     ///
     /// All styling and color information is discarded.
     ///
-    pub def toString(rs: RichString): String = match rs {
+    def toPlainString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> r#text, "", spans)
     }
@@ -312,7 +322,7 @@ mod RichString {
     ///
     /// The returned string includes ANSI color and style codes for terminal display.
     ///
-    pub def toAnsiString(rs: RichString): String = match rs {
+    def toAnsiString(rs: RichString): String = match rs {
         case RichString(spans) =>
             Chain.joinWith(match Span.Span(r) -> {
                 // Collect all codes in a list
@@ -339,5 +349,29 @@ mod RichString {
                     "\u001B[${List.join(";", allCodes)}m${r#text}\u001B[0m"
             }, "", spans)
     }
+
+    ///
+    /// Returns `true` if the terminal supports ANSI colors.
+    ///
+    /// Checks for color support by examining environment variables:
+    /// - COLORTERM=truecolor indicates 24-bit color support
+    /// - WT_SESSION indicates Windows Terminal
+    /// - TERM containing "256", "ansi", "xterm", or "screen" indicates ANSI support
+    /// - XPC_SERVICE_NAME containing "intellij" indicates IntelliJ IDEA
+    ///
+    def isColorTerm(): Bool = unsafely IO run {
+        run {
+            let isTrueColor = Env.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
+            let isWindowsTerminal = not (Env.getVar("WT_SESSION") |> Option.isEmpty);
+            let isAnsiTerminal = Env.getVar("TERM") |>
+                Option.exists(p ->
+                    let keywords = "256" :: "ansi" :: "xterm" :: "screen" :: Nil;
+                    List.exists(s -> String.contains({substr = s}, p), keywords)
+                );
+            let isIntelliJ = Env.getVar("XPC_SERVICE_NAME") |>
+                Option.exists(p -> String.contains({substr = "intellij"}, String.toLowerCase(p)));
+            isTrueColor or isWindowsTerminal or isAnsiTerminal or isIntelliJ
+            } with Env.runWithIO
+        }
 
 }
