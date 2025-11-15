@@ -271,7 +271,7 @@ object CompilerPerf {
         ("maxThreads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
-        ("results" -> ListOps.zip(baseline.phases, baselineWithPar.phases).map {
+        ("results" -> ListOps.zipTruncate(baseline.phases, baselineWithPar.phases).map {
           case ((phase, times1), (_, times2)) =>
             ("phase" -> phase) ~ ("speedup" -> combine(ListOps.zip(times1, times2).map(p => p._1.toDouble / p._2.toDouble)))
         })
@@ -285,7 +285,7 @@ object CompilerPerf {
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> ListOps.zip(baselineWithPar.phases, baselineWithParInc.phases).map {
+        ("results" -> ListOps.zipTruncate(baselineWithPar.phases, baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
             ("phase" -> phase) ~ ("ratio" -> combine(ListOps.zip(times1, times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
