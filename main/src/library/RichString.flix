@@ -297,7 +297,6 @@ mod RichString {
             RichString(Chain.append(spans1, spans2))
     }
 
-
     ///
     /// Returns the string representation of the `RichString` `rs`.
     ///
