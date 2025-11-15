@@ -73,7 +73,12 @@ mod RichString {
     /// A trait for types that can be formatted as a `RichString`.
     ///
     pub trait Formattable[a] {
-        pub def format(x: a): RichString
+        ///
+        /// The associated effect of the Formattable which represents the effect of formatting.
+        ///
+        type Aef[a]: Eff = {}
+
+        pub def format(x: a): RichString \ Formattable.Aef[a]
     }
 
     instance Formattable[RichString] {
@@ -133,7 +138,7 @@ mod RichString {
     ///
     /// Returns a `RichString` with the given text `x` using default colors and normal style.
     ///
-    pub def text(x: a): RichString with Formattable[a] =
+    pub def text(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         Formattable.format(x)
 
     ///
@@ -146,7 +151,7 @@ mod RichString {
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given foreground color `c`.
     ///
-    pub def withColor(c: Color, x: a): RichString with Formattable[a] =
+    pub def withColor(c: Color, x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
             Span.Span({text = r#text, fgColor = c, bgColor = r#bgColor, styles = r#styles}), rs)
@@ -154,7 +159,7 @@ mod RichString {
     ///
     /// Returns a `RichString` from given text `x` with all spans updated to use the given background color `c`.
     ///
-    pub def withBgColor(c: Color, x: a): RichString with Formattable[a] =
+    pub def withBgColor(c: Color, x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
             Span.Span({text = r#text, fgColor = r#fgColor, bgColor = c, styles = r#styles}), rs)
@@ -162,7 +167,7 @@ mod RichString {
     ///
     /// Returns a `RichString` from given text `x` with the given `style` in addition to any other styles it already has.
     ///
-    pub def withStyle(style: Style, x: a): RichString with Formattable[a] =
+    pub def withStyle(style: Style, x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         let rs = Formattable.format(x);
         map(match Span.Span(r) ->
             Span.Span({text = r#text, fgColor = r#fgColor, bgColor = r#bgColor, styles = Set.insert(style, r#styles)}), rs)
@@ -182,109 +187,109 @@ mod RichString {
     ///
     /// Returns a `RichString` with the given text `x` in black color.
     ///
-    pub def black(x: a): RichString with Formattable[a] =
+    pub def black(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(0, 0, 0), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in red color.
     ///
-    pub def red(x: a): RichString with Formattable[a] =
+    pub def red(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(205, 49, 49), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in green color.
     ///
-    pub def green(x: a): RichString with Formattable[a] =
+    pub def green(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(13, 188, 121), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in yellow color.
     ///
-    pub def yellow(x: a): RichString with Formattable[a] =
+    pub def yellow(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(229, 192, 123), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in blue color.
     ///
-    pub def blue(x: a): RichString with Formattable[a] =
+    pub def blue(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(36, 114, 200), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in magenta color.
     ///
-    pub def magenta(x: a): RichString with Formattable[a] =
+    pub def magenta(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(188, 63, 188), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in cyan color.
     ///
-    pub def cyan(x: a): RichString with Formattable[a] =
+    pub def cyan(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(17, 168, 205), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in white color.
     ///
-    pub def white(x: a): RichString with Formattable[a] =
+    pub def white(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
         withColor(Color.Rgb(255, 255, 255), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on black background.
     ///
-    pub def bgBlack(x: a): RichString with Formattable[a] =
+    pub def bgBlack(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(0, 0, 0), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on red background.
     ///
-    pub def bgRed(x: a): RichString with Formattable[a] =
+    pub def bgRed(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(205, 49, 49), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on green background.
     ///
-    pub def bgGreen(x: a): RichString with Formattable[a] =
+    pub def bgGreen(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(13, 188, 121), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on yellow background.
     ///
-    pub def bgYellow(x: a): RichString with Formattable[a] =
+    pub def bgYellow(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(229, 192, 123), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on blue background.
     ///
-    pub def bgBlue(x: a): RichString with Formattable[a] =
+    pub def bgBlue(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(36, 114, 200), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on magenta background.
     ///
-    pub def bgMagenta(x: a): RichString with Formattable[a] =
+    pub def bgMagenta(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(188, 63, 188), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on cyan background.
     ///
-    pub def bgCyan(x: a): RichString with Formattable[a] =
+    pub def bgCyan(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(17, 168, 205), x)
 
     ///
     /// Returns a `RichString` with the given text `x` on white background.
     ///
-    pub def bgWhite(x: a): RichString with Formattable[a] =
+    pub def bgWhite(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withBgColor(Color.Rgb(255, 255, 255), x)
 
     ///
     /// Returns a `RichString` with the given text `x` in bold style.
     ///
-    pub def bold(x: a): RichString with Formattable[a] =
+    pub def bold(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Bold, x)
 
     ///
     /// Returns a `RichString` with the given text `x` in underline style.
     ///
-    pub def underline(x: a): RichString with Formattable[a] =
+    pub def underline(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Underline, x)
 
     ///
