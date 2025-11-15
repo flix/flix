@@ -957,15 +957,14 @@ mod List {
         }) |> List.map(Nel.reverse)
 
     ///
-    /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist, if they are equal according to `Eq` on `a`.
+    /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist,
+    /// if `f(x)` and `f(y)` are equal according to `Eq` on `b`.
     ///
     /// A sublist is created by iterating through the remaining elements of `l` from left to right and adding an
     /// element to the sublist if and only if doing so creates no conflicts with the elements already in the sublist.
     ///
-    /// `Eq` must define an equivalence relation.
-    ///
-    pub def groupBy(l: List[a]): List[Nel[a]] with Eq[a] =
-        groupWith(Eq.eq, l)
+    pub def groupBy(f: a -> b, l: List[a]): List[Nel[a]] with Eq[b] =
+        groupWith(Eq.eq `on` f, l)
 
     ///
     /// Helper function for `groupWith`.

@@ -1636,13 +1636,13 @@ mod TestList {
     }
 
     @Test
-    def groupBy01(): Unit \ Assert = assertEq(expected = Nil, List.groupBy((Nil: List[A])))
+    def groupBy01(): Unit \ Assert = assertEq(expected = Nil, List.groupBy(identity, (Nil: List[A])))
 
     @Test
-    def groupBy02(): Unit \ Assert = assertEq(expected = (Nel.singleton(A.A(1, 1))) :: Nil, List.groupBy((A.A(1, 1) :: Nil)))
+    def groupBy02(): Unit \ Assert = assertEq(expected = (Nel.singleton(A.A(1, 1))) :: Nil, List.groupBy(identity, (A.A(1, 1) :: Nil)))
 
     @Test
-    def groupBy03(): Unit \ Assert = assertEq(expected = listToNel(A.A(1, 1), A.A(1, 2) :: A.A(1, 1) :: Nil) :: (listToNel(A.A(2, 1), A.A(2, 4) :: Nil)) :: Nil, List.groupBy((A.A(1, 1) :: A.A(2, 1) :: A.A(1, 2) :: A.A(1, 1) :: A.A(2, 4) :: Nil)))
+    def groupBy03(): Unit \ Assert = assertEq(expected = listToNel(A.A(1, 1), A.A(1, 2) :: A.A(1, 1) :: Nil) :: (listToNel(A.A(2, 1), A.A(2, 4) :: Nil)) :: Nil, List.groupBy(identity, (A.A(1, 1) :: A.A(2, 1) :: A.A(1, 2) :: A.A(1, 1) :: A.A(2, 4) :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // groupWith                                                               //
