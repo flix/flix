@@ -308,6 +308,8 @@ object SyntaxTree {
 
       case object OpenVariantAs extends Expr
 
+      case object OperatorAsLambda extends Expr
+
       case object Paren extends Expr
 
       case object ParYield extends Expr

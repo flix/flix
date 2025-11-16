@@ -95,6 +95,11 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   /**
+    * Returns the parsed ast.
+    */
+  def getParsedAst: SyntaxTree.Root = cachedParserCst
+
+  /**
     * A cache of error messages for incremental compilation.
     */
   private var cachedErrors: List[CompilationMessage] = Nil
@@ -789,11 +794,12 @@ class Flix {
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
-    val (result, errors) = check()
-    if (errors.isEmpty) {
+    val (result, allErrors) = check()
+    if (allErrors.isEmpty) {
       codeGen(result.get)
     } else {
-      Validation.Failure(Chain.from(errors))
+      val nonShadowedErrors = CompilationMessage.filterShadowedMessages(allErrors)
+      Validation.Failure(Chain.from(nonShadowedErrors))
     }
   }
 

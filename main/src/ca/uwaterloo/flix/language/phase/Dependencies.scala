@@ -316,7 +316,7 @@ object Dependencies {
         visitSymUse(field._1)
         visitExp(field._2)
       }
-      visitExp(region)
+      region.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 

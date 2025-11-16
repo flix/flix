@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Alexander Dybdahl Troelsen
+ * Copyright 2025 Din Jakupi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.api.lsp.provider
 
-import ca.uwaterloo.flix.api.lsp.LspSuite
-import org.scalatest.Suites
+import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.{FormattingOptions, TextEdit}
+import scala.annotation.unused
 
-class ApiSuite extends Suites(
-  new LspSuite,
-  new TestEffectLock
-)
+object FormattingProvider {
+
+  def formatDocument(@unused uri: String, @unused options: FormattingOptions)(implicit @unused flix: Flix): List[TextEdit] = {
+    List() // TODO: Implement document formatting
+  }
+
+}

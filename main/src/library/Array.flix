@@ -850,7 +850,7 @@ mod Array {
     /// Returns the sum of all elements in the array `a`.
     ///
     pub def sum(a: Array[Int32, r]): Int32 \ r =
-        foldLeft((acc, x) -> acc + x, 0, a)
+        foldLeft((+), 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Alexander Dybdahl Troelsen
+ * Copyright 2025 Casper Dalgaard Nielsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.language.ast.shared
 
-import ca.uwaterloo.flix.api.lsp.LspSuite
-import org.scalatest.Suites
+/**
+  * Represents whether a struct is mutable.
+  */
+sealed trait Mutability
 
-class ApiSuite extends Suites(
-  new LspSuite,
-  new TestEffectLock
-)
+object Mutability {
+
+  /**
+    * The struct is immutable.
+    */
+  case object Immutable extends Mutability
+
+  /**
+    * The struct is mutable.
+    */
+  case object Mutable extends Mutability
+
+}

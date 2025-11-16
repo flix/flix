@@ -208,11 +208,14 @@ object DocAst {
     def ArrayStore(d1: Expr, index: Expr, d2: Expr): Expr =
       Assign(SquareApp(d1, List(index)), d2)
 
-    def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], d2: Expr): Expr = {
+    def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], regionOpt: Option[Expr]): Expr = {
       val beforeRecord = "new " + sym.toString
       val name = Name.Label(sym.name, sym.loc)
       val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc) }
-      DoubleKeyword(beforeRecord, record, "@", Left(d2))
+      regionOpt match {
+        case Some(region) => DoubleKeyword(beforeRecord, record, "@", Left(region))
+        case None => Keyword(beforeRecord, record)
+      }
     }
 
     def StructGet(d1: Expr, field: Symbol.StructFieldSym): Expr =

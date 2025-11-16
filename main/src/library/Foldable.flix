@@ -51,7 +51,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns the sum of all elements in `t`.
     ///
     pub def sum(t: t[Int32]): Int32 \ Foldable.Aef[t] =
-        Foldable.foldLeft((acc, x) -> acc + x, 0, t)
+        Foldable.foldLeft((+), 0, t)
 
     ///
     /// Returns the sum of all elements in `t` according to the function `f`.
@@ -218,7 +218,7 @@ pub trait Foldable[t : Type -> Type] {
     /// Returns `t` as a set.
     ///
     pub def toSet(t: t[a]): Set[a] \ Foldable.Aef[t] with Order[a] =
-        Foldable.foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), t)
+        Foldable.foldRight(Set.insert, Set.empty(), t)
 
     ///
     /// Returns `t` as a map.
@@ -341,7 +341,7 @@ mod Foldable {
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.
     ///
     pub def fold(t: t[a]): a \ Foldable.Aef[t] with Foldable[t], Monoid[a] =
-        Foldable.foldLeft((acc, x) -> Monoid.combine(acc, x), Monoid.empty(), t)
+        Foldable.foldLeft(Monoid.combine, Monoid.empty(), t)
 
     ///
     /// Returns the number of elements in `t`.

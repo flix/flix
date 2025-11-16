@@ -1916,9 +1916,9 @@ object Parser2 {
     private def parenOrTupleOrLambdaExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.ParenL))
-      (nth(0), nth(1)) match {
+      (nth(0), nth(1), nth(2)) match {
         // Detect unit tuple.
-        case (TokenKind.ParenL, TokenKind.ParenR) =>
+        case (TokenKind.ParenL, TokenKind.ParenR, _) =>
           // Detect unit lambda `() -> expr`.
           if (nth(2) == TokenKind.ArrowThinRWhitespace) {
             lambda()
@@ -1929,7 +1929,16 @@ object Parser2 {
             close(mark, TreeKind.Expr.Tuple)
           }
 
-        case (TokenKind.ParenL, _) =>
+        case (TokenKind.ParenL, tok, TokenKind.ParenR) if tok.isOperator =>
+          val mark = open()
+          advance()
+          val opMark = open()
+          advance()
+          close(opMark, TreeKind.Operator)
+          advance()
+          close(mark, TreeKind.Expr.OperatorAsLambda)
+
+        case (TokenKind.ParenL, _, _) =>
           // Detect lambda function declaration.
           val isLambda = {
             var level = 1
@@ -1963,7 +1972,7 @@ object Parser2 {
             parenOrTupleOrAscribe()
           }
 
-        case (t, _) =>
+        case (t, _, _) =>
           val error = UnexpectedToken(expected = NamedTokenSet.FromKinds(Set(TokenKind.ParenL)), actual = Some(t), sctx, loc = currentSourceLocation())
           advanceWithError(error)
       }
