@@ -405,7 +405,7 @@ object ConstraintGen {
           case _ => false
         }
         if (!isJvm) {
-          c.expectType(expected = Type.Unit, actual = tpe1, exp1.loc)
+          c.expectStmt(actual = tpe1, exp1.loc)
         }
 
         val resTpe = tpe2

@@ -2309,7 +2309,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |def f(): String = 123; "hi"
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.UnexpectedType](result)
+    expectError[TypeError.NonUnitStatement](result)
   }
 
   test("TypeError.Seq.Jvm.01") {

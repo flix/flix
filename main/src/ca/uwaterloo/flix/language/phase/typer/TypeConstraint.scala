@@ -119,6 +119,11 @@ object TypeConstraint {
     case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
 
     /**
+      * The constraint indicates that the type is used in the first part of a sequence (must be unit).
+      */
+    case class Sequence(actual: Type, loc: SourceLocation) extends Provenance
+
+    /**
       * Indicates the conflict arose from a timeout
       */
     // TODO this is an abuse of provenance. We should instead have a separate "conflict reason" type.
