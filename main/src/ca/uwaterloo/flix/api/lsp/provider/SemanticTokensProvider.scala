@@ -853,8 +853,6 @@ object SemanticTokensProvider {
     case TypeConstructor.BigInt => true
     case TypeConstructor.Str => true
     case TypeConstructor.Regex => true
-    case TypeConstructor.Sender => true
-    case TypeConstructor.Receiver => true
     case TypeConstructor.Lazy => true
     case TypeConstructor.Enum(_, _) => true
     case TypeConstructor.Struct(_, _) => true

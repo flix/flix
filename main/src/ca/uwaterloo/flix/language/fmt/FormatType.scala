@@ -178,8 +178,6 @@ object FormatType {
       case DisplayType.Array => true
       case DisplayType.ArrayWithoutRegion => true
       case DisplayType.Vector => true
-      case DisplayType.Sender => true
-      case DisplayType.Receiver => true
       case DisplayType.Lazy => true
       case DisplayType.True => true
       case DisplayType.False => true
@@ -258,8 +256,6 @@ object FormatType {
       case DisplayType.Array => "Array"
       case DisplayType.ArrayWithoutRegion => "ArrayWithoutRegion"
       case DisplayType.Vector => "Vector"
-      case DisplayType.Sender => "Sender"
-      case DisplayType.Receiver => "Receiver"
       case DisplayType.Lazy => "Lazy"
       case DisplayType.False => "false"
       case DisplayType.True => "true"

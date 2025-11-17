@@ -55,16 +55,6 @@ object Lowering {
 
      case Type.Var(_, _) => tpe0
 
-     // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
-     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
-       val t = lowerType(tpe)
-       mkChannelTpe(t, loc)
-
-     // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
-     case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
-       val t = lowerType(tpe)
-       mkChannelTpe(t, loc)
-
      case Type.Apply(tpe1, tpe2, loc) =>
        val t1 = lowerType(tpe1)
        val t2 = lowerType(tpe2)
@@ -316,7 +306,7 @@ object Lowering {
     * @param tpe is assumed to be specialized, but not lowered.
     */
   private def extractChannelTpe(tpe: Type): Type = eraseAliases(tpe) match {
-    case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), _, _) => elmType
+    case Type.Apply(Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), _, _), _, _) => elmType
     case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
   }
 

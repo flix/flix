@@ -760,16 +760,32 @@ object Type {
   def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Univ, loc)
 
   /**
-    * Returns the type `Sender[tpe]` with the given optional source location `loc`.
+    * Returns the type `Sender[tpe]` with the given source location `loc`.
     */
-  def mkSender(tpe: Type, loc: SourceLocation): Type =
-    Apply(Cst(TypeConstructor.Sender, loc), tpe, loc)
+  def mkSender(tpe: Type, loc: SourceLocation): Type = {
+    mkChan(tpe, Symbol.mkEnumSym("Concurrent.Channel.Sen"), loc)
+  }
 
   /**
-    * Returns the type `Receiver[tpe]` with the given optional source location `loc`.
+    * Returns the type `Receiver[tpe]` with the given source location `loc`.
     */
   def mkReceiver(tpe: Type, loc: SourceLocation): Type =
-    Apply(Cst(TypeConstructor.Receiver, loc), tpe, loc)
+    mkChan(tpe, Symbol.mkEnumSym("Concurrent.Channel.Rec"), loc)
+
+  /**
+    * Returns the `Receiver[tpe]` or `Sender[tpe]` depending on `channelEnumSym`.
+    * `channelEnumSym` should be either `Concurrent.Channel.Rec` or `Concurrent.Channel.Sen`.
+    */
+  private def mkChan(tpe: Type, channelEnumSym: Symbol.EnumSym, loc: SourceLocation): Type = {
+    val regionTpe = Type.IO;
+    Type.Apply(Type.Apply(
+      Type.Apply(
+        Type.Cst(TypeConstructor.Enum(Symbol.mkEnumSym("Concurrent.Channel.Mpmc"), Kind.Star ->: Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown),
+        tpe,
+        loc
+      ),
+      Type.Cst(TypeConstructor.Enum(channelEnumSym, Kind.Star), SourceLocation.Unknown), loc), regionTpe, loc)
+  }
 
   /**
     * Returns the Lazy type with the given source location `loc`.

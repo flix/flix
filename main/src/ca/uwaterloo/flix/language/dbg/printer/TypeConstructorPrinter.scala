@@ -53,8 +53,6 @@ object TypeConstructorPrinter {
     case TypeConstructor.SchemaRowEmpty => DocAst.Type.SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(pred) => DocAst.Type.AsIs(s"SchemaRowExtend($pred)")
     case TypeConstructor.Schema => DocAst.Type.Schema
-    case TypeConstructor.Sender => DocAst.Type.AsIs("Sender")
-    case TypeConstructor.Receiver => DocAst.Type.AsIs("Receiver")
     case TypeConstructor.Lazy => DocAst.Type.AsIs("Lazy")
     case TypeConstructor.Enum(sym, _) => DocAst.Type.AsIs(sym.toString)
     case TypeConstructor.Struct(sym, _) => DocAst.Type.AsIs(sym.toString)

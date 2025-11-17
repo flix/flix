@@ -83,10 +83,6 @@ object DisplayType {
 
   case object Vector extends DisplayType
 
-  case object Sender extends DisplayType
-
-  case object Receiver extends DisplayType
-
   case object Lazy extends DisplayType
 
   case object Pure extends DisplayType
@@ -513,8 +509,6 @@ object DisplayType {
         case TypeConstructor.Array => mkApply(Array, t.typeArguments.map(visit))
         case TypeConstructor.ArrayWithoutRegion => mkApply(ArrayWithoutRegion, t.typeArguments.map(visit))
         case TypeConstructor.Vector => mkApply(Vector, t.typeArguments.map(visit))
-        case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
-        case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
         case TypeConstructor.Enum(sym, _) =>
           mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
