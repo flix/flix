@@ -38,7 +38,7 @@ object Shell {
   /**
     * The name used for the main entry point created to :eval an expression
     */
-  val ShellEntryPointName = "shell1"
+  val ShellEntryPointName : String = "shell1"
 }
 
 class Shell(bootstrap: Bootstrap, options: Options) {

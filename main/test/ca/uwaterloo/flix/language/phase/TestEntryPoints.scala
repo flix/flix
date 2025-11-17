@@ -193,9 +193,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.DefaultHandlerNotInEffectModule.01") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |@DefaultHandler
         |pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
         |            run {
@@ -206,6 +207,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                    k()
         |                }
         |            }
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -215,9 +217,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.01") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(): a \ (ef - E) + IO =
@@ -230,6 +233,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -239,9 +243,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.02") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef, u: a): a \ (ef - E) + IO =
@@ -254,6 +259,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -263,14 +269,16 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.03") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: a): a \ (ef - E) + IO =
         |            checked_ecast(f)
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -280,9 +288,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.04") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): Bool \ (ef - E) + IO =
@@ -295,6 +304,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -304,9 +314,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.05") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ {}): a \ IO =
@@ -319,6 +330,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -328,9 +340,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.06") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Bool -> a \ ef, u: a): a \ (ef - E) + IO =
@@ -343,6 +356,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -352,12 +366,14 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.WrongSignatureForDefaultHandler.07") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op(): Unit
         |}
-        |pub eff E2{
+        |
+        |pub eff E2 {
         |   def op(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO + E2 =
@@ -370,6 +386,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -379,9 +396,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.NonPublicDefaultHandler.01") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
@@ -394,6 +412,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -403,9 +422,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.DuplicatedDefaultHandlers.01") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
@@ -417,6 +437,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                    k()
         |                }
         |            }
+        |
         |    @DefaultHandler
         |    pub def runWithIO2(f: Unit -> a \ ef): a \ (ef - E) + IO =
         |            run {
@@ -428,6 +449,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -491,9 +513,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.01") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
@@ -506,6 +529,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit = ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -515,9 +539,10 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.02") {
     val input =
       """
-        |pub eff E{
+        |pub eff E {
         |   def op(): Unit
         |}
+        |
         |mod E {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E) + IO =
@@ -530,6 +555,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit \ E = E.op()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -539,12 +565,14 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.03") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op(): Unit
         |}
-        |pub eff E2{
+        |
+        |pub eff E2 {
         |   def op(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
@@ -557,6 +585,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E2 {
         |    @DefaultHandler
         |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
@@ -569,6 +598,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit \ E1 + E2 = E1.op();E2.op()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -578,12 +608,14 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.04") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op(): Unit
         |}
-        |pub eff E2{
+        |
+        |pub eff E2 {
         |   def op(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
@@ -596,6 +628,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E2 {
         |    @DefaultHandler
         |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
@@ -608,6 +641,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit \ E2 + E1 = E2.op();E1.op()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -617,15 +651,18 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.05") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op1(): Unit
         |}
-        |pub eff E2{
+        |
+        |pub eff E2 {
         |   def op2(): Unit
         |}
-        |pub eff E3{
+        |
+        |pub eff E3 {
         |   def op3(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
@@ -638,6 +675,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E2 {
         |    @DefaultHandler
         |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
@@ -650,6 +688,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E3 {
         |    @DefaultHandler
         |    pub def runWithIO(h: Unit -> c \ ef): c \ (ef - E3) + IO =
@@ -662,6 +701,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit \ E1 + E2 + E3 = E1.op1();E2.op2();E3.op3()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -671,15 +711,18 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.06") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op1(): Unit
         |}
-        |pub eff E2{
+        |
+        |pub eff E2 {
         |   def op2(): Unit
         |}
-        |pub eff E3{
+        |
+        |pub eff E3 {
         |   def op3(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
@@ -692,6 +735,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E2 {
         |    @DefaultHandler
         |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
@@ -704,6 +748,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E3 {
         |    @DefaultHandler
         |    pub def runWithIO(h: Unit -> c \ ef): c \ (ef - E3) + IO =
@@ -716,6 +761,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit \ E1 + E3 = E1.op1();E3.op3()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -725,15 +771,18 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
   test("Test.ValidEntryPoint.DefaultHandler.07") {
     val input =
       """
-        |pub eff E1{
+        |pub eff E1 {
         |   def op1(): Unit
         |}
-        |pub eff E2{
+        |
+        |pub eff E2 {
         |   def op2(): Unit
         |}
-        |pub eff E3{
+        |
+        |pub eff E3 {
         |   def op3(): Unit
         |}
+        |
         |mod E1 {
         |    @DefaultHandler
         |    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - E1) + IO =
@@ -746,6 +795,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |mod E2 {
         |    @DefaultHandler
         |    pub def runWithIO(g: Unit -> b \ ef): b \ (ef - E2) + IO =
@@ -770,6 +820,7 @@ class TestEntryPoints extends AnyFunSuite with TestUtils {
         |                }
         |            }
         |}
+        |
         |def main(): Unit \ E1 + E2 + E3 + IO = E1.op1();E2.op2();E3.op3();println("Hello World")
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)

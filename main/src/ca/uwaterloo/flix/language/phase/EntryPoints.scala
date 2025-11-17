@@ -95,8 +95,8 @@ object EntryPoints {
         }
       case Some(sym) => root.defs.get(sym) match {
         case Some(shell) if shell.sym.name == Shell.ShellEntryPointName =>
-          // A main is given and it is shell - transform it.
-          val newShell = mkShell(shell)
+          // A main is given and it is the shell's main - transform it.
+          val newShell = rewriteShellEntryPoint(shell)
           (root.copy(defs = root.defs + (shell.sym -> newShell)), Nil)
         case Some(_) =>
           // A main is given and it exists - use it.
@@ -138,7 +138,7 @@ object EntryPoints {
     *   additional IO due to `println`.
     *
     */
-  private def mkShell(oldShell: TypedAst.Def): TypedAst.Def = {
+  private def rewriteShellEntryPoint(oldShell: TypedAst.Def): TypedAst.Def = {
     val exp = oldShell.exp.asInstanceOf[TypedAst.Expr.LocalDef]
     val tpe = exp.bnd.tpe.asInstanceOf[Type.Apply]
     val spec = oldShell.spec.copy(
@@ -716,7 +716,8 @@ object EntryPoints {
       val defEffects: CofiniteSet[Symbol.EffSym] = eval(currentDef.spec.eff) match {
         case Result.Ok(s) => s
         // This means eff is either not well-formed or it has type variables.
-        // Either way, in this case we will wrap with all default handlers to provide better error messages
+        // Either way, in this case we will wrap with all default handlers
+        // to make sure that the effects present in the signature that have default handlers are handled
         case Result.Err(_) => CofiniteSet.universe
       }
       val necessaryHandlers = defaultHandlers.filter(h => defEffects.contains(h.handledSym))
