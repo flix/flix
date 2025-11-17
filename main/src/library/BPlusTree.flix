@@ -504,6 +504,34 @@ mod BPlusTree {
     }
 
     ///
+    /// Returns a string containing all values in `t`, in key order,
+    /// with each value formatted by its `ToString` instance and separated by `sep`.
+    ///
+    pub def joinValues(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[v] =
+        joinWith(_ -> v -> ToString.toString(v), sep, t)
+
+    ///
+    /// Returns a string containing all keys in `t`, in key order,
+    /// with each key formatted by its `ToString` instance and separated by `sep`.
+    ///
+    pub def joinKeys(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[k] =
+        joinWith(k -> _ -> ToString.toString(k), sep, t)
+
+    ///
+    /// Applies `f` to each key-value pair in `t`, in key order, to obtain a
+    /// string and returns all results joined together using `sep`.
+    ///
+    pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef = region rc {
+        let sb = StringBuilder.empty(rc);
+        foreach ((k, v) <- t) {
+            StringBuilder.append(f(k, v), sb);
+            StringBuilder.append(sep, sb)
+        };
+        let str = StringBuilder.toString(sb);
+        String.dropRight(String.length(sep), str)
+    }
+
+    ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
     /// `f` must not modify `t`.
     ///
