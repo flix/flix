@@ -460,7 +460,7 @@ object Visitor {
             visitStructFieldSymUse(symUse)
             visitExpr(exp)
         }
-        visitExpr(region)
+        region.foreach(visitExpr)
 
       case Expr.StructGet(exp, symUse, _, _, _) =>
         visitExpr(exp)

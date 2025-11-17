@@ -64,7 +64,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalThrowType.01") {
     val input =
       """
-        |def f(): String = throw "hello"
+        |def f(): String \ IO = throw "hello"
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
@@ -74,7 +74,8 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |import java.io.IOException
-        |def f(): String = throw (throw new IOException())
+        |
+        |def f(): String \ IO = throw (throw new IOException())
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[IllegalThrowType](result)
@@ -84,9 +85,10 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |import java.io.IOException
-        |pub def f(): String = throw None
+        |
+        |pub def f(): String \ IO = throw Comparison.LessThan
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[IllegalThrowType](result)
   }
 
@@ -97,7 +99,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(Some(x)).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -108,7 +110,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(Some(2)).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -119,7 +121,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(1) :- B(None).
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -130,7 +132,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    A(x) :- B(()), C(x::_).
         |}
     """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibAll)
     expectError[IllegalPatternInBodyAtom](result)
   }
 
@@ -608,20 +610,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
   test("IllegalCastFromVar.01") {
     val input =
       """
-        |def f(): String =
-        |    g("ABC")
-        |
-        |def g(x: a): a = checked_cast(x)
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalCheckedCastFromVar](result)
-  }
-
-  test("IllegalCastFromVar.02") {
-    val input =
-      """
-        |def f(x: a): String =
-        |    checked_cast(x)
+        |def f(x: a): String = checked_cast(x)
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[SafetyError.IllegalCheckedCastFromVar](result)

@@ -245,7 +245,7 @@ object EffectVerifier {
       ()
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
       fields.map { case (k, v) => v }.foreach(visitExp)
-      visitExp(region)
+      region.foreach(visitExp)
       // TODO region stuff
       ()
     case Expr.StructGet(e, _, t, _, _) =>

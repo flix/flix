@@ -250,7 +250,7 @@ object LoweredAst {
 
   case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

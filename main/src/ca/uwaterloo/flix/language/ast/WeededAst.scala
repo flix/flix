@@ -167,8 +167,6 @@ object WeededAst {
 
     case class FCons(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class FAppend(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class ListLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class SetLit(exps: List[Expr], loc: SourceLocation) extends Expr

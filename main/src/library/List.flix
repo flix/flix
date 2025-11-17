@@ -179,6 +179,11 @@ mod List {
     pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
 
     ///
+    /// Returns a new list with element `x` added to the front of list `l`.
+    ///
+    pub def cons(x: a, l: List[a]): List[a] = Cons(x, l)
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
     ///
     /// Returns `None` if `l` is empty.
@@ -1162,25 +1167,26 @@ mod List {
     /// Returns the list `l` as a set.
     ///
     pub def toSet(l: List[a]): Set[a] with Order[a] =
-        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), l)
+        foldRight(Set.insert, Set.empty(), l)
 
     ///
     /// Returns the association list `l` as a map.
     ///
-    /// If `l` contains multiple mappings with the same key, `toMap` does not
-    /// make any guarantees about which mapping will be in the resulting map.
+    /// If `l` contains multiple mappings with the same key the last occurrence is kept.
     ///
     pub def toMap(l: List[(a, b)]): Map[a, b] with Order[a] =
-        foldRight((x, acc) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
+        foldLeft((acc, x) -> Map.insert(fst(x), snd(x), acc), Map.empty(), l)
 
     ///
-    /// Returns a map with elements of `s` as keys and `f` applied as values.
+    /// Returns a map with mappings `k => v` where `(k, v) = f(x)` for some `x` in `l`.
     ///
-    /// If `s` contains multiple mappings with the same key, `toMapWith` does not
-    /// make any guarantees about which mapping will be in the resulting map.
+    /// If multiple mappings with the same key are produced only the last occurrence is kept.
     ///
-    pub def toMapWith(f: a -> b, l: List[a]): Map[a, b] with Order[a] =
-        List.foldRight((x, acc) -> Map.insert(x, f(x), acc), Map.empty(), l)
+    pub def toMapWith(f: a -> (k, v), l: List[a]): Map[k, v] with Order[k] =
+        foldLeft((acc, x) -> {
+            let (key, val) = f(x);
+            Map.insert(key, val, acc)
+        }, Map.empty(), l)
 
     ///
     /// Applies `f` to every element of `l`.

@@ -260,7 +260,7 @@ object Stratifier {
       val fields = fields0.map {
         case (name, e0) => name -> visitExp(e0)
       }
-      val region = visitExp(region0)
+      val region = region0.map(visitExp)
       Expr.StructNew(sym, fields, region, tpe, eff, loc)
 
     case Expr.StructGet(e0, field, tpe, eff, loc) =>

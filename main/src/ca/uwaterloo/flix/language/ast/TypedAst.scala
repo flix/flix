@@ -184,7 +184,7 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, symUse: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

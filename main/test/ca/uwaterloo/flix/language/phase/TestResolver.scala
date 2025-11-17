@@ -602,10 +602,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   test("UndefinedJvmConstructor.01") {
     val input =
-      raw"""
+      """
            |import java.io.File
+           |
            |def foo(): Unit =
-           |    let _ = unsafe new File();
+           |    let _ = new File();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -616,7 +617,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.io.File
-           |def foo(): Unit =
+           |
+           |def foo(): Unit \ IO =
            |    let _ = unsafe new File(0);
            |    ()
        """.stripMargin
@@ -628,7 +630,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
-           |def foo(): Unit =
+           |
+           |def foo(): Unit \ IO =
            |    let _ = unsafe new String(true);
            |    ()
        """.stripMargin
@@ -640,7 +643,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
-           |def foo(): Unit =
+           |
+           |def foo(): Unit \ IO =
            |    let _ = unsafe new String(true, 'a', "test");
            |    ()
        """.stripMargin

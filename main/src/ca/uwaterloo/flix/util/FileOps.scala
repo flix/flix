@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import org.json4s.JValue
 import org.json4s.native.JsonMethods
 
+import java.io.IOException
 import java.nio.file.{Files, LinkOption, Path, StandardOpenOption}
 import java.util.{Calendar, GregorianCalendar}
 import java.util.zip.{ZipEntry, ZipOutputStream}
@@ -26,6 +27,24 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Using
 
 object FileOps {
+
+  /**
+    * Deletes `path` if it exists. Wraps any error `e` in `Result.Err(e)`.
+    *
+    * @param path the path to delete
+    * @return `Ok(())` if `path` was successfully deleted, `Err(e)` otherwise
+    */
+  def delete(path: Path): Result[Unit, Exception] = {
+    try {
+      if (Files.deleteIfExists(path)) {
+        Result.Ok(())
+      } else {
+        Result.Err(new RuntimeException(s"path '$path' does not exist"))
+      }
+    } catch {
+      case e: Exception => Result.Err(e)
+    }
+  }
 
   /**
     * Reads the first line of the file at the given path `p` if it is possible.
@@ -113,27 +132,44 @@ object FileOps {
     * }}}
     */
   def getFlixFilesIn(path: Path, depth: Int): List[Path] = {
-    if (Files.exists(path) && Files.isDirectory(path))
-      Files.walk(path, depth)
-        .iterator().asScala
-        .filter(checkExt(_, "flix"))
-        .toList.sorted
-    else
-      List.empty
+    walkTree(path, depth).filter(checkExt(_, "flix"))
   }
 
   /**
-    * Returns a list of all files in the given path, visited recursively.
+    * Returns a list of all files (excluding directories) in the given path, visited recursively.
     * The depth parameter is the maximum number of levels of directories to visit.
     * Use a depth of 0 to only visit the given directory.
     * Use a depth of 1 to only visit the files in the given directory.
     * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
     */
   def getFilesIn(path: Path, depth: Int): List[Path] = {
+    walkTree(path, depth).filter(Files.isRegularFile(_))
+  }
+
+  /**
+    * Returns a list of all directories in the given path, visited recursively.
+    * The list contains the directories in order of outermost to innermost, e.g., `a :: a/b :: a/b/c :: Nil`.
+    *
+    * The depth parameter is the maximum number of levels of directories to visit.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  def getDirectoriesIn(path: Path, depth: Int): List[Path] = {
+    walkTree(path, depth).filter(Files.isDirectory(_))
+  }
+
+  /**
+    * Returns a list of all paths in the given path (including `path`), visited recursively.
+    * The depth parameter is the maximum number of levels of directories to visit.
+    * Use a depth of 0 to only visit the given directory.
+    * Use a depth of 1 to only visit the files in the given directory.
+    * Use a depth of [[Int.MaxValue]] to visit all files in the directory and its subdirectories.
+    */
+  private def walkTree(path: Path, depth: Int): List[Path] = {
     if (Files.exists(path) && Files.isDirectory(path))
       Files.walk(path, depth)
         .iterator().asScala
-        .filter(Files.isRegularFile(_))
         .toList.sorted
     else
       List.empty
@@ -158,6 +194,26 @@ object FileOps {
     else
       List.empty
   }
+
+  /** Returns `true` if the given `path` exists and is a Java Virtual Machine class file. */
+  def isClassFile(path: Path): Boolean = {
+    if (Files.exists(path) && Files.isReadable(path) && Files.isRegularFile(path)) {
+      // Read the first four bytes of the file.
+      val is = Files.newInputStream(path)
+      val b1 = is.read()
+      val b2 = is.read()
+      val b3 = is.read()
+      val b4 = is.read()
+      is.close()
+
+      // Check if the four first bytes match CAFE BABE.
+      return b1 == 0xCA && b2 == 0xFE && b3 == 0xBA && b4 == 0xBE
+    }
+    false
+  }
+
+  /** Returns `true` if the given `path` exists and has 0 bytes of data. */
+  def isEmpty(path: Path): Boolean = Files.size(path) == 0L
 
   /**
     * Checks if the given path is a regular file with the expected extension.

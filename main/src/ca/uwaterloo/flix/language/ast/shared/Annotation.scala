@@ -137,15 +137,6 @@ object Annotation {
   }
 
   /**
-    * An annotation that marks a type as must-use.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class MustUse(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@MustUse"
-  }
-
-  /**
     * An annotation that marks a function definition as using parallel evaluation.
     *
     * @param loc the source location of the annotation.

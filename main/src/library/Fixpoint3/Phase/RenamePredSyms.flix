@@ -124,7 +124,7 @@ mod Fixpoint3.Phase.RenamePredSyms {
     ///
     def mapForward(state: UniqueInts[PredSym, r], pred: PredSym): PredSym \ r =
         let PredSym(name, _) = pred;
-        let index = UniqueInts.getIndex(pred, state);
+        let index = UniqueInts.createIndex(pred, state);
         PredSym(name, Int32.toInt64(index))
 
     ///

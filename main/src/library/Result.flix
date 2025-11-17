@@ -21,7 +21,6 @@
 /// The constructor `Ok(v)` represents the successful value `v`,
 /// whereas the constructor `Err(v)` represents the error value `v`.
 ///
-@MustUse
 pub enum Result[e, t] with Eq, Order, ToString {
     case Ok(t),
     case Err(e)
@@ -153,7 +152,7 @@ mod Result {
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
     pub def sum(r: Result[e, Int32]): Int32 =
-        foldLeft((acc, x) -> acc + x, 0, r)
+        foldLeft((+), 0, r)
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)` else `0`.

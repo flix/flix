@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Mutability
+
 import java.lang.reflect.{Constructor, Field, Method}
 
 /**
@@ -62,7 +64,7 @@ object AtomicOp {
 
   case object ArrayLength extends AtomicOp
 
-  case class StructNew(sym: Symbol.StructSym, fields: List[Symbol.StructFieldSym]) extends AtomicOp
+  case class StructNew(sym: Symbol.StructSym, mutability: Mutability, fields: List[Symbol.StructFieldSym]) extends AtomicOp
 
   case class StructGet(sym: Symbol.StructFieldSym) extends AtomicOp
 

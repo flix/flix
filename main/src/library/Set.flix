@@ -497,7 +497,7 @@ mod Set {
     /// Returns the set `s` as a chain.
     ///
     pub def toChain(s: Set[a]): Chain[a] =
-        foldLeft((acc, x) -> Chain.snoc(acc, x), Chain.empty(), s)
+        foldLeft(Chain.snoc, Chain.empty(), s)
 
     ///
     /// Returns the association set `s` as a map.

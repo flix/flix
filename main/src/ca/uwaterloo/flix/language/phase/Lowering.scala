@@ -59,12 +59,8 @@ object Lowering {
     def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint${version}.Solver.facts$arity")
 
     lazy val ChannelNew: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannel")
-    lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
     lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
     lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
-    lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
-    lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
-    lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
 
     /**
       * Returns the definition associated with the given symbol `sym`.
@@ -97,9 +93,6 @@ object Lowering {
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
 
     lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
-    lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
-
-    lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
   }
 
   private object Types {
@@ -124,10 +117,7 @@ object Lowering {
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
-    lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
     lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
-
-    lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
     lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
 
@@ -570,10 +560,14 @@ object Lowering {
 
     case TypedAst.Expr.StructNew(sym, fields0, region0, tpe, eff, loc) =>
       val fields = fields0.map { case (k, v) => (k, visitExp(v)) }
-      val region = visitExp(region0)
       val (names0, es) = fields.unzip
       val names = names0.map(_.sym)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, names), region :: es, tpe, eff, loc)
+      region0.map(visitExp) match {
+        case Some(region) =>
+          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Mutable, names), region :: es, tpe, eff, loc)
+        case None =>
+          LoweredAst.Expr.ApplyAtomic(AtomicOp.StructNew(sym, Mutability.Immutable, names), es, tpe, eff, loc)
+      }
 
     case TypedAst.Expr.StructGet(exp, field, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -704,72 +698,29 @@ object Lowering {
       val ms = methods.map(visitJvmMethod)
       LoweredAst.Expr.NewObject(name, clazz, t, eff, ms, loc)
 
-    // New channel expressions are rewritten as follows:
-    //     %%CHANNEL_NEW%%(m)
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.newChannel(10)
-    //
     case TypedAst.Expr.NewChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
       LoweredAst.Expr.NewChannel(e, t, eff, loc)
 
-    // Channel get expressions are rewritten as follows:
-    //     <- c
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.get(c)
-    //
     case TypedAst.Expr.GetChannel(exp, tpe, eff, loc) =>
       val e = visitExp(exp)
       val t = visitType(tpe)
-      mkGetChannel(e, t, eff, loc)
+      LoweredAst.Expr.GetChannel(e, t, eff, loc)
 
-    // Channel put expressions are rewritten as follows:
-    //     c <- 42
-    // becomes a call to the standard library function:
-    //     Concurrent/Channel.put(42, c)
-    //
-    case TypedAst.Expr.PutChannel(exp1, exp2, _, eff, loc) =>
+    case TypedAst.Expr.PutChannel(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      mkPutChannel(e1, e2, eff, loc)
+      val t = visitType(tpe)
+      LoweredAst.Expr.PutChannel(e1, e2, t, eff, loc)
 
-    // Channel select expressions are rewritten as follows:
-    //     select {
-    //         case x <- ?ch1 => ?handlech1
-    //         case y <- ?ch2 => ?handlech2
-    //         case _ => ?default
-    //     }
-    // becomes:
-    //     let ch1 = ?ch1;
-    //     let ch2 = ?ch2;
-    //     match selectFrom(mpmcAdmin(ch1) :: mpmcAdmin(ch2) :: Nil, false) {  // true if no default
-    //         case (0, locks) =>
-    //             let x = unsafeGetAndUnlock(ch1, locks);
-    //             ?handlech1
-    //         case (1, locks) =>
-    //             let y = unsafeGetAndUnlock(ch2, locks);
-    //             ?handlech2
-    //         case (-1, _) =>                                                  // Omitted if no default
-    //             ?default                                                     // Unlock is handled by selectFrom
-    //     }
-    // Note: match is not exhaustive: we're relying on the simplifier to handle this for us
-    //
     case TypedAst.Expr.SelectChannel(rules, default, tpe, eff, loc) =>
-      val rs = rules.map(visitSelectChannelRule)
+      val rs = rules.map { case TypedAst.SelectChannelRule(TypedAst.Binder(sym, _), chan, exp, loc0) =>
+        LoweredAst.SelectChannelRule(sym, visitExp(chan), visitExp(exp), loc0)
+      }
       val d = default.map(visitExp)
       val t = visitType(tpe)
-
-      val channels = rs map { case LoweredAst.SelectChannelRule(_, c, _) => (mkLetSym("chan", loc), c) }
-      val admins = mkChannelAdminList(rs, channels, loc)
-      val selectExp = mkChannelSelect(admins, d, loc)
-      val cases = mkChannelCases(rs, channels, eff, loc)
-      val defaultCase = mkSelectDefaultCase(d, loc)
-      val matchExp = LoweredAst.Expr.Match(selectExp, cases ++ defaultCase, t, eff, loc)
-
-      channels.foldRight[LoweredAst.Expr](matchExp) {
-        case ((sym, c), e) => LoweredAst.Expr.Let(sym, c, e, t, eff, loc)
-      }
+      LoweredAst.Expr.SelectChannel(rs, d, t, eff, loc)
 
     case TypedAst.Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
@@ -1109,16 +1060,6 @@ object Lowering {
     case TypedAst.TypeMatchRule(bnd, tpe, exp, _) =>
       val e = visitExp(exp)
       LoweredAst.TypeMatchRule(bnd.sym, tpe, e)
-  }
-
-  /**
-    * Lowers the given select channel rule `rule0`.
-    */
-  private def visitSelectChannelRule(rule0: TypedAst.SelectChannelRule)(implicit scope: Scope, root: TypedAst.Root, flix: Flix): LoweredAst.SelectChannelRule = rule0 match {
-    case TypedAst.SelectChannelRule(TypedAst.Binder(sym, _), chan, exp, _) =>
-      val c = visitExp(chan)
-      val e = visitExp(exp)
-      LoweredAst.SelectChannelRule(sym, c, e)
   }
 
   /**
@@ -1535,69 +1476,6 @@ object Lowering {
     val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
     val targ = exp2.tpe
     LoweredAst.Expr.ApplyDef(Defs.ChannelPut, List(exp2, exp1), List(targ), itpe, Type.Unit, eff, loc)
-  }
-
-  /**
-    * Make the list of MpmcAdmin objects which will be passed to `selectFrom`
-    */
-  private def mkChannelAdminList(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expr)], loc: SourceLocation): LoweredAst.Expr = {
-    val admins = ListOps.zip(rs, channels) map {
-      case (LoweredAst.SelectChannelRule(_, c, _), (chanSym, _)) =>
-        val (targ, _) = extractChannelTpe(c.tpe)
-        val itpe = Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc)
-        LoweredAst.Expr.ApplyDef(Defs.ChannelMpmcAdmin, List(LoweredAst.Expr.Var(chanSym, c.tpe, loc)), List(targ), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
-    }
-    mkList(admins, Types.ChannelMpmcAdmin, loc)
-  }
-
-  /**
-    * Construct a call to `selectFrom` given a list of MpmcAdmin objects and optional default
-    */
-  private def mkChannelSelect(admins: LoweredAst.Expr, default: Option[LoweredAst.Expr], loc: SourceLocation): LoweredAst.Expr = {
-    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-
-    val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val itpe = Type.mkIoUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
-    val blocking = default match {
-      case Some(_) => LoweredAst.Expr.Cst(Constant.Bool(false), Type.Bool, loc)
-      case None => LoweredAst.Expr.Cst(Constant.Bool(true), Type.Bool, loc)
-    }
-    LoweredAst.Expr.ApplyDef(Defs.ChannelSelectFrom, List(admins, blocking), List.empty, itpe, selectRetTpe, Type.IO, loc)
-  }
-
-  /**
-    * Construct a sequence of MatchRules corresponding to the given SelectChannelRules
-    */
-  private def mkChannelCases(rs: List[LoweredAst.SelectChannelRule], channels: List[(Symbol.VarSym, LoweredAst.Expr)], eff: Type, loc: SourceLocation)(implicit scope: Scope, flix: Flix): List[LoweredAst.MatchRule] = {
-    val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-
-    ListOps.zip(rs, channels).zipWithIndex map {
-      case ((LoweredAst.SelectChannelRule(sym, chan, exp), (chSym, _)), i) =>
-        val locksSym = mkLetSym("locks", loc)
-        val pat = mkTuplePattern(Nel(LoweredAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(LoweredAst.Pattern.Var(locksSym, locksType, loc))), loc)
-        val (getTpe, _) = extractChannelTpe(chan.tpe)
-        val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
-        val args = List(LoweredAst.Expr.Var(chSym, chan.tpe, loc), LoweredAst.Expr.Var(locksSym, locksType, loc))
-        val getExp = LoweredAst.Expr.ApplyDef(Defs.ChannelUnsafeGetAndUnlock, args, List(getTpe), itpe, getTpe, eff, loc)
-        val e = LoweredAst.Expr.Let(sym, getExp, exp, exp.tpe, eff, loc)
-        LoweredAst.MatchRule(pat, None, e)
-    }
-  }
-
-  /**
-    * Construct additional MatchRule to handle the (optional) default case
-    * NB: Does not need to unlock because that is handled inside Concurrent/Channel.selectFrom.
-    */
-  private def mkSelectDefaultCase(default: Option[LoweredAst.Expr], loc: SourceLocation): List[LoweredAst.MatchRule] = {
-    default match {
-      case Some(defaultExp) =>
-        val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
-        val pat = mkTuplePattern(Nel(LoweredAst.Pattern.Cst(Constant.Int32(-1), Type.Int32, loc), List(LoweredAst.Pattern.Wild(locksType, loc))), loc)
-        val defaultMatch = LoweredAst.MatchRule(pat, None, defaultExp)
-        List(defaultMatch)
-      case _ =>
-        List()
-    }
   }
 
   /**
@@ -2076,13 +1954,6 @@ object Lowering {
 
     // Wrap everything in a purity cast,
     LoweredAst.Expr.Cast(blockExp, None, Some(Type.Pure), tpe, eff, loc.asSynthetic)
-  }
-
-  /**
-    * Returns a TypedAst.Pattern representing a tuple of patterns.
-    */
-  private def mkTuplePattern(patterns: Nel[LoweredAst.Pattern], loc: SourceLocation): LoweredAst.Pattern = {
-    LoweredAst.Pattern.Tuple(patterns, Type.mkTuple(patterns.map(_.tpe), loc), loc)
   }
 
   /**

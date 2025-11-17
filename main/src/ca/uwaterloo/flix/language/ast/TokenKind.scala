@@ -299,6 +299,35 @@ sealed trait TokenKind {
     case _ => false
   }
 
+  /** Returns `true` if this token is an operator (e.g. `+`). */
+  def isOperator: Boolean = this match {
+    // Arithmetic operators
+    case TokenKind.Plus => true
+    case TokenKind.Minus => true
+    case TokenKind.Star => true
+    case TokenKind.Slash => true
+
+    // Comparison operators
+    case TokenKind.AngleL => true
+    case TokenKind.AngleR => true
+    case TokenKind.AngledEqual => true
+    case TokenKind.AngleLEqual => true
+    case TokenKind.AngleREqual => true
+    case TokenKind.EqualEqual => true
+    case TokenKind.BangEqual => true
+
+    // User-defined operators
+    case TokenKind.GenericOperator => true
+
+    // List operators
+    case TokenKind.ColonColonColon => true
+
+    // Note: `KeywordAnd` and `KeywordOr` are explicitly not supported due to laziness.
+    // Note: `ColonColon` is not supported due to desugaring of long lists.
+
+    case _ => false
+  }
+
   /**
     * Returns `true` if this token can validly appear as the first token of a declaration.
     *
