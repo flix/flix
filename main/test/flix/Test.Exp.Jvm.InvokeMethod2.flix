@@ -11,12 +11,12 @@ mod Test.Exp.Jvm.InvokeMethod {
        obj.concat(" world") == "Hello world"
 
    @test
-   def testInvokeMethod_03(): Bool \ IO =
+   def testInvokeMethod_03(): Bool =
        let obj = "Hello world";
        obj.compareTo("Goodbye world") == 1
 
    @test
-   def testInvokeMethod_04(): Bool \ IO =
+   def testInvokeMethod_04(): Bool =
        let obj = "HELLO WORLD";
        obj.charAt(3) == 'L'
 

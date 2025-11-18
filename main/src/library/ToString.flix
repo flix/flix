@@ -76,15 +76,15 @@ instance ToString[String] {
 }
 
 instance ToString[BigInt] {
-    pub def toString(x: BigInt): String = unsafe x.toString()
+    pub def toString(x: BigInt): String = x.toString()
 }
 
 instance ToString[BigDecimal] {
-    pub def toString(x: BigDecimal): String = unsafe x.toString()
+    pub def toString(x: BigDecimal): String = x.toString()
 }
 
 instance ToString[Regex] {
-    pub def toString(x: Regex): String = unsafe x.toString()
+    pub def toString(x: Regex): String = x.toString()
 }
 
 instance ToString[(a1, a2)] with ToString[a1], ToString[a2] {
