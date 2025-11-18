@@ -105,25 +105,25 @@ mod Debug {
                     "\"" + escape(s) + "\""
                 }
             case y: Array[Bool, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Bool, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Bool, Static])) as _ \ {})
             case y: Array[Char, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Char, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Char, Static])) as _ \ {})
             case y: Array[Float32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float32, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Float32, Static])) as _ \ {})
             case y: Array[Float64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float64, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Float64, Static])) as _ \ {})
             case y: Array[Int8, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int8, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int8, Static])) as _ \ {})
             case y: Array[Int16, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int16, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int16, Static])) as _ \ {})
             case y: Array[Int32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int32, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int32, Static])) as _ \ {})
             case y: Array[Int64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
+                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int64, Static])) as _ \ {})
             case y: Array[_, _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
+                unchecked_cast(Arrays.deepToString(unchecked_cast(y as Array[Object, Static])) as _ \ {})
             case y: _ =>
-                unsafe Objects.toString(unchecked_cast(y as Object))
+                unchecked_cast(Objects.toString(unchecked_cast(y as Object)) as _ \ {})
         }
     }
 
