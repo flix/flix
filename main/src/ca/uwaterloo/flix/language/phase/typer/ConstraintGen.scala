@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
 
+import java.lang.reflect.Modifier
+
 /**
   * This phase generates a list of type constraints, which include
   *   - equality constraints `tpe1 ~ tpe2`
@@ -936,9 +938,11 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, _) =>
+        val isFinal = Modifier.isFinal(field.getModifiers)
         val fieldType = Type.getFlixType(field.getType)
+        val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         val resTpe = fieldType
-        val resEff = Type.IO
+        val resEff = fieldReadEff
         (resTpe, resEff)
 
       case Expr.PutStaticField(field, exp, loc) =>

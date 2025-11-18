@@ -69,15 +69,15 @@ mod Regex {
     ///
     def toInt(flag: Flag): Int32 =
         match flag {
-            case CanonEq                => unsafe Pattern.CANON_EQ
-            case CaseInsenstive         => unsafe Pattern.CASE_INSENSITIVE
-            case Comments               => unsafe Pattern.COMMENTS
-            case Dotall                 => unsafe Pattern.DOTALL
-            case Literal                => unsafe Pattern.LITERAL
-            case Multiline              => unsafe Pattern.MULTILINE
-            case UnicodeCase            => unsafe Pattern.UNICODE_CASE
-            case UnicodeCharacterClass  => unsafe Pattern.UNICODE_CHARACTER_CLASS
-            case UnixLines              => unsafe Pattern.UNIX_LINES
+            case CanonEq                => Pattern.CANON_EQ
+            case CaseInsenstive         => Pattern.CASE_INSENSITIVE
+            case Comments               => Pattern.COMMENTS
+            case Dotall                 => Pattern.DOTALL
+            case Literal                => Pattern.LITERAL
+            case Multiline              => Pattern.MULTILINE
+            case UnicodeCase            => Pattern.UNICODE_CASE
+            case UnicodeCharacterClass  => Pattern.UNICODE_CHARACTER_CLASS
+            case UnixLines              => Pattern.UNIX_LINES
         }
 
     ///
@@ -102,7 +102,7 @@ mod Regex {
     ///
     pub def unmatchable(): Regex =
         try {
-            unsafe Pattern.compile("^\\b$")
+            Pattern.compile("^\\b$")
         } catch {
             case _: Exception => unreachable!()
         }
@@ -111,19 +111,19 @@ mod Regex {
     /// Return the regular expression string that matches the the literal string `s`.
     ///
     pub def quote(s: String): String =
-        unsafe Pattern.quote(s)
+        Pattern.quote(s)
 
     ///
     /// Return the regular expression string used to build this Regex.
     ///
     pub def pattern(rgx: Regex): String =
-        unsafe rgx.pattern()
+        rgx.pattern()
 
     ///
     /// Return the flags used to build the Regex `rgx`.
     ///
     pub def flags(rgx: Regex): Set[Flag] =
-        let i = unsafe rgx.flags();
+        let i = rgx.flags();
         listFlags(i) |> List.toSet
 
 
@@ -132,7 +132,7 @@ mod Regex {
     ///
     pub def isMatch(rgx: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, rgx, s);
-        unsafe m1.matches()
+        unchecked_cast(m1.matches() as _ \ {})
     }
 
     ///
@@ -202,14 +202,14 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `rgx`.
     ///
     pub def split(rgx: Regex, s: String): List[String] =
-        unsafe Array.toList(unsafe rgx.split(s))
+        unchecked_cast(Array.toList(rgx.split(s)) as _ \ {})
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unsafe m1.replaceAll(dst#dst)
+        unchecked_cast(m1.replaceAll(dst#dst) as _ \ {})
     }
 
     ///
@@ -217,7 +217,7 @@ mod Regex {
     ///
     pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unsafe m1.replaceFirst(dst#dst)
+        unchecked_cast(m1.replaceFirst(dst#dst) as _ \ {})
     }
 
     ///
@@ -225,7 +225,7 @@ mod Regex {
     ///
     pub def startsWith(prefix: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, prefix, s);
-        unsafe m1.lookingAt()
+        unchecked_cast(m1.lookingAt() as _ \ {})
     }
 
     ///
@@ -433,7 +433,7 @@ mod Regex {
     ///
     pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; unsafe m1.matches()}
+            case Ok(m)  => {let Matcher(m1) = m; unchecked_cast(m1.matches() as _ \ {})}
             case Err(_) => false
         }
     }
@@ -569,7 +569,7 @@ mod Regex {
     /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ r =
-        Matcher(unchecked_cast ((rgx.matcher(s): _ \ IO) as _ \ r))
+        Matcher(unchecked_cast (rgx.matcher(s) as _ \ r))
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input` with bounds `start` and `end`.

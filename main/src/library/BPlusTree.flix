@@ -758,7 +758,7 @@ mod BPlusTree {
     /// It is assumed that this function is only used in contexts
     /// where this effect is not observable outside of the RedBlackTree module.
     ///
-    def threads(): Int32 = unsafe {
+    def threads(): Int32 = {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
         multiplier * Runtime.getRuntime().availableProcessors()
