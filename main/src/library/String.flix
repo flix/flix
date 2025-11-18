@@ -26,7 +26,7 @@ mod String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char = unsafe s.charAt(i)
+    pub def charAt(i: Int32, s: String): Char = s.charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -40,7 +40,7 @@ mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 = unsafe s.codePointAt(i)
+    pub def codePointAt(i: Int32, s: String): Int32 = s.codePointAt(i)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
@@ -125,7 +125,7 @@ mod String {
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator(): String = unsafe System.lineSeparator()
+    pub def lineSeparator(): String = System.lineSeparator()
 
     ///
     /// Returns the given string `s` as an array of characters.
