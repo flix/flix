@@ -197,6 +197,12 @@ mod RichString {
         withColor(Color.Rgb(205, 49, 49), x)
 
     ///
+    /// Returns a `RichString` with the given text `x` in gray color.
+    ///
+    pub def gray(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
+        withColor(Color.Rgb(128, 128, 128), x)
+
+    ///
     /// Returns a `RichString` with the given text `x` in green color.
     ///
     pub def green(x: a): RichString \ Formattable.Aef[a] with Formattable[a] =
