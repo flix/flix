@@ -145,9 +145,6 @@ class Flix {
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
 
-    // Debug
-    "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
-
     // References
     "Ref.flix" -> LocalResource.get("/src/library/Ref.flix"),
   )
@@ -214,6 +211,7 @@ class Flix {
     "Writable.flix" -> LocalResource.get("/src/library/Writable.flix"),
 
     "Env.flix" -> LocalResource.get("/src/library/Env.flix"),
+    "Debug.flix" -> LocalResource.get("/src/library/Debug.flix"),
 
     "Applicative.flix" -> LocalResource.get("/src/library/Applicative.flix"),
     "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
