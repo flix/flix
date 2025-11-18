@@ -158,7 +158,7 @@ mod Env {
 
             def getUserHomeDirectory(k) = k(getPropHelper("user.home"))
 
-            def getVirtualProcessors(k) = k(unsafe Runtime.getRuntime().availableProcessors())
+            def getVirtualProcessors(k) = k(Runtime.getRuntime().availableProcessors())
         }
 
     ///

@@ -101,12 +101,12 @@ mod BigDecimal {
     ///
     /// Returns `x` rounded up to a BigDecimal representing the nearest larger integer value.
     ///
-    pub def ceil(x: BigDecimal): BigDecimal = x.setScale(0, unsafe RoundingMode.CEILING)
+    pub def ceil(x: BigDecimal): BigDecimal = x.setScale(0, RoundingMode.CEILING)
 
     ///
     /// Returns `x` rounded down to a BigDecimal representing the nearest smaller integer value.
     ///
-    pub def floor(x: BigDecimal): BigDecimal = x.setScale(0, unsafe RoundingMode.FLOOR)
+    pub def floor(x: BigDecimal): BigDecimal = x.setScale(0, RoundingMode.FLOOR)
 
     ///
     /// Returns `x` rounded to a BigDecimal representing the nearest integer value.
@@ -114,7 +114,7 @@ mod BigDecimal {
     /// The rounding may be upwards or downwards. If the rounding up and rounding down are equally
     /// close, `x` will be rounded to an even value (i.e. `round(0.5ff64) == 0.0ff64`).
     ///
-    pub def round(x: BigDecimal): BigDecimal = x.setScale(0, unsafe RoundingMode.HALF_EVEN)
+    pub def round(x: BigDecimal): BigDecimal = x.setScale(0, RoundingMode.HALF_EVEN)
 
     ///
     /// Convert `x` to an `Option[Int8]`.

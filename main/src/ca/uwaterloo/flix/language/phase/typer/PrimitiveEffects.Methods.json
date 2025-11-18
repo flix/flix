@@ -15,6 +15,8 @@
     "java.lang.Math::exp": "",
     "java.lang.Math::floor": "",
     "java.lang.Math::rint": "",
+    "java.lang.Runtime::availableProcessors": "",
+    "java.lang.Runtime::getRuntime": "",
     "java.lang.Runtime::version": "",
     "java.lang.Short::longValue": "",
     "java.lang.Short::parseShort": "",
@@ -83,6 +85,7 @@
     "java.math.BigInteger::toString": "",
     "java.math.BigInteger::valueOf": "",
     "java.math.BigInteger::xor": "",
+    "java.util.concurrent.locks.ReentrantLock::isFair": "",
     "java.util.regex.Pattern::toString": ""
   }
 }
