@@ -30,13 +30,13 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Subtypes {
       obj.contains(sb) and obj.contains(sb.toString())
 
    @test
-   def testInvokeMethod_05(): Bool \ IO =
+   def testInvokeMethod_05(): Bool =
       let txt = "HeLlO WorlD";
       let obj : Object = (checked_cast("HeLlO WorlD") : Object);
       txt.equals(obj)
 
    @test
-   def testInvokeMethod_06(): Bool \ IO =
+   def testInvokeMethod_06(): Bool =
       let txt = "HeLlO WorlD";
       let obj : CharSequence = (checked_cast("HeLlO WorlD") : CharSequence);
       txt.equals(obj)

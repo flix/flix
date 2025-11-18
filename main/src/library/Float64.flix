@@ -109,7 +109,7 @@ mod Float64 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Float64] = try {
-        Some(Double.parseDouble(unsafe s.strip()))
+        Some(Double.parseDouble(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -186,7 +186,7 @@ mod Float64 {
     ///
     pub def tryToBigInt(x: Float64): Option[BigInt] =
         try {
-            Some(unsafe BigDecimal.valueOf(x).toBigInteger())
+            Some(BigDecimal.valueOf(x).toBigInteger())
         } catch {
             // Catch NaN, isInfinite.
             case _: NumberFormatException => None
@@ -220,7 +220,7 @@ mod Float64 {
     ///
     pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
         try {
-            Some(unsafe new BigDecimal(x))
+            Some(new BigDecimal(x))
         } catch {
             case _: NumberFormatException => None
         }
@@ -318,19 +318,19 @@ mod Float64 {
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: Float64): Float64 =
-        unsafe Math.abs(x)
+        Math.abs(x)
 
     ///
     /// Returns `x` rounded up to a Float64 representing the nearest larger integer value.
     ///
     pub def ceil(x: Float64): Float64 =
-        unsafe Math.ceil(x)
+        Math.ceil(x)
 
     ///
     /// Returns `x` rounded down to a Float64 representing the nearest smaller integer value.
     ///
     pub def floor(x: Float64): Float64 =
-        unsafe Math.floor(x)
+        Math.floor(x)
 
     ///
     /// Returns `x` rounded to a Float64 representing the nearest integer value.
@@ -339,7 +339,7 @@ mod Float64 {
     /// close, `x` will be rounded to an even value (i.e. `round(0.5f64) == 0.0f64`).
     ///
     pub def round(x: Float64): Float64 =
-        unsafe Math.rint(x)
+        Math.rint(x)
 
     ///
     /// Returns ` base` raised to the power of `n`.
@@ -350,7 +350,7 @@ mod Float64 {
     /// Returns the exponential of `x`.
     ///
     pub def exp(x: Float64): Float64 =
-        unsafe Math.exp(x)
+        Math.exp(x)
 
     ///
     /// Get the primitive Float64 value from its object representation (i.e. java.lang.Double).

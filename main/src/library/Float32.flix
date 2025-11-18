@@ -109,7 +109,7 @@ mod Float32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Float32] = try {
-        Some(Float.parseFloat(unsafe s.strip()))
+        Some(Float.parseFloat(s.strip()))
      } catch {
          case _: NumberFormatException => None
      }
@@ -287,20 +287,20 @@ mod Float32 {
     /// Returns the absolute value of `x`.
     ///
     pub def abs(x: Float32): Float32 =
-        unsafe Math.abs(x)
+        Math.abs(x)
 
     ///
     /// Returns `x` rounded up to a Float32 representing the nearest larger integer value.
     ///
     pub def ceil(x: Float32): Float32 =
-        let x1 = unsafe Math.ceil(Float.valueOf(x).doubleValue());
+        let x1 = Math.ceil(Float.valueOf(x).doubleValue());
         Double.valueOf(x1).floatValue()
 
     ///
     /// Returns `x` rounded down to a Float32 representing the nearest smaller integer value.
     ///
     pub def floor(x: Float32): Float32 =
-        let x1 = unsafe Math.floor(Float.valueOf(x).doubleValue());
+        let x1 = Math.floor(Float.valueOf(x).doubleValue());
         Double.valueOf(x1).floatValue()
 
     ///
@@ -310,7 +310,7 @@ mod Float32 {
     /// close, `x` will be rounded to an even value (i.e. `round(0.5f32) == 0.0f32`).
     ///
     pub def round(x: Float32): Float32 =
-        let x1 = unsafe Math.rint(Float.valueOf(x).doubleValue());
+        let x1 = Math.rint(Float.valueOf(x).doubleValue());
         Double.valueOf(x1).floatValue()
 
     ///
