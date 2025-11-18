@@ -28,7 +28,6 @@ pub eff Logger {
 
 mod Logger {
 
-    use RichString.Formattable;
     use RichString.{gray, cyan, green, yellow, red, bold, text};
 
     ///
