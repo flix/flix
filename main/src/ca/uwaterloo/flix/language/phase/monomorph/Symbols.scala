@@ -25,7 +25,8 @@ object Symbols {
 
     lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
     lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
-    lazy val ChannelMpmcAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcAdmin")
+    lazy val ChannelMpmcSenderAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcSenderAdmin")
+    lazy val ChannelMpmcReceiverAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcReceiverAdmin")
     lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")
     lazy val ChannelUnsafeGetAndUnlock: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.unsafeGetAndUnlock")
@@ -33,14 +34,16 @@ object Symbols {
   }
 
   protected[monomorph] object Enums {
-    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
+    lazy val ChannelSender: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Sender")
+    lazy val ChannelReceiver: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Receiver")
     lazy val ChannelMpmcAdmin: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.MpmcAdmin")
     lazy val ConcurrentReentrantLock: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.ReentrantLock")
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
   }
 
   protected[monomorph] object Types {
-    lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
+    lazy val ChannelSender: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelSender, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
+    lazy val ChannelReceiver: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelReceiver, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
     lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 

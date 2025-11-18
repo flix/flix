@@ -92,11 +92,9 @@ object Lowering {
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
 
-    lazy val ChannelMpmc: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Mpmc")
+    lazy val ChannelSender: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Sender")
 
-    lazy val ChannelSender: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Sen")
-
-    lazy val ChannelReceiver: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Rec")
+    lazy val ChannelReceiver: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Receiver")
   }
 
   private object Types {
@@ -121,11 +119,9 @@ object Lowering {
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
-    lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
+    lazy val ChannelSender: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelSender, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
 
-    lazy val ChannelSender: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelSender, Kind.Star), SourceLocation.Unknown)
-
-    lazy val ChannelReceiver: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelReceiver, Kind.Star), SourceLocation.Unknown)
+    lazy val ChannelReceiver: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelReceiver, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
 
@@ -1821,22 +1817,14 @@ object Lowering {
     * The type of a channel which can transmit variables of type `tpe`.
     */
   private def mkReceiveChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    mkChannelTpe(tpe, Type.IO, Types.ChannelReceiver, loc)
+    Type.Apply(Types.ChannelReceiver, tpe, loc)
   }
 
   /**
     * The type of a channel which can transmit variables of type `tpe`.
     */
   private def mkSendChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    mkChannelTpe(tpe, Type.IO, Types.ChannelSender, loc)
-  }
-
-  /**
-    * The type of a channel which can transmit variables of type `tpe1` in region `tpe2`.
-    * Whether the channel is a send or receive channel is indicated by `tpe3`.
-    */
-  private def mkChannelTpe(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Apply(Type.Apply(Types.ChannelMpmc, tpe1, loc), tpe3, loc), tpe2, loc)
+    Type.Apply(Types.ChannelSender, tpe, loc)
   }
 
   /**

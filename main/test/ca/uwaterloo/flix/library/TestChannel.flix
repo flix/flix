@@ -1,15 +1,15 @@
 mod TestChannel {
 
     use Assert.{assertEq, assertTrue, fail}
-    use Concurrent.Channel.Mpmc
+    use Concurrent.Channel.Sender
+    use Concurrent.Channel.Receiver
     use Concurrent.Channel.unsafeGetAndUnlock
     use Concurrent.Channel.get
-    use Concurrent.Channel.mpmcAdmin
+    use Concurrent.Channel.mpmcSenderAdmin
+    use Concurrent.Channel.mpmcReceiverAdmin
     use Concurrent.Channel.newChannelTuple
     use Concurrent.Channel.put
     use Concurrent.Channel.selectFrom
-    use Concurrent.Channel.Rec
-    use Concurrent.Channel.Sen
 
     @Test
     def getPut01(): Unit \ Assert + IO =
@@ -33,7 +33,7 @@ mod TestChannel {
     def select01(): Unit \ Assert + IO =
         let (c_s, c_r) = newChannelTuple(1);
         put(2, c_s);
-        match selectFrom(mpmcAdmin(c_r) :: Nil, true) {
+        match selectFrom(mpmcReceiverAdmin(c_r) :: Nil, true) {
             case (0, locks) =>
                 let i = unsafeGetAndUnlock(c_r, locks);
                 assertEq(expected = 2, i)
@@ -43,7 +43,7 @@ mod TestChannel {
     @Test
     def select02(): Unit \ Assert + IO =
         let (_, c_r) = newChannelTuple(1);
-        match selectFrom(mpmcAdmin(c_r) :: Nil, false) {
+        match selectFrom(mpmcReceiverAdmin(c_r) :: Nil, false) {
             case (0, locks) =>
                 let _ = unsafeGetAndUnlock(c_r, locks);
                 fail("Should not have received from empty channel")
@@ -54,12 +54,12 @@ mod TestChannel {
 
     @Test
     def select03(): Unit \ Assert + IO =
-        let (_, c1_r): (Mpmc[Int32, Sen, Static], Mpmc[Int32, Rec, Static]) = newChannelTuple(0);
-        let (c2_s, c2_r): (Mpmc[String, Sen, Static], Mpmc[String, Rec, Static]) = newChannelTuple(10);
+        let (_, c1_r): (Sender[Int32], Receiver[Int32]) = newChannelTuple(0);
+        let (c2_s, c2_r): (Sender[String], Receiver[String]) = newChannelTuple(10);
 
         put("hey", c2_s);
 
-        match selectFrom(mpmcAdmin(c1_r) :: mpmcAdmin(c2_r) :: Nil, true) {
+        match selectFrom(mpmcReceiverAdmin(c1_r) :: mpmcReceiverAdmin(c2_r) :: Nil, true) {
             case (0, locks) =>
                 let _ = unsafeGetAndUnlock(c1_r, locks);
                 bug!("The channel should be empty")
