@@ -238,19 +238,19 @@ instance Order[Float64] {
 instance Order[BigDecimal] {
 
     redef less(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) < 0
+        x.compareTo(y) < 0
 
     redef lessEqual(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) <= 0
+        x.compareTo(y) <= 0
 
     redef greater(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) > 0
+        x.compareTo(y) > 0
 
     redef greaterEqual(x: BigDecimal, y: BigDecimal): Bool =
-        (unsafe x.compareTo(y)) >= 0
+        x.compareTo(y) >= 0
 
     pub def compare(x: BigDecimal, y: BigDecimal): Comparison =
-        match (unsafe x.compareTo(y)) {
+        match x.compareTo(y) {
             case 0          => Comparison.EqualTo
             case z if z < 0 => Comparison.LessThan
             case _          => Comparison.GreaterThan
