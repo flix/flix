@@ -20,11 +20,13 @@ import ca.uwaterloo.flix.language.ast.LoweredAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
-import ca.uwaterloo.flix.util.collection.{ListOps, Nel}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.phase.EntryPoints.{DefaultHandler, ErrorOrMalformed, eval}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
@@ -172,13 +174,188 @@ object Lowering {
   }
 
   /**
+    * A function is an entry point if:
+    *   - It is the main function (called `main` by default, but can configured
+    *     to an arbitrary name).
+    *   - It is a test (annotated with `@Test`).
+    *   - It is an exported function (annotated with `@Export`).
+    */
+  private def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
+    isMain(defn) || isTest(defn) || isExport(defn)
+
+  /** Returns `true` if `defn` is a test. */
+  private def isTest(defn: TypedAst.Def): Boolean =
+    defn.spec.ann.isTest
+
+  /** Returns `true` if `defn` is an exported function. */
+  private def isExport(defn: TypedAst.Def): Boolean =
+    defn.spec.ann.isExport
+
+  /** Returns `true` if `defn` is the main function. */
+  private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
+    root.mainEntryPoint.contains(defn.sym)
+
+  /**
     * Lowers the given definition `defn0`.
     */
-  private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = defn0 match {
+  private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = {
+    // Wrap the definition in default handlers if entry point
+    val defn = if (isEntryPoint(defn0)) {
+        wrapDefWithDefaultHandlers(defn0, root)
+    } else {
+      defn0
+    }
+    defn match {
     case TypedAst.Def(sym, spec0, exp0, loc) =>
       val spec = visitSpec(spec0)
       val exp = visitExp(exp0)(Scope.Top, root, flix)
       LoweredAst.Def(sym, spec, exp, loc)
+  }
+  }
+
+  /**
+    * Wraps an entry point function with calls to the default handlers of each of the effects appearing in
+    * its signature. The order in which the handlers are applied is not defined and should not be relied upon.
+    *
+    * If the signature is not well-formed or it has type variables, it adds calls to every default handler.
+    *
+    * For example, if we had default handlers for some effects A, B and C:
+    *
+    * Transforms a function:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ A + B = exp
+    * }}}
+    * Into:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ (((ef - A) + IO) - B) + IO =
+    *         handlerB(_ -> handlerA(_ ->exp))
+    * }}}
+    *
+    * Each of the wrappers:
+    *   - Removes the handled effect from the function's effect set and adds IO
+    *   - Creates a lambda (_ -> originalBody) and passes it to each handler
+    *   - Updates the function's type signature accordingly
+    *
+    * @param currentDef      The entry point function definition to wrap
+    * @param root            The typed AST root
+    * @return The wrapped function definition with all necessary default effect handlers
+    */
+  private def wrapDefWithDefaultHandlers(currentDef: TypedAst.Def, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+    // Obtain the concrete effect set of the definition that is going to be wrapped.
+    // We are expecting entry points, and all entry points should have a concrete effect set
+    // Obtain the concrete effect set of the definition that is going to be wrapped.
+    // We are expecting entry points, and all entry points should have a concrete effect set
+    val defEffects: CofiniteSet[Symbol.EffSym] = eval(currentDef.spec.eff) match {
+      case Result.Ok(s) => s
+      // This means eff is either not well-formed or it has type variables.
+      // Either way, in this case we will wrap with all default handlers
+      // to make sure that the effects present in the signature that have default handlers are handled
+      case Result.Err(_) => CofiniteSet.universe
+    }
+    val necessaryHandlers = root.defaultHandlers.filter(h => defEffects.contains(h.handledSym))
+    // Wrap the expression in each of the default handlers for the effects appearing in the signature.
+    // Right now, the order depends on the order of defaultHandlers.
+    necessaryHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler, root))
+  }
+  /**
+    * Evaluates `eff` if it is well-formed and has no type variables,
+    * associated types, or error types.
+    */
+  private def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = eff match {
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
+      case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
+      case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
+      case _ => Result.Err(())
+    }
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
+      Result.mapN(eval(x0)) {
+        case x => CofiniteSet.complement(x)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.union(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.intersection(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.difference(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.xor(x, y)
+      }
+    case Type.Alias(_, _, tpe, _) => eval(tpe)
+    case Type.Var(_, _) => Result.Err(())
+    case Type.Apply(_, _, _) => Result.Err(())
+    case Type.AssocType(_, _, _, _) => Result.Err(())
+    case Type.JvmToType(_, _) => Result.Err(())
+    case Type.JvmToEff(_, _) => Result.Err(())
+    case Type.UnresolvedJvmType(_, _) => Result.Err(())
+  }
+  /**
+    * Wraps an entry point function with a default effect handler.
+    *
+    * Transforms a function:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ ef = exp
+    * }}}
+    *
+    * Into:
+    * {{{
+    *     def f(arg1: tpe1, ...): tpe \ (ef - handledEffect) + IO =
+    *         handler(_ -> exp)
+    * }}}
+    *
+    * The wrapper:
+    *   - Removes the handled effect from the function's effect set and adds IO
+    *   - Creates a lambda (_ -> originalBody) and passes it to each handler
+    *   - Updates the function's type signature accordingly
+    *
+    * @param defn        The entry point function definition to wrap
+    * @param defaultHandler Information about the default handler to apply
+    * @param root        The typed AST root
+    * @return The wrapped function definition with updated effect signature
+    */
+  private def wrapInHandler(defn: TypedAst.Def, defaultHandler: DefaultHandler, root: TypedAst.Root)(implicit flix: Flix): TypedAst.Def = {
+    // Create synthetic locations
+    val effLoc = defn.spec.eff.loc.asSynthetic
+    val baseTypeLoc = defn.spec.declaredScheme.base.loc.asSynthetic
+    val expLoc = defn.exp.loc.asSynthetic
+    // The new type is the same as the wrapped def with an effect set of
+    // `(ef - handledEffect) + IO` where `ef` is the effect set of the previous definition.
+    val effDif = Type.mkDifference(defn.spec.eff, defaultHandler.handledEff, effLoc)
+    // Technically we could perform this outside at the wrapInHandlers level
+    // by just checking the length of the handlers and if it is greater than 0
+    // just adding IO. However, that would only work while default handlers can only generate IO.
+    val eff = Type.mkUnion(effDif, Type.IO, effLoc)
+    val tpe = Type.mkCurriedArrowWithEffect(defn.spec.fparams.map(_.tpe), eff, defn.spec.retTpe, baseTypeLoc)
+    val spec = defn.spec.copy(
+      declaredScheme = defn.spec.declaredScheme.copy(base = tpe),
+      eff = eff,
+    )
+    // Create _ -> exp
+    val innerLambda =
+      TypedAst.Expr.Lambda(
+        TypedAst.FormalParam(
+          TypedAst.Binder(Symbol.freshVarSym("_", FormalParam, expLoc)(Scope.Top, flix), Type.Unit),
+          Type.Unit,
+          TypeSource.Inferred,
+          expLoc
+        ),
+        defn.exp,
+        Type.mkArrowWithEffect(Type.Unit, defn.spec.eff, defn.spec.retTpe, expLoc),
+        expLoc
+      )
+    // Create the instantiated type of the handler
+    val handlerArrowType = Type.mkArrowWithEffect(innerLambda.tpe, eff, defn.spec.retTpe, expLoc)
+    // Create HandledEff.handle(_ -> exp)
+    val handlerDefSymUse = SymUse.DefSymUse(defaultHandler.handlerSym, expLoc)
+    val handlerCall = TypedAst.Expr.ApplyDef(handlerDefSymUse, List(innerLambda), List(innerLambda.tpe), handlerArrowType, defn.spec.retTpe, eff, expLoc)
+    defn.copy(spec = spec, exp = handlerCall)
   }
 
   /**
