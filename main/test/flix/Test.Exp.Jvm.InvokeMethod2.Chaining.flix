@@ -1,22 +1,22 @@
 mod Test.Exp.Jvm.InvokeMethod.Chaining {
 
     @test
-    def testInvokeMethod_01(): Bool \ IO =
+    def testInvokeMethod_01(): Bool =
         let obj = "HeLlO WoRlD";
         obj.toUpperCase().toLowerCase() == "hello world"
 
     @test
-    def testInvokeMethod_02(): Bool \ IO =
+    def testInvokeMethod_02(): Bool =
         let obj = "hEllO WoRld";
         obj.toLowerCase().toUpperCase() == "HELLO WORLD"
 
     @test
-    def testInvokeMethod_03(): Bool \ IO =
+    def testInvokeMethod_03(): Bool =
         let obj = "hello world";
         obj.substring(1, 11).length() == 10
 
     @test
-    def testInvokeMethod_04(): Bool \ IO =
+    def testInvokeMethod_04(): Bool =
         let obj = "   hello world    ";
         let obj2 = "hello world";
         obj.trim().length() == obj2.length()
@@ -27,7 +27,7 @@ mod Test.Exp.Jvm.InvokeMethod.Chaining {
         val.modPow(10ii, 32023ii).modInverse(4831ii) == 4493ii
 
     @test
-    def testInvokeMethod_06(): Bool \ IO =
+    def testInvokeMethod_06(): Bool =
         let val = 94832ii;
         val.multiply(11ii).negate() == -1043152ii
 
@@ -42,12 +42,12 @@ mod Test.Exp.Jvm.InvokeMethod.Chaining {
         val.max(9999.99999999ff).min(12.4938ff) == 12.4938ff
 
     @test
-    def testInvokeMethod_09(): Bool \ IO =
+    def testInvokeMethod_09(): Bool =
         let val = -932983.1113ff;
         val.multiply(1.049309ff).negate() == 978987.5755350917ff
 
     @test
-    def testInvokeMethod_10(): Bool \ IO =
+    def testInvokeMethod_10(): Bool =
         let val = 833.1ff;
         val.pow(4).pow(2).pow(1) == 232047597200769719005766.94527841ff
 
