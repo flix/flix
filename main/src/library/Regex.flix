@@ -102,7 +102,7 @@ mod Regex {
     ///
     pub def unmatchable(): Regex =
         try {
-            unsafe Pattern.compile("^\\b$")
+            Pattern.compile("^\\b$")
         } catch {
             case _: Exception => unreachable!()
         }
@@ -111,19 +111,19 @@ mod Regex {
     /// Return the regular expression string that matches the the literal string `s`.
     ///
     pub def quote(s: String): String =
-        unsafe Pattern.quote(s)
+        Pattern.quote(s)
 
     ///
     /// Return the regular expression string used to build this Regex.
     ///
     pub def pattern(rgx: Regex): String =
-        unsafe rgx.pattern()
+        rgx.pattern()
 
     ///
     /// Return the flags used to build the Regex `rgx`.
     ///
     pub def flags(rgx: Regex): Set[Flag] =
-        let i = unsafe rgx.flags();
+        let i = rgx.flags();
         listFlags(i) |> List.toSet
 
 
@@ -202,7 +202,7 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `rgx`.
     ///
     pub def split(rgx: Regex, s: String): List[String] =
-        unsafe Array.toList(unsafe rgx.split(s))
+        unsafe Array.toList(rgx.split(s))
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
@@ -569,7 +569,7 @@ mod Regex {
     /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ r =
-        Matcher(unchecked_cast ((rgx.matcher(s): _ \ IO) as _ \ r))
+        Matcher(unchecked_cast (rgx.matcher(s) as _ \ r))
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input` with bounds `start` and `end`.

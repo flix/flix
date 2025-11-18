@@ -155,7 +155,7 @@ mod String {
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            unsafe Pattern.compile(regex)
+            Pattern.compile(regex)
         })
 
 
@@ -170,7 +170,7 @@ mod String {
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            unsafe Pattern.compile(regex, Regex.sumFlags(flags))
+            Pattern.compile(regex, Regex.sumFlags(flags))
         })
 
 
@@ -318,8 +318,8 @@ mod String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool =
         try {
-            let p1 = unsafe Pattern.compile(pattern);
-            let m1 = unsafe p1.matcher(s);
+            let p1 = Pattern.compile(pattern);
+            let m1 = p1.matcher(s);
             unsafe m1.find(0)
         } catch {
             case _: PatternSyntaxException => false

@@ -95,6 +95,12 @@
     "java.util.Optional::isPresent": "",
     "java.util.concurrent.locks.ReentrantLock::isFair": "",
     "java.util.Objects::isNull": "",
+    "java.util.regex.Pattern::compile": "",
+    "java.util.regex.Pattern::flags": "",
+    "java.util.regex.Pattern::matcher": "",
+    "java.util.regex.Pattern::pattern": "",
+    "java.util.regex.Pattern::quote": "",
+    "java.util.regex.Pattern::split": "",
     "java.util.regex.Pattern::toString": ""
   }
 }
