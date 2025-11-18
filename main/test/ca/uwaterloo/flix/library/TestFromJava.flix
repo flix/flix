@@ -98,12 +98,12 @@ mod TestFromJava {
 
     @Test
     def bigIntFromJava01(): Unit \ Assert =
-        let i = unsafe BigInteger.valueOf(0i64);
+        let i = BigInteger.valueOf(0i64);
         assertEq(expected = 0ii, ToFlix.toFlix(i))
 
     @Test
     def bigIntFromJava02(): Unit \ Assert =
-        let i = unsafe BigInteger.valueOf(100i64);
+        let i = BigInteger.valueOf(100i64);
         assertEq(expected = 100ii, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -112,12 +112,12 @@ mod TestFromJava {
 
     @Test
     def bigDecimalFromJava01(): Unit \ Assert =
-        let d = unsafe BigDecimal.valueOf(0i64);
+        let d = BigDecimal.valueOf(0i64);
         assertEq(expected = 0.0ff, ToFlix.toFlix(d))
 
     @Test
     def bigDecimalFromJava02(): Unit \ Assert =
-        let d = unsafe BigDecimal.valueOf(100i64);
+        let d = BigDecimal.valueOf(100i64);
         assertEq(expected = 100.0ff, ToFlix.toFlix(d))
 
     /////////////////////////////////////////////////////////////////////////////

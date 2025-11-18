@@ -116,7 +116,7 @@ mod Env {
             f(x)
         } with handler Env {
             def getArgs(k) =
-                k(unsafe Array.toList(Global.getArgs()))
+                k(Array.toList(Global.getArgs()))
 
             def getEnv(k) = region rc {
                 try {
@@ -130,7 +130,7 @@ mod Env {
 
             def getVar(name, k) =
                 try {
-                    let result = unsafe System.getenv(name);
+                    let result = System.getenv(name);
                     k(Object.toOption(result))
                 } catch {
                     case _: Exception => k(None)
@@ -144,11 +144,11 @@ mod Env {
 
             def getOsVersion(k) = k(getPropHelper("os.version"))
 
-            def getFileSeparator(k) = k(unsafe JFile.separator)
+            def getFileSeparator(k) = k(JFile.separator)
 
-            def getPathSeparator(k) = k(unsafe JFile.pathSeparator)
+            def getPathSeparator(k) = k(JFile.pathSeparator)
 
-            def getLineSeparator(k) = k(unsafe System.lineSeparator())
+            def getLineSeparator(k) = k(System.lineSeparator())
 
             def getCurrentWorkingDirectory(k) = k(getPropHelper("user.dir"))
 

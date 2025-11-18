@@ -336,7 +336,7 @@ mod Int16 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int16] = try {
-        Some(Short.parseShort(unsafe s.strip()))
+        Some(Short.parseShort(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -377,7 +377,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int16): BigInt =
-        unsafe BigInteger.valueOf(Short.valueOf(x).longValue())
+        BigInteger.valueOf(Short.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -401,7 +401,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int16): BigDecimal =
-        unsafe new BigDecimal(Int16.toInt32(x))
+        new BigDecimal(Int16.toInt32(x))
 
     ///
     /// Helper function for the `clamp` conversion function.

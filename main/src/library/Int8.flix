@@ -337,7 +337,7 @@ mod Int8 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int8] = try {
-        Some(Byte.parseByte(unsafe s.strip()))
+        Some(Byte.parseByte(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -372,7 +372,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int8): BigInt =
-        unsafe BigInteger.valueOf(Byte.valueOf(x).longValue())
+        BigInteger.valueOf(Byte.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -396,7 +396,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int8): BigDecimal =
-        unsafe new BigDecimal(Int8.toInt32(x))
+        new BigDecimal(Int8.toInt32(x))
 
     ///
     /// Get the primitive Int8 value from its object representation (i.e. Byte).
