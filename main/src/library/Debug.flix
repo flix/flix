@@ -55,7 +55,7 @@ mod Debug {
     ///
     @Internal
     def escape(s: String): String = {
-        def replace(src: String, dst: String, subject: String): String = unsafe subject.replace(src, dst);
+        def replace(src: String, dst: String, subject: String): String = subject.replace(src, dst);
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")
