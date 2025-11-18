@@ -27,6 +27,13 @@ pub enum List[t] {
     case Cons(t, List[t])
 }
 
+instance Formattable[List[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: List[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("List#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+}
+
 instance ToString[List[a]] with ToString[a] {
     pub def toString(l: List[a]): String = List.toString(l)
 }

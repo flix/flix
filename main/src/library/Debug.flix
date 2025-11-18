@@ -21,8 +21,6 @@ eff Debug
 
 mod Debug {
 
-    use RichString.Formattable;
-
     import java.lang.Byte
     import java.lang.Double
     import java.lang.Float

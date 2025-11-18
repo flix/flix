@@ -46,6 +46,15 @@ instance Monad[Result[e]] {
     pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
 }
 
+instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
+    type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+    pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+        case Ok(v)  => RichString.fromString("Ok(") + Formattable.format(v) + RichString.fromString(")")
+        case Err(e) => RichString.fromString("Err(") + Formattable.format(e) + RichString.fromString(")")
+    }
+}
+
 mod Result {
 
     import java.lang.Exception

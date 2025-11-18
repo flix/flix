@@ -161,6 +161,15 @@ instance ForEach[Option[a]] {
     pub def forEach(f: a -> Unit \ ef, o: Option[a]): Unit \ ef = Option.forEach(f, o)
 }
 
+instance Formattable[Option[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
+        case None    => RichString.fromString("None")
+        case Some(v) => RichString.fromString("Some(") + Formattable.format(v) + RichString.fromString(")")
+    }
+}
+
 mod Option {
 
     ///
