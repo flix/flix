@@ -163,7 +163,7 @@ mod BigInt {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[BigInt] = try {
-        Some(new BigInteger(unsafe s.strip()))
+        Some(new BigInteger(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }

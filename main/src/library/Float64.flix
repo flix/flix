@@ -109,7 +109,7 @@ mod Float64 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Float64] = try {
-        Some(Double.parseDouble(unsafe s.strip()))
+        Some(Double.parseDouble(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }

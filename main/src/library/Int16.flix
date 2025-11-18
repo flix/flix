@@ -336,7 +336,7 @@ mod Int16 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int16] = try {
-        Some(Short.parseShort(unsafe s.strip()))
+        Some(Short.parseShort(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }

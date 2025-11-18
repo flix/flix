@@ -35,6 +35,7 @@
     "java.lang.String::replaceFirst": "",
     "java.lang.String::split": "",
     "java.lang.String::startsWith": "",
+    "java.lang.String::strip": "",
     "java.lang.String::substring": "",
     "java.lang.String::trim": "",
     "java.math.BigDecimal::abs": "",

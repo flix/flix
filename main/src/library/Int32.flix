@@ -341,7 +341,7 @@ mod Int32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int32] = try {
-        Some(Integer.parseInt(unsafe s.strip()))
+        Some(Integer.parseInt(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -353,7 +353,7 @@ mod Int32 {
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
-            Ok(Integer.parseInt(unsafe s.strip(), radix))
+            Ok(Integer.parseInt(s.strip(), radix))
         } catch {
             case _: NumberFormatException => Err("Int32.parse")
         }

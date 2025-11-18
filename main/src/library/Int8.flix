@@ -337,7 +337,7 @@ mod Int8 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int8] = try {
-        Some(Byte.parseByte(unsafe s.strip()))
+        Some(Byte.parseByte(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }

@@ -341,7 +341,7 @@ mod Int64 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int64] = try {
-        Some(Long.parseLong(unsafe s.strip()))
+        Some(Long.parseLong(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -352,7 +352,7 @@ mod Int64 {
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int64] = try {
-        Ok(Long.parseLong(unsafe s.strip(), radix))
+        Ok(Long.parseLong(s.strip(), radix))
     } catch {
         case _: NumberFormatException => Err("Int64.parse")
     }
