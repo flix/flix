@@ -19,9 +19,11 @@
     "java.lang.Short::longValue": "",
     "java.lang.Short::parseShort": "",
     "java.lang.Short::valueOf": "",
+    "java.lang.String::compareTo": "",
     "java.lang.String::concat": "",
     "java.lang.String::endsWith": "",
     "java.lang.String::equals": "",
+    "java.lang.String::hashCode": "",
     "java.lang.String::indexOf": "",
     "java.lang.String::isEmpty": "",
     "java.lang.String::lastIndexOf": "",
@@ -44,6 +46,7 @@
     "java.math.BigDecimal::divide": "",
     "java.math.BigDecimal::doubleValue": "",
     "java.math.BigDecimal::floatValue": "",
+    "java.math.BigDecimal::hashCode": "",
     "java.math.BigDecimal::intValue": "",
     "java.math.BigDecimal::longValue": "",
     "java.math.BigDecimal::multiply": "",
@@ -56,6 +59,7 @@
     "java.math.BigDecimal::subtract": "",
     "java.math.BigDecimal::toBigInteger": "",
     "java.math.BigDecimal::toPlainString": "",
+    "java.math.BigDecimal::toString": "",
     "java.math.BigDecimal::valueOf": "",
     "java.math.BigInteger::add": "",
     "java.math.BigInteger::and": "",
@@ -63,6 +67,7 @@
     "java.math.BigInteger::byteValueExact": "",
     "java.math.BigInteger::compareTo": "",
     "java.math.BigInteger::divide": "",
+    "java.math.BigInteger::hashCode": "",
     "java.math.BigInteger::intValueExact": "",
     "java.math.BigInteger::longValueExact": "",
     "java.math.BigInteger::multiply": "",
@@ -75,7 +80,9 @@
     "java.math.BigInteger::shiftRight": "",
     "java.math.BigInteger::shortValueExact": "",
     "java.math.BigInteger::subtract": "",
+    "java.math.BigInteger::toString": "",
     "java.math.BigInteger::valueOf": "",
-    "java.math.BigInteger::xor": ""
+    "java.math.BigInteger::xor": "",
+    "java.util.regex.Pattern::toString": ""
   }
 }

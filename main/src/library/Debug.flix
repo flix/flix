@@ -82,7 +82,7 @@ mod Debug {
                 if (unsafe Objects.isNull(y)) {
                     "null"
                 } else {
-                    unsafe y.toString() + "ff"
+                    y.toString() + "ff"
                 }
             case y: Int8 =>
                 Byte.toString(y) + "i8"
@@ -96,7 +96,7 @@ mod Debug {
                 if (unsafe Objects.isNull(y)) {
                     "null"
                 } else {
-                    unsafe y.toString() + "ii"
+                    y.toString() + "ii"
                 }
             case s: String =>
                 if (unsafe Objects.isNull(s)) {

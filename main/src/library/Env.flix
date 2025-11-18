@@ -176,11 +176,11 @@ mod Env {
                 case _: Exception => None
             }
 
-    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] =
-        if (unsafe iter.hasNext())
-            let e = unsafe unchecked_cast(iter.next() as Entry);
-            let k = unsafe unchecked_cast(e.getKey() as String);
-            let v = unsafe unchecked_cast(e.getValue() as String);
+    def getEnvHelper(iter: JIterator, m: Map[String, String]): Map[String, String] \ IO =
+        if (iter.hasNext())
+            let e = unchecked_cast(iter.next() as Entry);
+            let k = unchecked_cast(e.getKey() as String);
+            let v = unchecked_cast(e.getValue() as String);
             getEnvHelper(iter, Map.insert(k, v, m))
         else
             m

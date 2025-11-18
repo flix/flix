@@ -69,15 +69,15 @@ mod Regex {
     ///
     def toInt(flag: Flag): Int32 =
         match flag {
-            case CanonEq                => unsafe Pattern.CANON_EQ
-            case CaseInsenstive         => unsafe Pattern.CASE_INSENSITIVE
-            case Comments               => unsafe Pattern.COMMENTS
-            case Dotall                 => unsafe Pattern.DOTALL
-            case Literal                => unsafe Pattern.LITERAL
-            case Multiline              => unsafe Pattern.MULTILINE
-            case UnicodeCase            => unsafe Pattern.UNICODE_CASE
-            case UnicodeCharacterClass  => unsafe Pattern.UNICODE_CHARACTER_CLASS
-            case UnixLines              => unsafe Pattern.UNIX_LINES
+            case CanonEq                => Pattern.CANON_EQ
+            case CaseInsenstive         => Pattern.CASE_INSENSITIVE
+            case Comments               => Pattern.COMMENTS
+            case Dotall                 => Pattern.DOTALL
+            case Literal                => Pattern.LITERAL
+            case Multiline              => Pattern.MULTILINE
+            case UnicodeCase            => Pattern.UNICODE_CASE
+            case UnicodeCharacterClass  => Pattern.UNICODE_CHARACTER_CLASS
+            case UnixLines              => Pattern.UNIX_LINES
         }
 
     ///

@@ -63,7 +63,7 @@ instance Hash[Float64] {
 }
 
 instance Hash[BigDecimal] {
-    pub def hash(x: BigDecimal): Int32 = unsafe x.hashCode()
+    pub def hash(x: BigDecimal): Int32 = x.hashCode()
 }
 
 instance Hash[Int8] {
@@ -83,11 +83,11 @@ instance Hash[Int64] {
 }
 
 instance Hash[String] {
-    pub def hash(x: String): Int32 = unsafe x.hashCode()
+    pub def hash(x: String): Int32 = x.hashCode()
 }
 
 instance Hash[BigInt] {
-    pub def hash(x: BigInt): Int32 = unsafe x.hashCode()
+    pub def hash(x: BigInt): Int32 = x.hashCode()
 }
 
 instance Hash[(a1, a2)] with Hash[a1], Hash[a2] {

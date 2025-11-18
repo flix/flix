@@ -84,6 +84,6 @@ instance Div[BigInt] {
 
 instance Div[String] {
     pub def div(x: String, y: String): String =
-        let s = unsafe File.separator;
+        let s = File.separator;
         x + s + y
 }
