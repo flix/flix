@@ -89,6 +89,10 @@
     "java.math.BigInteger::toString": "",
     "java.math.BigInteger::valueOf": "",
     "java.math.BigInteger::xor": "",
+    "java.util.Map$Entry::getKey": "",
+    "java.util.Map$Entry::getValue": "",
+    "java.util.Optional::get": "",
+    "java.util.Optional::isPresent": "",
     "java.util.concurrent.locks.ReentrantLock::isFair": "",
     "java.util.Objects::isNull": "",
     "java.util.regex.Pattern::toString": ""
