@@ -155,13 +155,11 @@ mod Fixpoint3.ProvenanceReconstruct {
         def recurse(workList: List[ProofTree[r]]) = match workList {
             case Nil                               => ()
             case ProofTree.EDB(pred, fact) :: tail =>
-                if (filter(pred)) MutList.push((pred, fact), res)
-                else ();
+                if (filter(pred)) { MutList.push((pred, fact), res) };
                 recurse(tail)
             case ProofTree.Negative(_, _) :: tail => recurse(tail)
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
-                if (filter(pred)) MutList.push((pred, fact), res)
-                else ();
+                if (filter(pred)) { MutList.push((pred, fact), res) };
                 let furtherWork = Array.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
                 recurse(furtherWork)
         }};

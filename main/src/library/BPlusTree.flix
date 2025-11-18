@@ -898,9 +898,9 @@ mod BPlusTree {
                     Array.put(f(key, val), index, node->values);
                     Lock.unlockWrite(writeStamp, node->lock)
                 }
-            } else if (not Lock.valid(stamp, node->lock))
+            } else if (not Lock.valid(stamp, node->lock)) {
                 BPlusTree.adjustWithKey(f, key, t)
-            else ()
+            }
         }
 
         ///
@@ -1600,9 +1600,9 @@ mod BPlusTree {
             let index = binarySearch(min, search, minLeaf);
             if (index < 0) {
                 let insertionPoint = toInsertionPoint(index);
-                if (insertionPoint <= minLeaf->size)
+                if (insertionPoint <= minLeaf->size) {
                     traverseRight(f, insertionPoint, max, search, minLeaf)
-                else ()
+                }
             } else
                 traverseRight(f, index, max, search, minLeaf)
 
@@ -1690,9 +1690,9 @@ mod BPlusTree {
             let parentStamp = lockParent(leftNode, tree);
             rightNode->parent = leftNode->parent;
             Array.forEachWithIndex(i -> child ->
-                if (i < rightSize)
+                if (i < rightSize) {
                     child->parent = Some(rightNode)
-                else (), rightChildren);
+                }, rightChildren);
             Lock.unlockWrite(leftNodeStamp, leftNode->lock);
             Lock.unlockWrite(rightNodeStamp, rightNode->lock);
             pushKeyToParent(leftNode->parent, leftNode, rightNode, parentStamp, keyOfRight, tree)
@@ -1780,7 +1780,7 @@ mod BPlusTree {
                 if (childIndexInRight != rightSizeWithoutNew) {
                     Array.copyInto(srcPos = mid + childIndexInRight - 1, dstPos = childIndexInRight, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->keys, rightKeys);
                     Array.copyInto(srcPos = mid + childIndexInRight, dstPos = childIndexInRight + 1, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->children, rightChildren)
-                } else ();
+                };
                 (Array.get(mid - 1, leftNode->keys), rightKeys, rightChildren)
             }
         }
@@ -1874,7 +1874,7 @@ mod BPlusTree {
                 if (comparison(k, max, search) != 1) {
                     f(k, Array.get(index, node->values));
                     traverseRight(f, index + 1, max, search, node)
-                } else ()
+                }
             } else match node->next {
                 case Some(next) => traverseRight(f, 0, max, search, next)
                 case None => ()

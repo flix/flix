@@ -573,9 +573,9 @@ mod MutList {
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
     pub def push(x: a, v: MutList[a, r]): Unit \ r =
-        if (capacity(v) - v->length == 0)
+        if (capacity(v) - v->length == 0) {
             reserve(v->length, v)
-        else ();
+        };
         Array.put(x, v->length, v->values);
         v->length = v->length + 1
 
@@ -587,9 +587,9 @@ mod MutList {
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
     pub def insert(x: a, i: Int32, v: MutList[a, r]): Unit \ r =
-        if (capacity(v) - v->length == 0)
+        if (capacity(v) - v->length == 0) {
             reserve(v->length, v)
-        else ();
+        };
         let sub = Array.copyOfRange(v->r, i, v->length, v->values);
         Array.updateSequence(i + 1, sub, v->values);
         Array.put(x, i, v->values);
@@ -640,7 +640,7 @@ mod MutList {
     ///
     pub def retain(f: a -> Bool, v: MutList[a, r]): Unit \ r =
         let l = MutList.empty(v->r);
-        forEach(e -> if (f(e)) push(e, l) else (), v);
+        forEach(e -> if (f(e)) { push(e, l) }, v);
         v->values = l->values;
         v->length = length(l);
         ()

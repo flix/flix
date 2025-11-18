@@ -288,10 +288,10 @@ mod Fixpoint3.Phase.IndexSelection {
     def searchOf(relSym: RelSym, search: Search, indexes: PrimitiveSearches[r]): Unit \ r =
         if (not Vector.isEmpty(search)) {
             let searches = MutMap.getWithDefault(relSym, List.empty(), indexes);
-            if (not List.memberOf(search, searches))
+            if (not List.memberOf(search, searches)) {
                 MutMap.put(relSym, search :: searches, indexes)
-            else ()
-        } else ()
+            }
+        }
 
     ///
     /// Returns true if `term` is ground (no free variables) w.r.t. `seenTuples`.

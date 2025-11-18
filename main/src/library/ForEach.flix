@@ -72,7 +72,7 @@ mod ForEach {
         type Aef = ForEach.Aef[t]
         pub def forEach(f: a -> Unit \ ef, t: WithFilter[t, a]): Unit \ ef + ForEach.Aef[t] =
             let WithFilter.WithFilter(p, base) = t;
-            base |> ForEach.forEach(elm -> if (p(elm)) f(elm) else ())
+            base |> ForEach.forEach(elm -> if (p(elm)) { f(elm) })
     }
 
     ///

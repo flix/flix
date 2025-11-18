@@ -248,7 +248,7 @@ mod MutDeque {
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand(d: MutDeque[a, r]): Unit \ r =
-        if (shouldExpand(d)) grow(d) else ()
+        if (shouldExpand(d)) { grow(d) }
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -271,7 +271,7 @@ mod MutDeque {
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
     def compress(d: MutDeque[a, r]): Unit \ r =
-        if (shouldCompress(d)) shrink(d) else ()
+        if (shouldCompress(d)) { shrink(d) }
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.

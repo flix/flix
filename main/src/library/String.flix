@@ -404,7 +404,7 @@ mod String {
             if (i >= len)
                 ()
             else {
-                if (f(charAt(i, s))) MutList.push(i, l) else ();
+                if (f(charAt(i, s))) { MutList.push(i, l) };
                 loop(i + 1)
             }
         };
@@ -1126,7 +1126,7 @@ mod String {
     /// This implements a forloop, the end point `e` is inclusive.
     ///
     def forIndex(b: Int32, e: Int32, f: Int32 -> Unit \ ef): Unit \ ef =
-        if (b <= e) { f(b); forIndex(b + 1, e, f) } else ()
+        if (b <= e) { f(b); forIndex(b + 1, e, f) }
 
     ///
     /// Helper function for `levenshteinDistance`.
