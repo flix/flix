@@ -2684,8 +2684,9 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordUnsafely)
       Type.ttype()
-      expect(TokenKind.KeywordRun)
+      expect(TokenKind.CurlyL)
       expression()
+      expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Unsafe)
     }
 

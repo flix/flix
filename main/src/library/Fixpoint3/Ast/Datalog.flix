@@ -107,7 +107,7 @@ mod Fixpoint3.Ast.Datalog {
                 if (not Fixpoint3.Options.enableDebugPrintFacts()) {
                     "Printing facts disabled."
                 } else {
-                   unsafely IO run {
+                   unsafely IO {
                         let builder = StringBuilder.empty(rc);
                         foreach ((relSym, innerMap) <- db) {
                             foreach ((tuple, lat) <- innerMap) {
@@ -127,7 +127,7 @@ mod Fixpoint3.Ast.Datalog {
                 "${d1}${lineSep}${d2}${lineSep}"
             }
             case Datalog.Provenance(_, db) => region rc {
-                unsafely IO run {
+                unsafely IO {
                     let indent = String.repeat(4, " ");
                     Map.joinWith(predSym -> facts -> {
                         let builder = StringBuilder.empty(rc);

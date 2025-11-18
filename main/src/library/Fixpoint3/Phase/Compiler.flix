@@ -47,7 +47,7 @@ mod Fixpoint3.Phase.Compiler {
         case Datalog(facts, _) => region rc {
             let predicates = Predicate.initialize(d, db);
             let stmts = MutList.empty(rc);
-            let compiledFacts = unsafely IO run compileFacts(facts, db, predicates);
+            let compiledFacts = unsafely IO { compileFacts(facts, db, predicates) };
             // Create map of stratum to list of rules in stratum
             let counter = Counter.fresh(rc);
             let rulesWithId = enumerateRules(d);
