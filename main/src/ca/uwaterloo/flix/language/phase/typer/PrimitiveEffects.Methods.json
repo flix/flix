@@ -4,6 +4,7 @@
     "java.lang.Byte::parseByte": "",
     "java.lang.Byte::valueOf": "",
     "java.lang.Double::parseDouble": "",
+    "java.lang.Exception::getMessage": "",
     "java.lang.Float::parseFloat": "",
     "java.lang.Integer::longValue": "",
     "java.lang.Integer::parseInt": "",
@@ -86,6 +87,7 @@
     "java.math.BigInteger::valueOf": "",
     "java.math.BigInteger::xor": "",
     "java.util.concurrent.locks.ReentrantLock::isFair": "",
+    "java.util.Objects::isNull": "",
     "java.util.regex.Pattern::toString": ""
   }
 }

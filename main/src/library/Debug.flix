@@ -79,7 +79,7 @@ mod Debug {
             case y: Float64 =>
                 Double.toString(y)
             case y: BigDecimal =>
-                if (unsafe Objects.isNull(y)) {
+                if (Objects.isNull(y)) {
                     "null"
                 } else {
                     y.toString() + "ff"
@@ -93,13 +93,13 @@ mod Debug {
             case y: Int64 =>
                 Long.toString(y) + "i64"
             case y: BigInt =>
-                if (unsafe Objects.isNull(y)) {
+                if (Objects.isNull(y)) {
                     "null"
                 } else {
                     y.toString() + "ii"
                 }
             case s: String =>
-                if (unsafe Objects.isNull(s)) {
+                if (Objects.isNull(s)) {
                     "null"
                 } else {
                     "\"" + escape(s) + "\""
