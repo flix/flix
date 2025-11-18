@@ -195,7 +195,7 @@ mod Fixpoint3.PrecedenceGraph {
                     let vSCC = getOrCrash(MutMap.get(v, rootMap));
                     if (uSCC != vSCC) {
                         addEdge(uSCC, vSCC, condensation)
-                    } else ()
+                    }
                 }
             };
             let inverseRootMap = MutMap.toMap(rootMap)
@@ -221,7 +221,7 @@ mod Fixpoint3.PrecedenceGraph {
             foreach (u <- getVertices(g)) {
                 if (Array.get(u, colors) == Color.White) {
                     topologicalSortVisit(g, colors, sorted, u)
-                } else ()
+                }
             };
             sorted |> MutList.toList |> List.reverse
         }
@@ -238,11 +238,11 @@ mod Fixpoint3.PrecedenceGraph {
         ): Unit \ r0 + r1 = {
             Array.put(Color.Gray, u, colors);
             foreach (v <- getNeighbors(u, g)) {
-                if (Array.get(v, colors) == Color.White)
+                if (Array.get(v, colors) == Color.White) {
                     topologicalSortVisit(g, colors, sorted, v)
-                else if (Array.get(v, colors) == Color.Gray)
+                } else if (Array.get(v, colors) == Color.Gray) {
                     bug!("In Fixpoint.PrecedenceGraph.MutGraph.topologicalSortVisit: Cycle detected")
-                else ()
+                }
             };
             Array.put(Color.Black, u, colors);
             MutList.push(u, sorted)
@@ -265,7 +265,7 @@ mod Fixpoint3.PrecedenceGraph {
                     stronglyConnectedComponentsVisit(
                         components, stack, disc, low, onStack, time, g, u
                     )
-                } else ()
+                }
             };
             MutList.toList(components)
         }
@@ -320,7 +320,7 @@ mod Fixpoint3.PrecedenceGraph {
                     let uLow = Array.get(u, low);
                     let vLow = Array.get(v, low);
                     Array.put(Int32.min(uLow, vLow), u, low)
-                } else ()
+                }
             };
             if (Array.get(u, low) == Array.get(u, disc)) {
                 region rc {
@@ -332,14 +332,13 @@ mod Fixpoint3.PrecedenceGraph {
                         };
                         Array.put(false, w, onStack);
                         MutSet.add(w, mutSet);
-                        if (u != w) loop()
-                        else ()
+                        if (u != w) { loop() }
                     };
                     loop();
                     let component = MutSet.toSet(mutSet);
                     MutList.push(component, components)
                 }
-            } else ()
+            }
         }
     }
 

@@ -323,9 +323,9 @@ mod Fixpoint3.Phase.Lowering {
                         None
                     case _ => Some(x)
                 }, tests);
-                if (Vector.length(otherBools) != 0)
+                if (Vector.length(otherBools) != 0) {
                     unchecked_cast(bug!("Bug in Fixpoint.Lowering: Bools except equality in query") as _ \ r)
-                else ();
+                };
                 ExecutableRam.RelOp.Query(lowerRowVar(rv, idToIndex), index, oldPos, den, thisWriteTo, loweredBody)
             case Ram.RelOp.Functional(rv, f, terms, body, _, thisType) =>
                 let loweredBody = lowerOpRec(body);
