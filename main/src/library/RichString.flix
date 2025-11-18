@@ -85,6 +85,10 @@ mod RichString {
         pub def format(x: RichString): RichString = x
     }
 
+    instance Formattable[Unit] {
+        pub def format(x: Unit): RichString = fromString(ToString.toString(x))
+    }
+
     instance Formattable[Bool] {
         pub def format(x: Bool): RichString = fromString(ToString.toString(x))
     }
@@ -127,6 +131,77 @@ mod RichString {
 
     instance Formattable[BigDecimal] {
         pub def format(x: BigDecimal): RichString = fromString(ToString.toString(x))
+    }
+
+    instance Formattable[Option[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
+            case None    => fromString("None")
+            case Some(v) => fromString("Some(") + Formattable.format(v) + fromString(")")
+        }
+    }
+
+    instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+        pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+            case Ok(v)  => fromString("Ok(") + Formattable.format(v) + fromString(")")
+            case Err(e) => fromString("Err(") + Formattable.format(e) + fromString(")")
+        }
+    }
+
+    instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
+        type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+        pub def format(x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+            case Validation.Success(v) => fromString("Success(") + Formattable.format(v) + fromString(")")
+            case Validation.Failure(e) => fromString("Failure(") + Formattable.format(e) + fromString(")")
+        }
+    }
+
+    instance Formattable[List[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: List[a]): RichString \ Formattable.Aef[a] =
+            fromString("List#{") + joinWith(Formattable.format, fromString(", "), x) + fromString("}")
+    }
+
+    instance Formattable[Nel[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Nel[a]): RichString \ Formattable.Aef[a] =
+            fromString("Nel#{") + joinWith(Formattable.format, fromString(", "), x) + fromString("}")
+    }
+
+    instance Formattable[Nec[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Nec[a]): RichString \ Formattable.Aef[a] =
+            fromString("Nec#{") + joinWith(Formattable.format, fromString(", "), x) + fromString("}")
+    }
+
+    instance Formattable[Set[a]] with Formattable[a] {
+        type Aef = Formattable.Aef[a]
+
+        pub def format(x: Set[a]): RichString \ Formattable.Aef[a] =
+            fromString("Set#{") + joinWith(Formattable.format, fromString(", "), Set.toList(x)) + fromString("}")
+    }
+
+    instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
+        type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+        pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
+            let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
+            fromString("Map#{") + joinWith(identity, fromString(", "), pairs) + fromString("}")
+    }
+
+    instance Formattable[(a1, a2)] with Formattable[a1], Formattable[a2] {
+        type Aef[(a1, a2)] = Formattable.Aef[a1] + Formattable.Aef[a2]
+
+        pub def format(x: (a1, a2)): RichString \ Formattable.Aef[a1] + Formattable.Aef[a2] =
+            let (v1, v2) = x;
+            fromString("(") + Formattable.format(v1) + fromString(", ") + Formattable.format(v2) + fromString(")")
     }
 
     ///
@@ -291,6 +366,26 @@ mod RichString {
     ///
     pub def underline(x: a): RichString  \ Formattable.Aef[a] with Formattable[a] =
         withStyle(Style.Underline, x)
+
+    ///
+    /// Returns the concatenation of the elements in `xs` formatted with RichString `sep` inserted between each.
+    ///
+    /// Uses the Formattable trait to format each element.
+    ///
+    pub def join(sep: RichString, xs: t[a]): RichString \ (Formattable.Aef[a] + Foldable.Aef[t]) with Formattable[a], Foldable[t] =
+        joinWith(Formattable.format, sep, xs)
+
+    ///
+    /// Returns the concatenation of elements in `xs` according to `f` with RichString `sep` inserted between each.
+    ///
+    pub def joinWith(f: a -> RichString \ ef, sep: RichString, xs: t[a]): RichString \ (ef + Foldable.Aef[t]) with Foldable[t] =
+        let l = Foldable.toList(xs);
+        match l {
+            case Nil       => empty()
+            case x :: Nil  => f(x)
+            case x :: rest =>
+                List.foldLeft((acc, elem) -> acc + sep + f(elem), f(x), rest)
+        }
 
     ///
     /// Returns the concatenation of `rs1` and `rs2`.
