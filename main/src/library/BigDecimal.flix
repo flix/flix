@@ -69,7 +69,7 @@ mod BigDecimal {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[BigDecimal] = try {
-        Some(new BigDecimal(unsafe s.strip()))
+        Some(new BigDecimal(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
