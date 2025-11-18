@@ -186,7 +186,7 @@ mod BigDecimal {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigDecimal): Option[Float32] =
-        let d = unsafe x.floatValue();
+        let d = x.floatValue();
         if (Float32.isFinite(d))
             Some(d)
         else
@@ -202,7 +202,7 @@ mod BigDecimal {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigDecimal): Option[Float64] =
-        let d = unsafe x.doubleValue();
+        let d = x.doubleValue();
         if (Float64.isFinite(d))
             Some(d)
         else

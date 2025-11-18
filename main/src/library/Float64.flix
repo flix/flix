@@ -220,7 +220,7 @@ mod Float64 {
     ///
     pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
         try {
-            Some(unsafe new BigDecimal(x))
+            Some(new BigDecimal(x))
         } catch {
             case _: NumberFormatException => None
         }

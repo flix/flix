@@ -396,7 +396,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int8): BigDecimal =
-        unsafe new BigDecimal(Int8.toInt32(x))
+        new BigDecimal(Int8.toInt32(x))
 
     ///
     /// Get the primitive Int8 value from its object representation (i.e. Byte).

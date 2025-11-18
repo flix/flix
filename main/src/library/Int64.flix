@@ -428,7 +428,7 @@ mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toBigDecimal(x: Int64): BigDecimal =
-        unsafe new BigDecimal(x)
+        new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.

@@ -401,7 +401,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int16): BigDecimal =
-        unsafe new BigDecimal(Int16.toInt32(x))
+        new BigDecimal(Int16.toInt32(x))
 
     ///
     /// Helper function for the `clamp` conversion function.

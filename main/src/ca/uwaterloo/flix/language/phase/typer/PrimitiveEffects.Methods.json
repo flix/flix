@@ -1,6 +1,20 @@
 {
   "methods": {
+    "java.lang.Runtime::version": "",
+    "java.math.BigDecimal::doubleValue": "",
+    "java.math.BigDecimal::floatValue": "",
+    "java.math.BigInteger::and": "",
+    "java.math.BigInteger::bitLength": "",
+    "java.math.BigInteger::byteValueExact": "",
+    "java.math.BigInteger::intValueExact": "",
+    "java.math.BigInteger::longValueExact": "",
+    "java.math.BigInteger::not": "",
+    "java.math.BigInteger::or": "",
     "java.math.BigInteger::pow": "",
-    "java.lang.Runtime::version": ""
+    "java.math.BigInteger::remainder": "",
+    "java.math.BigInteger::shiftLeft": "",
+    "java.math.BigInteger::shiftRight": "",
+    "java.math.BigInteger::shortValueExact": "",
+    "java.math.BigInteger::xor": ""
   }
 }
