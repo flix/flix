@@ -1182,7 +1182,7 @@ mod List {
     ///
     /// If multiple mappings with the same key are produced only the last occurrence is kept.
     ///
-    pub def toMapWith(f: a -> (k, v), l: List[a]): Map[k, v] with Order[k] =
+    pub def toMapWith(f: a -> (k, v) \ ef, l: List[a]): Map[k, v] \ ef with Order[k] =
         foldLeft((acc, x) -> {
             let (key, val) = f(x);
             Map.insert(key, val, acc)
