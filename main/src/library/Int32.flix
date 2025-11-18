@@ -400,7 +400,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int32): BigInt =
-        unsafe BigInteger.valueOf(Integer.valueOf(x).longValue())
+        BigInteger.valueOf(Integer.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an Float32.

@@ -372,7 +372,7 @@ mod Int8 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int8): BigInt =
-        unsafe BigInteger.valueOf(Byte.valueOf(x).longValue())
+        BigInteger.valueOf(Byte.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.

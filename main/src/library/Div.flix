@@ -39,7 +39,7 @@ instance Div[BigDecimal] {
         if (y == 0ff)
             0ff
         else
-            unsafe x.divide(y)
+            x.divide(y)
 }
 
 instance Div[Int8] {
@@ -79,7 +79,7 @@ instance Div[BigInt] {
         if (y == 0ii)
             0ii
         else
-            unsafe x.divide(y)
+            x.divide(y)
 }
 
 instance Div[String] {

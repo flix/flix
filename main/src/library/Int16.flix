@@ -377,7 +377,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int16): BigInt =
-        unsafe BigInteger.valueOf(Short.valueOf(x).longValue())
+        BigInteger.valueOf(Short.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.

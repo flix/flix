@@ -55,7 +55,7 @@ mod String {
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
-        unsafe s1.concat(s2)
+        s1.concat(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
