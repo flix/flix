@@ -1865,7 +1865,6 @@ object Parser2 {
         case TokenKind.KeywordCheckedCast => checkedTypeCastExpr()
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
-        case TokenKind.KeywordUnsafe => unsafeExpr()
         case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordHandler => handlerExpr()
@@ -2668,15 +2667,6 @@ object Parser2 {
         expect(TokenKind.ParenR)
       }
       close(mark, TreeKind.Expr.UncheckedCast)
-    }
-
-    private def unsafeExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordUnsafe))
-      val mark = open()
-      expect(TokenKind.KeywordUnsafe)
-      expression()
-      close(mark, TreeKind.Expr.UnsafeOld)
     }
 
     /**
