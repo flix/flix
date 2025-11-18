@@ -78,10 +78,10 @@ mod TestBox {
     def float32RoundTrip02(): Unit \ Assert = assertEq(expected = -4.56f32, unbox(box(-4.56f32)))
 
     @Test
-    def float32MaxValue(): Unit \ Assert + IO = assertEq(expected = Float.MAX_VALUE, unsafe unbox(box(Float.MAX_VALUE)))
+    def float32MaxValue(): Unit \ Assert = assertEq(expected = Float.MAX_VALUE, unbox(box(Float.MAX_VALUE)))
 
     @Test
-    def float32MinValue(): Unit \ Assert + IO = assertEq(expected = Float.MIN_VALUE, unsafe unbox(box(Float.MIN_VALUE)))
+    def float32MinValue(): Unit \ Assert = assertEq(expected = Float.MIN_VALUE, unbox(box(Float.MIN_VALUE)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Float64                                                                 //
@@ -106,10 +106,10 @@ mod TestBox {
     def float64RoundTrip02(): Unit \ Assert = assertEq(expected = -4.56, unbox(box(-4.56)))
 
     @Test
-    def float64MaxValue(): Unit \ Assert + IO = assertEq(expected = Double.MAX_VALUE, unsafe unbox(box(Double.MAX_VALUE)))
+    def float64MaxValue(): Unit \ Assert = assertEq(expected = Double.MAX_VALUE, unbox(box(Double.MAX_VALUE)))
 
     @Test
-    def float64MinValue(): Unit \ Assert + IO = assertEq(expected = Double.MIN_VALUE, unsafe unbox(box(Double.MIN_VALUE)))
+    def float64MinValue(): Unit \ Assert = assertEq(expected = Double.MIN_VALUE, unbox(box(Double.MIN_VALUE)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int8                                                                    //
@@ -134,10 +134,10 @@ mod TestBox {
     def int8RoundTrip02(): Unit \ Assert = assertEq(expected = -128i8, unbox(box(-128i8)))
 
     @Test
-    def int8MaxValue(): Unit \ Assert + IO = assertEq(expected = Byte.MAX_VALUE, unsafe unbox(box(Byte.MAX_VALUE)))
+    def int8MaxValue(): Unit \ Assert = assertEq(expected = Byte.MAX_VALUE, unbox(box(Byte.MAX_VALUE)))
 
     @Test
-    def int8MinValue(): Unit \ Assert + IO = assertEq(expected = Byte.MIN_VALUE, unsafe unbox(box(Byte.MIN_VALUE)))
+    def int8MinValue(): Unit \ Assert = assertEq(expected = Byte.MIN_VALUE, unbox(box(Byte.MIN_VALUE)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int16                                                                   //
@@ -162,10 +162,10 @@ mod TestBox {
     def int16RoundTrip02(): Unit \ Assert = assertEq(expected = -32768i16, unbox(box(-32768i16)))
 
     @Test
-    def int16MaxValue(): Unit \ Assert + IO = assertEq(expected = Short.MAX_VALUE, unsafe unbox(box(Short.MAX_VALUE)))
+    def int16MaxValue(): Unit \ Assert = assertEq(expected = Short.MAX_VALUE, unbox(box(Short.MAX_VALUE)))
 
     @Test
-    def int16MinValue(): Unit \ Assert + IO = assertEq(expected = Short.MIN_VALUE, unsafe unbox(box(Short.MIN_VALUE)))
+    def int16MinValue(): Unit \ Assert = assertEq(expected = Short.MIN_VALUE, unbox(box(Short.MIN_VALUE)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int32                                                                   //
@@ -190,10 +190,10 @@ mod TestBox {
     def int32RoundTrip02(): Unit \ Assert = assertEq(expected = -2147483648i32, unbox(box(-2147483648i32)))
 
     @Test
-    def int32MaxValue(): Unit \ Assert + IO = assertEq(expected = Integer.MAX_VALUE, unsafe unbox(box(Integer.MAX_VALUE)))
+    def int32MaxValue(): Unit \ Assert = assertEq(expected = Integer.MAX_VALUE, unbox(box(Integer.MAX_VALUE)))
 
     @Test
-    def int32MinValue(): Unit \ Assert + IO = assertEq(expected = Integer.MIN_VALUE, unsafe unbox(box(Integer.MIN_VALUE)))
+    def int32MinValue(): Unit \ Assert = assertEq(expected = Integer.MIN_VALUE, unbox(box(Integer.MIN_VALUE)))
 
     /////////////////////////////////////////////////////////////////////////////
     // Int64                                                                   //
@@ -218,9 +218,9 @@ mod TestBox {
     def int64RoundTrip02(): Unit \ Assert = assertEq(expected = -9223372036854775808i64, unbox(box(-9223372036854775808i64)))
 
     @Test
-    def int64MaxValue(): Unit \ Assert + IO = assertEq(expected = Long.MAX_VALUE, unsafe unbox(box(Long.MAX_VALUE)))
+    def int64MaxValue(): Unit \ Assert = assertEq(expected = Long.MAX_VALUE, unbox(box(Long.MAX_VALUE)))
 
     @Test
-    def int64MinValue(): Unit \ Assert + IO = assertEq(expected = Long.MIN_VALUE, unsafe unbox(box(Long.MIN_VALUE)))
+    def int64MinValue(): Unit \ Assert = assertEq(expected = Long.MIN_VALUE, unbox(box(Long.MIN_VALUE)))
 
 }

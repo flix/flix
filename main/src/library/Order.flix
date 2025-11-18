@@ -364,7 +364,7 @@ instance Order[BigInt] {
 instance Order[String] {
 
     pub def compare(x: String, y: String): Comparison =
-        Comparison.fromInt32((unsafe x.compareTo(y)))
+        Comparison.fromInt32(x.compareTo(y))
 
 }
 
