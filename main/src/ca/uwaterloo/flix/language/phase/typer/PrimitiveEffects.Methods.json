@@ -1,5 +1,6 @@
 {
   "methods": {
+    "java.math.BigInteger::pow": "",
     "java.lang.Runtime::version": ""
   }
 }

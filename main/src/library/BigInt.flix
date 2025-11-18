@@ -40,7 +40,7 @@ mod BigInt {
     /// Returns `base` raised to the power of `n`.
     ///
     pub def pow(base: {base = BigInt}, n: Int32): BigInt =
-        unsafe base#base.pow(n)
+        base#base.pow(n)
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
