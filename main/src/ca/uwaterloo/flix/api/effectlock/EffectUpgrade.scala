@@ -32,6 +32,14 @@ object EffectUpgrade {
     isGeneralizable(sc1, sc2) || isSubset(sc1, sc2)
   }
 
+  /**
+    * Generalize-rule
+    *
+    * 𝜎1 ⊑ 𝜏2
+    * -------
+    * 𝜎1 ⪯ 𝜏2
+    *
+    */
   private def isGeneralizable(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
     implicit val eqEnv: EqualityEnv = EqualityEnv.empty
     val renv = RigidityEnv.apply(SortedSet.from(sc02.quantifiers))
