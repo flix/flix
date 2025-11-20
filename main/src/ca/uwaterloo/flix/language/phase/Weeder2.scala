@@ -704,7 +704,6 @@ object Weeder2 {
         case "@LoweringTarget" => LoweringTarget(loc)
         case "@Lazy" => Lazy(loc)
         case "@LazyWhenPure" => LazyWhenPure(loc)
-        case "@MustUse" => MustUse(loc)
         case "@Skip" => Skip(loc)
         case "@Test" | "@test" => Test(loc)
         case "@TailRec" => TailRecursive(loc)
@@ -1294,7 +1293,6 @@ object Weeder2 {
                 case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
                 case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
                 case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.ColonColonColon, _, _, _, _, _) => Validation.Success(Expr.FAppend(e1, e2, tree.loc))
                 case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
                 case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
                   tryPickQName(exprs(1)) match {
@@ -1344,6 +1342,9 @@ object Weeder2 {
       case TokenKind.EqualEqual => Some("Eq.eq")
       case TokenKind.BangEqual => Some("Eq.neq")
 
+      // List operators
+      case TokenKind.ColonColonColon => Some("List.append")
+
       // Unsupported operators
       case _ => None
     }
@@ -1353,12 +1354,14 @@ object Weeder2 {
       pickAll(TreeKind.Expr.Expr, tree) match {
         case exprCondition :: exprThen :: exprElse :: Nil =>
           mapN(visitExpr(exprCondition), visitExpr(exprThen), visitExpr(exprElse)) {
-            (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
+            (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, Some(eelse), tree.loc)
           }
-        case _ =>
-          val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, SyntacticContext.Expr.OtherExpr, hint = Some("the else-branch is required in Flix."), tree.loc)
-          sctx.errors.add(error)
-          Validation.Success(Expr.Error(error))
+        case exprCondition :: exprThen :: Nil =>
+          mapN(visitExpr(exprCondition), visitExpr(exprThen)) {
+            (condition, tthen) => Expr.IfThenElse(condition, tthen, None, tree.loc)
+          }
+        case exprs =>
+          throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
       }
     }
 

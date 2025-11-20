@@ -504,6 +504,34 @@ mod BPlusTree {
     }
 
     ///
+    /// Returns a string containing all values in `t`, in key order,
+    /// with each value formatted by its `ToString` instance and separated by `sep`.
+    ///
+    pub def joinValues(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[v] =
+        joinWith(_ -> v -> ToString.toString(v), sep, t)
+
+    ///
+    /// Returns a string containing all keys in `t`, in key order,
+    /// with each key formatted by its `ToString` instance and separated by `sep`.
+    ///
+    pub def joinKeys(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[k] =
+        joinWith(k -> _ -> ToString.toString(k), sep, t)
+
+    ///
+    /// Applies `f` to each key-value pair in `t`, in key order, to obtain a
+    /// string and returns all results joined together using `sep`.
+    ///
+    pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef = region rc {
+        let sb = StringBuilder.empty(rc);
+        foreach ((k, v) <- t) {
+            StringBuilder.append(f(k, v), sb);
+            StringBuilder.append(sep, sb)
+        };
+        let str = StringBuilder.toString(sb);
+        String.dropRight(String.length(sep), str)
+    }
+
+    ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
     /// `f` must not modify `t`.
     ///
@@ -730,7 +758,7 @@ mod BPlusTree {
     /// It is assumed that this function is only used in contexts
     /// where this effect is not observable outside of the RedBlackTree module.
     ///
-    def threads(): Int32 = unsafe {
+    def threads(): Int32 = {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
         multiplier * Runtime.getRuntime().availableProcessors()
@@ -870,9 +898,9 @@ mod BPlusTree {
                     Array.put(f(key, val), index, node->values);
                     Lock.unlockWrite(writeStamp, node->lock)
                 }
-            } else if (not Lock.valid(stamp, node->lock))
+            } else if (not Lock.valid(stamp, node->lock)) {
                 BPlusTree.adjustWithKey(f, key, t)
-            else ()
+            }
         }
 
         ///
@@ -1572,9 +1600,9 @@ mod BPlusTree {
             let index = binarySearch(min, search, minLeaf);
             if (index < 0) {
                 let insertionPoint = toInsertionPoint(index);
-                if (insertionPoint <= minLeaf->size)
+                if (insertionPoint <= minLeaf->size) {
                     traverseRight(f, insertionPoint, max, search, minLeaf)
-                else ()
+                }
             } else
                 traverseRight(f, index, max, search, minLeaf)
 
@@ -1662,9 +1690,9 @@ mod BPlusTree {
             let parentStamp = lockParent(leftNode, tree);
             rightNode->parent = leftNode->parent;
             Array.forEachWithIndex(i -> child ->
-                if (i < rightSize)
+                if (i < rightSize) {
                     child->parent = Some(rightNode)
-                else (), rightChildren);
+                }, rightChildren);
             Lock.unlockWrite(leftNodeStamp, leftNode->lock);
             Lock.unlockWrite(rightNodeStamp, rightNode->lock);
             pushKeyToParent(leftNode->parent, leftNode, rightNode, parentStamp, keyOfRight, tree)
@@ -1752,7 +1780,7 @@ mod BPlusTree {
                 if (childIndexInRight != rightSizeWithoutNew) {
                     Array.copyInto(srcPos = mid + childIndexInRight - 1, dstPos = childIndexInRight, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->keys, rightKeys);
                     Array.copyInto(srcPos = mid + childIndexInRight, dstPos = childIndexInRight + 1, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->children, rightChildren)
-                } else ();
+                };
                 (Array.get(mid - 1, leftNode->keys), rightKeys, rightChildren)
             }
         }
@@ -1846,7 +1874,7 @@ mod BPlusTree {
                 if (comparison(k, max, search) != 1) {
                     f(k, Array.get(index, node->values));
                     traverseRight(f, index + 1, max, search, node)
-                } else ()
+                }
             } else match node->next {
                 case Some(next) => traverseRight(f, 0, max, search, next)
                 case None => ()

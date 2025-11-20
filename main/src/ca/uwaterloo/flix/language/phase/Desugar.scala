@@ -536,7 +536,7 @@ object Desugar {
     case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
+      val e3 = exp3.map(visitExp).getOrElse(Expr.Cst(Constant.Unit, loc.asSynthetic))
       Expr.IfThenElse(e1, e2, e3, loc)
 
     case WeededAst.Expr.Stm(exp1, exp2, loc) =>
@@ -666,9 +666,6 @@ object Desugar {
 
     case WeededAst.Expr.FCons(exp1, exp2, loc) =>
       desugarFCons(exp1, exp2, loc)
-
-    case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
-      desugarFAppend(exp1, exp2, loc)
 
     case WeededAst.Expr.ListLit(exps, loc) =>
       desugarListLit(exps, loc)
@@ -1290,17 +1287,6 @@ object Desugar {
     }
 
     flatten(exp2, List(exp1))
-  }
-
-  /**
-    * Rewrites  [[WeededAst.Expr.FAppend]] (`xs ++ ys`) into a call to `List.append`.
-    */
-  private def desugarFAppend(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    // NB: We painstakingly construct the qualified name
-    // to ensure that source locations are available.
-    val e1 = visitExp(exp1)
-    val e2 = visitExp(exp2)
-    mkApplyFqn("List.append", List(e1, e2), loc0)
   }
 
   /**

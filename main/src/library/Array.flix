@@ -53,6 +53,14 @@ instance ForEach[Array[a, r]] {
     pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ ef + r = Array.forEach(f, a)
 }
 
+instance Formattable[Array[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: Array[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("Array#{") + joinWith(Formattable.format, fromString(", "), Array.toList(x)) + fromString("}")
+}
+
 mod Array {
     import java.lang.Object
     import java.lang.System
@@ -1299,7 +1307,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                if (f(get(i, a))) MutList.push(i, l) else ();
+                if (f(get(i, a))) { MutList.push(i, l) };
                 loop(i + 1)
             }
         };

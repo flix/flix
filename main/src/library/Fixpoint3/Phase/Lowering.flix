@@ -182,7 +182,7 @@ mod Fixpoint3.Phase.Lowering {
             let numOfArities = UniqueInts.get(idToIndex);
             let arities = Array.empty(rc, numOfArities);
             foreach ((rv, arity) <- arityInformation) {
-                Array.put(arity, UniqueInts.getIndex(rv, idToIndex), arities)
+                Array.put(arity, UniqueInts.createIndex(rv, idToIndex), arities)
             };
             (ExecutableRam.RamProgram.Program(loweredStmt, newFacts, meta, indexInfo, (Array.toVector(arities), constWrites), typeInfo), boxing)
     }
@@ -323,9 +323,9 @@ mod Fixpoint3.Phase.Lowering {
                         None
                     case _ => Some(x)
                 }, tests);
-                if (Vector.length(otherBools) != 0)
+                if (Vector.length(otherBools) != 0) {
                     unchecked_cast(bug!("Bug in Fixpoint.Lowering: Bools except equality in query") as _ \ r)
-                else ();
+                };
                 ExecutableRam.RelOp.Query(lowerRowVar(rv, idToIndex), index, oldPos, den, thisWriteTo, loweredBody)
             case Ram.RelOp.Functional(rv, f, terms, body, _, thisType) =>
                 let loweredBody = lowerOpRec(body);
@@ -376,20 +376,21 @@ mod Fixpoint3.Phase.Lowering {
             case Ram.RamTerm.Lit(val, ty) => ExecutableRam.RamTerm.Lit(Boxing.unboxWith(val, ty, boxing), val)
             case Ram.RamTerm.ProvMax(vec) =>
                 vec
-                    |> Vector.map(match (rv, i) -> (UniqueInts.getIndex(rv, idToIndex), i))
+                    |> Vector.map(match (rv, i) -> (UniqueInts.createIndex(rv, idToIndex), i))
                     |> ExecutableRam.RamTerm.ProvMax
             case Ram.RamTerm.RowLoad(rv, index, ty, RelSym.Symbol(_, arity, den)) =>
                 match den {
-                    case Denotation.Relational => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, ty)
+                    case Denotation.Relational => ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.createIndex(rv, idToIndex), index, ty)
                     case Denotation.Latticenal(_, _, _, _) =>
                         if (index < arity - 1) {
-                            ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.getIndex(rv, idToIndex), index, ty)
+                            ExecutableRam.RamTerm.LoadFromTuple(UniqueInts.createIndex(rv, idToIndex), index, ty)
                         } else {
-                            ExecutableRam.RamTerm.LoadLatVar(UniqueInts.getIndex(rv, idToIndex), ty)
+                            ExecutableRam.RamTerm.LoadLatVar(UniqueInts.createIndex(rv, idToIndex), ty)
                         }
                 }
             case Ram.RamTerm.Meet(_, _, _, ty) =>
-                let representingRowVar = lowerMeet(term, idToIndex, meetWithMap);
+                unifyMeet(term, meetWithMap);
+                let representingRowVar = getAnyMeetRowVar(term);
                 let pos = computeLatticeMeetPos(representingRowVar, idToIndex, meetWithMap);
                 ExecutableRam.RamTerm.LoadLatVar(pos, ty)
             case Ram.RamTerm.App1(f, t1, ty)                   => ExecutableRam.RamTerm.App1(f, lowerT(t1), ty)
@@ -400,27 +401,41 @@ mod Fixpoint3.Phase.Lowering {
         }
 
     ///
-    /// Return the position the `Meet` where `term` will be stored.
+    /// Return any `RowVar` involved in the meet of `term`.
     ///
-    /// Unify every `RowVar` meet during unpacking of `Meet` in `meetWithMap`.
+    /// `term` must be a `RamTerm.Meet` or a `RamTerm.RowLoad`.
     ///
-    def lowerMeet(
-        term: Ram.RamTerm,
-        idToIndex: IdToIndex[r],
-        meetWithMap: MeetWithMap[r]
-    ): RowVar \ r = match term {
+    def getAnyMeetRowVar(
+        term: Ram.RamTerm
+    ): RowVar = match term {
         case Ram.RamTerm.RowLoad(rv, _, _, _) =>
-            let (_, meetDisjointSet) = meetWithMap;
-            MutDisjointSets.makeSet(rv, meetDisjointSet);
             rv
-        case Ram.RamTerm.Meet(_, t1, (rv, _), _) =>
-            let (_, meetDisjointSet) = meetWithMap;
-            let prevRv = lowerMeet(t1, idToIndex, meetWithMap);
-            MutDisjointSets.makeSet(rv, meetDisjointSet);
-            MutDisjointSets.makeSet(prevRv, meetDisjointSet);
-            MutDisjointSets.union(rv, prevRv, meetDisjointSet);
+        case Ram.RamTerm.Meet(_, _, (rv, _), _) =>
             rv
         case _ => unreachable!()
+    }
+
+    ///
+    /// Unify every `RowVar` met during unpacking of `term` in `meetWithMap`.
+    ///
+    /// `term` must be a `RamTerm.Meet` or a `RamTerm.RowLoad`.
+    ///
+    def unifyMeet(
+        term: Ram.RamTerm,
+        meetWithMap: MeetWithMap[r]
+    ): Unit \ r = {
+        let unifyingRv = getAnyMeetRowVar(term);
+        def loop(t) = match t {
+            case Ram.RamTerm.RowLoad(rv, _, _, _) =>
+                let (_, meetDisjointSet) = meetWithMap;
+                MutDisjointSets.union(rv, unifyingRv, meetDisjointSet)
+            case Ram.RamTerm.Meet(_, t1, (rv, _), _) =>
+                let (_, meetDisjointSet) = meetWithMap;
+                MutDisjointSets.union(rv, unifyingRv, meetDisjointSet);
+                loop(t1)
+            case _ => unreachable!()
+        };
+        loop(term)
     }
 
     ///
@@ -454,7 +469,7 @@ mod Fixpoint3.Phase.Lowering {
                 let sPos = getOrCrash(Map.get((s, 0), placements));
                 Some(ExecutableRam.BoolExp.NotMemberOf(Vector.map(lowerT, terms), sPos, den))
             case Ram.BoolExp.NotBot(t1, _, _) =>
-                lowerMeet(t1, idToIndex, meetWithMap);
+                unifyMeet(t1, meetWithMap);
                 None
             case Ram.BoolExp.Leq(box, rv, relSym) =>
                 let leq = match toDenotation(relSym) {
@@ -476,7 +491,7 @@ mod Fixpoint3.Phase.Lowering {
     /// Note: every `RowVar` is assigned a unique memory position.
     ///
     def lowerRowVar(rowVar: RowVar, idToIndex: IdToIndex[r]): Int32 \ r =
-        UniqueInts.getIndex(rowVar, idToIndex)
+        UniqueInts.createIndex(rowVar, idToIndex)
 
     ///
     /// Add `rv` to `meetWithMap`.

@@ -899,6 +899,111 @@ mod TestBPlusTree {
         assertFalse(BPlusTree.memberOf(0, tree))
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // joinValues                                                              //
+    /////////////////////////////////////////////////////////////////////////////
+    
+    @Test
+    def joinValues01(): Unit \ Assert = region rc {
+        let t: BPlusTree[_, Int32, _] = BPlusTree.empty(rc);
+        Assert.assertEq(expected = "", BPlusTree.joinValues(", ", t))
+    }
+
+    @Test
+    def joinValues02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(2, "b", t);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(3, "c", t);
+
+        Assert.assertEq(expected = "a, b, c", BPlusTree.joinValues(", ", t))
+    }
+
+    @Test
+    def joinValues03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(10, "x", t);
+
+        Assert.assertEq(expected = "x", BPlusTree.joinValues(" | ", t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinKeys                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def joinKeys01(): Unit \ Assert = region rc {
+        let t: BPlusTree[Int32, _, _] = BPlusTree.empty(rc);
+        Assert.assertEq(expected = "", BPlusTree.joinKeys(", ", t))
+    }
+
+    @Test
+    def joinKeys02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(3, "c", t);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(2, "b", t);
+
+        Assert.assertEq(expected = "1, 2, 3", BPlusTree.joinKeys(", ", t))
+    }
+
+    @Test
+    def joinKeys03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(42, "x", t);
+
+        Assert.assertEq(expected = "42", BPlusTree.joinKeys(" | ", t))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // joinWith                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def joinWith01(): Unit \ Assert = region rc {
+        let t: BPlusTree[String, String, _] = BPlusTree.empty(rc);
+        let f = k -> v -> "${k}:${v}";
+
+        Assert.assertEq(expected = "", BPlusTree.joinWith(f, ", ", t))
+    }
+
+    @Test
+    def joinWith02(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(2, "b", t);
+        BPlusTree.put(1, "a", t);
+        BPlusTree.put(3, "c", t);
+
+        let f = k -> v -> "${k}=>${v}";
+
+        Assert.assertEq(expected = "1=>a, 2=>b, 3=>c", BPlusTree.joinWith(f, ", ", t))
+    }
+
+    @Test
+    pub def joinWith03(): Unit \ Assert = region rc {
+        let t = BPlusTree.empty(rc);
+        BPlusTree.put(7, 9, t);
+
+        let f = k -> v -> "${k * v}";
+
+        Assert.assertEq(expected = "63", BPlusTree.joinWith(f, "; ", t))
+    }
+
+    @Test
+    def joinWith04(): Unit \ Assert = region rc {
+        let t = BPlusTree.emptyWithArity(rc, 5);
+        foreach (i <- Range.Range(0, 100)) {
+            BPlusTree.put(i, "${i}", t)
+        };
+
+        let f = k -> v -> "${k}=${v}";
+
+        let keys = List.range(0, 100);
+        let expected = List.join(", ", List.map(i -> "${i}=${i}", keys));
+
+        Assert.assertEq(expected = expected, BPlusTree.joinWith(f, ", ", t))
+    }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // minimumKey                                                              //

@@ -921,10 +921,10 @@ mod Fixpoint3.Solver {
         case Datalog(_, cs) => region rc {
             let pFacts = MutList.empty(rc);
             foreach (Constraint(HeadAtom(headPred, _, terms), body) <- cs) {
-                if (headPred == p and Vector.isEmpty(body))
+                if (headPred == p and Vector.isEmpty(body)) {
                     let vs = Vector.map(headTermValue, terms);
                     MutList.push(f(vs), pFacts)
-                else ()
+                }
             };
             MutList.toVector(pFacts)
         }
@@ -952,7 +952,7 @@ mod Fixpoint3.Solver {
                                         lat
                                 }, arity + 1);
                                 MutList.push(f(vs), pFacts)
-                            } else ()
+                            }
                         }, rel)
                 });
             MutList.toVector(pFacts)

@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.language.CompilationMessageKind.*
-import ca.uwaterloo.flix.language.ast.shared.SyntacticContext
 
 sealed trait CompilationMessageKind {
   override def toString: String = this match {
@@ -26,7 +25,7 @@ sealed trait CompilationMessageKind {
     case KindError => "Kind Error"
     case LexerError => "Lexer Error"
     case NameError => "Name Error"
-    case ParseError(sctx) => s"Parse Error ($sctx)"
+    case ParseError => "Parse Error"
     case PatternMatchError => "Pattern Match Error"
     case RedundancyError => "Redundancy Error"
     case ResolutionError => "Resolution Error"
@@ -35,6 +34,29 @@ sealed trait CompilationMessageKind {
     case TestError => "Test Error"
     case TypeError => "Type Error"
     case WeederError => "Syntax Error"
+  }
+
+  /**
+    * Returns the next compilation message kind in the phase order.
+    *
+    * Returns `None` if this is the last phase.
+    */
+  def next: Option[CompilationMessageKind] = this match {
+    case LexerError => Some(ParseError)
+    case ParseError => Some(WeederError)
+    case WeederError => Some(NameError)
+    case NameError => Some(ResolutionError)
+    case ResolutionError => Some(KindError)
+    case KindError => Some(DerivationError)
+    case DerivationError => Some(TypeError)
+    case TypeError => Some(EntryPointError)
+    case EntryPointError => Some(InstanceError)
+    case InstanceError => Some(StratificationError)
+    case StratificationError => Some(PatternMatchError)
+    case PatternMatchError => Some(RedundancyError)
+    case RedundancyError => Some(SafetyError)
+    case SafetyError => None
+    case TestError => None
   }
 }
 
@@ -52,7 +74,7 @@ object CompilationMessageKind {
 
   case object NameError extends CompilationMessageKind
 
-  case class ParseError(sctx: SyntacticContext) extends CompilationMessageKind
+  case object ParseError extends CompilationMessageKind
 
   case object PatternMatchError extends CompilationMessageKind
 

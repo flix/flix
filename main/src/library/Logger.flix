@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Magnus Madsen
+ *  Copyright 2025 Magnus Madsen
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,36 +22,38 @@ pub eff Logger {
     ///
     /// Logs the given message `m` at the given severity `s`.
     ///
-    def log(s: Severity, m: String): Unit
+    def log(s: Severity, m: RichString): Unit
 
 }
 
 mod Logger {
 
+    use RichString.{gray, cyan, green, yellow, red, bold, text};
+
     ///
     /// Logs the message `m` at the `Trace` level.
     ///
-    pub def trace(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Trace, "${m}")
+    pub def trace(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Trace, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Debug` level.
     ///
-    pub def debug(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Debug, "${m}")
+    pub def debug(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Debug, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Info` level.
     ///
-    pub def info(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Info, "${m}")
+    pub def info(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Info, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Warn` level.
     ///
-    pub def warn(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Warn, "${m}")
+    pub def warn(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Warn, Formattable.format(m))
 
     ///
     /// Logs the message `m` at the `Fatal` level.
     ///
-    pub def fatal(m: a): Unit \ Logger with ToString[a] = Logger.log(Severity.Fatal, "${m}")
+    pub def fatal(m: a): Unit \ (Logger + Formattable.Aef[a]) with Formattable[a] = Logger.log(Severity.Fatal, Formattable.format(m))
 
     ///
     /// Handles the `Logger` effect of the given function `f`.
@@ -62,7 +64,18 @@ mod Logger {
         run {
             f(x)
         } with handler Logger {
-            def log(s, m, k) = { println("[${s}] ${m}"); k() }
+            def log(s, m, k) = {
+                let prefix = match s {
+                    case Severity.Trace => gray("[Trace]")
+                    case Severity.Debug => cyan("[Debug]")
+                    case Severity.Info  => green("[Info]")
+                    case Severity.Warn  => yellow("[Warn]")
+                    case Severity.Fatal => bold(red("[Fatal]"))
+                };
+                let output = prefix + text(" ") + m;
+                println(RichString.toString(output));
+                k()
+            }
         }
 
     ///

@@ -26,7 +26,7 @@ mod String {
     ///
     /// Returns the character at position `i` in the string `s`.
     ///
-    pub def charAt(i: Int32, s: String): Char = unsafe s.charAt(i)
+    pub def charAt(i: Int32, s: String): Char = s.charAt(i)
 
     ///
     /// Optionally return the character at position `i` in the string `s`.
@@ -40,7 +40,7 @@ mod String {
     ///
     /// Returns the code point at position `i` in the string `s`.
     ///
-    pub def codePointAt(i: Int32, s: String): Int32 = unsafe s.codePointAt(i)
+    pub def codePointAt(i: Int32, s: String): Int32 = s.codePointAt(i)
 
     ///
     /// Optionally returns the code point at position `i` in the string `s`.
@@ -55,13 +55,13 @@ mod String {
     /// Returns the string `s1` followed by the string `s2`.
     ///
     pub def concat(s1: String, s2: String): String =
-        unsafe s1.concat(s2)
+        s1.concat(s2)
 
     ///
     /// Returns `true` if the string `s` is the empty string.
     ///
     pub def isEmpty(s: String): Bool =
-        unsafe s.isEmpty()
+        s.isEmpty()
 
     ///
     /// Returns `true` if the string `s` is non-empty.
@@ -72,7 +72,7 @@ mod String {
     /// Returns the number of characters the string `s`.
     ///
     pub def length(s: String): Int32 =
-        unsafe s.length()
+        s.length()
 
     ///
     /// Returns the number of characters the string `s`.
@@ -83,31 +83,31 @@ mod String {
     /// Returns `true` if the string `s` starts with the string `prefix`.
     ///
     pub def startsWith(prefix: {prefix = String}, s: String): Bool =
-        unsafe s.startsWith(prefix#prefix)
+        s.startsWith(prefix#prefix)
 
     ///
     /// Returns `true` if the string `s` ends with the string `suffix`.
     ///
     pub def endsWith(suffix: {suffix = String}, s: String): Bool =
-        unsafe s.endsWith(suffix#suffix)
+        s.endsWith(suffix#suffix)
 
     ///
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] =
-        unsafe Array.toList(unsafe s.split(regex#regex))
+        unchecked_cast(Array.toList(s.split(regex#regex)) as _ \ {})
 
     ///
     /// Returns the lower case version of the string `s`.
     ///
     pub def toLowerCase(s: String): String =
-        unsafe s.toLowerCase()
+        s.toLowerCase()
 
     ///
     /// Returns the upper case version of the string `s`.
     ///
     pub def toUpperCase(s: String): String =
-        unsafe s.toUpperCase()
+        s.toUpperCase()
 
     ///
     /// Returns the given string `s` as a list of characters.
@@ -120,12 +120,12 @@ mod String {
     /// Returns a new empty string if there is no characters in `s`.
     ///
     pub def trim(s: String): String =
-        unsafe s.trim()
+        s.trim()
 
     ///
     /// Get the system line separator.
     ///
-    pub def lineSeparator(): String = unsafe System.lineSeparator()
+    pub def lineSeparator(): String = System.lineSeparator()
 
     ///
     /// Returns the given string `s` as an array of characters.
@@ -155,7 +155,7 @@ mod String {
     ///
     pub def toRegex(regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            unsafe Pattern.compile(regex)
+            Pattern.compile(regex)
         })
 
 
@@ -170,7 +170,7 @@ mod String {
     ///
     pub def toRegexWithFlags(flags: Set[Flag], regex: String): Result[String, Regex] =
         Result.tryCatch(_ -> {
-            unsafe Pattern.compile(regex, Regex.sumFlags(flags))
+            Pattern.compile(regex, Regex.sumFlags(flags))
         })
 
 
@@ -302,7 +302,7 @@ mod String {
     ///
     pub def isMatch(regex: {regex = String}, s: String): Bool =
         try {
-            unsafe s.matches(regex#regex)
+            s.matches(regex#regex)
         } catch {
             case _: PatternSyntaxException => false
         }
@@ -318,9 +318,9 @@ mod String {
     ///
     def isSubmatchHelper(pattern: String, s: String): Bool =
         try {
-            let p1 = unsafe Pattern.compile(pattern);
-            let m1 = unsafe p1.matcher(s);
-            unsafe m1.find(0)
+            let p1 = Pattern.compile(pattern);
+            let m1 = p1.matcher(s);
+            unchecked_cast(m1.find(0) as _ \ {})
         } catch {
             case _: PatternSyntaxException => false
         }
@@ -331,7 +331,7 @@ mod String {
     /// If `b` or `e` are out-of-bounds, return the empty string.
     ///
     pub def slice(start: {start = Int32}, end: {end = Int32}, s: String): String = try {
-        unsafe s.substring(start#start, end#end)
+        s.substring(start#start, end#end)
     } catch {
         case _: IndexOutOfBoundsException => ""
     }
@@ -404,7 +404,7 @@ mod String {
             if (i >= len)
                 ()
             else {
-                if (f(charAt(i, s))) MutList.push(i, l) else ();
+                if (f(charAt(i, s))) { MutList.push(i, l) };
                 loop(i + 1)
             }
         };
@@ -761,7 +761,7 @@ mod String {
         if (n < 0)
             ""
         else
-            unsafe s.repeat(n)
+            s.repeat(n)
 
     ///
     /// Pad the string `s` at the left with the supplied char `c` to fit the width `w`.
@@ -810,25 +810,25 @@ mod String {
     /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
-        unsafe s.replace(src#src, dst#dst)
+        s.replace(src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
     pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
-        unsafe s.replace(src#src, dst#dst)
+        s.replace(src#src, dst#dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex = String}, to: {to = String}, s: String): String =
-        unsafe s.replaceAll(regex#regex, to#to)
+        s.replaceAll(regex#regex, to#to)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex = String}, to: {to = String}, s: String): String =
-        unsafe s.replaceFirst(regex#regex, to#to)
+        s.replaceFirst(regex#regex, to#to)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
@@ -985,7 +985,7 @@ mod String {
         if (isEmpty(substr#substr))
             None
         else {
-            let i = unsafe s.indexOf(substr#substr);
+            let i = s.indexOf(substr#substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1000,7 +1000,7 @@ mod String {
         if (isEmpty(substr#substr))
             None
         else {
-            let i = unsafe s.lastIndexOf(substr#substr);
+            let i = s.lastIndexOf(substr#substr);
             if (i < 0) None else Some(i)
         }
 
@@ -1126,7 +1126,7 @@ mod String {
     /// This implements a forloop, the end point `e` is inclusive.
     ///
     def forIndex(b: Int32, e: Int32, f: Int32 -> Unit \ ef): Unit \ ef =
-        if (b <= e) { f(b); forIndex(b + 1, e, f) } else ()
+        if (b <= e) { f(b); forIndex(b + 1, e, f) }
 
     ///
     /// Helper function for `levenshteinDistance`.
@@ -1188,7 +1188,7 @@ mod String {
         if (isEmpty(substr#substr))
             None
         else {
-            let ix = unsafe s.indexOf(substr#substr, offset#offset);
+            let ix = s.indexOf(substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
@@ -1201,7 +1201,7 @@ mod String {
         if (isEmpty(substr#substr))
             None
         else {
-            let ix = unsafe s.lastIndexOf(substr#substr, offset#offset);
+            let ix = s.lastIndexOf(substr#substr, offset#offset);
             if (ix < 0) None else Some(ix)
         }
 
