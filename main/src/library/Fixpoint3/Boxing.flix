@@ -67,7 +67,7 @@ mod Fixpoint3.Boxing {
     @Internal
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r]) \ r =
         let boxingInfo = initializeInternal(rc, program, withProv);
-        let facts = unsafely IO { initializeFacts(rc, program, boxingInfo) };
+        let facts = unsafe IO { initializeFacts(rc, program, boxingInfo) };
         (boxingInfo, facts)
 
     ///

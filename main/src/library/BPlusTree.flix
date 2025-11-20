@@ -535,7 +535,7 @@ mod BPlusTree {
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
     /// `f` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads.
+    /// This method unsafe removes the `r` effect when spawning threads.
     ///
     /// Not thread-safe.
     ///
@@ -570,7 +570,7 @@ mod BPlusTree {
     ///
     /// `f1` and `f2` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads in case 2.
+    /// This method unsafe removes the `r` effect when spawning threads in case 2.
     ///
     /// Not thread-safe.
     ///

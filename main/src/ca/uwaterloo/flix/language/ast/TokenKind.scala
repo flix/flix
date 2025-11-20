@@ -145,7 +145,7 @@ sealed trait TokenKind {
       case TokenKind.KeywordTypeMatch => "'typematch'"
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
-      case TokenKind.KeywordUnsafely => "'unsafely'"
+      case TokenKind.KeywordUnsafe => "'unsafe'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
@@ -276,7 +276,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
-    case TokenKind.KeywordUnsafely => true
+    case TokenKind.KeywordUnsafe => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
@@ -448,7 +448,7 @@ sealed trait TokenKind {
     case TokenKind.KeywordTry => true
     case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
-    case TokenKind.KeywordUnsafely => true
+    case TokenKind.KeywordUnsafe => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordXvar => true
     case TokenKind.ListHash => true
@@ -880,7 +880,7 @@ object TokenKind {
 
   case object KeywordUniv extends TokenKind
 
-  case object KeywordUnsafely extends TokenKind
+  case object KeywordUnsafe extends TokenKind
 
   case object KeywordUse extends TokenKind
 

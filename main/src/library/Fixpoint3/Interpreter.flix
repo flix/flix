@@ -186,7 +186,7 @@ mod Fixpoint3.Interpreter {
             let ctx = (db, env, boxing);
             evalStmt(rc, ctx, parLevel(), stmt);
             // Remove the `IO` effect from dealing with static.
-            let boxedFacts = unsafely IO { marshallDb(rc, db, boxing, indexPos, predState, typeInfo) };
+            let boxedFacts = unsafe IO { marshallDb(rc, db, boxing, indexPos, predState, typeInfo) };
             (boxedFacts, predState)
     }
 

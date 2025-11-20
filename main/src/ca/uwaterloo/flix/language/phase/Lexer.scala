@@ -127,7 +127,7 @@ object Lexer {
       ("type", TokenKind.KeywordType),
       ("typematch", TokenKind.KeywordTypeMatch),
       ("unchecked_cast", TokenKind.KeywordUncheckedCast),
-      ("unsafely", TokenKind.KeywordUnsafely),
+      ("unsafe", TokenKind.KeywordUnsafe),
       ("use", TokenKind.KeywordUse),
       ("where", TokenKind.KeywordWhere),
       ("with", TokenKind.KeywordWith),

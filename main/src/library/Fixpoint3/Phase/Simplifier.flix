@@ -40,7 +40,7 @@ mod Fixpoint3.Phase.Simplifier {
     /// The returned RAM program is always the same size or smaller.
     ///
     @Internal
-    pub def simplifyProgram(program: RamProgram): RamProgram = unsafely IO {
+    pub def simplifyProgram(program: RamProgram): RamProgram = unsafe IO {
         match program {
             case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
                 // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
