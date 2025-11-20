@@ -92,9 +92,9 @@ object Lowering {
 
     lazy val FList: Symbol.EnumSym = Symbol.mkEnumSym("List")
 
-    lazy val ChannelSender: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Sender")
-
     lazy val ChannelReceiver: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Receiver")
+
+    lazy val ChannelSender: Symbol.EnumSym = Symbol.mkEnumSym("Concurrent.Channel.Sender")
   }
 
   private object Types {
@@ -119,9 +119,9 @@ object Lowering {
 
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
-    lazy val ChannelSender: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelSender, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
-
     lazy val ChannelReceiver: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelReceiver, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
+
+    lazy val ChannelSender: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelSender, Kind.Star ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val VectorOfBoxed: Type = Type.mkVector(Types.Boxed, SourceLocation.Unknown)
 
@@ -1448,6 +1448,9 @@ object Lowering {
 
   /**
     * Make a new channel tuple expression.
+    *
+    * The value of the returned expression has type:
+    * {{{ (Sender[tpe], Receiver[tpe]) }}}
     */
   private def mkNewChannelTuple(exp: LoweredAst.Expr, tpe: Type, resTpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
     val itpe = Type.mkIoArrow(exp.tpe, resTpe, loc)
@@ -1814,14 +1817,14 @@ object Lowering {
   }
 
   /**
-    * The type of a channel which can transmit variables of type `tpe`.
+    * The channel type channel `Receiver[tpe]`.
     */
   private def mkReceiveChannelTpe(tpe: Type, loc: SourceLocation): Type = {
     Type.Apply(Types.ChannelReceiver, tpe, loc)
   }
 
   /**
-    * The type of a channel which can transmit variables of type `tpe`.
+    * The channel type channel `Sender[tpe]`.
     */
   private def mkSendChannelTpe(tpe: Type, loc: SourceLocation): Type = {
     Type.Apply(Types.ChannelSender, tpe, loc)
@@ -1843,17 +1846,17 @@ object Lowering {
   }
 
   /**
-    * An expression for a channel variable called `sym`
-    */
-  private def mkSendChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
-    LoweredAst.Expr.Var(sym, mkSendChannelTpe(tpe, loc), loc)
-  }
-
-  /**
-    * An expression for a channel variable called `sym`
+    * An expression for a channel variable called `sym` of type `Receiver[tpe]`
     */
   private def mkReceiveChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
     LoweredAst.Expr.Var(sym, mkReceiveChannelTpe(tpe, loc), loc)
+  }
+
+  /**
+    * An expression for a channel variable called `sym` of type `Sender[tpe]`
+    */
+  private def mkSendChannelExp(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation): LoweredAst.Expr = {
+    LoweredAst.Expr.Var(sym, mkSendChannelTpe(tpe, loc), loc)
   }
 
   /**
@@ -1862,18 +1865,18 @@ object Lowering {
   private def mkParChannels(exp: LoweredAst.Expr, chanSymsWithExps: List[((Symbol.VarSym, Symbol.VarSym), LoweredAst.Expr)]): LoweredAst.Expr = {
     // Make spawn expressions `spawn ch <- exp`.
     val spawns = chanSymsWithExps.foldRight(exp: LoweredAst.Expr) {
-      case (((putSym, _), e), acc) =>
+      case (((sendSym, _), e), acc) =>
         val loc = e.loc.asSynthetic
-        val e1 = mkSendChannelExp(putSym, e.tpe, loc) // The channel `ch`
+        val e1 = mkSendChannelExp(sendSym, e.tpe, loc) // The channel `ch`
         val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expr.Cst(Constant.Static, Type.mkRegionToStar(Type.IO, loc), loc)
         val e4 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
-    // Make matches like `match (chan 1) { case (putSym, getSym) => acc }`.
+    // Make matches like `match (chan 1) { case (sendSym, receiveSym) => acc }`.
     chanSymsWithExps.foldRight(spawns: LoweredAst.Expr) {
-      case (((putSym, getSym), e), acc) =>
+      case (((sendSym, receiveSym), e), acc) =>
         val loc = e.loc.asSynthetic
         val sendChannelTpe = mkSendChannelTpe(e.tpe, loc)
         val receiveChannelTpe = mkReceiveChannelTpe(e.tpe, loc)
@@ -1882,12 +1885,12 @@ object Lowering {
         val matchRule = LoweredAst.MatchRule(
           LoweredAst.Pattern.Tuple(
             Nel(
-              LoweredAst.Pattern.Var(putSym, sendChannelTpe, loc),
-              List(LoweredAst.Pattern.Var(getSym, receiveChannelTpe, loc))
+              LoweredAst.Pattern.Var(sendSym, sendChannelTpe, loc),
+              List(LoweredAst.Pattern.Var(receiveSym, receiveChannelTpe, loc))
             ),
             tupleChanType, loc
           ), None, acc)
-        LoweredAst.Expr.Match(chan, List(matchRule), acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
+        LoweredAst.Expr.Match(chan, List(matchRule), acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), loc) // The match-expression `match ch = chan {case (c_s, c_r) => acc}`
     }
   }
 
@@ -1943,7 +1946,7 @@ object Lowering {
     val last = frags.last
 
     // Generate symbols for each channel.
-    val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, (mkLetSym("channel_put", l.asSynthetic), mkLetSym("channel_get", l.asSynthetic)), e) }
+    val chanSymsWithPatAndExp = fs.map { case LoweredAst.ParYieldFragment(p, e, l) => (p, (mkLetSym("channel_send", l.asSynthetic), mkLetSym("channel_receive", l.asSynthetic)), e) }
 
     // Make `GetChannel` exps for the spawnable exps.
     val waitExps = mkBoundParWaits(chanSymsWithPatAndExp, exp)

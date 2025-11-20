@@ -25,7 +25,6 @@ object Symbols {
 
     lazy val ChannelGet: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.get")
     lazy val ChannelPut: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.put")
-    lazy val ChannelMpmcSenderAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcSenderAdmin")
     lazy val ChannelMpmcReceiverAdmin: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.mpmcReceiverAdmin")
     lazy val ChannelNewTuple: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.newChannelTuple")
     lazy val ChannelSelectFrom: Symbol.DefnSym = Symbol.mkDefnSym("Concurrent.Channel.selectFrom")

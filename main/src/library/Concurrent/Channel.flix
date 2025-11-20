@@ -17,13 +17,13 @@
 //
 
 ///
-/// Static denotes the region of global lifetime.
+/// The type of a channel used for sending data.
 ///
 @Internal
 pub type alias Sender[a: Type] = Concurrent.Channel.Sender[a]
 
 ///
-/// Static denotes the region of global lifetime.
+/// The type of a channel used for receiving data.
 ///
 @Internal
 pub type alias Receiver[a: Type] = Concurrent.Channel.Receiver[a]
@@ -42,17 +42,13 @@ mod Concurrent.Channel {
     use Concurrent.CyclicBarrier.awaitBarrier
 
     ///
-    /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
-    /// channel.
+    /// Two enums that represent multiple-producer (`Sender`) and multiple-consumer (`Receiver`) channels.
     ///
     /// The tuple corresponds to (
     ///   `admin` - The administration info of the channel.
     ///   `elementDeque` - a deque of the channel elements but only used as a
     ///       queue.
     /// )
-    ///
-    /// The region type parameter is here to avoid losing type constraints in
-    /// Monomorpher/Lowering. `Mpmc[t, Static]` should always be used.
     ///
     /// -- Conditions and Signalling --
     /// When a channel needs to notify threads about available space or elements
@@ -90,7 +86,7 @@ mod Concurrent.Channel {
     /// a [synchronous rendezvous](https://en.wikipedia.org/wiki/Barrier_(computer_science))
     /// with the thread executing `get`.
     ///
-    /// -- Mpmc / MpmcAdmin split --
+    /// -- Sender/Receiver vs MpmcAdmin split --
     /// The select function must work on heterogeneous channel collections,
     /// which cannot happen without existential types. This means that the
     /// non-polymorphic aspects relevant to select is split into its own

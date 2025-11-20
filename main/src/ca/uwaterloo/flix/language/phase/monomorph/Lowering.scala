@@ -307,7 +307,7 @@ object Lowering {
     */
   private def extractReceiverTpe(tpe: Type): Type = eraseAliases(tpe) match {
     case Type.Apply(Types.ChannelReceiver, elmType, _) => elmType
-    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
+    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a 'Receiver[type]'", tpe.loc)
   }
 
   /**

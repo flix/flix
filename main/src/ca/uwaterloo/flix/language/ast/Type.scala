@@ -774,7 +774,7 @@ object Type {
 
   /**
     * Returns the `Receiver[tpe]` or `Sender[tpe]` depending on `channelEnumSym`.
-    * `channelEnumSym` should be either `Concurrent.Channel.Rec` or `Concurrent.Channel.Sen`.
+    * `channelEnumSym` should be either `Concurrent.Channel.Receiver` or `Concurrent.Channel.Sender`.
     */
   private def mkChan(tpe: Type, channelEnumSym: Symbol.EnumSym, loc: SourceLocation): Type = {
       Type.Apply(
