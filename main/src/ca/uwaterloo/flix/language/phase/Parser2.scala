@@ -2670,7 +2670,7 @@ object Parser2 {
     }
 
     /**
-      * `'unsafe' TTYPE { EXPRESSION }`
+      * `'unsafe' TTYPE { STATEMENT }`
       *
       * produces
       *
@@ -2685,7 +2685,7 @@ object Parser2 {
       expect(TokenKind.KeywordUnsafe)
       Type.ttype()
       expect(TokenKind.CurlyL)
-      expression()
+      statement()
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Unsafe)
     }

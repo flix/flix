@@ -232,7 +232,7 @@ mod Fixpoint3.Boxing {
         let (_, _, typeInfo, _) = info;
         match BoxingType.getType(index, typeInfo) {
             case Types.TyBool      => Boxed.BoxedBool(not(v == 0i64))
-            case Types.TyChar      => BoxedChar(unchecked_cast(Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) as _ \ {}))
+            case Types.TyChar      => BoxedChar(unsafe IO { Array.get(0, Character.toChars(getOrCrash(Int64.tryToInt32(v)))) })
             case Types.TyInt8      => BoxedInt8(getOrCrash(Int64.tryToInt8(v)))
             case Types.TyInt16     => BoxedInt16(getOrCrash(Int64.tryToInt16(v)))
             case Types.TyInt32     => BoxedInt32(getOrCrash(Int64.tryToInt32(v)))
