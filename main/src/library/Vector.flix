@@ -38,6 +38,14 @@ instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
 }
 
+instance Formattable[Vector[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Vector[a]): RichString \ Formattable.Aef[a] =
+        use RichString.{fromString, joinWith};
+        fromString("Vector#{") + joinWith(Formattable.format, fromString(", "), Vector.toList(x)) + fromString("}")
+}
+
 instance Hash[Vector[a]] with Hash[a] {
     pub def hash(v: Vector[a]): Int32 =
         Vector.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), v)
