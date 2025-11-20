@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
 
@@ -30,6 +30,7 @@ object EffectUpgrade {
     * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
     */
   def isSafe(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
+    // Alpha rename so equality of types can be done via `==`.
     val sc1 = alpha(sc01)
     val sc2 = alpha(sc02)
     isGeneralizable(sc1, sc2) || isSubset(sc1, sc2)
@@ -64,10 +65,27 @@ object EffectUpgrade {
     * ----------
     * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
     *
+    *
+    * Assumes that `sc01` and `sc02` have been alpha-renamed so the variables have the same names if they are equal.
     */
   private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
-    ???
+    isSameType(sc01, sc02) && isEffectSubset(sc02, sc01)
   }
+
+  /**
+    * Checks that the type in `sc01` is the same type as `sc02`.
+    * Assumes that they have been alpha-renamed so the variables have the same names if they are equal.
+    */
+  private def isSameType(sc01: Scheme, sc02: Scheme): Boolean = {
+    (sc01.base.typeConstructor, sc02.base.typeConstructor) match {
+      case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
+        true
+
+      case (_, _) => false
+    }
+  }
+
+  private def isEffectSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = ???
 
   /**
     * Performs alpha-renaming on `sc0`.
