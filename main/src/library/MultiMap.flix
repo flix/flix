@@ -31,6 +31,14 @@ instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
 }
 
+instance Formattable[MultiMap[k, v]] with Formattable[k], Formattable[v] {
+    type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+    pub def format(x: MultiMap[k, v]): RichString \ Formattable.Aef[k] + Formattable.Aef[v] =
+        let kvs = MultiMap.toMap(x) |> Map.toList |> List.map(match (k, vs) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(vs));
+        RichString.fromString("MultiMap#{") + RichString.joinWith(identity, RichString.fromString(", "), kvs) + RichString.fromString("}")
+}
+
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: MultiMap[k, v]): Int32 =
         let MultiMap.MultiMap(m1) = m;
