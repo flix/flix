@@ -69,13 +69,6 @@ instance ForEach[BPlusTree[k, v, r]] {
     pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
 }
 
-instance Iterable[BPlusTree[k, v, r]] {
-    type Elm = (k, v)
-    type Aef = r
-    pub def iterator(rc: Region[r1], t: BPlusTree[k, v, r]): Iterator[(k, v), r + r1, r1] \ r + r1 = 
-        BPlusTree.iterator(rc, t)
-}
-
 mod BPlusTree {
     import java.lang.Runtime
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
