@@ -553,13 +553,13 @@ mod BPlusTree {
         } else {
             let minLeaf = Node.leftMostChild(t->root);
             unchecked_cast(Vector.range(0, threadNum) |>
-            (Vector.forEach(i -> {
+            Vector.forEach(i -> {
                 let _: Unit = spawn unchecked_cast(
                     // Flix does not allow region effect in spawns. Remove the effect.
                     (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
                 ) @ rc;
                 ()
-            }): _ \ {}) as _ \ r)
+            }) as _ \ r)
         }
     }
 
@@ -1084,8 +1084,7 @@ mod BPlusTree {
             // The purpose is to be able to give them to a Java class which performs pointer comparison.
             let obj1 = unchecked_cast(o1 as JObject);
             let obj2 = unchecked_cast(o2 as JObject);
-            // Unchecked cast is here used to remove the IO effect from interacting with Java.
-            unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
+            unsafe IO { JObjects.equals(obj1, obj2) }
 
         ///
         /// Optionally returns the first mapping satisfying the function `f` in `node` and

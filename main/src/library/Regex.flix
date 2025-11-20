@@ -132,7 +132,7 @@ mod Regex {
     ///
     pub def isMatch(rgx: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, rgx, s);
-        unchecked_cast(m1.matches() as _ \ {})
+        unsafe IO { m1.matches() }
     }
 
     ///
@@ -202,14 +202,14 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `rgx`.
     ///
     pub def split(rgx: Regex, s: String): List[String] =
-        unchecked_cast(Array.toList(rgx.split(s)) as _ \ {})
+        unsafe IO { Array.toList(rgx.split(s)) }
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unchecked_cast(m1.replaceAll(dst#dst) as _ \ {})
+        unsafe IO { m1.replaceAll(dst#dst) }
     }
 
     ///
@@ -217,7 +217,7 @@ mod Regex {
     ///
     pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unchecked_cast(m1.replaceFirst(dst#dst) as _ \ {})
+        unsafe IO { m1.replaceFirst(dst#dst) }
     }
 
     ///
@@ -225,7 +225,7 @@ mod Regex {
     ///
     pub def startsWith(prefix: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, prefix, s);
-        unchecked_cast(m1.lookingAt() as _ \ {})
+        unsafe IO { m1.lookingAt() }
     }
 
     ///
@@ -433,8 +433,8 @@ mod Regex {
     ///
     pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; unchecked_cast(m1.matches() as _ \ {})}
-            case Err(_) => false
+            case Ok(Matcher(m))  => unsafe IO { m.matches() }
+            case Err(_)          => false
         }
     }
 
