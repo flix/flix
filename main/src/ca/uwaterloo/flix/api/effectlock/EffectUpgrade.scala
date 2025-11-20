@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
-import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv}
+import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.immutable.SortedSet
@@ -60,44 +61,62 @@ object EffectUpgrade {
   }
 
   /**
-    * Subset-rule
+    * `sc02` is a safe upgrade of `sc02` if its effects is a subset of `sc01`:
     *
-    * 𝜑 ∪ 𝜑′ ≡ 𝜑′
+    * 𝜑 ∪ 𝜑' ≡ 𝜑
     * ----------
     * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
     *
+    * `𝜑` are the effects of `sc01` and `𝜑'` are the effects of `sc02`.
     *
     * Assumes that `sc01` and `sc02` have been alpha-renamed so the variables have the same names if they are equal.
     */
   private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
-    isSameType(sc01, sc02) && isEffectSubset(sc02, sc01)
+    isSameType(sc01, sc02) && isEffectSubset(sc01, sc02)
   }
 
   /**
     * Checks that the type in `sc01` is the same type as `sc02`.
     * Assumes that they have been alpha-renamed so the variables have the same names if they are equal.
     */
-  private def isSameType(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
-    (sc01.base.typeConstructor, sc02.base.typeConstructor) match {
-      case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
-        // Check same args
-        val isSameArgs = ListOps.zip(sc01.base.arrowArgTypes, sc01.base.arrowArgTypes).map {
-          case (argTpe1, argTpe2) => (sc01.copy(base = argTpe1), sc02.copy(base = argTpe2))
-        }.forall { case (sc1, sc2) => isSubset(sc1, sc2) }
+  private def isSameType(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = (sc01.base.typeConstructor, sc02.base.typeConstructor) match {
+    case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
+      // Check same args
+      val isSameArgs = ListOps.zip(sc01.base.arrowArgTypes, sc01.base.arrowArgTypes).map {
+        case (argTpe1, argTpe2) => (sc01.copy(base = argTpe1), sc02.copy(base = argTpe2))
+      }.forall { case (sc1, sc2) => isSubset(sc1, sc2) }
 
-        // Check same result
-        val isSameResult = isSubset(sc01.copy(base = sc01.base.arrowResultType), sc02.copy(base = sc02.base.arrowResultType))
+      // Check same result
+      val isSameResult = isSubset(sc01.copy(base = sc01.base.arrowResultType), sc02.copy(base = sc02.base.arrowResultType))
 
-        // Assert both hold
-        isSameArgs && isSameResult
+      // Assert both hold
+      isSameArgs && isSameResult
 
-      case (_, _) =>
-        // Base case: Non-arrow types. Directly compare for equality
-        sc01 == sc02
-    }
+    case (_, _) =>
+      // Base case: Non-arrow types. Directly compare for equality
+      sc01 == sc02
   }
 
-  private def isEffectSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = ???
+  /**
+    * Checks that the effects of `upgrade` is a subset of the effects of `original`.
+    */
+  private def isEffectSubset(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = (original.base.typeConstructor, upgrade.base.typeConstructor) match {
+    case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
+      val originalEff = original.base.arrowEffectType
+      val upgradeEff = upgrade.base.arrowEffectType
+      val union = Type.mkUnion(originalEff, upgradeEff, upgradeEff.loc)
+      val renv = RigidityEnv.ofRigidVars(original.quantifiers)
+      val provenance = TypeConstraint.Provenance.ExpectEffect(originalEff, union, originalEff.loc)
+      val constraint = TypeConstraint.Equality(union, originalEff, provenance)
+      EffUnification3.unifyAll(List(constraint), Scope.Top, renv) match {
+        case Result.Ok(_) => true
+        case Result.Err(_) => false
+      }
+
+    case (_, _) =>
+      // Any non-arrow type has no effects so they are trivially always effect subsets of each other
+      true
+  }
 
   /**
     * Performs alpha-renaming on `sc0`.
