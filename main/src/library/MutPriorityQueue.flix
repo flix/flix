@@ -41,6 +41,14 @@ instance ForEach[MutPriorityQueue[a, r]] {
     pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = MutPriorityQueue.forEach(f, q)
 }
 
+instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutPriorityQueue#{") + joinWith(Formattable.format, fromString(", "), MutPriorityQueue.toList(x)) + fromString("}")
+}
+
 mod MutPriorityQueue {
 
     ///
