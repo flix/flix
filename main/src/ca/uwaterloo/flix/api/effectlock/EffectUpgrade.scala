@@ -38,9 +38,9 @@ object EffectUpgrade {
   /**
     * Generalize-rule
     *
-    * 𝜎1 ⊑ 𝜏2
+    * 𝜎1 ⊑ 𝜎2
     * -------
-    * 𝜎1 ⪯ 𝜏2
+    * 𝜎1 ⪯ 𝜎2
     *
     */
   private def isGeneralizable(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
@@ -57,6 +57,14 @@ object EffectUpgrade {
     }
   }
 
+  /**
+    * Subset-rule
+    *
+    * 𝜑 ∪ 𝜑′ ≡ 𝜑′
+    * ----------
+    * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
+    *
+    */
   private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
     ???
   }
