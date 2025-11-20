@@ -69,6 +69,9 @@ object EffectUpgrade {
     ???
   }
 
+  /**
+    * Performs alpha-renaming on `sc0`.
+    */
   private def alpha(sc0: Scheme): Scheme = {
     val seen = mutable.Map.empty[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]
 
