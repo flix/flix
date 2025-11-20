@@ -26,6 +26,9 @@ import scala.collection.mutable
 
 object EffectUpgrade {
 
+  /**
+    * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
+    */
   def isSafe(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
     val sc1 = alpha(sc01)
     val sc2 = alpha(sc02)
