@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver2
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnv
+import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -76,12 +77,23 @@ object EffectUpgrade {
     * Checks that the type in `sc01` is the same type as `sc02`.
     * Assumes that they have been alpha-renamed so the variables have the same names if they are equal.
     */
-  private def isSameType(sc01: Scheme, sc02: Scheme): Boolean = {
+  private def isSameType(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
     (sc01.base.typeConstructor, sc02.base.typeConstructor) match {
       case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
-        true
+        // Check same args
+        val isSameArgs = ListOps.zip(sc01.base.arrowArgTypes, sc01.base.arrowArgTypes).map {
+          case (argTpe1, argTpe2) => (sc01.copy(base = argTpe1), sc02.copy(base = argTpe2))
+        }.forall { case (sc1, sc2) => isSubset(sc1, sc2) }
 
-      case (_, _) => false
+        // Check same result
+        val isSameResult = isSubset(sc01.copy(base = sc01.base.arrowResultType), sc02.copy(base = sc02.base.arrowResultType))
+
+        // Assert both hold
+        isSameArgs && isSameResult
+
+      case (_, _) =>
+        // Base case: Non-arrow types. Directly compare for equality
+        sc01 == sc02
     }
   }
 
