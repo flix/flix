@@ -94,9 +94,11 @@ mod BPlusTree {
         ///
         @Internal
         pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
-            let adder = unchecked_cast((new JLongAdder(): _ \ IO) as _ \ r);
-            unchecked_cast((adder.add(Int32.toInt64(initialValue)): _ \ IO) as _ \ r);
-            AtomicCounter(adder)
+            checked_ecast(unsafe IO {
+                let adder = new JLongAdder();
+                adder.add(Int32.toInt64(initialValue));
+                AtomicCounter(adder)
+            })
 
 
         ///
@@ -105,8 +107,7 @@ mod BPlusTree {
         @Internal
         pub def increment(counter: AtomicCounter[r]): Unit \ r =
             let AtomicCounter(c) = counter;
-            unchecked_cast((c.increment(): _ \ IO) as _ \ r);
-            ()
+            checked_ecast(unsafe IO { c.increment() })
 
         ///
         /// Returns the current state of `counter`.
@@ -114,7 +115,7 @@ mod BPlusTree {
         @Internal
         pub def get(counter: AtomicCounter[r]): Int32 \ r =
             let AtomicCounter(c) = counter;
-            unchecked_cast((c.intValue(): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { c.intValue() })
     }
 
 
@@ -179,8 +180,7 @@ mod BPlusTree {
         @Internal
         pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            let stamp = unchecked_cast((l.readLock(): _ \ IO) as _ \ r);
-            unchecked_cast((l.unlockRead(stamp): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.unlockRead(l.readLock()) })
 
         ///
         /// Returns `true` if `lock` is currently held by a thread.
@@ -190,14 +190,14 @@ mod BPlusTree {
         @Internal
         pub def isLocked(lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.isWriteLocked() or l.isReadLocked(): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.isWriteLocked() or l.isReadLocked() })
 
         ///
         /// Returns a fresh lock.
         ///
         @Internal
         pub def mkLock(_: Region[r]): Lock[r] \ r =
-            Lock(unchecked_cast((new JStampedLock(): _ \ IO) as _ \ r))
+            Lock(checked_ecast(unsafe IO { new JStampedLock() }))
 
         /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
         /// The returned stamp cannot be invalidated if it was valid when issued.
@@ -207,7 +207,7 @@ mod BPlusTree {
         @Internal
         pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.tryConvertToWriteLock(stamp): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.tryConvertToWriteLock(stamp) })
 
         ///
         /// Return an optimistic stamp on `lock` which can be used in `valid` to
@@ -218,7 +218,7 @@ mod BPlusTree {
         @Internal
         pub def tryReadLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.tryOptimisticRead(): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.tryOptimisticRead() })
 
         ///
         /// Unlock `lock` with the issued write-stamp, `stamp`.
@@ -228,7 +228,7 @@ mod BPlusTree {
         @Internal
         pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.unlockWrite(stamp): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.unlockWrite(stamp) })
 
         ///
         /// Returns true if `stamp` is still valid on `lock`, meaning no thread
@@ -239,7 +239,7 @@ mod BPlusTree {
         @Internal
         pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.validate(stamp): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.validate(stamp) })
 
         ///
         /// Lock `lock` and returns the stamp.
@@ -249,7 +249,7 @@ mod BPlusTree {
         @Internal
         pub def writeLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.writeLock(): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { l.writeLock() })
     }
 
     ///

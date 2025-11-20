@@ -137,7 +137,7 @@ instance ForEach[Vector[a]] {
 instance ToFlix[Vector[a]] {
     type In = JList
     pub def toFlix(l: JList): Vector[a] = region rc {
-        let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let iter = unsafe IO { l.iterator() };
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }

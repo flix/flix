@@ -591,7 +591,7 @@ mod Regex {
     ///
     def find(m: Matcher[r]): Bool \ r =
         let Matcher(m1) = m;
-        unchecked_cast ((m1.find(): _ \ IO) as _ \ r)
+        checked_ecast(unsafe IO { m1.find() })
 
     ///
     /// Attempt to find the next match after the supplied position `pos`.
@@ -603,7 +603,7 @@ mod Regex {
     def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((m1.find(pos): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { m1.find(pos) })
         }) |> Result.getWithDefault(false)
 
 
@@ -642,7 +642,7 @@ mod Regex {
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((discard m1.$region(start#start, end#end): _ \ IO) as _ \ r)
+            checked_ecast(unsafe IO { discard m1.$region(start#start, end#end) })
         })
 
 
