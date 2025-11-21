@@ -40,7 +40,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix = new Flix
+    val flix = mkFlixInstance
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
@@ -54,7 +54,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix = new Flix
+    val flix = mkFlixInstance
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
