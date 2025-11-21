@@ -552,14 +552,16 @@ mod BPlusTree {
             forEach(f, t)
         } else {
             let minLeaf = Node.leftMostChild(t->root);
-            unchecked_cast(Vector.range(0, threadNum) |>
-            Vector.forEach(i -> {
-                let _: Unit = spawn unchecked_cast(
-                    // Flix does not allow region effect in spawns. Remove the effect.
-                    (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
-                ) @ rc;
-                ()
-            }) as _ \ r)
+            unsafe IO as r {
+                Vector.range(0, threadNum) |>
+                Vector.forEach(i -> {
+                    let _: Unit = spawn unsafe r as IO {
+                        // Flix does not allow region effect in spawns. Remove the effect.
+                        Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                    } @ rc;
+                    ()
+                })
+            }
         }
     }
 

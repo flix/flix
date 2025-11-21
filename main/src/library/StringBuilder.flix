@@ -43,14 +43,14 @@ mod StringBuilder {
     ///
     pub def appendString(s: String, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        discard unchecked_cast((msb.append(s): _ \ IO) as _ \ r)
+        discard unsafe IO as r { msb.append(s) }
 
     ///
     /// Append the code point `cp` to the StringBuilder `sb`.
     ///
     pub def appendCodePoint(cp: Int32, sb: StringBuilder[r]): Unit \ r =
         let StringBuilder(msb) = sb;
-        discard unchecked_cast((msb.appendCodePoint(cp): _ \ IO) as _ \ r)
+        discard unsafe IO as r { msb.appendCodePoint(cp) }
 
     ///
     /// Append the system line separator to the StringBuilder `sb`.
