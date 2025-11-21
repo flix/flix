@@ -34,6 +34,10 @@ instance ToString[Ipv6Addr] {
     pub def toString(x: Ipv6Addr): String = Ipv6Addr.toString(x)
 }
 
+instance Formattable[Ipv6Addr] {
+    pub def format(x: Ipv6Addr): RichString = RichString.fromString(ToString.toString(x))
+}
+
 mod Ipv6Addr {
     import java.lang.Integer
     import java.lang.NumberFormatException
