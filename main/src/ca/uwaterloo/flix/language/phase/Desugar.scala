@@ -700,7 +700,7 @@ object Desugar {
       val e = visitExp(exp)
       val eff = visitType(eff0)
       val asEff = asEff0.map(visitType)
-      Expr.Unsafe(e, eff, loc) // TODO
+      Expr.Unsafe(e, eff, asEff, loc)
 
     case WeededAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp)

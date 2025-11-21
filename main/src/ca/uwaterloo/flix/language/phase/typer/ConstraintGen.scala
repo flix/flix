@@ -800,10 +800,10 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.Unsafe(exp, eff0, loc) =>
+      case Expr.Unsafe(exp, eff0, asEff0, loc) =>
         val (tpe, eff) = visitExp(exp)
         val resTpe = tpe
-        val resEff = Type.mkDifference(eff, eff0, loc)
+        val resEff = Type.mkUnion(Type.mkDifference(eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
         (resTpe, resEff)
 
       case Expr.Without(exp, symUse, _) =>
