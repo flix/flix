@@ -47,7 +47,7 @@ object PkgTestUtils {
     * Returns the throttle time depending on whether the GitHub token is available.
     */
   private def throttleTime: (Int, Int) = runnerToken match {
-    case Some(_) => (300, 200)
+    case Some(_) => (1000, 1500)
     case None => (3000, 1500)
   }
 
