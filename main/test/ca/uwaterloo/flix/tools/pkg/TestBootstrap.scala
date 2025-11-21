@@ -63,7 +63,7 @@ class TestBootstrap extends AnyFunSuite {
     for (e <- new ZipFile(jarPath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("2014-06-27 00:00:00"))
+      assert(formatted == "2014-06-27 00:00:00")
     }
   }
 
@@ -86,7 +86,7 @@ class TestBootstrap extends AnyFunSuite {
     val hash2 = calcHash(jarPath)
 
     assert(
-      hash1.equals(hash2),
+      hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
@@ -116,7 +116,7 @@ class TestBootstrap extends AnyFunSuite {
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("2014-06-27 00:00:00"))
+      assert(formatted == "2014-06-27 00:00:00")
     }
   }
 
@@ -140,7 +140,7 @@ class TestBootstrap extends AnyFunSuite {
     val hash2 = calcHash(packagePath)
 
     assert(
-      hash1.equals(hash2),
+      hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
