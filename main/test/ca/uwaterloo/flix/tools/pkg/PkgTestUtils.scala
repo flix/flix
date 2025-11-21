@@ -12,7 +12,7 @@ object PkgTestUtils {
     */
   def getGitHubToken: Option[String] = {
     val propValue = System.getProperty("GITHUB_CI_RUNNER_TOKEN")
-    if (propValue.isBlank || propValue.isEmpty)
+    if (propValue == null || propValue.isBlank || propValue.isEmpty)
       None
     else
       Some(propValue)
