@@ -53,6 +53,14 @@ instance IndexableMut[MutList[a, r]] {
         MutList.put(v, i, t)
 }
 
+instance Formattable[MutList[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutList#{") + joinWith(Formattable.format, fromString(", "), MutList.toList(x)) + fromString("}")
+}
+
 mod MutList {
 
     ///

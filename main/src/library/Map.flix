@@ -35,6 +35,14 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
         Map.toList(x) <=> Map.toList(y)
 }
 
+instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
+    type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+    pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
+        let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v));
+        RichString.fromString("Map#{") + RichString.joinWith(identity, RichString.fromString(", "), pairs) + RichString.fromString("}")
+}
+
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }

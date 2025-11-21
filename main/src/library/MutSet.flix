@@ -34,6 +34,14 @@ instance ForEach[MutSet[a, r]] {
     pub def forEach(f: a -> Unit \ ef, s: MutSet[a, r]): Unit \ ef + r = MutSet.forEach(f, s)
 }
 
+instance Formattable[MutSet[t, r]] with Formattable[t] {
+    type Aef = Formattable.Aef[t] + r
+
+    pub def format(x: MutSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutSet#{") + joinWith(Formattable.format, fromString(", "), MutSet.toList(x)) + fromString("}")
+}
+
 mod MutSet {
 
     ///

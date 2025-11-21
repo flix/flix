@@ -29,6 +29,10 @@ instance ToString[Ipv4Addr] {
     pub def toString(x: Ipv4Addr): String = Ipv4Addr.toString(x)
 }
 
+instance Formattable[Ipv4Addr] {
+    pub def format(x: Ipv4Addr): RichString = RichString.fromString(ToString.toString(x))
+}
+
 mod Ipv4Addr {
     import java.net.InetAddress
     import java.net.UnknownHostException

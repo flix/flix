@@ -127,6 +127,13 @@ instance Reducible[Nec] {
     redef toList(l: Nec[a]): List[a] = Nec.toList(l)
 }
 
+instance Formattable[Nec[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Nec[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Nec#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+}
+
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
         "Nec#{" + (Nec.iterator(rc, c) |> Iterator.join(", ")) + "}"

@@ -102,6 +102,15 @@ instance Filterable[Chain] {
 
 instance Witherable[Chain]
 
+instance Formattable[Chain[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Chain#{") +
+        RichString.join(RichString.fromString(", "), c) +
+        RichString.fromString("}")
+}
+
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
         "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
