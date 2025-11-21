@@ -61,6 +61,15 @@ instance IndexableMut[MutHashMap[k, v, r]] with Eq[k], Hash[k] {
     pub def put(t: MutHashMap[k, v, r], i: k, v: v): Unit \ r = MutHashMap.put(i, v, t)
 }
 
+instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
+    type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+
+    pub def format(x: MutHashMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+        use RichString.{fromString, joinWith};
+        let kvs = MutHashMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
+        fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
+}
+
 mod MutHashMap {
 
     ///

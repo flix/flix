@@ -54,6 +54,15 @@ instance ForEach[MutMap[k, v, r]] {
     pub def forEach(f: ((k, v)) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ ef + r = MutMap.forEach(k -> v -> f((k, v)), m)
 }
 
+instance Formattable[MutMap[k, v, r]] with Formattable[k], Formattable[v] {
+    type Aef = Formattable.Aef[k] + Formattable.Aef[v] + r
+
+    pub def format(x: MutMap[k, v, r]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v] + r) =
+        use RichString.{fromString, joinWith};
+        let kvs = MutMap.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + fromString(" => ") + Formattable.format(v));
+        fromString("MutMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
+}
+
 mod MutMap {
 
     ///

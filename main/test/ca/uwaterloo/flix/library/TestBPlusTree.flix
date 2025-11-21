@@ -47,7 +47,7 @@ mod TestBPlusTree {
                 let (f, seed) = inputt;
                 // Have to remove the effect ef1 and rc as spawn does not accept them
                 spawn unchecked_cast(() -> {
-                    Random.runWithSeed(seed, () -> repeatN(() -> {
+                    discard Random.runWithSeed(seed, () -> repeatN(() -> {
                         let (x, y) = f();
                         BPlusTree.put(x, y, tree);
                         true
@@ -328,9 +328,9 @@ mod TestBPlusTree {
     pub def foldLeft05(): Unit \ Assert = region rc{
         let t: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         let list = MutList.empty(rc);
-        let res = (0, t) ||> BPlusTree.foldLeft(acc -> v -> { 
-            MutList.push(v, list); 
-            v + acc 
+        let res = (0, t) ||> BPlusTree.foldLeft(acc -> v -> {
+            MutList.push(v, list);
+            v + acc
         });
         Assert.assertEq(expected = 0, res);
         Assert.assertTrue(MutList.isEmpty(list))
@@ -786,7 +786,7 @@ mod TestBPlusTree {
     @Test
     def adjust06(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
-        foreach (k <- Range.Range(0, 300)) 
+        foreach (k <- Range.Range(0, 300))
             BPlusTree.put(k, k * 100, t);
         BPlusTree.adjust(plusOne, 150, t);
         Assert.assertEq(expected = Some(15001), BPlusTree.get(150, t))
@@ -814,11 +814,11 @@ mod TestBPlusTree {
         Assert.assertEq(expected = Some(12), BPlusTree.get(5, t));
         Assert.assertNone(BPlusTree.get(-3, t))
     }
-    
+
     @Test
     def adjustWithKey03(): Unit \ Assert = region rc {
         let t = BPlusTree.emptyWithArity(rc, 3);
-        foreach (k <- Range.Range(0, 300)) 
+        foreach (k <- Range.Range(0, 300))
             BPlusTree.put(k, k * 100, t);
         BPlusTree.adjustWithKey(addKeyToValue, 150, t);
         Assert.assertEq(expected = Some(15150), BPlusTree.get(150, t))
@@ -831,7 +831,7 @@ mod TestBPlusTree {
     @Test
     def computeIfAbsent01(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
-        BPlusTree.computeIfAbsent(() -> 2, 1, tree);
+        discard BPlusTree.computeIfAbsent(() -> 2, 1, tree);
         assertTrue(BPlusTree.memberOfPair(1, 2, tree))
     }
 
@@ -839,7 +839,7 @@ mod TestBPlusTree {
     def computeIfAbsent02(): Unit \ Assert = region rc {
         let tree = BPlusTree.empty(rc);
         BPlusTree.put(1, 3, tree);
-        BPlusTree.computeIfAbsent(() -> 2, 1, tree);
+        discard BPlusTree.computeIfAbsent(() -> 2, 1, tree);
         assertTrue(BPlusTree.memberOfPair(1, 3, tree));
         assertFalse(BPlusTree.memberOfPair(1, 2, tree))
     }
@@ -852,7 +852,7 @@ mod TestBPlusTree {
             Ref.put(true, ref);
             2
         };
-        BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
+        discard BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
         assertTrue(BPlusTree.memberOfPair(1, 2, tree));
         assertTrue(Ref.get(ref))
     }
@@ -866,7 +866,7 @@ mod TestBPlusTree {
             2
         };
         BPlusTree.put(1, 3, tree);
-        BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
+        discard BPlusTree.computeIfAbsent(effectfulFunction, 1, tree);
         assertTrue(BPlusTree.memberOfPair(1, 3, tree));
         assertTrue(Ref.get(ref))
     }
@@ -1248,7 +1248,7 @@ mod TestBPlusTree {
     def size06(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(0, 0, tree);
-        BPlusTree.computeIfAbsent(() -> 3, 0, tree);
+        discard BPlusTree.computeIfAbsent(() -> 3, 0, tree);
         assertEq(expected = 1, BPlusTree.size(tree))
     }
 
@@ -1256,7 +1256,7 @@ mod TestBPlusTree {
     def size07(): Unit \ Assert = region rc {
         let tree: BPlusTree[Int32, Int32, rc] = BPlusTree.emptyWithArity(rc, 3);
         BPlusTree.put(0, 0, tree);
-        BPlusTree.computeIfAbsent(() -> 3, 1, tree);
+        discard BPlusTree.computeIfAbsent(() -> 3, 1, tree);
         assertEq(expected = 2, BPlusTree.size(tree))
     }
 

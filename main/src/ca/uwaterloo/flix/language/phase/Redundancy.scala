@@ -490,10 +490,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
 
       // Check for useless pure expressions.
-      if (isUnderAppliedFunction(exp1)) {
-        // `isUnderAppliedFunction` implies `isUselessExpression` so this must be checked first.
-        (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
-      } else if (isUselessExpression(exp1)) {
+      if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
@@ -1051,41 +1048,6 @@ object Redundancy {
     case Body.Guard(exp, _) =>
       visitExp(exp, env0, rc)
 
-  }
-
-  /**
-    * Returns true if the expression is pure and of impure function type.
-    */
-  private def isUnderAppliedFunction(exp: Expr): Boolean = {
-    val isPure = exp.eff == Type.Pure
-    val isNonPureFunction = exp.tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) =>
-        curriedArrowPurityType(exp.tpe) != Type.Pure
-      case _ => false
-    }
-    isPure && isNonPureFunction
-  }
-
-  /**
-    * Returns the purity type of `this` curried arrow type.
-    *
-    * For example,
-    *
-    * {{{
-    * Int32                                        =>     throw
-    * Int32 -> String -> Int32 \ Pure              =>     Pure
-    * (Int32, String) -> String -> Bool \ IO       =>     IO
-    * }}}
-    *
-    * NB: Assumes that `this` type is an arrow.
-    */
-  @tailrec
-  private def curriedArrowPurityType(tpe: Type): Type = {
-    val resType = tpe.arrowResultType
-    resType.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
-      case _ => tpe.arrowEffectType
-    }
   }
 
   /**
