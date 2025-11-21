@@ -130,11 +130,11 @@ class TestBootstrap extends AnyFunSuite {
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.buildPkg()(Formatter.getDefault)
 
-    def hash1 = calcHash(packagePath)
+    val hash1 = calcHash(packagePath)
 
     b.buildPkg()(Formatter.getDefault)
 
-    def hash2 = calcHash(packagePath)
+    val hash2 = calcHash(packagePath)
 
     assert(
       hash1.equals(hash2),
