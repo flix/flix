@@ -79,12 +79,12 @@ class TestBootstrap extends AnyFunSuite {
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
-    def hash1 = calcHash(jarPath)
+    val hash1 = calcHash(jarPath)
 
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
-    def hash2 = calcHash(jarPath)
+    val hash2 = calcHash(jarPath)
 
     assert(
       hash1.equals(hash2),
