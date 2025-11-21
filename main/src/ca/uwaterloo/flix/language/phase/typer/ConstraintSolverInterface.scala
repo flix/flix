@@ -166,7 +166,7 @@ object ConstraintSolverInterface {
           List(TypeError.UnexpectedArg(sym, num, expected = subst(expected), actual = subst(actual), renv, loc))
       }
 
-    case TypeConstraint.Equality(_, _, Provenance.Sequence(actual, loc)) =>
+    case TypeConstraint.Equality(_, _, Provenance.NonUnitStatement(actual, loc)) =>
       List(TypeError.NonUnitStatement(subst(actual), loc))
 
     case TypeConstraint.Equality(baseType1, baseType2, Provenance.Match(fullType1, fullType2, loc)) =>

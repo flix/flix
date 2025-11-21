@@ -174,7 +174,7 @@ class TypeContext {
     * Generates a constraint where an `actual` type is used where the `Unit` type is expected in a statement position.
     */
   def expectStmt(actual: Type, loc: SourceLocation): Unit = {
-    val prov = Provenance.Sequence(actual, loc)
+    val prov = Provenance.NonUnitStatement(actual, loc)
     val constr = TypeConstraint.Equality(Type.Unit, actual, prov)
     currentScopeConstraints.add(constr)
   }

@@ -119,9 +119,9 @@ object TypeConstraint {
     case class Source(eff1: Type.Var, eff2: Type, loc: SourceLocation) extends Provenance
 
     /**
-      * The constraint indicates that the type is used in the first part of a sequence (must be unit).
+      * The constraint indicates that the type is used in the first part of a statement (must be unit).
       */
-    case class Sequence(actual: Type, loc: SourceLocation) extends Provenance
+    case class NonUnitStatement(actual: Type, loc: SourceLocation) extends Provenance
 
     /**
       * Indicates the conflict arose from a timeout

@@ -2303,7 +2303,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedPredicateDenotation](result)
   }
 
-  test("TypeError.Seq.Unit.01") {
+  test("TypeError.NonUnitStatement.01") {
     val input =
       """
         |def f(): String = 123; "hi"
@@ -2312,7 +2312,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.NonUnitStatement](result)
   }
 
-  test("TypeError.Seq.Jvm.01") {
+  test("TypeError.NonUnitStatement.Jvm.01") {
     val input =
       """
         |def f(): String \ IO = "".toString(); ""
@@ -2321,7 +2321,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     rejectError[TypeError](result)
   }
 
-  test("TypeError.Seq.Jvm.02") {
+  test("TypeError.NonUnitStatement.Jvm.02") {
     val input =
       """
         |import java.lang.Object

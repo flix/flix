@@ -663,7 +663,7 @@ object TypeError {
       import formatter.*
       s""">> Statement has non-unit type: ${FormatType.formatType(tpe)}.
          |
-         |${code(loc, s"missing constraint")}
+         |${code(loc, s"non-unit type")}
          |
          |""".stripMargin
     }
