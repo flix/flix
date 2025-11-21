@@ -74,6 +74,7 @@ class TestBootstrap extends AnyFunSuite {
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
     val flix = new Flix()
+    flix.setOptions(flix.options.copy(threads = 1))
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(flix)
@@ -127,7 +128,12 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
+    val flix = new Flix()
+    flix.setOptions(flix.options.copy(threads = 1))
+
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
+    b.build(flix)
+
     b.buildPkg()(Formatter.getDefault)
 
     val hash1 = calcHash(packagePath)
