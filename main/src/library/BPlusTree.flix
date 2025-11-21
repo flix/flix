@@ -94,11 +94,11 @@ mod BPlusTree {
         ///
         @Internal
         pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
-            checked_ecast(unsafe IO {
+            unsafe IO as r {
                 let adder = new JLongAdder();
                 adder.add(Int32.toInt64(initialValue));
                 AtomicCounter(adder)
-            })
+            }
 
 
         ///
@@ -107,7 +107,7 @@ mod BPlusTree {
         @Internal
         pub def increment(counter: AtomicCounter[r]): Unit \ r =
             let AtomicCounter(c) = counter;
-            checked_ecast(unsafe IO { c.increment() })
+            unsafe IO as r { c.increment() }
 
         ///
         /// Returns the current state of `counter`.
@@ -115,8 +115,7 @@ mod BPlusTree {
         @Internal
         pub def get(counter: AtomicCounter[r]): Int32 \ r =
             let AtomicCounter(c) = counter;
-            checked_ecast(unsafe IO { c.intValue() })
-            // //unsafe IO as r { c.intValue() }
+            unsafe IO as r { c.intValue() }
     }
 
 
@@ -181,7 +180,7 @@ mod BPlusTree {
         @Internal
         pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.unlockRead(l.readLock()) })
+            unsafe IO as r { l.unlockRead(l.readLock()) }
 
         ///
         /// Returns `true` if `lock` is currently held by a thread.
@@ -191,14 +190,14 @@ mod BPlusTree {
         @Internal
         pub def isLocked(lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.isWriteLocked() or l.isReadLocked() })
+            unsafe IO as r { l.isWriteLocked() or l.isReadLocked() }
 
         ///
         /// Returns a fresh lock.
         ///
         @Internal
         pub def mkLock(_: Region[r]): Lock[r] \ r =
-            Lock(checked_ecast(unsafe IO { new JStampedLock() }))
+            Lock(unsafe IO as r { new JStampedLock() })
 
         /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
         /// The returned stamp cannot be invalidated if it was valid when issued.
@@ -208,7 +207,7 @@ mod BPlusTree {
         @Internal
         pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.tryConvertToWriteLock(stamp) })
+            unsafe IO as r { l.tryConvertToWriteLock(stamp) }
 
         ///
         /// Return an optimistic stamp on `lock` which can be used in `valid` to
@@ -219,7 +218,7 @@ mod BPlusTree {
         @Internal
         pub def tryReadLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.tryOptimisticRead() })
+            unsafe IO as r { l.tryOptimisticRead() }
 
         ///
         /// Unlock `lock` with the issued write-stamp, `stamp`.
@@ -229,7 +228,7 @@ mod BPlusTree {
         @Internal
         pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.unlockWrite(stamp) })
+            unsafe IO as r { l.unlockWrite(stamp) }
 
         ///
         /// Returns true if `stamp` is still valid on `lock`, meaning no thread
@@ -240,7 +239,7 @@ mod BPlusTree {
         @Internal
         pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.validate(stamp) })
+            unsafe IO as r { l.validate(stamp) }
 
         ///
         /// Lock `lock` and returns the stamp.
@@ -250,7 +249,7 @@ mod BPlusTree {
         @Internal
         pub def writeLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            checked_ecast(unsafe IO { l.writeLock() })
+            unsafe IO as r { l.writeLock() }
     }
 
     ///

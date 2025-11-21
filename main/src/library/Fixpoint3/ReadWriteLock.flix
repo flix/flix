@@ -29,23 +29,23 @@ mod Fixpoint3 {
         use Fixpoint3.ReadWriteLock
 
         pub def mkLock(_: Region[r]): ReadWriteLock[r] \ r =
-            ReadWriteLock(checked_ecast(unsafe IO { new JStampedLock().asReadWriteLock() }))
+            ReadWriteLock(unsafe IO as r { new JStampedLock().asReadWriteLock() })
 
         pub def readLock(lock: ReadWriteLock[r]): Unit \ r =
             let ReadWriteLock(l) = lock;
-            checked_ecast(unsafe IO { l.readLock().lock() })
+            unsafe IO as r { l.readLock().lock() }
 
         pub def writeLock(lock: ReadWriteLock[r]): Unit \ r =
             let ReadWriteLock(l) = lock;
-            checked_ecast(unsafe IO { l.writeLock().lock() })
+            unsafe IO as r { l.writeLock().lock() }
 
         pub def unlockRead(lock: ReadWriteLock[r]): Unit \ r =
             let ReadWriteLock(l) = lock;
-            checked_ecast(unsafe IO { l.readLock().unlock() })
+            unsafe IO as r { l.readLock().unlock() }
 
         pub def unlockWrite(lock: ReadWriteLock[r]): Unit \ r =
             let ReadWriteLock(l) = lock;
-            checked_ecast(unsafe IO { l.writeLock().unlock() })
+            unsafe IO as r { l.writeLock().unlock() }
     }
 
 }

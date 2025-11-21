@@ -40,7 +40,7 @@ mod Debug {
     pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        checked_ecast(unsafe IO { System.out.print(s) })
+        unsafe IO as Debug { System.out.print(s) }
 
     ///
     /// Prints `x` to the standard out followed by a new line.
@@ -48,7 +48,7 @@ mod Debug {
     pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        checked_ecast(unsafe IO { System.out.println(s) })
+        unsafe IO as Debug { System.out.println(s) }
 
     ///
     /// Escapes the given string per Flix's escaping rules.

@@ -121,7 +121,7 @@ mod Env {
             def getEnv(k) = region rc {
                 try {
                     let _ = rc;
-                    let iter = checked_ecast(unsafe IO { System.getenv().entrySet().iterator() });
+                    let iter = unsafe IO as rc { System.getenv().entrySet().iterator() };
                     k(getEnvHelper(iter, Map.empty()))
                 } catch {
                     case _: Exception => k(Map.empty())

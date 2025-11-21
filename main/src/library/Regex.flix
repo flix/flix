@@ -591,7 +591,7 @@ mod Regex {
     ///
     def find(m: Matcher[r]): Bool \ r =
         let Matcher(m1) = m;
-        checked_ecast(unsafe IO { m1.find() })
+        unsafe IO as r { m1.find() }
 
     ///
     /// Attempt to find the next match after the supplied position `pos`.
@@ -603,7 +603,7 @@ mod Regex {
     def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { m1.find(pos) })
+            unsafe IO as r { m1.find(pos) }
         }) |> Result.getWithDefault(false)
 
 
@@ -642,7 +642,7 @@ mod Regex {
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { discard m1.$region(start#start, end#end) })
+            unsafe IO as r { discard m1.$region(start#start, end#end) }
         })
 
 
@@ -652,7 +652,7 @@ mod Regex {
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { m1.start() })
+            unsafe IO as r { m1.start() }
         })
 
     ///
@@ -661,7 +661,7 @@ mod Regex {
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { m1.end() })
+            unsafe IO as r { m1.end() }
         })
 
     ///
@@ -679,7 +679,7 @@ mod Regex {
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { m1.group() })
+            unsafe IO as r { m1.group() }
         })
 
     ///
@@ -688,7 +688,7 @@ mod Regex {
     def matcherGroup(m: Matcher[r], i:Int32): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { if (not Object.isNull(m1.group(i))) m1.group(i) else "" })
+            unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
         })
 
     ///
@@ -696,7 +696,7 @@ mod Regex {
     ///
     def groupCount(m: Matcher[r]): Int32 \ r =
             let Matcher(m1) = m;
-            checked_ecast(unsafe IO { m1.groupCount() })
+            unsafe IO as r { m1.groupCount() }
 
     ///
     /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.
