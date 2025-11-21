@@ -8,9 +8,9 @@ import ca.uwaterloo.flix.api.Flix
 object PkgTestUtils {
 
   /**
-    * Returns the GitHub token of the CI runner if available.
+    * GitHub token of the CI runner if available.
     */
-  def getGitHubToken: Option[String] = {
+  private lazy val runnerToken: Option[String] = {
     val propValue = System.getProperty("GITHUB_CI_RUNNER_TOKEN")
     if (propValue == null || propValue.isBlank || propValue.isEmpty)
       None
@@ -19,11 +19,16 @@ object PkgTestUtils {
   }
 
   /**
+    * Returns the GitHub token of the CI runner if available.
+    */
+  def getGitHubToken: Option[String] = runnerToken
+
+  /**
     * Returns a new [[Flix]] object that has the GitHub token of the CI runner set if available.
     */
   def mkFlixInstance: Flix = {
     val flix = new Flix()
-    flix.setOptions(flix.options.copy(githubToken = getGitHubToken))
+    flix.setOptions(flix.options.copy(githubToken = runnerToken))
   }
 
   /**
@@ -31,10 +36,19 @@ object PkgTestUtils {
     * and waiting some other amount of time before returning the result.
     */
   def throttle[A](action: => A): A = {
-    Thread.sleep(3000)
+    val (t1, t2) = throttleTime
+    Thread.sleep(t1)
     val result = action
-    Thread.sleep(1500)
+    Thread.sleep(t2)
     result
+  }
+
+  /**
+    * Returns the throttle time depending on whether the GitHub token is available.
+    */
+  private def throttleTime: (Int, Int) = runnerToken match {
+    case Some(_) => (300, 200)
+    case None => (3000, 1500)
   }
 
 }
