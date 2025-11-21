@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.tools.pkg.PkgTestUtils.{getGitHubToken, mkFlixInstance, throttle}
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -19,13 +20,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
   before { // before each test, sleep for 1000 ms
     Thread.sleep(1000)
-  }
-
-  private def throttle[A](action: => A): A = {
-    Thread.sleep(3000)
-    val result = action
-    Thread.sleep(1500)
-    result
   }
 
   private val Main: String =
@@ -746,13 +740,13 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val pkgs = throttle {
-      FlixPackageManager.installAll(manifestsWithSecurity, path, None)
+      FlixPackageManager.installAll(manifestsWithSecurity, path, getGitHubToken)
     } match {
       case Ok(ps) => ps
       case Err(e) => fail(e.message(formatter))
     }
 
-    val flix = new Flix()
+    val flix = mkFlixInstance
     flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
 
     for ((path, sctx) <- pkgs) {
