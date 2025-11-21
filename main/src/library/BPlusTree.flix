@@ -116,6 +116,7 @@ mod BPlusTree {
         pub def get(counter: AtomicCounter[r]): Int32 \ r =
             let AtomicCounter(c) = counter;
             checked_ecast(unsafe IO { c.intValue() })
+            // //unsafe IO as r { c.intValue() }
     }
 
 

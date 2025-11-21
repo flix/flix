@@ -2676,6 +2676,8 @@ object Parser2 {
       *
       *   - TreeKind.Expr.Unsafe
       *     - TreeKind.Type.Type
+      *     - TreeKind.UnsafeAs
+      *       - TreeKind.Type.Type
       *     - TreeKind.Expr.Expr
       */
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
@@ -2684,6 +2686,12 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
       Type.ttype()
+      if (at(TokenKind.KeywordAs)) {
+        eat(TokenKind.KeywordAs)
+        val mark = open()
+        Type.ttype()
+        close(mark, TreeKind.Expr.UnsafeAsEffFragment)
+      }
       expect(TokenKind.CurlyL)
       statement()
       expect(TokenKind.CurlyR)

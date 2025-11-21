@@ -1832,8 +1832,12 @@ object Weeder2 {
 
     private def visitUnsafeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Unsafe)
-      mapN(Types.pickType(tree), pickExpr(tree)) {
-        (eff, expr) => Expr.Unsafe(expr, eff, tree.loc)
+      val optAs = tryPick(TreeKind.Expr.UnsafeAsEffFragment, tree) match {
+        case None => Validation.Success(None)
+        case Some(fragment) => mapN(Types.pickType(fragment))(Some(_))
+      }
+      mapN(Types.pickType(tree), optAs, pickExpr(tree)) {
+        (eff, asEff, expr) => Expr.Unsafe(expr, eff, asEff, tree.loc)
       }
     }
 
