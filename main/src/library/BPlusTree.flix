@@ -367,6 +367,82 @@ mod BPlusTree {
         }
 
     ///
+    /// Returns a `BPlusTree` with mappings `k => f(v)` for every `k => v` in `t`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = 
+        mapWithKey(rc1, _ -> v -> f(v), t)
+
+    ///
+    /// Returns a `BPlusTree` with mappings `k => f(k, v)` for every `k => v` in `t`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def mapWithKey(rc1: Region[r1], f: k -> v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = {
+        let t1 = BPlusTree.emptyWithArity(rc1, BPlusTree.arity(t));
+        foreach ((k, v) <- t) {
+            BPlusTree.put(k, f(k, v), t1)
+        };
+        t1
+    }
+
+    ///
+    /// Returns an iterator over all key-value pairs in `t`,
+    ///
+    /// Not thread-safe.
+    ///
+    pub def iterator(rc1: Region[r1], t: BPlusTree[k, v, r]): Iterator[(k, v), r + r1, r1] \ r + r1 = {
+        let nodeRef = Ref.fresh(rc1, Node.leftMostChild(t->root));
+        let indexRef = Ref.fresh(rc1, 0);
+        def next() = {
+            let node = Ref.get(nodeRef);
+            let index = Ref.get(indexRef);
+            if (index < Node.size(node)) {
+                Ref.put(index + 1, indexRef);
+                Some(Node.getKeyAndValueAt(index, node))
+            } else match Node.next(node) {
+                case None => None
+                case Some(nextNode) => {
+                    Ref.put(nextNode, nodeRef);
+                    Ref.put(0, indexRef);
+                    next()
+                }
+            }
+        };
+        Iterator.iterate(rc1, next)
+    }
+
+    ///
+    /// Returns `t` as an immutable map.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] = 
+        (Map.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Map.insert(k, v, acc))
+    
+    ///
+    /// Returns `t` as a set of key-value pairs.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] = 
+        (Set.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Set.insert((k, v), acc))
+    
+    ///
+    /// Returns `t` as a vector of key-value pairs.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def toVector(t: BPlusTree[k, v, r]): Vector[(k, v)] \ r = region rc {
+        let mm = MutList.empty(rc);
+        foreach ((k, v) <- t) {
+            MutList.push((k, v), mm)
+        };
+        MutList.toVector(mm)
+    }
+
+    ///
     /// Returns a fresh empty BPlusTree tree of standard arity.
     ///
     pub def empty(rc: Region[r]): BPlusTree[k, v, r] \ r =
@@ -428,11 +504,15 @@ mod BPlusTree {
     ///
     /// Applies `f` to a start value `i` and all values in `t` going from left to right.
     ///
+    /// Not thread-safe.
+    ///
     pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
         List.foldLeft(f, i, valuesOf(t))
 
     ///
     /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
+    ///
+    /// Not thread-safe.
     ///
     pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
         List.foldLeft(b -> match (k, v) -> f(b, k, v), i, toList(t))
@@ -463,6 +543,8 @@ mod BPlusTree {
     ///
     /// Returns `Some(v)` if `k => v` is in `t`. Otherwise, returns `None`.
     ///
+    /// Thread-safe.
+    ///
     pub def get(k: k, t: BPlusTree[k, v, r]): Option[v] \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.get(k, stamp, leaf, t)
@@ -480,6 +562,8 @@ mod BPlusTree {
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
+    /// Thread-safe. 
+    ///
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.getWithDefault(k, stamp, d, leaf, t)
@@ -487,6 +571,8 @@ mod BPlusTree {
 
     ///
     /// Returns the set of keys in `t`.
+    ///
+    /// Not thread-safe.
     ///
     pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] = region rc {
         let set = MutSet.empty(rc);
@@ -496,6 +582,8 @@ mod BPlusTree {
 
     ///
     /// Returns the list of values in `t`.
+    ///
+    /// Not thread-safe.
     ///
     pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] = region rc {
         let list = MutList.empty(rc);
@@ -507,6 +595,8 @@ mod BPlusTree {
     /// Returns a string containing all values in `t`, in key order,
     /// with each value formatted by its `ToString` instance and separated by `sep`.
     ///
+    /// Not thread-safe.
+    ///
     pub def joinValues(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[v] =
         joinWith(_ -> v -> ToString.toString(v), sep, t)
 
@@ -514,12 +604,16 @@ mod BPlusTree {
     /// Returns a string containing all keys in `t`, in key order,
     /// with each key formatted by its `ToString` instance and separated by `sep`.
     ///
+    /// Not thread-safe.
+    ///
     pub def joinKeys(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[k] =
         joinWith(k -> _ -> ToString.toString(k), sep, t)
 
     ///
     /// Applies `f` to each key-value pair in `t`, in key order, to obtain a
     /// string and returns all results joined together using `sep`.
+    ///
+    /// Not thread-safe.
     ///
     pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef = region rc {
         let sb = StringBuilder.empty(rc);
@@ -1075,6 +1169,23 @@ mod BPlusTree {
                 }
             };
             loop(1, node)
+
+        ///
+        /// Return the mapping `k => v` at position `index` in `node`. Crashes if 
+        /// `index >= node->size`.
+        ///
+        @Internal
+        pub def getKeyAndValueAt(index: Int32, node: Node[k, v, r]): (k, v) \ r = {
+            let k = Array.get(index, node->keys);
+            let v = Array.get(index, node->values);
+            (k, v)
+        }
+
+        ///
+        /// Optionally return the node to the right of `node`.
+        ///
+        @Internal
+        pub def next(node: Node[k, v, r]): Option[Node[k, v, r]] \ r = node->next
 
         ///
         /// Returns `true` if the pointer of `o1` is equal to the pointer of `o2`.
