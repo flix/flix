@@ -63,7 +63,7 @@ class TestBootstrap extends AnyFunSuite {
     for (e <- new ZipFile(jarPath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("2014-06-27 00:00:00"))
+      assert(formatted == "2014-06-27 00:00:00")
     }
   }
 
@@ -79,15 +79,14 @@ class TestBootstrap extends AnyFunSuite {
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
-    def hash1 = calcHash(jarPath)
+    val hash1 = calcHash(jarPath)
 
-    b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
-    def hash2 = calcHash(jarPath)
+    val hash2 = calcHash(jarPath)
 
     assert(
-      hash1.equals(hash2),
+      hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
@@ -117,7 +116,7 @@ class TestBootstrap extends AnyFunSuite {
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("2014-06-27 00:00:00"))
+      assert(formatted == "2014-06-27 00:00:00")
     }
   }
 
@@ -127,17 +126,21 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
+    val flix = new Flix()
+
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
-
-    def hash1 = calcHash(packagePath)
+    b.build(flix)
 
     b.buildPkg()(Formatter.getDefault)
 
-    def hash2 = calcHash(packagePath)
+    val hash1 = calcHash(packagePath)
+
+    b.buildPkg()(Formatter.getDefault)
+
+    val hash2 = calcHash(packagePath)
 
     assert(
-      hash1.equals(hash2),
+      hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
