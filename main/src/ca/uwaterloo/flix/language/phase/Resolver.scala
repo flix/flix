@@ -1269,11 +1269,12 @@ object Resolver {
         case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
       }
 
-    case NamedAst.Expr.Unsafe(exp, eff0, loc) =>
+    case NamedAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
       val eVal = resolveExp(exp, scp0)
       val effVal = resolveType(eff0, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root)
-      mapN(eVal, effVal) {
-        case (e, eff) => ResolvedAst.Expr.Unsafe(e, eff, loc)
+      val asEffVal = traverseOpt(asEff0)(resolveType(_, Some(Kind.Eff), Wildness.ForbidWild, scp0, taenv, ns0, root))
+      mapN(eVal, effVal, asEffVal) {
+        case (e, eff, asEff) => ResolvedAst.Expr.Unsafe(e, eff, asEff, loc)
       }
 
     case NamedAst.Expr.TryCatch(exp, rules, loc) =>

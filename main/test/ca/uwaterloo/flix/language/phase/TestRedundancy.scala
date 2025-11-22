@@ -1507,7 +1507,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessUnsafe.01") {
     val input =
       raw"""
-           |pub def f(): Int32 = unsafely {} run 42
+           |pub def f(): Int32 = unsafe {} run 42
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1517,7 +1517,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantUnsafe.01") {
     val input =
       raw"""
-           |pub def f(): Int32 = unsafely IO run 42
+           |pub def f(): Int32 = unsafe IO { 42 }
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)

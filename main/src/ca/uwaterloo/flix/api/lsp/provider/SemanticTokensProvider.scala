@@ -582,8 +582,8 @@ object SemanticTokensProvider {
     case Expr.UncheckedCast(exp, declaredType, declaredEff, _, _, _) =>
       visitExp(exp) ++ declaredType.map(visitType).getOrElse(Iterator()) ++ declaredEff.map(visitType).getOrElse(Iterator())
 
-    case Expr.Unsafe(exp, runEff, _, _, _) =>
-      visitType(runEff) ++ visitExp(exp)
+    case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
+      visitType(runEff) ++ asEff.map(visitType).getOrElse(Iterator()) ++ visitExp(exp)
 
     case Expr.Without(exp, symUse, _, _, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, symUse.qname.loc)

@@ -37,13 +37,13 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromOptional01(): Unit \ Assert =
-        let o = unsafe Optional.empty();
+    def fromOptional01(): Unit \ Assert + IO =
+        let o = Optional.empty();
         assertEq(expected = (None : Option[String]), Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o))
 
     @Test
-    def fromOptional02(): Unit \ Assert =
-        let o = unsafe Optional.of("Hello");
+    def fromOptional02(): Unit \ Assert + IO =
+        let o = Optional.of("Hello");
         assertEq(expected = Some("Hello"), Adaptor.fromOptional((Proxy.Proxy: Proxy[String]), o))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -51,8 +51,8 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromMapEntry01(): Unit \ Assert =
-        let e = unsafe JMap.entry("hello", "world");
+    def fromMapEntry01(): Unit \ Assert + IO =
+        let e = JMap.entry("hello", "world");
         assertEq(expected = ("hello", "world"), Adaptor.fromMapEntry((Proxy.Proxy: Proxy[String]), (Proxy.Proxy: Proxy[String]), e))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -60,18 +60,18 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromList01(): Unit \ Assert =
-        let l = unsafe JList.of();
+    def fromList01(): Unit \ Assert + IO =
+        let l = JList.of();
         assertEq(expected = (List#{} : List[String]), Adaptor.fromList(l))
 
     @Test
-    def fromList02(): Unit \ Assert =
-        let l = unsafe JList.of("hello");
+    def fromList02(): Unit \ Assert + IO =
+        let l = JList.of("hello");
         assertEq(expected = List#{"hello"}, Adaptor.fromList(l))
 
     @Test
-    def fromList03(): Unit \ Assert =
-        let l = unsafe JList.of("hello", "world");
+    def fromList03(): Unit \ Assert + IO =
+        let l = JList.of("hello", "world");
         assertEq(expected = List#{"hello", "world"}, Adaptor.fromList(l))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -79,20 +79,20 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromListToIterator01(): Unit \ Assert = region rc {
-        let l = unsafe JList.of();
+    def fromListToIterator01(): Unit \ Assert + IO = region rc {
+        let l = JList.of();
         assertEq(expected = (List#{} : List[String]), Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
     }
 
     @Test
-    def fromListToIterator02(): Unit \ Assert = region rc {
-        let l = unsafe JList.of("hello");
+    def fromListToIterator02(): Unit \ Assert + IO = region rc {
+        let l = JList.of("hello");
         assertEq(expected = List#{"hello"}, Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
     }
 
     @Test
-    def fromListToIterator03(): Unit \ Assert = region rc {
-        let l = unsafe JList.of("hello", "world");
+    def fromListToIterator03(): Unit \ Assert + IO = region rc {
+        let l = JList.of("hello", "world");
         assertEq(expected = List#{"hello", "world"}, Iterator.toList(Adaptor.fromListToIterator(rc, (Proxy.Proxy: Proxy[String]), l)))
     }
 
@@ -101,18 +101,18 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromSet01(): Unit \ Assert =
-        let s = unsafe JSet.of();
+    def fromSet01(): Unit \ Assert + IO =
+        let s = JSet.of();
         assertEq(expected = (Set#{} : Set[String]), Adaptor.fromSet(s))
 
     @Test
-    def fromSet02(): Unit \ Assert =
-        let s = unsafe JSet.of("hello");
+    def fromSet02(): Unit \ Assert + IO =
+        let s = JSet.of("hello");
         assertEq(expected = Set#{"hello"}, Adaptor.fromSet(s))
 
     @Test
-    def fromSet03(): Unit \ Assert =
-        let s = unsafe JSet.of("hello", "world");
+    def fromSet03(): Unit \ Assert + IO =
+        let s = JSet.of("hello", "world");
         assertEq(expected = Set#{"hello", "world"}, Adaptor.fromSet(s))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -120,20 +120,20 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromSetToIterator01(): Unit \ Assert = region rc {
-        let s = unsafe JSet.of();
+    def fromSetToIterator01(): Unit \ Assert + IO = region rc {
+        let s = JSet.of();
         assertEq(expected = (Set#{} : Set[String]), Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
     @Test
-    def fromSetToIterator02(): Unit \ Assert = region rc {
-        let s = unsafe JSet.of("hello");
+    def fromSetToIterator02(): Unit \ Assert + IO = region rc {
+        let s = JSet.of("hello");
         assertEq(expected = Set#{"hello"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
     @Test
-    def fromSetToIterator03(): Unit \ Assert = region rc {
-        let s = unsafe JSet.of("hello", "world");
+    def fromSetToIterator03(): Unit \ Assert + IO = region rc {
+        let s = JSet.of("hello", "world");
         assertEq(expected = Set#{"hello", "world"}, Iterator.toSet(Adaptor.fromSetToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
@@ -142,18 +142,18 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromMap01(): Unit \ Assert =
-        let m = unsafe JMap.of();
+    def fromMap01(): Unit \ Assert + IO =
+        let m = JMap.of();
         assertEq(expected = (Map#{} : Map[String, String]), Adaptor.fromMap(m))
 
     @Test
-    def fromMap02(): Unit \ Assert =
-        let m = unsafe JMap.of("a", "hello");
+    def fromMap02(): Unit \ Assert + IO =
+        let m = JMap.of("a", "hello");
         assertEq(expected = Map#{"a" => "hello"}, Adaptor.fromMap(m))
 
     @Test
-    def fromMap03(): Unit \ Assert =
-        let m = unsafe JMap.of("a", "hello", "b", "world");
+    def fromMap03(): Unit \ Assert + IO =
+        let m = JMap.of("a", "hello", "b", "world");
         assertEq(expected = Map#{"a" => "hello", "b" => "world"}, Adaptor.fromMap(m))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -161,20 +161,20 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromMapToIterator01(): Unit \ Assert = region rc {
-        let m = unsafe JMap.of();
+    def fromMapToIterator01(): Unit \ Assert + IO = region rc {
+        let m = JMap.of();
         assertEq(expected = (Map#{} : Map[String, String]), Iterator.toMap(Adaptor.fromMapToIterator(rc, m)))
     }
 
     @Test
-    def fromMapToIterator02(): Unit \ Assert = region rc {
-        let m = unsafe JMap.of("a", "hello");
+    def fromMapToIterator02(): Unit \ Assert + IO = region rc {
+        let m = JMap.of("a", "hello");
         assertEq(expected = Map#{"a" => "hello"}, Iterator.toMap(Adaptor.fromMapToIterator(rc, m)))
     }
 
     @Test
-    def fromMapToIterator03(): Unit \ Assert = region rc {
-        let m = unsafe JMap.of("a", "hello", "b", "world");
+    def fromMapToIterator03(): Unit \ Assert + IO = region rc {
+        let m = JMap.of("a", "hello", "b", "world");
         assertEq(expected = Map#{"a" => "hello", "b" => "world"}, Iterator.toMap(Adaptor.fromMapToIterator(rc, m)))
     }
 
@@ -183,23 +183,23 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromIterator01(): Unit \ Assert = region rc {
-        let iter = unsafe JList.of().iterator();
+    def fromIterator01(): Unit \ Assert + IO = region rc {
+        let iter = JList.of().iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
         assertEq(expected = (Nil : List[String]), Iterator.toList(flixIter))
     }
 
     @Test
-    def fromIterator02(): Unit \ Assert = region rc {
-        let iter = unsafe JList.of("hello").iterator();
+    def fromIterator02(): Unit \ Assert + IO = region rc {
+        let iter = JList.of("hello").iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
         assertEq(expected = List#{"hello"}, Iterator.toList(flixIter))
     }
 
 
     @Test
-    def fromIterator03(): Unit \ Assert = region rc {
-        let iter = unsafe JList.of("hello", "world").iterator();
+    def fromIterator03(): Unit \ Assert + IO = region rc {
+        let iter = JList.of("hello", "world").iterator();
         let flixIter = Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[String]), iter);
         assertEq(expected = List#{"hello", "world"}, Iterator.toList(flixIter))
     }
@@ -209,20 +209,20 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromStreamToIterator01(): Unit \ Assert = region rc {
-        let s = unsafe Stream.empty();
+    def fromStreamToIterator01(): Unit \ Assert + IO = region rc {
+        let s = Stream.empty();
         assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
     @Test
-    def fromStreamToIterator02(): Unit \ Assert = region rc {
-        let s = unsafe Stream.of("hello");
+    def fromStreamToIterator02(): Unit \ Assert + IO = region rc {
+        let s = Stream.of("hello");
         assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
     @Test
-    def fromStreamToIterator03(): Unit \ Assert = region rc {
-        let s = unsafe Arrays.stream(Vector#{"hello", "world"});
+    def fromStreamToIterator03(): Unit \ Assert + IO = region rc {
+        let s = Arrays.stream(Vector#{"hello", "world"});
         assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromStreamToIterator(rc, (Proxy.Proxy: Proxy[String]), s)))
     }
 
@@ -231,20 +231,20 @@ mod TestAdaptor {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def fromCollectionToIterator01(): Unit \ Assert = region rc {
-        let col = checked_cast (unsafe JList.of());
+    def fromCollectionToIterator01(): Unit \ Assert + IO = region rc {
+        let col = checked_cast (JList.of());
         assertEq(expected = (Nil : List[String]), Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
     }
 
     @Test
-    def fromCollectionToIterator02(): Unit \ Assert = region rc {
-        let col = checked_cast (unsafe JList.of("hello"));
+    def fromCollectionToIterator02(): Unit \ Assert + IO = region rc {
+        let col = checked_cast (JList.of("hello"));
         assertEq(expected = "hello" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
     }
 
     @Test
-    def fromCollectionToIterator03(): Unit \ Assert = region rc {
-        let col = checked_cast (unsafe JList.of("hello", "world"));
+    def fromCollectionToIterator03(): Unit \ Assert + IO = region rc {
+        let col = checked_cast (JList.of("hello", "world"));
         assertEq(expected = "hello" :: "world" :: Nil, Iterator.toList(Adaptor.fromCollectionToIterator(rc, (Proxy.Proxy: Proxy[String]), col)))
     }
 

@@ -202,25 +202,25 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that `unsafely {} run exp` was used.
+    * An error raised to indicate that an `unsafe` block is redundant.
     *
-    * @param loc the source location of the unsafe run.
+    * @param loc the source location of the unsafe block.
     */
   case class UselessUnsafe(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect removal, it is removing nothing."
+    def summary: String = "Redundant unsafe block"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redundant effect removal, it is removing nothing.
+      s""">> Redundant unsafe block
          |
-         |${code(loc, "redundant unsafe run.")}
+         |${code(loc, "redundant")}
          |
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that unsafely run was used on a pure expression.
+    * An error raised to indicate that unsafe was used on a pure expression.
     *
     * @param loc the source location of the unsafe run.
     */

@@ -395,10 +395,10 @@ object TypeReconstruction {
       val eff = declaredEff0.getOrElse(e.eff)
       TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case KindedAst.Expr.Unsafe(exp, eff0, loc) =>
+    case KindedAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
       val e = visitExp(exp)
-      val eff = Type.mkDifference(e.eff, eff0, loc)
-      TypedAst.Expr.Unsafe(e, eff0, e.tpe, eff, loc)
+      val eff = Type.mkUnion(Type.mkDifference(e.eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
+      TypedAst.Expr.Unsafe(e, eff0, asEff0, e.tpe, eff, loc)
 
     case KindedAst.Expr.Without(exp, symUse, loc) =>
       val e = visitExp(exp)

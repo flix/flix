@@ -40,15 +40,17 @@ mod Fixpoint3.Phase.Simplifier {
     /// The returned RAM program is always the same size or smaller.
     ///
     @Internal
-    pub def simplifyProgram(program: RamProgram): RamProgram = unsafely IO run match program {
-        case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
-            // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
-            let filterOutEmpty = fact -> fact
-                |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
-                |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
-                |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
-            let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
-            RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index, typeInfo)
+    pub def simplifyProgram(program: RamProgram): RamProgram = unsafe IO {
+        match program {
+            case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
+                // Compute the a set of all relations which are initialized with facts, i.e. have some EDB facts.
+                let filterOutEmpty = fact -> fact
+                    |> Map.filter(x -> (not BPlusTree.isEmpty(x)))
+                    |> Map.foldRightWithKey(k -> _ -> Set.insert(k), Set#{})
+                    |> Set.map(rel -> getRelSymAsType(rel, PredType.Full, predicates));
+                let nonEmpty = filterOutEmpty(fst(facts)) `Set.union` filterOutEmpty(snd(facts));
+                RamProgram.Program(simplifyStmt(stmt, nonEmpty, predicates), facts, predicates, index, typeInfo)
+        }
     }
 
     ///

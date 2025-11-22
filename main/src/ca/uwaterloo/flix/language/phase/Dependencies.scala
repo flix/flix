@@ -367,9 +367,10 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, _) =>
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, _) =>
       visitExp(exp)
       visitType(runEff)
+      asEff.foreach(visitType)
       visitType(tpe)
       visitType(eff)
 

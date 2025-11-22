@@ -3,10 +3,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        unsafe new AtomicInteger(n)
+        unsafe IO { new AtomicInteger(n) }
 
     def toInt(n: AtomicInteger): Int32 =
-        unsafe n.intValue()
+        unsafe IO { n.intValue() }
 
     eff Exc {
         def raise(): AtomicInteger

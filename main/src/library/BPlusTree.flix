@@ -94,9 +94,11 @@ mod BPlusTree {
         ///
         @Internal
         pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
-            let adder = unchecked_cast((new JLongAdder(): _ \ IO) as _ \ r);
-            unchecked_cast((adder.add(Int32.toInt64(initialValue)): _ \ IO) as _ \ r);
-            AtomicCounter(adder)
+            unsafe IO as r {
+                let adder = new JLongAdder();
+                adder.add(Int32.toInt64(initialValue));
+                AtomicCounter(adder)
+            }
 
 
         ///
@@ -105,8 +107,7 @@ mod BPlusTree {
         @Internal
         pub def increment(counter: AtomicCounter[r]): Unit \ r =
             let AtomicCounter(c) = counter;
-            unchecked_cast((c.increment(): _ \ IO) as _ \ r);
-            ()
+            unsafe IO as r { c.increment() }
 
         ///
         /// Returns the current state of `counter`.
@@ -114,7 +115,7 @@ mod BPlusTree {
         @Internal
         pub def get(counter: AtomicCounter[r]): Int32 \ r =
             let AtomicCounter(c) = counter;
-            unchecked_cast((c.intValue(): _ \ IO) as _ \ r)
+            unsafe IO as r { c.intValue() }
     }
 
 
@@ -179,8 +180,7 @@ mod BPlusTree {
         @Internal
         pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            let stamp = unchecked_cast((l.readLock(): _ \ IO) as _ \ r);
-            unchecked_cast((l.unlockRead(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.unlockRead(l.readLock()) }
 
         ///
         /// Returns `true` if `lock` is currently held by a thread.
@@ -190,14 +190,14 @@ mod BPlusTree {
         @Internal
         pub def isLocked(lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.isWriteLocked() or l.isReadLocked(): _ \ IO) as _ \ r)
+            unsafe IO as r { l.isWriteLocked() or l.isReadLocked() }
 
         ///
         /// Returns a fresh lock.
         ///
         @Internal
         pub def mkLock(_: Region[r]): Lock[r] \ r =
-            Lock(unchecked_cast((new JStampedLock(): _ \ IO) as _ \ r))
+            Lock(unsafe IO as r { new JStampedLock() })
 
         /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
         /// The returned stamp cannot be invalidated if it was valid when issued.
@@ -207,7 +207,7 @@ mod BPlusTree {
         @Internal
         pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.tryConvertToWriteLock(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.tryConvertToWriteLock(stamp) }
 
         ///
         /// Return an optimistic stamp on `lock` which can be used in `valid` to
@@ -218,7 +218,7 @@ mod BPlusTree {
         @Internal
         pub def tryReadLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.tryOptimisticRead(): _ \ IO) as _ \ r)
+            unsafe IO as r { l.tryOptimisticRead() }
 
         ///
         /// Unlock `lock` with the issued write-stamp, `stamp`.
@@ -228,7 +228,7 @@ mod BPlusTree {
         @Internal
         pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.unlockWrite(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.unlockWrite(stamp) }
 
         ///
         /// Returns true if `stamp` is still valid on `lock`, meaning no thread
@@ -239,7 +239,7 @@ mod BPlusTree {
         @Internal
         pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.validate(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.validate(stamp) }
 
         ///
         /// Lock `lock` and returns the stamp.
@@ -249,7 +249,7 @@ mod BPlusTree {
         @Internal
         pub def writeLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.writeLock(): _ \ IO) as _ \ r)
+            unsafe IO as r { l.writeLock() }
     }
 
     ///
@@ -629,7 +629,7 @@ mod BPlusTree {
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
     /// `f` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads.
+    /// This method unsafe removes the `r` effect when spawning threads.
     ///
     /// Not thread-safe.
     ///
@@ -646,14 +646,16 @@ mod BPlusTree {
             forEach(f, t)
         } else {
             let minLeaf = Node.leftMostChild(t->root);
-            unchecked_cast(Vector.range(0, threadNum) |>
-            (Vector.forEach(i -> {
-                let _: Unit = spawn unchecked_cast(
-                    // Flix does not allow region effect in spawns. Remove the effect.
-                    (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
-                ) @ rc;
-                ()
-            }): _ \ {}) as _ \ r)
+            unsafe IO as r {
+                Vector.range(0, threadNum) |>
+                Vector.forEach(i -> {
+                    let _: Unit = spawn unsafe r as IO {
+                        // Flix does not allow region effect in spawns. Remove the effect.
+                        Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                    } @ rc;
+                    ()
+                })
+            }
         }
     }
 
@@ -664,7 +666,7 @@ mod BPlusTree {
     ///
     /// `f1` and `f2` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads in case 2.
+    /// This method unsafe removes the `r` effect when spawning threads in case 2.
     ///
     /// Not thread-safe.
     ///
@@ -1195,8 +1197,7 @@ mod BPlusTree {
             // The purpose is to be able to give them to a Java class which performs pointer comparison.
             let obj1 = unchecked_cast(o1 as JObject);
             let obj2 = unchecked_cast(o2 as JObject);
-            // Unchecked cast is here used to remove the IO effect from interacting with Java.
-            unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
+            unsafe IO { JObjects.equals(obj1, obj2) }
 
         ///
         /// Optionally returns the first mapping satisfying the function `f` in `node` and

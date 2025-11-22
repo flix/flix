@@ -806,10 +806,11 @@ object Namer {
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
-    case DesugaredAst.Expr.Unsafe(exp, eff0, loc) =>
+    case DesugaredAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
-      NamedAst.Expr.Unsafe(e, eff, loc)
+      val asEff = asEff0.map(visitType)
+      NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
     case DesugaredAst.Expr.Without(exp, qname, loc) =>
       val e = visitExp(exp)

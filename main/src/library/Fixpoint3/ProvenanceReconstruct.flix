@@ -177,7 +177,7 @@ mod Fixpoint3.ProvenanceReconstruct {
     ///
     @Internal
     pub def provQuery(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
-        unsafely IO run provQueryInternal(predSym, fact, withh, d)
+        unsafe IO { provQueryInternal(predSym, fact, withh, d) }
 
     ///
     /// Returns `None` if `predSym(fact)` is not a part of the provenance model `d`.

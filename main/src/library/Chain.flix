@@ -141,7 +141,7 @@ instance ToJava[Chain[a]] {
 instance ToFlix[Chain[a]] {
     type In = JList
     pub def toFlix(l: JList): Chain[a] = region rc {
-        let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let it = unsafe IO { l.iterator() };
         it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }
 }

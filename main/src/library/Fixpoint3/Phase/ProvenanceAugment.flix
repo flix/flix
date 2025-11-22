@@ -53,7 +53,7 @@
     /// Further extend facts to contain a depth and rule.
     ///
     def augmentProgramInternal(program: RamProgram): RamProgram = match program {
-        case RamProgram.Program(stmt, facts, predicates, indexInfo, typeInfo) => unsafely IO run {
+        case RamProgram.Program(stmt, facts, predicates, indexInfo, typeInfo) => unsafe IO {
             let (f1, f2) = facts;
             let augmentedF1 = Map.map(augmentFacts, f1);
             let augmentedF2 = Map.map(augmentFacts, f2);

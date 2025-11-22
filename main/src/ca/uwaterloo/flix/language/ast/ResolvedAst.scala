@@ -181,7 +181,7 @@ object ResolvedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[UnkindedType], declaredEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
-    case class Unsafe(exp: Expr, eff: UnkindedType, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, eff: UnkindedType, asEff: Option[UnkindedType], loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, symUse: EffSymUse, loc: SourceLocation) extends Expr
 

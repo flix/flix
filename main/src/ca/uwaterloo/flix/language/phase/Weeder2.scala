@@ -907,7 +907,6 @@ object Weeder2 {
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCastExpr(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
-        case TreeKind.Expr.UnsafeOld => visitUnsafeOldExpr(tree)
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Run => visitRunExpr(tree)
@@ -1833,15 +1832,12 @@ object Weeder2 {
 
     private def visitUnsafeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Unsafe)
-      mapN(Types.pickType(tree), pickExpr(tree)) {
-        (eff, expr) => Expr.Unsafe(expr, eff, tree.loc)
+      val optAs = tryPick(TreeKind.Expr.UnsafeAsEffFragment, tree) match {
+        case None => Validation.Success(None)
+        case Some(fragment) => mapN(Types.pickType(fragment))(Some(_))
       }
-    }
-
-    private def visitUnsafeOldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.UnsafeOld)
-      mapN(pickExpr(tree)) {
-        expr => Expr.UnsafeOld(expr, tree.loc)
+      mapN(Types.pickType(tree), optAs, pickExpr(tree)) {
+        (eff, asEff, expr) => Expr.Unsafe(expr, eff, asEff, tree.loc)
       }
     }
 

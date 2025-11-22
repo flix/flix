@@ -256,7 +256,7 @@ object PatMatch {
 
       case Expr.UncheckedCast(exp, _, _, _, _, _) => visitExp(exp)
 
-      case Expr.Unsafe(exp, _, _, _, _) => visitExp(exp)
+      case Expr.Unsafe(exp, _, _, _, _, _) => visitExp(exp)
 
       case Expr.Without(exp, _, _, _, _) => visitExp(exp)
 

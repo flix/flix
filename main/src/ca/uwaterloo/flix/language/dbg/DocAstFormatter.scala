@@ -194,8 +194,12 @@ object DocAstFormatter {
         case (Some(tpe), None) => aux(v) |:: text(":") +: formatType(tpe, paren = false)
         case (None, None) => aux(v, paren = paren)
       }
-      case Unsafe(d, tpe) =>
-        text("unsafe_remove") +: formatType(tpe, paren = false) +: curly(format(d))
+      case Unsafe(d, runEff, asEff) => asEff match {
+        case Some(eff) =>
+          text("unsafe") +: formatType(runEff, paren = false) +\: text("as") +\: formatType(eff, paren = false) +: curly(format(d))
+        case None =>
+          text("unsafe") +: formatType(runEff, paren = false) +: curly(format(d))
+      }
       case DoubleKeyword(word1, d1, word2, d2E) =>
         val d2Part = d2E match {
           case Left(d2) => aux(d2, paren = false)

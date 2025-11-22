@@ -301,9 +301,9 @@ object Stratifier {
       val e = visitExp(exp)
       Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
       val e = visitExp(exp)
-      Expr.Unsafe(e, runEff, tpe, eff, loc)
+      Expr.Unsafe(e, runEff, asEff, tpe, eff, loc)
 
     case Expr.Without(exp, symUse, tpe, eff, loc) =>
       val e = visitExp(exp)

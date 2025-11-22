@@ -95,7 +95,7 @@ mod String {
     /// Splits the string `s` around matches of the regular expression `regex`.
     ///
     pub def split(regex: {regex = String}, s: String): List[String] =
-        unchecked_cast(Array.toList(s.split(regex#regex)) as _ \ {})
+        unsafe IO { Array.toList(s.split(regex#regex)) }
 
     ///
     /// Returns the lower case version of the string `s`.
@@ -320,7 +320,7 @@ mod String {
         try {
             let p1 = Pattern.compile(pattern);
             let m1 = p1.matcher(s);
-            unchecked_cast(m1.find(0) as _ \ {})
+            unsafe IO { m1.find(0) }
         } catch {
             case _: PatternSyntaxException => false
         }

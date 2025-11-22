@@ -755,7 +755,7 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+    case Expr.Unsafe(exp, runEff, _, _, _, loc) =>
       (runEff, exp.eff) match {
         case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
         case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)

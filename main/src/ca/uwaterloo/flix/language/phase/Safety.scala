@@ -252,7 +252,7 @@ object Safety {
       checkPermissions(loc.security, loc)
       visitExp(exp)
 
-    case Expr.Unsafe(exp, _, _, _, loc) =>
+    case Expr.Unsafe(exp, _, _, _, _, loc) =>
       checkPermissions(loc.security, loc)
       visitExp(exp)
 

@@ -86,23 +86,21 @@ mod Random {
     ///
     /// In other words, re-interprets the `Random` effect using seeded deterministic randomness.
     ///
-    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): a -> b \ ef - Random = {
-        // Given a specifc seed, JRandom is just a mutable iterator and therefore we type it as such.
-        x -> region local {
-            let _ = local; // avoid redundancy check
-            let rnd = unchecked_cast (new JRandom(seed) as _ \ local);
+    pub def handleWithSeed(seed: Int64, f: a -> b \ ef): a -> b \ ef - Random =
+        // Note: Given a *specific* seed, JRandom is fully deterministic (i.e. pure).
+        x -> {
+            let rnd = unsafe IO { new JRandom(seed) };
             run {
                 f(x)
             } with handler Random {
-                def randomBool(k)       = k(unchecked_cast (rnd.nextBoolean() as _ \ local))
-                def randomFloat32(k)    = k(unchecked_cast (rnd.nextFloat() as _ \ local))
-                def randomFloat64(k)    = k(unchecked_cast (rnd.nextDouble() as _ \ local))
-                def randomInt32(k)      = k(unchecked_cast (rnd.nextInt() as _ \ local))
-                def randomInt64(k)      = k(unchecked_cast (rnd.nextLong() as _ \ local))
-                def randomGaussian(k)   = k(unchecked_cast (rnd.nextGaussian() as _ \ local))
+                def randomBool(k)     = k(unsafe IO { rnd.nextBoolean() })
+                def randomFloat32(k)  = k(unsafe IO { rnd.nextFloat() })
+                def randomFloat64(k)  = k(unsafe IO { rnd.nextDouble() })
+                def randomInt32(k)    = k(unsafe IO { rnd.nextInt() })
+                def randomInt64(k)    = k(unsafe IO { rnd.nextLong() })
+                def randomGaussian(k) = k(unsafe IO { rnd.nextGaussian() })
             }
         }
-    }
 
     ///
     /// Runs the `Random` effect of the given function `f` from an initial seed.
