@@ -2507,8 +2507,6 @@ object Resolver {
         case "BigInt" => Validation.Success(UnkindedType.Cst(TypeConstructor.BigInt, loc))
         case "String" => Validation.Success(UnkindedType.Cst(TypeConstructor.Str, loc))
         case "Regex" => Validation.Success(UnkindedType.Cst(TypeConstructor.Regex, loc))
-        case "Sender" => Validation.Success(UnkindedType.Cst(TypeConstructor.Sender, loc))
-        case "Receiver" => Validation.Success(UnkindedType.Cst(TypeConstructor.Receiver, loc))
         case "Lazy" => Validation.Success(UnkindedType.Cst(TypeConstructor.Lazy, loc))
         case "Array" => Validation.Success(UnkindedType.Cst(TypeConstructor.Array, loc))
         case "Vector" => Validation.Success(UnkindedType.Cst(TypeConstructor.Vector, loc))

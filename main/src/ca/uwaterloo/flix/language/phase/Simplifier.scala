@@ -316,10 +316,6 @@ object Simplifier {
 
           case TypeConstructor.RecordRowEmpty => SimpleType.RecordEmpty
 
-          case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
-
-          case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
-
           case TypeConstructor.Lazy =>
             val List(elm) = tpe.typeArguments
             SimpleType.Lazy(visitType(elm))
@@ -488,10 +484,6 @@ object Simplifier {
           case TypeConstructor.Regex => cst
 
           case TypeConstructor.RecordRowEmpty => cst
-
-          case TypeConstructor.Sender => throw InternalCompilerException("Unexpected Sender", tpe.loc)
-
-          case TypeConstructor.Receiver => throw InternalCompilerException("Unexpected Receiver", tpe.loc)
 
           case TypeConstructor.Lazy =>
             val List(elm) = tpe.typeArguments

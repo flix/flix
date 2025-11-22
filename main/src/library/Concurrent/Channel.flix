@@ -16,6 +16,18 @@
 // limitations under the License.
 //
 
+///
+/// The type of a channel used for sending data.
+///
+@Internal
+pub type alias Sender[a: Type] = Concurrent.Channel.Sender[a]
+
+///
+/// The type of a channel used for receiving data.
+///
+@Internal
+pub type alias Receiver[a: Type] = Concurrent.Channel.Receiver[a]
+
 mod Concurrent.Channel {
 
     import dev.flix.runtime.Global
@@ -30,17 +42,13 @@ mod Concurrent.Channel {
     use Concurrent.CyclicBarrier.awaitBarrier
 
     ///
-    /// An enum that represents a multiple-producer, multiple-consumer (mpmc)
-    /// channel.
+    /// Two enums that represent multiple-producer (`Sender`) and multiple-consumer (`Receiver`) channels.
     ///
     /// The tuple corresponds to (
     ///   `admin` - The administration info of the channel.
     ///   `elementDeque` - a deque of the channel elements but only used as a
     ///       queue.
     /// )
-    ///
-    /// The region type parameter is here to avoid losing type constraints in
-    /// Monomorpher/Lowering. `Mpmc[t, Static]` should always be used.
     ///
     /// -- Conditions and Signalling --
     /// When a channel needs to notify threads about available space or elements
@@ -78,14 +86,20 @@ mod Concurrent.Channel {
     /// a [synchronous rendezvous](https://en.wikipedia.org/wiki/Barrier_(computer_science))
     /// with the thread executing `get`.
     ///
-    /// -- Mpmc / MpmcAdmin split --
+    /// -- Sender/Receiver vs MpmcAdmin split --
     /// The select function must work on heterogeneous channel collections,
     /// which cannot happen without existential types. This means that the
     /// non-polymorphic aspects relevant to select is split into its own
     /// structure on which select can operate.
     ///
     @Internal
-    pub enum Mpmc[a: Type, _r: Region](
+    pub enum Sender[a: Type](
+        MpmcAdmin, // admin
+        MutDeque[a, Static] // elementDeque
+    )
+
+    @Internal
+    pub enum Receiver[a: Type] (
         MpmcAdmin, // admin
         MutDeque[a, Static] // elementDeque
     )
@@ -93,8 +107,16 @@ mod Concurrent.Channel {
     /// Returns the `MpmcAdmin` of `c`.
     @Internal
     @LoweringTarget
-    pub def mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin = {
-        let Mpmc.Mpmc(admin, _) = c;
+    pub def mpmcReceiverAdmin(c: Receiver[a]): MpmcAdmin = {
+        let Receiver.Receiver(admin, _) = c;
+        admin
+    }
+
+    /// Returns the `MpmcAdmin` of `c`.
+    @Internal
+    @LoweringTarget
+    pub def mpmcSenderAdmin(c: Sender[a]): MpmcAdmin = {
+        let Sender.Sender(admin, _) = c;
         admin
     }
 
@@ -137,40 +159,32 @@ mod Concurrent.Channel {
     )
 
     ///
-    /// Creates a new channel. A runtime error occurs if `bufferSize` is
+    /// Creates a new channel tuple (sender, receiver)
+    ///
+    /// A runtime error occurs if `bufferSize` is
     /// negative. A channel with `bufferSize` zero means that sending and
     /// receiving is syncronized.
     ///
     @Internal
     @LoweringTarget
-    pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
+    pub def newChannelTuple(bufferSize: Int32): (Sender[a], Receiver[a]) \ IO =
         if (bufferSize < 0) bug!("bufferSize < 0") else {
             let unBuffered = bufferSize == 0;
             let reentrantLock = newLock(fairness());
             let size = Ref.fresh(Static, 0);
-            Mpmc.Mpmc(
-                MpmcAdmin.MpmcAdmin(
-                    Global.newId(),
-                    reentrantLock,
-                    unBuffered,
-                    if (unBuffered) 1 else bufferSize,
-                    size,
-                    MutList.empty(Static),
-                    newCyclicBarrier(2),
-                    newCondition(reentrantLock)
-                ),
-                MutDeque.empty(Static)
-            )
+            let mpmcAdmin = MpmcAdmin.MpmcAdmin(
+                Global.newId(),
+                reentrantLock,
+                unBuffered,
+                if (unBuffered) 1 else bufferSize,
+                size,
+                MutList.empty(Static),
+                newCyclicBarrier(2),
+                newCondition(reentrantLock)
+            );
+            let mutDeq = MutDeque.empty(Static);
+            (Sender.Sender(mpmcAdmin, mutDeq), Receiver.Receiver(mpmcAdmin, mutDeq))
         }
-
-    ///
-    /// Creates a new channel tuple (sender, receiver)
-    ///
-    @Internal
-    @LoweringTarget
-    pub def newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO =
-        let c = newChannel(bufferSize);
-        (c, c)
 
     ///
     /// Sends the element `e` on the channel `c`. This is blocking if the
@@ -180,8 +194,8 @@ mod Concurrent.Channel {
     ///
     @Internal
     @LoweringTarget
-    pub def put(e: a, c: Mpmc[a, Static]): Unit \ IO =
-        let Mpmc.Mpmc(admin, elementDeque) = c;
+    pub def put(e: a, c: Sender[a]): Unit \ IO =
+        let Sender.Sender(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
         lock(channelLock);
 
@@ -209,8 +223,8 @@ mod Concurrent.Channel {
     ///
     @Internal
     @LoweringTarget
-    pub def get(c: Mpmc[a, Static]): a \ IO =
-        let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
+    pub def get(c: Receiver[a]): a \ IO =
+        let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcReceiverAdmin(c);
         lock(channelLock);
 
         // Get the next available element
@@ -223,8 +237,8 @@ mod Concurrent.Channel {
     ///
     @Internal
     @LoweringTarget
-    pub def unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO = {
-        let Mpmc.Mpmc(admin, elementDeque) = c;
+    pub def unsafeGetAndUnlock(c: Receiver[a], locks: List[ReentrantLock]): a \ IO = {
+        let Receiver.Receiver(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
         lock(channelLock);
 
@@ -307,8 +321,8 @@ mod Concurrent.Channel {
     ///
     /// The channel lock is expected to be held, and will be unlocked on return.
     ///
-    def getHelper(c: Mpmc[a, Static]): a \ IO =
-        let Mpmc.Mpmc(admin, elementDeque) = c;
+    def getHelper(c: Receiver[a]): a \ IO =
+        let Receiver.Receiver(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, waitingGetters, _, _) = admin;
 
         // Try to get the element (which could already be taken by someone
