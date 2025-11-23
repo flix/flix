@@ -500,6 +500,34 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the given type parameter `ident` is not used in the signature.
+    *
+    * @param ident the unused type variable.
+    */
+  case class UnusedTypeParamSignature(ident: Name.Ident, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Type parameter unused in function signature."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
+         |
+         |${code(ident.loc, "type parameter unused in function signature.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the type parameter in the signature.
+         |  (2)  Remove type parameter.
+         |  (3)  Prefix the type parameter name with an underscore.
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * An error raised to indicate that the given variable symbol `sym` is not used.
     *
     * @param sym the unused variable symbol.
