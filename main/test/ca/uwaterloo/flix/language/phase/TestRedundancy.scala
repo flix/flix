@@ -945,44 +945,57 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedTypeParam.Def.01") {
+  test("UnusedTypeParamSignature.Def.01") {
     val input =
       s"""
          |pub def f[a: Type](): Int32 = 123
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
-  test("UnusedTypeParam.Def.02") {
+  test("UnusedTypeParamSignature.Def.02") {
     val input =
       s"""
          |pub def f[a: Type, b: Type](x: a): a = x
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
-  test("UnusedTypeParam.Def.03") {
+  test("UnusedTypeParamSignature.Def.03") {
     val input =
       s"""
          |pub def f[a: Type, b: Type](x: b): b = x
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
-  test("UnusedTypeParam.Def.04") {
+  test("UnusedTypeParamSignature.Def.04") {
     val input =
       s"""
          |pub def f[a: Type, b: Type, c: Type](x: a, y: c): (a, c) = (x, y)
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
+  }
+
+  test("UnusedTypeParamSignature.Def.05") {
+    val input =
+      s"""
+         |pub def f[a: Type](x: Int32): Int32 = {
+         | let x: a = ???;
+         | 1
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
   test("UnusedTypeParam.Struct.01") {
