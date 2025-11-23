@@ -30,19 +30,50 @@ pub eff Abort {
 
 mod Abort {
 
+    import java.lang.System
+
     ///
-    /// Handle the `Abort` effect of the given function `f`.
+    /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.
+    ///
+    /// In other words, re-interprets the `Abort` effect using the `IO` effect.
+    ///
+    /// Note: The returned function can still return normally if `abort` is never called by `f`.
+    ///
+    pub def handle(f: a -> b \ ef): a -> b \ (ef - Abort) + IO = x ->
+        run {
+            f(x)
+        } with handler Abort {
+            def abort(m, _k) = {
+                System.err.println(m);
+                unchecked_cast(System.exit(1) as b)
+            }
+        }
+
+    ///
+    /// Handles the `Abort` effect of the given function `f` by converting aborts to Result values.
     ///
     /// Returns a function that
-    ///     - returns `Ok(f())` if the computation completes successfully without aborting.
-    ///     - returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[String, b] \ (ef - Abort) = x ->
+    /// Returns `Ok(f())` if the computation completes successfully without aborting.
+    /// Returns `Err(m)`  if the computation aborts with error message `m`.
+    ///
+    pub def handleWithResult(f: a -> b \ ef): a -> Result[String, b] \ (ef - Abort) = x ->
         run {
             Ok(f(x))
         } with handler Abort {
             def abort(m, _k) = Result.Err(m)
         }
+
+
+    ///
+    /// Runs the `Abort` effect of the given function `f`.
+    ///
+    /// In other words, re-interprets the `Abort` effect using the `IO` effect.
+    ///
+    /// Note: This function can still return normally if `abort` is never called by `f`.
+    ///
+    @DefaultHandler
+    pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Abort) + IO = handle(f)()
 
     ///
     /// Runs the `Abort` effect of the given function `f`.
@@ -50,6 +81,6 @@ mod Abort {
     /// Returns `Ok(f())` if the computation completes successfully without aborting.
     /// Returns `Err(m)`  if the computation aborts with error message `m`.
     ///
-    pub def runWithResult(f: Unit -> a \ ef): Result[String, a] \ (ef - Abort) = handle(f)()
+    pub def runWithResult(f: Unit -> a \ ef): Result[String, a] \ (ef - Abort) = handleWithResult(f)()
 
 }
