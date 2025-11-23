@@ -2670,13 +2670,13 @@ object Parser2 {
     }
 
     /**
-      * `'unsafe' TTYPE { STATEMENT }`
+      * `'unsafe' TTYPE [as TTYPE] { STATEMENT }`
       *
       * produces
       *
       *   - TreeKind.Expr.Unsafe
       *     - TreeKind.Type.Type
-      *     - TreeKind.UnsafeAs
+      *     - TreeKind.UnsafeAsEffFragment
       *       - TreeKind.Type.Type
       *     - TreeKind.Expr.Expr
       */
