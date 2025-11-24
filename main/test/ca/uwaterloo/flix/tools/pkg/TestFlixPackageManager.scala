@@ -16,8 +16,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   private implicit val formatter: Formatter = Formatter.NoFormatter
   private implicit val out: PrintStream = System.out
 
-  before { // before each test, sleep for n ms
-    Thread.sleep(5000)
+  before { // before each test, sleep for 1000 ms
+    Thread.sleep(4000)
   }
 
   private val Main: String =
