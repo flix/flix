@@ -188,7 +188,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  ignore("Safe.11") {
+  test("Safe.11") {
     val input =
       """
         |pub eff E {
