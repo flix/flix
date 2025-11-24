@@ -395,8 +395,21 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Stm(exp1, exp2, loc) =>
-        val (_, eff1) = visitExp(exp1)
+        val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
+
+        // If the first expression is a JVM invocation,
+        // then we don't require it to be return Unit
+        val isJvm = exp1 match {
+          case _: Expr.InvokeConstructor => true
+          case _: Expr.InvokeMethod => true
+          case _: Expr.InvokeStaticMethod => true
+          case _ => false
+        }
+        if (!isJvm) {
+          c.expectStmt(actual = tpe1, exp1.loc)
+        }
+
         val resTpe = tpe2
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -800,10 +813,10 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.Unsafe(exp, eff0, loc) =>
+      case Expr.Unsafe(exp, eff0, asEff0, loc) =>
         val (tpe, eff) = visitExp(exp)
         val resTpe = tpe
-        val resEff = Type.mkDifference(eff, eff0, loc)
+        val resEff = Type.mkUnion(Type.mkDifference(eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
         (resTpe, resEff)
 
       case Expr.Without(exp, symUse, _) =>

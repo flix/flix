@@ -83,6 +83,7 @@ mod Logger {
     ///
     /// In other words, re-interprets the `Logger` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Logger) + IO = handle(f)()
 
 }

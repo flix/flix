@@ -3,17 +3,17 @@ mod Test.Handler.Gen.AtomicInteger {
     import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        unsafe new AtomicInteger(n)
+        unsafe IO { new AtomicInteger(n) }
 
     def toInt(n: AtomicInteger): Int32 =
-        unsafe n.intValue()
+        unsafe IO { n.intValue() }
 
     eff Gen {
         def gen(): AtomicInteger
     }
 
     def generator(): Unit \ Gen =
-        Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Int32): List[AtomicInteger] =
         region rc {

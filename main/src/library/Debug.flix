@@ -38,7 +38,7 @@ mod Debug {
     pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        unchecked_cast({System.out.print(s)} as _ \ Debug)
+        unsafe IO as Debug { System.out.print(s) }
 
     ///
     /// Prints `x` to the standard out followed by a new line.
@@ -46,7 +46,7 @@ mod Debug {
     pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
         let rs = Formattable.format(x);
         let s = RichString.toString(rs);
-        unchecked_cast({System.out.println(s)} as _ \ Debug)
+        unsafe IO as Debug { System.out.println(s) }
 
     ///
     /// Escapes the given string per Flix's escaping rules.
@@ -103,25 +103,25 @@ mod Debug {
                     "\"" + escape(s) + "\""
                 }
             case y: Array[Bool, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Bool, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Bool, Static])) }
             case y: Array[Char, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Char, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Char, Static])) }
             case y: Array[Float32, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Float32, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Float32, Static])) }
             case y: Array[Float64, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Float64, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Float64, Static])) }
             case y: Array[Int8, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int8, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int8, Static])) }
             case y: Array[Int16, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int16, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int16, Static])) }
             case y: Array[Int32, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int32, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int32, Static])) }
             case y: Array[Int64, _] =>
-                unchecked_cast(Arrays.toString(unchecked_cast(y as Array[Int64, Static])) as _ \ {})
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int64, Static])) }
             case y: Array[_, _] =>
-                unchecked_cast(Arrays.deepToString(unchecked_cast(y as Array[Object, Static])) as _ \ {})
+                unsafe IO { Arrays.deepToString(unchecked_cast(y as Array[Object, Static])) }
             case y: _ =>
-                unchecked_cast(Objects.toString(unchecked_cast(y as Object)) as _ \ {})
+                unsafe IO { Objects.toString(unchecked_cast(y as Object)) }
         }
     }
 

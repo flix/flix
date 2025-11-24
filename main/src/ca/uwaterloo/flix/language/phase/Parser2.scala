@@ -1866,7 +1866,6 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordHandler => handlerExpr()
         case TokenKind.KeywordTry => tryExpr()
@@ -2670,32 +2669,32 @@ object Parser2 {
       close(mark, TreeKind.Expr.UncheckedCast)
     }
 
+    /**
+      * `'unsafe' TTYPE [as TTYPE] { STATEMENT }`
+      *
+      * produces
+      *
+      *   - TreeKind.Expr.Unsafe
+      *     - TreeKind.Type.Type
+      *     - TreeKind.UnsafeAsEffFragment
+      *       - TreeKind.Type.Type
+      *     - TreeKind.Expr.Expr
+      */
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUnsafe))
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
-      expression()
-      close(mark, TreeKind.Expr.UnsafeOld)
-    }
-
-    /**
-      * `'unsafely' TTYPE 'run' EXPRESSION`
-      *
-      * produces
-      *
-      *   - TreeKind.Expr.UnsafelyRun
-      *     - TreeKind.Type.Type
-      *     - TreeKind.Expr.Expr
-      */
-    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordUnsafely))
-      val mark = open()
-      expect(TokenKind.KeywordUnsafely)
       Type.ttype()
-      expect(TokenKind.KeywordRun)
-      expression()
+      if (at(TokenKind.KeywordAs)) {
+        eat(TokenKind.KeywordAs)
+        val mark = open()
+        Type.ttype()
+        close(mark, TreeKind.Expr.UnsafeAsEffFragment)
+      }
+      expect(TokenKind.CurlyL)
+      statement()
+      expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Unsafe)
     }
 

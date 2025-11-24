@@ -303,12 +303,12 @@ object Redundancy {
   /**
     * Finds unused type parameters.
     */
-  private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = spec match {
+  private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParamSignature] = spec match {
     case Spec(_, _, _, tparams, fparams, _, tpe, eff, tconstrs, econstrs) =>
       val tpes = fparams.map(_.tpe) ::: tpe :: eff :: tconstrs.map(_.arg) ::: econstrs.map(_.tpe1) ::: econstrs.map(_.tpe2)
       val used = tpes.flatMap { t => t.typeVars.map(_.sym) }.toSet
       tparams.collect {
-        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParam(tparam.name, tparam.loc)
+        case tparam if deadTypeVar(tparam.sym, used) => UnusedTypeParamSignature(tparam.name, tparam.loc)
       }
   }
 
@@ -490,10 +490,7 @@ object Redundancy {
       val us2 = visitExp(exp2, env0, rc)
 
       // Check for useless pure expressions.
-      if (isUnderAppliedFunction(exp1)) {
-        // `isUnderAppliedFunction` implies `isUselessExpression` so this must be checked first.
-        (us1 ++ us2) + UnderAppliedFunction(exp1.tpe, exp1.loc)
-      } else if (isUselessExpression(exp1)) {
+      if (isUselessExpression(exp1)) {
         (us1 ++ us2) + UselessExpression(exp1.tpe, exp1.loc)
       } else {
         us1 ++ us2
@@ -758,7 +755,7 @@ object Redundancy {
         case _ => visitExp(exp, env0, rc)
       }
 
-    case Expr.Unsafe(exp, runEff, _, _, loc) =>
+    case Expr.Unsafe(exp, runEff, _, _, _, loc) =>
       (runEff, exp.eff) match {
         case (Type.Pure, _) => visitExp(exp, env0, rc) + UselessUnsafe(loc)
         case (_, Type.Pure) => visitExp(exp, env0, rc) + RedundantUnsafe(loc)
@@ -1051,41 +1048,6 @@ object Redundancy {
     case Body.Guard(exp, _) =>
       visitExp(exp, env0, rc)
 
-  }
-
-  /**
-    * Returns true if the expression is pure and of impure function type.
-    */
-  private def isUnderAppliedFunction(exp: Expr): Boolean = {
-    val isPure = exp.eff == Type.Pure
-    val isNonPureFunction = exp.tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) =>
-        curriedArrowPurityType(exp.tpe) != Type.Pure
-      case _ => false
-    }
-    isPure && isNonPureFunction
-  }
-
-  /**
-    * Returns the purity type of `this` curried arrow type.
-    *
-    * For example,
-    *
-    * {{{
-    * Int32                                        =>     throw
-    * Int32 -> String -> Int32 \ Pure              =>     Pure
-    * (Int32, String) -> String -> Bool \ IO       =>     IO
-    * }}}
-    *
-    * NB: Assumes that `this` type is an arrow.
-    */
-  @tailrec
-  private def curriedArrowPurityType(tpe: Type): Type = {
-    val resType = tpe.arrowResultType
-    resType.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => curriedArrowPurityType(resType)
-      case _ => tpe.arrowEffectType
-    }
   }
 
   /**

@@ -202,25 +202,25 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that `unsafely {} run exp` was used.
+    * An error raised to indicate that an `unsafe` block is redundant.
     *
-    * @param loc the source location of the unsafe run.
+    * @param loc the source location of the unsafe block.
     */
   case class UselessUnsafe(loc: SourceLocation) extends RedundancyError {
-    def summary: String = "Redundant effect removal, it is removing nothing."
+    def summary: String = "Redundant unsafe block"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Redundant effect removal, it is removing nothing.
+      s""">> Redundant unsafe block
          |
-         |${code(loc, "redundant unsafe run.")}
+         |${code(loc, "redundant")}
          |
          |""".stripMargin
     }
   }
 
   /**
-    * An error raised to indicate that unsafely run was used on a pure expression.
+    * An error raised to indicate that unsafe was used on a pure expression.
     *
     * @param loc the source location of the unsafe run.
     */
@@ -285,71 +285,6 @@ object RedundancyError {
     }
 
     def loc: SourceLocation = shadowing
-  }
-
-  /**
-    * An error raised to indicate that an impure function expression is useless
-    * is statement position.
-    *
-    * @param tpe the type of the expression.
-    * @param loc the location of the expression.
-    */
-  case class UnderAppliedFunction(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError {
-    def summary: String = "Under applied function. Missing function argument(s)?"
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Under applied function. ${applicationAdvice(tpe)}
-         |
-         |${code(loc, "the function is not fully-applied and hence has no effect.")}
-         |
-         |The function has type '${FormatType.formatType(tpe)}'
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Give the function (additional) arguments.
-         |  (2)  Use the result computed by the expression.
-         |  (3)  Remove the expression statement.
-         |  (4)  Introduce a let-binding with a wildcard name.
-         |
-         |""".stripMargin
-    })
-
-    /**
-      * Creates an advice string about applied the arguments of the curried arrow `tpe`.
-      *
-      * OBS: If `tpe` is not arrow type then an exception is thrown.
-      */
-    private def applicationAdvice(tpe: Type): String = {
-      val arguments = curriedArrowArgTypes(tpe)
-      if (arguments.isEmpty) { // fallback message
-        "Missing function argument(s)?"
-      } else {
-        val argumentStrings = arguments.map(t => s"${FormatType.formatType(t)}").mkString(", ")
-        s"Missing argument(s) of type: $argumentStrings."
-      }
-    }
-
-    /**
-      * Returns the argument types of `this` curried arrow type.
-      * Returns `Nil` if `this` is not an arrow type.
-      *
-      * For example,
-      *
-      * {{{
-      * Int32                               =>     Nil
-      * Int32 -> String -> Int32            =>     List(Int32, String)
-      * (Int32, String) -> String -> Bool   =>     List(Int32, String, String)
-      * }}}
-      */
-    private def curriedArrowArgTypes(tpe: Type): List[Type] = tpe.typeConstructor match {
-      case Some(TypeConstructor.Arrow(_)) => tpe.arrowArgTypes ++ curriedArrowArgTypes(tpe.arrowResultType)
-      case _ => Nil
-    }
   }
 
   /**
@@ -557,6 +492,34 @@ object RedundancyError {
          |Possible fixes:
          |
          |  (1)  Use the type parameter.
+         |  (2)  Remove type parameter.
+         |  (3)  Prefix the type parameter name with an underscore.
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate that the given type parameter `ident` is not used in the signature.
+    *
+    * @param ident the unused type variable.
+    */
+  case class UnusedTypeParamSignature(ident: Name.Ident, loc: SourceLocation) extends RedundancyError {
+    def summary: String = "Type parameter unused in function signature."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unused type parameter '${red(ident.name)}'. The parameter is not referenced in the signature.
+         |
+         |${code(ident.loc, "type parameter unused in function signature.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the type parameter in the signature.
          |  (2)  Remove type parameter.
          |  (3)  Prefix the type parameter name with an underscore.
          |

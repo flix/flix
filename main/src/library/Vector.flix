@@ -145,7 +145,7 @@ instance ForEach[Vector[a]] {
 instance ToFlix[Vector[a]] {
     type In = JList
     pub def toFlix(l: JList): Vector[a] = region rc {
-        let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let iter = unsafe IO { l.iterator() };
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
@@ -495,14 +495,16 @@ mod Vector {
             let l = MutList.empty(rc);
             // We handle the first element twice.
             MutList.push(Vector.get(0, v), l);
-            (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
-                if (f(head, cur)) {
-                    head
-                } else {
-                    MutList.push(cur, l);
-                    cur
-                }
-            });
+            discard {
+                (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
+                    if (f(head, cur)) {
+                        head
+                    } else {
+                        MutList.push(cur, l);
+                        cur
+                    }
+                })
+            };
             MutList.toVector(l)
         }
     }
