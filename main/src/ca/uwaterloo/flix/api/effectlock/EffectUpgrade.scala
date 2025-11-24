@@ -48,8 +48,8 @@ object EffectUpgrade {
     debug(s"orig = $orig")
     debug(s"upgr = $upgr")
     val res1 = isGeneralizable(original, upgrade)
-    val res2 = isSubset(orig, upgr)
     debug(s"isGeneralizable(original, upgrade) = $res1")
+    val res2 = isSubset(orig, upgr)
     debug(s"isSubset(orig, upgr) = $res2")
     res1 || res2
   }
@@ -90,6 +90,8 @@ object EffectUpgrade {
   private def isSubset(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     val res1 = isSameType(original, upgrade)
     val res2 = isEffectSubset(original, upgrade)
+    debug(s"original = $original")
+    debug(s"upgrade = $upgrade")
     debug(s"isSameType(original, upgrade) = $res1")
     debug(s"isEffectSubset(original, upgrade) = $res2")
     res1 && res2
