@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.Scope
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
 import ca.uwaterloo.flix.language.phase.unification.{EffUnification3, EqualityEnv}
 import ca.uwaterloo.flix.util.Result
@@ -29,7 +29,7 @@ import scala.collection.mutable
 object EffectUpgrade {
 
   private def debug(obj: Object): Unit = {
-    // println(s"[DEBUG] $obj")
+    println(s"[DEBUG] $obj")
   }
 
   /**
@@ -116,7 +116,7 @@ object EffectUpgrade {
       // Base case: Non-arrow types. Directly compare for equality
       debug(s"Non-arrow type: $original")
       debug(s"Non-arrow type: $upgrade")
-      original == upgrade
+      original.base == upgrade.base
   }
 
   /**
@@ -142,18 +142,25 @@ object EffectUpgrade {
 
   /**
     * Performs alpha-renaming on `sc0`.
+    *
+    * To account for change in signatures, symbols with different kinds are renamed differently.
     */
   private def alpha(sc0: Scheme): Scheme = {
-    val seen = mutable.Map.empty[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]
+    val seen = mutable.Map.empty[Kind, mutable.Map[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]]
 
     def visit(tpe0: Type): Type = tpe0 match {
-      case Type.Var(sym, loc) => seen.get(sym) match {
-        case Some(subst) => Type.Var(subst, loc)
-        case None =>
-          val subst = new Symbol.KindedTypeVarSym(seen.size, sym.text, sym.kind, sym.isSlack, sym.scope, sym.loc)
-          seen += sym -> subst
-          Type.Var(subst, loc)
-      }
+      case Type.Var(sym, loc) =>
+        if (!seen.contains(sym.kind)) {
+          seen.put(sym.kind, mutable.Map.empty[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym])
+        }
+        val innerMap = seen(sym.kind)
+        innerMap.get(sym) match {
+          case Some(subst) => Type.Var(subst, loc)
+          case None =>
+            val subst = new Symbol.KindedTypeVarSym(innerMap.size, sym.text, sym.kind, sym.isSlack, sym.scope, sym.loc)
+            innerMap += sym -> subst
+            Type.Var(subst, loc)
+        }
 
       case Type.Cst(_, _) =>
         tpe0
@@ -180,7 +187,13 @@ object EffectUpgrade {
     val base = visit(sc0.base)
     val tconstrs = sc0.tconstrs.map(tc => tc.copy(arg = visit(tc.arg)))
     val econstrs = sc0.econstrs.map(ec => ec.copy(tpe1 = visit(ec.tpe1), tpe2 = visit(ec.tpe2)))
-    val qs = sc0.quantifiers.map(q => seen.getOrElse(q, q))
+    val qs = sc0.quantifiers.map {
+      q =>
+        seen.get(q.kind) match {
+          case Some(inner) => inner.getOrElse(q, q)
+          case None => q
+        }
+    }
     Scheme(qs, tconstrs, econstrs, base)
   }
 
