@@ -25,25 +25,4 @@ object PkgTestUtils {
     val flix = new Flix()
     flix.setOptions(flix.options.copy(githubToken = gitHubToken))
   }
-
-  /**
-    * Throttles `action` by waiting some amount of time before computing `action`
-    * and waiting some other amount of time before returning the result.
-    */
-  def throttle[A](action: => A): A = {
-    val (t1, t2) = throttleTime
-    Thread.sleep(t1)
-    val result = action
-    Thread.sleep(t2)
-    result
-  }
-
-  /**
-    * Returns the throttle time depending on whether the GitHub token is available.
-    */
-  private def throttleTime: (Int, Int) = gitHubToken match {
-    case Some(_) => (1000, 1500)
-    case None => (3000, 1500)
-  }
-
 }
