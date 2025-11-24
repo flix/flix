@@ -2,7 +2,7 @@
 
 Version 0.67.0:
 - Language: Added support for `@DefaultHandler`s (thanks Neo!)
-- Language: Added support for if-statement (thanks Casper!)
+- Language: Added support for if-statements (thanks Casper!)
 - Language: Reworked `unsafe` block (thanks Magnus!)
 - Library: Added `Formattable` trait (thanks Magnus!)
 - Library: Improved `RichString` data type (thanks Magnus!)
