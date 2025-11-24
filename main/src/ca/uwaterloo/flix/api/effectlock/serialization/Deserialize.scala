@@ -5,7 +5,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUs
 import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.reflect
 import scala.collection.immutable.SortedSet
 
 object Deserialize {
@@ -133,15 +133,18 @@ object Deserialize {
     Class.forName(clazz0)
   }
 
-  private def deserializeJvmConstructor(constructor0: String): Constructor[?] = {
+  private def deserializeJvmConstructor(constructor0: String): reflect.Constructor[?] = {
+    // TODO: Also use class and parameter types
     ???
   }
 
-  private def deserializeJvmMethod(method0: String): Method = {
+  private def deserializeJvmMethod(method0: String): reflect.Method = {
+    // TODO: Also use class and parameter types
     ???
   }
 
-  private def deserializeJvmField(field0: String): Field = {
+  private def deserializeJvmField(field0: String): reflect.Field = {
+    // TODO: Also use class
     ???
   }
 
