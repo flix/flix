@@ -229,7 +229,7 @@ class TestBootstrap extends AnyFunSuite {
     val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) {}
+      input.readNBytes(buffer.length)
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }
