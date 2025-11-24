@@ -74,6 +74,7 @@ class TestBootstrap extends AnyFunSuite {
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
     val flix = new Flix()
+    flix.setOptions(flix.options.copy(threads = 1))
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(flix)
