@@ -374,7 +374,7 @@ object SyntaxTree {
 
       case object Unsafe extends Expr
 
-      case object UnsafeOld extends Expr
+      case object UnsafeAsEffFragment extends Expr
 
       case object Use extends Expr
 

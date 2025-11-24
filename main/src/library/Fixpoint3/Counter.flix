@@ -50,8 +50,7 @@ mod Fixpoint3 {
         ///
         @Internal
         pub def increment(counter: Counter[r]): Unit \ r =
-            getAndIncrement(counter);
-            ()
+            discard getAndIncrement(counter)
 
         ///
         /// Returns the state of `counter`.

@@ -30,12 +30,12 @@ mod CodePoint {
     ///
     /// Returns the minimum integer value of a Unicode code point.
     ///
-    pub def minValue(): Int32 = unsafe Character.MIN_CODE_POINT
+    pub def minValue(): Int32 = Character.MIN_CODE_POINT
 
     ///
     /// Returns the maximum integer value of a Unicode code point.
     ///
-    pub def maxValue(): Int32 = unsafe Character.MAX_CODE_POINT
+    pub def maxValue(): Int32 = Character.MAX_CODE_POINT
 
     ///
     /// Returns `true` if the given char `c` is an ascii character.

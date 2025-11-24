@@ -155,13 +155,11 @@ mod Fixpoint3.ProvenanceReconstruct {
         def recurse(workList: List[ProofTree[r]]) = match workList {
             case Nil                               => ()
             case ProofTree.EDB(pred, fact) :: tail =>
-                if (filter(pred)) MutList.push((pred, fact), res)
-                else ();
+                if (filter(pred)) { MutList.push((pred, fact), res) };
                 recurse(tail)
             case ProofTree.Negative(_, _) :: tail => recurse(tail)
             case ProofTree.IDB(pred, fact, subTrees) :: tail => {
-                if (filter(pred)) MutList.push((pred, fact), res)
-                else ();
+                if (filter(pred)) { MutList.push((pred, fact), res) };
                 let furtherWork = Array.foldRight(cur -> acc -> cur :: acc, tail, subTrees);
                 recurse(furtherWork)
         }};
@@ -179,7 +177,7 @@ mod Fixpoint3.ProvenanceReconstruct {
     ///
     @Internal
     pub def provQuery(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
-        unsafely IO run provQueryInternal(predSym, fact, withh, d)
+        unsafe IO { provQueryInternal(predSym, fact, withh, d) }
 
     ///
     /// Returns `None` if `predSym(fact)` is not a part of the provenance model `d`.
@@ -411,7 +409,7 @@ mod Fixpoint3.ProvenanceReconstruct {
                 case _               => ()
             }
         };
-        loop(0, MutMap.toMap(varSymToVal));
+        discard loop(0, MutMap.toMap(varSymToVal));
         Array.filterMap(rc, identity, bodyValues)
     }
 

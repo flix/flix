@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for parser errors.
   */
 sealed trait ParseError extends CompilationMessage {
-  def kind: CompilationMessageKind = CompilationMessageKind.ParseError(sctx)
+  def kind: CompilationMessageKind = CompilationMessageKind.ParseError
   def sctx: SyntacticContext
   def loc: SourceLocation
 }
@@ -146,7 +146,7 @@ object ParseError {
     * @param loc           The source location.
     */
   case class Malformed(namedTokenSet: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = s"Malformed ${namedTokenSet.display(Formatter.NoFormatter)}."
 
@@ -166,7 +166,7 @@ object ParseError {
     * @param loc  The source location.
     */
   case class MisplacedComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = s"Misplaced comment(s)."
 
@@ -187,7 +187,7 @@ object ParseError {
     * @param loc  The source location.
     */
   case class MisplacedDocComments(sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = s"Misplaced doc-comment(s)."
 
@@ -209,7 +209,7 @@ object ParseError {
     * @param loc   The source location.
     */
   case class MissingRegion(token: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = s"Expected region on ${token.display}."
 
@@ -232,7 +232,7 @@ object ParseError {
     * @param loc      The source location.
     */
   case class NeedAtleastOne(expected: NamedTokenSet, sctx: SyntacticContext, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = s"Expected at least one ${expected.display(Formatter.NoFormatter)}."
 
@@ -253,7 +253,7 @@ object ParseError {
     * @param loc       The source location.
     */
   case class TrailingSeparator(separator: TokenKind, sctx: SyntacticContext, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = s"Trailing ${separator.display}."
 
@@ -276,7 +276,7 @@ object ParseError {
     * @param loc      The source location.
     */
   case class UnexpectedToken(expected: NamedTokenSet, actual: Option[TokenKind], sctx: SyntacticContext = SyntacticContext.Unknown, hint: Option[String] = None, loc: SourceLocation) extends ParseError {
-    override val kind: CompilationMessageKind.ParseError = CompilationMessageKind.ParseError(sctx)
+    override val kind: CompilationMessageKind = CompilationMessageKind.ParseError
 
     def summary: String = {
       val expectedStr = s"Expected ${expected.display(Formatter.NoFormatter)}"

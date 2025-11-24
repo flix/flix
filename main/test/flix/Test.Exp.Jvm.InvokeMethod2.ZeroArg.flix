@@ -1,22 +1,22 @@
 mod Test.Exp.Jvm.InvokeMethod.ZeroArg {
 
     @test
-    def testInvokeMethod_01(): Bool \ IO =
+    def testInvokeMethod_01(): Bool =
         let obj = "HELLO WORLD";
         obj.toLowerCase() == "hello world"
 
     @test
-    def testInvokeMethod_02(): Bool \ IO =
+    def testInvokeMethod_02(): Bool =
         let obj = "hello world";
         obj.toUpperCase() == "HELLO WORLD"
 
     @test
-    def testInvokeMethod_03(): Bool \ IO =
+    def testInvokeMethod_03(): Bool =
         let obj = "hello world";
         obj.length() == 11
 
     @test
-    def testInvokeMethod_04(): Bool \ IO =
+    def testInvokeMethod_04(): Bool =
         let obj = "   hello world    ";
         obj.trim() == "hello world"
 
@@ -26,7 +26,7 @@ mod Test.Exp.Jvm.InvokeMethod.ZeroArg {
         obj.intern() == obj
 
     @test
-    def testInvokeMethod_6(): Bool \ IO =
+    def testInvokeMethod_6(): Bool =
         let val = 12093ii;
         val.intValueExact() == 12093
 
@@ -51,12 +51,12 @@ mod Test.Exp.Jvm.InvokeMethod.ZeroArg {
         val.abs() == 32ii
 
     @test
-    def testInvokeMethod_11(): Bool \ IO =
+    def testInvokeMethod_11(): Bool =
         let val = -123.45ff;
         val.abs() == 123.45ff
 
     @test
-    def testInvokeMethod_12(): Bool \ IO =
+    def testInvokeMethod_12(): Bool =
         let val = 12443.1489ff;
         val.precision() == 9
 
@@ -66,12 +66,12 @@ mod Test.Exp.Jvm.InvokeMethod.ZeroArg {
         val.plus() == -50.000001ff
 
     @test
-    def testInvokeMethod_14(): Bool \ IO =
+    def testInvokeMethod_14(): Bool =
         let val = 23984.1119ff;
         val.doubleValue() == 23984.1119f64
 
     @test
-    def testInvokeMethod_15(): Bool \ IO =
+    def testInvokeMethod_15(): Bool =
         let val = 57842.0109ff;
         val.floatValue() == 57842.0109f32
 }

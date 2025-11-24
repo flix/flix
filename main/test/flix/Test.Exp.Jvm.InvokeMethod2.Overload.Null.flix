@@ -4,17 +4,17 @@ mod Test.Exp.Jvm.InvokeMethod.Overload.Null {
     import java.lang.StringBuilder
 
    @test
-   def testInvokeMethod_01(): Bool \ IO =
+   def testInvokeMethod_01(): Bool =
       let obj = "hello world";
       not obj.equals(null)
 
    @test
-   def testInvokeMethod_02(): Bool \ IO =
+   def testInvokeMethod_02(): Bool =
       let obj = "null";
       not obj.equals(null)
 
    @test
-   def testInvokeMethod_03(): Bool \ IO =
+   def testInvokeMethod_03(): Bool =
       let obj = "txt";
       let val : String = (checked_cast(null) : String);
       not obj.equals(val)

@@ -71,6 +71,7 @@ mod Console {
     ///
     /// In other words, re-interprets the `Console` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Console) + IO = handle(f)()
 
 }

@@ -23,6 +23,13 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance Formattable[Nel[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Nel[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Nel#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+}
+
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = Nel.toString(l)
 }

@@ -171,7 +171,7 @@ mod Assert {
                 if (cond)
                     resume()
                 else {
-                    println(RichString.toAnsiString(msg));
+                    println(RichString.toString(msg));
                     throw new AssertionError(RichString.toString(msg))
                 }
             }
@@ -182,6 +182,7 @@ mod Assert {
     ///
     /// In other words, re-interprets the `Assert` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Assert) + IO = handle(f)()
 
     ///
@@ -226,7 +227,7 @@ mod Assert {
                 if (cond)
                     resume()
                 else {
-                    println(RichString.toAnsiString(msg));
+                    println(RichString.toString(msg));
                     resume()
                 }
             }
@@ -247,7 +248,7 @@ mod Assert {
                 else {
                     use Console.eprintln;
                     run {
-                        eprintln(RichString.toAnsiString(msg))
+                        eprintln(RichString.toString(msg))
                     } with Console.runWithIO;
                     resume()
                 }
@@ -271,9 +272,9 @@ mod Assert {
                     use Console.{print, readln};
                     run {
                         println("");
-                        println(RichString.toAnsiString(msg));
+                        println(RichString.toString(msg));
                         println("");
-                        print(RichString.toAnsiString(yellow("Continue execution? (Y/n): ")));
+                        print(RichString.toString(yellow("Continue execution? (Y/n): ")));
                         let input = readln();
                         let trimmed = String.trim(input);
                         if (String.toLowerCase(trimmed) == "n" or String.toLowerCase(trimmed) == "no")
