@@ -313,7 +313,11 @@ object GitHub {
     * * `v2.3.4`
     */
   private def parseSemVer(str: String): SemVer = {
-    SemVer.ofString(str) match {
+    val (v, num) = str.splitAt(1)
+    if (v != "v") {
+      throw new RuntimeException(s"Invalid semantic version: $str")
+    }
+    SemVer.ofString(num) match {
       case Some(semver) => semver
       case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
