@@ -225,7 +225,7 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  def calcHash(p: Path): String = {
+  private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
       input.readNBytes(8192)
