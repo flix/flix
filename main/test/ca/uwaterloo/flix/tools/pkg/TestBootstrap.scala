@@ -226,10 +226,9 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   def calcHash(p: Path): String = {
-    val buffer = new Array[Byte](8192)
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      input.readNBytes(buffer.length)
+      input.readNBytes(8192)
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }
