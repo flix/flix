@@ -10,7 +10,7 @@ object PkgTestUtils {
   /**
     * GitHub token of the CI runner if available.
     */
-  private lazy val runnerToken: Option[String] = {
+  val gitHubToken: Option[String] = {
     val propValue = System.getProperty("GITHUB_CI_RUNNER_TOKEN")
     if (propValue == null || propValue.isBlank || propValue.isEmpty)
       None
@@ -19,16 +19,11 @@ object PkgTestUtils {
   }
 
   /**
-    * Returns the GitHub token of the CI runner if available.
-    */
-  def getGitHubToken: Option[String] = runnerToken
-
-  /**
     * Returns a new [[Flix]] object that has the GitHub token of the CI runner set if available.
     */
-  def mkFlixInstance: Flix = {
+  def mkFlix: Flix = {
     val flix = new Flix()
-    flix.setOptions(flix.options.copy(githubToken = runnerToken))
+    flix.setOptions(flix.options.copy(githubToken = gitHubToken))
   }
 
   /**
@@ -46,7 +41,7 @@ object PkgTestUtils {
   /**
     * Returns the throttle time depending on whether the GitHub token is available.
     */
-  private def throttleTime: (Int, Int) = runnerToken match {
+  private def throttleTime: (Int, Int) = gitHubToken match {
     case Some(_) => (1000, 1500)
     case None => (3000, 1500)
   }
