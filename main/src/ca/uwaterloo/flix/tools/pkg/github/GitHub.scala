@@ -318,7 +318,9 @@ object GitHub {
       throw new RuntimeException(s"Invalid semantic version: $str")
     }
     SemVer.ofString(num) match {
-      case Some(semver) => semver
+      case Some(semver) =>
+        println(s"[DEBUG] recognized semver: $semver")
+        semver
       case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
   }
