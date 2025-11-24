@@ -276,9 +276,9 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
       visitExp(exp)
-      val expected = Type.mkDifference(exp.eff, runEff, loc)
+      val expected = Type.mkUnion(Type.mkDifference(exp.eff, runEff, loc), Type.Pure, loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Without(exp, symUse, tpe, eff, loc) =>

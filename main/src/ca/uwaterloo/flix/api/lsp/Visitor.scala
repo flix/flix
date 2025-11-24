@@ -495,9 +495,9 @@ object Visitor {
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
-      case Expr.Unsafe(exp, runEff, _, _, _) =>
-        // runEff is first syntactically
+      case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
         visitType(runEff)
+        asEff.foreach(visitType)
         visitExpr(exp)
 
       case Expr.Without(exp, symUse, _, _, _) =>
