@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.effectlock.EffectUpgrade
 import ca.uwaterloo.flix.api.effectlock.serialization.*
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.Options
@@ -17,7 +18,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.01") {
@@ -29,7 +30,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.02") {
@@ -41,7 +42,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.03") {
@@ -57,7 +58,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.04") {
@@ -73,7 +74,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.05") {
@@ -89,7 +90,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.06") {
@@ -108,7 +109,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.07") {
@@ -127,7 +128,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.08") {
@@ -146,7 +147,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.09") {
@@ -165,7 +166,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.10") {
@@ -184,7 +185,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   ignore("Safe.11") {
@@ -203,7 +204,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   ignore("Safe.12") {
@@ -222,7 +223,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result))
+    assert(checkIsSafe("f", "g", result.get))
   }
 
   ignore("Safe.13") {
@@ -241,7 +242,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result))
+    assert(checkIsSafe("f", "g", result.get))
   }
 
   ignore("Safe.14") {
@@ -260,7 +261,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result))
+    assert(checkIsSafe("f", "g", result.get))
   }
 
   test("Safe.15") {
@@ -272,7 +273,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.16") {
@@ -284,7 +285,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.17") {
@@ -296,7 +297,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.18") {
@@ -312,7 +313,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Safe.19") {
@@ -328,7 +329,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result))
+    assert(checkIsSafe("g", "f", result.get))
   }
 
   test("Unsafe.01") {
@@ -344,7 +345,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.02") {
@@ -360,7 +361,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.03") {
@@ -376,7 +377,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.04") {
@@ -395,7 +396,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.05") {
@@ -414,7 +415,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.06") {
@@ -433,7 +434,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.07") {
@@ -445,7 +446,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.08") {
@@ -457,7 +458,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.09") {
@@ -469,7 +470,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.10") {
@@ -481,7 +482,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.11") {
@@ -497,7 +498,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("Unsafe.12") {
@@ -513,7 +514,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("f", "g", result))
+    assert(!checkIsSafe("f", "g", result.get))
   }
 
   test("serialization.01") {
@@ -734,8 +735,17 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  def checkIsSafe(upgrade: String, original: String, optRoot: Option[TypedAst.Root]): Boolean = {
-    false
+  private def checkIsSafe(upgrade: String, original: String, root: TypedAst.Root): Boolean = {
+    implicit val flix: Flix = new Flix()
+    val upgr = stringToDef(upgrade, root).get
+    val orig = stringToDef(original, root).get
+    EffectUpgrade.isSafe(orig.spec.declaredScheme, upgr.spec.declaredScheme)
+  }
+
+  private def stringToDef(defn: String, root: TypedAst.Root): Option[TypedAst.Def] = {
+    root.defs.find {
+      case (sym, _) => sym.text == defn
+    }.map(_._2)
   }
 
 }
