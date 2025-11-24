@@ -28,6 +28,10 @@ import scala.collection.mutable
 
 object EffectUpgrade {
 
+  private def debug(obj: Object): Unit = {
+    // println(s"[DEBUG] $obj")
+  }
+
   /**
     * Returns `true` if `upgrade` is a safe upgrade of `original`.
     *
@@ -36,10 +40,18 @@ object EffectUpgrade {
     *   - `upgrade` is a monomorphic downgrade of `original`.
     */
   def isSafe(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
+    debug(s"original = $original")
+    debug(s"upgrade = $upgrade")
     // Alpha rename so equality of types can be done via `==`.
     val orig = alpha(original)
     val upgr = alpha(upgrade)
-    isGeneralizable(orig, upgr) || isSubset(orig, upgr)
+    debug(s"orig = $orig")
+    debug(s"upgr = $upgr")
+    val res1 = isGeneralizable(original, upgrade)
+    val res2 = isSubset(orig, upgr)
+    debug(s"isGeneralizable(original, upgrade) = $res1")
+    debug(s"isSubset(orig, upgr) = $res2")
+    res1 || res2
   }
 
   /**
@@ -50,14 +62,14 @@ object EffectUpgrade {
     * 𝜎1 ⪯ 𝜎2
     *
     */
-  private def isGeneralizable(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
+  private def isGeneralizable(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     implicit val eqEnv: EqualityEnv = EqualityEnv.empty
-    val renv = RigidityEnv.apply(SortedSet.from(sc02.quantifiers))
-    val unification = ConstraintSolver2.fullyUnify(sc01.base, sc02.base, Scope.Top, renv)
+    val renv = RigidityEnv.apply(SortedSet.from(original.quantifiers))
+    val unification = ConstraintSolver2.fullyUnify(original.base, upgrade.base, Scope.Top, renv)
 
     unification match {
       case Some(subst) =>
-        subst(sc01.base) == sc02.base
+        original.base == subst(upgrade.base)
 
       case None =>
         false
@@ -76,7 +88,11 @@ object EffectUpgrade {
     * Assumes that `original` and `upgrade` have been alpha-renamed so the variables have the same names if they are equal.
     */
   private def isSubset(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
-    isSameType(original, upgrade) && isEffectSubset(original, upgrade)
+    val res1 = isSameType(original, upgrade)
+    val res2 = isEffectSubset(original, upgrade)
+    debug(s"isSameType(original, upgrade) = $res1")
+    debug(s"isEffectSubset(original, upgrade) = $res2")
+    res1 && res2
   }
 
   /**
@@ -86,7 +102,7 @@ object EffectUpgrade {
   private def isSameType(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = (original.base.typeConstructor, upgrade.base.typeConstructor) match {
     case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
       // Check same args
-      val isSameArgs = ListOps.zip(original.base.arrowArgTypes, original.base.arrowArgTypes).map {
+      val isSameArgs = ListOps.zip(original.base.arrowArgTypes, upgrade.base.arrowArgTypes).map {
         case (argTpe1, argTpe2) => (original.copy(base = argTpe1), upgrade.copy(base = argTpe2))
       }.forall { case (sc1, sc2) => isSubset(sc1, sc2) }
 
@@ -98,6 +114,8 @@ object EffectUpgrade {
 
     case (_, _) =>
       // Base case: Non-arrow types. Directly compare for equality
+      debug(s"Non-arrow type: $original")
+      debug(s"Non-arrow type: $upgrade")
       original == upgrade
   }
 
