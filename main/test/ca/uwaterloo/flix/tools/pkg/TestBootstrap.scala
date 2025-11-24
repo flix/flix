@@ -74,13 +74,16 @@ class TestBootstrap extends AnyFunSuite {
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
     val flix1 = new Flix()
+    // Use 1 thread for deterministic symbols
     flix1.setOptions(flix1.options.copy(threads = 1))
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.buildJar(flix1)(Formatter.getDefault)
     val hash1 = calcHash(jarPath)
 
+    // Use new flix instance to reset symbol generation
     val flix2 = new Flix()
+    // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
     b.buildJar(flix2)(Formatter.getDefault)
     val hash2 = calcHash(jarPath)
