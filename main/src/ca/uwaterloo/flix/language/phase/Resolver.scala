@@ -3757,10 +3757,39 @@ object Resolver {
 
     def addInstance(inst: ResolvedAst.Declaration.Instance): SymbolTable = copy(instances = instances + (inst.symUse.sym -> inst))
 
-    private def mergeEnums(enum1: ResolvedAst.Declaration.Enum, enum2: Option[ResolvedAst.Declaration.Enum]): Option[ResolvedAst.Declaration.Enum] = (enum1, enum2) match {
+    /**
+      * Optionally merges `enum1` and `enum2`. If `enum2` is [[None]] `enum1` is returned. If `enum2`
+      * is [[Some]] it indicates that it is a duplicate, and we merge the 2 enums.
+      *
+      * This is done to ensure that all cases of the enum are included.
+      * This is assumed to be the case by later phases which can cause crashes.
+      *
+      * An example transformation is
+      * {{{
+      * enum X[t] {
+      *   case A(t)
+      *   case B(t)
+      * }
+      * enum X[t] {
+      *   case B(t, t)
+      *   case C(t)
+      * }
+      * }}}
+      * becoming
+      * {{{
+      * enum X[t] {
+      *  case A(t)
+      *  case B(t, t)
+      *  case C(t)
+      * }
+      * }}}
+      *
+      * No guarantees about whether cases from the `enum1` or `enum2` is kept.
+      */
+    private def resilientMergeEnums(enum1: ResolvedAst.Declaration.Enum, enum2: Option[ResolvedAst.Declaration.Enum]): Option[ResolvedAst.Declaration.Enum] = (enum1, enum2) match {
       case (_, None) => Some(enum1)
       case (ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, tparams1, Derivations(derives1, derLoc), cases1, loc1), Some(ResolvedAst.Declaration.Enum(_, _, _, _, tparams2, Derivations(derives2, _), cases2, loc2))) =>
-        val combinedTparams = (tparams1 ++ tparams2).distinct
+        val combinedTparams = (tparams1 ++ tparams2).distinctBy(_.name.name)
         val combinedDerivations = Derivations((derives1 ++ derives2).distinctBy(_.sym), derLoc)
         val combinedCases = (cases1 ++ cases2).distinctBy(_.sym)
         Some(ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, combinedTparams, combinedDerivations, combinedCases, loc1))
@@ -3772,7 +3801,7 @@ object Resolver {
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
         enums = that.enums.foldLeft(this.enums) {
-          case (acc, (newSym, enum)) => acc.updatedWith(newSym)(mergeEnums(enum, _))
+          case (acc, (newSym, enum0)) => acc.updatedWith(newSym)(resilientMergeEnums(enum0, _))
         },
         structs = this.structs ++ that.structs,
         structFields = this.structFields ++ that.structFields,
