@@ -138,7 +138,7 @@ mod Fixpoint3.Boxing {
         foreach (x <- relSyms) {
             match x {
                 case RelSym.Symbol(PredSym.PredSym(_, index), arity, Denotation.Latticenal(bot, _, _, _)) =>
-                    unboxWith(bot, TypeInfo.getType(index, arity - 1, typeInfo), info); ()
+                    discard unboxWith(bot, TypeInfo.getType(index, arity - 1, typeInfo), info)
                 case _ => ()
             }
         };

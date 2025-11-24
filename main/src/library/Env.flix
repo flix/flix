@@ -166,6 +166,7 @@ mod Env {
     ///
     /// In other words, re-interprets the `Env` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Env) + IO = handle(f)()
 
     def getPropHelper(name: String): Option[String] \ IO =

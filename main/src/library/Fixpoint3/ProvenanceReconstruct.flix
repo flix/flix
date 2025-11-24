@@ -409,7 +409,7 @@ mod Fixpoint3.ProvenanceReconstruct {
                 case _               => ()
             }
         };
-        loop(0, MutMap.toMap(varSymToVal));
+        discard loop(0, MutMap.toMap(varSymToVal));
         Array.filterMap(rc, identity, bodyValues)
     }
 

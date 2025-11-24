@@ -137,6 +137,7 @@ mod HttpWithResult {
     ///
     /// In other words, re-interprets the `HttpWithResult` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - HttpWithResult) + IO = handle(f)()
 
 }
