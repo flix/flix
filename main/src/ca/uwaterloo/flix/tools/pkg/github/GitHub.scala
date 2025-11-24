@@ -312,11 +312,10 @@ object GitHub {
     *
     * * `v2.3.4`
     */
-  private def parseSemVer(string: String): SemVer = {
-    val semVer = """v(\d+)\.(\d+)\.(\d+)""".r
-    string match {
-      case semVer(major, minor, patch) => SemVer(major.toInt, minor.toInt, patch.toInt)
-      case _ => throw new RuntimeException(s"Invalid semantic version: $string")
+  private def parseSemVer(str: String): SemVer = {
+    SemVer.ofString(str) match {
+      case Some(semver) => semver
+      case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
   }
 }
