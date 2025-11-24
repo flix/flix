@@ -275,6 +275,7 @@ mod FileReadWithResult {
     ///
     /// In other words, re-interprets the `FileReadWithResult` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileReadWithResult) + {IO} = handle(f)()
 
     ///
