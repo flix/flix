@@ -9,7 +9,7 @@ type alias Interface = String     // e.g. "Shape"
 ///
 /// We then compute the detailed inheritance path for each cycle found.
 ///
-def main(): Unit \ IO =
+pub def main(): Unit \ IO =
     let db = database();
 
     // A Datalog program that computes the transitive supertype relation.
@@ -44,15 +44,19 @@ def main(): Unit \ IO =
 
             // Use a provenance query to find the inheritance edges that form the cycle.
             let p = pquery db, pr select Cycle(typ) with {Extends, Implements};
-            let path = Vector.map(v -> ematch v {
-                case Extends(x, y)    => (x, "extends", y)
-                case Implements(x, y) => (x, "implements", y)
-            }, p);
-
-            foreach ((src, rel, dst) <- path) {
-                let fmtSrc = String.padRight(15, ' ', src);
-                let fmtRel = String.center(12, ' ', rel);
-                println("    ${fmtSrc} ${fmtRel} ${dst}")
+            foreach (edge <- p) {
+                ematch edge {
+                    case Extends(src, dst) => {
+                        let fmtSrc = String.padRight(15, ' ', src);
+                        let fmtRel = String.center(12, ' ', "extends");
+                        println("    ${fmtSrc} ${fmtRel} ${dst}")
+                    }
+                    case Implements(src, dst) => {
+                        let fmtSrc = String.padRight(15, ' ', src);
+                        let fmtRel = String.center(12, ' ', "implements");
+                        println("    ${fmtSrc} ${fmtRel} ${dst}")
+                    }
+                }
             }
         }
     }
