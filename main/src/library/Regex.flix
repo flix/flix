@@ -132,7 +132,7 @@ mod Regex {
     ///
     pub def isMatch(rgx: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, rgx, s);
-        unchecked_cast(m1.matches() as _ \ {})
+        unsafe IO { m1.matches() }
     }
 
     ///
@@ -202,14 +202,14 @@ mod Regex {
     /// Splits the string `s` around matches of the Regex `rgx`.
     ///
     pub def split(rgx: Regex, s: String): List[String] =
-        unchecked_cast(Array.toList(rgx.split(s)) as _ \ {})
+        unsafe IO { Array.toList(rgx.split(s)) }
 
     ///
     /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
     pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unchecked_cast(m1.replaceAll(dst#dst) as _ \ {})
+        unsafe IO { m1.replaceAll(dst#dst) }
     }
 
     ///
@@ -217,7 +217,7 @@ mod Regex {
     ///
     pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         let Matcher(m1) = newMatcher(rc, src#src, s);
-        unchecked_cast(m1.replaceFirst(dst#dst) as _ \ {})
+        unsafe IO { m1.replaceFirst(dst#dst) }
     }
 
     ///
@@ -225,7 +225,7 @@ mod Regex {
     ///
     pub def startsWith(prefix: Regex, s: String): Bool = region rc {
         let Matcher(m1) = newMatcher(rc, prefix, s);
-        unchecked_cast(m1.lookingAt() as _ \ {})
+        unsafe IO { m1.lookingAt() }
     }
 
     ///
@@ -433,8 +433,8 @@ mod Regex {
     ///
     pub def isMatchWithBounds(rgx: Regex, start: {start = Int32}, end: {end = Int32}, s: String): Bool = region rc {
         match newMatcherWithBounds(rc, rgx, start, end, s) {
-            case Ok(m)  => {let Matcher(m1) = m; unchecked_cast(m1.matches() as _ \ {})}
-            case Err(_) => false
+            case Ok(Matcher(m))  => unsafe IO { m.matches() }
+            case Err(_)          => false
         }
     }
 
@@ -569,7 +569,7 @@ mod Regex {
     /// Create a Matcher for Regex `rgx` on the source String `input`.
     ///
     def newMatcher(_: Region[r], rgx: Regex, s: String): Matcher[r] \ r =
-        Matcher(unchecked_cast (rgx.matcher(s) as _ \ r))
+        Matcher(checked_ecast(rgx.matcher(s)))
 
     ///
     /// Create a Matcher for Regex `rgx` on the source String `input` with bounds `start` and `end`.
@@ -591,7 +591,7 @@ mod Regex {
     ///
     def find(m: Matcher[r]): Bool \ r =
         let Matcher(m1) = m;
-        unchecked_cast ((m1.find(): _ \ IO) as _ \ r)
+        unsafe IO as r { m1.find() }
 
     ///
     /// Attempt to find the next match after the supplied position `pos`.
@@ -603,7 +603,7 @@ mod Regex {
     def findFrom(pos: Int32, m: Matcher[r]): Bool \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((m1.find(pos): _ \ IO) as _ \ r)
+            unsafe IO as r { m1.find(pos) }
         }) |> Result.getWithDefault(false)
 
 
@@ -642,7 +642,7 @@ mod Regex {
     def setBounds(start: {start = Int32}, end: {end = Int32}, m: Matcher[r]): Result[String, Unit] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((discard m1.$region(start#start, end#end): _ \ IO) as _ \ r)
+            unsafe IO as r { discard m1.$region(start#start, end#end) }
         })
 
 
@@ -652,7 +652,7 @@ mod Regex {
     def matcherStart(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((m1.start(): _ \ IO) as _ \ r)
+            unsafe IO as r { m1.start() }
         })
 
     ///
@@ -661,7 +661,7 @@ mod Regex {
     def matcherEnd(m: Matcher[r]): Result[String, Int32] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((m1.end(): _ \ IO) as _ \ r)
+            unsafe IO as r { m1.end() }
         })
 
     ///
@@ -679,7 +679,7 @@ mod Regex {
     def matcherContent(m: Matcher[r]): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((m1.group(): _ \ IO) as _ \ r)
+            unsafe IO as r { m1.group() }
         })
 
     ///
@@ -688,7 +688,7 @@ mod Regex {
     def matcherGroup(m: Matcher[r], i:Int32): Result[String, String] \ r =
         Result.tryCatch(_ -> {
             let Matcher(m1) = m;
-            unchecked_cast ((if (not Object.isNull(m1.group(i))) m1.group(i) else "" : _ \ IO) as _ \ r)
+            unsafe IO as r { if (not Object.isNull(m1.group(i))) m1.group(i) else "" }
         })
 
     ///
@@ -696,7 +696,7 @@ mod Regex {
     ///
     def groupCount(m: Matcher[r]): Int32 \ r =
             let Matcher(m1) = m;
-            unchecked_cast ((m1.groupCount(): _ \ IO) as _ \ r)
+            unsafe IO as r { m1.groupCount() }
 
     ///
     /// `MatchQuery` is a read query applied to a the current match of a `Matcher`.

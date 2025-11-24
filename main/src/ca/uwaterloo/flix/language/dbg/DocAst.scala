@@ -132,7 +132,7 @@ object DocAst {
 
     case class AscriptionEff(v: Expr, tpe: Option[Type], eff: Option[Type]) extends Composite
 
-    case class Unsafe(d: Expr, tpe: Type) extends Composite
+    case class Unsafe(d: Expr, runEff: Type, asEff: Option[Type]) extends Composite
 
     case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
