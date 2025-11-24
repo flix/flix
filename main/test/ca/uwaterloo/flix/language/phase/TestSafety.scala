@@ -1491,10 +1491,11 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |mod A {
         |    import java.lang.StringBuilder
-        |    pub def f(): StringBuilder = unsafe new StringBuilder()
+        |
+        |    pub def f(): StringBuilder \ IO = new StringBuilder()
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)(SecurityContext.Unrestricted)
+    val result = compile(input, Options.TestWithLibMin)(SecurityContext.Unrestricted)
     expectSuccess(result)
   }
 

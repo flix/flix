@@ -154,7 +154,7 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 /// Crashes the current process with the given message `m`.
 ///
-pub def bug!(m: String): a = unchecked_cast({ printBugMsg(m); ?panic } as _ \ {})
+pub def bug!(m: String): a = unsafe IO { printBugMsg(m); ?panic }
 
 @Internal
 pub def printBugMsg(m: String): Unit \ IO = {

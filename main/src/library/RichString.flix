@@ -380,7 +380,7 @@ mod RichString {
     /// - TERM containing "256", "ansi", "xterm", or "screen" indicates ANSI support
     /// - XPC_SERVICE_NAME containing "intellij" indicates IntelliJ IDEA
     ///
-    def isColorTerm(): Bool = unsafely IO run {
+    def isColorTerm(): Bool = unsafe IO {
         run {
             let isTrueColor = Env.getVar("COLORTERM") |> Option.exists(p -> p == "truecolor");
             let isWindowsTerminal = not (Env.getVar("WT_SESSION") |> Option.isEmpty);
