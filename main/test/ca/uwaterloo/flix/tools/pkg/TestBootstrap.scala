@@ -58,7 +58,7 @@ class TestBootstrap extends AnyFunSuite {
     b.buildJar(flix)(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
-    val jarPath = p.resolveSibling("artifact").resolve(packageName + ".jar")
+    val jarPath = p.resolve("artifact/").resolve(packageName + ".jar")
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     for (e <- new ZipFile(jarPath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
