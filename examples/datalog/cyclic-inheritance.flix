@@ -9,7 +9,7 @@ type alias Interface = String     // e.g. "Shape"
 ///
 /// We then compute the detailed inheritance path for each cycle found.
 ///
-pub def main(): Unit \ IO =
+def main(): Unit \ IO =
     let db = database();
 
     // A Datalog program that computes the transitive supertype relation.
