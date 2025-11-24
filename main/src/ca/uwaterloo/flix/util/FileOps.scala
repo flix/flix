@@ -288,8 +288,17 @@ object FileOps {
   def sortPlatformIndependently(prefix: Path, paths: List[Path]): List[(Path, String)] = {
     require(paths.forall(_.startsWith(prefix)), "All paths in 'paths' must start with 'prefix'.")
     paths.map { path =>
-      (path, prefix.relativize(path).toString)
+      (path, convertPathToRelativeFileName(prefix, path))
     }.sortBy(_._2)
+  }
+
+  /**
+    * @param prefix the root directory to compute a relative path from the given path
+    * @param path   the path to be converted to a relative path based on the given root directory
+    * @return relative file name separated by slashes, like `path/to/file.ext`
+    */
+  private def convertPathToRelativeFileName(prefix: Path, path: Path): String = {
+    prefix.relativize(path).toString.replace('\\', '/')
   }
 
 }
