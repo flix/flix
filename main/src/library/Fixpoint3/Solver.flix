@@ -117,7 +117,7 @@ mod Fixpoint3.Solver {
     pub def union(d1: Datalog, d2: Datalog): Datalog = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(edb1 ++ edb2, idb1 ++ idb2)
-        case (Model(db1), Model(db2)) => unsafely IO run {
+        case (Model(db1), Model(db2)) => unsafe IO {
             let union = ramSym -> v1 -> v2 -> {
                 let newTree = BPlusTree.empty(Static);
 
@@ -151,7 +151,7 @@ mod Fixpoint3.Solver {
     @LoweringTarget
     pub def provenanceOf(p: PredSym, f: Vector[Boxed], withh: Vector[PredSym], mkExtVar: PredSym -> Vector[Boxed] -> t, d: Datalog): Vector[t] = match d {
         case Datalog(_, _) => provenanceOf(p, f, withh, mkExtVar, runSolverWithProvenance(d))
-        case Model(db) => unsafely IO run {
+        case Model(db) => unsafe IO {
             // This is a dirty hack based on the implementation of Order on RelSym (it only depends on PredSym).
             let fakeRelSym = Ram.makeFakeRelSym(p);
             match Map.get(fakeRelSym, db) {
@@ -188,7 +188,7 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given provenance model `model` as a Datalog value.
     ///
-    def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] = unsafely IO run {
+    def provenanceModeltoModel(model: Map[RelSym, BPlusTree[Vector[Boxed], (Int64, Int32), IO]]): Map[RelSym, BPlusTree[Vector[Boxed], Boxed, IO]] = unsafe IO {
         model |>
             Map.map(old -> {
                 let newTree = BPlusTree.empty(Static);
@@ -242,7 +242,7 @@ mod Fixpoint3.Solver {
             } else {
                 // Case 2: Introduce a fresh name (index) for the predicate symbol.
                 let PredSym(name, _) = predSym;
-                let nextId = unchecked_cast((Global.newId() + 1i64) as _ \ {});  // We add one because the counter starts at zero.
+                let nextId = unsafe IO { Global.newId() + 1i64 };  // We add one because the counter starts at zero.
                 let newPredSym = PredSym(name, nextId);
                 Map.insert(predSym, newPredSym, macc)
             }
@@ -985,7 +985,7 @@ mod Fixpoint3.Solver {
         let (db, meta) = dbMeta;
         let dbOnlyFullRels = MutMap.toMap(db) |>
             Map.filterWithKey(k -> facts -> match k {
-                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafely IO run BPlusTree.isEmpty(facts))
+                case RelSym.Symbol(PredSym(_, id), _, _) => Predicate.isFullId(id, meta) and not (unsafe IO { BPlusTree.isEmpty(facts) })
             });
         if (withProv) {
             toProvenance(rules, dbOnlyFullRels)
@@ -997,7 +997,7 @@ mod Fixpoint3.Solver {
     ///
     /// Returns the given database `db` augmented with provenance as a Provenance value.
     ///
-    def toProvenance(rules: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Datalog = unsafely IO run {
+    def toProvenance(rules: Vector[Constraint], db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Datalog = unsafe IO {
         (Map#{}, db)
             ||> Map.foldLeftWithKey(acc -> relSym -> facts -> {
                 let len = Vector.length(fst(getOrCrash(BPlusTree.minimumKey(facts))));
