@@ -24,7 +24,7 @@ pub eff Abort {
     ///
     /// The computation cannot be resumed.
     ///
-    def abort(m: String): Void
+    def abort(m: RichString): Void
 
 }
 
@@ -44,7 +44,7 @@ mod Abort {
             f(x)
         } with handler Abort {
             def abort(m, _k) = {
-                System.err.println(m);
+                System.err.println(RichString.toString(m));
                 unchecked_cast(System.exit(1) as b)
             }
         }
@@ -61,7 +61,7 @@ mod Abort {
         run {
             Ok(f(x))
         } with handler Abort {
-            def abort(m, _k) = Result.Err(m)
+            def abort(m, _k) = Result.Err(RichString.toString(m))
         }
 
 
