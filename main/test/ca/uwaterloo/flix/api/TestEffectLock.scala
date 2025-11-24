@@ -332,6 +332,18 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
+  test("Safe.21") {
+    val input =
+      """
+        |pub def f(_: a -> b): Unit = ()
+        |
+        |pub def g(_: a -> b \ ef): Unit \ ef = checked_ecast(())
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result.get))
+  }
+
   test("Unsafe.01") {
     val input =
       """
