@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api.effectlock.serialization
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.{Scope, VarText}
-import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol}
 
 object Deserialize {
 
@@ -40,11 +40,18 @@ object Deserialize {
       Symbol.freshKindedTypeVarSym(t, k, isSlack = false, SourceLocation.Unknown)(Scope.Top, flix)
   }
 
-  private def deserializeRestrictableEnumSym(sym0: RestrictableEnumSym): Symbol.RestrictableEnumSym = ???
+  private def deserializeRestrictableEnumSym(sym0: RestrictableEnumSym): Symbol.RestrictableEnumSym = sym0 match {
+    case RestrictableEnumSym(ns, name, cases) =>
+      new Symbol.RestrictableEnumSym(ns, name, cases.map(deserializeIdent), SourceLocation.Unknown)
+  }
 
   private def deserializeVarText(text0: SVarText): VarText = text0 match {
     case Absent => VarText.Absent
     case Text(s) => VarText.SourceText(s)
+  }
+
+  private def deserializeIdent(ident0: String): Name.Ident = {
+    Name.Ident(ident0, SourceLocation.Unknown)
   }
 
 }
