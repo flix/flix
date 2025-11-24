@@ -29,13 +29,17 @@ import scala.collection.mutable
 object EffectUpgrade {
 
   /**
-    * Returns true if `sc1` is unifiable with `sc2` or if `sc1` is a monomorphic downgrade of `sc2`.
+    * Returns `true` if `upgrade` is a safe upgrade of `original`.
+    *
+    * `upgrade` is a safe upgrade of `original` if at least one of the following holds:
+    *   - `upgrade` is unifiable with `original`.
+    *   - `upgrade` is a monomorphic downgrade of `original`.
     */
-  def isSafe(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
+  def isSafe(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     // Alpha rename so equality of types can be done via `==`.
-    val sc1 = alpha(sc01)
-    val sc2 = alpha(sc02)
-    isGeneralizable(sc1, sc2) || isSubset(sc1, sc2)
+    val orig = alpha(original)
+    val upgr = alpha(upgrade)
+    isGeneralizable(orig, upgr) || isSubset(orig, upgr)
   }
 
   /**
@@ -61,40 +65,40 @@ object EffectUpgrade {
   }
 
   /**
-    * `sc02` is a safe upgrade of `sc02` if its effects is a subset of `sc01`:
+    * `upgrade` is a safe upgrade of `original` if its effects is a subset of `original`:
     *
     * 𝜑 ∪ 𝜑' ≡ 𝜑
     * ----------
     * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
     *
-    * `𝜑` are the effects of `sc01` and `𝜑'` are the effects of `sc02`.
+    * `𝜑` are the effects of `original` and `𝜑'` are the effects of `upgrade`.
     *
-    * Assumes that `sc01` and `sc02` have been alpha-renamed so the variables have the same names if they are equal.
+    * Assumes that `original` and `upgrade` have been alpha-renamed so the variables have the same names if they are equal.
     */
-  private def isSubset(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = {
-    isSameType(sc01, sc02) && isEffectSubset(sc01, sc02)
+  private def isSubset(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
+    isSameType(original, upgrade) && isEffectSubset(original, upgrade)
   }
 
   /**
-    * Checks that the type in `sc01` is the same type as `sc02`.
+    * Checks that the type in `original` is the same type as `upgrade`.
     * Assumes that they have been alpha-renamed so the variables have the same names if they are equal.
     */
-  private def isSameType(sc01: Scheme, sc02: Scheme)(implicit flix: Flix): Boolean = (sc01.base.typeConstructor, sc02.base.typeConstructor) match {
+  private def isSameType(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = (original.base.typeConstructor, upgrade.base.typeConstructor) match {
     case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
       // Check same args
-      val isSameArgs = ListOps.zip(sc01.base.arrowArgTypes, sc01.base.arrowArgTypes).map {
-        case (argTpe1, argTpe2) => (sc01.copy(base = argTpe1), sc02.copy(base = argTpe2))
+      val isSameArgs = ListOps.zip(original.base.arrowArgTypes, original.base.arrowArgTypes).map {
+        case (argTpe1, argTpe2) => (original.copy(base = argTpe1), upgrade.copy(base = argTpe2))
       }.forall { case (sc1, sc2) => isSubset(sc1, sc2) }
 
       // Check same result
-      val isSameResult = isSubset(sc01.copy(base = sc01.base.arrowResultType), sc02.copy(base = sc02.base.arrowResultType))
+      val isSameResult = isSubset(original.copy(base = original.base.arrowResultType), upgrade.copy(base = upgrade.base.arrowResultType))
 
       // Assert both hold
       isSameArgs && isSameResult
 
     case (_, _) =>
       // Base case: Non-arrow types. Directly compare for equality
-      sc01 == sc02
+      original == upgrade
   }
 
   /**
