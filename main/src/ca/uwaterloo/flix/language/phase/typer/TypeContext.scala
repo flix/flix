@@ -171,6 +171,15 @@ class TypeContext {
   }
 
   /**
+    * Generates a constraint where an `actual` type is used where the `Unit` type is expected in a statement position.
+    */
+  def expectStmt(actual: Type, loc: SourceLocation): Unit = {
+    val prov = Provenance.NonUnitStatement(actual, loc)
+    val constr = TypeConstraint.Equality(Type.Unit, actual, prov)
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
     * Generates constraints expecting the given type arguments to unify.
     *
     * For expected types `tpeE1 ... tpeEN` and actual types `tpeA1 ... tpeAN`, generates:

@@ -2303,4 +2303,32 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.MismatchedPredicateDenotation](result)
   }
 
+  test("TypeError.NonUnitStatement.01") {
+    val input =
+      """
+        |def f(): String = 123; "hi"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.NonUnitStatement](result)
+  }
+
+  test("TypeError.NonUnitStatement.Jvm.01") {
+    val input =
+      """
+        |def f(): String \ IO = "".toString(); ""
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("TypeError.NonUnitStatement.Jvm.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): String \ IO = Objects.toString(""); ""
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
 }
