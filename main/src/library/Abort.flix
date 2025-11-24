@@ -24,13 +24,20 @@ pub eff Abort {
     ///
     /// The computation cannot be resumed.
     ///
-    def abort(m: RichString): Void
+    def abortWithMsg(m: RichString): Void
 
 }
 
 mod Abort {
 
     import java.lang.System
+
+    ///
+    /// Immediately aborts the current computation with the given error message `m`.
+    ///
+    /// The computation cannot be resumed.
+    ///
+    pub def abort(m: a): Void \ Abort + Formattable.Aef[a] with Formattable[a] = Abort.abortWithMsg(Formattable.format(m))
 
     ///
     /// Handles the `Abort` effect of the given function `f` by printing the error message and exiting.
@@ -43,7 +50,7 @@ mod Abort {
         run {
             f(x)
         } with handler Abort {
-            def abort(m, _k) = {
+            def abortWithMsg(m, _k) = {
                 System.err.println(RichString.toString(m));
                 unchecked_cast(System.exit(1) as b)
             }
@@ -61,7 +68,7 @@ mod Abort {
         run {
             Ok(f(x))
         } with handler Abort {
-            def abort(m, _k) = Result.Err(RichString.toString(m))
+            def abortWithMsg(m, _k) = Result.Err(RichString.toString(m))
         }
 
 
