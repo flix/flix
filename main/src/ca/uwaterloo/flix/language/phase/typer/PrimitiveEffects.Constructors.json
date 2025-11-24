@@ -1,5 +1,6 @@
 {
   "constructors": {
-
+    "java.math.BigDecimal": "",
+    "java.math.BigInteger": ""
   }
 }

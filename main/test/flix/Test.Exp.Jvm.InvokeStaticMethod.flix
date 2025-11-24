@@ -81,11 +81,11 @@ mod Test.Exp.Jvm.InvokeStaticMethod {
         assertEq(expected = "0.0", JString.valueOf(0.0f64))
 
     @Test
-    def invokeMathAbs01(): Unit \ {Assert, IO} =
+    def invokeMathAbs01(): Unit \ {Assert} =
         assertEq(expected = 42, JMath.abs(-42))
 
     @Test
-    def invokeMathAbs02(): Unit \ {Assert, IO} =
+    def invokeMathAbs02(): Unit \ {Assert} =
         assertEq(expected = 3.14f64, JMath.abs(-3.14f64))
 
     @Test

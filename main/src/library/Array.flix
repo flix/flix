@@ -53,6 +53,14 @@ instance ForEach[Array[a, r]] {
     pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ ef + r = Array.forEach(f, a)
 }
 
+instance Formattable[Array[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: Array[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("Array#{") + joinWith(Formattable.format, fromString(", "), Array.toList(x)) + fromString("}")
+}
+
 mod Array {
     import java.lang.Object
     import java.lang.System
@@ -1299,7 +1307,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                if (f(get(i, a))) MutList.push(i, l) else ();
+                if (f(get(i, a))) { MutList.push(i, l) };
                 loop(i + 1)
             }
         };
@@ -1540,7 +1548,7 @@ mod Array {
     pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: Array[a, r2]): Unit \ { r1, r2 } =
         let srcObj: Object = checked_cast(src#src);
         let dstObj: Object = checked_cast(dst);
-        unchecked_cast(System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) as _ \ { r1, r2 })
+        unsafe IO as { r1, r2 } { System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) }
 
     ///
     /// Returns a shallow copy of the array `a`.

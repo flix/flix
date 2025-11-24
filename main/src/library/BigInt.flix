@@ -40,7 +40,7 @@ mod BigInt {
     /// Returns `base` raised to the power of `n`.
     ///
     pub def pow(base: {base = BigInt}, n: Int32): BigInt =
-        unsafe base#base.pow(n)
+        base#base.pow(n)
 
     ///
     /// Returns the Euclidean modulo of `x` and `n`.
@@ -50,7 +50,7 @@ mod BigInt {
         if (n == 0ii)
             0ii
         else
-            unsafe ((x.remainder(n)) + n).remainder(n)
+            ((x.remainder(n)) + n).remainder(n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -62,7 +62,7 @@ mod BigInt {
         if (n == 0ii)
             0ii
         else
-            unsafe x.remainder(n)
+            x.remainder(n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -115,43 +115,43 @@ mod BigInt {
     /// Returns the integer binary logarithm of `x`.
     ///
     pub def log2(x: BigInt): Int32 =
-        unsafe x.bitLength()
+        x.bitLength()
 
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
     pub def leftShift(x: BigInt, y: Int32): BigInt =
-        unsafe x.shiftLeft(y)
+        x.shiftLeft(y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
     pub def rightShift(x: BigInt, y: Int32): BigInt =
-        unsafe x.shiftRight(y)
+        x.shiftRight(y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
     pub def bitwiseAnd(x: BigInt, y: BigInt): BigInt =
-        unsafe x.$and(y)
+        x.$and(y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
     pub def bitwiseNot(x: BigInt): BigInt =
-        unsafe x.$not()
+        x.$not()
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
     pub def bitwiseOr(x: BigInt, y: BigInt): BigInt =
-        unsafe x.$or(y)
+        x.$or(y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
     pub def bitwiseXor(x: BigInt, y: BigInt): BigInt =
-        unsafe x.$xor(y)
+        x.$xor(y)
 
     ///
     /// Return a string representation of `x`.
@@ -163,7 +163,7 @@ mod BigInt {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[BigInt] = try {
-        Some(unsafe new BigInteger(s.strip()))
+        Some(new BigInteger(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -178,7 +178,7 @@ mod BigInt {
     ///
     pub def tryToInt8(x: BigInt): Option[Int8] =
         try {
-            Some(unsafe x.byteValueExact())
+            Some(x.byteValueExact())
         } catch {
             case _ : ArithmeticException => None
         }
@@ -193,7 +193,7 @@ mod BigInt {
     ///
     pub def tryToInt16(x: BigInt): Option[Int16] =
         try {
-            Some(unsafe x.shortValueExact())
+            Some(x.shortValueExact())
         } catch {
             case _ : ArithmeticException => None
         }
@@ -208,7 +208,7 @@ mod BigInt {
     ///
     pub def tryToInt32(x: BigInt): Option[Int32] =
         try {
-            Some(unsafe x.intValueExact())
+            Some(x.intValueExact())
         } catch {
             case _ : ArithmeticException => None
         }
@@ -223,7 +223,7 @@ mod BigInt {
     ///
     pub def tryToInt64(x: BigInt): Option[Int64] =
         try {
-            Some(unsafe x.longValueExact())
+            Some(x.longValueExact())
         } catch {
             case _ : ArithmeticException => None
         }
@@ -239,8 +239,8 @@ mod BigInt {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
-        let xd = unsafe new BigDecimal(x);
-        let d = unsafe xd.floatValue();
+        let xd = new BigDecimal(x);
+        let d = xd.floatValue();
         forM (
             f32min <- Float32.tryToBigInt(Float32.minValue());
             f32max <- Float32.tryToBigInt(Float32.maxValue());
@@ -258,8 +258,8 @@ mod BigInt {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
-        let xd = unsafe new BigDecimal(x);
-        let d = unsafe xd.doubleValue();
+        let xd = new BigDecimal(x);
+        let d = xd.doubleValue();
         forM (
             f64min <- Float64.tryToBigInt(Float64.minValue());
             f64max <- Float64.tryToBigInt(Float64.maxValue());
@@ -270,7 +270,7 @@ mod BigInt {
     /// Convert `x` to an `BigDecimal`.
     ///
     pub def toBigDecimal(x: BigInt): BigDecimal =
-        unsafe new BigDecimal(x)
+        new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
@@ -294,7 +294,7 @@ mod BigInt {
         let maxii = Int8.toBigInt(max#max);
         try {
             let y = clamp(min = minii, max = maxii, x);
-            unsafe y.byteValueExact()
+            y.byteValueExact()
         } catch {
             // This should be impossible!
             case _ : ArithmeticException => min#min
@@ -310,7 +310,7 @@ mod BigInt {
         let maxii = Int16.toBigInt(max#max);
         try {
             let y = clamp(min = minii, max = maxii, x);
-            unsafe y.shortValueExact()
+            y.shortValueExact()
         } catch {
             // This should be impossible!
             case _ : ArithmeticException => min#min
@@ -326,7 +326,7 @@ mod BigInt {
         let maxii = Int32.toBigInt(max#max);
         try {
             let y = clamp(min = minii, max = maxii, x);
-            unsafe y.intValueExact()
+            y.intValueExact()
         } catch {
             // This should be impossible!
             case _ : ArithmeticException => min#min
@@ -342,7 +342,7 @@ mod BigInt {
         let maxii = Int64.toBigInt(max#max);
         try {
             let y = clamp(min = minii, max = maxii, x);
-            unsafe y.longValueExact()
+            y.longValueExact()
         } catch {
             // This should be impossible!
             case _ : ArithmeticException => min#min
@@ -360,8 +360,8 @@ mod BigInt {
                 f32max <- Float32.tryToBigInt(max#max)
             ) yield {
                 let x1 = clamp(min = f32min, max = f32max, x);
-                let xd = unsafe new BigDecimal(x1);
-                unsafe xd.floatValue()
+                let xd = new BigDecimal(x1);
+                xd.floatValue()
             }
         };
         match step() {
@@ -381,8 +381,8 @@ mod BigInt {
                 f64max <- Float64.tryToBigInt(max#max)
             ) yield {
                 let x1 = clamp(min = f64min, max = f64max, x);
-                let xd = unsafe new BigDecimal(x1);
-                unsafe xd.doubleValue()
+                let xd = new BigDecimal(x1);
+                xd.doubleValue()
             }
         };
         match step() {

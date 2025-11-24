@@ -199,8 +199,7 @@ mod Concurrent.Channel {
 
         // If the channel is unbuffered, wait for the element to be handed off
         // before continuing.
-        if (unBuffered) discard awaitBarrier(rendezvous)
-        else ()
+        if (unBuffered) { discard awaitBarrier(rendezvous) }
 
     ///
     /// Retrieves an element from the channel `c`. This is blocking if the
@@ -452,8 +451,7 @@ mod Concurrent.Channel {
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
 
         // In the unbuffered case, rendezvous with the putter from which we just received a value.
-        if (unBuffered) discard awaitBarrier(rendezvous)
-        else ();
+        if (unBuffered) { discard awaitBarrier(rendezvous) };
 
         // Signal waiting setters that the channel has space
         signalCondition(waitingPutters);

@@ -35,27 +35,25 @@ mod Debug {
     ///
     /// Prints `x` to the standard out.
     ///
-    pub def dprint(x: a): Unit \ Debug with ToString[a] =
-        unchecked_cast({
-            let s: String = ToString.toString(x);
-            System.out.print(s)
-        } as _ \ Debug)
+    pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
+        let rs = Formattable.format(x);
+        let s = RichString.toString(rs);
+        unsafe IO as Debug { System.out.print(s) }
 
     ///
     /// Prints `x` to the standard out followed by a new line.
     ///
-    pub def dprintln(x: a): Unit \ Debug with ToString[a] =
-        unchecked_cast({
-            let s: String = ToString.toString(x);
-            System.out.println(s)
-        } as _ \ Debug)
+    pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
+        let rs = Formattable.format(x);
+        let s = RichString.toString(rs);
+        unsafe IO as Debug { System.out.println(s) }
 
     ///
     /// Escapes the given string per Flix's escaping rules.
     ///
     @Internal
     def escape(s: String): String = {
-        def replace(src: String, dst: String, subject: String): String = unsafe subject.replace(src, dst);
+        def replace(src: String, dst: String, subject: String): String = subject.replace(src, dst);
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")
@@ -79,10 +77,10 @@ mod Debug {
             case y: Float64 =>
                 Double.toString(y)
             case y: BigDecimal =>
-                if (unsafe Objects.isNull(y)) {
+                if (Objects.isNull(y)) {
                     "null"
                 } else {
-                    unsafe y.toString() + "ff"
+                    y.toString() + "ff"
                 }
             case y: Int8 =>
                 Byte.toString(y) + "i8"
@@ -93,37 +91,37 @@ mod Debug {
             case y: Int64 =>
                 Long.toString(y) + "i64"
             case y: BigInt =>
-                if (unsafe Objects.isNull(y)) {
+                if (Objects.isNull(y)) {
                     "null"
                 } else {
-                    unsafe y.toString() + "ii"
+                    y.toString() + "ii"
                 }
             case s: String =>
-                if (unsafe Objects.isNull(s)) {
+                if (Objects.isNull(s)) {
                     "null"
                 } else {
                     "\"" + escape(s) + "\""
                 }
             case y: Array[Bool, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Bool, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Bool, Static])) }
             case y: Array[Char, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Char, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Char, Static])) }
             case y: Array[Float32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float32, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Float32, Static])) }
             case y: Array[Float64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float64, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Float64, Static])) }
             case y: Array[Int8, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int8, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int8, Static])) }
             case y: Array[Int16, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int16, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int16, Static])) }
             case y: Array[Int32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int32, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int32, Static])) }
             case y: Array[Int64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int64, Static])) }
             case y: Array[_, _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
+                unsafe IO { Arrays.deepToString(unchecked_cast(y as Array[Object, Static])) }
             case y: _ =>
-                unsafe Objects.toString(unchecked_cast(y as Object))
+                unsafe IO { Objects.toString(unchecked_cast(y as Object)) }
         }
     }
 

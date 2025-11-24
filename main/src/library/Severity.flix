@@ -27,3 +27,13 @@ pub enum Severity with Eq, Order, ToString {
     case Warn
     case Fatal
 }
+
+instance Formattable[Severity] {
+    pub def format(s: Severity): RichString = match s {
+        case Severity.Trace => RichString.gray("Trace")
+        case Severity.Debug => RichString.blue("Debug")
+        case Severity.Info  => RichString.green("Info")
+        case Severity.Warn  => RichString.yellow("Warn")
+        case Severity.Fatal => RichString.red("Fatal")
+    }
+}

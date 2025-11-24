@@ -94,9 +94,11 @@ mod BPlusTree {
         ///
         @Internal
         pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
-            let adder = unchecked_cast((new JLongAdder(): _ \ IO) as _ \ r);
-            unchecked_cast((adder.add(Int32.toInt64(initialValue)): _ \ IO) as _ \ r);
-            AtomicCounter(adder)
+            unsafe IO as r {
+                let adder = new JLongAdder();
+                adder.add(Int32.toInt64(initialValue));
+                AtomicCounter(adder)
+            }
 
 
         ///
@@ -105,8 +107,7 @@ mod BPlusTree {
         @Internal
         pub def increment(counter: AtomicCounter[r]): Unit \ r =
             let AtomicCounter(c) = counter;
-            unchecked_cast((c.increment(): _ \ IO) as _ \ r);
-            ()
+            unsafe IO as r { c.increment() }
 
         ///
         /// Returns the current state of `counter`.
@@ -114,7 +115,7 @@ mod BPlusTree {
         @Internal
         pub def get(counter: AtomicCounter[r]): Int32 \ r =
             let AtomicCounter(c) = counter;
-            unchecked_cast((c.intValue(): _ \ IO) as _ \ r)
+            unsafe IO as r { c.intValue() }
     }
 
 
@@ -179,8 +180,7 @@ mod BPlusTree {
         @Internal
         pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            let stamp = unchecked_cast((l.readLock(): _ \ IO) as _ \ r);
-            unchecked_cast((l.unlockRead(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.unlockRead(l.readLock()) }
 
         ///
         /// Returns `true` if `lock` is currently held by a thread.
@@ -190,14 +190,14 @@ mod BPlusTree {
         @Internal
         pub def isLocked(lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.isWriteLocked() or l.isReadLocked(): _ \ IO) as _ \ r)
+            unsafe IO as r { l.isWriteLocked() or l.isReadLocked() }
 
         ///
         /// Returns a fresh lock.
         ///
         @Internal
         pub def mkLock(_: Region[r]): Lock[r] \ r =
-            Lock(unchecked_cast((new JStampedLock(): _ \ IO) as _ \ r))
+            Lock(unsafe IO as r { new JStampedLock() })
 
         /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
         /// The returned stamp cannot be invalidated if it was valid when issued.
@@ -207,7 +207,7 @@ mod BPlusTree {
         @Internal
         pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.tryConvertToWriteLock(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.tryConvertToWriteLock(stamp) }
 
         ///
         /// Return an optimistic stamp on `lock` which can be used in `valid` to
@@ -218,7 +218,7 @@ mod BPlusTree {
         @Internal
         pub def tryReadLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.tryOptimisticRead(): _ \ IO) as _ \ r)
+            unsafe IO as r { l.tryOptimisticRead() }
 
         ///
         /// Unlock `lock` with the issued write-stamp, `stamp`.
@@ -228,7 +228,7 @@ mod BPlusTree {
         @Internal
         pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.unlockWrite(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.unlockWrite(stamp) }
 
         ///
         /// Returns true if `stamp` is still valid on `lock`, meaning no thread
@@ -239,7 +239,7 @@ mod BPlusTree {
         @Internal
         pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.validate(stamp): _ \ IO) as _ \ r)
+            unsafe IO as r { l.validate(stamp) }
 
         ///
         /// Lock `lock` and returns the stamp.
@@ -249,7 +249,7 @@ mod BPlusTree {
         @Internal
         pub def writeLock(lock: Lock[r]): Int64 \ r =
             let Lock(l) = lock;
-            unchecked_cast((l.writeLock(): _ \ IO) as _ \ r)
+            unsafe IO as r { l.writeLock() }
     }
 
     ///
@@ -367,6 +367,82 @@ mod BPlusTree {
         }
 
     ///
+    /// Returns a `BPlusTree` with mappings `k => f(v)` for every `k => v` in `t`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = 
+        mapWithKey(rc1, _ -> v -> f(v), t)
+
+    ///
+    /// Returns a `BPlusTree` with mappings `k => f(k, v)` for every `k => v` in `t`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def mapWithKey(rc1: Region[r1], f: k -> v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = {
+        let t1 = BPlusTree.emptyWithArity(rc1, BPlusTree.arity(t));
+        foreach ((k, v) <- t) {
+            BPlusTree.put(k, f(k, v), t1)
+        };
+        t1
+    }
+
+    ///
+    /// Returns an iterator over all key-value pairs in `t`,
+    ///
+    /// Not thread-safe.
+    ///
+    pub def iterator(rc1: Region[r1], t: BPlusTree[k, v, r]): Iterator[(k, v), r + r1, r1] \ r + r1 = {
+        let nodeRef = Ref.fresh(rc1, Node.leftMostChild(t->root));
+        let indexRef = Ref.fresh(rc1, 0);
+        def next() = {
+            let node = Ref.get(nodeRef);
+            let index = Ref.get(indexRef);
+            if (index < Node.size(node)) {
+                Ref.put(index + 1, indexRef);
+                Some(Node.getKeyAndValueAt(index, node))
+            } else match Node.next(node) {
+                case None => None
+                case Some(nextNode) => {
+                    Ref.put(nextNode, nodeRef);
+                    Ref.put(0, indexRef);
+                    next()
+                }
+            }
+        };
+        Iterator.iterate(rc1, next)
+    }
+
+    ///
+    /// Returns `t` as an immutable map.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] = 
+        (Map.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Map.insert(k, v, acc))
+    
+    ///
+    /// Returns `t` as a set of key-value pairs.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] = 
+        (Set.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Set.insert((k, v), acc))
+    
+    ///
+    /// Returns `t` as a vector of key-value pairs.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def toVector(t: BPlusTree[k, v, r]): Vector[(k, v)] \ r = region rc {
+        let mm = MutList.empty(rc);
+        foreach ((k, v) <- t) {
+            MutList.push((k, v), mm)
+        };
+        MutList.toVector(mm)
+    }
+
+    ///
     /// Returns a fresh empty BPlusTree tree of standard arity.
     ///
     pub def empty(rc: Region[r]): BPlusTree[k, v, r] \ r =
@@ -428,11 +504,15 @@ mod BPlusTree {
     ///
     /// Applies `f` to a start value `i` and all values in `t` going from left to right.
     ///
+    /// Not thread-safe.
+    ///
     pub def foldLeft(f: b -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
         List.foldLeft(f, i, valuesOf(t))
 
     ///
     /// Applies `f` to a start value `i` and all mappings `k => v` in `t` going from left to right.
+    ///
+    /// Not thread-safe.
     ///
     pub def foldLeftWithKey(f: b -> k -> v -> b \ ef, i: b, t: BPlusTree[k, v, r]): b \ ef + r with Order[k] =
         List.foldLeft(b -> match (k, v) -> f(b, k, v), i, toList(t))
@@ -463,6 +543,8 @@ mod BPlusTree {
     ///
     /// Returns `Some(v)` if `k => v` is in `t`. Otherwise, returns `None`.
     ///
+    /// Thread-safe.
+    ///
     pub def get(k: k, t: BPlusTree[k, v, r]): Option[v] \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.get(k, stamp, leaf, t)
@@ -480,6 +562,8 @@ mod BPlusTree {
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
+    /// Thread-safe. 
+    ///
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
         Node.getWithDefault(k, stamp, d, leaf, t)
@@ -487,6 +571,8 @@ mod BPlusTree {
 
     ///
     /// Returns the set of keys in `t`.
+    ///
+    /// Not thread-safe.
     ///
     pub def keysOf(t: BPlusTree[k, v, r]): Set[k] \ r with Order[k] = region rc {
         let set = MutSet.empty(rc);
@@ -497,6 +583,8 @@ mod BPlusTree {
     ///
     /// Returns the list of values in `t`.
     ///
+    /// Not thread-safe.
+    ///
     pub def valuesOf(t: BPlusTree[k, v, r]): List[v] \ r with Order[k] = region rc {
         let list = MutList.empty(rc);
         forEach(_ -> v -> MutList.push(v, list), t);
@@ -504,10 +592,44 @@ mod BPlusTree {
     }
 
     ///
+    /// Returns a string containing all values in `t`, in key order,
+    /// with each value formatted by its `ToString` instance and separated by `sep`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def joinValues(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[v] =
+        joinWith(_ -> v -> ToString.toString(v), sep, t)
+
+    ///
+    /// Returns a string containing all keys in `t`, in key order,
+    /// with each key formatted by its `ToString` instance and separated by `sep`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def joinKeys(sep: String, t: BPlusTree[k, v, r]): String \ r with ToString[k] =
+        joinWith(k -> _ -> ToString.toString(k), sep, t)
+
+    ///
+    /// Applies `f` to each key-value pair in `t`, in key order, to obtain a
+    /// string and returns all results joined together using `sep`.
+    ///
+    /// Not thread-safe.
+    ///
+    pub def joinWith(f: k -> v -> String \ ef, sep: String, t: BPlusTree[k, v, r]): String \ r + ef = region rc {
+        let sb = StringBuilder.empty(rc);
+        foreach ((k, v) <- t) {
+            StringBuilder.append(f(k, v), sb);
+            StringBuilder.append(sep, sb)
+        };
+        let str = StringBuilder.toString(sb);
+        String.dropRight(String.length(sep), str)
+    }
+
+    ///
     /// Applies `f` to all mappings `k => v` in `t` in parallel.
     /// `f` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads.
+    /// This method unsafe removes the `r` effect when spawning threads.
     ///
     /// Not thread-safe.
     ///
@@ -524,14 +646,16 @@ mod BPlusTree {
             forEach(f, t)
         } else {
             let minLeaf = Node.leftMostChild(t->root);
-            unchecked_cast(Vector.range(0, threadNum) |>
-            (Vector.forEach(i -> {
-                let _: Unit = spawn unchecked_cast(
-                    // Flix does not allow region effect in spawns. Remove the effect.
-                    (Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf): _ \ r) as _ \ IO
-                ) @ rc;
-                ()
-            }): _ \ {}) as _ \ r)
+            unsafe IO as r {
+                Vector.range(0, threadNum) |>
+                Vector.forEach(i -> {
+                    let _: Unit = spawn unsafe r as IO {
+                        // Flix does not allow region effect in spawns. Remove the effect.
+                        Node.traverseRightUnconditionalInc(f, i, threadNum, minLeaf)
+                    } @ rc;
+                    ()
+                })
+            }
         }
     }
 
@@ -542,7 +666,7 @@ mod BPlusTree {
     ///
     /// `f1` and `f2` must not modify `t`.
     ///
-    /// This method unsafely removes the `r` effect when spawning threads in case 2.
+    /// This method unsafe removes the `r` effect when spawning threads in case 2.
     ///
     /// Not thread-safe.
     ///
@@ -730,7 +854,7 @@ mod BPlusTree {
     /// It is assumed that this function is only used in contexts
     /// where this effect is not observable outside of the RedBlackTree module.
     ///
-    def threads(): Int32 = unsafe {
+    def threads(): Int32 = {
         // Note: We use a multiple of the number of physical cores for better performance.
         let multiplier = 4;
         multiplier * Runtime.getRuntime().availableProcessors()
@@ -870,9 +994,9 @@ mod BPlusTree {
                     Array.put(f(key, val), index, node->values);
                     Lock.unlockWrite(writeStamp, node->lock)
                 }
-            } else if (not Lock.valid(stamp, node->lock))
+            } else if (not Lock.valid(stamp, node->lock)) {
                 BPlusTree.adjustWithKey(f, key, t)
-            else ()
+            }
         }
 
         ///
@@ -1049,6 +1173,23 @@ mod BPlusTree {
             loop(1, node)
 
         ///
+        /// Return the mapping `k => v` at position `index` in `node`. Crashes if 
+        /// `index >= node->size`.
+        ///
+        @Internal
+        pub def getKeyAndValueAt(index: Int32, node: Node[k, v, r]): (k, v) \ r = {
+            let k = Array.get(index, node->keys);
+            let v = Array.get(index, node->values);
+            (k, v)
+        }
+
+        ///
+        /// Optionally return the node to the right of `node`.
+        ///
+        @Internal
+        pub def next(node: Node[k, v, r]): Option[Node[k, v, r]] \ r = node->next
+
+        ///
         /// Returns `true` if the pointer of `o1` is equal to the pointer of `o2`.
         ///
         def equalByReference(o1: Node[k, v, r], o2: Node[k, v, r]): Bool =
@@ -1056,8 +1197,7 @@ mod BPlusTree {
             // The purpose is to be able to give them to a Java class which performs pointer comparison.
             let obj1 = unchecked_cast(o1 as JObject);
             let obj2 = unchecked_cast(o2 as JObject);
-            // Unchecked cast is here used to remove the IO effect from interacting with Java.
-            unchecked_cast((JObjects.equals(obj1, obj2): _ \ IO) as _ \ {})
+            unsafe IO { JObjects.equals(obj1, obj2) }
 
         ///
         /// Optionally returns the first mapping satisfying the function `f` in `node` and
@@ -1572,9 +1712,9 @@ mod BPlusTree {
             let index = binarySearch(min, search, minLeaf);
             if (index < 0) {
                 let insertionPoint = toInsertionPoint(index);
-                if (insertionPoint <= minLeaf->size)
+                if (insertionPoint <= minLeaf->size) {
                     traverseRight(f, insertionPoint, max, search, minLeaf)
-                else ()
+                }
             } else
                 traverseRight(f, index, max, search, minLeaf)
 
@@ -1662,9 +1802,9 @@ mod BPlusTree {
             let parentStamp = lockParent(leftNode, tree);
             rightNode->parent = leftNode->parent;
             Array.forEachWithIndex(i -> child ->
-                if (i < rightSize)
+                if (i < rightSize) {
                     child->parent = Some(rightNode)
-                else (), rightChildren);
+                }, rightChildren);
             Lock.unlockWrite(leftNodeStamp, leftNode->lock);
             Lock.unlockWrite(rightNodeStamp, rightNode->lock);
             pushKeyToParent(leftNode->parent, leftNode, rightNode, parentStamp, keyOfRight, tree)
@@ -1752,7 +1892,7 @@ mod BPlusTree {
                 if (childIndexInRight != rightSizeWithoutNew) {
                     Array.copyInto(srcPos = mid + childIndexInRight - 1, dstPos = childIndexInRight, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->keys, rightKeys);
                     Array.copyInto(srcPos = mid + childIndexInRight, dstPos = childIndexInRight + 1, len = rightSizeWithoutNew - childIndexInRight, src = leftNode->children, rightChildren)
-                } else ();
+                };
                 (Array.get(mid - 1, leftNode->keys), rightKeys, rightChildren)
             }
         }
@@ -1846,7 +1986,7 @@ mod BPlusTree {
                 if (comparison(k, max, search) != 1) {
                     f(k, Array.get(index, node->values));
                     traverseRight(f, index + 1, max, search, node)
-                } else ()
+                }
             } else match node->next {
                 case Some(next) => traverseRight(f, 0, max, search, next)
                 case None => ()

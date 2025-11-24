@@ -40,12 +40,4 @@ mod Test.Exp.UncheckedTypeCast {
         // Test that cast from primitive types to object types doesn't cause compile time crash.
         if (-3 < 10) true else castToString(42) == ""
 
-    @test
-    def testUncheckedTypeCast08(): Bool =
-        try castToString(42) == ??? catch {
-            case e: Error =>
-                let msg = (unsafe e.getMessage());
-                msg |> String.startsWith(prefix = "Cannot cast from type 'Int32' to 'Object'")
-        }
-
 }

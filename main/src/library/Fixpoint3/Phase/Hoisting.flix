@@ -112,8 +112,7 @@ mod Fixpoint3.Phase.Hoisting {
                             let rep = getOrCrash(MutDisjointSets.find(load, equalitySets));
                             match Map.get(rep, innerAcc) {
                                 case Some(RamTerm.Lit(v, _)) => {
-                                        if (v != val) MutSet.add(fst(rep), impossible)
-                                        else ()
+                                        if (v != val) { MutSet.add(fst(rep), impossible) }
                                     };
                                     innerAcc
                                 case Some(_) => bug!("In Fixpoint.Phase.Hoisting.hoistProgram: termMap contains non-literals before hoistStmt!")

@@ -536,7 +536,7 @@ object Desugar {
     case WeededAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val e3 = visitExp(exp3)
+      val e3 = exp3.map(visitExp).getOrElse(Expr.Cst(Constant.Unit, loc.asSynthetic))
       Expr.IfThenElse(e1, e2, e3, loc)
 
     case WeededAst.Expr.Stm(exp1, exp2, loc) =>
@@ -696,17 +696,11 @@ object Desugar {
       val eff = declaredEff.map(visitType)
       Expr.UncheckedCast(e, t, eff, loc)
 
-    case WeededAst.Expr.Unsafe(exp, eff0, loc) =>
+    case WeededAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
-      Expr.Unsafe(e, eff, loc)
-
-    case WeededAst.Expr.UnsafeOld(exp, loc) =>
-      // We desugar an unsafe expression to an unchecked cast to pure.
-      val e = visitExp(exp)
-      val declaredType = None
-      val declaredEff = Some(DesugaredAst.Type.Pure(loc.asSynthetic))
-      Expr.UncheckedCast(e, declaredType, declaredEff, loc)
+      val asEff = asEff0.map(visitType)
+      Expr.Unsafe(e, eff, asEff, loc)
 
     case WeededAst.Expr.Without(exp, eff, loc) =>
       val e = visitExp(exp)

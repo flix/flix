@@ -98,12 +98,12 @@ mod TestFromJava {
 
     @Test
     def bigIntFromJava01(): Unit \ Assert =
-        let i = unsafe BigInteger.valueOf(0i64);
+        let i = BigInteger.valueOf(0i64);
         assertEq(expected = 0ii, ToFlix.toFlix(i))
 
     @Test
     def bigIntFromJava02(): Unit \ Assert =
-        let i = unsafe BigInteger.valueOf(100i64);
+        let i = BigInteger.valueOf(100i64);
         assertEq(expected = 100ii, ToFlix.toFlix(i))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -112,12 +112,12 @@ mod TestFromJava {
 
     @Test
     def bigDecimalFromJava01(): Unit \ Assert =
-        let d = unsafe BigDecimal.valueOf(0i64);
+        let d = BigDecimal.valueOf(0i64);
         assertEq(expected = 0.0ff, ToFlix.toFlix(d))
 
     @Test
     def bigDecimalFromJava02(): Unit \ Assert =
-        let d = unsafe BigDecimal.valueOf(100i64);
+        let d = BigDecimal.valueOf(100i64);
         assertEq(expected = 100.0ff, ToFlix.toFlix(d))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -139,13 +139,13 @@ mod TestFromJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def stringFromJava01(): Unit \ Assert =
-        let s = unsafe JString.valueOf(true);
+    def stringFromJava01(): Unit \ Assert + IO =
+        let s = JString.valueOf(true);
         assertEq(expected = "true", ToFlix.toFlix(s))
 
     @Test
-    def stringFromJava02(): Unit \ Assert =
-        let s = unsafe JString.valueOf(false);
+    def stringFromJava02(): Unit \ Assert + IO =
+        let s = JString.valueOf(false);
         assertEq(expected = "false", ToFlix.toFlix(s))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -153,18 +153,18 @@ mod TestFromJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def chainFromJava01(): Unit \ Assert =
-        let l = unsafe JList.of();
+    def chainFromJava01(): Unit \ Assert + IO =
+        let l = JList.of();
         assertEq(expected = (Chain.empty(): Chain[String]), (ToFlix.toFlix(l): Chain[String]))
 
     @Test
-    def chainFromJava02(): Unit \ Assert =
-        let l = unsafe JList.of("one");
+    def chainFromJava02(): Unit \ Assert + IO =
+        let l = JList.of("one");
         assertEq(expected = Chain.singleton("one"), (ToFlix.toFlix(l): Chain[String]))
 
     @Test
-    def chainFromJava03(): Unit \ Assert =
-        let l = unsafe JList.of("one", "two");
+    def chainFromJava03(): Unit \ Assert + IO =
+        let l = JList.of("one", "two");
         assertEq(expected = List.toChain(List#{"one", "two"}), (ToFlix.toFlix(l): Chain[String]))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -172,18 +172,18 @@ mod TestFromJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def listFromJava01(): Unit \ Assert =
-        let l = unsafe JList.of();
+    def listFromJava01(): Unit \ Assert + IO =
+        let l = JList.of();
         assertEq(expected = (Nil: List[String]), (ToFlix.toFlix(l): List[String]))
 
     @Test
-    def listFromJava02(): Unit \ Assert =
-        let l = unsafe JList.of("one");
+    def listFromJava02(): Unit \ Assert + IO =
+        let l = JList.of("one");
         assertEq(expected = List#{"one"}, (ToFlix.toFlix(l): List[String]))
 
     @Test
-    def listFromJava03(): Unit \ Assert =
-        let l = unsafe JList.of("one", "two");
+    def listFromJava03(): Unit \ Assert + IO =
+        let l = JList.of("one", "two");
         assertEq(expected = List#{"one", "two"}, (ToFlix.toFlix(l): List[String]))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -191,18 +191,18 @@ mod TestFromJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def mapFromJava01(): Unit \ Assert =
-        let m = unsafe JMap.of();
+    def mapFromJava01(): Unit \ Assert + IO =
+        let m = JMap.of();
         assertEq(expected = Map#{}, (ToFlix.toFlix(m): Map[String, String]))
 
     @Test
-    def mapFromJava02(): Unit \ Assert =
-        let m = unsafe JMap.of("a", "one");
+    def mapFromJava02(): Unit \ Assert + IO =
+        let m = JMap.of("a", "one");
         assertEq(expected = Map#{"a" => "one"}, (ToFlix.toFlix(m): Map[String, String]))
 
     @Test
-    def mapFromJava03(): Unit \ Assert =
-        let m = unsafe JMap.of("a", "one", "b", "two");
+    def mapFromJava03(): Unit \ Assert + IO =
+        let m = JMap.of("a", "one", "b", "two");
         assertEq(expected = Map#{"a" => "one", "b" => "two"}, (ToFlix.toFlix(m): Map[String, String]))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -210,18 +210,18 @@ mod TestFromJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def setFromJava01(): Unit \ Assert =
-        let s = unsafe JSet.of();
+    def setFromJava01(): Unit \ Assert + IO =
+        let s = JSet.of();
         assertEq(expected = Set#{}, (ToFlix.toFlix(s): Set[String]))
 
     @Test
-    def setFromJava02(): Unit \ Assert =
-        let s = unsafe JSet.of("one");
+    def setFromJava02(): Unit \ Assert + IO =
+        let s = JSet.of("one");
         assertEq(expected = Set#{"one"}, (ToFlix.toFlix(s): Set[String]))
 
     @Test
-    def setFromJava03(): Unit \ Assert =
-        let s = unsafe JSet.of("one", "two");
+    def setFromJava03(): Unit \ Assert + IO =
+        let s = JSet.of("one", "two");
         assertEq(expected = Set#{"one", "two"}, (ToFlix.toFlix(s): Set[String]))
 
     /////////////////////////////////////////////////////////////////////////////
@@ -229,18 +229,18 @@ mod TestFromJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def vectorFromJava01(): Unit \ Assert =
-        let v = unsafe JList.of();
+    def vectorFromJava01(): Unit \ Assert + IO =
+        let v = JList.of();
         assertEq(expected = Vector#{}, (ToFlix.toFlix(v): Vector[String]))
 
     @Test
-    def vectorFromJava02(): Unit \ Assert =
-        let v = unsafe JList.of("one");
+    def vectorFromJava02(): Unit \ Assert + IO =
+        let v = JList.of("one");
         assertEq(expected = Vector#{"one"}, (ToFlix.toFlix(v): Vector[String]))
 
     @Test
-    def vectorFromJava03(): Unit \ Assert =
-        let v = unsafe JList.of("one", "two");
+    def vectorFromJava03(): Unit \ Assert + IO =
+        let v = JList.of("one", "two");
         assertEq(expected = Vector#{"one", "two"}, (ToFlix.toFlix(v): Vector[String]))
 
 }

@@ -50,10 +50,6 @@ mod Test.Exp.Jvm.InvokeConstructor {
     def testInvokeConstructor09(): JString \ IO =
         new JString("Hello World")
 
-    @test
-    def testInvokePureConstructor01(): JString =
-        unsafe new JString("Hello World")
-
     // This test doesn't pass unless explicit cast is done
     @test
     def testInvokeObjectConstructor01(): Object \ IO =

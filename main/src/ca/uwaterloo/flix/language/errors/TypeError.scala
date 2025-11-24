@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.SymbolSet
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.ast.shared.Denotation
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -644,6 +645,25 @@ object TypeError {
       s""">> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing constraint")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Non-unit type used in statement position.
+    *
+    * @param tpe the actual type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = "Non-unit type used in statement position."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Statement has non-unit type: ${FormatType.formatType(tpe)}.
+         |
+         |${code(loc, s"non-unit type")}
          |
          |""".stripMargin
     }

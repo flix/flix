@@ -741,7 +741,7 @@ mod Test.Exp.TypeMatch {
     def reg2(x: a): String \ IO =
         typematch x {
             case y: Array[_, Static] =>
-                Array.get(0, y);
+                discard Array.get(0, y);
                 "Array"
             case _: _ =>
                 "Not Array"

@@ -945,44 +945,57 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("UnusedTypeParam.Def.01") {
+  test("UnusedTypeParamSignature.Def.01") {
     val input =
       s"""
          |pub def f[a: Type](): Int32 = 123
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
-  test("UnusedTypeParam.Def.02") {
+  test("UnusedTypeParamSignature.Def.02") {
     val input =
       s"""
          |pub def f[a: Type, b: Type](x: a): a = x
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
-  test("UnusedTypeParam.Def.03") {
+  test("UnusedTypeParamSignature.Def.03") {
     val input =
       s"""
          |pub def f[a: Type, b: Type](x: b): b = x
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
-  test("UnusedTypeParam.Def.04") {
+  test("UnusedTypeParamSignature.Def.04") {
     val input =
       s"""
          |pub def f[a: Type, b: Type, c: Type](x: a, y: c): (a, c) = (x, y)
          |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnusedTypeParam](result)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
+  }
+
+  test("UnusedTypeParamSignature.Def.05") {
+    val input =
+      s"""
+         |pub def f[a: Type](x: Int32): Int32 = {
+         | let x: a = ???;
+         | 1
+         |}
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UnusedTypeParamSignature](result)
   }
 
   test("UnusedTypeParam.Struct.01") {
@@ -1414,7 +1427,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       s"""
          |def f(): Unit =
-         |    123;
+         |    ();
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1424,8 +1437,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessExpression.02") {
     val input =
       s"""
+         |def foo(): Unit = ()
          |def f(): Unit =
-         |    (21, 42);
+         |    foo();
          |    ()
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1435,50 +1449,25 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessExpression.03") {
     val input =
       """
-        |def hof(f: a -> b \ e, x: a): b \ e = f(x)
+        |def hof(f: a -> Unit \ e, x: a): Unit \ e = f(x)
         |
         |def f(): Unit =
-        |    hof(x -> (x, 21), 42);
+        |    hof(x -> (), 42);
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.UselessExpression](result)
   }
 
-  test("UnderAppliedFunction.01") {
-    val input =
-      s"""
-         |def f(): Unit =
-         |    x -> Array#{123} @ Static;
-         |    ()
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnderAppliedFunction](result)
-  }
-
-  test("UnderAppliedFunction.02") {
-    val input =
-      s"""
-         |def f(): Unit =
-         |    def g(x, y) = Array#{x, y} @ Static;
-         |    g;
-         |    ()
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[RedundancyError.UnderAppliedFunction](result)
-  }
-
-  test("UnderAppliedFunction.03") {
+  test("UselessExpression.04") {
     val input =
       """
-        |def hof(f: a -> b \ e, x: a): b \ e = f(x)
-        |
         |def f(): Unit =
-        |    hof(x -> (x, Ref.fresh(21, Static)));
+        |    discard 123;
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnderAppliedFunction](result)
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[RedundancyError.UselessExpression](result)
   }
 
   test("UnusedFormalParam.Instance.01") {
@@ -1531,7 +1520,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UselessUnsafe.01") {
     val input =
       raw"""
-           |pub def f(): Int32 = unsafely {} run 42
+           |pub def f(): Int32 = unsafe {} run 42
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1541,7 +1530,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantUnsafe.01") {
     val input =
       raw"""
-           |pub def f(): Int32 = unsafely IO run 42
+           |pub def f(): Int32 = unsafe IO { 42 }
            |
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1771,37 +1760,6 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
 
     val result = compile(input, Options.TestWithLibMin)
     expectError[RedundancyError.RedundantDiscard](result)
-  }
-
-  test("MustUse.01") {
-    val input =
-      """
-        |@MustUse
-        |enum A {
-        |    case A
-        |}
-        |
-        |def f(): Int32 \ IO =
-        |    unchecked_cast(A.A as _ \ IO);
-        |    123
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
-  }
-
-  test("MustUse.02") {
-    val input =
-      """
-        |def f(): Int32 \ IO =
-        |    unchecked_cast((x -> x + 123) as _ \ IO);
-        |    123
-        |
-        |""".stripMargin
-
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[RedundancyError.UnusedMustUseValue](result)
   }
 
   test("RedundantCheckedTypeCast.01") {
