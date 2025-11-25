@@ -27,7 +27,7 @@ pub def main(): Unit \ IO =
         AvailableMethod(t, m) :- MethodDecl(t, m).
 
         // A method is available on a type if it is available on a supertype.
-        AvailableMethod(t, m) :- SuperType(t, s), MethodDecl(superTyp, m).
+        AvailableMethod(t, m) :- SuperType(t, s), MethodDecl(s, m).
     };
 
     // Query for all methods available on the target type `tt`.
