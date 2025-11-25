@@ -7,7 +7,7 @@ type alias Interface = String     // e.g. "Shape"
 ///
 /// We compute all inheritance cycles in a class hierarchy.
 ///
-/// We then compute the detailed inheritance path for each cycle found.
+/// We then compute the inheritance path for each cycle found.
 ///
 def main(): Unit \ IO =
     let db = database();
@@ -18,7 +18,7 @@ def main(): Unit \ IO =
         SuperType(x, y) :- Extends(x, y).
         SuperType(x, y) :- Implements(x, y).
 
-        // Compute transitive closure of supertype relationships.
+        // Compute the transitive closure of supertype relation.
         SuperType(x, z) :- SuperType(x, y), Extends(y, z).
         SuperType(x, z) :- SuperType(x, y), Implements(y, z).
 
@@ -26,21 +26,21 @@ def main(): Unit \ IO =
         Cycle(x) :- SuperType(x, x).
     };
 
-    // Query for all cycles in the hierarchy.
+    // Compute all cycles in the class hierarchy.
     let cycles = query db, pr select x from Cycle(x);
 
     if (Vector.isEmpty(cycles)) {
-        println("No inheritance cycles found. Hierarchy is valid!")
+        println("No inheritance cycles found. Class hierarchy is valid!")
     } else {
-        println("WARNING: Inheritance cycles detected!\n");
+        println("ERROR: Inheritance cycles detected!\n");
         println("The following types have cyclic inheritance:");
         foreach (typ <- cycles) {
             println("  - ${typ}")
         };
+        println("");
 
-        println("\nDetailed cycle paths:");
         foreach (typ <- cycles) {
-            println("\nCycle involving '${typ}':");
+            println("Cycle involving '${typ}':");
 
             // Use a provenance query to find the inheritance edges that form the cycle.
             let p = pquery db, pr select Cycle(typ) with {Extends, Implements};
@@ -57,7 +57,8 @@ def main(): Unit \ IO =
                         println("    ${fmtSrc} ${fmtRel} ${dst}")
                     }
                 }
-            }
+            };
+            println("")
         }
     }
 
@@ -78,11 +79,6 @@ def database(): #{ Extends(Class, Class), Implements(Class, Interface) | r } = #
     Extends("Quadrilateral", "Polygon").
     Implements("Polygon", "Shape").
 
-    // 3D shapes
-    Extends("Sphere", "Shape3D").
-    Extends("Cube", "Shape3D").
-    Implements("Shape3D", "Renderable").
-
     // Cycle 1: Circle -> Ellipse -> OvalShape -> Circle
     Extends("Circle", "Ellipse").
     Extends("Ellipse", "OvalShape").
@@ -92,3 +88,4 @@ def database(): #{ Extends(Class, Class), Implements(Class, Interface) | r } = #
     Implements("Drawable", "Paintable").
     Implements("Paintable", "Drawable").
 }
+
