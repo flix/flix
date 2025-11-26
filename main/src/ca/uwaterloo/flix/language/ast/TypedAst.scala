@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
+import ca.uwaterloo.flix.language.phase.EntryPoints.DefaultHandler
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnv, TraitEnv}
 import ca.uwaterloo.flix.util.collection.{ListMap, Nel}
 
@@ -26,7 +27,7 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
+  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
 
   case class Root(modules: ListMap[Symbol.ModuleSym, Symbol],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -41,6 +42,7 @@ object TypedAst {
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
+                  defaultHandlers: List[DefaultHandler],
                   sources: Map[Source, SourceLocation],
                   traitEnv: TraitEnv,
                   eqEnv: EqualityEnv,
