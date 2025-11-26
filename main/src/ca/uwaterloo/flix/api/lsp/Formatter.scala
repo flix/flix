@@ -1,7 +1,10 @@
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
+import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
+import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Operator
+
+import scala.collection.mutable.ListBuffer
 
 /**
   * A pretty-printer for Flix syntax trees.
@@ -20,8 +23,8 @@ object Formatter {
 
   private def traverseTree(tree: SyntaxTree.Tree): List[TextEdit] = {
     val editsHere = tree.kind match {
-      case Binary if tree.loc.isSingleLine => handleBinaryExpr(tree)
-      case _ => Nil
+      case Binary if tree.loc.isSingleLine => formatBinaryExpression(tree)
+      case _                               => Nil
     }
 
     val editsFromChildren = tree.children.flatMap {
@@ -31,17 +34,42 @@ object Formatter {
     editsHere ++ editsFromChildren
   }
 
-  private def handleBinaryExpr(tree: SyntaxTree.Tree): List[TextEdit] = {
-    val tokens: Array[Token] = collectTokens(tree)
-    val tokenStrings: Array[String] = tokens.map(_.text)
+  private def formatBinaryExpression(tree: SyntaxTree.Tree): List[TextEdit] = {
+    val tokens = collectTokens(tree)
+    val edits = ListBuffer.empty[TextEdit]
 
-    val formattedString = tokenStrings.mkString(" ")
-    val startPos = Position(tree.loc.beginLine, tree.loc.beginCol)
-    val endPos = Position(tree.loc.endLine, tree.loc.endCol)
-    val range = Range(startPos, endPos)
+    val operatorTrees = findOperatorTrees(tree)
+    val operatorTokens = operatorTrees.flatMap(opTree => collectTokens(opTree))
 
-    List(TextEdit(range, formattedString))
+    for (op <- operatorTokens) {
+      val index = tokens.indexOf(op)
+      if (index > 0 && index < tokens.length - 1) {
+        val left  = tokens(index - 1)
+        val right = tokens(index + 1)
+
+        val beforeRange = Range(
+          Position(left.sp2.lineOneIndexed, left.sp2.colOneIndexed),
+          Position(op.sp1.lineOneIndexed,   op.sp1.colOneIndexed)
+        )
+        val afterRange = Range(
+          Position(op.sp2.lineOneIndexed,   op.sp2.colOneIndexed),
+          Position(right.sp1.lineOneIndexed, right.sp1.colOneIndexed)
+        )
+
+        edits += TextEdit(beforeRange, " ")
+        edits += TextEdit(afterRange, " ")
+      }
+    }
+    edits.toList
   }
+
+  private def findOperatorTrees(tree: SyntaxTree.Tree): List[SyntaxTree.Tree] =
+    tree.children.flatMap {
+      case t: SyntaxTree.Tree =>
+        if (t.kind == Operator) t :: findOperatorTrees(t) else findOperatorTrees(t)
+      case _ => Nil
+    }.toList
+
 
   private def collectTokens(child: SyntaxTree.Child): Array[Token] = child match {
     case token: Token => Array(token)
