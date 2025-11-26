@@ -33,6 +33,14 @@ import java.io.PrintStream
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 
+object Shell {
+
+  /**
+    * The name used for the main entry point created to :eval an expression
+    */
+  val ShellEntryPointName : String = "shell1"
+}
+
 class Shell(bootstrap: Bootstrap, options: Options) {
 
   /**
@@ -310,16 +318,20 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         // The input is an expression. Wrap it in main and run it.
 
         // The name of the generated main function.
-        val main = Symbol.mkDefnSym("shell1")
+        val main = Symbol.mkDefnSym(Shell.ShellEntryPointName)
 
         val effString = Symbol.PrimitiveEffs.map(_.toString).mkString(" + ")
-        // Cast to allow any subset of the primitive effects
-        val src =
+        val src = {
+          // A dummy unit value is returned initially instead of println(s). This is because s could have any set of
+          // effects and hence, we do not know the final type signature of main until s has been typed.
+          //
+          // We cannot just accept the effString as our effect set because evaluating s may generate other effects.
+          // checked_ecast(()) is replaced with _f() in the `EntryPoint` phase. Specifically, in the function `mkShell`
           s"""def ${main.name}(): Unit \\ $effString =
-             |checked_ecast(
-             |  Assert.runWithIO(_ -> println($s))
-             |)
+             |def _f() = { println($s) };
+             |checked_ecast(())
              |""".stripMargin
+        }
         flix.addSourceCode("<shell>", src)(SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)

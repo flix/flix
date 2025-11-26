@@ -124,6 +124,25 @@ mod Test.Exp.Lambda.Op {
         assertEq(expected = 1 :: 3 :: 4 :: Nil, List.filter((!=)(2), 1 :: 2 :: 3 :: 2 :: 4 :: Nil))
 
     //
+    // List Operators
+    //
+
+    @Test
+    def testLambdaOpAppend01(): Unit \ Assert =
+        let f = (:::);
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: Nil, f(1 :: 2 :: Nil, 3 :: 4 :: Nil))
+
+    @Test
+    def testLambdaOpAppend02(): Unit \ Assert =
+        assertEq(expected = 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: Nil,
+                 List.foldLeft((:::), Nil, (1 :: 2 :: Nil) :: (3 :: 4 :: Nil) :: (5 :: 6 :: Nil) :: Nil))
+
+    @Test
+    def testLambdaOpAppend03(): Unit \ Assert =
+        let append = (:::);
+        assertEq(expected = 1 :: 2 :: 3 :: Nil, append(1 :: Nil, 2 :: 3 :: Nil))
+
+    //
     // User-Defined Operators
     //
 

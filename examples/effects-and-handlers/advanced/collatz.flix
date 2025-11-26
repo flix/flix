@@ -11,7 +11,7 @@ pub def main(): Unit \ IO = region rc {
         State.put(0);
         def loop(k: Int32) = {
             if (k == 1)
-                k
+                ()
             else if (Int32.modulo(k, 2) == 0) {
                 State.put(State.get() + 1);
                 loop(k / 2)

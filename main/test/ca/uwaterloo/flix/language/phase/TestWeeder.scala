@@ -1105,18 +1105,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalNumberOfTraitParameters](result)
   }
 
-  test("IllegalTraitParamNumber.02") {
-    val input =
-      """
-        |trait A[] {
-        | def f(x: a): a
-        |}
-        |def main(): Unit = ()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalNumberOfTraitParameters](result)
-  }
-
   test("IllegalInlineAndDontInlineAnnotation.01") {
     val input =
       """

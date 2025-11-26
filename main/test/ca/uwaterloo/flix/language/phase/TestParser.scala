@@ -741,6 +741,17 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadIfThenElse.04") {
+    val input =
+      """
+        |def foo(): Unit \ IO = if (false) if (true) println(1) else println(1)
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("BadLetMatch.01") {
     val input =
       """
@@ -1434,6 +1445,18 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
+  }
+
+  test("NeedAtleastOne.01") {
+    val input =
+      """
+        |trait A[] {
+        |    def f(x: a): a
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
   }
 
 }

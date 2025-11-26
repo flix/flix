@@ -17,7 +17,6 @@
 ///
 /// The Validation type.
 ///
-@MustUse
 pub enum Validation[e, t] with Eq, Order, ToString {
     case Success(t),
     case Failure(Nec[e])
@@ -52,6 +51,14 @@ instance Applicative[Validation[e]] {
     pub def ap(f: Validation[e, a -> b \ ef], x: Validation[e, a]): Validation[e, b] \ ef = Validation.ap(f, x)
 }
 
+instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
+    type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+    pub def format(x: Validation[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+        case Validation.Success(v) => RichString.fromString("Success(") + Formattable.format(v) + RichString.fromString(")")
+        case Validation.Failure(e) => RichString.fromString("Failure(") + Formattable.format(e) + RichString.fromString(")")
+    }
+}
 
 mod Validation {
 

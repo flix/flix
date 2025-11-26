@@ -146,7 +146,6 @@ sealed trait TokenKind {
       case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
       case TokenKind.KeywordUniv => "'univ'"
       case TokenKind.KeywordUnsafe => "'unsafe'"
-      case TokenKind.KeywordUnsafely => "'unsafely'"
       case TokenKind.KeywordUse => "'use'"
       case TokenKind.KeywordWhere => "'where'"
       case TokenKind.KeywordWith => "'with'"
@@ -278,7 +277,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUniv => true
     case TokenKind.KeywordUnsafe => true
-    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordWhere => true
     case TokenKind.KeywordWith => true
@@ -319,8 +317,11 @@ sealed trait TokenKind {
     // User-defined operators
     case TokenKind.GenericOperator => true
 
-    // Note: `KeywordAnd` and `KeywordAnd` are explicitly not supported due to laziness.
-    // Note: `ColonColon` and `ColonColonColon` are not supported due to desugaring of long lists.
+    // List operators
+    case TokenKind.ColonColonColon => true
+
+    // Note: `KeywordAnd` and `KeywordOr` are explicitly not supported due to laziness.
+    // Note: `ColonColon` is not supported due to desugaring of long lists.
 
     case _ => false
   }
@@ -448,7 +449,6 @@ sealed trait TokenKind {
     case TokenKind.KeywordTypeMatch => true
     case TokenKind.KeywordUncheckedCast => true
     case TokenKind.KeywordUnsafe => true
-    case TokenKind.KeywordUnsafely => true
     case TokenKind.KeywordUse => true
     case TokenKind.KeywordXvar => true
     case TokenKind.ListHash => true
@@ -881,8 +881,6 @@ object TokenKind {
   case object KeywordUniv extends TokenKind
 
   case object KeywordUnsafe extends TokenKind
-
-  case object KeywordUnsafely extends TokenKind
 
   case object KeywordUse extends TokenKind
 

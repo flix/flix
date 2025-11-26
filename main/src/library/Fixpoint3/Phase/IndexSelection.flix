@@ -119,8 +119,7 @@ mod Fixpoint3.Phase.IndexSelection {
                 let indexState = UniqueInts.empty(rc2);
                 let indexedStmt = indexStmt(newStmt, indexes, indexState);
                 foreach ((relSym, _) <- indexes) {
-                    UniqueInts.getIndex((relSym, 0), indexState);
-                    ()
+                    discard UniqueInts.createIndex((relSym, 0), indexState)
                 };
                 let finalState = UniqueInts.toMap(indexState);
                 (indexedStmt, finalState)
@@ -199,7 +198,7 @@ mod Fixpoint3.Phase.IndexSelection {
                         bug!("In Fixpoint.Phase.IndexSelection.indexOp: Found non-equality BoolExp in indexOp!")
                 }) |> List.toVector;
             let index = lookupIndex(relSym, search, constructedIndexes);
-            let absoluteIndex = UniqueInts.getIndex((relSym, index), indexState);
+            let absoluteIndex = UniqueInts.createIndex((relSym, index), indexState);
             RelOp.Query(rowVar, relSym, boolExps, absoluteIndex, t, indexOp(body, constructedIndexes, indexState))
         case RelOp.Functional(rowVar, func, terms, body, arity, t) =>
             RelOp.Functional(rowVar, func, terms, indexOp(body, constructedIndexes, indexState), arity, t)
@@ -288,10 +287,10 @@ mod Fixpoint3.Phase.IndexSelection {
     def searchOf(relSym: RelSym, search: Search, indexes: PrimitiveSearches[r]): Unit \ r =
         if (not Vector.isEmpty(search)) {
             let searches = MutMap.getWithDefault(relSym, List.empty(), indexes);
-            if (not List.memberOf(search, searches))
+            if (not List.memberOf(search, searches)) {
                 MutMap.put(relSym, search :: searches, indexes)
-            else ()
-        } else ()
+            }
+        }
 
     ///
     /// Returns true if `term` is ground (no free variables) w.r.t. `seenTuples`.

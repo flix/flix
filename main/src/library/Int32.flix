@@ -341,7 +341,7 @@ mod Int32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int32] = try {
-        Some(Integer.parseInt(unsafe s.strip()))
+        Some(Integer.parseInt(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -353,7 +353,7 @@ mod Int32 {
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
-            Ok(Integer.parseInt(unsafe s.strip(), radix))
+            Ok(Integer.parseInt(s.strip(), radix))
         } catch {
             case _: NumberFormatException => Err("Int32.parse")
         }
@@ -400,7 +400,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int32): BigInt =
-        unsafe BigInteger.valueOf(Integer.valueOf(x).longValue())
+        BigInteger.valueOf(Integer.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an Float32.
@@ -424,7 +424,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        unsafe new BigDecimal(x)
+        new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.

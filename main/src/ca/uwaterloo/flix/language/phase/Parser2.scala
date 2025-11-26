@@ -491,6 +491,17 @@ object Parser2 {
     false
   }
 
+  /** Returns the distance to the first non-comment token after lookahead. */
+  @tailrec
+  private def nextNonComment(lookahead: Int)(implicit s: State): Int = {
+    if (s.position + lookahead > s.tokens.length - 1) {
+      lookahead
+    } else s.tokens(s.position + lookahead).kind match {
+      case t if t.isComment => nextNonComment(lookahead + 1)
+      case _ => lookahead
+    }
+  }
+
   /** Separation permissions between a list of items. */
   sealed trait Separation
 
@@ -1534,6 +1545,35 @@ object Parser2 {
       lhs
     }
 
+    /**
+      * Returns true if the expression looks like a block expression.
+      *
+      * Does not guarantee that the expression successfully parses to an expression.
+      */
+    private def isBlockExpr()(implicit s: State): Boolean = {
+      if (!at(TokenKind.CurlyL)) {
+        return false
+      }
+      // Determines if a '{' is opening a block, a record literal, or a record operation.
+      // We can discern between record ops and literals vs. blocks by looking at the next two
+      // non-comment tokens.
+      val nextTwoNonCommentTokens = {
+        val nextIdx = nextNonComment(1)
+        val nextNextIdx = nextNonComment(nextIdx + 1)
+        (nth(nextIdx), nth(nextNextIdx))
+      }
+      nextTwoNonCommentTokens match {
+        case (TokenKind.CurlyR, _)
+             | (TokenKind.NameLowercase, TokenKind.Equal)
+             | (TokenKind.Plus, TokenKind.NameLowercase)
+             | (TokenKind.Minus, TokenKind.NameLowercase) =>
+          // Either `{ +y = expr | expr }` or `{ x = expr }`.
+          // Both are parsed the same and the difference is handled in Weeder.
+          false
+        case _ => true
+      }
+    }
+
     /** Returns the binary operator type of the current token if applicable. */
     private def peekBinaryOp()(implicit s: State): Option[BinaryOp] = {
       nthToken(0) match {
@@ -1826,7 +1866,6 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordHandler => handlerExpr()
         case TokenKind.KeywordTry => tryExpr()
@@ -2101,11 +2140,16 @@ object Parser2 {
       expect(TokenKind.ParenL)
       expression()
       expect(TokenKind.ParenR)
+      val thenIsBlockish = isBlockExpr()
       expression()
       if (eat(TokenKind.KeywordElse)) {
         // Only call expression, if we found an 'else'. Otherwise when it is missing, defs might
         // get read as let-rec-defs.
         expression()
+      } else if (!thenIsBlockish) {
+        // `if (exp1) exp2` is illegal, but `if (exp1) { exp2 }` is not
+        val error = UnexpectedToken(NamedTokenSet.FromKinds(Set(TokenKind.KeywordElse)), actual = None, sctx, hint = Some("an if expression without an else branch must be enclosed in braces."), currentSourceLocation())
+        closeWithError(open(), error)
       }
       close(mark, TreeKind.Expr.IfThenElse)
     }
@@ -2424,37 +2468,11 @@ object Parser2 {
     }
 
     private def blockOrRecordExpr()(implicit s: State): Mark.Closed = {
-      // Determines if a '{' is opening a block, a record literal, or a record operation.
       assert(at(TokenKind.CurlyL))
-
-      /** Returns the distance to the first non-comment token after lookahead. */
-      @tailrec
-      def nextNonComment(lookahead: Int): Int = {
-        if (s.position + lookahead > s.tokens.length - 1) {
-          lookahead
-        } else s.tokens(s.position + lookahead).kind match {
-          case t if t.isComment => nextNonComment(lookahead + 1)
-          case _ => lookahead
-        }
-      }
-
-      // We can discern between record ops and literals vs. blocks by looking at the next two
-      // non-comment tokens.
-      val nextTwoNonCommentTokens = {
-        val nextIdx = nextNonComment(1)
-        val nextNextIdx = nextNonComment(nextIdx + 1)
-        (nth(nextIdx), nth(nextNextIdx))
-      }
-      nextTwoNonCommentTokens match {
-        case (TokenKind.CurlyR, _)
-             | (TokenKind.NameLowercase, TokenKind.Equal)
-             | (TokenKind.Plus, TokenKind.NameLowercase)
-             | (TokenKind.Minus, TokenKind.NameLowercase) =>
-            // Either `{ +y = expr | expr }` or `{ x = expr }`.
-            // Both are parsed the same and the difference is handled in Weeder.
-            recordOperation()
-        case _ => block()
-      }
+      if (isBlockExpr())
+        block()
+      else
+        recordOperation()
     }
 
     private def recordOperation()(implicit s: State): Mark.Closed = {
@@ -2651,32 +2669,32 @@ object Parser2 {
       close(mark, TreeKind.Expr.UncheckedCast)
     }
 
+    /**
+      * `'unsafe' TTYPE [as TTYPE] { STATEMENT }`
+      *
+      * produces
+      *
+      *   - TreeKind.Expr.Unsafe
+      *     - TreeKind.Type.Type
+      *     - TreeKind.UnsafeAsEffFragment
+      *       - TreeKind.Type.Type
+      *     - TreeKind.Expr.Expr
+      */
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUnsafe))
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
-      expression()
-      close(mark, TreeKind.Expr.UnsafeOld)
-    }
-
-    /**
-      * `'unsafely' TTYPE 'run' EXPRESSION`
-      *
-      * produces
-      *
-      *   - TreeKind.Expr.UnsafelyRun
-      *     - TreeKind.Type.Type
-      *     - TreeKind.Expr.Expr
-      */
-    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordUnsafely))
-      val mark = open()
-      expect(TokenKind.KeywordUnsafely)
       Type.ttype()
-      expect(TokenKind.KeywordRun)
-      expression()
+      if (at(TokenKind.KeywordAs)) {
+        eat(TokenKind.KeywordAs)
+        val mark = open()
+        Type.ttype()
+        close(mark, TreeKind.Expr.UnsafeAsEffFragment)
+      }
+      expect(TokenKind.CurlyL)
+      statement()
+      expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Unsafe)
     }
 

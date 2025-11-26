@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.language.ast.shared.Source
 import ca.uwaterloo.flix.util.Formatter
 
+import scala.collection.mutable
+
 /**
   * A common super-type for compilation messages.
   */
@@ -91,6 +93,67 @@ trait CompilationMessage {
        |~ Want to help improve this error message? Create a PR on GitHub:
        |  $url
        |""".stripMargin
+  }
+
+}
+
+object CompilationMessage {
+
+  /**
+    * Filters compilation messages to prevent cascading errors.
+    *
+    * When an error occurs in an early phase (e.g., lexer), it often causes spurious errors
+    * in later phases (e.g., parser, typer) at the same or overlapping source locations.
+    * This method returns only the earliest-phase error for each source location, filtering
+    * out later errors that are likely consequences of the earlier one.
+    *
+    * The filtering works as follows:
+    * 1. Messages are processed in phase order (lexer → parser → weeder → ... → safety)
+    * 2. For each phase, we include messages whose locations don't overlap with
+    *    messages already included from earlier phases
+    * 3. A location A "overlaps" with location B if A is contained within B
+    * 4. Messages from the same phase never shadow each other, even if they overlap
+    *
+    * @param l the list of compilation messages to filter
+    * @return the filtered list containing only the earliest relevant error for each location
+    */
+  def filterShadowedMessages(l: List[CompilationMessage]): List[CompilationMessage] = {
+    // Accumulator for messages that pass the filter
+    val result = mutable.ArrayBuffer.empty[CompilationMessage]
+
+    // Group messages by their error kind for efficient lookup
+    val msgByKind = l.groupBy(_.kind)
+
+    // Start with the first phase in the compilation pipeline
+    var current: Option[CompilationMessageKind] = Some(CompilationMessageKind.LexerError)
+
+    // Process each phase in order
+    while (current.isDefined) {
+      val c = current.get
+
+      // Messages to include from this phase.
+      val acc = mutable.ArrayBuffer.empty[CompilationMessage]
+
+      // Check if there are any messages for this phase
+      msgByKind.get(c) match {
+        case None => // No messages for this phase, continue to next
+        case Some(msgs) =>
+          // For each message in this phase
+          for (msg <- msgs) {
+            // Only include if no earlier message contains this location
+            if (!result.exists(m => m.loc.contains(msg.loc))) {
+              acc += msg
+            }
+          }
+      }
+
+      // Add messages from this phase.
+      result ++= acc
+
+      // Move to the next phase in the pipeline
+      current = c.next
+    }
+    result.toList
   }
 
 }

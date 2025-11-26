@@ -4,31 +4,31 @@ mod Test.Exp.Jvm.InvokeMethod {
     import java.lang.{String => JString}
 
     @test
-    def testInvokeMethod01(): Bool \ IO =
+    def testInvokeMethod01(): Bool =
         "HELLO WORLD".toLowerCase() == "hello world"
 
     @test
-    def testInvokeMethod02(): Bool \ IO =
+    def testInvokeMethod02(): Bool =
         "hello world".toUpperCase() == "HELLO WORLD"
 
     @test
-    def testInvokeMethod03(): Bool \ IO =
+    def testInvokeMethod03(): Bool =
         "hello world".length() == 11
 
     @test
-    def testInvokeMethod04(): Bool \ IO =
+    def testInvokeMethod04(): Bool =
         "hello world".indexOf("world") == 6
 
     @test
-    def testInvokeMethod05(): Bool \ IO =
+    def testInvokeMethod05(): Bool =
         "hello world".replaceAll("hello", "goodbye") == "goodbye world"
 
     @test
     def testInvokePureMethod01(): Bool =
-        unsafe "HELLO WORLD".toLowerCase() == "hello world"
+        "HELLO WORLD".toLowerCase() == "hello world"
 
     @test
-    def testInvokeObjectMethod01(): JString \ IO =
+    def testInvokeObjectMethod01(): JString =
         "HELLO WORLD".toLowerCase()
 
     @test

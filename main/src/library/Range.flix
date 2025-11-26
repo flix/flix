@@ -36,7 +36,7 @@ mod Range {
         def loop(i) =
             if (i < e) {
                 f(i); loop(Discrete.succ(i))
-            } else ();
+            };
         loop(b)
 
 }

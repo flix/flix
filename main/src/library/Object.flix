@@ -24,7 +24,7 @@ mod Object {
     @Inline
     pub def isNull(x: a): Bool =
         match Reflect.reflect(x) {
-            case Reflect.JvmValue.JvmObject(obj) => unsafe Objects.isNull(obj)
+            case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
             case _ => false
         }
 

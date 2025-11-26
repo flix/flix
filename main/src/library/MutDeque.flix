@@ -46,6 +46,14 @@ instance ForEach[MutDeque[a, r]] {
     pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
 }
 
+instance Formattable[MutDeque[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
+}
+
 mod MutDeque {
 
     ///
@@ -248,7 +256,7 @@ mod MutDeque {
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand(d: MutDeque[a, r]): Unit \ r =
-        if (shouldExpand(d)) grow(d) else ()
+        if (shouldExpand(d)) { grow(d) }
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -271,7 +279,7 @@ mod MutDeque {
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
     def compress(d: MutDeque[a, r]): Unit \ r =
-        if (shouldCompress(d)) shrink(d) else ()
+        if (shouldCompress(d)) { shrink(d) }
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
