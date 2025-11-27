@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api.effectlock.serialization
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse, TypeAliasSymUse}
-import ca.uwaterloo.flix.language.ast.shared.{Scope, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
 import java.lang.reflect
@@ -20,7 +20,7 @@ object Deserialize {
   private def deserializeScheme(sc0: SScheme)(implicit flix: Flix): Scheme = sc0 match {
     case SScheme(quantifiers, tconstrs, econstrs, base) =>
       val qs = quantifiers.map(deserializeKindedTypeVarSym)
-      Scheme(qs, tconstrs.map(deserializeTraitConstraint), ???, deserializeType(base))
+      Scheme(qs, tconstrs.map(deserializeTraitConstraint), econstrs.map(deserializeEqualityConstraint), deserializeType(base))
   }
 
   private def deserializeType(tpe0: SType)(implicit flix: Flix): Type = tpe0 match {
@@ -208,6 +208,11 @@ object Deserialize {
 
   private def deserializeNamespace(ns0: List[String]): Name.NName = {
     Name.NName(ns0.map(deserializeIdent), SourceLocation.Unknown)
+  }
+
+  private def deserializeEqualityConstraint(econstr0: EqConstr)(implicit flix: Flix): EqualityConstraint = econstr0 match {
+    case EqConstr(sym, tpe1, tpe2) =>
+      EqualityConstraint(deserializeAssocTypeSymUse(sym), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
   }
 
   private def deserializeTraitConstraint(traitConstr0: TraitConstr)(implicit flix: Flix): TraitConstraint = traitConstr0 match {
