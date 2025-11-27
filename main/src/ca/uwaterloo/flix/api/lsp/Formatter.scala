@@ -1,3 +1,18 @@
+/*
+ * Copyright 2025 Din Jakupi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
@@ -7,20 +22,27 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Operator
 import scala.collection.mutable.ListBuffer
 
 /**
-  * A pretty-printer for Flix syntax trees.
+  * A formatter for Flix syntax trees.
   */
 object Formatter {
 
   /**
-    * Pretty prints the given syntax tree root.
+    * Formats the given syntax tree.
     *
     * @param root the syntax tree root
     * @param uri the file path of the syntax tree
-    * @return a pretty-printed string representation of the syntax tree
+    * @return a formatted source code as a list of text edits
     */
   def format(root: SyntaxTree.Root, uri: String): List[TextEdit] =
     findTreeBasedOnUri(root, uri).map(traverseTree).getOrElse(Nil)
 
+  /**
+    * Traverses the syntax tree and collects [[TextEdit]]s for formatting.
+    * Only formats binary expressions that are on a single line.
+    *
+    * @param tree the syntax tree
+    * @return a list of text edits to apply for formatting
+    */
   private def traverseTree(tree: SyntaxTree.Tree): List[TextEdit] = {
     val editsHere = tree.kind match {
       case Binary if tree.loc.isSingleLine => formatBinaryExpression(tree)
@@ -34,42 +56,72 @@ object Formatter {
     editsHere ++ editsFromChildren
   }
 
+  /**
+    * Formats binary expression by adding spaces around operators.
+    * Adds a single space between tokens and operators in binary expressions on the same line.
+    *
+    * Example:
+    *   Original source code
+    *     def main(): Int32 = 1+2*3*5+4-6/2
+    *   Formatted source code
+    *     def main(): Int32 = 1 + 2 * 3 * 5 + 4 - 6 / 2
+    * @param tree the binary expression tree
+    * @return a list of text edits to apply for formatting
+    */
   private def formatBinaryExpression(tree: SyntaxTree.Tree): List[TextEdit] = {
-    val tokens = collectTokens(tree)
     val edits = ListBuffer.empty[TextEdit]
+    val operatorTree = tree.children.collectFirst {
+      case t: SyntaxTree.Tree if t.kind == Operator => t
+    }
 
-    val operatorTrees = findOperatorTrees(tree)
-    val operatorTokens = operatorTrees.flatMap(opTree => collectTokens(opTree))
+    operatorTree.foreach { opTree =>
+      val opToken = collectTokens(opTree).headOption
 
-    for (op <- operatorTokens) {
-      val index = tokens.indexOf(op)
-      if (index > 0 && index < tokens.length - 1) {
-        val left  = tokens(index - 1)
-        val right = tokens(index + 1)
+      opToken.foreach { op =>
+        val leftToken = tree.children.headOption.flatMap {
+          case t: SyntaxTree.Tree => getRightmostToken(t)
+          case token: Token => Some(token)
+        }
 
-        val beforeRange = Range(
-          Position(left.sp2.lineOneIndexed, left.sp2.colOneIndexed),
-          Position(op.sp1.lineOneIndexed,   op.sp1.colOneIndexed)
-        )
-        val afterRange = Range(
-          Position(op.sp2.lineOneIndexed,   op.sp2.colOneIndexed),
-          Position(right.sp1.lineOneIndexed, right.sp1.colOneIndexed)
-        )
+        val rightToken = tree.children.lastOption.flatMap {
+          case t: SyntaxTree.Tree => getLeftmostToken(t)
+          case token: Token => Some(token)
+        }
 
-        edits += TextEdit(beforeRange, " ")
-        edits += TextEdit(afterRange, " ")
+        (leftToken, rightToken) match {
+          case (Some(left), Some(right)) =>
+            val beforeRange = Range(
+              Position(left.sp2.lineOneIndexed, left.sp2.colOneIndexed),
+              Position(op.sp1.lineOneIndexed, op.sp1.colOneIndexed)
+            )
+            val afterRange = Range(
+              Position(op.sp2.lineOneIndexed, op.sp2.colOneIndexed),
+              Position(right.sp1.lineOneIndexed, right.sp1.colOneIndexed)
+            )
+
+            edits += TextEdit(beforeRange, " ")
+            edits += TextEdit(afterRange, " ")
+          case _ => // In case tokes are missing we do nothing.
+        }
       }
     }
+
     edits.toList
   }
 
-  private def findOperatorTrees(tree: SyntaxTree.Tree): List[SyntaxTree.Tree] =
-    tree.children.flatMap {
-      case t: SyntaxTree.Tree =>
-        if (t.kind == Operator) t :: findOperatorTrees(t) else findOperatorTrees(t)
-      case _ => Nil
-    }.toList
+  private def getLeftmostToken(tree: SyntaxTree.Tree): Option[Token] = {
+    tree.children.headOption.flatMap {
+      case token: Token => Some(token)
+      case t: SyntaxTree.Tree => getLeftmostToken(t)
+    }
+  }
 
+  private def getRightmostToken(tree: SyntaxTree.Tree): Option[Token] = {
+    tree.children.lastOption.flatMap {
+      case token: Token => Some(token)
+      case t: SyntaxTree.Tree => getRightmostToken(t)
+    }
+  }
 
   private def collectTokens(child: SyntaxTree.Child): Array[Token] = child match {
     case token: Token => Array(token)
