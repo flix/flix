@@ -160,7 +160,7 @@ object Deserialize {
   }
 
   private def deserializeKindedTypeVarSym(sym0: VarSym)(implicit flix: Flix): Symbol.KindedTypeVarSym = sym0 match {
-    case VarSym(text, kind) =>
+    case VarSym(text, kind) => // TODO store and reuse ID
       val t = deserializeVarText(text)
       val k = deserializeKind(kind)
       Symbol.freshKindedTypeVarSym(t, k, isSlack = false, SourceLocation.Unknown)(Scope.Top, flix)
@@ -175,7 +175,7 @@ object Deserialize {
   }
 
   private def deserializeRegionSym(sym0: RegionSym)(implicit flix: Flix): Symbol.RegionSym = sym0 match {
-    case RegionSym(text) =>
+    case RegionSym(text) => // TODO store and reuse ID
       Symbol.freshRegionSym(deserializeIdent(text))
   }
 
