@@ -11,7 +11,9 @@ object Deserialize {
 
   def deserializeDef(defn0: SDef)(implicit flix: Flix): (Symbol.DefnSym, Scheme) = defn0 match {
     case SDef(namespace, text, scheme, source) => // source unused?
-      val sym = Symbol.mkDefnSym(namespace.mkString("", ".", s".$text"))
+      val ns = namespace.mkString(".")
+      val t = if (ns.isBlank || ns.isEmpty) text else s".$text"
+      val sym = Symbol.mkDefnSym(ns + t)
       val sc = deserializeScheme(scheme)
       sym -> sc
   }
