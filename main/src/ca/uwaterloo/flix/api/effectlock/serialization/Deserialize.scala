@@ -5,7 +5,6 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUs
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 
-import java.lang.reflect
 import scala.collection.immutable.SortedSet
 
 object Deserialize {
@@ -63,10 +62,10 @@ object Deserialize {
     case Enum(sym, kind) => TypeConstructor.Enum(deserializeEnumSym(sym), deserializeKind(kind))
     case Struct(sym, kind) => TypeConstructor.Struct(deserializeStructSym(sym), deserializeKind(kind))
     case RestrictableEnum(sym, kind) => TypeConstructor.RestrictableEnum(deserializeRestrictableEnumSym(sym), deserializeKind(kind))
-    case Native(clazz) => TypeConstructor.Native(deserializeJvmClass(clazz))
-    case JvmConstructor(constructor) => TypeConstructor.JvmConstructor(deserializeJvmConstructor(constructor))
-    case JvmMethod(method) => TypeConstructor.JvmMethod(deserializeJvmMethod(method))
-    case JvmField(field) => TypeConstructor.JvmField(deserializeJvmField(field))
+    case Native(clazz) => TypeConstructor.Native(deserializeJvmClass(Native(clazz)))
+    case JvmConstructor(clazz, params) => TypeConstructor.JvmConstructor(deserializeJvmConstructor(clazz, params))
+    case JvmMethod(clazz, method, params) => TypeConstructor.JvmMethod(deserializeJvmMethod(clazz, method, params))
+    case JvmField(clazz, field) => TypeConstructor.JvmField(deserializeJvmField(clazz, field))
     case Array => TypeConstructor.Array
     case ArrayWithoutRegion => TypeConstructor.ArrayWithoutRegion
     case Vector => TypeConstructor.Vector
@@ -129,23 +128,33 @@ object Deserialize {
       Symbol.mkEnumSym(deserializeNamespace(namespace), deserializeIdent(text))
   }
 
-  private def deserializeJvmClass(clazz0: String): Class[?] = {
-    Class.forName(clazz0)
+  private def deserializeJvmClass(clazz0: Native): Class[?] = clazz0.clazz match {
+    case "B" => Byte.getClass
+    case "C" => Char.getClass
+    case "D" => Double.getClass
+    case "F" => Float.getClass
+    case "I" => Int.getClass
+    case "J" => Long.getClass
+    case "S" => Short.getClass
+    case "Z" => Boolean.getClass
+    case clazz => Class.forName(clazz)
   }
 
-  private def deserializeJvmConstructor(constructor0: String): reflect.Constructor[?] = {
-    // TODO: Also use class and parameter types
-    ???
+  private def deserializeJvmConstructor(clazz0: Native, params0: List[Native]): java.lang.reflect.Constructor[?] = {
+    val clazz = deserializeJvmClass(clazz0)
+    val params = params0.map(deserializeJvmClass).toArray
+    clazz.getDeclaredConstructor(params *)
   }
 
-  private def deserializeJvmMethod(method0: String): reflect.Method = {
-    // TODO: Also use class and parameter types
-    ???
+  private def deserializeJvmMethod(clazz0: Native, method0: String, params0: List[Native]): java.lang.reflect.Method = {
+    val clazz = deserializeJvmClass(clazz0)
+    val params = params0.map(deserializeJvmClass).toArray
+    clazz.getDeclaredMethod(method0, params *)
   }
 
-  private def deserializeJvmField(field0: String): reflect.Field = {
-    // TODO: Also use class
-    ???
+  private def deserializeJvmField(clazz0: Native, field0: String): java.lang.reflect.Field = {
+    val clazz = deserializeJvmClass(clazz0)
+    clazz.getDeclaredField(field0)
   }
 
   private def deserializeKindedTypeVarSym(sym0: VarSym)(implicit flix: Flix): Symbol.KindedTypeVarSym = sym0 match {
