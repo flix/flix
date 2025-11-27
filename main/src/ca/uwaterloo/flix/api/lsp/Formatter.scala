@@ -101,7 +101,7 @@ object Formatter {
 
             edits += TextEdit(beforeRange, " ")
             edits += TextEdit(afterRange, " ")
-          case _ => // In case tokes are missing we do nothing.
+          case _ => // In case tokens are missing we do nothing.
         }
       }
     }
