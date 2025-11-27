@@ -1,13 +1,14 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.effectlock.serialization.*
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestSerialization extends AnyFunSuite with TestUtils {
 
-  test("serialization.01") {
+  test("serialize.01") {
     val input =
       """
         |pub def fun(): Unit = ()
@@ -23,7 +24,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.02") {
+  test("serialize.02") {
     val input =
       """
         |pub def fun(x: Int32): Int32 = x + x
@@ -39,7 +40,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.03") {
+  test("serialize.03") {
     val input =
       """
         |pub def toUnit(_: Int32): Unit = ()
@@ -55,7 +56,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.04") {
+  test("serialize.04") {
     val input =
       """
         |pub def answer(): Int32 = 42
@@ -71,7 +72,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.05") {
+  test("serialize.05") {
     val input =
       """
         |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
@@ -102,7 +103,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.06") {
+  test("serialize.06") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -122,7 +123,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.07") {
+  test("serialize.07") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -146,7 +147,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.08") {
+  test("serialize.08") {
     val input =
       """
         |pub eff A {
@@ -184,7 +185,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.09") {
+  test("serialize.09") {
     val input =
       """
         |type alias Num = Int32
@@ -202,7 +203,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialization.10") {
+  test("serialize.10") {
     val input =
       """
         |pub trait T[a: Type] {
@@ -222,6 +223,178 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val actual = Serialize.serializeDef(defs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.01") {
+    val input =
+      """
+        |pub def fun(): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.02") {
+    val input =
+      """
+        |pub def fun(x: Int32): Int32 = x + x
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.03") {
+    val input =
+      """
+        |pub def toUnit(_: Int32): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.04") {
+    val input =
+      """
+        |pub def answer(): Int32 = 42
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.05") {
+    val input =
+      """
+        |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.06") {
+    val input =
+      """
+        |trait ToString[a: Type] {
+        |   pub def toString(x: a): String
+        |}
+        |
+        |pub def pretty(x: a): String with ToString[a] = ToString.toString(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.07") {
+    val input =
+      """
+        |trait ToString[a: Type] {
+        |   pub def toString(x: a): String
+        |}
+        |
+        |pub eff A {
+        |    def thing(x: String): Unit
+        |}
+        |
+        |pub def prettyPrint(x: t): Unit \ A with ToString[t] = A.thing(ToString.toString(x))
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.08") {
+    val input =
+      """
+        |pub eff A {
+        |    def thing(x: String): Unit
+        |}
+        |
+        |pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.09") {
+    val input =
+      """
+        |type alias Num = Int32
+        |pub def fun(x: Num): Num = x + x
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.10") {
+    val input =
+      """
+        |pub trait T[a: Type] {
+        |    type B: Type
+        |    pub def f(g: a -> T.B[a]): T.B[a]
+        |}
+        |
+        |pub def h(q: a -> T.B[a], x: a): T.B[a] = q(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+
     assert(actual == expected)
   }
 
