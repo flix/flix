@@ -215,7 +215,7 @@ object Deserialize {
       EqualityConstraint(deserializeAssocTypeSymUse(sym), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
   }
 
-  private def deserializeTraitConstraint(traitConstr0: TraitConstr)(implicit flix: Flix): TraitConstraint = traitConstr0 match {
+  private def deserializeTraitConstraint(tconstr0: TraitConstr)(implicit flix: Flix): TraitConstraint = tconstr0 match {
     case TraitConstr(sym, tpe) =>
       TraitConstraint(TraitSymUse(deserializeTraitSym(sym), SourceLocation.Unknown), deserializeType(tpe), SourceLocation.Unknown)
   }
