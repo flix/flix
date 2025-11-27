@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.api
+package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.effectlock.serialization.*

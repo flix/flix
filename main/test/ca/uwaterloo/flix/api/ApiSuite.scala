@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.api.effectlock.TestEffectLock
 import ca.uwaterloo.flix.api.lsp.LspSuite
 import org.scalatest.Suites
 
