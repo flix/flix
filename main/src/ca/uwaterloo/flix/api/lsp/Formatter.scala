@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.CommentList
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
 
