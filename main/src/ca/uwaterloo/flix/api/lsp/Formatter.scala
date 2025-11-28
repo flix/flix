@@ -69,8 +69,8 @@ object Formatter {
     val childBoundaries = tree.children.flatMap {
       case t: SyntaxTree.Tree =>
         for {
-          first <- getFirstToken(t)
-          last <- getLastToken(t)
+          first <- getLeftMostToken(t)
+          last <- getRightMostToken(t)
         } yield (first, last)
       case tok: Token =>
         Some((tok, tok))
@@ -91,16 +91,28 @@ object Formatter {
     children.toList
   }
 
-  private def getFirstToken(tree: SyntaxTree.Tree): Option[Token] = {
+  /**
+    * Recursively gets the left-most token in the syntax tree.
+    *
+    * @param tree the syntax tree
+    * @return an option containing the left-most token if found
+    */
+  private def getLeftMostToken(tree: SyntaxTree.Tree): Option[Token] = {
     tree.children.headOption.flatMap {
-      case t: SyntaxTree.Tree => getFirstToken(t)
+      case t: SyntaxTree.Tree => getLeftMostToken(t)
       case tok: Token => Some(tok)
     }
   }
 
-  private def getLastToken(tree: SyntaxTree.Tree): Option[Token] = {
+  /**
+    * Recursively gets the right-most token in the syntax tree.
+    *
+    * @param tree the syntax tree
+    * @return an option containing the right-most token if found
+    */
+  private def getRightMostToken(tree: SyntaxTree.Tree): Option[Token] = {
     tree.children.lastOption.flatMap {
-      case t: SyntaxTree.Tree => getLastToken(t)
+      case t: SyntaxTree.Tree => getRightMostToken(t)
       case tok: Token => Some(tok)
     }
   }
