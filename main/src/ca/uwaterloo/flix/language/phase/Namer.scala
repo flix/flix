@@ -93,12 +93,13 @@ object Namer {
     * Performs naming on the given namespace.
     */
   private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Namespace = decl match {
-    case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls, loc) =>
-      val ns = Name.NName(ns0.idents :+ ident, ident.loc)
+    case DesugaredAst.Declaration.Namespace(ann0, ident, usesAndImports0, decls, loc) =>
+      val ann = ann0 ++ ns0.annotation
+      val ns = Name.NName(ns0.idents :+ ident, ann, ident.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
-      NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
+      NamedAst.Declaration.Namespace(ann, sym, usesAndImports, ds, loc)
   }
 
   /**
@@ -109,7 +110,7 @@ object Namer {
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
+    case NamedAst.Declaration.Namespace(_, sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
@@ -316,7 +317,7 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitEnum(enum0: DesugaredAst.Declaration.Enum, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Enum = enum0 match {
-    case DesugaredAst.Declaration.Enum(doc, ann, mod0, ident, tparams0, derives0, cases0, loc) =>
+    case DesugaredAst.Declaration.Enum(doc, ann0, mod0, ident, tparams0, derives0, cases0, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -326,6 +327,7 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
+      val ann = visitAnnotations(ann0, ns0)
       val derives = visitDerivations(derives0)
       val cases = cases0.map(visitCase(_, sym))
 
@@ -336,7 +338,7 @@ object Namer {
     * Performs the naming on the given struct `struct0`.
     */
   private def visitStruct(struct0: DesugaredAst.Declaration.Struct, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Struct = struct0 match {
-    case DesugaredAst.Declaration.Struct(doc, ann, mod0, ident, tparams0, fields0, loc) =>
+    case DesugaredAst.Declaration.Struct(doc, ann0, mod0, ident, tparams0, fields0, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -345,6 +347,7 @@ object Namer {
       // Compute the type parameters.
       val tparams = tparams0.map(visitTypeParam)
 
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val fields = fields0.map(visitField(sym, _))
 
@@ -355,7 +358,7 @@ object Namer {
     * Performs naming on the given enum `enum0`.
     */
   private def visitRestrictableEnum(enum0: DesugaredAst.Declaration.RestrictableEnum, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.RestrictableEnum = enum0 match {
-    case DesugaredAst.Declaration.RestrictableEnum(doc, ann, mod0, ident, index0, tparams0, derives0, cases, loc) =>
+    case DesugaredAst.Declaration.RestrictableEnum(doc, ann0, mod0, ident, index0, tparams0, derives0, cases, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
@@ -366,6 +369,7 @@ object Namer {
       val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
 
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
       val cs = cases.map(visitRestrictableCase(_, sym))
@@ -413,10 +417,11 @@ object Namer {
     * Performs naming on the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.TypeAlias = alias0 match {
-    case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe, loc) =>
+    case DesugaredAst.Declaration.TypeAlias(doc, ann0, mod0, ident, tparams0, tpe, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val tparams = tparams0.map(visitTypeParam)
       val t = visitType(tpe)
@@ -453,11 +458,12 @@ object Namer {
     * Performs naming on the given trait `trt`.
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Trait = trt match {
-    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
+    case DesugaredAst.Declaration.Trait(doc, ann0, mod0, ident, tparams0, superTraits, assocs, signatures, laws, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val sym = Symbol.mkTraitSym(ns0, ident)
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val tparam = visitTypeParam(tparams0)
 
@@ -506,13 +512,14 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Sig = sig match {
-    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
+    case DesugaredAst.Declaration.Sig(doc, ann0, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
 
       // First visit all the top-level information
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
@@ -532,13 +539,14 @@ object Namer {
     * Performs naming on the given definition declaration `decl0`.
     */
   private def visitDef(decl0: DesugaredAst.Declaration.Def, ns0: Name.NName, defKind: DefKind)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Def = decl0 match {
-    case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
+    case DesugaredAst.Declaration.Def(doc, ann0, mod0, ident, tparams0, fparams, exp, tpe, eff, tconstrs, econstrs, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams, tpe, eff, econstrs)
 
       // First visit all the top-level information
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
@@ -564,11 +572,12 @@ object Namer {
     * Performs naming on the given effect `eff0`.
     */
   private def visitEffect(eff0: DesugaredAst.Declaration.Effect, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Effect = eff0 match {
-    case DesugaredAst.Declaration.Effect(doc, ann, mod0, ident, tparams0, ops0, loc) =>
+    case DesugaredAst.Declaration.Effect(doc, ann0, mod0, ident, tparams0, ops0, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       val sym = Symbol.mkEffSym(ns0, ident)
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val tparams = visitExplicitTypeParams(tparams0)
       val ops = ops0.map(visitOp(_, ns0, sym))
@@ -579,11 +588,12 @@ object Namer {
     * Performs naming on the given effect operation `op0`.
     */
   private def visitOp(op0: DesugaredAst.Declaration.Op, ns0: Name.NName, effSym: Symbol.EffSym)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Op = op0 match {
-    case DesugaredAst.Declaration.Op(doc, ann, mod0, ident, fparams, tpe, tconstrs, loc) =>
+    case DesugaredAst.Declaration.Op(doc, ann0, mod0, ident, fparams, tpe, tconstrs, loc) =>
       if (isReservedName(ident.name)) {
         sctx.errors.add(NameError.IllegalReservedName(ident))
       }
       // First visit all the top-level information
+      val ann = visitAnnotations(ann0, ns0)
       val mod = visitModifiers(mod0, ns0)
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
@@ -1371,6 +1381,13 @@ object Namer {
   }
 
   /**
+    * Performs naming on the given annotation.
+    *
+    * Adds the annotations `ann` to the annotations of `ns0`.
+    */
+  private def visitAnnotations(ann: Annotations, ns0: Name.NName): Annotations = ann ++ ns0.annotation
+
+  /**
     * Performs naming on the given modifiers.
     *
     * Adds the `pub` modifier if in the root namespace.
@@ -1509,7 +1526,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Namespace(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Namespace(_, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**

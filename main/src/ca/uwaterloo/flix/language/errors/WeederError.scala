@@ -220,7 +220,7 @@ object WeederError {
     *
     * @param loc the location of the illegal annotation.
     */
-  case class IllegalAnnotation(loc: SourceLocation) extends WeederError {
+  case class IllegalAnnotationInnerFunction(loc: SourceLocation) extends WeederError {
     override def summary: String = "Unexpected annotation on inner function."
 
     override def message(formatter: Formatter): String = {
@@ -233,6 +233,26 @@ object WeederError {
     }
 
     override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
+  }
+
+  /**
+    * An error raised to indicate that an illegal annotation was provided.
+    *
+    * @param loc the location of the illegal annotation.
+    */
+  case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
+    override def summary: String = s"Unexpected annotation: $name."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected annotation: $name.
+         |
+         |${code(loc, "unexpected annotation")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some(s"The provided annotations is not allowed here.")
   }
 
   /**

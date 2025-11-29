@@ -239,7 +239,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalAnnotation](result)
+    expectError[WeederError.IllegalAnnotationInnerFunction](result)
   }
 
   test("IllegalAnnotation.02") {
@@ -252,7 +252,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalAnnotation](result)
+    expectError[WeederError.IllegalAnnotationInnerFunction](result)
   }
 
   test("IllegalAnnotation.03") {
@@ -262,6 +262,28 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         | @Skip @Tailrec
         | def g(i) = if (i <= 0) 0 else g(i - 1);
         | g(10)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotationInnerFunction](result)
+  }
+
+  test("IllegalAnnotation.04") {
+    val input =
+      """
+        |@Lazy
+        |mod A {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
+  test("IllegalAnnotation.05") {
+    val input =
+      """
+        |mod A {
+        |  @Parallel
+        |  mod B {}
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

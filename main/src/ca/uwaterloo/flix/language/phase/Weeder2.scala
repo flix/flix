@@ -98,7 +98,7 @@ object Weeder2 {
         sctx.errors.add(error)
         List.empty
       } else {
-        val nname = Name.NName(qname.namespace.idents :+ qname.ident, qname.loc)
+        val nname = Name.NName(qname.namespace.idents :+ qname.ident, Annotations.Empty, qname.loc)
         maybeUseMany match {
           // case: Use many.
           case Some(useMany) =>
@@ -233,15 +233,22 @@ object Weeder2 {
 
     private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Namespace, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Module)
+      val annotations = pickAnnotations(tree)
+      val illegalAnnotations = annotations.annotations.filter { ann => !ann.isInstanceOf[Annotation.Internal] }
+      illegalAnnotations.foreach {
+        ann => sctx.errors.add(IllegalAnnotation(ann.toString, ann.loc))
+      }
+      // Ensure errors are thrown for all parsed modifiers.
+      pickModifiers(tree, allowed = Set())
       mapN(
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
         (qname, usesAndImports, declarations) =>
-          val base = Declaration.Namespace(qname.ident, usesAndImports, declarations, tree.loc)
+          val base = Declaration.Namespace(annotations, qname.ident, usesAndImports, declarations, tree.loc)
           qname.namespace.idents.foldRight(base: Declaration.Namespace) {
-            case (ident, acc) => Declaration.Namespace(ident, Nil, List(acc), tree.loc)
+            case (ident, acc) => Declaration.Namespace(annotations, ident, Nil, List(acc), tree.loc)
           }
       }
     }
@@ -1379,7 +1386,7 @@ object Weeder2 {
         case Annotations(as) =>
           // Check for annotations
           for (a <- as) {
-            sctx.errors.add(IllegalAnnotation(a.loc))
+            sctx.errors.add(IllegalAnnotationInnerFunction(a.loc))
           }
       }
 
@@ -3402,7 +3409,7 @@ object Weeder2 {
     // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
-      val nname = Name.NName(idents, loc)
+      val nname = Name.NName(idents, Annotations.Empty, loc)
       val positionAfterDot = SourcePosition.moveRight(last.loc.sp2)
       val emptyIdentLoc = SourceLocation(isReal = true, last.loc.source, positionAfterDot, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
@@ -3410,7 +3417,7 @@ object Weeder2 {
       Name.QName(nname, emptyIdent, qnameLoc)
     } else {
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
-      val nname = Name.NName(idents.dropRight(1), loc)
+      val nname = Name.NName(idents.dropRight(1), Annotations.Empty, loc)
       Name.QName(nname, last, loc)
     }
   }

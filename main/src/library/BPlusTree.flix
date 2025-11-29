@@ -371,7 +371,7 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = 
+    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] =
         mapWithKey(rc1, _ -> v -> f(v), t)
 
     ///
@@ -418,17 +418,17 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] = 
+    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] =
         (Map.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Map.insert(k, v, acc))
-    
+
     ///
     /// Returns `t` as a set of key-value pairs.
     ///
     /// Not thread-safe.
     ///
-    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] = 
+    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =
         (Set.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Set.insert((k, v), acc))
-    
+
     ///
     /// Returns `t` as a vector of key-value pairs.
     ///
@@ -562,7 +562,7 @@ mod BPlusTree {
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
-    /// Thread-safe. 
+    /// Thread-safe.
     ///
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
@@ -942,6 +942,7 @@ mod BPlusTree {
         isLeaf:     Bool
     }
 
+    @Internal
     mod Node {
         import java.lang.invoke.{VarHandle => JVarHandle}
         import java.lang.{Object => JObject}
@@ -979,7 +980,6 @@ mod BPlusTree {
         ///
         /// - On invocation, the thread has a lock on `node`.
         ///
-        @Internal
         pub def adjustWithKey(f: k -> v -> v \ ef, key: k, stamp: Int64, t: BPlusTree[k, v, r], node: Node[k, v, r]): Unit \ ef + r with Order[k] = {
             let index = binarySearch(key, BPlusTree.search(t), node);
             if (index >= 0) {
@@ -1031,7 +1031,6 @@ mod BPlusTree {
         ///
         /// Only used for internal testing.
         ///
-        @Internal
         pub def assertNodeInvariant(
             node: Node[k, v, r],
             arity: Int32,
@@ -1154,7 +1153,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def computeHeight(node: Node[k, v, r]): Int32 \ r =
             // Every leaf is at the same height, so just use the left most path.
             def loop(count, n) = {
@@ -1171,10 +1169,9 @@ mod BPlusTree {
             loop(1, node)
 
         ///
-        /// Return the mapping `k => v` at position `index` in `node`. Crashes if 
+        /// Return the mapping `k => v` at position `index` in `node`. Crashes if
         /// `index >= node->size`.
         ///
-        @Internal
         pub def getKeyAndValueAt(index: Int32, node: Node[k, v, r]): (k, v) \ r = {
             let k = Array.get(index, node->keys);
             let v = Array.get(index, node->values);
@@ -1184,7 +1181,6 @@ mod BPlusTree {
         ///
         /// Optionally return the node to the right of `node`.
         ///
-        @Internal
         pub def next(node: Node[k, v, r]): Option[Node[k, v, r]] \ r = node->next
 
         ///
@@ -1204,7 +1200,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def findLeft(
             f: k -> v -> Bool \ ef,
             index: Int32,
@@ -1228,7 +1223,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def exists(
             f: k -> v -> Bool \ ef,
             index: Int32,
@@ -1249,13 +1243,11 @@ mod BPlusTree {
         ///
         /// Provides access to the `lock` field of `node`.
         ///
-        @Internal
         pub def getLock(node: Node[k, v, r]): Lock[r] = node->lock
 
         ///
         /// Returns `Some(val)` if `key => val` is in `tree`. Otherwise return `None`.
         ///
-        @Internal
         pub def get(key: k, stamp: Int64, node: Node[k, v, r], tree: BPlusTree[k, v, r]): Option[v] \ r with Order[k] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             let result = if (index < 0)
@@ -1273,7 +1265,6 @@ mod BPlusTree {
         ///
         /// Returns `Some((key, value))` if `key => val` is in `tree`. Otherwise return `None`.
         ///
-        @Internal
         pub def getKeyAndValue(key: k, stamp: Int64, node: Node[k, v, r], tree: BPlusTree[k, v, r]): Option[(k, v)] \ r with Order[k] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             let result = if (index < 0)
@@ -1291,7 +1282,6 @@ mod BPlusTree {
         ///
         /// Returns `val` if `key => val` is in `tree`. Otherwise return `d`.
         ///
-        @Internal
         pub def getWithDefault(key: k, stamp: Int64, d: v, node: Node[k, v, r], tree: BPlusTree[k, v, r]): v \ r with Order[k] =
             let index = binarySearch(key, BPlusTree.search(tree), node);
             let result = if (index < 0)
@@ -1317,7 +1307,6 @@ mod BPlusTree {
         /// - On return, the thread has no lock on the tree if the returned value is None.
         ///   Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
         ///
-        @Internal
         pub def insertIntoLeaf(
             key: k,
             val: v,
@@ -1349,7 +1338,6 @@ mod BPlusTree {
         /// - On return, the thread has no lock on the tree if the returned value is None.
         ///   Otherwise it has a write-lock on `tree->rootLock` and `p` where `Some(p)` is returned
         ///
-        @Internal
         pub def insertIntoLeafIf(
             decider: k -> v -> k -> v -> Bool,
             key: k,
@@ -1461,7 +1449,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def isEmpty(node: Node[k, v, r]): Bool \ r = node->size == 0
 
         ///
@@ -1474,7 +1461,6 @@ mod BPlusTree {
         ///
         /// Returns `true` if `key` is contained in the leaf `node`.
         ///
-        @Internal
         pub def leafMemberOf(key: k, search: Search, node: Node[k, v, r]): Bool \ r with Order[k] =
             let index = binarySearch(key, search, node);
             if (index < 0)
@@ -1485,7 +1471,6 @@ mod BPlusTree {
         ///
         /// Returns `true` if the mapping `key => val` is contained in the leaf `node`.
         ///
-        @Internal
         pub def leafMemberOfPair(key: k, val: v, search: Search, node: Node[k, v, r]): Bool \ r with Order[k], Eq[v] =
             let index1 = binarySearch(key, search, node);
             if (index1 < 0)
@@ -1498,7 +1483,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def leftMostChild(node: Node[k, v, r]): Node[k, v, r] \ r =
             match node->isLeaf {
                 case false =>
@@ -1551,7 +1535,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def minimumKey(t: Node[k, v, r]): Option[(k, v)] \ r =
             let leftMost = leftMostChild(t);
             if (size(leftMost) == 0) {
@@ -1563,7 +1546,6 @@ mod BPlusTree {
         ///
         /// Create a new leaf node.
         ///
-        @Internal
         pub def mkLeaf(
             rc: Region[r],
             keys: Array[k, r],
@@ -1607,7 +1589,6 @@ mod BPlusTree {
         ///
         /// Provides access to the `parent` field of `node`.
         ///
-        @Internal
         pub def parent(node: Node[k, v, r]): Option[Node[k, v, r]] \ r = node->parent
 
         ///
@@ -1672,7 +1653,6 @@ mod BPlusTree {
         ///
         /// Thread-safe.
         ///
-        @Internal
         pub def putWith(f: v -> v -> v \ ef, key: k, val: v, tree: BPlusTree[k, v, r], node: Node[k, v, r], stamp: Int64): Option[(Node[k, v, r], Int64)] \ r + ef with Order[k] =
             let writeStamp = Lock.tryConvertToWrite(stamp, node->lock);
             if (not Lock.valid(writeStamp, node->lock)) {
@@ -1697,7 +1677,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def rangeQueryWith(
             f: k -> v -> Unit \ r0,
             min: k,
@@ -1720,7 +1699,6 @@ mod BPlusTree {
         ///
         /// Returns the size of `node`.
         ///
-        @Internal
         pub def size(node: Node[k, v, r]): Int32 \ r = node->size
 
         ///
@@ -1915,7 +1893,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def toString(indent: Int32, rc: Region[r], node: Node[k, v, r]): String \ r with ToString[k], ToString[v] =
             let indentString = String.repeat(indent, " ");
             match node->isLeaf {
@@ -1941,7 +1918,6 @@ mod BPlusTree {
         /// `lock` on `cur`. If acquiring a lock at any point fails release the locks you
         /// hold and retry from the root.
         ///
-        @Internal
         pub def traverseDown(key: k, cur: Node[k, v, r], stamp: Int64, tree: BPlusTree[k, v, r]): (Node[k, v, r], Int64) \ r with Order[k] =
             match cur->isLeaf {
                 case false =>
@@ -1996,7 +1972,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def traverseRightUnconditional(
             f: k -> v -> Unit \ ef,
             index: Int32,
@@ -2015,7 +1990,6 @@ mod BPlusTree {
         ///
         /// Not thread-safe.
         ///
-        @Internal
         pub def traverseRightUnconditionalInc(
             f: k -> v -> Unit \ ef,
             index: Int32,
