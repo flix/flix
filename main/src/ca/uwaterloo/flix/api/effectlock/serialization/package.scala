@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import org.json4s.{CustomSerializer, JBool, JField, JInt, JNull, JObject, JString}
+import org.json4s.{CustomSerializer, JBool, JInt, JObject, JString, jvalue2extractable}
 
 import java.nio.file.Path
 
@@ -236,7 +236,8 @@ package object serialization {
 
   case class EqConstr(sym: AssocTypeSym, tpe1: SType, tpe2: SType)
 
-  class SourceSerializer extends CustomSerializer[Source](_ => ( {
+  /** Defines a custom serializer and deserializer for [[Source]] */
+  private class SourceSerializer extends CustomSerializer[Source](_ => ( {
     case JObject(List("input-type" -> JString(tpe), "path" -> JString(path), "name" -> JString(name))) =>
       tpe match {
         case "text" => Source(Input.Text(name, "", SecurityContext.Plain), new Array(0))
@@ -276,17 +277,17 @@ package object serialization {
   }))
 
   /** Defines a custom serializer and deserializer for [[SourceLocation]] */
-  class SourceLocationSerializer extends CustomSerializer[SourceLocation](_ => ( {
+  private class SourceLocationSerializer extends CustomSerializer[SourceLocation](_ => ( {
     case JObject(List(
     "isReal" -> JBool(isReal),
-    "source" -> _,
+    "source" -> src,
     "sp1" -> JObject(List("l" -> JInt(l1), "c" -> JInt(c1))),
     "sp2" -> JObject(List("l" -> JInt(l2), "c" -> JInt(c2))))) =>
-      SourceLocation(isReal, ???, SourcePosition(l1.toInt, c1.toShort), SourcePosition(l2.toInt, c2.toShort))
+      SourceLocation(isReal, src.extract[Source], SourcePosition(l1.toInt, c1.toShort), SourcePosition(l2.toInt, c2.toShort))
   }, {
     case loc: SourceLocation => JObject(
       "isReal" -> JBool(loc.isReal),
-      "source" -> ???, // TODO: Somehow serialize Source
+      "source" -> org.json4s.Extraction.decompose(loc.source),
       "sp1" -> JObject("l" -> JInt(loc.sp1.lineOneIndexed), "c" -> JInt(loc.sp1.colOneIndexed)),
       "sp2" -> JObject("l" -> JInt(loc.sp2.lineOneIndexed), "c" -> JInt(loc.sp2.colOneIndexed)),
     )
