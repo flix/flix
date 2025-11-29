@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.Expr.Binary
+import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
+import ca.uwaterloo.flix.language.ast.TokenKind.{Colon, Comma}
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
 
 /**
@@ -42,8 +44,9 @@ object Formatter {
     */
   private def traverseTree(tree: SyntaxTree.Tree): List[TextEdit] = {
     val editsHere = tree.kind match {
-      case Binary if tree.loc.isSingleLine => formatBinaryExpression(tree)
-      case _                               => Nil
+      case Binary if tree.loc.isSingleLine        => formatBinaryExpression(tree)
+      case ParameterList if tree.loc.isSingleLine => formatParameterList(tree)
+      case _                                      => Nil
     }
 
     val editsFromChildren = tree.children.flatMap {
@@ -54,6 +57,26 @@ object Formatter {
   }
 
   /**
+    * Formats parameter lists by adding spaces after commas.
+    * Adds a single space after commas in a parameter list on the same line.
+    *
+    * @param tree the parameter list tree
+    * @return a list of text edits to apply for formatting
+    */
+  private def formatParameterList(tree: SyntaxTree.Tree): List[TextEdit] = {
+    val childBoundaries: List[(Token, Token)] = getChildBoundaries(tree)
+
+      val edits = childBoundaries
+        .sliding(2)
+        .collect {
+          case List((_, prevLast), (nextFirst, _)) =>
+            if (prevLast.kind == Comma) createSeparatorTextEdit(prevLast, nextFirst, " ")
+            else createSeparatorTextEdit(prevLast, nextFirst, "")
+        }
+      edits.toList
+    }
+
+  /**
     * Formats binary expression by adding spaces around operators.
     * Adds a single space between tokens and operators in binary expressions on the same line.
     *
@@ -62,10 +85,29 @@ object Formatter {
     *     def main(): Int32 = 1+2*3*5+4-6/2
     *   Formatted source code
     *     def main(): Int32 = 1 + 2 * 3 * 5 + 4 - 6 / 2
+    *
     * @param tree the binary expression tree
     * @return a list of text edits to apply for formatting
     */
   private def formatBinaryExpression(tree: SyntaxTree.Tree): List[TextEdit] = {
+    val childBoundaries = getChildBoundaries(tree)
+
+    val edits = childBoundaries
+      .sliding(2)
+      .collect {
+        case List((_, prevLast), (nextFirst, _)) =>
+          createSeparatorTextEdit(prevLast, nextFirst, " ")
+      }
+    edits.toList
+  }
+
+  /**
+    * Gets the first and last tokens of each child of the given syntax tree.
+    *
+    * @param tree the syntax tree
+    * @return a list of tuples containing the first and last tokens of each child
+    */
+  private def getChildBoundaries(tree: SyntaxTree.Tree) = {
     val childBoundaries = tree.children.flatMap {
       case t: SyntaxTree.Tree =>
         for {
@@ -75,20 +117,17 @@ object Formatter {
       case tok: Token =>
         Some((tok, tok))
     }.toList
+    childBoundaries
+  }
 
-    val children = childBoundaries
-      .sliding(2)
-      .collect {
-        case List((_, prevLast), (nextFirst, _)) =>
-          TextEdit(
-            Range(
-              Position(prevLast.sp2.lineOneIndexed, prevLast.sp2.colOneIndexed),
-              Position(nextFirst.sp1.lineOneIndexed, nextFirst.sp1.colOneIndexed)
-            ),
-            " "
-          )
-      }
-    children.toList
+  private def createSeparatorTextEdit(prevLast: Token, nextFirst: Token, seperator: String) = {
+    TextEdit(
+      Range(
+        Position(prevLast.sp2.lineOneIndexed, prevLast.sp2.colOneIndexed),
+        Position(nextFirst.sp1.lineOneIndexed, nextFirst.sp1.colOneIndexed)
+      ),
+      seperator
+    )
   }
 
   /**
