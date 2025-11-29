@@ -144,7 +144,7 @@ object Serialize {
   }
 
   private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {
-    VarSym(serializeVarText(sym0.text), serializeKind(sym0.kind))
+    VarSym(sym0.id, serializeVarText(sym0.text), serializeKind(sym0.kind))
   }
 
   private def serializeRegionSym(sym0: Symbol.RegionSym): RegionSym = {
