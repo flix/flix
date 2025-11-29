@@ -76,8 +76,6 @@ object Serialize {
     case TypeConstructor.SchemaRowEmpty => SchemaRowEmpty
     case TypeConstructor.SchemaRowExtend(pred) => SchemaRowExtend(pred.name)
     case TypeConstructor.Schema => Schema
-    case TypeConstructor.Sender => Sender
-    case TypeConstructor.Receiver => Receiver
     case TypeConstructor.Lazy => Lazy
     case TypeConstructor.Enum(sym, kind) => Enum(serializeEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Struct(sym, kind) => Struct(serializeStructSym(sym), serializeKind(kind))

@@ -55,16 +55,6 @@ object Lowering {
 
      case Type.Var(_, _) => tpe0
 
-     // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
-     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
-       val t = lowerType(tpe)
-       mkChannelTpe(t, loc)
-
-     // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
-     case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
-       val t = lowerType(tpe)
-       mkChannelTpe(t, loc)
-
      case Type.Apply(tpe1, tpe2, loc) =>
        val t1 = lowerType(tpe1)
        val t2 = lowerType(tpe2)
@@ -195,7 +185,7 @@ object Lowering {
     val admins = ListOps.zip(rs, channels) map {
       case ((_, c, _), (chanSym, _)) =>
         val itpe = Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc)
-        val defnSym = lookup(Defs.ChannelMpmcAdmin, itpe)
+        val defnSym = lookup(Defs.ChannelMpmcReceiverAdmin, itpe)
         MonoAst.Expr.ApplyDef(defnSym, List(MonoAst.Expr.Var(chanSym, lowerType(c.tpe), loc)), lowerType(itpe), Types.ChannelMpmcAdmin, Type.Pure, loc)
     }
     mkList(admins, Types.ChannelMpmcAdmin, loc)
@@ -243,7 +233,7 @@ object Lowering {
       case (((sym, chan, exp), (chSym, _)), i) =>
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc))), loc)
-        val getTpe = extractChannelTpe(chan.tpe)
+        val getTpe = extractReceiverTpe(chan.tpe)
         val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
         val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
         val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
@@ -315,9 +305,9 @@ object Lowering {
     *
     * @param tpe is assumed to be specialized, but not lowered.
     */
-  private def extractChannelTpe(tpe: Type): Type = eraseAliases(tpe) match {
-    case Type.Apply(Type.Apply(Types.ChannelMpmc, elmType, _), _, _) => elmType
-    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a channel type", tpe.loc)
+  private def extractReceiverTpe(tpe: Type): Type = eraseAliases(tpe) match {
+    case Type.Apply(Types.ChannelReceiver, elmType, _) => elmType
+    case _ => throw InternalCompilerException(s"Cannot interpret '$tpe' as a 'Receiver[type]'", tpe.loc)
   }
 
   /**
@@ -337,20 +327,6 @@ object Lowering {
   private def mkLetSym(prefix: String, loc: SourceLocation)(implicit flix: Flix): Symbol.VarSym = {
     val name = prefix + Flix.Delimiter + flix.genSym.freshId()
     Symbol.freshVarSym(name, BoundBy.Let, loc)(Scope.Top, flix)
-  }
-
-  /**
-    * The type of a channel which can transmit variables of type `tpe`.
-    */
-  private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    mkChannelTpe(tpe, Type.IO, loc)
-  }
-
-  /**
-    * The type of a channel which can transmit variables of type `tpe1` in region `tpe2`.
-    */
-  private def mkChannelTpe(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Apply(Types.ChannelMpmc, tpe1, loc), tpe2, loc)
   }
 
 }

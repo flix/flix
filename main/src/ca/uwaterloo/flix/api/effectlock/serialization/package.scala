@@ -95,10 +95,6 @@ package object serialization {
 
   case object Schema extends STC
 
-  case object Sender extends STC
-
-  case object Receiver extends STC
-
   case object Lazy extends STC
 
   case class Enum(sym: EnumSym, kind: SKind) extends STC
@@ -266,8 +262,6 @@ package object serialization {
         SchemaRowEmpty.getClass,
         classOf[SchemaRowExtend],
         Schema.getClass,
-        Sender.getClass,
-        Receiver.getClass,
         Lazy.getClass,
         classOf[Enum],
         classOf[Struct],
