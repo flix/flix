@@ -82,10 +82,10 @@ object Serialize {
     case TypeConstructor.Enum(sym, kind) => Enum(serializeEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Struct(sym, kind) => Struct(serializeStructSym(sym), serializeKind(kind))
     case TypeConstructor.RestrictableEnum(sym, kind) => RestrictableEnum(serializeRestrictableEnumSym(sym), serializeKind(kind))
-    case TypeConstructor.Native(clazz) => Native(clazz.descriptorString())
-    case TypeConstructor.JvmConstructor(constructor) => JvmConstructor(constructor.toGenericString)
-    case TypeConstructor.JvmMethod(method) => JvmMethod(method.toGenericString)
-    case TypeConstructor.JvmField(field) => JvmField(field.toGenericString)
+    case TypeConstructor.Native(clazz) => serializeJvmClass(clazz) // Should not be possible?
+    case TypeConstructor.JvmConstructor(constructor) => serializeJvmConstructor(constructor) // Should not be possible?
+    case TypeConstructor.JvmMethod(method) => serializeJvmMethod(method) // Should not be possible?
+    case TypeConstructor.JvmField(field) => serializeJvmField(field) // Should not be possible?
     case TypeConstructor.Array => Array
     case TypeConstructor.ArrayWithoutRegion => ArrayWithoutRegion
     case TypeConstructor.Vector => Vector
@@ -141,6 +141,29 @@ object Serialize {
 
   private def serializeEnumSym(sym0: Symbol.EnumSym): EnumSym = {
     EnumSym(sym0.namespace, sym0.text)
+  }
+
+  private def serializeJvmClass(clazz: Class[?]): Native = {
+    Native(clazz.descriptorString())
+  }
+
+  private def serializeJvmConstructor(constructor0: java.lang.reflect.Constructor[?]): JvmConstructor = {
+    val clazz = serializeJvmClass(constructor0.getDeclaringClass)
+    val params = constructor0.getParameterTypes.toList.map(serializeJvmClass)
+    JvmConstructor(clazz, params)
+  }
+
+  private def serializeJvmMethod(method0: java.lang.reflect.Method): JvmMethod = {
+    val clazz = serializeJvmClass(method0.getDeclaringClass)
+    val methodName = method0.getName
+    val params = method0.getParameterTypes.toList.map(serializeJvmClass)
+    JvmMethod(clazz, methodName, params)
+  }
+
+  private def serializeJvmField(field0: java.lang.reflect.Field): JvmField = {
+    val clazz = serializeJvmClass(field0.getDeclaringClass)
+    val name = field0.getName
+    JvmField(clazz, name)
   }
 
   private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {
