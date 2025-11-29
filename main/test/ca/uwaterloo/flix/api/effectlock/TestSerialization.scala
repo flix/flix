@@ -297,7 +297,6 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defn = defs.head
     val expected = (defn.sym, defn.spec.declaredScheme)
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
-    // TODO: Alpha rename both
 
     assert(actual == expected)
   }
