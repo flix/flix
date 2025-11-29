@@ -64,14 +64,14 @@ object Formatter {
     * @return a list of text edits to apply for formatting
     */
   private def formatParameterList(tree: SyntaxTree.Tree): List[TextEdit] = {
-    val childBoundaries: List[(Token, Token)] = getChildBoundaries(tree)
+    val tokens = getTokensInOrder(tree)
 
-      val edits = childBoundaries
+      val edits = tokens
         .sliding(2)
         .collect {
-          case List((_, prevLast), (nextFirst, _)) =>
-            if (prevLast.kind == Comma) createSeparatorTextEdit(prevLast, nextFirst, " ")
-            else createSeparatorTextEdit(prevLast, nextFirst, "")
+          case List(prev, next) =>
+            if (prev.kind == Comma || prev.kind == Colon) createSeparatorTextEdit(prev, next, " ")
+            else createSeparatorTextEdit(prev, next, "")
         }
       edits.toList
     }
@@ -128,6 +128,13 @@ object Formatter {
       ),
       seperator
     )
+  }
+
+  private def getTokensInOrder(tree: SyntaxTree.Tree): List[Token] = {
+    tree.children.flatMap {
+      case t: SyntaxTree.Tree => getTokensInOrder(t)
+      case tok: Token => List(tok)
+    }.toList
   }
 
   /**
