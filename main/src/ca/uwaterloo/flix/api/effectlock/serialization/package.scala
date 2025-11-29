@@ -17,7 +17,9 @@ package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
-import org.json4s.{CustomSerializer, JBool, JField, JObject}
+import org.json4s.{CustomSerializer, JBool, JField, JInt, JNull, JObject, JString}
+
+import java.nio.file.Path
 
 /**
   * Package object for the serialization package.
@@ -234,21 +236,61 @@ package object serialization {
 
   case class EqConstr(sym: AssocTypeSym, tpe1: SType, tpe2: SType)
 
-  /** Defines a custom serializer and deserializer for [[SourceLocation]] */
-  class SourceLocationSerializer extends CustomSerializer[SourceLocation](format => ( {
-    case _ => ???
+  class SourceSerializer extends CustomSerializer[Source](_ => ( {
+    case JObject(List("input-type" -> JString(tpe), "path" -> JString(path), "name" -> JString(name))) =>
+      tpe match {
+        case "text" => Source(Input.Text(name, "", SecurityContext.Plain), new Array(0))
+        case "txt-file" => Source(Input.TxtFile(Path.of(path), SecurityContext.Plain), new Array(0))
+        case "pkg-file" => Source(Input.PkgFile(Path.of(path), SecurityContext.Plain), new Array(0))
+        case "file-in-package" => Source(Input.FileInPackage(Path.of(path), name, "", SecurityContext.Plain), new Array(0))
+        case "unknown" => Source(Input.Unknown, new Array(0))
+      }
   }, {
-    case loc: SourceLocation =>
-      JObject(List(
-        "isReal" -> JBool(loc.isReal),
-        "source" -> loc.source match {
+    case src: Source => src.input match {
+      case Input.Text(name, _, _) => JObject(
+        "input-type" -> JString("text"),
+        "path" -> JString(""),
+        "name" -> JString(name),
+      )
+      case Input.TxtFile(path, _) => JObject(
+        "input-type" -> JString("txt-file"),
+        "path" -> JString(path.toString),
+        "name" -> JString(""),
+      )
+      case Input.PkgFile(path, _) => JObject(
+        "input-type" -> JString("pkg-file"),
+        "path" -> JString(path.toString),
+        "name" -> JString(""),
+      )
+      case Input.FileInPackage(path, virtualPath, _, _) => JObject(
+        "input-type" -> JString("file-in-package"),
+        "path" -> JString(path.toString),
+        "name" -> JString(virtualPath),
+      )
+      case Input.Unknown => JObject(
+        "input-type" -> JString("unknown"),
+        "path" -> JString(""),
+        "name" -> JString(""),
+      )
+    }
+  }))
 
-        },
-        "sp1" -> ???,
-        "sp2" -> ???,
-      ))
-  }
-  ))
+  /** Defines a custom serializer and deserializer for [[SourceLocation]] */
+  class SourceLocationSerializer extends CustomSerializer[SourceLocation](_ => ( {
+    case JObject(List(
+    "isReal" -> JBool(isReal),
+    "source" -> _,
+    "sp1" -> JObject(List("l" -> JInt(l1), "c" -> JInt(c1))),
+    "sp2" -> JObject(List("l" -> JInt(l2), "c" -> JInt(c2))))) =>
+      SourceLocation(isReal, ???, SourcePosition(l1.toInt, c1.toShort), SourcePosition(l2.toInt, c2.toShort))
+  }, {
+    case loc: SourceLocation => JObject(
+      "isReal" -> JBool(loc.isReal),
+      "source" -> ???, // TODO: Somehow serialize Source
+      "sp1" -> JObject("l" -> JInt(loc.sp1.lineOneIndexed), "c" -> JInt(loc.sp1.colOneIndexed)),
+      "sp2" -> JObject("l" -> JInt(loc.sp2.lineOneIndexed), "c" -> JInt(loc.sp2.colOneIndexed)),
+    )
+  }))
 
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(
@@ -349,19 +391,6 @@ package object serialization {
         classOf[Text],
         classOf[TraitConstr],
         classOf[EqConstr],
-
-        // Source location classes
-        classOf[SourceLocation],
-        classOf[Source],
-        classOf[SourcePosition],
-        classOf[Input.Text],
-        SecurityContext.Unrestricted.getClass,
-        SecurityContext.Plain.getClass,
-        SecurityContext.Paranoid.getClass,
-        classOf[Input.TxtFile], // Contains Path type, might be a challenge
-        classOf[Input.PkgFile], // Contains Path type, might be a challenge
-        classOf[Input.FileInPackage], // Contains Path type, might be a challenge
-        Input.Unknown.getClass,
-      )))
+      ))) + new SourceSerializer + new SourceLocationSerializer
 }
 
