@@ -168,14 +168,14 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
                 Cst(Arrow(2)),
                 Apply(
                   Apply(
-                    Cst(Difference), Var(VarSym(1, Text("ef"), EffKind))
+                    Cst(Difference), Var(VarSym(0, Text("ef"), EffKind))
                   ), Cst(Effect(EffSym(List(), "A"), EffKind)))
               ), Var(VarSym(0, Text("a"), StarKind))
-            ), Var(VarSym(2, Text("b"), StarKind)))
+            ), Var(VarSym(1, Text("b"), StarKind)))
         ), Var(VarSym(0, Text("a"), StarKind))
-      ), Var(VarSym(2, Text("b"), StarKind))
+      ), Var(VarSym(1, Text("b"), StarKind))
     )
-    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind), VarSym(1, Text("ef"), EffKind), VarSym(2, Text("b"), StarKind)), List.empty, List.empty, tpe)
+    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind), VarSym(0, Text("ef"), EffKind), VarSym(1, Text("b"), StarKind)), List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "prettyPrint", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
