@@ -15,6 +15,10 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import org.json4s.{CustomSerializer, JBool, JField, JObject}
+
 /**
   * Package object for the serialization package.
   * The serializable AST is defined in this package object, so it becomes
@@ -24,7 +28,7 @@ package ca.uwaterloo.flix.api.effectlock
 package object serialization {
 
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
+  case class SDef(namespace: List[String], text: String, scheme: SScheme, loc: SourceLocation)
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)
@@ -230,6 +234,22 @@ package object serialization {
 
   case class EqConstr(sym: AssocTypeSym, tpe1: SType, tpe2: SType)
 
+  /** Defines a custom serializer and deserializer for [[SourceLocation]] */
+  class SourceLocationSerializer extends CustomSerializer[SourceLocation](format => ( {
+    case _ => ???
+  }, {
+    case loc: SourceLocation =>
+      JObject(List(
+        "isReal" -> JBool(loc.isReal),
+        "source" -> loc.source match {
+
+        },
+        "sp1" -> ???,
+        "sp2" -> ???,
+      ))
+  }
+  ))
+
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(
     org.json4s.ShortTypeHints(
@@ -329,6 +349,19 @@ package object serialization {
         classOf[Text],
         classOf[TraitConstr],
         classOf[EqConstr],
+
+        // Source location classes
+        classOf[SourceLocation],
+        classOf[Source],
+        classOf[SourcePosition],
+        classOf[Input.Text],
+        SecurityContext.Unrestricted.getClass,
+        SecurityContext.Plain.getClass,
+        SecurityContext.Paranoid.getClass,
+        classOf[Input.TxtFile], // Contains Path type, might be a challenge
+        classOf[Input.PkgFile], // Contains Path type, might be a challenge
+        classOf[Input.FileInPackage], // Contains Path type, might be a challenge
+        Input.Unknown.getClass,
       )))
 }
 
