@@ -106,4 +106,9 @@ case class Annotations(annotations: List[Annotation]) {
     */
   def isTest: Boolean = annotations exists (_.isInstanceOf[Annotation.Test])
 
+  /**
+    * Combines the annotations of `this` and `that`, removing duplicates.
+    */
+  def ++(that: Annotations): Annotations = Annotations((this.annotations ++ that.annotations).distinct)
+
 }

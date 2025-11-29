@@ -16,12 +16,14 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.ast.shared.Annotations
+
 object Name {
 
   /**
     * The root namespace.
     */
-  val RootNS: NName = NName(Nil, SourceLocation.Unknown)
+  val RootNS: NName = NName(Nil, Annotations.Empty, SourceLocation.Unknown)
 
   /**
     * Returns the given string `fqn` as a qualified name.
@@ -39,7 +41,7 @@ object Name {
     * Creates a qualified name from the given namespace `ns` and name `name`.
     */
   def mkQName(ns: List[String], name: String, loc: SourceLocation): QName = {
-    val nname = NName(ns.map(t => Name.Ident(t, loc)), loc)
+    val nname = NName(ns.map(t => Name.Ident(t, loc)), Annotations.Empty, loc)
     val ident = Ident(name, loc)
     QName(nname, ident, loc)
   }
@@ -59,7 +61,7 @@ object Name {
     */
   def mkUnlocatedNName(parts: List[String]): NName = {
     val idents = parts.map(Ident(_, SourceLocation.Unknown))
-    NName(idents, SourceLocation.Unknown)
+    NName(idents, Annotations.Empty, SourceLocation.Unknown)
   }
 
   /**
@@ -69,7 +71,7 @@ object Name {
     */
   def mkUnlocatedNNameWithLoc(parts: List[String], loc: SourceLocation): NName = {
     val idents = parts.map(Ident(_, SourceLocation.Unknown))
-    NName(idents, loc)
+    NName(idents, Annotations.Empty, loc)
   }
 
   /**
@@ -124,7 +126,7 @@ object Name {
     * @param idents the identifiers of the namespace.
     * @param loc    the source location of the namespace.
     */
-  case class NName(idents: List[Ident], loc: SourceLocation) {
+  case class NName(idents: List[Ident], annotation: Annotations, loc: SourceLocation) {
     /**
       * Returns `true` if this is the root namespace.
       */
