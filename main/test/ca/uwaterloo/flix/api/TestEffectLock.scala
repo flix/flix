@@ -15,11 +15,12 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Unit))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, "<test>")
-
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "fun", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
+    println(org.json4s.native.Serialization.write(actual))
     assert(actual == expected)
   }
 
@@ -31,10 +32,10 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Int32))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+    val expected = SDef(List.empty, "fun", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -47,10 +48,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Unit))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "toUnit", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "toUnit", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -63,10 +65,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "answer", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "answer", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -94,10 +97,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
       ), Cst(Int32)
     )
     val scheme = SScheme(List(VarSym(Text("a"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List(), "toInt32", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List(), "toInt32", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -114,10 +118,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(Text("a"), StarKind))), Cst(Str))
     val scheme = SScheme(List(VarSym(Text("a"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(Text("a"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "pretty", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "pretty", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -138,10 +143,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(EffSym(List.empty, "A"), EffKind))), Var(VarSym(Text("t"), StarKind))), Cst(Unit))
     val scheme = SScheme(List(VarSym(Text("t"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(Text("t"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "prettyPrint", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -176,10 +182,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
       ), Var(VarSym(Text("b"), StarKind))
     )
     val scheme = SScheme(List(VarSym(Text("a"), StarKind), VarSym(Text("ef"), EffKind), VarSym(Text("b"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "prettyPrint", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -194,10 +201,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val alias = Alias(TypeAliasSym(List.empty, "Num"), List.empty, Cst(Int32))
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), alias), alias)
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "fun", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }
@@ -217,10 +225,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val tb = AssocTypeSym(TraitSym(List(), "T"), "B")
     val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, Var(a), StarKind))), Var(a)), AssocType(tb, Var(a), StarKind))
     val scheme = SScheme(List(a), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "h", scheme, "<test>")
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
+
+    val expected = SDef(List.empty, "h", scheme, defs.head.loc)
     val actual = Serialize.serializeDef(defs.head)
     assert(actual == expected)
   }

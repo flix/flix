@@ -26,8 +26,8 @@ object Serialize {
       val ns = sym.namespace
       val text = sym.name
       val sscheme = serializeSpec(spec)
-      val source = loc.source.name
-      SDef(ns, text, sscheme, source)
+      // loc is directly serializable
+      SDef(ns, text, sscheme, loc)
   }
 
   private def serializeSpec(spec0: TypedAst.Spec): SScheme = spec0 match {

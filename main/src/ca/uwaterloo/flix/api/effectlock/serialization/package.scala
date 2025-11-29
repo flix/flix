@@ -15,6 +15,12 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
+import org.json4s.{CustomSerializer, JBool, JInt, JObject, JString, jvalue2extractable}
+
+import java.nio.file.Path
+
 /**
   * Package object for the serialization package.
   * The serializable AST is defined in this package object, so it becomes
@@ -24,7 +30,7 @@ package ca.uwaterloo.flix.api.effectlock
 package object serialization {
 
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
+  case class SDef(namespace: List[String], text: String, scheme: SScheme, loc: SourceLocation)
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)
@@ -230,6 +236,63 @@ package object serialization {
 
   case class EqConstr(sym: AssocTypeSym, tpe1: SType, tpe2: SType)
 
+  /** Defines a custom serializer and deserializer for [[Source]] */
+  private class SourceSerializer extends CustomSerializer[Source](_ => ( {
+    case JObject(List("input-type" -> JString(tpe), "path" -> JString(path), "name" -> JString(name))) =>
+      tpe match {
+        case "text" => Source(Input.Text(name, "", SecurityContext.Plain), new Array(0))
+        case "txt-file" => Source(Input.TxtFile(Path.of(path), SecurityContext.Plain), new Array(0))
+        case "pkg-file" => Source(Input.PkgFile(Path.of(path), SecurityContext.Plain), new Array(0))
+        case "file-in-package" => Source(Input.FileInPackage(Path.of(path), name, "", SecurityContext.Plain), new Array(0))
+        case "unknown" => Source(Input.Unknown, new Array(0))
+      }
+  }, {
+    case src: Source => src.input match {
+      case Input.Text(name, _, _) => JObject(
+        "input-type" -> JString("text"),
+        "path" -> JString(""),
+        "name" -> JString(name),
+      )
+      case Input.TxtFile(path, _) => JObject(
+        "input-type" -> JString("txt-file"),
+        "path" -> JString(path.toString),
+        "name" -> JString(""),
+      )
+      case Input.PkgFile(path, _) => JObject(
+        "input-type" -> JString("pkg-file"),
+        "path" -> JString(path.toString),
+        "name" -> JString(""),
+      )
+      case Input.FileInPackage(path, virtualPath, _, _) => JObject(
+        "input-type" -> JString("file-in-package"),
+        "path" -> JString(path.toString),
+        "name" -> JString(virtualPath),
+      )
+      case Input.Unknown => JObject(
+        "input-type" -> JString("unknown"),
+        "path" -> JString(""),
+        "name" -> JString(""),
+      )
+    }
+  }))
+
+  /** Defines a custom serializer and deserializer for [[SourceLocation]] */
+  private class SourceLocationSerializer extends CustomSerializer[SourceLocation](_ => ( {
+    case JObject(List(
+    "isReal" -> JBool(isReal),
+    "source" -> src,
+    "sp1" -> JObject(List("l" -> JInt(l1), "c" -> JInt(c1))),
+    "sp2" -> JObject(List("l" -> JInt(l2), "c" -> JInt(c2))))) =>
+      SourceLocation(isReal, src.extract[Source], SourcePosition(l1.toInt, c1.toShort), SourcePosition(l2.toInt, c2.toShort))
+  }, {
+    case loc: SourceLocation => JObject(
+      "isReal" -> JBool(loc.isReal),
+      "source" -> org.json4s.Extraction.decompose(loc.source),
+      "sp1" -> JObject("l" -> JInt(loc.sp1.lineOneIndexed), "c" -> JInt(loc.sp1.colOneIndexed)),
+      "sp2" -> JObject("l" -> JInt(loc.sp2.lineOneIndexed), "c" -> JInt(loc.sp2.colOneIndexed)),
+    )
+  }))
+
   /** Implicitly defines type hints for json4s for each of the serializable constructors. */
   implicit val formats: org.json4s.Formats = org.json4s.native.Serialization.formats(
     org.json4s.ShortTypeHints(
@@ -329,6 +392,6 @@ package object serialization {
         classOf[Text],
         classOf[TraitConstr],
         classOf[EqConstr],
-      )))
+      ))) + new SourceSerializer + new SourceLocationSerializer
 }
 
