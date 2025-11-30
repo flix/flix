@@ -16,12 +16,12 @@
 package ca.uwaterloo.flix.api
 
 /**
-  * A collection of Flix configuration options that are defined at *compile-time*.
+  * A collection of Flix compiler constants that are hard coded.
   */
 object CompilerConstants {
 
   /**
-    * The JVM Classfile Version.
+    * The JVM bytecode version used when generating class files.
     */
   val JvmTargetVersion: Int = org.objectweb.asm.Opcodes.V21
 
