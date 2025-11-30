@@ -98,13 +98,8 @@ object SimpleRunner {
         compilationResult.getMain match {
           case None => // nop
           case Some(m) =>
-            // Compute the arguments to be passed to main.
-            val args: Array[String] = cmdOpts.args match {
-              case None => Array.empty
-              case Some(a) => a.split(" ")
-            }
             // Invoke main with the supplied arguments.
-            m(args)
+            m(cmdOpts.args.toArray)
 
             // Exit.
             System.exit(0)

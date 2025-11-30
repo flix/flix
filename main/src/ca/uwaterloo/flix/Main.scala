@@ -219,11 +219,7 @@ object Main {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
-              val args: Array[String] = cmdOpts.args match {
-                case None => Array.empty
-                case Some(a) => a.split(" ")
-              }
-              bootstrap.run(flix, args)
+              bootstrap.run(flix, cmdOpts.args.toArray)
             }
           }
 
@@ -328,7 +324,7 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(command: Command = Command.None,
-                     args: Option[String] = None,
+                     args: Seq[String] = Seq(),
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
@@ -409,6 +405,14 @@ object Main {
     * @param args the arguments array.
     */
   def parseCmdOpts(args: Array[String]): Option[CmdOpts] = {
+    // Split at "--" separator: arguments before are for flix, arguments after are for the program
+    val separatorIndex = args.indexOf("--")
+    val (flixArgs, progArgs) = if (separatorIndex >= 0) {
+      (args.take(separatorIndex), args.drop(separatorIndex + 1))
+    } else {
+      (args, Array.empty[String])
+    }
+
     implicit val readLibLevel: scopt.Read[LibLevel] = scopt.Read.reads {
       case "nix" => LibLevel.Nix
       case "min" => LibLevel.Min
@@ -487,10 +491,6 @@ object Main {
       ).hidden()
 
       note("")
-
-      opt[String]("args").action((s, c) => c.copy(args = Some(s))).
-        valueName("<a1, a2, ...>").
-        text("arguments passed to main. Must be a single quoted string.")
 
       opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
         text("specifies the main entry point.")
@@ -591,7 +591,7 @@ object Main {
 
     }
 
-    parser.parse(args, CmdOpts())
+    parser.parse(flixArgs, CmdOpts()).map(_.copy(args = progArgs.toSeq))
   }
 
   /**
