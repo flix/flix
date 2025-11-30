@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
@@ -52,11 +53,17 @@ object Main {
         .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
         .orElse(sys.env.get("GITHUB_TOKEN"))
 
+    // compute the main entry point
+    val entryPoint = cmdOpts.entryPoint match {
+      case None => Options.Default.entryPoint
+      case Some(s) => Some(Symbol.mkDefnSym(s))
+    }
+
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
       build = Build.Development,
-      entryPoint = None,
+      entryPoint = entryPoint,
       explain = cmdOpts.explain,
       githubToken = githubToken,
       incremental = Options.Default.incremental,
@@ -416,6 +423,7 @@ object Main {
     */
   case class CmdOpts(command: Command = Command.None,
                      args: List[String] = Nil,
+                     entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
                      githubToken: Option[String] = None,
@@ -582,6 +590,9 @@ object Main {
       ).hidden()
 
       note("")
+
+      opt[String]("entrypoint").action((s, c) => c.copy(entryPoint = Some(s))).
+        text("specifies the main entry point.")
 
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
         text("provides suggestions on how to solve a problem.")
