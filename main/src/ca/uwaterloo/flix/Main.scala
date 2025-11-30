@@ -47,24 +47,6 @@ object Main {
       null
     }
 
-    // check if the --listen flag was passed.
-    if (cmdOpts.listen.nonEmpty) {
-      var successfulRun: Boolean = false
-      while (!successfulRun) {
-        try {
-          val socketServer = new SocketServer(cmdOpts.listen.get)
-          socketServer.run()
-          successfulRun = true
-        } catch {
-          case ex: BindException =>
-            Console.println(ex.getMessage)
-            Console.println("Retrying in 10 seconds.")
-            Thread.sleep(10_000)
-        }
-      }
-      System.exit(0)
-    }
-
     // compute the main entry point
     val entryPoint = cmdOpts.entryPoint match {
       case None => Options.Default.entryPoint
@@ -123,6 +105,12 @@ object Main {
 
       cmdOpts.command match {
         case Command.None =>
+          // check if the --listen flag was passed.
+          if (cmdOpts.listen.nonEmpty) {
+            SocketServer.listen(cmdOpts.listen.get)
+            System.exit(0)
+          }
+
           // check if the --Xbenchmark-code-size flag was passed.
           if (cmdOpts.xbenchmarkCodeSize) {
             BenchmarkCompilerOld.benchmarkCodeSize(options)

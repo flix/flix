@@ -30,11 +30,39 @@ import org.json4s.native.JsonMethods
 import org.json4s.native.JsonMethods.*
 
 import java.io.IOException
-import java.net.InetSocketAddress
+import java.net.{BindException, InetSocketAddress}
 import java.nio.file.{Files, Paths}
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
+
+/**
+  * Companion object of [[SocketServer]].
+  */
+object SocketServer {
+
+  /**
+    * Attempts to start a [[SocketServer]] on the given port.
+    *
+    * Retries until the port is free.
+    */
+  def listen(port: Int): Unit = {
+    var successfulRun: Boolean = false
+    while (!successfulRun) {
+      try {
+        val socketServer = new SocketServer(port)
+        socketServer.run()
+        successfulRun = true
+      } catch {
+        case ex: BindException =>
+          Console.println(ex.getMessage)
+          Console.println("Retrying in 10 seconds.")
+          Thread.sleep(10_000)
+      }
+    }
+  }
+
+}
 
 /**
   * A WebSocket server implementation that receives and evaluates Flix programs.
