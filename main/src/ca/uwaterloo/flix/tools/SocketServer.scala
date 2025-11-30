@@ -172,13 +172,13 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
           compilationResult.getMain match {
             case None =>
               // The main function was not present. Just report successful compilation.
-              Ok("Compilation was successful. No main function to run.", compilationResult.totalTime, 0L)
+              Ok(("Compilation was successful. No main function to run.", compilationResult.totalTime, 0L))
             case Some(main) =>
               // Evaluate the main function and get the result as a string.
               val t = System.nanoTime()
               val (_, stdOut, stdErr) = SafeExec.execute(() => main(Array.empty))
               val e = System.nanoTime() - t
-              Ok(stdOut + stdErr, compilationResult.totalTime, e)
+              Ok((stdOut + stdErr, compilationResult.totalTime, e))
           }
 
         case Result.Err(errors) =>
