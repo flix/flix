@@ -114,10 +114,11 @@ class TestMain extends AnyFunSuite {
     assert(opts.files.length == 1)
   }
 
-  test("--args --abc --def") {
-    val args = Array("--args", "--abc --def")
+  test("run -- arg1 arg2") {
+    val args = Array("run", "--", "arg1", "arg2")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.args.contains("--abc --def"))
+    assert(opts.command == Main.Command.Run)
+    assert(opts.args == Seq("arg1", "arg2"))
   }
 
   test("--explain foo") {
