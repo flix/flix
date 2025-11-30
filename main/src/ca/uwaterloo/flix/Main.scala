@@ -72,7 +72,6 @@ object Main {
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
-      xprinttyper = cmdOpts.xprinttyper,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
@@ -433,7 +432,6 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
-                     xprinttyper: Option[String] = None,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
@@ -650,10 +648,6 @@ object Main {
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
-
-      // Xprint-typer
-      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
-        text("[experimental] writes constraints to dot files.")
 
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
