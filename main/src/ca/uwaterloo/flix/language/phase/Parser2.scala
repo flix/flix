@@ -567,6 +567,7 @@ object Parser2 {
                         )(implicit sctx: SyntacticContext, s: State): Int = {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
+    comments()
     if (!at(delimiterL)) {
       expect(delimiterL)
       return 0
@@ -574,11 +575,12 @@ object Parser2 {
     expect(delimiterL)
     var continue = true
     var numItems = 0
+    comments()
     while (continue && !atEnd() && !eof()) {
-      comments()
       val kind = nth(0)
       if (checkForItem(kind)) {
         getItem()
+        comments()
         numItems += 1
         if (!atEnd()) {
           // Check for separator if needed.
@@ -587,6 +589,7 @@ object Parser2 {
             case Separation.Optional(separator, _) => eat(separator)
             case Separation.None =>
           }
+          comments()
           // Check for trailing separator if needed.
           if (atEnd()) {
             separation match {
@@ -614,6 +617,7 @@ object Parser2 {
     optionallyWith match {
       case Some((indicator, rule)) => if (eat(indicator)) {
         rule()
+        comments()
       }
       case None =>
     }
