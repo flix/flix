@@ -25,4 +25,21 @@ object CompilerConstants {
     */
   val JvmTargetVersion: Int = org.objectweb.asm.Opcodes.V21
 
+  /**
+    * The maximum number of variables an equation may contain before it is
+    * considered too complex for set unification.
+    */
+  val MaxEffUnificationVars: Int = 11
+
+  /**
+    * The maximum number of rounds the inliner can run.
+    */
+  val MaxOptimizerRounds: Int = 5
+
+  /**
+    * The maximum amount of fuel the parser can consume without making progress.
+    */
+  val MaxParserFuel: Int = 2048
+
+
 }

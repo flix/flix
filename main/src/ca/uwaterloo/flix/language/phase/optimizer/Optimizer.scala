@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.optimizer
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 
@@ -24,7 +24,7 @@ object Optimizer {
   /**
     * The maximum number of rounds to run the inliner for.
     */
-  private val MaxRounds: Int = 5
+  private val MaxRounds: Int = CompilerConstants.MaxOptimizerRounds
 
   /**
     * Returns an optimized version of the given AST `root`.
