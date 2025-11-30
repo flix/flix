@@ -95,7 +95,6 @@ object Main {
       installDeps = cmdOpts.installDeps,
       outputJvm = false,
       outputPath = Options.Default.outputPath,
-      target = Options.Default.target,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
