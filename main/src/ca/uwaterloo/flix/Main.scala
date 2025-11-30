@@ -33,16 +33,11 @@ import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
-/**
-  * The main entry point for the Flix compiler and runtime.
-  */
 object Main {
 
-  /**
-    * The main method.
-    */
   def main(argv: Array[String]): Unit = {
 
+    // retrieve the current working directory.
     val cwd = Paths.get(".").toAbsolutePath.normalize()
 
     // parse command line options.
