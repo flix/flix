@@ -2926,6 +2926,10 @@ mod TestList {
     def literal06(): Unit \ Assert =
         assertFalse(List.isEmpty(List#{{}}))
 
+    @Test
+    def literal07(): Unit \ Assert =
+        assertTrue(List.isEmpty(List#{/**/}))
+
     /////////////////////////////////////////////////////////////////////////////
     // frequency                                                               //
     /////////////////////////////////////////////////////////////////////////////

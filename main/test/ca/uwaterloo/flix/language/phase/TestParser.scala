@@ -49,6 +49,17 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
+  test("TrailingComma.01") {
+    val input =
+      """
+        |def b(): List[Int32] = List#{2, /**/}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("IllegalDefName.01") {
     val input =
       """
