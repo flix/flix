@@ -22,17 +22,12 @@ import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 object Optimizer {
 
   /**
-    * The maximum number of rounds to run the inliner for.
-    */
-  private val MaxRounds: Int = CompilerConstants.MaxOptimizerRounds
-
-  /**
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
-    for (_ <- 0 until MaxRounds) {
+    for (_ <- 0 until CompilerConstants.MaxOptimizerRounds) {
       if (currentDelta.nonEmpty) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
         val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)

@@ -16,15 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.CompilerConstants
 import org.objectweb.asm.ClassWriter
 
 object AsmOps {
-
-  /**
-    * Returns the target JVM version.
-    */
-  def JavaVersion: Int = CompilerConstants.JvmTargetVersion
 
   /**
     * Returns a freshly created class writer object.
