@@ -1,9 +1,19 @@
 ///
-/// We introduce type aliases to model taint analysis.
+/// We introduce a few types and aliases to model a taint analysis.
 ///
+
+/// Types of untrusted data sources.
+pub enum SourceType with Eq, Order, ToString {
+    case UserInput      // Form fields, query parameters
+    case Network        // HTTP requests, socket data
+}
+
+/// Types of sensitive sinks.
+pub enum SinkType with Eq, Order, ToString {
+    case SqlQuery       // SQL injection risk
+}
+
 type alias Variable = String      // e.g. "username"
-type alias SourceType = String    // e.g. "userInput"
-type alias SinkType = String      // e.g. "sqlQuery"
 type alias Location = Int32       // e.g. 42
 
 ///
@@ -51,8 +61,7 @@ pub def main(): Unit \ IO =
                     }
                     case Assign(target, source, l) => {
                         let fmtTarget = String.padRight(15, ' ', target);
-                        let arrow = String.padRight(3, ' ', "=");
-                        println("    [${l}] ${fmtTarget} ${arrow} ${source}")
+                        println("    [${l}] ${fmtTarget} <- ${source}")
                     }
                 }
             };
@@ -67,31 +76,31 @@ pub def main(): Unit \ IO =
 ///
 def database(): #{ Source(Variable, SourceType, Location), Assign(Variable, Variable, Location), Sink(Variable, SinkType, Location) | r } = #{
     // Scenario 1: Direct SQL injection
-    Source("username", "userInput", 10).
+    Source("username", SourceType.UserInput, 10).
     Assign("query1", "username", 15).
-    Sink("query1", "sqlQuery", 20).
+    Sink("query1", SinkType.SqlQuery, 20).
 
     // Scenario 2: Multi-hop taint propagation
-    Source("email", "userInput", 30).
+    Source("email", SourceType.UserInput, 30).
     Assign("sanitized", "email", 32).
     Assign("emailQuery", "sanitized", 35).
-    Sink("emailQuery", "sqlQuery", 40).
+    Sink("emailQuery", SinkType.SqlQuery, 40).
 
     // Scenario 3: Multiple assignments before sink
-    Source("password", "userInput", 50).
+    Source("password", SourceType.UserInput, 50).
     Assign("temp1", "password", 52).
     Assign("temp2", "temp1", 54).
     Assign("authQuery", "temp2", 56).
-    Sink("authQuery", "sqlQuery", 60).
+    Sink("authQuery", SinkType.SqlQuery, 60).
 
     // Scenario 4: Network input vulnerability
-    Source("requestBody", "network", 70).
+    Source("requestBody", SourceType.Network, 70).
     Assign("jsonData", "requestBody", 72).
     Assign("updateQuery", "jsonData", 75).
-    Sink("updateQuery", "sqlQuery", 80).
+    Sink("updateQuery", SinkType.SqlQuery, 80).
 
     // Safe scenario: no path to sink
-    Source("safeInput", "userInput", 90).
+    Source("safeInput", SourceType.UserInput, 90).
     Assign("safeVar", "safeInput", 92).
     // No sink for safeVar
 }
