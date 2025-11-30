@@ -128,10 +128,82 @@ object Main {
 
       cmdOpts.command match {
         case Command.None =>
-          SimpleRunner.run(cwd, cmdOpts, options) match {
-            case Result.Ok(_) =>
+          // check if the --Xbenchmark-code-size flag was passed.
+          if (cmdOpts.xbenchmarkCodeSize) {
+            BenchmarkCompilerOld.benchmarkCodeSize(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-incremental flag was passed.
+          if (cmdOpts.xbenchmarkIncremental) {
+            BenchmarkCompilerOld.benchmarkIncremental(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-phases flag was passed.
+          if (cmdOpts.xbenchmarkPhases) {
+            BenchmarkCompilerOld.benchmarkPhases(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-frontend flag was passed.
+          if (cmdOpts.xbenchmarkFrontend) {
+            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-throughput flag was passed.
+          if (cmdOpts.xbenchmarkThroughput) {
+            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
+            System.exit(0)
+          }
+
+          // check if we should start a REPL
+          if (cmdOpts.files.isEmpty) {
+            Bootstrap.bootstrap(cwd, options.githubToken) match {
+              case Result.Ok(bootstrap) =>
+                val shell = new Shell(bootstrap, options)
+                shell.loop()
+                System.exit(0)
+              case Result.Err(error) =>
+                println(error.message(formatter))
+                System.exit(1)
+            }
+          }
+
+          // configure Flix and add the paths.
+          val flix = new Flix()
+          flix.setOptions(options)
+          implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+          for (file <- cmdOpts.files) {
+            val ext = file.getName.split('.').last
+            ext match {
+              case "flix" => flix.addFlix(file.toPath)
+              case "fpkg" => flix.addPkg(file.toPath)
+              case "jar" => flix.addJar(file.toPath)
+              case _ =>
+                Console.println(s"Unrecognized file extension: '$ext'.")
+                System.exit(1)
+            }
+          }
+
+          flix.setFormatter(formatter)
+
+          // evaluate main.
+          flix.compile().toResult match {
+            case Result.Ok(compilationResult) =>
+              compilationResult.getMain match {
+                case None => // nop
+                case Some(m) =>
+                  // Invoke main with the supplied arguments.
+                  m(cmdOpts.args.toArray)
+              }
               System.exit(0)
-            case _ =>
+
+            case Result.Err(errors) =>
+              flix.mkMessages(errors.toList.sortBy(_.source.name)).foreach(println)
+              println()
+              println(s"Compilation failed with ${errors.length} error(s).")
               System.exit(1)
           }
 
@@ -358,9 +430,7 @@ object Main {
           ZhegalkinPerf.run(options.XPerfN)
 
       }
-    }
-
-    catch {
+    } catch {
       case ex: RuntimeException =>
         ex.printStackTrace()
         System.exit(1)
