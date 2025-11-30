@@ -108,8 +108,7 @@ object Main {
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
-      xchaosMonkey = cmdOpts.xchaosMonkey,
-      xiterations = cmdOpts.xiterations,
+      xchaosMonkey = cmdOpts.xchaosMonkey
     )
 
     // Don't use progress bar if benchmarking.
@@ -401,7 +400,6 @@ object Main {
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
                      xchaosMonkey: Boolean = false,
-                     xiterations: Int = 1000,
                      files: Seq[File] = Seq())
 
   /**
@@ -628,10 +626,6 @@ object Main {
       // Xchaos-monkey
       opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
         text("[experimental] introduces randomness.")
-
-      // Xiterations
-      opt[Int]("Xiterations").action((n, c) => c.copy(xiterations = n)).
-        text("[experimental] sets the maximum number of constraint resolution iterations during typechecking")
 
       note("")
 
