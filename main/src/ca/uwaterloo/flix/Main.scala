@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -137,26 +137,16 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd) match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
-          }
+          exitOnResult(Bootstrap.init(cwd))
 
         case Command.Check =>
           if (cmdOpts.files.isEmpty) {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-              bootstrap =>
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options)
                 bootstrap.check(flix)
-            } match {
-              case Result.Ok(_) => System.exit(0)
-              case Result.Err(error) =>
-                println(error.message(formatter))
-                System.exit(1)
+              }
             }
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
@@ -166,81 +156,54 @@ object Main {
           }
 
         case Command.Build =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+            }
           }
 
         case Command.BuildJar =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.buildJar(flix)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+            }
           }
 
         case Command.BuildFatJar =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.buildFatJar(flix)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+            }
           }
 
         case Command.BuildPkg =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap => bootstrap.buildPkg()
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              bootstrap.buildPkg()
+            }
           }
 
         case Command.Clean =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap => bootstrap.clean()
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(errors) =>
-              println(errors.message(formatter))
-              System.exit(1)
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              bootstrap.clean()
+            }
           }
 
         case Command.Doc =>
           if (cmdOpts.files.isEmpty) {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-              bootstrap =>
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options)
                 bootstrap.doc(flix)
-            } match {
-              case Result.Ok(_) => System.exit(0)
-              case Result.Err(error) =>
-                println(error.message(formatter))
-                System.exit(1)
+              }
             }
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options)
@@ -252,8 +215,8 @@ object Main {
           }
 
         case Command.Run =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               val args: Array[String] = cmdOpts.args match {
@@ -261,26 +224,17 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+            }
           }
 
         case Command.Test =>
           if (cmdOpts.files.isEmpty) {
-            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-              bootstrap =>
+            exitOnResult {
+              Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options.copy(progress = false))
                 bootstrap.test(flix)
-            } match {
-              case Result.Ok(_) => System.exit(0)
-              case Result.Err(error) =>
-                println(error.message(formatter))
-                System.exit(1)
+              }
             }
           } else {
             val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
@@ -325,17 +279,12 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.release(flix)(System.err)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+            }
           }
 
         case Command.Outdated =>
@@ -671,6 +620,18 @@ object Main {
     println()
     println(s"Found ${errors.size} error(s).")
     System.exit(1)
+  }
+
+  /**
+    * Exits with code 0 on success, or prints the error and exits with code 1 on failure.
+    */
+  private def exitOnResult[T](result: Result[T, BootstrapError])(implicit formatter: Formatter): Unit = {
+    result match {
+      case Result.Ok(_) => System.exit(0)
+      case Result.Err(error) =>
+        println(error.message(formatter))
+        System.exit(1)
+    }
   }
 
 }
