@@ -324,7 +324,7 @@ object Main {
     * A case class representing the parsed command line options.
     */
   case class CmdOpts(command: Command = Command.None,
-                     args: Seq[String] = Seq(),
+                     args: List[String] = Nil,
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
@@ -591,7 +591,7 @@ object Main {
 
     }
 
-    parser.parse(flixArgs, CmdOpts()).map(_.copy(args = progArgs.toSeq))
+    parser.parse(flixArgs, CmdOpts()).map(_.copy(args = progArgs.toList))
   }
 
   /**
