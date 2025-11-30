@@ -137,6 +137,10 @@ object Main {
           }
 
         case Command.Init =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'init' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult(Bootstrap.init(cwd))
 
         case Command.Check =>
@@ -156,6 +160,10 @@ object Main {
           }
 
         case Command.Build =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -165,6 +173,10 @@ object Main {
           }
 
         case Command.BuildJar =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-jar' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -174,6 +186,10 @@ object Main {
           }
 
         case Command.BuildFatJar =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-fatjar' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -183,6 +199,10 @@ object Main {
           }
 
         case Command.BuildPkg =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'build-pkg' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               bootstrap.buildPkg()
@@ -190,6 +210,10 @@ object Main {
           }
 
         case Command.Clean =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'clean' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               bootstrap.clean()
@@ -214,7 +238,15 @@ object Main {
             } else exitWithErrors(flix, errors)
           }
 
+        case Command.Format =>
+          println("Not yet supported.")
+          System.exit(1)
+
         case Command.Run =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'run' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -250,7 +282,7 @@ object Main {
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'repl' command cannot be used with a list of files.")
+            println("The 'repl' command does not support file arguments.")
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubToken) match {
@@ -264,10 +296,18 @@ object Main {
           }
 
         case PlainLsp =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'lsp' command does not support file arguments.")
+            System.exit(1)
+          }
           LspServer.run(options)
           System.exit(0)
 
         case Command.VSCodeLsp(port) =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'lsp-vscode' command does not support file arguments.")
+            System.exit(1)
+          }
           val o = options.copy(progress = false)
           try {
             val languageServer = new VSCodeLspServer(port, o)
@@ -279,6 +319,10 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'release' command does not support file arguments.")
+            System.exit(1)
+          }
           exitOnResult {
             Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -288,6 +332,10 @@ object Main {
           }
 
         case Command.Outdated =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'outdated' command does not support file arguments.")
+            System.exit(1)
+          }
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -381,6 +429,8 @@ object Main {
 
     case object Doc extends Command
 
+    case object Format extends Command
+
     case object Run extends Command
 
     case object Test extends Command
@@ -444,6 +494,8 @@ object Main {
       cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
+
+      cmd("format").action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")
 
       cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
