@@ -79,7 +79,6 @@ object Main {
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
-      xfuzzer = cmdOpts.xfuzzer,
       xprinttyper = cmdOpts.xprinttyper,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
@@ -442,7 +441,6 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
-                     xfuzzer: Boolean = false,
                      xprinttyper: Option[String] = None,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
@@ -663,10 +661,6 @@ object Main {
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
-
-      // Xfuzzer
-      opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
-        text("[experimental] enables compiler fuzzing.")
 
       // Xprint-typer
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
