@@ -31,14 +31,19 @@ import scala.util.Random
 object ChaosMonkey {
 
   /**
+    * Probability that the ChaosMonkey makes chaos.
+    */
+  private val P: Double = 0.10
+
+  /**
     * Randomly permutes the given list if the ChaosMonkey is enabled.
     */
   def chaos[A](l: List[A])(implicit flix: Flix): List[A] = {
-    // reorder the list when the Chaos Monkey is enabled.
-    if (flix.options.xchaosMonkey)
+    if (flix.options.xchaosMonkey && Random.nextDouble() <= P) {
       Random.shuffle(l)
-    else
+    } else {
       l
+    }
   }
 
 }
