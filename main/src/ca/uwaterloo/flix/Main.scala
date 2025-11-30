@@ -19,10 +19,14 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.language.phase.unification.zhegalkin.ZhegalkinPerf
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools.*
+import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.*
 
 import java.io.{File, PrintStream}
@@ -142,17 +146,23 @@ object Main {
           }
 
         case Command.Check =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
-              bootstrap.check(flix)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+          if (cmdOpts.files.nonEmpty) {
+            val flix = mkFlixWithFiles(cmdOpts.files, options)
+            val (_, errors) = flix.check()
+            if (errors.isEmpty) System.exit(0)
+            else exitWithErrors(flix, errors)
+          } else {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                bootstrap.check(flix)
+            } match {
+              case Result.Ok(_) => System.exit(0)
+              case Result.Err(error) =>
+                println(error.message(formatter))
+                System.exit(1)
+            }
           }
 
         case Command.Build =>
@@ -220,17 +230,25 @@ object Main {
           }
 
         case Command.Doc =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
-              bootstrap.doc(flix)
-          } match {
-            case Result.Ok(_) =>
+          if (cmdOpts.files.nonEmpty) {
+            val flix = mkFlixWithFiles(cmdOpts.files, options)
+            val (optRoot, errors) = flix.check()
+            if (errors.isEmpty) {
+              HtmlDocumentor.run(optRoot.get, PackageModules.All)(flix)
               System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+            } else exitWithErrors(flix, errors)
+          } else {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options)
+                bootstrap.doc(flix)
+            } match {
+              case Result.Ok(_) => System.exit(0)
+              case Result.Err(error) =>
+                println(error.message(formatter))
+                System.exit(1)
+            }
           }
 
         case Command.Run =>
@@ -252,17 +270,28 @@ object Main {
           }
 
         case Command.Test =>
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.test(flix)
-          } match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+          if (cmdOpts.files.nonEmpty) {
+            val flix = mkFlixWithFiles(cmdOpts.files, options.copy(progress = false))
+            flix.compile() match {
+              case Validation.Success(compilationResult) =>
+                Tester.run(Nil, compilationResult)(flix) match {
+                  case Result.Ok(_) => System.exit(0)
+                  case Result.Err(_) => System.exit(1)
+                }
+              case Validation.Failure(errors) => exitWithErrors(flix, errors.toList)
+            }
+          } else {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.test(flix)
+            } match {
+              case Result.Ok(_) => System.exit(0)
+              case Result.Err(error) =>
+                println(error.message(formatter))
+                System.exit(1)
+            }
           }
 
         case Command.Repl =>
@@ -614,6 +643,34 @@ object Main {
     }
 
     parser.parse(args, CmdOpts())
+  }
+
+  /**
+    * Creates a fresh Flix instance configured with the given options and source files.
+    */
+  private def mkFlixWithFiles(files: Seq[File], options: Options)(implicit formatter: Formatter): Flix = {
+    val flix = new Flix().setFormatter(formatter)
+    flix.setOptions(options)
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+    for (file <- files) {
+      if (file.getName.endsWith(".flix")) {
+        flix.addFlix(file.toPath)
+      } else {
+        Console.println(s"Unrecognized file: '${file.getName}'. Only .flix files are supported.")
+        System.exit(1)
+      }
+    }
+    flix
+  }
+
+  /**
+    * Prints compilation errors and exits with code 1.
+    */
+  private def exitWithErrors(flix: Flix, errors: List[CompilationMessage]): Unit = {
+    flix.mkMessages(errors.sortBy(_.source.name)).foreach(println)
+    println()
+    println(s"Found ${errors.size} error(s).")
+    System.exit(1)
   }
 
 }

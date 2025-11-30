@@ -81,6 +81,33 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Repl)
   }
 
+  test("check") {
+    val args = Array("check")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Check)
+  }
+
+  test("check with files") {
+    val args = Array("check", "foo.flix", "bar.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Check)
+    assert(opts.files.length == 2)
+  }
+
+  test("test with files") {
+    val args = Array("test", "foo.flix", "bar.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Test)
+    assert(opts.files.length == 2)
+  }
+
+  test("doc with files") {
+    val args = Array("doc", "foo.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Doc)
+    assert(opts.files.length == 1)
+  }
+
   test("--args --abc --def") {
     val args = Array("--args", "--abc --def")
     val opts = Main.parseCmdOpts(args).get
