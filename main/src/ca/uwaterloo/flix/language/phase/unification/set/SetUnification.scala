@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.unification.set
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.language.phase.unification.set.SetFormula.*
 import ca.uwaterloo.flix.language.phase.unification.shared.{BoolUnificationException, CofiniteIntSet, SveAlgorithm}
@@ -30,8 +31,7 @@ object SetUnification {
   /**
    * The maximum number of variables an equation may contain before it is considered too complex.
    */
-  // Experiments suggest that 12 is too much.
-  val MaxVars: Int = 11 // Up to 2^11 = 2,048 terms per Zhegalkin polynomial.
+  val MaxVars: Int = CompilerConstants.MaxEffUnificationVars
 
   /**
     * Enable simple rewrite rules.
