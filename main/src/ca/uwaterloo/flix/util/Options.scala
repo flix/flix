@@ -36,7 +36,6 @@ object Options {
     outputJvm = false,
     outputPath = Path.of("./build/"),
     progress = false,
-    target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
@@ -87,7 +86,6 @@ object Options {
   * @param outputJvm      Enable JVM bytecode output.
   * @param outputPath     The path to the output folder.
   * @param progress       print progress during compilation.
-  * @param target         the target JVM.
   * @param threads        selects the number of threads to use.
   * @param loadClassFiles loads the generated class files into the JVM.
   * @param assumeYes      run non-interactively and assume answer to all prompts is yes.
@@ -103,7 +101,6 @@ case class Options(lib: LibLevel,
                    progress: Boolean,
                    outputJvm: Boolean,
                    outputPath: Path,
-                   target: JvmTarget,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
@@ -136,20 +133,6 @@ object Build {
     * Running the compiler in production mode disables certain features that are allowed during development.
     */
   case object Production extends Build
-}
-
-/**
-  * An option to control the version of emitted JVM bytecode.
-  */
-sealed trait JvmTarget
-
-object JvmTarget {
-
-  /**
-    * Emit bytecode for Java 21.
-    */
-  object Version21 extends JvmTarget
-
 }
 
 sealed trait LibLevel
