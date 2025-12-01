@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -740,4 +741,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
        |${deps.mkString(System.lineSeparator())}
        |""".stripMargin
   }
+
+  println(s"Total requests: ${GitHub.reqs.get()}\nTotal bytes: ${GitHub.totalData.get() * 16}")
+
 }
