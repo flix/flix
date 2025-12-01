@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
 import ca.uwaterloo.flix.language.ast.TokenKind.{Colon, Comma}
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
 
+import scala.annotation.unused
+
 /**
   * A formatter for Flix syntax trees.
   */
@@ -34,6 +36,15 @@ object Formatter {
     */
   def format(root: SyntaxTree.Root, uri: String): List[TextEdit] =
     findTreeBasedOnUri(root, uri).map(traverseTree).getOrElse(Nil)
+
+  def format(tree: SyntaxTree.Tree): List[TextEdit] = {
+    traverseTree(tree)
+  }
+
+  def applyEditsToFile(@unused uri: String, @unused edits: List[TextEdit]) = {
+    // TODO: This function should apply the edits to the file content and return the updated content.
+    ()
+  }
 
   /**
     * Traverses the syntax tree and collects [[TextEdit]]s for formatting.

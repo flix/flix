@@ -82,6 +82,11 @@ object Command {
   case object Doc extends Command
 
   /**
+    * Formats the current project source code.
+   */
+  case object Format extends Command
+
+  /**
     * Runs the tests for the current project.
     */
   case object Test extends Command
@@ -154,6 +159,9 @@ object Command {
 
     if (input == ":doc" || input == ":d")
       return Command.Doc
+
+    if (input == ":format" || input == ":fmt")
+      return Command.Format
 
     if (input == ":build-jar" || input == ":jar")
       return Command.BuildJar

@@ -238,8 +238,17 @@ object Main {
           }
 
         case Command.Format =>
-          println("Not yet supported.")
-          System.exit(1)
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'format' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap { bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.format(flix)
+            }
+          }
 
         case Command.Run =>
           if (cmdOpts.files.nonEmpty) {
