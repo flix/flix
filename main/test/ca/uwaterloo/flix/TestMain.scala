@@ -127,12 +127,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.explain)
   }
 
-  test("--entrypoint foo") {
-    val args = Array("--entrypoint", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.entryPoint.nonEmpty)
-  }
-
   test("--json") {
     val args = Array("--json")
     val opts = Main.parseCmdOpts(args).get
