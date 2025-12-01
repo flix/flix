@@ -82,7 +82,7 @@ object Main {
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
-      xchaosMonkey = cmdOpts.xchaosMonkey
+      xchaosMonkey = Options.Default.xchaosMonkey
     )
 
     // Don't use progress bar if benchmarking.
@@ -443,7 +443,6 @@ object Main {
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
-                     xchaosMonkey: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -662,10 +661,6 @@ object Main {
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
-
-      // Xchaos-monkey
-      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
-        text("[experimental] introduces randomness.")
 
       note("")
 
