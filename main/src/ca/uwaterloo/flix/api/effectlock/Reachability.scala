@@ -15,9 +15,16 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
+import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.TypedAst
+
 /**
   * Computes the set of reachable public library functions from the source project.
   */
 object Reachability {
+
+  case class ReachableDefs(defs: Set[Symbol.DefnSym], sigs: Set[Symbol.SigSym])
+
+  def run(root: TypedAst.Root): Set[Symbol.DefnSym] = ???
 
 }
