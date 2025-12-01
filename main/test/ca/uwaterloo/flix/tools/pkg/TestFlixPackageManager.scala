@@ -21,7 +21,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     Thread.sleep(5000)
   }
 
-  val start = System.nanoTime()
+  private var start: Long = System.nanoTime()
 
   private val Main: String =
     """
@@ -36,6 +36,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       |""".stripMargin
 
   test("Install missing dependency.01") {
+    start = System.nanoTime()
     assertResult(expected = true)(actual = {
       val toml = {
         """
