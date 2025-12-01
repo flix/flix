@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
@@ -65,7 +65,7 @@ object Parser2 {
 
   private object State {
     /** The reset value of [[State.fuel]]. */
-    val FuelReset = 2048
+    val FuelReset: Int = CompilerConstants.MaxParserFuel
   }
 
   private class State(val tokens: Array[Token], val src: Source) {

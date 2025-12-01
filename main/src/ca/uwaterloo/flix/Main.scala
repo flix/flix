@@ -33,16 +33,11 @@ import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
-/**
-  * The main entry point for the Flix compiler and runtime.
-  */
 object Main {
 
-  /**
-    * The main method.
-    */
   def main(argv: Array[String]): Unit = {
 
+    // retrieve the current working directory.
     val cwd = Paths.get(".").toAbsolutePath.normalize()
 
     // parse command line options.
@@ -52,35 +47,17 @@ object Main {
       null
     }
 
-    // check if the --listen flag was passed.
-    if (cmdOpts.listen.nonEmpty) {
-      var successfulRun: Boolean = false
-      while (!successfulRun) {
-        try {
-          val socketServer = new SocketServer(cmdOpts.listen.get)
-          socketServer.run()
-          successfulRun = true
-        } catch {
-          case ex: BindException =>
-            Console.println(ex.getMessage)
-            Console.println("Retrying in 10 seconds.")
-            Thread.sleep(10_000)
-        }
-      }
-      System.exit(0)
-    }
+    // get GitHub token
+    val githubToken =
+      cmdOpts.githubToken
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
+        .orElse(sys.env.get("GITHUB_TOKEN"))
 
     // compute the main entry point
     val entryPoint = cmdOpts.entryPoint match {
       case None => Options.Default.entryPoint
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
-
-    // get GitHub token
-    val githubToken =
-      cmdOpts.githubToken
-        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
-        .orElse(sys.env.get("GITHUB_TOKEN"))
 
     // construct flix options.
     var options = Options(
@@ -95,20 +72,17 @@ object Main {
       installDeps = cmdOpts.installDeps,
       outputJvm = false,
       outputPath = Options.Default.outputPath,
-      target = Options.Default.target,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
       xprintphases = cmdOpts.xprintphases,
       xnodeprecated = cmdOpts.xnodeprecated,
       xsummary = cmdOpts.xsummary,
-      xfuzzer = cmdOpts.xfuzzer,
-      xprinttyper = cmdOpts.xprinttyper,
       xsubeffecting = cmdOpts.xsubeffecting,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfPar = cmdOpts.XPerfPar,
       XPerfN = cmdOpts.XPerfN,
-      xchaosMonkey = cmdOpts.xchaosMonkey
+      xchaosMonkey = Options.Default.xchaosMonkey
     )
 
     // Don't use progress bar if benchmarking.
@@ -128,10 +102,88 @@ object Main {
 
       cmdOpts.command match {
         case Command.None =>
-          SimpleRunner.run(cwd, cmdOpts, options) match {
-            case Result.Ok(_) =>
+          // check if the --listen flag was passed.
+          if (cmdOpts.listen.nonEmpty) {
+            SocketServer.listen(cmdOpts.listen.get)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-code-size flag was passed.
+          if (cmdOpts.xbenchmarkCodeSize) {
+            BenchmarkCompilerOld.benchmarkCodeSize(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-incremental flag was passed.
+          if (cmdOpts.xbenchmarkIncremental) {
+            BenchmarkCompilerOld.benchmarkIncremental(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-phases flag was passed.
+          if (cmdOpts.xbenchmarkPhases) {
+            BenchmarkCompilerOld.benchmarkPhases(options)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-frontend flag was passed.
+          if (cmdOpts.xbenchmarkFrontend) {
+            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
+            System.exit(0)
+          }
+
+          // check if the --Xbenchmark-throughput flag was passed.
+          if (cmdOpts.xbenchmarkThroughput) {
+            BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
+            System.exit(0)
+          }
+
+          // check if we should start a REPL
+          if (cmdOpts.files.isEmpty) {
+            Bootstrap.bootstrap(cwd, options.githubToken) match {
+              case Result.Ok(bootstrap) =>
+                val shell = new Shell(bootstrap, options)
+                shell.loop()
+                System.exit(0)
+              case Result.Err(error) =>
+                println(error.message(formatter))
+                System.exit(1)
+            }
+          }
+
+          // configure Flix and add the paths.
+          val flix = new Flix()
+          flix.setOptions(options)
+          implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+          for (file <- cmdOpts.files) {
+            val ext = file.getName.split('.').last
+            ext match {
+              case "flix" => flix.addFlix(file.toPath)
+              case "fpkg" => flix.addPkg(file.toPath)
+              case "jar" => flix.addJar(file.toPath)
+              case _ =>
+                Console.println(s"Unrecognized file extension: '$ext'.")
+                System.exit(1)
+            }
+          }
+
+          flix.setFormatter(formatter)
+
+          // evaluate main.
+          flix.compile().toResult match {
+            case Result.Ok(compilationResult) =>
+              compilationResult.getMain match {
+                case None => // nop
+                case Some(m) =>
+                  // Invoke main with the supplied arguments.
+                  m(cmdOpts.args.toArray)
+              }
               System.exit(0)
-            case _ =>
+
+            case Result.Err(errors) =>
+              flix.mkMessages(errors.toList.sortBy(_.source.name)).foreach(println)
+              println()
+              println(s"Compilation failed with ${errors.length} error(s).")
               System.exit(1)
           }
 
@@ -358,9 +410,7 @@ object Main {
           ZhegalkinPerf.run(options.XPerfN)
 
       }
-    }
-
-    catch {
+    } catch {
       case ex: RuntimeException =>
         ex.printStackTrace()
         System.exit(1)
@@ -389,13 +439,10 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xprintphases: Boolean = false,
                      xsummary: Boolean = false,
-                     xfuzzer: Boolean = false,
-                     xprinttyper: Option[String] = None,
                      xsubeffecting: Set[Subeffecting] = Set.empty,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      XPerfPar: Boolean = false,
-                     xchaosMonkey: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -611,21 +658,9 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
-      // Xfuzzer
-      opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
-        text("[experimental] enables compiler fuzzing.")
-
-      // Xprint-typer
-      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym))).
-        text("[experimental] writes constraints to dot files.")
-
       // Xsubeffecting
       opt[Seq[Subeffecting]]("Xsubeffecting").action((subeffectings, c) => c.copy(xsubeffecting = subeffectings.toSet)).
         text("[experimental] enables sub-effecting in select places")
-
-      // Xchaos-monkey
-      opt[Unit]("Xchaos-monkey").action((_, c) => c.copy(xchaosMonkey = true)).
-        text("[experimental] introduces randomness.")
 
       note("")
 
