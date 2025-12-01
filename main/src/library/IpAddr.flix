@@ -26,6 +26,10 @@ instance FromString[IpAddr] {
     pub def fromString(x: String): Option[IpAddr] = IpAddr.fromString(x)
 }
 
+instance Formattable[IpAddr] {
+    pub def format(x: IpAddr): RichString = RichString.fromString(ToString.toString(x))
+}
+
 mod IpAddr {
 
     use Ipv4Addr.Ipv4Addr

@@ -102,6 +102,15 @@ instance Filterable[Chain] {
 
 instance Witherable[Chain]
 
+instance Formattable[Chain[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Chain#{") +
+        RichString.join(RichString.fromString(", "), c) +
+        RichString.fromString("}")
+}
+
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
         "Chain#{" + (Chain.iterator(rc, c) |> Iterator.join(", ")) + "}"
@@ -132,7 +141,7 @@ instance ToJava[Chain[a]] {
 instance ToFlix[Chain[a]] {
     type In = JList
     pub def toFlix(l: JList): Chain[a] = region rc {
-        let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let it = unsafe IO { l.iterator() };
         it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }
 }

@@ -35,6 +35,14 @@ instance Iterable[MutHashSet[a, r]] {
         MutHashSet.iterator(rc, s)
 }
 
+instance Formattable[MutHashSet[t, r]] with Formattable[t] {
+    type Aef = Formattable.Aef[t] + r
+
+    pub def format(x: MutHashSet[t, r]): RichString \ (Formattable.Aef[t] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutHashSet#{") + joinWith(Formattable.format, fromString(", "), MutHashSet.toList(x)) + fromString("}")
+}
+
 mod MutHashSet {
 
     ///

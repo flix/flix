@@ -121,7 +121,7 @@ mod Env {
             def getEnv(k) = region rc {
                 try {
                     let _ = rc;
-                    let iter = unchecked_cast ((System.getenv().entrySet().iterator()) as _ \ rc);
+                    let iter = unsafe IO as rc { System.getenv().entrySet().iterator() };
                     k(getEnvHelper(iter, Map.empty()))
                 } catch {
                     case _: Exception => k(Map.empty())
@@ -166,6 +166,7 @@ mod Env {
     ///
     /// In other words, re-interprets the `Env` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - Env) + IO = handle(f)()
 
     def getPropHelper(name: String): Option[String] \ IO =

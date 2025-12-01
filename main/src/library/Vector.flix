@@ -38,6 +38,14 @@ instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
 }
 
+instance Formattable[Vector[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Vector[a]): RichString \ Formattable.Aef[a] =
+        use RichString.{fromString, joinWith};
+        fromString("Vector#{") + joinWith(Formattable.format, fromString(", "), Vector.toList(x)) + fromString("}")
+}
+
 instance Hash[Vector[a]] with Hash[a] {
     pub def hash(v: Vector[a]): Int32 =
         Vector.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), v)
@@ -137,7 +145,7 @@ instance ForEach[Vector[a]] {
 instance ToFlix[Vector[a]] {
     type In = JList
     pub def toFlix(l: JList): Vector[a] = region rc {
-        let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let iter = unsafe IO { l.iterator() };
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
@@ -487,14 +495,16 @@ mod Vector {
             let l = MutList.empty(rc);
             // We handle the first element twice.
             MutList.push(Vector.get(0, v), l);
-            (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
-                if (f(head, cur)) {
-                    head
-                } else {
-                    MutList.push(cur, l);
-                    cur
-                }
-            });
+            discard {
+                (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
+                    if (f(head, cur)) {
+                        head
+                    } else {
+                        MutList.push(cur, l);
+                        cur
+                    }
+                })
+            };
             MutList.toVector(l)
         }
     }

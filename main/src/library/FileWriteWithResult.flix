@@ -264,6 +264,7 @@ mod FileWriteWithResult {
     ///
     /// In other words, re-interprets the `FileWriteWithResult` effect using the `IO` effect.
     ///
+    @DefaultHandler
     pub def runWithIO(f: Unit -> a \ ef): a \ (ef - FileWriteWithResult) + {IO} = handle(f)()
 
 }

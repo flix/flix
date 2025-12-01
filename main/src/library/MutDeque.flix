@@ -46,6 +46,14 @@ instance ForEach[MutDeque[a, r]] {
     pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
 }
 
+instance Formattable[MutDeque[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
+}
+
 mod MutDeque {
 
     ///

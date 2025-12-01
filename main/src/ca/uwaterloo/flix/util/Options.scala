@@ -49,8 +49,7 @@ object Options {
     XPerfN = None,
     XPerfFrontend = false,
     XPerfPar = false,
-    xchaosMonkey = false,
-    xiterations = 5000,
+    xchaosMonkey = false
   )
 
   /**
@@ -117,8 +116,7 @@ case class Options(lib: LibLevel,
                    XPerfFrontend: Boolean,
                    XPerfPar: Boolean,
                    XPerfN: Option[Int],
-                   xchaosMonkey: Boolean,
-                   xiterations: Int,
+                   xchaosMonkey: Boolean
                   )
 
 /**
