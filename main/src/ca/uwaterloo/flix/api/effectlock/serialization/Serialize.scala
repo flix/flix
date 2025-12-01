@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api.effectlock.serialization
 
-import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, TraitConstraint, VarText}
+import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, SymUse, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -43,7 +43,7 @@ object Serialize {
     case Type.Var(sym, _) => Var(serializeKindedTypeVarSym(sym))
     case Type.Cst(tc, _) => Cst(serializeTypeConstructor(tc))
     case Type.Apply(tpe1, tpe2, _) => Apply(serializeType(tpe1), serializeType(tpe2))
-    case Type.Alias(symUse, args, tpe, _) => Alias(serializeTypeAliasSym(symUse.sym), args.map(serializeType), serializeType(tpe))
+    case Type.Alias(symUse, args, tpe, _) => Alias(serializeTypeAliasSymUse(symUse), args.map(serializeType), serializeType(tpe))
     case Type.AssocType(symUse, arg, kind, _) => AssocType(serializeAssocTypeSym(symUse.sym), serializeType(arg), serializeKind(kind))
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JvmToType", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JvmToEff", loc)
@@ -169,6 +169,10 @@ object Serialize {
 
   private def serializeTypeAliasSym(sym0: Symbol.TypeAliasSym): TypeAliasSym = {
     TypeAliasSym(sym0.namespace, sym0.name)
+  }
+
+  private def serializeTypeAliasSymUse(sym0: SymUse.TypeAliasSymUse): TypeAliasSymUse = {
+    TypeAliasSymUse(serializeTypeAliasSym(sym0.sym), sym0.loc)
   }
 
   private def serializeVarText(text0: VarText): SVarText = text0 match {

@@ -44,7 +44,7 @@ package object serialization {
 
   case class Apply(tpe1: SType, tpe2: SType) extends SType
 
-  case class Alias(symUse: TypeAliasSym, args: List[SType], tpe: SType) extends SType
+  case class Alias(symUse: TypeAliasSymUse, args: List[SType], tpe: SType) extends SType
 
   case class AssocType(symUse: AssocTypeSym, arg: SType, kind: SKind) extends SType
 
@@ -206,6 +206,8 @@ package object serialization {
   case class VarSym(text: SVarText, kind: SKind) extends SSym
 
   case class TypeAliasSym(namespace: List[String], name: String) extends SSym
+
+  case class TypeAliasSymUse(sym: TypeAliasSym, loc: SourceLocation)
 
   case class AssocTypeSym(trt: TraitSym, name: String) extends SSym
 
@@ -379,6 +381,7 @@ package object serialization {
         classOf[ArrowKind],
         classOf[VarSym],
         classOf[TypeAliasSym],
+        classOf[TypeAliasSymUse],
         classOf[AssocTypeSym],
         classOf[TraitSym],
         classOf[EnumSym],

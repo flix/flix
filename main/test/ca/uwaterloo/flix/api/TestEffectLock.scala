@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.effectlock.serialization.*
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -198,7 +199,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def fun(x: Num): Num = x + x
         |""".stripMargin
 
-    val alias = Alias(TypeAliasSym(List.empty, "Num"), List.empty, Cst(Int32))
+    val alias = Alias(TypeAliasSymUse(TypeAliasSym(List.empty, "Num"), SourceLocation.Unknown), List.empty, Cst(Int32))
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), alias), alias)
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
 
