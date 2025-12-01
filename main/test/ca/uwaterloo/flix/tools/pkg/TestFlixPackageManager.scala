@@ -21,6 +21,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     Thread.sleep(5000)
   }
 
+  val start = System.nanoTime()
+
   private val Main: String =
     """
       |pub def main(): Unit \ IO =
@@ -679,6 +681,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case Ok(_) => fail("expected error, got success")
       case Err(_: PackageError.MismatchedVersions) =>
         println(s"Total requests: ${GitHub.reqs.get()}\nTotal bytes: ${GitHub.totalData.get() * 16}")
+        val tdelta = System.nanoTime() - start
+        println(s"Total time: $tdelta ns (${tdelta / 1_000_000_000} + 0.${tdelta % 1_000_000_000} seconds)")
         succeed
       case Err(e) => fail(e.message(formatter))
     }
