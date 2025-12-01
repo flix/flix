@@ -26,12 +26,16 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.{URI, URL}
 import java.nio.file.{Files, Path}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import javax.net.ssl.HttpsURLConnection
 
 /**
   * An interface for the GitHub API.
   */
 object GitHub {
+
+  val reqs: AtomicInteger = new AtomicInteger(0)
+  val totalData: AtomicLong = new AtomicLong(0)
 
   /**
     * A GitHub project.
@@ -62,7 +66,10 @@ object GitHub {
       // add the API key as bearer if needed
       apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
       val stream = conn.getInputStream
-      StreamOps.readAll(stream)
+      reqs.incrementAndGet()
+      val res = StreamOps.readAll(stream)
+      res.foreach(_ => totalData.incrementAndGet())
+      res
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
     }
@@ -97,6 +104,7 @@ object GitHub {
       val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
       conn.addRequestProperty("Authorization", "Bearer " + apiKey)
 
+      reqs.incrementAndGet()
       val code = conn.getResponseCode
       code match {
         case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
@@ -134,12 +142,15 @@ object GitHub {
       val outStream = conn.getOutputStream
       outStream.write(jsonCompact.getBytes("utf-8"))
 
+      reqs.incrementAndGet()
       // Process response errors
       val code = conn.getResponseCode
       code match {
         case 201 =>
           val inStream = conn.getInputStream
-          StreamOps.readAll(inStream)
+          val res = StreamOps.readAll(inStream)
+          res.foreach(_ => totalData.incrementAndGet())
+          res
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
         case 404 => return Err(ReleaseError.RepositoryNotFound(project))
         case _ => return Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
@@ -182,6 +193,7 @@ object GitHub {
       val outStream = conn.getOutputStream
       outStream.write(assetData)
 
+      reqs.incrementAndGet()
       // Process response errors
       val code = conn.getResponseCode
       code match {
@@ -218,6 +230,7 @@ object GitHub {
       val outStream = conn.getOutputStream
       outStream.write(jsonCompact.getBytes("utf-8"))
 
+      reqs.incrementAndGet()
       // Process response errors
       val code = conn.getResponseCode
       code match {
@@ -257,8 +270,10 @@ object GitHub {
   /**
     * Downloads the given asset.
     */
-  def downloadAsset(asset: Asset): InputStream =
+  def downloadAsset(asset: Asset): InputStream = {
+    reqs.incrementAndGet()
     asset.url.openStream()
+  }
 
   /**
     * Returns the URL that returns data related to the project's releases.
