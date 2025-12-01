@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.Symbol.DefnSym
 import ca.uwaterloo.flix.language.ast.TypedAst
 
 /**
@@ -23,8 +24,42 @@ import ca.uwaterloo.flix.language.ast.TypedAst
   */
 object Reachability {
 
-  case class ReachableDefs(defs: Set[Symbol.DefnSym], sigs: Set[Symbol.SigSym])
+  case class ReachableSyms(defs: Set[Symbol.DefnSym], sigs: Set[Symbol.SigSym])
 
-  def run(root: TypedAst.Root): Set[Symbol.DefnSym] = ???
+  def run(root: TypedAst.Root): ReachableSyms = {
+    val initDefnSyms = root.defs.keys.map(ReachableSym.DefnSym.apply).toSet
+    val initTraitSyms = root.traits.keys.map(ReachableSym.TraitSym.apply)
+    val initSigSym = root.sigs.keys.map(ReachableSym.SigSym.apply)
+    val init: Set[ReachableSym] = initDefnSyms ++ initTraitSyms ++ initSigSym
+
+    var reach = init
+    var delta = reach
+
+    while (delta.nonEmpty) {
+      val newReach = delta.flatMap(visitSym)
+      delta = newReach -- reach
+      reach = reach ++ delta
+    }
+
+    val defnSyms = reach.collect { case x: ReachableSym.DefnSym => x }.map(_.sym)
+    val sigSyms = reach.collect { case x: ReachableSym.SigSym => x }.map(_.sym)
+    ReachableSyms(defnSyms, sigSyms)
+
+  }
+
+  private def visitSym(sym0: ReachableSym): Set[ReachableSym] = ???
+
+  /** Reachable symbols (defs, traits, sigs). */
+  private sealed trait ReachableSym
+
+  private object ReachableSym {
+
+    case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
+
+    case class TraitSym(sym: Symbol.TraitSym) extends ReachableSym
+
+    case class SigSym(sym: Symbol.SigSym) extends ReachableSym
+
+  }
 
 }
