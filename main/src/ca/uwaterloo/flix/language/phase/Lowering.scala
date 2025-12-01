@@ -18,14 +18,14 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.Expr
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
+import ca.uwaterloo.flix.language.ast.TypedAst.DefaultHandler
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.BoundBy.FormalParam
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugLoweredAst
-import ca.uwaterloo.flix.language.phase.EntryPoints.{DefaultHandler, ErrorOrMalformed, eval}
-import ca.uwaterloo.flix.util.collection.{CofiniteSet, ListOps, Nel}
+import ca.uwaterloo.flix.util.collection.{CofiniteSet}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 /**
@@ -174,36 +174,14 @@ object Lowering {
   }
 
   /**
-    * A function is an entry point if:
-    *   - It is the main function (called `main` by default, but can configured
-    *     to an arbitrary name).
-    *   - It is a test (annotated with `@Test`).
-    *   - It is an exported function (annotated with `@Export`).
-    */
-  private def isEntryPoint(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    isMain(defn) || isTest(defn) || isExport(defn)
-
-  /** Returns `true` if `defn` is a test. */
-  private def isTest(defn: TypedAst.Def): Boolean =
-    defn.spec.ann.isTest
-
-  /** Returns `true` if `defn` is an exported function. */
-  private def isExport(defn: TypedAst.Def): Boolean =
-    defn.spec.ann.isExport
-
-  /** Returns `true` if `defn` is the main function. */
-  private def isMain(defn: TypedAst.Def)(implicit root: TypedAst.Root): Boolean =
-    root.mainEntryPoint.contains(defn.sym)
-
-  /**
     * Lowers the given definition `defn0`.
     */
   private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Def = {
     // Wrap the definition in default handlers if entry point
-    val defn = if (isEntryPoint(defn0)) {
+    val defn = if (EntryPoints.isEntryPoint(defn0)) {
         wrapDefWithDefaultHandlers(defn0, root)
     } else {
-      defn0
+        defn0
     }
     defn match {
     case TypedAst.Def(sym, spec0, exp0, loc) =>
@@ -245,7 +223,7 @@ object Lowering {
     // We are expecting entry points, and all entry points should have a concrete effect set
     // Obtain the concrete effect set of the definition that is going to be wrapped.
     // We are expecting entry points, and all entry points should have a concrete effect set
-    val defEffects: CofiniteSet[Symbol.EffSym] = eval(currentDef.spec.eff) match {
+    val defEffects: CofiniteSet[Symbol.EffSym] = Type.eval(currentDef.spec.eff) match {
       case Result.Ok(s) => s
       // This means eff is either not well-formed or it has type variables.
       // Either way, in this case we will wrap with all default handlers
@@ -257,45 +235,7 @@ object Lowering {
     // Right now, the order depends on the order of defaultHandlers.
     necessaryHandlers.foldLeft(currentDef)((defn, handler) => wrapInHandler(defn, handler, root))
   }
-  /**
-    * Evaluates `eff` if it is well-formed and has no type variables,
-    * associated types, or error types.
-    */
-  private def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = eff match {
-    case Type.Cst(tc, _) => tc match {
-      case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
-      case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
-      case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
-      case _ => Result.Err(())
-    }
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
-      Result.mapN(eval(x0)) {
-        case x => CofiniteSet.complement(x)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.union(x, y)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.intersection(x, y)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.difference(x, y)
-      }
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
-      Result.mapN(eval(x0), eval(y0)) {
-        case (x, y) => CofiniteSet.xor(x, y)
-      }
-    case Type.Alias(_, _, tpe, _) => eval(tpe)
-    case Type.Var(_, _) => Result.Err(())
-    case Type.Apply(_, _, _) => Result.Err(())
-    case Type.AssocType(_, _, _, _) => Result.Err(())
-    case Type.JvmToType(_, _) => Result.Err(())
-    case Type.JvmToEff(_, _) => Result.Err(())
-    case Type.UnresolvedJvmType(_, _) => Result.Err(())
-  }
+
   /**
     * Wraps an entry point function with a default effect handler.
     *
