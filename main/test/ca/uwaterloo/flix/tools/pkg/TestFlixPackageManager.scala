@@ -677,7 +677,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     val path = Files.createTempDirectory("")
     FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
       case Ok(_) => fail("expected error, got success")
-      case Err(_: PackageError.MismatchedVersions) => succeed
+      case Err(_: PackageError.MismatchedVersions) =>
+        println(s"Total requests: ${GitHub.reqs.get()}\nTotal bytes: ${GitHub.totalData.get() * 16}")
+        succeed
       case Err(e) => fail(e.message(formatter))
     }
   }
@@ -724,7 +726,6 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case _: SafetyError.Forbidden => true
       case _ => false
     }
-
     (forbidden, flix.mkMessages(errors).mkString(System.lineSeparator()))
   }
 
@@ -741,7 +742,5 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
        |${deps.mkString(System.lineSeparator())}
        |""".stripMargin
   }
-
-  println(s"Total requests: ${GitHub.reqs.get()}\nTotal bytes: ${GitHub.totalData.get() * 16}")
 
 }
