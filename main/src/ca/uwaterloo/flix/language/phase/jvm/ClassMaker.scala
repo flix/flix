@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Abstract.{IsAbstract, NotAbstract}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.*
@@ -143,7 +143,7 @@ object ClassMaker {
   private def mkClassWriter(name: JvmName, v: Visibility, f: Final, a: Abstract, i: Interface, superClass: JvmName, interfaces: List[JvmName])(implicit flix: Flix): ClassWriter = {
     val cw = AsmOps.mkClassWriter()
     val m = v.toInt + f.toInt + a.toInt + i.toInt
-    cw.visit(AsmOps.JavaVersion, m, name.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
+    cw.visit(CompilerConstants.JvmTargetVersion, m, name.toInternalName, null, superClass.toInternalName, interfaces.map(_.toInternalName).toArray)
     cw.visitSource(name.toInternalName, null)
     cw
   }

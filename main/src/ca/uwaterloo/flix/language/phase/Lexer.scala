@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, StringCursor}
 import ca.uwaterloo.flix.util.collection.PrefixTree
 
-import scala.annotation.tailrec
+import scala.annotation.{tailrec, unused}
 import scala.collection.mutable
 import scala.util.Random
 
@@ -237,8 +237,7 @@ object Lexer {
       val (results, errors) = ParOps.parMap(staleByDecreasingSize) {
         src =>
           val (tokens, errors) = lex(src)
-          val fuzzedTokens = fuzz(tokens)
-          (src -> fuzzedTokens, errors)
+          (src -> tokens, errors)
       }.unzip
 
       // Construct a map from each source to its tokens.
@@ -960,12 +959,8 @@ object Lexer {
     *
     * Must not modify the last token since it is end-of-file.
     */
+  @unused
   private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
-    // Return immediately if fuzzing is disabled.
-    if (!flix.options.xfuzzer) {
-      return tokens
-    }
-
     // Return immediately if there are few tokens.
     if (tokens.length <= 10) {
       return tokens
