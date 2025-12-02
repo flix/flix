@@ -112,12 +112,14 @@ object GitHub {
     */
   private def verifyRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
     val url = releaseVersionUrl(project, version)
-
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .GET()
+      .build()
     try {
-      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      val resp = openConnectionWithRateLimiting(req)
 
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
         case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Ok(())
