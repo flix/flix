@@ -31,5 +31,5 @@ jobs:
       - name: Test Package Manager suite with timeout
         env: # Only add token in this step to prevent other steps from abusing the token
           GITHUB_CI_RUNNER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        timeout-minutes: 15
+        timeout-minutes: 10
         run: ./gradlew testPackageManager --console=plain
