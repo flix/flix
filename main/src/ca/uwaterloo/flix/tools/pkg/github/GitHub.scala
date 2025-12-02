@@ -44,7 +44,7 @@ object GitHub {
     *   System.currentTimeMillis() / 1000
     * }}}
     */
-  private var rateLimitReset: Long = Long.MaxValue
+  private var rateLimitReset: Long = Long.MinValue
 
   /** The number of requests remaining in the current rate limit window. */
   private var rateLimitRemaining: Long = Long.MaxValue
