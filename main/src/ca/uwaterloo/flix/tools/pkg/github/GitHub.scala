@@ -26,12 +26,27 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 import java.io.{IOException, InputStream}
 import java.net.{URI, URL, URLConnection}
 import java.nio.file.{Files, Path}
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 import javax.net.ssl.HttpsURLConnection
 
 /**
   * An interface for the GitHub API.
   */
 object GitHub {
+
+  /**
+    * The current time at which the rate limit window resets, in UTC epoch seconds.
+    *
+    * Local time can be compared to this by computing
+    * {{{
+    *   System.currentTimeMillis() / 1000
+    * }}}
+    */
+  private var rateLimitReset: Long = Long.MaxValue
+
+  /** The number of requests remaining in the current rate limit window. */
+  private var rateLimitRemaining: Long = Long.MaxValue
 
   /**
     * A GitHub project.
@@ -58,7 +73,7 @@ object GitHub {
   def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
     val json = try {
-      val conn = url.openConnection()
+      val conn = openConnectionWithRateLimiting(url)
       // add the API key as bearer if needed
       apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
       val stream = conn.getInputStream
@@ -66,6 +81,7 @@ object GitHub {
       StreamOps.readAll(stream)
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
+      case ex: NumberFormatException => return Err(PackageError.ProjectNotFound(url, project, ???)) // TODO: Make new network error
     }
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
@@ -95,7 +111,7 @@ object GitHub {
     val url = releaseVersionUrl(project, version)
 
     try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
       conn.addRequestProperty("Authorization", "Bearer " + apiKey)
 
       val code = conn.getResponseCode
@@ -107,6 +123,7 @@ object GitHub {
 
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
+      case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
   }
 
@@ -127,7 +144,7 @@ object GitHub {
 
     val url = releasesUrl(project)
     val json = try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
       conn.setRequestMethod("POST")
       conn.addRequestProperty("Authorization", "Bearer " + apiKey)
       conn.setDoOutput(true)
@@ -150,6 +167,7 @@ object GitHub {
 
     } catch {
       case _: IOException => return Err(ReleaseError.NetworkError)
+      case _: NumberFormatException => return Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
 
     // Extract URL from returned JSON
@@ -174,7 +192,7 @@ object GitHub {
     val url = releaseAssetUploadUrl(project, releaseId, assetName)
 
     try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
 
       conn.setRequestMethod("POST")
       conn.addRequestProperty("Authorization", "Bearer " + apiKey)
@@ -196,6 +214,7 @@ object GitHub {
 
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
+      case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
   }
 
@@ -218,7 +237,7 @@ object GitHub {
     val url = releaseIdUrl(project, releaseId)
 
     try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
 
       // Java doesn't recognize "PATCH" as a valid request method (???)
       conn.setRequestMethod("POST")
@@ -244,6 +263,7 @@ object GitHub {
 
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
+      case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
   }
 
@@ -335,5 +355,31 @@ object GitHub {
       case Some(semver) => semver
       case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
+  }
+
+  private def openConnectionWithRateLimiting(url: URL): URLConnection = this.synchronized {
+    if (!isWithinRateLimit) {
+      waitUntilNextRateLimitWindow()
+    }
+    val conn = url.openConnection()
+    updateRateLimits(conn)
+    conn
+  }
+
+  private def waitUntilNextRateLimitWindow(): Unit = {
+    val currentTime = System.currentTimeMillis() / 1000
+    val interval = Math.max(rateLimitReset - currentTime, 0) // Ensure that interval cannot be negative
+    Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
+  }
+
+  private def updateRateLimits(conn: URLConnection): Unit = {
+    val newRateLimitReset = java.lang.Long.parseLong(conn.getHeaderField("x-ratelimit-reset"))
+    val newRateLimitRemaining = java.lang.Long.parseLong(conn.getHeaderField("x-ratelimit-remaining"))
+    rateLimitReset = Math.max(rateLimitReset, newRateLimitReset)
+    rateLimitRemaining = Math.min(rateLimitRemaining, newRateLimitRemaining)
+  }
+
+  private def isWithinRateLimit: Boolean = {
+    rateLimitRemaining > 0
   }
 }
