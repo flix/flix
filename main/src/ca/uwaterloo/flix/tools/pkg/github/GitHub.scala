@@ -202,6 +202,8 @@ object GitHub {
   private def debugRateLimitHeader(conn: URLConnection): Unit = {
     println(
       s"""conn.getHeaderField("x-ratelimit-reset") = ${conn.getHeaderField("x-ratelimit-reset")}
+         |conn.getHeaderField("x-ratelimit-used") = ${conn.getHeaderField("x-ratelimit-used")}
+         |conn.getHeaderField("x-ratelimit-remaining) = ${conn.getHeaderField("x-ratelimit-remaining")}
          |System.currentTimeMillis() / 1000 (local) = ${System.currentTimeMillis() / 1000}
          |""".stripMargin)
   }
