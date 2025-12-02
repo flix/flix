@@ -24,11 +24,14 @@ import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
 import java.io.{IOException, InputStream}
+import java.net.http.{HttpClient, HttpHeaders, HttpRequest, HttpResponse}
 import java.net.{URI, URL, URLConnection}
 import java.nio.file.{Files, Path}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import javax.net.ssl.HttpsURLConnection
+import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.OptionConverters.RichOptional
 
 /**
   * An interface for the GitHub API.
@@ -47,6 +50,8 @@ object GitHub {
 
   /** The number of requests remaining in the current rate limit window. */
   private var rateLimitRemaining: Long = Long.MaxValue
+
+  private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
 
   /**
     * A GitHub project.
@@ -72,12 +77,11 @@ object GitHub {
     */
   def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
+    val reqBuilder = HttpRequest.newBuilder(url.toURI)
+    // add the API key as bearer if needed
+    apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
     val json = try {
-      val conn = openConnectionWithRateLimiting(url)
-      // add the API key as bearer if needed
-      apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
-      val stream = conn.getInputStream
-      StreamOps.readAll(stream)
+      openConnectionWithRateLimiting(reqBuilder.GET().build()).body()
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
       case ex: NumberFormatException => return Err(PackageError.ProjectNotFound(url, project, ???)) // TODO: Make new network error
@@ -214,11 +218,11 @@ object GitHub {
     }
   }
 
-  private def debugRateLimitHeader(conn: URLConnection): Unit = {
+  private def debugRateLimitHeader(headers: HttpHeaders): Unit = {
     println(
-      s"""conn.getHeaderField("x-ratelimit-reset") = ${conn.getHeaderField("x-ratelimit-reset")}
-         |conn.getHeaderField("x-ratelimit-used") = ${conn.getHeaderField("x-ratelimit-used")}
-         |conn.getHeaderField("x-ratelimit-remaining) = ${conn.getHeaderField("x-ratelimit-remaining")}
+      s"""conn.getHeaderField("x-ratelimit-reset") = ${headers.firstValue("x-ratelimit-reset").orElse("")}
+         |conn.getHeaderField("x-ratelimit-used") = ${headers.firstValue("x-ratelimit-used").orElse("")}
+         |conn.getHeaderField("x-ratelimit-remaining) = ${headers.firstValue("x-ratelimit-remaining").orElse("")}
          |System.currentTimeMillis() / 1000 (local) = ${System.currentTimeMillis() / 1000}
          |""".stripMargin)
   }
@@ -352,14 +356,15 @@ object GitHub {
     }
   }
 
-  private def openConnectionWithRateLimiting(url: URL): URLConnection = this.synchronized {
+  private def openConnectionWithRateLimiting(request: HttpRequest): HttpResponse[String] = this.synchronized {
     if (!isWithinRateLimit) {
       waitUntilNextRateLimitWindow()
     }
-    val conn = url.openConnection()
-    debugRateLimitHeader(conn)
-    updateRateLimits(conn)
-    conn
+    val res: HttpResponse[String] = HTTP_CLIENT.send(request, HttpResponse.BodyHandler[String])
+    val headers = res.headers()
+    debugRateLimitHeader(headers)
+    updateRateLimits(headers)
+    res
   }
 
   private def waitUntilNextRateLimitWindow(): Unit = {
@@ -368,9 +373,11 @@ object GitHub {
     Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
   }
 
-  private def updateRateLimits(conn: URLConnection): Unit = {
-    val newRateLimitReset = java.lang.Long.parseLong(conn.getHeaderField("x-ratelimit-reset"))
-    val newRateLimitRemaining = java.lang.Long.parseLong(conn.getHeaderField("x-ratelimit-remaining"))
+  private def updateRateLimits(headers: HttpHeaders): Unit = {
+    val resetStr = headers.firstValue("x-ratelimit-reset").orElse("")
+    val remainingStr = headers.firstValue("x-ratelimit-remaining").orElse("")
+    val newRateLimitReset = java.lang.Long.parseLong(resetStr)
+    val newRateLimitRemaining = java.lang.Long.parseLong(remainingStr)
     rateLimitReset = Math.max(rateLimitReset, newRateLimitReset)
     rateLimitRemaining = Math.min(rateLimitRemaining, newRateLimitRemaining)
   }
