@@ -17,21 +17,19 @@ package ca.uwaterloo.flix.tools.pkg.github
 
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Result, StreamOps}
+import ca.uwaterloo.flix.util.Result
 import org.json4s.*
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
 import java.io.{IOException, InputStream}
+import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.{HttpClient, HttpHeaders, HttpRequest, HttpResponse}
-import java.net.{URI, URL, URLConnection}
-import java.nio.file.{Files, Path}
+import java.net.{URI, URL}
+import java.nio.file.Path
 import java.time.Duration
 import java.time.temporal.ChronoUnit
-import javax.net.ssl.HttpsURLConnection
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.jdk.OptionConverters.RichOptional
 
 /**
   * An interface for the GitHub API.
@@ -80,8 +78,9 @@ object GitHub {
     val reqBuilder = HttpRequest.newBuilder(url.toURI)
     // add the API key as bearer if needed
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
+    val req = reqBuilder.GET().build()
     val json = try {
-      openConnectionWithRateLimiting(reqBuilder.GET().build()).body()
+      openConnectionWithRateLimiting(req).body()
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
       case ex: NumberFormatException => return Err(PackageError.ProjectNotFound(url, project, ???)) // TODO: Make new network error
@@ -116,15 +115,17 @@ object GitHub {
       .header("Authorization", "Bearer " + apiKey)
       .GET()
       .build()
+
     try {
+      // Send request
       val resp = openConnectionWithRateLimiting(req)
 
+      // Process response errors
       val code = resp.statusCode()
       code match {
         case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Ok(())
       }
-
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
       case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
@@ -147,25 +148,23 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releasesUrl(project)
-    val json = try {
-      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
-      conn.setRequestMethod("POST")
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
-      conn.setDoOutput(true)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .header("Content-Type", "application/json")
+      .POST(BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
+      .build()
 
+    val json = try {
       // Send request
-      val outStream = conn.getOutputStream
-      outStream.write(jsonCompact.getBytes("utf-8"))
+      val resp = openConnectionWithRateLimiting(req)
 
       // Process response errors
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
-        case 201 =>
-          val inStream = conn.getInputStream
-          StreamOps.readAll(inStream)
+        case 201 => resp.body()
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
         case 404 => return Err(ReleaseError.RepositoryNotFound(project))
-        case _ => return Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+        case _ => return Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
 
     } catch {
@@ -190,28 +189,24 @@ object GitHub {
     */
   private def uploadAsset(assetPath: Path, project: Project, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
     val assetName = assetPath.getFileName.toString
-    val assetData = Files.readAllBytes(assetPath)
 
     val url = releaseAssetUploadUrl(project, releaseId, assetName)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .header("Content-Type", "application/octet-stream")
+      .POST(BodyPublishers.ofFile(assetPath))
+      .build()
 
     try {
-      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
-
-      conn.setRequestMethod("POST")
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
-      conn.addRequestProperty("Content-Type", "application/octet-stream")
-      conn.setDoOutput(true)
-
       // Send request
-      val outStream = conn.getOutputStream
-      outStream.write(assetData)
+      val resp = openConnectionWithRateLimiting(req)
 
       // Process response errors
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
         case 201 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
-        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
 
     } catch {
@@ -237,31 +232,25 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releaseIdUrl(project, releaseId)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .header("Content-Type", "application/json")
+      .method("PATCH", BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
+      .build()
 
     try {
-      val conn = openConnectionWithRateLimiting(url).asInstanceOf[HttpsURLConnection]
-
-      // Java doesn't recognize "PATCH" as a valid request method (???)
-      conn.setRequestMethod("POST")
-      conn.setRequestProperty("X-HTTP-Method-Override", "PATCH")
-
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
-      conn.setDoOutput(true)
-
       // Send request
-      val outStream = conn.getOutputStream
-      outStream.write(jsonCompact.getBytes("utf-8"))
+      val resp = openConnectionWithRateLimiting(req)
 
       // Process response errors
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
         case 200 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.RepositoryNotFound(project))
         case 422 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
-        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
-
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
       case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
