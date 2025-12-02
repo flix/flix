@@ -351,7 +351,7 @@ object GitHub {
     if (!isWithinRateLimit) {
       waitUntilNextRateLimitWindow()
     }
-    val res: HttpResponse[String] = HTTP_CLIENT.send(request, HttpResponse.BodyHandler[String])
+    val res = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
     val headers = res.headers()
     debugRateLimitHeader(headers)
     updateRateLimits(headers)
