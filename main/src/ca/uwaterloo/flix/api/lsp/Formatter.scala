@@ -20,7 +20,8 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind.ParameterList
 import ca.uwaterloo.flix.language.ast.TokenKind.{Colon, Comma}
 import ca.uwaterloo.flix.language.ast.{SyntaxTree, Token}
 
-import scala.annotation.unused
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
 
 /**
   * A formatter for Flix syntax trees.
@@ -41,9 +42,30 @@ object Formatter {
     traverseTree(tree)
   }
 
-  def applyEditsToFile(@unused uri: String, @unused edits: List[TextEdit]) = {
-    // TODO: This function should apply the edits to the file content and return the updated content.
-    ()
+  def applyTextEditsToFile(file: Option[Path], edits: List[TextEdit]): Unit = {
+    // TODO: This function should apply the edits to the file content and return the updated content
+    val bytes = Files.readAllBytes(file.get)
+    val src = new String(bytes, StandardCharsets.UTF_8)
+    val updated = applyTextEditsToString(src, edits)
+    Files.write(file.get, updated.getBytes(StandardCharsets.UTF_8))
+  }
+
+  private def applyTextEditsToString(src: String, edits: List[TextEdit]): String = {
+    val sortedEdits = edits.sortBy(e => (e.range.start.line, e.range.start.character)).reverse
+
+    sortedEdits.foldLeft(src) { (text, edit) =>
+      val lines = text.split("\n").toBuffer
+      val lineIdx = edit.range.start.line - 1
+      val line = lines(lineIdx)
+
+      val updatedLine =
+        line.substring(0, edit.range.start.character - 1) +
+          edit.newText +
+          line.substring(edit.range.end.character - 1)
+
+      lines(lineIdx) = updatedLine
+      lines.mkString("\n")
+    }
   }
 
   /**

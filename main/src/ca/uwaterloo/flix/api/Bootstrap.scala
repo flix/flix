@@ -602,9 +602,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def format(flix: Flix): Result[Unit, BootstrapError] = {
     val tree = flix.getParsedAst
     tree.units.foreach {
-      case (_, subtree) =>
-        // TODO: Maybe we can improve the performance here? Currently, we always pass all source paths
-       LspFormatter.format(subtree) // TODO: Apply the edits
+      case (source, subtree) =>
+        val edits = LspFormatter.format(subtree)
+        val sourcePath = sourcePaths.find(p => p.endsWith(source.name))
+        if (sourcePath.isDefined) {
+          Console.println(s"Applying $edits")
+          LspFormatter.applyTextEditsToFile(sourcePath, edits)
+        }
     }
     Result.Ok(())
   }
