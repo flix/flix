@@ -360,9 +360,13 @@ object GitHub {
 
   private def waitUntilNextRateLimitWindow(): Unit = {
     val currentTime = System.currentTimeMillis() / 1000
+    println(s"rateLimitReset = $rateLimitReset")
+    println(s"currentTime = $currentTime")
     val interval = Math.max(rateLimitReset - currentTime, 0) // Ensure that interval cannot be negative
     println(s"SLEEPING FOR $interval SECONDS")
-    Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
+    if (currentTime < rateLimitReset) {
+      Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
+    }
   }
 
   private def updateRateLimits(headers: HttpHeaders): Unit = {
