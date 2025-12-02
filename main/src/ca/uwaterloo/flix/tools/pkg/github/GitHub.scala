@@ -77,7 +77,6 @@ object GitHub {
       // add the API key as bearer if needed
       apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
       val stream = conn.getInputStream
-      debugRateLimitHeader(conn)
       StreamOps.readAll(stream)
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
@@ -115,7 +114,6 @@ object GitHub {
       conn.addRequestProperty("Authorization", "Bearer " + apiKey)
 
       val code = conn.getResponseCode
-      debugRateLimitHeader(conn)
       code match {
         case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Ok(())
@@ -155,7 +153,6 @@ object GitHub {
 
       // Process response errors
       val code = conn.getResponseCode
-      debugRateLimitHeader(conn)
       code match {
         case 201 =>
           val inStream = conn.getInputStream
@@ -205,7 +202,6 @@ object GitHub {
 
       // Process response errors
       val code = conn.getResponseCode
-      debugRateLimitHeader(conn)
       code match {
         case 201 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
@@ -252,7 +248,6 @@ object GitHub {
 
       // Process response errors
       val code = conn.getResponseCode
-      debugRateLimitHeader(conn)
       code match {
         case 200 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
@@ -362,6 +357,7 @@ object GitHub {
       waitUntilNextRateLimitWindow()
     }
     val conn = url.openConnection()
+    debugRateLimitHeader(conn)
     updateRateLimits(conn)
     conn
   }
