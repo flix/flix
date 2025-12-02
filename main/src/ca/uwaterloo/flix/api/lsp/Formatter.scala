@@ -43,7 +43,6 @@ object Formatter {
   }
 
   def applyTextEditsToFile(file: Option[Path], edits: List[TextEdit]): Unit = {
-    // TODO: This function should apply the edits to the file content and return the updated content
     val bytes = Files.readAllBytes(file.get)
     val src = new String(bytes, StandardCharsets.UTF_8)
     val updated = applyTextEditsToString(src, edits)

@@ -606,7 +606,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         val edits = LspFormatter.format(subtree)
         val sourcePath = sourcePaths.find(p => p.endsWith(source.name))
         if (sourcePath.isDefined) {
-          Console.println(s"Applying $edits")
           LspFormatter.applyTextEditsToFile(sourcePath, edits)
         }
     }
