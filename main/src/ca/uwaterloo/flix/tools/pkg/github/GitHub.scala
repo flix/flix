@@ -24,7 +24,7 @@ import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
 import java.io.{IOException, InputStream}
-import java.net.{URI, URL}
+import java.net.{URI, URL, URLConnection}
 import java.nio.file.{Files, Path}
 import javax.net.ssl.HttpsURLConnection
 
@@ -62,7 +62,7 @@ object GitHub {
       // add the API key as bearer if needed
       apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
       val stream = conn.getInputStream
-      println("""conn.getHeaderField("x-ratelimit-reset") = """ + conn.getHeaderField("x-ratelimit-reset"))
+      debugRateLimitHeader(conn)
       StreamOps.readAll(stream)
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
@@ -199,7 +199,7 @@ object GitHub {
     }
   }
 
-  private def debugRateLimitHeader(conn: HttpsURLConnection): Unit = {
+  private def debugRateLimitHeader(conn: URLConnection): Unit = {
     println(
       s"""conn.getHeaderField("x-ratelimit-reset") = ${conn.getHeaderField("x-ratelimit-reset")}
          |System.currentTimeMillis() / 1000 (local) = ${System.currentTimeMillis() / 1000}
