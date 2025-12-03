@@ -367,6 +367,8 @@ object GitHub {
     if (currentTime < rateLimitReset) {
       println(s"SLEEPING FOR $interval MILLIS")
       Thread.sleep(Duration.of(interval, ChronoUnit.MILLIS))
+      println(s"Time after sleeping System.currentTimeMillis() = ${System.currentTimeMillis()}")
+      println(s"Time after sleeping System.currentTimeMillis() / 1000 = ${System.currentTimeMillis() / 1000}")
     }
   }
 
