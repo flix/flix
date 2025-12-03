@@ -36,19 +36,7 @@ import java.time.temporal.ChronoUnit
   */
 object GitHub {
 
-  /**
-    * The current time at which the rate limit window resets, in UTC epoch seconds.
-    *
-    * Local time can be compared to this by computing
-    * {{{
-    *   System.currentTimeMillis() / 1000
-    * }}}
-    */
-  private var rateLimitReset: Long = Long.MinValue
-
-  /** The number of requests remaining in the current rate limit window. */
-  private var rateLimitRemaining: Long = Long.MaxValue
-
+  /** Internally re-used Http Client. */
   private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
 
   /**
@@ -80,10 +68,9 @@ object GitHub {
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
     val req = reqBuilder.GET().build()
     val json = try {
-      openConnectionWithRateLimiting(req).body()
+      sendRequest(req).body()
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
-      case ex: NumberFormatException => return Err(PackageError.ProjectNotFound(url, project, ???)) // TODO: Make new network error
     }
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
@@ -118,7 +105,7 @@ object GitHub {
 
     try {
       // Send request
-      val resp = openConnectionWithRateLimiting(req)
+      val resp = sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -128,7 +115,6 @@ object GitHub {
       }
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
-      case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
   }
 
@@ -156,7 +142,7 @@ object GitHub {
 
     val json = try {
       // Send request
-      val resp = openConnectionWithRateLimiting(req)
+      val resp = sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -169,7 +155,6 @@ object GitHub {
 
     } catch {
       case _: IOException => return Err(ReleaseError.NetworkError)
-      case _: NumberFormatException => return Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
 
     // Extract URL from returned JSON
@@ -199,7 +184,7 @@ object GitHub {
 
     try {
       // Send request
-      val resp = openConnectionWithRateLimiting(req)
+      val resp = sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -211,17 +196,7 @@ object GitHub {
 
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
-      case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
-  }
-
-  private def debugRateLimitHeader(headers: HttpHeaders): Unit = {
-    println(
-      s"""conn.getHeaderField("x-ratelimit-reset") = ${headers.firstValue("x-ratelimit-reset").orElse("")}
-         |conn.getHeaderField("x-ratelimit-used") = ${headers.firstValue("x-ratelimit-used").orElse("")}
-         |conn.getHeaderField("x-ratelimit-remaining) = ${headers.firstValue("x-ratelimit-remaining").orElse("")}
-         |System.currentTimeMillis() / 1000 (local) = ${System.currentTimeMillis() / 1000}
-         |""".stripMargin)
   }
 
   /**
@@ -240,7 +215,7 @@ object GitHub {
 
     try {
       // Send request
-      val resp = openConnectionWithRateLimiting(req)
+      val resp = sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -253,7 +228,6 @@ object GitHub {
       }
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
-      case _: NumberFormatException => Err(ReleaseError.NetworkError) // TODO: Make new network error
     }
   }
 
@@ -347,40 +321,8 @@ object GitHub {
     }
   }
 
-  private def openConnectionWithRateLimiting(request: HttpRequest): HttpResponse[String] = this.synchronized {
-    if (!isWithinRateLimit) {
-      waitUntilNextRateLimitWindow()
-    }
-    val res = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
-    val headers = res.headers()
-    debugRateLimitHeader(headers)
-    updateRateLimits(headers)
-    res
-  }
-
-  private def waitUntilNextRateLimitWindow(): Unit = {
-    val currentTime = System.currentTimeMillis() / 1000
-    println(s"rateLimitReset = $rateLimitReset")
-    println(s"currentTime = $currentTime")
-    val interval = Math.max(rateLimitReset - currentTime, 0) // Ensure that interval cannot be negative
-    println(s"interval = $interval")
-    if (currentTime < rateLimitReset) {
-      println(s"SLEEPING FOR $interval SECONDS")
-      Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
-    }
-  }
-
-  private def updateRateLimits(headers: HttpHeaders): Unit = {
-    val resetStr = headers.firstValue("x-ratelimit-reset").orElse("")
-    val remainingStr = headers.firstValue("x-ratelimit-remaining").orElse("")
-    val newRateLimitReset = java.lang.Long.parseLong(resetStr)
-    val newRateLimitRemaining = java.lang.Long.parseLong(remainingStr)
-    rateLimitReset = Math.max(rateLimitReset, newRateLimitReset)
-    rateLimitRemaining = Math.max(rateLimitRemaining, newRateLimitRemaining)
-  }
-
-  private def isWithinRateLimit: Boolean = {
-    println(s"Checking rateLimitRemaining > 0 = ${rateLimitRemaining > 0}")
-    rateLimitRemaining > 0
+  /** Sends the HTTP request, `request`, and returns the response. */
+  private def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
+    HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
   }
 }
