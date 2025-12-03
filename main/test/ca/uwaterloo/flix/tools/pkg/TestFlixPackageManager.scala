@@ -690,7 +690,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case Err(e) => fail(e.message(formatter))
     }
 
-    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
+    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
       case Ok(ms) => ms
       case Err(e) => fail(e.message(formatter))
     }
