@@ -363,8 +363,9 @@ object GitHub {
     println(s"rateLimitReset = $rateLimitReset")
     println(s"currentTime = $currentTime")
     val interval = Math.max(rateLimitReset - currentTime, 0) // Ensure that interval cannot be negative
-    println(s"SLEEPING FOR $interval SECONDS")
+    println(s"interval = $interval")
     if (currentTime < rateLimitReset) {
+      println(s"SLEEPING FOR $interval SECONDS")
       Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
     }
   }
@@ -375,7 +376,7 @@ object GitHub {
     val newRateLimitReset = java.lang.Long.parseLong(resetStr)
     val newRateLimitRemaining = java.lang.Long.parseLong(remainingStr)
     rateLimitReset = Math.max(rateLimitReset, newRateLimitReset)
-    rateLimitRemaining = Math.min(rateLimitRemaining, newRateLimitRemaining)
+    rateLimitRemaining = Math.max(rateLimitRemaining, newRateLimitRemaining)
   }
 
   private def isWithinRateLimit: Boolean = {
