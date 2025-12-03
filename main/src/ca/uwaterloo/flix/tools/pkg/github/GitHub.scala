@@ -78,11 +78,6 @@ object GitHub {
     val reqBuilder = HttpRequest.newBuilder(url.toURI)
     // add the API key as bearer if needed
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
-    if (apiKey.isDefined) {
-      println("API Key is DEFINED")
-    } else {
-      println("API Key is UNDEFINED")
-    }
     val req = reqBuilder.GET().build()
     val json = try {
       openConnectionWithRateLimiting(req).body()
@@ -220,15 +215,6 @@ object GitHub {
     }
   }
 
-  private def debugRateLimitHeader(headers: HttpHeaders): Unit = {
-    println(
-      s"""conn.getHeaderField("x-ratelimit-reset") = ${headers.firstValue("x-ratelimit-reset").orElse("")}
-         |conn.getHeaderField("x-ratelimit-used") = ${headers.firstValue("x-ratelimit-used").orElse("")}
-         |conn.getHeaderField("x-ratelimit-remaining) = ${headers.firstValue("x-ratelimit-remaining").orElse("")}
-         |System.currentTimeMillis() / 1000 (local) = ${System.currentTimeMillis() / 1000}
-         |""".stripMargin)
-  }
-
   /**
     * Mark the given release as no longer being a draft, making it publicly available.
     */
@@ -358,22 +344,15 @@ object GitHub {
     }
     val res = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
     val headers = res.headers()
-    debugRateLimitHeader(headers)
     updateRateLimits(headers)
     res
   }
 
   private def waitUntilNextRateLimitWindow(): Unit = {
     val currentTime = System.currentTimeMillis() / 1000
-    println(s"rateLimitReset = $rateLimitReset")
-    println(s"currentTime = $currentTime")
     val interval = Math.max(rateLimitReset - currentTime, 0) // Ensure that interval cannot be negative
-    println(s"interval = $interval")
     if (currentTime < rateLimitReset) {
-      println(s"SLEEPING FOR $interval SECONDS")
       Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
-      println(s"Time after sleeping System.currentTimeMillis() = ${System.currentTimeMillis()}")
-      println(s"Time after sleeping System.currentTimeMillis() / 1000 = ${System.currentTimeMillis() / 1000}")
     }
   }
 
@@ -387,8 +366,6 @@ object GitHub {
   }
 
   private def isWithinRateLimit: Boolean = {
-    println(s"rateLimitRemaining = $rateLimitRemaining")
-    println(s"rateLimitRemaining > 0 = ${rateLimitRemaining > 0}")
     rateLimitRemaining > 0
   }
 }
