@@ -25,11 +25,9 @@ import org.json4s.native.JsonMethods.{compact, parse, render}
 
 import java.io.{IOException, InputStream}
 import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.{HttpClient, HttpHeaders, HttpRequest, HttpResponse}
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{URI, URL}
 import java.nio.file.Path
-import java.time.Duration
-import java.time.temporal.ChronoUnit
 
 /**
   * An interface for the GitHub API.
