@@ -216,16 +216,16 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an inner function is annotated with an illegal annotation.
+    * An error raised to indicate that an inner def is annotated with an illegal annotation.
     *
     * @param loc the location of the illegal annotation.
     */
-  case class IllegalAnnotationInnerFunction(loc: SourceLocation) extends WeederError {
-    override def summary: String = "Unexpected annotation on inner function."
+  case class IllegalAnnotationInnerDef(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Unexpected annotation on inner def."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation on local function.
+      s""">> Unexpected annotation on local def.
          |
          |${code(loc, "unexpected annotation")}
          |
@@ -240,19 +240,22 @@ object WeederError {
     *
     * @param loc the location of the illegal annotation.
     */
-  case class IllegalAnnotation(name: String, loc: SourceLocation) extends WeederError {
-    override def summary: String = s"Unexpected annotation: $name."
+  case class IllegalAnnotation(name: String, context: String, allowed: Set[String], loc: SourceLocation) extends WeederError {
+
+    private def prettyAllowed(formatter: Formatter): String = prettyJoin(allowed.toList.map(formatter.cyan))
+
+    override def summary: String = s"Unexpected annotation: $name. Allowed annotations: ${prettyAllowed(Formatter.NoFormatter)}"
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation: $name.
+      s""">> Unexpected annotation: $name. Allowed annotations: ${prettyAllowed(formatter)}
          |
          |${code(loc, "unexpected annotation")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some(s"The provided annotations is not allowed here.")
+    override def explain(formatter: Formatter): Option[String] = Some(s"The provided annotations is not allowed for $context. Allowed annotations are: ${prettyAllowed(formatter)}")
   }
 
   /**
@@ -1253,6 +1256,16 @@ object WeederError {
          |${code(loc, "Unsupported pattern.")}
          |""".stripMargin
     }
+  }
+
+  /**
+    * Joins items nicely with comma separation ending with an "or".
+    * For instance prettyJoin(List("def", "enum", "trait")) gives "def, enum or trait".
+    */
+  private def prettyJoin[T](items: Seq[T]): String = items match {
+    case i1 :: i2 :: Nil => s"$i1 or $i2"
+    case i1 :: Nil => s"$i1"
+    case i :: tail => s"$i, ${prettyJoin(tail)}"
   }
 
 }

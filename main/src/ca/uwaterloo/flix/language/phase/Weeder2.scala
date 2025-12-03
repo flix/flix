@@ -236,7 +236,7 @@ object Weeder2 {
       val annotations = pickAnnotations(tree)
       val illegalAnnotations = annotations.annotations.filter { ann => !ann.isInstanceOf[Annotation.Internal] }
       illegalAnnotations.foreach {
-        ann => sctx.errors.add(IllegalAnnotation(ann.toString, ann.loc))
+        ann => sctx.errors.add(IllegalAnnotation(ann.toString, "modules", Set("@Internal"), ann.loc))
       }
       // Ensure errors are thrown for all parsed modifiers.
       pickModifiers(tree, allowed = Set())
@@ -1386,7 +1386,7 @@ object Weeder2 {
         case Annotations(as) =>
           // Check for annotations
           for (a <- as) {
-            sctx.errors.add(IllegalAnnotationInnerFunction(a.loc))
+            sctx.errors.add(IllegalAnnotationInnerDef(a.loc))
           }
       }
 
