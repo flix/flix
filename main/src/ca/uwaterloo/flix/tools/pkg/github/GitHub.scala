@@ -79,7 +79,9 @@ object GitHub {
     // add the API key as bearer if needed
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
     if (apiKey.isDefined) {
-      println("API Key is defined")
+      println("API Key is DEFINED")
+    } else {
+      println("API Key is UNDEFINED")
     }
     val req = reqBuilder.GET().build()
     val json = try {

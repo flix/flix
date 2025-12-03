@@ -691,7 +691,9 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     if (PkgTestUtils.gitHubToken.isDefined) {
-      println("Github Token is defined")
+      println("Github Token is DEFINED")
+    } else {
+      println("Github Token is UNDEFINED")
     }
 
     val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
