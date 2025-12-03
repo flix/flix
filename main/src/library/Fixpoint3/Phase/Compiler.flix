@@ -346,7 +346,7 @@ mod Fixpoint3.Phase.Compiler {
                     case Some(join) =>
                         let relSym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
                         let loopBody = RelOp.If(
-                            Vector#{BoolExp.NotMemberOf(ramTerms, relSym)} ++ join,
+                            Vector#{BoolExp.NotMemberOf(ramTerms, relSym, false)} ++ join,
                             projection
                         );
                         let insert = (loopBody, augBody)
@@ -559,7 +559,7 @@ mod Fixpoint3.Phase.Compiler {
                             })
                     case BodyAtom(PredSym(_, id), _, Polarity.Negative, _, terms) =>
                         let ramTerms = Vector.mapWithIndex(compileBodyTerm(id), terms);
-                        Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates))}
+                        Vector#{BoolExp.NotMemberOf(ramTerms, Predicate.bodyAtomToRelSym(atom, Full, predicates), true)}
                     case Functional(_, _, _) => Vector.empty()
                     case Guard0(_) =>
                         Vector#{}

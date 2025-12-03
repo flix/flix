@@ -27,7 +27,8 @@
 /// which has time/depth `k` then this facts has at most time/depth `k + 1`.
 ///
 /// This module removes `BoolExp.NotMemberOf` as the `ProvProject` introduced by `Lowering`
-/// must ensure this property.
+/// must ensure this property. Note that only this does not refers to the `NotMemberOf` relating
+/// to negative dependencies/the `not A(...)` constructs.
 ///
  mod Fixpoint3.Phase.ProvenanceAugment {
     use Fixpoint3.Ast.Ram
@@ -132,7 +133,7 @@
     /// Returns `Some(boolExp)` if `boolExp` is not `NotMemberOf`. Otherwise returns `None`.
     ///
     def notNotMemberOf(boolExp: BoolExp): Option[BoolExp] = match boolExp {
-        case BoolExp.NotMemberOf(_, _) => None
+        case BoolExp.NotMemberOf(_, _, false) => None
         case _ => Some(boolExp)
     }
 
