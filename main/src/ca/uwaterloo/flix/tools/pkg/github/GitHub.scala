@@ -366,7 +366,7 @@ object GitHub {
     println(s"interval = $interval")
     if (currentTime < rateLimitReset) {
       println(s"SLEEPING FOR $interval SECONDS")
-      Thread.sleep(Duration.of(interval, ChronoUnit.SECONDS))
+      Thread.sleep(Duration.of(interval, ChronoUnit.MILLIS))
     }
   }
 
