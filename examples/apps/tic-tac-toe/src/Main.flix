@@ -6,13 +6,13 @@ def gameLoop(board: Board, symbol: Symbol): Unit \ Interface = {
     let move = Interface.getMove();
     match Board.makeMove(board, symbol, move) {
         case Some(newBoard) => {
-            if(Board.checkWin(newBoard, symbol)) {
+            if (Board.checkWin(newBoard, symbol)) {
                 match symbol {
                     case Symbol.X => Interface.display(newBoard, "Player One wins!!!")
                     case Symbol.O => Interface.display(newBoard, "Player Two wins!!!")
                     case _ => ()
                 }
-            } else if(Board.boardFilled(newBoard)) {
+            } else if (Board.boardFilled(newBoard)) {
                 Interface.display(board, "Draw")
             } else {
                 gameLoop(newBoard, Symbol.complement(symbol))

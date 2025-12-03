@@ -92,6 +92,7 @@ mod Concurrent.Channel {
 
     /// Returns the `MpmcAdmin` of `c`.
     @Internal
+    @LoweringTarget
     pub def mpmcAdmin(c: Mpmc[a, Static]): MpmcAdmin = {
         let Mpmc.Mpmc(admin, _) = c;
         admin
@@ -141,6 +142,7 @@ mod Concurrent.Channel {
     /// receiving is syncronized.
     ///
     @Internal
+    @LoweringTarget
     pub def newChannel(bufferSize: Int32): Mpmc[a, Static] \ IO =
         if (bufferSize < 0) bug!("bufferSize < 0") else {
             let unBuffered = bufferSize == 0;
@@ -165,6 +167,7 @@ mod Concurrent.Channel {
     /// Creates a new channel tuple (sender, receiver)
     ///
     @Internal
+    @LoweringTarget
     pub def newChannelTuple(bufferSize: Int32): (Mpmc[a, Static], Mpmc[a, Static]) \ IO =
         let c = newChannel(bufferSize);
         (c, c)
@@ -176,6 +179,7 @@ mod Concurrent.Channel {
     /// Implements the expression `c <- e`.
     ///
     @Internal
+    @LoweringTarget
     pub def put(e: a, c: Mpmc[a, Static]): Unit \ IO =
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, size, _, rendezvous, _) = admin;
@@ -195,8 +199,7 @@ mod Concurrent.Channel {
 
         // If the channel is unbuffered, wait for the element to be handed off
         // before continuing.
-        if (unBuffered) discard awaitBarrier(rendezvous)
-        else ()
+        if (unBuffered) { discard awaitBarrier(rendezvous) }
 
     ///
     /// Retrieves an element from the channel `c`. This is blocking if the
@@ -205,6 +208,7 @@ mod Concurrent.Channel {
     /// Implements to the expression `<- c`.
     ///
     @Internal
+    @LoweringTarget
     pub def get(c: Mpmc[a, Static]): a \ IO =
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, _, _, _, _) = mpmcAdmin(c);
         lock(channelLock);
@@ -218,6 +222,7 @@ mod Concurrent.Channel {
     /// Assumes the channel to be non-empty.
     ///
     @Internal
+    @LoweringTarget
     pub def unsafeGetAndUnlock(c: Mpmc[a, Static], locks: List[ReentrantLock]): a \ IO = {
         let Mpmc.Mpmc(admin, elementDeque) = c;
         let MpmcAdmin.MpmcAdmin(_, channelLock, _, _, size, _, _, _) = admin;
@@ -257,6 +262,7 @@ mod Concurrent.Channel {
     ///      In the non-blocking case, selectFrom unlocks all locks first
     ///
     @Internal
+    @LoweringTarget
     pub def selectFrom(
         channels: List[MpmcAdmin],
         blocking: Bool
@@ -445,8 +451,7 @@ mod Concurrent.Channel {
         let MpmcAdmin.MpmcAdmin(_, channelLock, unBuffered, _, _, _, rendezvous, waitingPutters) = c;
 
         // In the unbuffered case, rendezvous with the putter from which we just received a value.
-        if (unBuffered) discard awaitBarrier(rendezvous)
-        else ();
+        if (unBuffered) { discard awaitBarrier(rendezvous) };
 
         // Signal waiting setters that the channel has space
         signalCondition(waitingPutters);

@@ -17,12 +17,15 @@
 package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern}
+import ca.uwaterloo.flix.language.ast.KindedAst.{Expr, ExtPattern, ExtTagPattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, OpSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Scope, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, Subeffecting}
+
+import java.lang.reflect.Modifier
 
 /**
   * This phase generates a list of type constraints, which include
@@ -392,8 +395,21 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Stm(exp1, exp2, loc) =>
-        val (_, eff1) = visitExp(exp1)
+        val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
+
+        // If the first expression is a JVM invocation,
+        // then we don't require it to be return Unit
+        val isJvm = exp1 match {
+          case _: Expr.InvokeConstructor => true
+          case _: Expr.InvokeMethod => true
+          case _: Expr.InvokeStaticMethod => true
+          case _ => false
+        }
+        if (!isJvm) {
+          c.expectStmt(actual = tpe1, exp1.loc)
+        }
+
         val resTpe = tpe2
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -432,12 +448,7 @@ object ConstraintGen {
         val resEff = eff2
         (resTpe, resEff)
 
-      case Expr.Region(tpe, _) =>
-        val resTpe = tpe
-        val resEff = Type.Pure
-        (resTpe, resEff)
-
-      case Expr.Scope(sym, regSym, exp, tvar, evar, loc) =>
+      case Expr.Region(sym, regSym, exp, tvar, evar, loc) =>
         // We must visit exp INSIDE the region
         // (i.e. between `enter` and `exit`)
         // because we need to resolve local constraints
@@ -477,16 +488,50 @@ object ConstraintGen {
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case Expr.ExtMatch(exp, rules, loc) =>
-        val (tpe, eff) = visitExp(exp)
-        val (caseTpes, tpes, effs) = rules.map(visitExtMatchRule).unzip3
-        val expectedRowType = caseTpes.foldRight(Type.mkSchemaRowEmpty(loc)) {
-          case ((name, patTpes), acc) => Type.mkSchemaRowExtend(name, Type.mkRelation(patTpes, loc), acc, loc)
-        }
-        val expectedSchemaType = Type.mkExtensible(expectedRowType, loc)
-        c.unifyType(tpe, expectedSchemaType, exp.loc)
-        c.unifyAllTypes(tpes, loc)
-        val resTpe = tpes.head // Note: We are guaranteed to have one rule.
-        val resEff = Type.mkUnion(eff :: effs, loc)
+        // Note that x_i_m mean last variable term `x` of tag `i`. Think of `m` as shorthand for `max` or `last`.
+        // Thus, it may be the case that `|x_i_1, ..., x_i_m| != |x_j_1, ..., x_j_m|` but equality may occur.
+        // This also means `t_i_k != t_j_k` can happen and that equality can also occur.
+        //
+        // Gamma |- x_i_j : t_i_j
+        // Gamma, x_i_1 : t_i_1, ..., x_i_m : t_i_m |- exp_i : t // This is the result type
+        // Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) |#
+        // ef = Union(effs(exp_0), effs(exp_1), ..., effs(exp_n))
+        // -----------------------------------------------
+        // Gamma |- ematch exp_0 {
+        //              case Tag_1(x_1_1, ..., x_1_m) => exp_1
+        //              ...
+        //              case Tag_n(x_n_1, ..., x_n_m) => exp_n
+        //           } : t \ ef
+        //
+        // Lastly, if `case _ => exp_default` occurs (or an error pattern), then
+        //   Gamma |- exp_default : t                // This is just a special case of the second rule from the top.
+        // and the type of exp_0 is updated to have a fresh row variable, i.e., for fresh variable `r`:
+        //   Gamma |- exp_0 : #| Tag_1(t_1_1, ..., t_1_m), ..., Tag_n(t_n_1, ..., t_n_m) | r |#
+        //
+        val (scrutineeType, scrutineeEff) = visitExp(exp)
+        val (patTypes, ruleBodyTypes, ruleBodyEffs) = rules.map(visitExtMatchRule).unzip3
+        val tagPatTypes = patTypes.collect { case Left(tag) => tag }
+        val defaultPatternTvars = patTypes.collect { case Right(tvar) => tvar }.map { tvar => Type.mkExtensible(tvar, tvar.loc) }
+        val defaultSchemaRow = // Note: An empty list of patterns cannot occur and errors are treated as default cases.
+          if (defaultPatternTvars.isEmpty) // Implies that Tag pattern is present
+            Type.mkSchemaRowEmpty(loc.asSynthetic)
+          else
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
+        val expectedRowType =
+          if (tagPatTypes.isEmpty) // Implies that error or default case is present
+            freshVar(Kind.SchemaRow, loc.asSynthetic)
+          else
+            tagPatTypes
+              .foldRight(defaultSchemaRow) {
+                case ((pred, tpes), acc) =>
+                  val relation = Type.mkRelation(tpes, pred.loc.asSynthetic)
+                  Type.mkSchemaRowExtend(pred, relation, acc, pred.loc.asSynthetic)
+              }
+        val expectedExtensibleType = Type.mkExtensible(expectedRowType, loc.asSynthetic)
+        c.unifyAllTypes(scrutineeType :: expectedExtensibleType :: defaultPatternTvars, loc)
+        c.unifyAllTypes(ruleBodyTypes, loc)
+        val resTpe = ruleBodyTypes.head // Note: We are guaranteed to have one rule.
+        val resEff = Type.mkUnion(scrutineeEff :: ruleBodyEffs, loc)
         (resTpe, resEff)
 
       case KindedAst.Expr.Tag(symUse, exps, tvar, loc) =>
@@ -632,50 +677,57 @@ object ConstraintGen {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.StructNew(sym, fields, region, tvar, evar, loc) =>
+      case Expr.StructNew(sym, fields, regionOpt, tvar, evar, loc) =>
         // This case needs to handle expressions like `new S { f = rhs } @ r` where `f` was not present in the struct declaration
         // Here, we check that `rhs` is itself valid by visiting it but make sure not to unify it with anything
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(sym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(sym, root.structs)
         val visitedFields = fields.map { case (_, v) => visitExp(v) }
-        val (regionTpe, regionEff) = visitExp(region)
         val (fieldTpes, fieldEffs) = visitedFields.unzip
         c.unifyType(tvar, structTpe, loc)
         for {
-          ((fieldSymUse, expr), fieldTpe1) <- fields.zip(fieldTpes)
+          ((fieldSymUse, expr), fieldTpe1) <- ListOps.zip(fields, fieldTpes)
         } {
           instantiatedFieldTpes.get(fieldSymUse.sym) match {
             case None => () // if not an actual field, there is nothing to unify
             case Some((_, fieldTpe2)) => c.unifyType(fieldTpe1, fieldTpe2, expr.loc)
           }
         }
-        c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)
-        c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
+        (regionOpt, regionVarOpt) match {
+          case (Some(region), Some(regionVar)) =>
+            val (regionTpe, regionEff) = visitExp(region)
+            c.unifyType(Type.mkRegionToStar(regionVar, loc), regionTpe, region.loc)
+            c.unifyType(evar, Type.mkUnion(fieldEffs :+ regionEff :+ regionVar, loc), loc)
+          case _ => ()
+        }
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.StructGet(exp, symUse, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe, eff) = visitExp(exp)
         c.expectType(structTpe, tpe, exp.loc)
         val (mutable, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.unifyType(fieldTpe, tvar, loc)
         // If the field is mutable, then it emits a region effect, otherwise not.
-        val accessEffect = if (mutable) regionVar else Type.mkPure(loc)
+        val accessEffect = if (!mutable) Type.mkPure(loc) else regionVarOpt match {
+          case Some(value) => value
+          case None => throw InternalCompilerException(s"Unexpected missing region var in struct get near ${exp}", loc)
+        }
         c.unifyType(Type.mkUnion(eff, accessEffect, loc), evar, exp.loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
 
       case Expr.StructPut(exp1, symUse, exp2, tvar, evar, loc) =>
-        val (instantiatedFieldTpes, structTpe, regionVar) = instantiateStruct(symUse.sym.structSym, root.structs)
+        val (instantiatedFieldTpes, structTpe, regionVarOpt) = instantiateStruct(symUse.sym.structSym, root.structs)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectType(structTpe, tpe1, exp1.loc)
         val (_, fieldTpe) = instantiatedFieldTpes(symUse.sym)
         c.expectType(fieldTpe, tpe2, exp2.loc)
         c.unifyType(Type.mkUnit(loc), tvar, loc)
-        c.unifyType(Type.mkUnion(eff1, eff2, regionVar, loc), evar, loc)
+        c.unifyType(Type.mkUnion(eff1, eff2, regionVarOpt.get, loc), evar, loc)
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -761,10 +813,10 @@ object ConstraintGen {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.Unsafe(exp, eff0, loc) =>
+      case Expr.Unsafe(exp, eff0, asEff0, loc) =>
         val (tpe, eff) = visitExp(exp)
         val resTpe = tpe
-        val resEff = Type.mkDifference(eff, eff0, loc)
+        val resEff = Type.mkUnion(Type.mkDifference(eff, eff0, loc), asEff0.getOrElse(Type.Pure), loc)
         (resTpe, resEff)
 
       case Expr.Without(exp, symUse, _) =>
@@ -899,9 +951,11 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, _) =>
+        val isFinal = Modifier.isFinal(field.getModifiers)
         val fieldType = Type.getFlixType(field.getType)
+        val fieldReadEff = if (isFinal) Type.Pure else Type.IO
         val resTpe = fieldType
-        val resEff = Type.IO
+        val resEff = fieldReadEff
         (resTpe, resEff)
 
       case Expr.PutStaticField(field, exp, loc) =>
@@ -1004,10 +1058,9 @@ object ConstraintGen {
       case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
       case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
       case e: Expr.FixpointQueryWithProvenance => SchemaConstraintGen.visitFixpointQueryWithProvenance(e)
-      case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
-      case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
-      case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)
-      case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
+      case e: Expr.FixpointQueryWithSelect => SchemaConstraintGen.visitFixpointQueryWithSelect(e)
+      case e: Expr.FixpointSolveWithProject => SchemaConstraintGen.visitFixpointSolveWithProject(e)
+      case e: Expr.FixpointInjectInto => SchemaConstraintGen.visitFixpointInjectInto(e)
 
       case Expr.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.
@@ -1066,18 +1119,58 @@ object ConstraintGen {
   }
 
   /**
-    * Generates constraints for the patterns inside the record label pattern.
+    * Generates constraints for the given extensible match rule.
+    *
+    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
+    *
+    * See [[visitExtPattern]] for more information on the return type.
+    */
+  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, scope: Scope, root: KindedAst.Root, flix: Flix): (Either[(Name.Pred, List[Type]), Type.Var], Type, Type) = rule match {
+    case KindedAst.ExtMatchRule(pat, exp, _) =>
+      val patTpe = visitExtPattern(pat)
+      val (tpe, eff) = visitExp(exp)
+      (patTpe, tpe, eff)
+  }
+
+  /**
+    * Generates constraints for the patterns inside the ext pattern.
+    *
+    * Returns either the tag name along with the types of its term patterns or the type variable of the pattern.
+    *
+    * The [[Either]] type is required since the caller must eventually separate non-tag patterns from tag patterns
+    * to build schema rows.
+    */
+  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext, scope: Scope, flix: Flix): Either[(Name.Pred, List[Type]), Type.Var] = pat0 match {
+    case ExtPattern.Default(tvar, _) =>
+      Right(tvar)
+
+    case ExtPattern.Tag(label, pats, loc) =>
+      val name = Name.Pred(label.name, label.loc)
+      val ps = pats.map(visitExtTagPattern)
+      Left((name, ps))
+
+    case ExtPattern.Error(tvar, _) =>
+      Right(tvar)
+  }
+
+  /**
+    * Generates constraints for the patterns inside the ext tag pattern.
     *
     * Returns the type of the pattern.
     */
-  private def visitExtPattern(pat0: KindedAst.ExtPattern)(implicit c: TypeContext): Type = pat0 match {
-    case ExtPattern.Wild(tvar, _) => tvar
+  private def visitExtTagPattern(pat0: KindedAst.ExtTagPattern)(implicit c: TypeContext): Type = pat0 match {
+    case ExtTagPattern.Wild(tvar, _) =>
+      tvar
 
-    case ExtPattern.Var(sym, tvar, loc) =>
+    case ExtTagPattern.Var(sym, tvar, loc) =>
       c.unifyType(sym.tvar, tvar, loc)
       tvar
 
-    case ExtPattern.Error(tvar, _) => tvar
+    case ExtTagPattern.Unit(_) =>
+      Type.Unit
+
+    case ExtTagPattern.Error(tvar, _) =>
+      tvar
   }
 
   /**
@@ -1109,19 +1202,6 @@ object ConstraintGen {
       }
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
-  }
-
-  /**
-    * Generates constraints for the given extensible match rule.
-    *
-    * Returns the name of the constructor, the types of the constructor, the type of the expression body, and its effect.
-    */
-  private def visitExtMatchRule(rule: KindedAst.ExtMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): ((Name.Pred, List[Type]), Type, Type) = rule match {
-    case KindedAst.ExtMatchRule(label, pats, exp, _) =>
-      val name = Name.Pred(label.name, label.loc)
-      val patTypes = pats.map(visitExtPattern)
-      val (tpe, eff) = visitExp(exp)
-      ((name, patTypes), tpe, eff)
   }
 
   /**
@@ -1205,7 +1285,7 @@ object ConstraintGen {
         * Constrains the given formal parameter to its declared type.
         */
       def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
-        case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+        case KindedAst.FormalParam(sym, tpe, _, loc) =>
           c.unifyType(sym.tvar, tpe, loc)
       }
 
@@ -1299,17 +1379,23 @@ object ConstraintGen {
 
   /**
     * Instantiates the scheme of the struct in corresponding to `sym` in `structs`
-    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's region variable
+    * Returns a map from field name to its instantiated type, the type of the instantiated struct, and the instantiated struct's optional region variable
     *
     * For example, for the struct `struct S [v, r] { a: v, b: Int32 }` where `v` instantiates to `v'` and `r` instantiates to `r'`
     * The first element of the return tuple would be a map with entries `a -> v'` and `b -> Int32`
     * The second element of the return tuple would be(locations omitted) `Apply(Apply(Cst(Struct(S)), v'), r')`
-    * The third element of the return tuple would be `r'`
+    * The third element of the return tuple would be `Some(r')`
+    *
+    * For a immutable struct `struct S [v] { a: v, b: Int32 }` the third element would be `None`.
     */
-  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Type.Var) = {
+  private def instantiateStruct(sym: Symbol.StructSym, structs: Map[Symbol.StructSym, KindedAst.Struct])(implicit c: TypeContext, flix: Flix): (Map[Symbol.StructFieldSym, (Boolean, Type)], Type, Option[Type.Var]) = {
     implicit val scope: Scope = c.getScope
     val struct = structs(sym)
-    assert(struct.tparams.last.sym.kind == Kind.Eff)
+    if (struct.mod.isMutable) {
+      if (struct.tparams.last.sym.kind != Kind.Eff) {
+        throw InternalCompilerException(s"Unexpected kind ${struct.tparams.last.sym.kind} in struct. Expected `${Kind.Eff}`", struct.loc)
+      }
+    }
     val fields = struct.fields
     val (_, _, tpe, substMap) = Scheme.instantiate(struct.sc, struct.loc)
     val subst = Substitution(substMap)
@@ -1317,7 +1403,8 @@ object ConstraintGen {
       case KindedAst.StructField(mod, fieldSym, fieldTpe, _) =>
         fieldSym -> (mod.isMutable, subst(fieldTpe))
     }
-    (instantiatedFields.toMap, tpe, substMap(struct.tparams.last.sym))
+    val regionOpt = struct.tparams.lastOption.map(region => substMap(region.sym))
+    (instantiatedFields.toMap, tpe, regionOpt)
   }
 
   /** Returns a fresh variable with a synthetic location. */

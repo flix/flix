@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, SolveMode, Source}
+import ca.uwaterloo.flix.language.ast.shared.{Annotations, AvailableClasses, CheckedCastType, Constant, Denotation, Doc, Fixity, Modifiers, Polarity, PredicateAndArity, SolveMode, Source}
 import ca.uwaterloo.flix.util.collection.Nel
 
 
@@ -124,9 +124,7 @@ object NamedAst {
 
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
-
-    case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
@@ -156,7 +154,7 @@ object NamedAst {
 
     case class ArrayLength(base: Expr, loc: SourceLocation) extends Expr
 
-    case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Expr, loc: SourceLocation) extends Expr
+    case class StructNew(qname: Name.QName, exps: List[(Name.Label, Expr)], region: Option[Expr], loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, name: Name.Label, loc: SourceLocation) extends Expr
 
@@ -176,7 +174,7 @@ object NamedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], loc: SourceLocation) extends Expr
 
-    case class Unsafe(exp: Expr, eff: Type, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, eff: Type, asEff: Option[Type], loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, qname: Name.QName, loc: SourceLocation) extends Expr
 
@@ -220,13 +218,11 @@ object NamedAst {
 
     case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, mode: SolveMode, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, arity: Int, loc: SourceLocation) extends Expr
-
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -282,11 +278,28 @@ object NamedAst {
 
   object ExtPattern {
 
-    case class Wild(loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
     case class Error(loc: SourceLocation) extends ExtPattern
+
+  }
+
+  sealed trait ExtTagPattern {
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate
@@ -395,7 +408,7 @@ object NamedAst {
 
   case class ConstraintParam(sym: Symbol.VarSym, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Option[Type], loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, tpe: Option[Type], loc: SourceLocation)
 
   sealed trait PredicateParam
 
@@ -417,7 +430,7 @@ object NamedAst {
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr, loc: SourceLocation)
 

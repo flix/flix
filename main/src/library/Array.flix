@@ -53,11 +53,18 @@ instance ForEach[Array[a, r]] {
     pub def forEach(f: a -> Unit \ ef, a: Array[a, r]): Unit \ ef + r = Array.forEach(f, a)
 }
 
+instance Formattable[Array[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: Array[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("Array#{") + joinWith(Formattable.format, fromString(", "), Array.toList(x)) + fromString("}")
+}
+
 mod Array {
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays
-    import java.util.{Random => JRandom};
 
     ///
     /// Compares `a` and `b` lexicographically.
@@ -92,19 +99,19 @@ mod Array {
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
     pub def empty(rc: Region[r], l: Int32): Array[a, r] \ Heap[r] =
-        $ARRAY_NEW$(rc, Reflect.default(), l)
+        %%ARRAY_NEW%%(rc, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
     ///
     pub def get(i: Int32, a: Array[a, r]): a \ r =
-        $ARRAY_LOAD$(a, i)
+        %%ARRAY_LOAD%%(a, i)
 
     ///
     /// Stores the value `x` at position `i` in the array `a`.
     ///
     pub def put(x: a, i: Int32, a: Array[a, r]): Unit \ r =
-        $ARRAY_STORE$(a, i, x)
+        %%ARRAY_STORE%%(a, i, x)
 
     ///
     /// Optionally returns the element at position `i` in the array `a`.
@@ -128,7 +135,7 @@ mod Array {
     ///
     /// Returns the number of elements in the array `a`.
     ///
-    pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)
+    pub def length(a: Array[a, r]): Int32 = %%ARRAY_LENGTH%%(a)
 
     ///
     /// Returns the number of elements in the array `a`.
@@ -177,18 +184,6 @@ mod Array {
         }
 
     ///
-    /// Returns the array `a` as a `DelayList`.
-    ///
-    pub def toDelayList(a: Array[a, r]): DelayList[a] \ r =
-        def loop(i, acc) = {
-            if (i < 0)
-                acc
-            else
-                loop(i - 1, DelayList.ECons(get(i, a), acc))
-        };
-        loop(length(a) - 1, DelayList.ENil)
-
-    ///
     /// Returns the array `arr` as a chain.
     ///
     pub def toChain(arr: Array[a, r]): Chain[a] \ r =
@@ -222,15 +217,6 @@ mod Array {
             let i = length(arr) - 1;
             Some(loop(i, Nec.singleton(get(i, arr))))
         }
-
-    ///
-    /// Returns `a` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), a);
-        d
-
     ///
     /// Returns `a` as a Vector.
     ///
@@ -349,8 +335,13 @@ mod Array {
     ///
     /// Return the positions of the all the occurrences of `a` in `arr`.
     ///
-    pub def indices(rc: Region[r], a: a, arr: Array[a, r]): Array[Int32, r] \ r with Eq[a] =
-        findIndices(rc, b -> a == b, arr)
+    pub def indicesOf(a: a, arr: Array[a, r]): Vector[Int32] \ r with Eq[a] =
+        findIndices(b -> a == b, arr)
+
+    ///
+    /// Returns a range of all valid indices of the array `arr`.
+    ///
+    pub def indices(arr: Array[a, r]): Range[Int32] = Range.Range(0, length(arr))
 
     ///
     /// Alias for `findLeft`.
@@ -398,7 +389,7 @@ mod Array {
         if (n <= 0)
             Array#{} @ rc
         else
-            $ARRAY_NEW$(rc, x, n)
+            %%ARRAY_NEW%%(rc, x, n)
 
     ///
     /// Alias for `scanLeft`.
@@ -816,21 +807,6 @@ mod Array {
         loop(length(arr) - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, arr: Array[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i == length(arr))
-                z
-            else
-                f(get(i, arr), _ -> loop(i + 1))
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, arr: Array[a, r]): b \ { ef, r } with Monoid[b] =
@@ -882,7 +858,7 @@ mod Array {
     /// Returns the sum of all elements in the array `a`.
     ///
     pub def sum(a: Array[Int32, r]): Int32 \ r =
-        foldLeft((acc, x) -> acc + x, 0, a)
+        foldLeft((+), 0, a)
 
     ///
     /// Returns the sum of all elements in the array `a` according to the function `f`.
@@ -1279,16 +1255,6 @@ mod Array {
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), a)
 
     ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc1: Region[r1], a: Array[a, r2]): MutList[a, r1] \ { r2, r1 } =
-        let minCap = MutList.minCapacity();
-        let len = length(a);
-        let c = Order.max(len, minCap);
-        let copy = copyOfRange(rc1, 0, c, a);
-        new MutList @ rc1 {r = rc1, values = copy, length = len}
-
-    ///
     /// Alias for `findIndexOfLeft`.
     ///
     pub def findIndexOf(f: a -> Bool \ ef, a: Array[a, r]): Option[Int32] \ { ef, r } =
@@ -1334,19 +1300,20 @@ mod Array {
     ///
     /// Returns the positions of the all the elements in `a` satisfying `f`.
     ///
-    pub def findIndices(rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
+    pub def findIndices(f: a -> Bool \ ef, a: Array[a, r]): Vector[Int32] \ { ef, r } = region rc {
         let len = length(a);
-        let l = MutList.empty(rc2);
+        let l = MutList.empty(rc);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                if (f(get(i, a))) MutList.push(i, l) else ();
+                if (f(get(i, a))) { MutList.push(i, l) };
                 loop(i + 1)
             }
         };
         loop(0);
-        MutList.toArray(rc2, l)
+        MutList.toVector(l)
+    }
 
     ///
     /// Build an array of length `len` by applying `f` to the successive indices.
@@ -1394,14 +1361,6 @@ mod Array {
     ///
     pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
-
-    ///
-    /// Returns an iterator over `a` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r1], a: Array[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
-        iterator(rc, a) |> Iterator.zipWithIndex
 
     ///
     /// Apply the effectful function `f` to all the elements in the array `a`.
@@ -1553,6 +1512,30 @@ mod Array {
         }
 
     ///
+    /// Perform a binary search for `x` on the sorted array `a` and returns the position of `x`.
+    ///
+    /// Returns `None` if `a` does not contain `x`. Otherwise returns `Some(i)`,
+    /// where `Array.get(i, a) == x`.
+    ///
+    /// Assumes `a` is sorted. If this is not the case the result is undefined.
+    ///
+    /// If `a` contains multiple `x`-values then the index of one of them will be returned.
+    ///
+    pub def binarySearch(x: a, a: Array[a, r]): Option[Int32] \ r with Order[a] =
+        def f(lo, hi) = {
+            if (lo <= hi) {
+                let mid = (lo + hi) `Int32.rightShift` 1; // Shifting by 1 is slightly faster than dividing by 2.
+                match get(mid, a) <=> x {
+                    case Comparison.LessThan => f(mid + 1, hi)
+                    case Comparison.GreaterThan => f(lo, mid - 1)
+                    case Comparison.EqualTo => Some(mid)
+                }
+            } else None
+        };
+        let len = length(a);
+        f(0, len - 1)
+
+    ///
     /// Copies the range between `srcPos` (inclusive) to `srcPos + len` (exclusive) of `src` into `dst` starting from `dstPos` (inclusive).
     /// A valid range has the following properties:
     ///   0 <= len.
@@ -1565,7 +1548,7 @@ mod Array {
     pub def copyInto(srcPos: { srcPos = Int32 }, dstPos: { dstPos = Int32 }, len: { len = Int32 }, src: { src = Array[a, r1] }, dst: Array[a, r2]): Unit \ { r1, r2 } =
         let srcObj: Object = checked_cast(src#src);
         let dstObj: Object = checked_cast(dst);
-        unchecked_cast(System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) as _ \ { r1, r2 })
+        unsafe IO as { r1, r2 } { System.arraycopy(srcObj, srcPos#srcPos, dstObj, dstPos#dstPos, len#len) }
 
     ///
     /// Returns a shallow copy of the array `a`.
@@ -1582,49 +1565,55 @@ mod Array {
     /// If the range is valid and greater than the length of `a`, the resulting array will have the length of the range
     /// and include the specified range of `a`.
     ///
-    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
+    pub def copyOfRange(_: Region[r2], b: Int32, e: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } = {
+        use Reflect.JvmType;
         // All of the below casts are required to cast the type to `Array[a, ...]`.
-        typematch a {
+        match Reflect.reflectType((Proxy.Proxy: Proxy[a])) {
             // The casts here are used to both modify the java method type and to simulate GADT typing
-            case arr: Array[Bool, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Char, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Float64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int8, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int16, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int32, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[Int64, r1] =>
-                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ r1 + r2)
-            case arr: Array[a, r1] =>
-                // `a` must be non-primitive now
-                let arrObj = unchecked_cast(arr as Array[Object, r1]);
-                unchecked_cast(Arrays.copyOfRange(arrObj, b, e) as Array[a, r2] \ r1 + r2)
-            case _: _ => unreachable!()
+            case JvmType.JvmBool =>
+                let arr = unchecked_cast(a as Array[Bool, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmChar =>
+                let arr = unchecked_cast(a as Array[Char, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt8 =>
+                let arr = unchecked_cast(a as Array[Int8, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt16 =>
+                let arr = unchecked_cast(a as Array[Int16, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt32 =>
+                let arr = unchecked_cast(a as Array[Int32, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmInt64 =>
+                let arr = unchecked_cast(a as Array[Int64, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmFloat32 =>
+                let arr = unchecked_cast(a as Array[Float32, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmFloat64 =>
+                let arr = unchecked_cast(a as Array[Float64, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
+            case JvmType.JvmObject =>
+                let arr = unchecked_cast(a as Array[Object, r1]);
+                unchecked_cast(Arrays.copyOfRange(arr, b, e) as Array[a, r2] \ { r1, r2 })
         }
+    }
 
     ///
-    /// Shuffles `a` using the Fisher–Yates shuffle.
+    /// Shuffles `a` using a random permutation.
     ///
-    pub def shuffle(a: Array[a, r]): Unit \ {r, NonDet} = unchecked_cast({
-        let rnd = new JRandom();
+    pub def shuffle(a: Array[a, r]): Unit \ {r, Shuffle} = {
         let len = Array.length(a);
-        def loop(i) = {
-            if (i > 0) {
-                let j = rnd.nextInt(i + 1);
-                Array.swap(i, j, a);
-                loop(i - 1)
-            }
-            else
-                ()
-        };
-        loop(len - 1)
-    } as _ \ {r, NonDet})
+
+        // Compute a random permutation.
+        let perm = Shuffle.permutation(len);
+
+        // Apply the permutation: result[i] = a[perm[i]].
+        let result = Vector.init(i -> Array.get(Vector.get(i, perm), a), len);
+
+        // Write the result back into a.
+        Vector.forEachWithIndex((i, v) -> Array.put(v, i, a), result)
+    }
 
 }

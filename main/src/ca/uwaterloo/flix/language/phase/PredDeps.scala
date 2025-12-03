@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.shared.LabelledPrecedenceGraph.{Label, Lab
 import ca.uwaterloo.flix.language.ast.shared.{Denotation, LabelledPrecedenceGraph}
 import ca.uwaterloo.flix.language.ast.{ChangeSet, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -140,9 +140,7 @@ object PredDeps {
       visitExp(exp1)
       visitExp(exp2)
 
-    case Expr.Region(_, _) => ()
-
-    case Expr.Scope(_, _, exp, _, _, _) =>
+    case Expr.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -220,7 +218,7 @@ object PredDeps {
       visitExp(elm)
 
     case Expr.StructNew(_, fields, region, _, _, _) =>
-      visitExp(region)
+      region.foreach(visitExp)
       fields.foreach { case (_, e) => visitExp(e) }
 
     case Expr.StructGet(e, _, _, _, _) =>
@@ -252,7 +250,7 @@ object PredDeps {
     case Expr.UncheckedCast(exp, _, _, _, _, _) =>
       visitExp(exp)
 
-    case Expr.Unsafe(exp, _, _, _, _) =>
+    case Expr.Unsafe(exp, _, _, _, _, _) =>
       visitExp(exp)
 
     case Expr.Without(exp, _, _, _, _) =>
@@ -344,17 +342,17 @@ object PredDeps {
       exps.foreach(visitExp)
       terms.foreach(visitExp)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+      exps.foreach(visitExp)
 
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, _, where, _, _, _, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      where.foreach(visitExp)
 
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      visitExp(exp)
-
-    case Expr.FixpointProject(_, _, exp, _, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+      exps.foreach(visitExp)
 
     case Expr.Error(_, _, _) => ()
   }

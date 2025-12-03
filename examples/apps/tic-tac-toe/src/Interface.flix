@@ -21,7 +21,7 @@ mod Interface {
     ///
     def getMoveFromConsole(): Int32 \ Console = {
         let line = Console.readln();
-        if(Object.isNull(line)) {
+        if (Object.isNull(line)) {
             Console.println("Invalid move. Move must be a positive integer between 0 and 8");
             getMoveFromConsole()
         } else {

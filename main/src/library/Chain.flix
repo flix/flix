@@ -75,7 +75,11 @@ instance MonadZip[Chain] {
 instance Foldable[Chain] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
+    redef head(c: Chain[a]): Option[a] = Chain.head(c)
+    redef isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
+    redef memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
+    redef forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.forAll(f, c)
+    redef exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
 }
 
 instance UnorderedFoldable[Chain] {
@@ -97,6 +101,15 @@ instance Filterable[Chain] {
 }
 
 instance Witherable[Chain]
+
+instance Formattable[Chain[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(c: Chain[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Chain#{") +
+        RichString.join(RichString.fromString(", "), c) +
+        RichString.fromString("}")
+}
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
@@ -128,7 +141,7 @@ instance ToJava[Chain[a]] {
 instance ToFlix[Chain[a]] {
     type In = JList
     pub def toFlix(l: JList): Chain[a] = region rc {
-        let it = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let it = unsafe IO { l.iterator() };
         it |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
     }
 }
@@ -211,7 +224,7 @@ mod Chain {
     ///
     pub def head(c: Chain[a]): Option[a] = match viewLeft(c) {
         case ViewLeft.SomeLeft(x, _) => Some(x)
-        case _              => None
+        case _                       => None
     }
 
     ///
@@ -221,7 +234,7 @@ mod Chain {
     ///
     pub def last(c: Chain[a]): Option[a] = match viewRight(c) {
         case ViewRight.SomeRight(_, x) => Some(x)
-        case _               => None
+        case _                         => None
     }
 
     ///
@@ -230,7 +243,7 @@ mod Chain {
     ///
     pub def init(c: Chain[a]): Option[Chain[a]] = match viewRight(c) {
         case ViewRight.SomeRight(rs, _) => Some(rs)
-        case _                => None
+        case _                          => None
     }
 
     ///
@@ -261,12 +274,12 @@ mod Chain {
     /// Returns `ViewLeft.NoneLeft` if the chain is empty.
     ///
     pub def viewLeft(c: Chain[a]): ViewLeft[a] =
-        def loop(cc, acc, k) = match cc {
-            case Empty       => k(ViewLeft.NoneLeft)
-            case One(x)      => k(ViewLeft.SomeLeft(x, acc))
-            case Chain(l, r) => loop(l, append(r, acc), k)
+        def loop(cc, acc) = match cc {
+            case Empty       => ViewLeft.NoneLeft
+            case One(x)      => ViewLeft.SomeLeft(x, acc)
+            case Chain(l, r) => loop(l, append(r, acc))
         };
-        loop(c, Empty, identity)
+        loop(c, Empty)
 
     ///
     /// Deconstruct a Chain from right-to-left.
@@ -277,12 +290,12 @@ mod Chain {
     /// Returns `ViewRight.NoneRight` if the chain is empty.
     ///
     pub def viewRight(c: Chain[a]): ViewRight[a] =
-        def loop(cc, acc, k) = match cc {
-            case Empty       => k(ViewRight.NoneRight)
-            case One(x)      => k(ViewRight.SomeRight(acc, x))
-            case Chain(l, r) => loop(r, append(acc, l), k)
+        def loop(cc, acc) = match cc {
+            case Empty       => ViewRight.NoneRight
+            case One(x)      => ViewRight.SomeRight(acc, x)
+            case Chain(l, r) => loop(r, append(acc, l))
         };
-        loop(c, Empty, identity)
+        loop(c, Empty)
 
     ///
     /// Returns `true` if and only if `c` contains the element `a`.
@@ -297,11 +310,26 @@ mod Chain {
     /// Optionally returns the position of `a` in `c`.
     ///
     pub def indexOf(a: a, c: Chain[a]): Option[Int32] with Eq[a] =
-        def loop(v, acc) = match v {
+        def loop(cc, i) = match cc {
             case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, xs) => if (x == a) Some(acc) else loop(viewLeft(xs), acc + 1)
+            case ViewLeft.SomeLeft(x, xs) => if (x == a) Some(i) else loop(viewLeft(xs), i + 1)
         };
         loop(viewLeft(c), 0)
+
+    ///
+    /// Returns the positions of all occurrences of `x` in `c`.
+    ///
+    pub def indicesOf(x: a, c: Chain[a]): Vector[Int32] with Eq[a] =
+        def loop(cc, i, indices) = match cc {
+            case ViewLeft.NoneLeft        => indices
+            case ViewLeft.SomeLeft(y, ys) => if (x == y) loop(viewLeft(ys), i + 1, i :: indices) else loop(viewLeft(ys), i + 1, indices)
+        };
+        loop(viewLeft(c), 0, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the chain `c`.
+    ///
+    pub def indices(c: Chain[a]): Range[Int32] = Range.Range(0, length(c))
 
     ///
     /// Alias for `findLeft`.
@@ -364,13 +392,13 @@ mod Chain {
     /// That is, the result is of the form: `s :: f(s, x1) :: f(f(s, x1), x2) ...`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
-        def loop(a, cc, acc) = match viewLeft(cc) {
+        def loop(cc, a, acc) = match viewLeft(cc) {
             case ViewLeft.NoneLeft        => acc
             case ViewLeft.SomeLeft(x, xs) =>
                 let aa = f(a, x);
-                loop(aa, xs, snoc(acc, aa))
+                loop(xs, aa, snoc(acc, aa))
         };
-        loop(s, c, singleton(s))
+        loop(c, s, singleton(s))
 
     ///
     /// Accumulates the result of applying `f` to `c` going right to left.
@@ -378,13 +406,13 @@ mod Chain {
     /// That is, the result is of the form: `... f(xn-1, f(xn, s)) :: f(xn, s) :: s`.
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): Chain[b] \ ef =
-        def loop(a, cc, acc) = match viewRight(cc) {
+        def loop(cc, a, acc) = match viewRight(cc) {
             case ViewRight.NoneRight        => acc
             case ViewRight.SomeRight(xs, x) =>
                 let aa = f(x, a);
-                loop(aa, xs, cons(aa, acc))
+                loop(xs, aa, cons(aa, acc))
         };
-        loop(s, c, singleton(s))
+        loop(c, s, singleton(s))
 
     ///
     /// Returns the result of applying `f` to every element in `c`.
@@ -526,17 +554,6 @@ mod Chain {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Chain[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft        => z
-        case ViewLeft.SomeLeft(x, xs) => f(x, _ -> foldRightWithCont(f, z, xs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with Monoid[b] =
@@ -595,15 +612,15 @@ mod Chain {
     /// Returns `Nil` if `n < 0`.
     ///
     pub def takeLeft(n: Int32, c: Chain[a]): Chain[a] =
-        def loop(i, cc, acc) = match viewLeft(cc) {
+        def loop(cc, i, acc) = match viewLeft(cc) {
             case ViewLeft.NoneLeft        => acc
-            case _ if i < 1      => acc
-            case ViewLeft.SomeLeft(a, rs) => loop(i - 1, rs, snoc(acc, a))
+            case _ if i < 1               => acc
+            case ViewLeft.SomeLeft(a, rs) => loop(rs, i - 1, snoc(acc, a))
         };
         if (n < 0)
             Empty
         else
-            loop(n, c, Empty)
+            loop(c, n, Empty)
 
     ///
     /// Returns the last `n` elements of `c`.
@@ -612,15 +629,15 @@ mod Chain {
     /// Returns `Nil` if `n < 0`.
     ///
     pub def takeRight(n: Int32, c: Chain[a]): Chain[a] =
-        def loop(i, cc, acc) = match viewRight(cc) {
+        def loop(cc, i, acc) = match viewRight(cc) {
             case ViewRight.NoneRight        => acc
-            case _ if i < 1       => acc
-            case ViewRight.SomeRight(rs, a) => loop(i - 1, rs, cons(a, acc))
+            case _ if i < 1                 => acc
+            case ViewRight.SomeRight(rs, a) => loop(rs, i - 1, cons(a, acc))
         };
         if (n < 0)
             Empty
         else
-            loop(n, c, Empty)
+            loop(c, n, Empty)
 
     ///
     /// Returns the longest prefix of `c` that satisfies the predicate `f`.
@@ -637,7 +654,7 @@ mod Chain {
     ///
     pub def takeWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
         def loop(cc, acc) = match viewRight(cc) {
-            case ViewRight.NoneRight => acc
+            case ViewRight.NoneRight        => acc
             case ViewRight.SomeRight(rs, a) => if (f(a)) loop(rs, cons(a, acc)) else acc
         };
         loop(c, Empty)
@@ -674,7 +691,7 @@ mod Chain {
     pub def zip(c1: Chain[a], c2: Chain[b]): Chain[(a,b)] =
         def loop(cc1, cc2, acc) = match (viewLeft(cc1), viewLeft(cc2)) {
             case (ViewLeft.SomeLeft(a, rs), ViewLeft.SomeLeft(b, qs)) => loop(rs, qs, snoc(acc, (a, b)))
-            case _                                  => acc
+            case _                                                    => acc
         };
         loop(c1, c2, empty())
 
@@ -687,7 +704,7 @@ mod Chain {
     pub def zipWith(f: (a, b) -> c \ ef, c1: Chain[a], c2: Chain[b]): Chain[c] \ ef =
         def loop(cc1, cc2, acc) = match (viewLeft(cc1), viewLeft(cc2)) {
             case (ViewLeft.SomeLeft(a, rs), ViewLeft.SomeLeft(b, qs)) => loop(rs, qs, snoc(acc, f(a, b)))
-            case _                                  => acc
+            case _                                                    => acc
         };
         loop(c1, c2, empty())
 
@@ -699,7 +716,7 @@ mod Chain {
         use Applicative.{<*>, point};
         def loop(v1, v2, k) = match (v1, v2) {
             case (ViewLeft.SomeLeft(x, c1), ViewLeft.SomeLeft(y, c2)) => loop(viewLeft(c1), viewLeft(c2), ks -> k(cons <$> f(x,y) <*> ks))
-            case (_, _)                             => k(point(empty()))
+            case (_, _)                                               => k(point(empty()))
         };
         loop(viewLeft(xs), viewLeft(ys), x -> checked_ecast(x))
 
@@ -720,34 +737,34 @@ mod Chain {
     /// step in a left-to-right traversal.
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =
-        def loop(s1, cc, k) = match viewLeft(cc) {
-            case ViewLeft.NoneLeft        => k((s1, empty()))
+        def loop(cc, s1, acc) = match viewLeft(cc) {
+            case ViewLeft.NoneLeft        => (s1, acc)
             case ViewLeft.SomeLeft(a, rs) => {
                 let (s2, b) = f(s1, a);
-                loop(s2, rs, match (s3, ks) -> k((s3, cons(b, ks))))
+                loop(rs, s2, snoc(acc, b))
             }
         };
-        loop(start, c, identity)
+        loop(c, start, Empty)
 
     ///
     /// `mapAccumRight` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a right-to-left traversal.
     ///
     pub def mapAccumRight(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =
-        def loop(s1, cc, k) = match viewRight(cc) {
-            case ViewRight.NoneRight        => k((s1, empty()))
+        def loop(cc, s1, acc) = match viewRight(cc) {
+            case ViewRight.NoneRight        => (s1, acc)
             case ViewRight.SomeRight(rs, a) => {
                 let (s2, b) = f(s1, a);
-                loop(s2, rs, match (s3, ks) -> k((s3, snoc(ks, b))))
+                loop(rs, s2, cons(b, acc))
            }
         };
-        loop(start, c, identity)
+        loop(c, start, Empty)
 
     ///
     /// Applies `f` to every element of `c`.
     ///
     pub def forEach(f: a -> Unit \ ef, c: Chain[a]): Unit \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft => ()
+        case ViewLeft.NoneLeft        => ()
         case ViewLeft.SomeLeft(x, xs) => f(x); forEach(f, xs)
     }
 
@@ -755,8 +772,8 @@ mod Chain {
     /// Applies `f` to every element of `c` along with that element's index.
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, c: Chain[a]): Unit \ ef =
-        def loop(v, i) = match v {
-            case ViewLeft.NoneLeft => ()
+        def loop(cc, i) = match cc {
+            case ViewLeft.NoneLeft        => ()
             case ViewLeft.SomeLeft(x, xs) => f(i, x); loop(viewLeft(xs), i+1)
         };
         loop(viewLeft(c), 0)
@@ -768,25 +785,10 @@ mod Chain {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
-
-    ///
-    /// Returns `c` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], c: Chain[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
-    }
-
-    ///
     /// Returns the list `c` as a set.
     ///
     pub def toSet(c: Chain[a]): Set[a] with Order[a] =
-        foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
+        foldRight(Set.insert, Set.empty(), c)
 
     ///
     /// Returns the chain of pairs `c` that represents an association list as a map.
@@ -831,12 +833,6 @@ mod Chain {
         Iterator.iterate(rc, next)
 
     ///
-    /// Returns an iterator over `c` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], c: Chain[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, c) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the chain `c` as a Nel.
     ///
     pub def toNel(c: Chain[a]): Option[Nel[a]] =
@@ -871,7 +867,7 @@ mod Chain {
     /// Compares chains `c1` and `c2` lexicographically.
     ///
     pub def compare(c1: Chain[a], c2: Chain[a]): Comparison with Order[a] =
-        def loop(v1, v2) = match (v1, v2) {
+        def loop(cc1, cc2) = match (cc1, cc2) {
             case (SomeLeft(_, _), NoneLeft)         => Comparison.GreaterThan
             case (NoneLeft, NoneLeft)               => Comparison.EqualTo
             case (NoneLeft, SomeLeft(_, _))         => Comparison.LessThan
@@ -928,7 +924,7 @@ mod Chain {
     /// Returns the result of running all the actions in the chain `c`.
     ///
     pub def sequence(c: Chain[m[a]]): m[Chain[a]] with Applicative[m] =
-        def loop(v, acc) = match v {
+        def loop(cc, acc) = match cc {
             case ViewLeft.NoneLeft        => acc
             case ViewLeft.SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, x))
         };
@@ -939,7 +935,7 @@ mod Chain {
     /// chain `c`.
     ///
     pub def traverse(f: a -> m[b] \ ef, c: Chain[a]): m[Chain[b]] \ ef with Applicative[m] =
-        def loop(v, acc) = match v {
+        def loop(cc, acc) = match cc {
             case ViewLeft.NoneLeft        => acc
             case ViewLeft.SomeLeft(x, rs) => loop(viewLeft(rs), snocA(acc, f(x)))
         };
@@ -964,16 +960,16 @@ mod Chain {
     /// is the index of `e`.
     ///
     pub def zipWithIndex(c: Chain[a]): Chain[(Int32, a)] =
-        def loop(cc, acc, i) = match viewLeft(cc) {
+        def loop(cc, i, acc) = match viewLeft(cc) {
             case ViewLeft.NoneLeft        => acc
-            case ViewLeft.SomeLeft(a, rs) => loop(rs, snoc(acc, (i, a)), i + 1)
+            case ViewLeft.SomeLeft(a, rs) => loop(rs, i + 1, snoc(acc, (i, a)))
         };
-        loop(c, Empty, 0)
+        loop(c, 0, Empty)
 
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(c: Chain[a]): Chain[a] \ NonDet = region rc {
+    pub def shuffle(c: Chain[a]): Chain[a] \ Shuffle = region rc {
         toArray(rc, c) !> Array.shuffle |> Array.toChain
     }
 

@@ -31,6 +31,14 @@ instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
 }
 
+instance Formattable[MultiMap[k, v]] with Formattable[k], Formattable[v] {
+    type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+    pub def format(x: MultiMap[k, v]): RichString \ Formattable.Aef[k] + Formattable.Aef[v] =
+        let kvs = MultiMap.toMap(x) |> Map.toList |> List.map(match (k, vs) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(vs));
+        RichString.fromString("MultiMap#{") + RichString.joinWith(identity, RichString.fromString(", "), kvs) + RichString.fromString("}")
+}
+
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
     pub def hash(m: MultiMap[k, v]): Int32 =
         let MultiMap.MultiMap(m1) = m;
@@ -62,7 +70,7 @@ instance Indexable[MultiMap[k, v]] with Order[k] {
 instance Foldable[MultiMap[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRightWithCont(f, s, m)
+    redef isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
 }
 
 instance UnorderedFoldable[MultiMap[k]] {
@@ -327,25 +335,6 @@ mod MultiMap {
         Map.foldRightWithKey(outer, s, m1)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: MultiMap[k, v]): b \ ef =
-        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
-
-    ///
-    /// Applies `f` to a start value `z` and all key-value pairs in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
-    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: MultiMap[k, v]): b \ ef =
-        let MultiMap(m1) = m;
-        Map.foldRightWithKeyCont((k, vs, b1) -> Set.foldRightWithCont((v1, fac) -> f(k, v1, fac), b1(), vs), z, m1)
-
-    ///
     /// Returns the result of mapping each key-value pair and combining the results.
     ///
     pub def foldMapWithKey(f: (k, v) -> b \ ef, m: MultiMap[k, v]): b \ ef with Monoid[b] =
@@ -416,29 +405,8 @@ mod MultiMap {
     ///
     @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: MultiMap[k, v]): Int32 \ ef =
-        sumWith((k, v) -> if (f(k,v)) 1 else 0, m)
-
-    ///
-    /// Returns the sum of all keys in the MultiMap `m`.
-    ///
-    pub def sumKeys(m: MultiMap[Int32, v]): Int32 =
-        sumWith((k, _) -> k, m)
-
-    ///
-    /// Returns the sum of all values in the MultiMap `m`.
-    ///
-    pub def sumValues(m: MultiMap[k, Int32]): Int32 =
-        sumWith((_, v) -> v, m)
-
-    ///
-    /// Returns the sum of all key-value pairs `k => v` in the MultiMap `m` according to the function `f`.
-    ///
-    /// Purity reflective: Runs in parallel when given a pure function `f`.
-    ///
-    @ParallelWhenPure
-    pub def sumWith(f: (k, v) -> Int32 \ ef, m: MultiMap[k, v]): Int32 \ ef =
         let MultiMap(m1) = m;
-        let outer = (k, vs) -> Set.sumWith(v -> f(k, v), vs);
+        let outer = (k, vs) -> Set.count(v -> f(k, v), vs);
         Map.sumWith(outer, m1)
 
     ///
@@ -533,13 +501,6 @@ mod MultiMap {
     pub def toMap(m: MultiMap[k, v]): Map[k, Set[v]] =
         let MultiMap(m1) = m;
         m1
-
-    ///
-    /// Returns the MultiMap `m` as a list of singleton key-value pairs in ascending order.
-    ///
-    pub def toMutDeque(rc: Region[r], m: MultiMap[k, v]): MutDeque[(k, Set[v]), r] \ r =
-        let MultiMap(m1) = m;
-        Map.toMutDeque(rc, m1)
 
     // No traversable functions due to Order constraint that is outside the `Traversable` trait.
 

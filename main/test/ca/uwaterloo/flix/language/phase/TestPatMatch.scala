@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.NonExhaustiveMatchError
+import ca.uwaterloo.flix.language.errors.WeederError.IllegalConstantPattern
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -167,7 +168,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |def f(e: E): Int8 = let E.A(true, 'a', i) = e; i
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[IllegalConstantPattern](result)
   }
 
   test("Expression.LetMatch02") {
@@ -175,7 +176,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
       """def f(e: (Int8, Int8)): Int8 = let (a,1i8) = e; a
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[IllegalConstantPattern](result)
   }
 
   test("Pattern.Deep.01") {
@@ -205,7 +206,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[IllegalConstantPattern](result)
   }
 
   test("Expression.MatchLambda.02") {
@@ -349,7 +350,7 @@ class TestPatMatch extends AnyFunSuite with TestUtils {
         |def f(): E = par (E.E1 <- if (true) E.E1 else E.E2) yield E.E1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[NonExhaustiveMatchError](result)
+    expectError[IllegalConstantPattern](result)
   }
 
   test("Pattern.Guard.01") {

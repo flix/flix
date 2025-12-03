@@ -46,6 +46,14 @@ instance ForEach[MutDeque[a, r]] {
     pub def forEach(f: a -> Unit \ ef, md: MutDeque[a, r]): Unit \ ef + r = MutDeque.forEach(f, md)
 }
 
+instance Formattable[MutDeque[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutDeque[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
+}
+
 mod MutDeque {
 
     ///
@@ -100,6 +108,11 @@ mod MutDeque {
     ///
     pub def size(d: MutDeque[a, r]): Int32 \ r =
         computeSize(capacity(d), d->front, d->back)
+
+    ///
+    /// Returns a range of all valid indices of the mutable deque `d`.
+    ///
+    pub def indices(d: MutDeque[a, r]): Range[Int32] \ r = Range.Range(0, size(d))
 
     ///
     /// Returns the size of a MutDeque, where `l` = array length, `f` = front index, `b` = back index.
@@ -162,22 +175,6 @@ mod MutDeque {
                 loop(j, e, f(Array.get(j, d->values), acc))
             };
         loop(d->back, d->front, s)
-
-    ///
-    /// Applies `f` to a start value `z` and all elements in `d` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, s: b, d: MutDeque[a, r]): b \ { ef, r } =
-        let c = capacity(d) - 1;
-        def loop(i, e) =
-            if (i == e)
-                s
-            else {
-                f(Array.get(i, d->values), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
-            };
-        loop(d->front, d->back)
 
     ///
     /// Returns the result of mapping each element and combining the results.
@@ -259,7 +256,7 @@ mod MutDeque {
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
     ///
     def expand(d: MutDeque[a, r]): Unit \ r =
-        if (shouldExpand(d)) grow(d) else ()
+        if (shouldExpand(d)) { grow(d) }
 
     ///
     /// Returns `true` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -282,7 +279,7 @@ mod MutDeque {
     /// Compresses MutDeque `d` if the load factor is less than or equal to `minLoadFactor`.
     ///
     def compress(d: MutDeque[a, r]): Unit \ r =
-        if (shouldCompress(d)) shrink(d) else ()
+        if (shouldCompress(d)) { shrink(d) }
 
     ///
     /// Returns `true` if the load factor is less than or equal to 1 / 4.
@@ -441,8 +438,11 @@ mod MutDeque {
     ///
     /// Shuffles a copy of `d` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, NonDet } = region rc3 {
-        toArray(rc3, d) !> Array.shuffle |> Array.toMutDeque(rc1)
+    pub def shuffle(rc1: Region[r1], d: MutDeque[a, r2]): MutDeque[a, r1] \ { r2, r1, Shuffle } = region rc3 {
+        let arr = toArray(rc3, d) !> Array.shuffle;
+        let result = empty(rc1);
+        Array.forEach(x -> pushBack(x, result), arr);
+        result
     }
 
 }

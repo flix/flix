@@ -58,7 +58,7 @@ object DocAst {
 
     case class Tuple(elms: List[Expr]) extends Atom
 
-    case class Tag(sym: Symbol.CaseSym, args: List[Expr]) extends Atom
+    case class Tag(sym: Sym, args: List[Expr]) extends Atom
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class AsIs(s: String) extends Atom
@@ -93,6 +93,8 @@ object DocAst {
 
     case class Match(d: Expr, branches: List[(Expr, Option[Expr], Expr)]) extends Atom
 
+    case class ExtMatch(d: Expr, branches: List[(Expr, Expr)]) extends Atom
+
     case class TypeMatch(d: Expr, branches: List[(Expr, Type, Expr)]) extends Atom
 
     /** e.g. `r.x` */
@@ -116,7 +118,7 @@ object DocAst {
 
     case class LocalDef(sym: Expr, parameters: List[Expr.AscriptionTpe], resType: Option[Type], effect: Option[Type], body: Expr, next: Expr) extends LetBinder
 
-    case class Scope(v: Expr, d: Expr) extends Atom
+    case class Region(v: Expr, d: Expr) extends Atom
 
     case class AppWithTail(f: Expr, args: List[Expr], ct: Option[ExpPosition]) extends Atom
 
@@ -130,7 +132,7 @@ object DocAst {
 
     case class AscriptionEff(v: Expr, tpe: Option[Type], eff: Option[Type]) extends Composite
 
-    case class Unsafe(d: Expr, tpe: Type) extends Composite
+    case class Unsafe(d: Expr, runEff: Type, asEff: Option[Type]) extends Composite
 
     case class NewObject(name: String, clazz: Class[?], tpe: Type, methods: List[JvmMethod]) extends Composite
 
@@ -156,10 +158,6 @@ object DocAst {
     def HoleError(sym: Symbol.HoleSym): Expr =
       AsIs(sym.toString)
 
-    /** the region value */
-    val Region: Expr =
-      Meta("region")
-
     val MatchError: Expr =
       AsIs("?matchError")
 
@@ -170,7 +168,13 @@ object DocAst {
     val Error: Expr =
       AsIs("?astError")
 
-    def Untag(sym: Symbol.CaseSym, d: Expr, idx: Int): Expr =
+    def Tag(sym: Symbol.CaseSym, exprs: List[Expr]): Expr =
+      Tag(Sym(sym), exprs)
+
+    def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
+      Keyword("xvar", Tag(Sym(label), exprs))
+
+    def Untag(d: Expr, idx: Int): Expr =
       Keyword("untag_" + idx, d)
 
     def Is(sym: Symbol.CaseSym, d: Expr): Expr =
@@ -204,11 +208,14 @@ object DocAst {
     def ArrayStore(d1: Expr, index: Expr, d2: Expr): Expr =
       Assign(SquareApp(d1, List(index)), d2)
 
-    def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], d2: Expr): Expr = {
+    def StructNew(sym: Symbol.StructSym, exps: List[(Symbol.StructFieldSym, Expr)], regionOpt: Option[Expr]): Expr = {
       val beforeRecord = "new " + sym.toString
       val name = Name.Label(sym.name, sym.loc)
       val record = exps.foldRight(RecordEmpty: Expr) { case (cur, acc) => RecordExtend(name, cur._2, acc) }
-      DoubleKeyword(beforeRecord, record, "@", Left(d2))
+      regionOpt match {
+        case Some(region) => DoubleKeyword(beforeRecord, record, "@", Left(region))
+        case None => Keyword(beforeRecord, record)
+      }
     }
 
     def StructGet(d1: Expr, field: Symbol.StructFieldSym): Expr =
@@ -496,6 +503,23 @@ object DocAst {
     def Var(sym: Symbol.UnkindedTypeVarSym): Type = AsIs(sym.toString)
   }
 
+  object Pattern {
+
+    def ExtTag(label: Name.Label, exprs: List[Expr]): Expr =
+      Expr.Tag(Sym(label), exprs)
+
+    def Default: Expr =
+      Expr.Wild
+
+  }
+
+  case class Sym(private val symbol: String) {
+    override def toString: String = symbol
+  }
+
+  def Sym(label: Name.Label): Sym = Sym(label.name)
+
+  def Sym(sym: Symbol.CaseSym): Sym = Sym(sym.toString)
 }
 
 

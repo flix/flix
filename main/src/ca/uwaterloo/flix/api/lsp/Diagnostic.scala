@@ -22,30 +22,32 @@ import org.json4s.JsonDSL.*
 import org.json4s.*
 import org.eclipse.lsp4j
 
+import scala.annotation.unused
 import scala.jdk.CollectionConverters.*
 
 /**
   * Companion object for [[Diagnostic]].
   */
 object Diagnostic {
-  def from(compilationMessage: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
-    val range = Range.from(compilationMessage.loc)
+  def from(m: CompilationMessage, explain: Boolean, formatter: Formatter): Diagnostic = {
+    val range = Range.from(m.loc)
     val severity = Some(DiagnosticSeverity.Error)
-    val code = compilationMessage.kind.toString
-    val summary = compilationMessage.summary
+    val code = m.kind.toString
+    val summary = m.summary
     val explanationHeading =
       s"""
          |${formatter.underline("Explanation:")}
          |""".stripMargin
-    val explanation = compilationMessage.explain(formatter) match {
+    val explanation = m.explain(formatter) match {
       case Some(expl) if explain => explanationHeading + expl
       case _ => ""
     }
-    val fullMessage = compilationMessage.messageWithLoc(formatter) + explanation
-    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
+    val fullMessage = m.messageWithLoc(formatter) + explanation
+    val relatedInformation = m.locs.map(l => DiagnosticRelatedInformation(Location.from(l), m.summary))
+    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil, relatedInformation)
   }
 
-  def from(codeHint: CodeHint, formatter: Formatter): Diagnostic = {
+  def from(codeHint: CodeHint, @unused formatter: Formatter): Diagnostic = {
     val range = Range.from(codeHint.loc)
     val severity = Some(DiagnosticSeverity.from(codeHint.severity))
     val summary = codeHint.summary
@@ -72,8 +74,8 @@ case class Diagnostic(range: Range, severity: Option[DiagnosticSeverity], code: 
       ("source" -> source) ~
       ("message" -> message) ~
       ("fullMessage" -> fullMessage) ~
-      ("tags" -> tags.map(_.toInt))
-      ("relatedInformation" -> relatedInformation)
+      ("tags" -> tags.map(_.toInt)) ~
+      ("relatedInformation" -> relatedInformation.map(_.toJSON))
 
   def toLsp4j: lsp4j.Diagnostic = {
     val diagnostic = new lsp4j.Diagnostic()

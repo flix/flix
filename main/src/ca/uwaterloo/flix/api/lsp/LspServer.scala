@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range}
+import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range, FormattingOptions}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -82,7 +82,7 @@ object LspServer {
       * The proxy to the language client.
       * Used to send messages to the client.
       */
-    var flixLanguageClient: LanguageClient = _
+    private var flixLanguageClient: LanguageClient = _
 
     /**
       * The client capabilities.
@@ -145,7 +145,7 @@ object LspServer {
         FileOps.getFilesIn(path.resolve("test"), Int.MaxValue)
 
       flixSources.foreach { case p =>
-        if (FileOps.checkExt(p, ".flix")) {
+        if (FileOps.checkExt(p, "flix")) {
           val source = Files.readString(p)
           addSourceCode(p.toUri.toString, source)
         }
@@ -161,11 +161,11 @@ object LspServer {
       FileOps.getFilesIn(path.resolve("lib"), Int.MaxValue)
         .foreach{ case p =>
           // Load all JAR files in the workspace, the pattern should be lib/**/*.jar.
-          if (FileOps.checkExt(p, ".jar"))
+          if (FileOps.checkExt(p, "jar"))
             flix.addJar(p)
           // Load all Flix package files in the workspace, the pattern should be lib/**/*.fpkg.
-          if (FileOps.checkExt(p, ".fpkg")) {
-            flix.addPkg(p)(SecurityContext.AllPermissions)
+          if (FileOps.checkExt(p, "fpkg")) {
+            flix.addPkg(p)(SecurityContext.Unrestricted)
           }
         }
     }
@@ -194,6 +194,7 @@ object LspServer {
       serverCapabilities.setDocumentSymbolProvider(true)
       serverCapabilities.setWorkspaceSymbolProvider(true)
       serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full)// TODO: make it incremental
+      serverCapabilities.setDocumentFormattingProvider(true)
 
       serverCapabilities
     }
@@ -220,7 +221,7 @@ object LspServer {
       * Adds the given source code to the Flix instance.
       */
     def addSourceCode(uri: String, src: String): Unit = {
-      flix.addSourceCode(uri, src)(SecurityContext.AllPermissions)
+      flix.addSourceCode(uri, src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 
@@ -418,6 +419,24 @@ object LspServer {
       val uri = params.getTextDocument.getUri
       val symbols = SymbolProvider.processDocumentSymbols(uri)(flixLanguageServer.root)
       CompletableFuture.completedFuture(symbols.map(_.toLsp4j).map(messages.Either.forRight[SymbolInformation, DocumentSymbol]).asJava)
+    }
+
+    /**
+      * Formats the given document.
+      *
+      * @param params the document formatting parameters
+      * @return a future containing the list of text edits
+      */
+    override def formatting(params: DocumentFormattingParams): CompletableFuture[util.List[? <: TextEdit]] = {
+      val uri = params.getTextDocument.getUri
+      val options = FormattingOptions.fromLsp4j(params.getOptions)
+
+      val editsJava: util.List[TextEdit] =
+        FormattingProvider.formatDocument(uri, options)(flixLanguageServer.flix)
+          .map(_.toLsp4j)
+          .asJava
+
+      java.util.concurrent.CompletableFuture.completedFuture(editsJava.asInstanceOf[util.List[? <: TextEdit]])
     }
   }
 

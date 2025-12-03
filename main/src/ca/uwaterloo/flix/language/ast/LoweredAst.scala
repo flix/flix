@@ -103,7 +103,7 @@ object LoweredAst {
 
     case class LocalDef(sym: Symbol.VarSym, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Scope(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -139,6 +139,14 @@ object LoweredAst {
 
     case class NewObject(name: String, clazz: java.lang.Class[?], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
+    case class NewChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class GetChannel(exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class PutChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
   }
 
   sealed trait Pattern {
@@ -167,16 +175,30 @@ object LoweredAst {
   }
 
   sealed trait ExtPattern {
-    def tpe: Type
-
     def loc: SourceLocation
   }
 
   object ExtPattern {
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
+
+  }
+
+  sealed trait ExtTagPattern {
+    def tpe: Type
+
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
 
   }
 
@@ -212,7 +234,7 @@ object LoweredAst {
 
   case class StructField(sym: Symbol.StructFieldSym, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: Type, loc: SourceLocation)
+  case class FormalParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
@@ -226,9 +248,9 @@ object LoweredAst {
 
   case class TypeMatchRule(sym: Symbol.VarSym, tpe: Type, exp: Expr)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
-  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr)
+  case class SelectChannelRule(sym: Symbol.VarSym, chan: Expr, exp: Expr, loc: SourceLocation)
 
   case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
 

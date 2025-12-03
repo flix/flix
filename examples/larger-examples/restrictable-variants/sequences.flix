@@ -407,17 +407,6 @@ mod Seq {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Seq[s][a]): b \ ef = choose l {
-        case Seq.Nil            => z
-        case Seq.One(x)         => f(x, _ -> checked_ecast(z))
-        case Seq.Cons(x, xs)    => f(x, _ -> foldRightWithCont(f, z, xs))
-    }
-
     ///
     /// Applies `f` to all elements in `l` going from left to right until a single value `v` is obtained.  Returns `Some(v)`.
     ///
@@ -738,13 +727,6 @@ mod Seq {
         d
 
     ///
-    /// Returns `l` as a mutable list.
-    ///
-    pub def toMutList(rc: Region[r], l: Seq[s][a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc, toArray(rc2, l)) // `Array.toMutList` respects the invariant of `MutList`
-    }
-
-    ///
     /// Returns the list `l` as a set.
     ///
     pub def toSet(l: Seq[s][a]): Set[a] with Order[a] =
@@ -845,12 +827,6 @@ mod Seq {
         };
         Iterator.iterate(rc, next)
 
-    //
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: Seq[s][a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
     ///
     /// Returns the association list `l` as a `DelayMap`.
     ///
@@ -902,7 +878,6 @@ instance Functor[Seq.Seq[s]] {
 instance Foldable[Seq.Seq[s]] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRightWithCont(f, s, l)
 }
 
 instance Iterable[Seq.Seq[s][a]] {

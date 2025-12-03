@@ -50,10 +50,6 @@ mod Test.Exp.Jvm.InvokeConstructor {
     def testInvokeConstructor09(): JString \ IO =
         new JString("Hello World")
 
-    @test
-    def testInvokePureConstructor01(): JString =
-        unsafe new JString("Hello World")
-
     // This test doesn't pass unless explicit cast is done
     @test
     def testInvokeObjectConstructor01(): Object \ IO =
@@ -65,7 +61,7 @@ mod Test.Exp.Jvm.InvokeConstructor {
         new Builder()
 
     @test
-    def testInvokeConstructorWithArrayParam(): URLClassLoader \ {Sys, Net, IO} = region rc {
+    def testInvokeConstructorWithArrayParam(): URLClassLoader \ IO = region rc {
         let arr : Array[URL, rc] = Array#{} @ rc;
         new URLClassLoader(arr)
     }

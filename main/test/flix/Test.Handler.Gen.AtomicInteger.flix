@@ -3,17 +3,17 @@ mod Test.Handler.Gen.AtomicInteger {
     import java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        unsafe new AtomicInteger(n)
+        unsafe IO { new AtomicInteger(n) }
 
     def toInt(n: AtomicInteger): Int32 =
-        unsafe n.intValue()
+        unsafe IO { n.intValue() }
 
     eff Gen {
         def gen(): AtomicInteger
     }
 
     def generator(): Unit \ Gen =
-        Gen.gen(); generator()
+        discard Gen.gen(); generator()
 
     def sample(limit: Int32): List[AtomicInteger] =
         region rc {
@@ -37,38 +37,38 @@ mod Test.Handler.Gen.AtomicInteger {
 
     @Test
     def testSample01(): Bool =
-        Assert.eq(Nil, sample(0) |> List.map(toInt))
+        Nil == (sample(0) |> List.map(toInt))
 
     @Test
     def testSample02(): Bool =
-        Assert.eq(0 :: Nil, sample(1) |> List.map(toInt))
+        0 :: Nil == (sample(1) |> List.map(toInt))
 
     @Test
     def testSample03(): Bool =
-        Assert.eq(0 :: 1 :: Nil, sample(2) |> List.map(toInt))
+        0 :: 1 :: Nil == (sample(2) |> List.map(toInt))
 
     @Test
     def testSample04(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: Nil, sample(3) |> List.map(toInt))
+        0 :: 1 :: 2 :: Nil == (sample(3) |> List.map(toInt))
 
     @Test
     def testSample05(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: Nil, sample(4) |> List.map(toInt))
+        0 :: 1 :: 2 :: 3 :: Nil == (sample(4) |> List.map(toInt))
 
     @Test
     def testSample06(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: Nil, sample(5) |> List.map(toInt))
+        0 :: 1 :: 2 :: 3 :: 4 :: Nil == (sample(5) |> List.map(toInt))
 
     @Test
     def testSample07(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, sample(6) |> List.map(toInt))
+        0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil == (sample(6) |> List.map(toInt))
 
     @Test
     def testSample08(): Bool =
-        Assert.eq(range(newAtomicInteger(0), newAtomicInteger(10)) |> List.map(toInt), sample(10) |> List.map(toInt))
+        (range(newAtomicInteger(0), newAtomicInteger(10)) |> List.map(toInt)) == (sample(10) |> List.map(toInt))
 
     @Test
     def testSample09(): Bool =
-        Assert.eq(range(newAtomicInteger(0), newAtomicInteger(100)) |> List.map(toInt), sample(100) |> List.map(toInt))
+        (range(newAtomicInteger(0), newAtomicInteger(100)) |> List.map(toInt)) == (sample(100) |> List.map(toInt))
 
 }

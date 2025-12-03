@@ -74,16 +74,6 @@ pub trait Reducible[t: Type -> Type] {
         Reducible.reduceRightTo(f, a -> f(a, s), t)
 
     ///
-    /// Right-associative fold of a structure.
-    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, t: t[a]): b \ ef =
-        let f1 = (a, b) -> f(a, _ -> checked_ecast(b));
-        Reducible.reduceRightTo(f1, a -> f(a, _ -> checked_ecast(z)), t)
-
-    ///
     /// Alias for `reduce`.
     ///
     /// Reduce `t` using the derived `SemiGroup` instance.

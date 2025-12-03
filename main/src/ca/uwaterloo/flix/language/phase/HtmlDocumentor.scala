@@ -46,7 +46,7 @@ object HtmlDocumentor {
   /**
     * The directory where to write the ouput.
     */
-  private val OutputDirectory: Path = Paths.get("./build/doc")
+  def OutputDirectory(implicit flix: Flix): Path = flix.options.outputPath.resolve("doc/")
 
   /**
     * The path to the stylesheet, relative to the resources folder.
@@ -1248,7 +1248,7 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      c.tpes.map(DisplayType.fromWellKindedType) match {
+      c.tpes.map(DisplayType.fromWellKindedType(_)) match {
         case Nil => // Nothing
         case elms =>
           sb.append("(")
@@ -1292,7 +1292,7 @@ object HtmlDocumentor {
   private def docFormalParams(fparams: List[TypedAst.FormalParam])(implicit flix: Flix, sb: StringBuilder): Unit = {
     sb.append("<span class='fparams'>(")
     fparams match {
-      case List(TypedAst.FormalParam(_, _, Type.Cst(TypeConstructor.Unit, _), _, _)) =>
+      case List(TypedAst.FormalParam(_, Type.Cst(TypeConstructor.Unit, _), _, _)) =>
       // For a function declared with zero formal parameters,
       // the compiler will introduce a single parameter of the unit type
       case _ =>
@@ -1441,7 +1441,7 @@ object HtmlDocumentor {
   /**
     * Make a copy of the static assets into the output directory.
     */
-  private def writeAssets(): Unit = {
+  private def writeAssets()(implicit flix: Flix): Unit = {
     val stylesheet = readResource(Stylesheet)
     writeFile("styles.css", stylesheet)
 
@@ -1464,14 +1464,14 @@ object HtmlDocumentor {
   /**
     * Write the documentation output string into the output directory with the given `name`.
     */
-  private def writeDocFile(name: String, output: String): Unit = {
+  private def writeDocFile(name: String, output: String)(implicit flix: Flix): Unit = {
     writeFile(s"$name", output.getBytes)
   }
 
   /**
     * Write the file to the output directory with the given file name.
     */
-  private def writeFile(name: String, output: Array[Byte]): Unit = {
+  private def writeFile(name: String, output: Array[Byte])(implicit flix: Flix): Unit = {
     val path = OutputDirectory.resolve(name)
     try {
       Files.createDirectories(OutputDirectory)

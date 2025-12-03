@@ -15,8 +15,8 @@
  */
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.LoweredAst
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.{LoweredAst, Symbol}
+import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.dbg.DocAst
 
 object LoweredAstPrinter {
@@ -63,7 +63,7 @@ object LoweredAstPrinter {
     case Expr.ApplyAtomic(op, exps, tpe, eff, _) => OpPrinter.print(op, exps.map(print), TypePrinter.print(tpe), TypePrinter.print(eff))
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expr.Let(DocAst.Expr.Var(sym), None, print(exp1), print(exp2))
     case Expr.LocalDef(sym, fparams, exp1, exp2, tpe, eff, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), Some(TypePrinter.print(tpe)), Some(TypePrinter.print(eff)), print(exp1), print(exp2))
-    case Expr.Scope(sym, _, exp, _, _, _) => DocAst.Expr.Scope(DocAst.Expr.Var(sym), print(exp))
+    case Expr.Region(sym, _, exp, _, _, _) => DocAst.Expr.Region(DocAst.Expr.Var(sym), print(exp))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expr.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Stm(exp1, exp2, _, _, _) => DocAst.Expr.Stm(print(exp1), print(exp2))
     case Expr.Discard(exp, _, _) => DocAst.Expr.Discard(print(exp))
@@ -77,7 +77,7 @@ object LoweredAstPrinter {
           (patD, guardD, bodyD)
       }
       DocAst.Expr.Match(expD, rulesD)
-    case Expr.ExtMatch(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(exp, rules, _, _, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.TypeMatch(exp, rules, _, _, _) =>
       val expD = print(exp)
       val rulesD = rules.map {
@@ -114,6 +114,23 @@ object LoweredAstPrinter {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, _, _) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))
       }
       DocAst.Expr.NewObject(name, clazz, TypePrinter.print(tpe), methodsD)
+
+    case LoweredAst.Expr.NewChannel(_, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.GetChannel(_, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.PutChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+
+    case LoweredAst.Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
+
+  }
+
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: LoweredAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case LoweredAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
   }
 
   /**
@@ -139,10 +156,27 @@ object LoweredAstPrinter {
   }
 
   /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtPattern(pattern: LoweredAst.ExtPattern): DocAst.Expr = pattern match {
+    case ExtPattern.Default(_) => DocAst.Pattern.Default
+    case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pattern`.
+    */
+  private def printExtTagPattern(pattern: LoweredAst.ExtTagPattern): DocAst.Expr = pattern match {
+    case ExtTagPattern.Wild(_, _) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_, _) => DocAst.Expr.Unit
+  }
+
+  /**
     * Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`.
     */
   private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expr.AscriptionTpe = {
-    val LoweredAst.FormalParam(sym, _, tpe, _) = fp
+    val LoweredAst.FormalParam(sym, tpe, _) = fp
     DocAst.Expr.AscriptionTpe(DocAst.Expr.Var(sym), TypePrinter.print(tpe))
   }
 

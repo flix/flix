@@ -17,12 +17,17 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
-import ca.uwaterloo.flix.language.ast.{SimpleType, ReducedAst, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.JvmAst.*
+import ca.uwaterloo.flix.language.ast.{JvmAst, SimpleType, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 object JvmOps {
+
+  /** Returns the index of `varOffset` combined with the context offset. */
+  def getIndex(varOffset: Int, contextOffset: Int): Int =
+    varOffset + contextOffset
 
   /**
     * Returns the erased arrow type of `tpe`.
@@ -53,7 +58,7 @@ object JvmOps {
     */
   def getErasedClosureAbstractClassType(tpe: SimpleType): BackendObjType.AbstractArrow = tpe match {
     case SimpleType.Arrow(targs, tresult) =>
-     BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
+      BackendObjType.AbstractArrow(targs.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
@@ -138,94 +143,21 @@ object JvmOps {
       case (acc, _) => acc
     }
 
-  /** Returns the set of erased struct types in `types` without searching recursively. */
-  def getErasedStructTypesOf(root: Root, types: Iterable[SimpleType]): Set[BackendObjType.Struct] =
-    types.foldLeft(Set.empty[BackendObjType.Struct]) {
-      case (acc, SimpleType.Struct(sym, targs)) =>
-        acc + BackendObjType.Struct(instantiateStruct(sym, targs)(root))
-      case (acc, _) => acc
-    }
+  /** Returns the struct type of `struct`. */
+  def getStructType(struct: JvmAst.Struct)(implicit root: Root): BackendObjType.Struct =
+    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
 
-  /**
-    * Returns the ordered list of struct fields based on the given type `sym[targs..]`. It is
-    * assumed that both `targs` and the structs in `root` use erased types.
-    *
-    * Example:
-    *   - `instantiateStruct(S, List(Int32, IO)) = List(Int32, Int32, Object)`
-    *     for `struct S[t, r] { mut x: t, y: t, z: Object }`
-    */
-  def instantiateStruct(sym: Symbol.StructSym, targs: List[SimpleType])(implicit root: ReducedAst.Root): List[BackendType] = {
-    val struct = root.structs(sym)
-    assert(struct.tparams.length == targs.length)
-    val map = struct.tparams.map(_.sym).zip(targs).toMap
-    struct.fields.map(field => instantiateType(map, field.tpe))
-  }
 
-  /**
-    * Returns the set of erased tag types in `types` without searching recursively.
-    */
-  def getErasedTagTypesOf(types: Iterable[SimpleType])(implicit root: ReducedAst.Root): Set[BackendObjType.TagType] =
-    types.foldLeft(Set.empty[BackendObjType.TagType]) {
-      case (acc0, SimpleType.Enum(sym, targs)) =>
-        val tags = instantiateEnum(root.enums(sym), targs)
-        tags.foldLeft(acc0) {
-          case (acc, (tagSym, Nil)) => acc + BackendObjType.NullaryTag(tagSym.name)
-          case (acc, (_, tagElms)) => acc + BackendObjType.Tag(tagElms)
-        }
-      case (acc, _) => acc
-    }
-
-  /**
-    * Returns the ordered list of enums terms based on the given type `sym[targs..]`. It is assumed
-    * that both `targs` and the enums in `root` use erased types.
-    *
-    * Example:
-    *   - `instantiateEnum(E, List(Char)) = Map(A -> List(Char, Object), B -> List(Int32))`
-    *     for `enum E[t] { case A(t, Object) case B(Int32) }`
-    */
-  def instantiateEnum(enm: ReducedAst.Enum, targs: List[SimpleType])(implicit root: Root): Map[Symbol.CaseSym, List[BackendType]] = {
-    assert(enm.tparams.length == targs.length)
-    val map = enm.tparams.map(_.sym).zip(targs).toMap
-    enm.cases.map {
-      case (_, caze) => (caze.sym, caze.tpes.map(instantiateType(map, _)))
-    }
-  }
-
-  /**
-    * Instantiates `tpe` given the variable map `m`.
-    *
-    * Examples:
-    *   - `instantiateType([x -> Int32], x) = Int32`
-    *   - `instantiateType(_, Int32) = Int32`
-    *   - `instantiateType(_, Object) = Object`
-    *   - `instantiateType([x -> String], x) = throw InternalCompilerException`
-    *   - `instantiateType([x -> Int32], y) = throw InternalCompilerException`
-    *   - `instantiateType(_, Option[Int32]) =  throw InternalCompilerException`
-    *
-    * @param m Decides types for variables, must only contain erased types.
-    * @param tpe the type to instantiate, must be a polymorphic erased type
-    *            (either [[Type.Var]], a primitive type, or `java.lang.Object`)
-    */
-  private def instantiateType(m: Map[Symbol.KindedTypeVarSym, SimpleType], tpe: Type)(implicit root: Root): BackendType = tpe match {
-    case Type.Var(sym, _) => BackendType.toBackendType(m(sym))
-    case Type.Cst(tc, _) => tc match {
-      case TypeConstructor.Bool => BackendType.Bool
-      case TypeConstructor.Char => BackendType.Char
-      case TypeConstructor.Float32 => BackendType.Float32
-      case TypeConstructor.Float64 => BackendType.Float64
-      case TypeConstructor.Int8 => BackendType.Int8
-      case TypeConstructor.Int16 => BackendType.Int16
-      case TypeConstructor.Int32 => BackendType.Int32
-      case TypeConstructor.Int64 => BackendType.Int64
-      case TypeConstructor.Native(clazz) if clazz == classOf[Object] => BackendType.Object
-      case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    }
-    case Type.Apply(_, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.JvmToType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.JvmToEff(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
-    case Type.UnresolvedJvmType(_, _) => throw InternalCompilerException(s"Unexpected type: '$tpe'", tpe.loc)
+  /** Returns the tag type of each case in `enm`. */
+  def getTagsOf(enm: JvmAst.Enum)(implicit root: Root): List[BackendObjType.TagType] = {
+    enm.cases.values.map {
+      case caze => caze.tpes match {
+        case Nil =>
+          BackendObjType.NullaryTag(caze.sym.name)
+        case elms =>
+          BackendObjType.Tag(elms.map(BackendType.toBackendType))
+      }
+    }.toList
   }
 
   /** Returns the set of extensible tag types in `types` without searching recursively. */

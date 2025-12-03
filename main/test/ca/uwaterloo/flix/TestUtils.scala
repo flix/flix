@@ -31,19 +31,19 @@ trait TestUtils {
 
   this: AnyFunSuite =>
 
+  protected implicit val sctx: SecurityContext = SecurityContext.Unrestricted
+
   /**
     * Checks the given input string `s` with the given compilation options `o`.
     */
-  def check(s: String, o: Options): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+  def check(s: String, o: Options)(implicit sctx: SecurityContext): (Option[TypedAst.Root], List[CompilationMessage]) = {
     new Flix().setOptions(o).addSourceCode("<test>", s).check()
   }
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
-  def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+  def compile(s: String, o: Options)(implicit sctx: SecurityContext): Validation[CompilationResult, CompilationMessage] = {
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
   }
 

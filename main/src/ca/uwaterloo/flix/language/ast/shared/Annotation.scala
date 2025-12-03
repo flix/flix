@@ -27,6 +27,26 @@ trait Annotation {
 object Annotation {
 
   /**
+    * An AST node that represents a `@CompileTest` annotation.
+    *
+    * A function marked with `CompileTest` is compiled, but not evaluated.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class CompileTest(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@CompileTest"
+  }
+
+  /**
+    * An annotation that marks a function as a default handler for an effect.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class DefaultHandler(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@DefaultHandler"
+  }
+
+  /**
     * An annotation that marks a construct as deprecated.
     *
     * @param loc the source location of the annotation.
@@ -87,6 +107,36 @@ object Annotation {
   }
 
   /**
+    * An annotation that marks a function definition as using lazy evaluation.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class Lazy(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@Lazy"
+  }
+
+  /**
+    * An annotation that marks a function definition as a target for lowering.
+    *
+    * A function annotated with `LoweringTarget` may not be discarded until lowering has
+    * been performed.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class LoweringTarget(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@LoweringTarget"
+  }
+
+  /**
+    * An annotation that marks a function definition as using lazy evaluation when given a pure function argument.
+    *
+    * @param loc the source location of the annotation.
+    */
+  case class LazyWhenPure(loc: SourceLocation) extends Annotation {
+    override def toString: String = "@LazyWhenPure"
+  }
+
+  /**
     * An annotation that marks a function definition as using parallel evaluation.
     *
     * @param loc the source location of the annotation.
@@ -102,33 +152,6 @@ object Annotation {
     */
   case class ParallelWhenPure(loc: SourceLocation) extends Annotation {
     override def toString: String = "@ParallelWhenPure"
-  }
-
-  /**
-    * An annotation that marks a function definition as using lazy evaluation.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class Lazy(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@Lazy"
-  }
-
-  /**
-    * An annotation that marks a function definition as using lazy evaluation when given a pure function argument.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class LazyWhenPure(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@LazyWhenPure"
-  }
-
-  /**
-    * An annotation that marks a type as must-use.
-    *
-    * @param loc the source location of the annotation.
-    */
-  case class MustUse(loc: SourceLocation) extends Annotation {
-    override def toString: String = "@MustUse"
   }
 
   /**

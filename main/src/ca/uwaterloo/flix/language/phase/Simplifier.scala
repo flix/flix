@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.CaseSymUse
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Constant, Modifiers, Mutability, Scope}
 import ca.uwaterloo.flix.language.ast.{Purity, Symbol, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.collection.{ListOps, MapOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -139,8 +139,8 @@ object Simplifier {
         case AtomicOp.Spawn =>
           // Wrap the expression in a closure: () -> tpe \ ef
           val List(e1, e2) = es
-          val lambdaTyp = SimpleType.Arrow(List(SimpleType.Unit), e1.tpe)
-          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc)
+          val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e1.tpe)
+          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
@@ -148,8 +148,8 @@ object Simplifier {
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
           val e = es.head
-          val lambdaTyp = SimpleType.Arrow(List(SimpleType.Unit), e.tpe)
-          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc)
+          val lambdaTyp = SimpleType.mkArrow(List(SimpleType.Unit), e.tpe)
+          val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), SimpleType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
@@ -159,59 +159,12 @@ object Simplifier {
           val t = visitType(tpe)
           SimplifiedAst.Expr.ApplyAtomic(op, es, t, Purity.Impure, loc)
 
-        case AtomicOp.StructNew(sym, givenFields) =>
-          // Re-arrange the fields to be given in the declared order.
-          // Change the order by let-binding the field and region values.
-          //
-          // Example:
-          //
-          // struct MyStruct[r: Region] { x: Int32, y: Int32 }
-          //
-          // new MyStruct @ rc { y = 21, x = 42 }
-          //
-          // This becomes:
-          //
-          // let rc$tmp = rc;
-          // let y$tmp = 21;
-          // let x$tmp = 42;
-          // new MyStruct @ rc$tmp { x = x$tmp, y = y$tmp }
-          //
+        case AtomicOp.StructNew(sym, Mutability.Mutable, givenFields) =>
           val regExp :: fieldExps = es
-          val synthLoc = loc.asSynthetic
-          val fieldsDeclaredOrder = root.structs(sym).fields
-          val fieldInitializations = givenFields.zip(fieldExps)
+          visitStructNew(sym, givenFields, Some(regExp), fieldExps, tpe, loc)
 
-          // Find types and new names.
-          val freshFieldNames = givenFields.map {
-            fieldSym => (fieldSym, Symbol.freshVarSym(fieldSym.name, BoundBy.Let, synthLoc))
-          }.toMap
-          val fieldTypes = fieldInitializations.map {
-            case (fieldSym, e) => (fieldSym, e.tpe)
-          }.toMap
-          val freshRegName = Symbol.freshVarSym("r", BoundBy.Let, synthLoc)
-          val regType = regExp.tpe
-          val freshFieldInitialization = fieldInitializations.map {
-            case (fieldSym, e) => (freshFieldNames(fieldSym), e)
-          }
-
-          // Construct var expressions.
-          val regVar = SimplifiedAst.Expr.Var(freshRegName, regType, synthLoc)
-          val fieldVars = fieldsDeclaredOrder.map {
-            field => SimplifiedAst.Expr.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
-          }
-
-          // Construct the full expression.
-          val newStructExp = SimplifiedAst.Expr.ApplyAtomic(
-            AtomicOp.StructNew(sym, fieldsDeclaredOrder.map(_.sym)),
-            regVar :: fieldVars,
-            visitType(tpe),
-            Purity.Pure,
-            loc
-          )
-          val fieldBoundExp = freshFieldInitialization.foldRight(newStructExp: SimplifiedAst.Expr) {
-            case ((varSym, e), acc) => SimplifiedAst.Expr.Let(varSym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
-          }
-          SimplifiedAst.Expr.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
+        case AtomicOp.StructNew(sym, Mutability.Immutable, givenFields) =>
+          visitStructNew(sym, givenFields, None, es, tpe, loc)
 
         case _ =>
           val t = visitType(tpe)
@@ -243,9 +196,9 @@ object Simplifier {
       val ef = simplifyEffect(eff)
       SimplifiedAst.Expr.LocalDef(sym, fps, e1, e2, t, ef, loc)
 
-    case MonoAst.Expr.Scope(sym, _, exp, tpe, eff, loc) =>
+    case MonoAst.Expr.Region(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
-      SimplifiedAst.Expr.Scope(sym, visitExp(exp), t, simplifyEffect(eff), loc)
+      SimplifiedAst.Expr.Region(sym, visitExp(exp), t, simplifyEffect(eff), loc)
 
     case MonoAst.Expr.Match(exp, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp, rules, tpe, loc)
@@ -373,7 +326,7 @@ object Simplifier {
 
           case TypeConstructor.Enum(sym, _) =>
             val targs = tpe.typeArguments
-            SimpleType.Enum(sym, targs.map(visitType))
+            SimpleType.mkEnum(sym, targs.map(visitType))
 
           case TypeConstructor.Struct(sym, _) =>
             val targs = tpe.typeArguments
@@ -381,19 +334,19 @@ object Simplifier {
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val targs = tpe.typeArguments
-            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
-            SimpleType.Enum(enumSym, targs.map(visitType))
+            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
+            SimpleType.mkEnum(enumSym, targs.map(visitType))
 
           case TypeConstructor.Native(clazz) => SimpleType.Native(clazz)
 
           case TypeConstructor.Array =>
             // Remove the region from the array.
             val List(elm, _) = tpe.typeArguments
-            SimpleType.Array(visitType(elm))
+            SimpleType.mkArray(visitType(elm))
 
           case TypeConstructor.Vector =>
             val List(elm) = tpe.typeArguments
-            SimpleType.Array(visitType(elm))
+            SimpleType.mkArray(visitType(elm))
 
           case TypeConstructor.RegionToStar =>
             // Remove the type argument.
@@ -401,14 +354,14 @@ object Simplifier {
 
           case TypeConstructor.Tuple(_) =>
             val targs = tpe.typeArguments
-            SimpleType.Tuple(targs.map(visitType))
+            SimpleType.mkTuple(targs.map(visitType))
 
           case TypeConstructor.Arrow(_) =>
             // Remove the effect from the arrow.
             // Arrow type arguments are ordered (effect, args.., result type).
             val _ :: targs = tpe.typeArguments
             val (args, List(res)) = targs.splitAt(targs.length - 1)
-            SimpleType.Arrow(args.map(visitType), visitType(res))
+            SimpleType.mkArrow(args.map(visitType), visitType(res))
 
           case TypeConstructor.RecordRowExtend(label) =>
             val List(labelType, restType) = tpe.typeArguments
@@ -451,6 +404,7 @@ object Simplifier {
           case TypeConstructor.CaseSet(_, _) => SimpleType.Unit
           case TypeConstructor.CaseComplement(_) => SimpleType.Unit
           case TypeConstructor.CaseIntersection(_) => SimpleType.Unit
+          case TypeConstructor.CaseSymmetricDiff(_) => SimpleType.Unit
           case TypeConstructor.CaseUnion(_) => SimpleType.Unit
 
           case TypeConstructor.Relation(_) =>
@@ -553,7 +507,7 @@ object Simplifier {
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
             val targs = tpe.typeArguments
-            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
+            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
             Type.mkEnum(enumSym, targs.map(visitPolyType), loc)
 
           case TypeConstructor.Native(_) => cst
@@ -613,6 +567,7 @@ object Simplifier {
           case TypeConstructor.CaseSet(_, _) => Type.mkUnit(loc)
           case TypeConstructor.CaseComplement(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseIntersection(_) => Type.mkUnit(loc)
+          case TypeConstructor.CaseSymmetricDiff(_) => Type.mkUnit(loc)
           case TypeConstructor.CaseUnion(_) => Type.mkUnit(loc)
 
           case TypeConstructor.SchemaRowEmpty => Type.mkSchemaRowEmpty(loc)
@@ -661,7 +616,7 @@ object Simplifier {
 
   private def visitFormalParam(p: MonoAst.FormalParam): SimplifiedAst.FormalParam = {
     val t = visitType(p.tpe)
-    SimplifiedAst.FormalParam(p.sym, p.mod, t, p.loc)
+    SimplifiedAst.FormalParam(p.sym, t, p.loc)
   }
 
   private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit universe: Set[Symbol.EffSym], root: MonoAst.Root, flix: Flix): SimplifiedAst.JvmMethod = method match {
@@ -783,7 +738,7 @@ object Simplifier {
 
     // Construct a map from each label to the label of the next case.
     // The default label is the next label of the last case.
-    val nextLabel = (ruleLabels zip (ruleLabels.drop(1) ::: defaultLab :: Nil)).toMap
+    val nextLabel = ListOps.zip(ruleLabels, ruleLabels.drop(1) ::: defaultLab :: Nil).toMap
 
     val t = visitType(tpe)
 
@@ -791,7 +746,7 @@ object Simplifier {
     val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
 
     // Create a branch for each rule.
-    val branches = (ruleLabels zip rules) map {
+    val branches = ListOps.zip(ruleLabels, rules) map {
       // Process each (label, rule) pair.
       case (label, MonoAst.MatchRule(pat, guard, body)) =>
         // Retrieve the label of the next rule.
@@ -924,7 +879,7 @@ object Simplifier {
         val cond = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), List(varExp), SimpleType.Bool, Purity.Pure, loc)
         val freshVars = pats.map(_ => Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc))
         val zero = patternMatchList(pats ::: ps, freshVars ::: vs, guard, succ, fail)
-        val consequent = pats.zip(freshVars).zipWithIndex.foldRight(zero) {
+        val consequent = ListOps.zip(pats, freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
             val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
             val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym, idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
@@ -963,7 +918,7 @@ object Simplifier {
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
         val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
         // Let-binders are built in reverse, but it does not matter since binders are independent and pure
-        val (one, restrictedMatchVar) = pats.zip(freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
+        val (one, restrictedMatchVar) = ListOps.zip(pats, freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
           case ((exp, matchVarExp), (MonoAst.Pattern.Record.RecordLabelPattern(label, subpat, _, loc1), name)) =>
             val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(subpat.tpe), Purity.Pure, loc1)
             val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, matchVarExp.tpe), matchVarExp.purity, loc1)
@@ -1020,16 +975,22 @@ object Simplifier {
     val extVar = SimplifiedAst.Expr.Var(extName, tagType, exp.loc)
     val errorExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.MatchError, List.empty, tpe, Purity.Impure, loc)
     val iftes = rules.foldRight(errorExp: SimplifiedAst.Expr) {
-      case (MonoAst.ExtMatchRule(label, pats, exp1, loc1), branch2) =>
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Default(_), exp1, _), _) =>
+        // Note: If we have a default case, there is only 1 single default case, and it is the last rule.
+        // This invariant is ensured by the unreachable case check in Redunancy.
+        visitExp(exp1)
+
+      case (MonoAst.ExtMatchRule(MonoAst.ExtPattern.Tag(label, pats, _), exp1, loc1), branch2) =>
         val e1 = visitExp(exp1)
         val is = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtIs(label), List(extVar), SimpleType.Bool, Purity.Pure, extVar.loc)
         val termTypes = SimpleType.findExtensibleTermTypes(label, tagType)
         // Let-bind each variable in the rule / pattern
         val branch1 = pats.zipWithIndex.foldRight(e1) {
-          case ((MonoAst.ExtPattern.Wild(_, _), _), acc1) => acc1
-          case ((MonoAst.ExtPattern.Var(sym, _, _, _), idx), acc1) =>
+          case ((MonoAst.ExtTagPattern.Wild(_, _), _), acc1) => acc1
+          case ((MonoAst.ExtTagPattern.Var(sym, _, _, _), idx), acc1) =>
             val untag = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ExtUntag(label, idx), List(extVar), termTypes(idx), Purity.Pure, sym.loc)
             SimplifiedAst.Expr.Let(sym, untag, acc1, acc1.tpe, Purity.combine(untag.purity, acc1.purity), sym.loc)
+          case ((MonoAst.ExtTagPattern.Unit(_, _), _), acc1) => acc1
         }
         SimplifiedAst.Expr.IfThenElse(is, branch1, branch2, branch1.tpe, Purity.combine(branch1.purity, branch2.purity), loc1)
     }
@@ -1042,6 +1003,79 @@ object Simplifier {
       val retTpe = visitType(retTpe0)
       val eff = simplifyEffect(eff0)
       SimplifiedAst.Op(sym, ann, mod, fparams, retTpe, eff, loc)
+  }
+
+  /**
+    * Simplifies `new MyStruct ...` expressions.
+    *
+    * Re-arrange the fields to be given in the declared order.
+    * Change the order by let-binding the field and region values.
+    *
+    * Example (mutable struct):
+    *
+    * struct MyStruct[r: Region] { x: Int32, y: Int32 }
+    *
+    * new MyStruct @ rc { y = 21, x = 42 }
+    *
+    * This becomes:
+    *
+    * let rc$tmp = rc;<br>
+    * let y$tmp = 21;<br>
+    * let x$tmp = 42;<br>
+    * new MyStruct @ rc$tmp { x = x$tmp, y = y$tmp }
+    *
+    * For immutable datastructures (`regExpOpt` is `None`) there is no region and the code would be:
+    *
+    * let y$tmp = 21;<br>
+    * let x$tmp = 42;<br>
+    * new MyStruct { x = x$tmp, y = y$tmp }
+    *
+    * @param regExpOpt the optional region expression.
+    */
+  private def visitStructNew(sym: Symbol.StructSym, givenFields: List[Symbol.StructFieldSym], regExpOpt: Option[SimplifiedAst.Expr], fieldExps: List[SimplifiedAst.Expr], tpe: Type, loc: SourceLocation)(implicit root: MonoAst.Root, flix: Flix): SimplifiedAst.Expr = {
+    val synthLoc = loc.asSynthetic
+    val fieldsDeclaredOrder = root.structs(sym).fields
+    val fieldInitializations = ListOps.zip(givenFields, fieldExps)
+
+    // Find types and new names.
+    val freshFieldNames = givenFields.map {
+      fieldSym => (fieldSym, Symbol.freshVarSym(fieldSym.name, BoundBy.Let, synthLoc))
+    }.toMap
+    val fieldTypes = fieldInitializations.map {
+      case (fieldSym, e) => (fieldSym, e.tpe)
+    }.toMap
+    val freshRegName = Symbol.freshVarSym("r", BoundBy.Let, synthLoc)
+    val regTypeOpt = regExpOpt.map(_.tpe)
+    val freshFieldInitialization = fieldInitializations.map {
+      case (fieldSym, e) => (freshFieldNames(fieldSym), e)
+    }
+
+    // Construct var expressions.
+    val regVarOpt = regTypeOpt.map(regType => SimplifiedAst.Expr.Var(freshRegName, regType, synthLoc))
+    val fieldVars = fieldsDeclaredOrder.map {
+      field => SimplifiedAst.Expr.Var(freshFieldNames(field.sym), fieldTypes(field.sym), synthLoc)
+    }
+
+    val (exps, atomicOp) = regVarOpt match {
+      case Some(regVar) => (regVar :: fieldVars, AtomicOp.StructNew(sym, Mutability.Mutable, fieldsDeclaredOrder.map(_.sym)))
+      case None => (fieldVars, AtomicOp.StructNew(sym, Mutability.Immutable, fieldsDeclaredOrder.map(_.sym)))
+    }
+
+    // Construct the full expression.
+    val newStructExp = SimplifiedAst.Expr.ApplyAtomic(
+      atomicOp,
+      exps,
+      visitType(tpe),
+      Purity.Pure,
+      loc
+    )
+    val fieldBoundExp = freshFieldInitialization.foldRight(newStructExp: SimplifiedAst.Expr) {
+      case ((varSym, e), acc) => SimplifiedAst.Expr.Let(varSym, e, acc, acc.tpe, Purity.combine(acc.purity, e.purity), synthLoc)
+    }
+    regExpOpt match {
+      case Some(regExp) => SimplifiedAst.Expr.Let(freshRegName, regExp, fieldBoundExp, fieldBoundExp.tpe, Purity.combine(fieldBoundExp.purity, regExp.purity), synthLoc)
+      case None => fieldBoundExp
+    }
   }
 
   /**

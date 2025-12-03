@@ -29,6 +29,7 @@ import ca.uwaterloo.flix.util.ParOps
   *   - Is an entry point (main / test / export).
   *   - Appears in a function which itself is reachable.
   *   - Is an instance of a trait whose signature(s) appear in a reachable function.
+  *   - Is annotated with `@LoweringTarget`.
   */
 object TreeShaker1 {
 
@@ -36,8 +37,13 @@ object TreeShaker1 {
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker1") {
     val initReach: Set[ReachableSym] = root.entryPoints.map(ReachableSym.DefnSym.apply)
 
+    val loweringTargets: Set[ReachableSym] = root.defs.foldLeft(Set[ReachableSym]()) {
+      case (acc, (_, defn)) if defn.spec.ann.isLoweringTarget => acc + ReachableSym.DefnSym(defn.sym)
+      case (acc, _) => acc
+    }
+
     // Compute the symbols that are transitively reachable.
-    val allReachable = ParOps.parReach(initReach, visitSym(_, root))
+    val allReachable = ParOps.parReach(initReach ++ loweringTargets, visitSym(_, root))
 
     // Filter the reachable definitions.
     val reachableDefs = root.defs.filter {
@@ -99,7 +105,7 @@ object TreeShaker1 {
     case Expr.LocalDef(_, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.Scope(_, _, exp, _, _, _) =>
+    case Expr.Region(_, _, exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -143,6 +149,19 @@ object TreeShaker1 {
 
     case Expr.RunWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))
+
+    case Expr.NewChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.GetChannel(exp, _, _, _) =>
+      visitExp(exp)
+
+    case Expr.PutChannel(exp1, exp2, _, _, _) =>
+      visitExp(exp1) ++ visitExp(exp2)
+
+    case Expr.SelectChannel(selects, optExp, _, _, _) =>
+      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(Set())
+
   }
 
   /** Returns the symbols reachable from `exps`. */

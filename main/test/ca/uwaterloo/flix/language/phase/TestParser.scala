@@ -31,6 +31,127 @@ class TestParser extends Suites(
   */
 class TestParserRecovery extends AnyFunSuite with TestUtils {
 
+  test("UnterminatedInfixFunction.01") {
+    val input = "1 `add 2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("UnterminatedInfixFunction.02") {
+    val input = "1 `add/*this is a block comment*/` 2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("UnterminatedInfixFunction.03") {
+    val input = "1 `add 2"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("TrailingComma.01") {
+    val input =
+      """
+        |def b(): List[Int32] = List#{2, /**/}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.01") {
+    val input =
+      """
+        |def A(): Unit = ()
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.02") {
+    val input =
+      """
+        |pub trait A[a] {
+        |    pub def A(): Unit = ()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.03") {
+    val input =
+      """
+        |trait A[x] {}
+        |instance A[Int32] {
+        |    pub def A(): Unit = ()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.04") {
+    val input =
+      """
+        |trait A[x] {}
+        |instance A[Int32] {
+        |    pub redef A(): Unit = ()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.05") {
+    val input =
+      """
+        |trait B[a] {
+        |    law A:forall() false
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.06") {
+    val input =
+      """
+        |pub eff C {
+        |    def A(): Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("IllegalDefName.07") {
+    val input =
+      """
+        |def a(): Unit = {
+        |    def A() = ();
+        |    A()
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Use.01") {
     val input =
       """
@@ -122,6 +243,67 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("StructNoTParams.01") {
+    val input =
+      """
+        |struct S { }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.01") {
+    val input =
+      """
+        |def main: Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.02") {
+    val input =
+      """
+        |trait A[a] {
+        |def someSig: Unit
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DefNoParams.03") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    def localFunc = ();
+        |    localFunc()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("NoLiteralBody.01") {
+    val input =
+      """
+        |def main(): Unit = {
+        |    let _ = List#;
+        |    ()
+        |}
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+
   test("NoDefBody.01") {
     val input =
       """
@@ -148,6 +330,28 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |} def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingAnnotation.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |@Internal
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("DanglingModifier.01") {
+    val input =
+      """
+        |def main(): Unit = ()
+        |pub
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
@@ -314,6 +518,28 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |type alias M[k] = Map[k, Result[String, ]
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("TypeAlias.03") {
+    val input =
+      """
+        |type alias Magic
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("TypeAlias.04") {
+    val input =
+      """
+        |type alias Magic =
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -519,6 +745,17 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Int32 = if (false) 123
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadIfThenElse.04") {
+    val input =
+      """
+        |def foo(): Unit \ IO = if (false) if (true) println(1) else println(1)
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -748,7 +985,8 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    let result = run {
         |        mutual1(10)
         |    } with handler AskTell ;
-        |    Assert.eq(Some(84), result)
+        |    true
+        |
         |def main(): Int32 = 123
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
@@ -762,6 +1000,18 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |def foo(): Bool =
         |    try { true } catch
         |def main(): Int32 = 123
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingRecordOperation.01") {
+    val input =
+      """
+        |def main(): Int32 =
+        |    let _ = { | {} };
+        |    2
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
@@ -787,6 +1037,33 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
         |    try { true }
         |def main(): Int32 = 123
         |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingDotInDatalogConstraint.01") {
+    val input =
+      """def main(): Unit =
+        |    let _ = #{
+        |        Edge(1, 2)
+        |    };
+        |    ()
+        |"""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("MissingDotInDatalogConstraint.02") {
+    val input =
+      """def main(): Unit =
+        |    let _ = #{
+        |        Edge(1, 2).
+        |        Path(x, y) :- Edge(x, y)
+        |    };
+        |    ()
+        |"""".stripMargin
     val result = check(input, Options.TestWithLibMin)
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
@@ -881,27 +1158,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[LexerError](result)
   }
 
-  test("ParseError.EnumCase.01") {
-    val input =
-      """
-        |enum E {
-        |    case C()
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("ParseError.ParYield.01") {
-    val input =
-      """
-        |def f(): Int32 = par () yield 1
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.ParYield.02") {
     val input =
       """
         |def f(): Int32 = par a <- 1 yield a
@@ -910,7 +1167,7 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("ParseError.ParYield.03") {
+  test("ParseError.ParYield.02") {
     val input =
       """
         |def f(): (Int32, Int32) = par (a <- let b = 1; b; c <- 2) yield (a, c)
@@ -973,17 +1230,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Int32 = ematch xvar A() -> 123 {
-        |    case A(x) => x
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  ignore("IllegalExtTag.02") {
-    val input =
-      """
-        |def f(): Int32 = ematch xvar A (1) {
         |    case A(x) => x
         |}
         |""".stripMargin
@@ -1078,15 +1324,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  test("IllegalEnum.03") {
-    val input =
-      """
-        |enum Foo()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("IllegalModule.01") {
     val input =
       """
@@ -1134,15 +1371,6 @@ class TestParserSad extends AnyFunSuite with TestUtils {
     val input =
       """
         |def foo(): Unit \ IO = throw
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("StructNoTParams.01") {
-    val input =
-      """
-        |struct S { }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
@@ -1228,6 +1456,18 @@ class TestParserSad extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
+  }
+
+  test("NeedAtleastOne.01") {
+    val input =
+      """
+        |trait A[] {
+        |    def f(x: a): a
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError.NeedAtleastOne](result)
   }
 
 }

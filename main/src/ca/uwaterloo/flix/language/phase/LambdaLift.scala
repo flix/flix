@@ -114,7 +114,7 @@ object LambdaLift {
 
       // Construct the closure parameters
       val cs = if (cparams.isEmpty) {
-        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), Modifiers.Empty, SimpleType.Unit, loc))
+        List(LiftedAst.FormalParam(Symbol.freshVarSym("_lift", BoundBy.FormalParam, loc), SimpleType.Unit, loc))
       } else cparams.map(visitFormalParam)
 
       // Construct the formal parameters.
@@ -204,9 +204,9 @@ object LambdaLift {
       sctx.liftedDefs.add(freshDefnSym -> liftedDef)
       visitExp(exp2)(sym0, updatedLiftedLocalDefs, sctx, flix) // LocalDef node is erased here
 
-    case SimplifiedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+    case SimplifiedAst.Expr.Region(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp)
-      LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
+      LiftedAst.Expr.Region(sym, e, tpe, purity, loc)
 
     case SimplifiedAst.Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -243,7 +243,7 @@ object LambdaLift {
 
 
   private def visitFormalParam(fparam: SimplifiedAst.FormalParam): LiftedAst.FormalParam = fparam match {
-    case SimplifiedAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+    case SimplifiedAst.FormalParam(sym, tpe, loc) => LiftedAst.FormalParam(sym, tpe, loc)
   }
 
   /**

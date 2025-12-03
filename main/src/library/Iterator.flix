@@ -117,7 +117,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def sum(iter: Iterator[Int32, ef, r]): Int32 \ { ef, r } =
-        foldLeft((acc, x) -> acc + x, 0, iter)
+        foldLeft((+), 0, iter)
 
     ///
     /// Returns the sum of all elements in the iterator `iter` according to the function `f`.
@@ -164,7 +164,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toChain(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } =
-        foldLeft((acc, a) -> Chain.snoc(acc, a), Chain.empty(), iter)
+        foldLeft(Chain.snoc, Chain.empty(), iter)
 
     ///
     /// Returns the contents of `iter` as a map.
@@ -188,29 +188,9 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toNec(iter: Iterator[a, ef, r]): Option[Nec[a]] \ { ef, r } = match next(iter) {
-        case Some(a) => foldLeft((acc, x) -> Nec.snoc(acc, x), Nec.singleton(a), iter) |> Some
+        case Some(a) => foldLeft(Nec.snoc, Nec.singleton(a), iter) |> Some
         case None    => None
     }
-
-    ///
-    /// Returns the contents of `iter` as a MutDeque.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), iter);
-        d
-
-    ///
-    /// Returns the contents of `iter` as a MutList.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def toMutList(rc: Region[r1], iter: Iterator[a, ef, r2]): MutList[a, r1] \ { ef, r2, r1 } =
-        let l = MutList.empty(rc);
-        forEach(x -> MutList.push(x, l), iter);
-        l
 
     ///
     /// Returns the contents of `iter` as a set. Consumes the entire iterator.
@@ -400,12 +380,6 @@ mod Iterator {
         map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
-    /// Alias for `zipWithIndex`.
-    ///
-    pub def enumerator(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
-        zipWithIndex(iter)
-
-    ///
     /// Applies `f` to a start value `s` and all elements in `iter` going from left to right.
     ///
     /// That is, the result is of the form: `f(...f(f(s, x1), x2)..., xn)`.
@@ -437,23 +411,6 @@ mod Iterator {
 
         };
         loop(x -> checked_ecast(x))
-
-    ///
-    /// Applies `f` to a start value `z` and all elements in `iter` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    /// Consumes the entire iterator.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ { ef, r }) -> b \ ef, z: b, iter: Iterator[a, ef, r]): b \ { ef, r } =
-        let Iterator(_, iterF) = iter;
-        def loop() = match iterF() {
-            case Skip   => loop()
-            case Ans(a) => f(a, _ -> loop())
-            case Done   => z
-        };
-        loop()
 
     ///
     /// Returns the result of mapping each element and combining the results.

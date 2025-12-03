@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
@@ -59,7 +59,7 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      var errors = sctx.errors.asScala.toList
+      val errors = sctx.errors.asScala.toList
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
 
@@ -177,7 +177,7 @@ object Namer {
       case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl)
       case LookupResult.AlreadyDefined(loc) =>
         mkDuplicateNamePair(name, getSymLocation(decl), loc)
-         table
+        table
     }
   }
 
@@ -202,6 +202,7 @@ object Namer {
     case "Regex" => true
     case _ => false
   }
+
   /**
     * Adds the given declaration to the table.
     */
@@ -326,7 +327,7 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val cases = cases0.map(visitCase(_, sym))
+      val cases = ChaosMonkey.chaos(cases0.map(visitCase(_, sym)))
 
       NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
@@ -345,7 +346,7 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val fields = fields0.map(visitField(sym, _))
+      val fields = ChaosMonkey.chaos(fields0.map(visitField(sym, _)))
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
@@ -367,7 +368,7 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val cs = cases.map(visitRestrictableCase(_, sym))
+      val cs = ChaosMonkey.chaos(cases.map(visitRestrictableCase(_, sym)))
 
       NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cs, loc)
   }
@@ -516,8 +517,8 @@ object Namer {
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = tconstrs.map(visitTraitConstraint)
-      val ecsts = econstrs.map(visitEqualityConstraint)
+      val tcsts = ChaosMonkey.chaos(tconstrs.map(visitTraitConstraint))
+      val ecsts = ChaosMonkey.chaos(econstrs.map(visitEqualityConstraint))
 
       // Then visit the parts depending on the parameters
       val e = exp.map(visitExp(_)(Scope.Top, sctx, flix))
@@ -542,8 +543,8 @@ object Namer {
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = tconstrs.map(visitTraitConstraint)
-      val ecsts = econstrs.map(visitEqualityConstraint)
+      val tcsts = ChaosMonkey.chaos(tconstrs.map(visitTraitConstraint))
+      val ecsts = ChaosMonkey.chaos(econstrs.map(visitEqualityConstraint))
 
       // Then visit the parts depending on the parameters
       val e = visitExp(exp)(Scope.Top, sctx, flix)
@@ -676,10 +677,7 @@ object Namer {
       val e2 = visitExp(exp2)
       NamedAst.Expr.LocalDef(sym, fps, e1, e2, loc)
 
-    case DesugaredAst.Expr.Region(tpe, loc) =>
-      NamedAst.Expr.Region(tpe, loc)
-
-    case DesugaredAst.Expr.Scope(ident, exp, loc) =>
+    case DesugaredAst.Expr.Region(ident, exp, loc) =>
       // Introduce a rigid region variable for the region.
       val regSym = Symbol.freshRegionSym(ident)
 
@@ -692,7 +690,7 @@ object Namer {
 
       // Visit the body in the inner scope
       val e = visitExp(exp)(newScope, sctx, flix)
-      NamedAst.Expr.Scope(sym, regSym, e, loc)
+      NamedAst.Expr.Region(sym, regSym, e, loc)
 
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
@@ -761,10 +759,10 @@ object Namer {
       val e = visitExp(exp)
       NamedAst.Expr.ArrayLength(e, loc)
 
-    case DesugaredAst.Expr.StructNew(qname, exps, exp, loc) =>
-      val e = visitExp(exp)
+    case DesugaredAst.Expr.StructNew(qname, exps, regionOpt, loc) =>
+      val e = visitExp(regionOpt)
       val es = exps.map(visitStructField)
-      NamedAst.Expr.StructNew(qname, es, e, loc)
+      NamedAst.Expr.StructNew(qname, es, Some(e), loc)
 
     case DesugaredAst.Expr.StructGet(exp, name, loc) =>
       val e = visitExp(exp)
@@ -808,10 +806,11 @@ object Namer {
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
-    case DesugaredAst.Expr.Unsafe(exp, eff0, loc) =>
+    case DesugaredAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
-      NamedAst.Expr.Unsafe(e, eff, loc)
+      val asEff = asEff0.map(visitType)
+      NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
     case DesugaredAst.Expr.Without(exp, qname, loc) =>
       val e = visitExp(exp)
@@ -909,22 +908,21 @@ object Namer {
       val s = visitHeadPredicate(select)
       NamedAst.Expr.FixpointQueryWithProvenance(es, s, withh, loc)
 
-    case DesugaredAst.Expr.FixpointSolve(exp, mode, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointSolve(e, mode, loc)
+    case DesugaredAst.Expr.FixpointSolveWithProject(exps, optPreds, mode, loc) =>
+      val es = exps.map(visitExp)
+      NamedAst.Expr.FixpointSolveWithProject(es, optPreds, mode, loc)
 
-    case DesugaredAst.Expr.FixpointFilter(ident, exp, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointFilter(ident, e, loc)
+    case DesugaredAst.Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, loc) =>
+      val es = exps.map(visitExp)
+      val qe = visitExp(queryExp)
+      val ss = selects.map(visitExp)
+      val f = from.map(visitBodyPredicate)
+      val w = where.map(visitExp)
+      NamedAst.Expr.FixpointQueryWithSelect(es, qe, ss, f, w, pred, loc)
 
-    case DesugaredAst.Expr.FixpointInject(exp, pred, arity, loc) =>
-      val e = visitExp(exp)
-      NamedAst.Expr.FixpointInject(e, pred, arity, loc)
-
-    case DesugaredAst.Expr.FixpointProject(pred, arity, exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      NamedAst.Expr.FixpointProject(pred, arity, e1, e2, loc)
+    case DesugaredAst.Expr.FixpointInjectInto(exps, predsAndArities, loc) =>
+      val es = exps.map(visitExp)
+      NamedAst.Expr.FixpointInjectInto(es, predsAndArities, loc)
 
     case DesugaredAst.Expr.Error(m) =>
       NamedAst.Expr.Error(m)
@@ -946,10 +944,10 @@ object Namer {
     * Performs naming on the given ext match rule `rule0`.
     */
   private def visitExtMatchRule(rule0: DesugaredAst.ExtMatchRule)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtMatchRule = rule0 match {
-    case DesugaredAst.ExtMatchRule(label, pats, exp, loc) =>
-      val ps = pats.map(visitExtPattern)
+    case DesugaredAst.ExtMatchRule(pat, exp, loc) =>
+      val p = visitExtPattern(pat)
       val e = visitExp(exp)
-      NamedAst.ExtMatchRule(label, ps, e, loc)
+      NamedAst.ExtMatchRule(p, e, loc)
   }
 
   /**
@@ -1063,17 +1061,35 @@ object Namer {
   /**
     * Names the given ext pattern `pat0`.
     */
-  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.ExtPattern = pat0 match {
-    case DesugaredAst.ExtPattern.Wild(loc) =>
-      NamedAst.ExtPattern.Wild(loc)
+  private def visitExtPattern(pat0: DesugaredAst.ExtPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtPattern = pat0 match {
+    case DesugaredAst.ExtPattern.Default(loc) =>
+      NamedAst.ExtPattern.Default(loc)
 
-    case DesugaredAst.ExtPattern.Var(ident, loc) =>
-      // make a fresh variable symbol for the local variable.
-      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
-      NamedAst.ExtPattern.Var(sym, loc)
+    case DesugaredAst.ExtPattern.Tag(label, pats, loc) =>
+      val ps = pats.map(visitExtTagPattern)
+      NamedAst.ExtPattern.Tag(label, ps, loc)
 
     case DesugaredAst.ExtPattern.Error(loc) =>
       NamedAst.ExtPattern.Error(loc)
+  }
+
+  /**
+    * Names the given ext tag pattern `pat0`.
+    */
+  private def visitExtTagPattern(pat0: DesugaredAst.ExtTagPattern)(implicit scope: Scope, flix: Flix): NamedAst.ExtTagPattern = pat0 match {
+    case DesugaredAst.ExtTagPattern.Wild(loc) =>
+      NamedAst.ExtTagPattern.Wild(loc)
+
+    case DesugaredAst.ExtTagPattern.Var(ident, loc) =>
+      // make a fresh variable symbol for the local variable.
+      val sym = Symbol.freshVarSym(ident, BoundBy.Pattern)
+      NamedAst.ExtTagPattern.Var(sym, loc)
+
+    case DesugaredAst.ExtTagPattern.Unit(loc) =>
+      NamedAst.ExtTagPattern.Unit(loc)
+
+    case DesugaredAst.ExtTagPattern.Error(loc) =>
+      NamedAst.ExtTagPattern.Error(loc)
   }
 
   /**
@@ -1372,7 +1388,7 @@ object Namer {
     * Translates the given weeded formal parameter to a named formal parameter.
     */
   private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit scope: Scope, sctx: SharedContext, flix: Flix): NamedAst.FormalParam = fparam match {
-    case DesugaredAst.FormalParam(ident, mod, tpe, loc) =>
+    case DesugaredAst.FormalParam(ident, tpe, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
 
@@ -1380,7 +1396,7 @@ object Namer {
       val t = tpe.map(visitType)
 
       // Construct the formal parameter.
-      NamedAst.FormalParam(freshSym, mod, t, loc)
+      NamedAst.FormalParam(freshSym, t, loc)
   }
 
   /**
@@ -1457,8 +1473,8 @@ object Namer {
   private def visitImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): List[NamedAst.TypeParam] = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
-      case DesugaredAst.FormalParam(_, _, Some(tpe1), _) => freeTypeVars(tpe1)
-      case DesugaredAst.FormalParam(_, _, None, _) => Nil
+      case DesugaredAst.FormalParam(_, Some(tpe1), _) => freeTypeVars(tpe1)
+      case DesugaredAst.FormalParam(_, None, _) => Nil
     }
 
     val tpeTvars = freeTypeVars(tpe)

@@ -53,13 +53,12 @@ instance IndexableMut[MutList[a, r]] {
         MutList.put(v, i, t)
 }
 
-instance MutCollectable[MutList[a, r]] {
-    type Elm = a
-    type Aef = r
-    type Reg = r
-    pub def collect(rc: Region[r], iter: Iterator[a, ef, r1]): MutList[a, r] \ (ef + r + r1) =
-        Iterator.toMutList(rc, iter)
+instance Formattable[MutList[a, r]] with Formattable[a] {
+    type Aef = Formattable.Aef[a] + r
 
+    pub def format(x: MutList[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutList#{") + joinWith(Formattable.format, fromString(", "), MutList.toList(x)) + fromString("}")
 }
 
 mod MutList {
@@ -203,7 +202,7 @@ mod MutList {
     /// Returns the sum of all elements in the MutList `v`.
     ///
     pub def sum(v: MutList[Int32, r]): Int32 \ r =
-        foldLeft((acc, x) -> acc + x, 0, v)
+        foldLeft((+), 0, v)
 
     ///
     /// Returns the sum of all elements in the MutList `v` according to the function `f`.
@@ -289,6 +288,23 @@ mod MutList {
                 if (x == Array.get(i, v->values)) Some(i) else loop(i - 1)
         };
         loop(v->length - 1)
+
+    ///
+    /// Returns the positions of all occurrences of `x` in `v`.
+    ///
+    pub def indicesOf(x: a, v: MutList[a, r]): Vector[Int32] \ r with Eq[a] =
+        def loop(i, indices) = {
+            if (i >= v->length)
+                indices
+            else
+                if (x == Array.get(i, v->values)) loop(i + 1, i :: indices) else loop(i + 1, indices)
+        };
+        loop(0, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the mutable list `v`.
+    ///
+    pub def indices(v: MutList[a, r]): Range[Int32] \ r = Range.Range(0, v->length)
 
     ///
     /// Alias for `findLeft`.
@@ -502,22 +518,6 @@ mod MutList {
         loop(v->length - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `a` going from left to right.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ {ef, r}) -> b \ {ef, r}, z: b, v: MutList[a, r]): b \ { ef, r } =
-        def loop(i) = {
-            if (i >= v->length)
-                z
-            else {
-                f(Array.get(i, v->values), _ -> loop(i + 1))
-            }
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, v: MutList[a, r]): b \ {ef, r} with Monoid[b] =
@@ -581,9 +581,9 @@ mod MutList {
     /// Inserts the given element `x` at the end of the given mutable list `v`.
     ///
     pub def push(x: a, v: MutList[a, r]): Unit \ r =
-        if (capacity(v) - v->length == 0)
+        if (capacity(v) - v->length == 0) {
             reserve(v->length, v)
-        else ();
+        };
         Array.put(x, v->length, v->values);
         v->length = v->length + 1
 
@@ -595,9 +595,9 @@ mod MutList {
     /// If the given index `i` exceeds the length of the mutable list, the element is inserted at the last position.
     ///
     pub def insert(x: a, i: Int32, v: MutList[a, r]): Unit \ r =
-        if (capacity(v) - v->length == 0)
+        if (capacity(v) - v->length == 0) {
             reserve(v->length, v)
-        else ();
+        };
         let sub = Array.copyOfRange(v->r, i, v->length, v->values);
         Array.updateSequence(i + 1, sub, v->values);
         Array.put(x, i, v->values);
@@ -648,7 +648,7 @@ mod MutList {
     ///
     pub def retain(f: a -> Bool, v: MutList[a, r]): Unit \ r =
         let l = MutList.empty(v->r);
-        forEach(e -> if (f(e)) push(e, l) else (), v);
+        forEach(e -> if (f(e)) { push(e, l) }, v);
         v->values = l->values;
         v->length = length(l);
         ()
@@ -754,14 +754,6 @@ mod MutList {
     ///
     pub def toChain(xs: MutList[a, r]): Chain[a] \ r =
         foldLeft((ac, x) -> Chain.snoc(ac, x), Chain.empty(), xs)
-
-    ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 } =
-        let d = MutDeque.empty(rc1);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
 
     ///
     /// Returns `true` if the mutable lists `v1` and `v2` have the same elements in the same order, i.e. are structurally equal.
@@ -901,8 +893,12 @@ mod MutList {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, NonDet } = region rc2 {
-        toArray(rc2, v) !> Array.shuffle |> Array.toMutList(rc1)
+    pub def shuffle(rc1: Region[r1], v: MutList[a, r1]): MutList[a, r1] \ { r1, Shuffle } = {
+        let a = toArray(rc1, v);
+        Array.shuffle(a);
+        let ml = MutList.empty(rc1);
+        Array.forEach(x -> MutList.push(x, ml), a);
+        ml
     }
 
 }

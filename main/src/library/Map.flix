@@ -35,6 +35,14 @@ instance Order[Map[k, v]] with Order[k], Order[v] {
         Map.toList(x) <=> Map.toList(y)
 }
 
+instance Formattable[Map[k, v]] with Formattable[k], Formattable[v] {
+    type Aef = Formattable.Aef[k] + Formattable.Aef[v]
+
+    pub def format(x: Map[k, v]): RichString \ (Formattable.Aef[k] + Formattable.Aef[v]) =
+        let pairs = Map.toList(x) |> List.map(match (k, v) -> Formattable.format(k) + RichString.fromString(" => ") + Formattable.format(v));
+        RichString.fromString("Map#{") + RichString.joinWith(identity, RichString.fromString(", "), pairs) + RichString.fromString("}")
+}
+
 instance ToString[Map[k, v]] with ToString[k], ToString[v] {
     pub def toString(m: Map[k, v]): String = Map.toString(m)
 }
@@ -61,7 +69,7 @@ instance Functor[Map[k]] {
 instance Foldable[Map[k]] {
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
+    redef isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
 }
 
 instance UnorderedFoldable[Map[k]] {
@@ -520,25 +528,6 @@ mod Map {
         RedBlackTree.foldRight(f, s, t)
 
     ///
-    /// Applies `f` to a start value `z` and all values in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(v1, ...f(vn-1, f(vn, z)))`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, z: b, m: Map[k, v]): b \ ef =
-        foldRightWithKeyCont((_, v, c) -> f(v, c), z, m)
-
-    ///
-    /// Applies `f` to a start value `z` and all key-value pairs in `m` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(k1, v1, ...f(kn-1, vn-1, f(kn, vn, z)))`.
-    /// A `foldRightWithKeyCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithKeyCont(f: (k, v, Unit -> b \ ef) -> b \ ef, z: b, m: Map[k, v]): b \ ef =
-        let Map(t) = m;
-        RedBlackTree.foldRightWithCont(f, z, t)
-
-    ///
     /// Returns the result of mapping each key-value pair and combining the results.
     ///
     pub def foldMapWithKey(f: (k, v) -> b \ ef, m: Map[k, v]): b \ ef with Monoid[b] =
@@ -609,18 +598,6 @@ mod Map {
                     c()
             case Purity2.Impure(_) => c()
         }
-
-    ///
-    /// Returns the sum of all keys in the map `m`.
-    ///
-    pub def sumKeys(m: Map[Int32, v]): Int32 =
-        sumWith((k, _) -> k, m)
-
-    ///
-    /// Returns the sum of all values in the map `m`.
-    ///
-    pub def sumValues(m: Map[k, Int32]): Int32 =
-        sumWith((_, v) -> v, m)
 
     ///
     /// Returns the sum of all key-value pairs `k => v` in the map `m` according to the function `f`.
@@ -775,12 +752,6 @@ mod Map {
         Map.foldLeftWithKey(f, empty(), m)
 
     ///
-    /// Returns `m` as a mutable map.
-    ///
-    pub def toMutMap(rc: Region[r], m: Map[k, v]): MutMap[k, v, r] \ r =
-        MutMap.MutMap(rc, Ref.fresh(rc, m))
-
-    ///
     /// Returns the map `m` as a list of key-value pairs.
     ///
     pub def toList(m: Map[k, v]): List[(k, v)] =
@@ -813,12 +784,6 @@ mod Map {
         foldLeftWithKey((acc, k, v) -> Set.insert((k, v), acc), Set.empty(), m)
 
     ///
-    /// Returns the map `m` as a `DelayList` of key-value pairs.
-    ///
-    pub def toDelayList(m: Map[k, v]): DelayList[(k, v)] =
-        foldRightWithKey((k, v, acc) -> DelayList.ECons((k, v), acc), DelayList.ENil, m)
-
-    ///
     /// Returns the map `m` as a chain of key-value pairs.
     ///
     pub def toChain(m: Map[a, b]): Chain[(a, b)] with Order[a] =
@@ -829,14 +794,6 @@ mod Map {
     ///
     pub def toMultiMap(m: Map[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         MultiMap.MultiMap(Map.map(Set.singleton, m))
-
-    ///
-    /// Returns `m` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
-        d
 
     ///
     /// Applies `f` to every `(key, value)` of `m`.
@@ -922,14 +879,6 @@ mod Map {
     ///
     pub def iteratorValues(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r =
         iterator(rc, m) |> Iterator.map(snd)
-
-    ///
-    /// Returns `m` as a `DelayMap`.
-    ///
-    pub def toDelayMap(m: Map[k, v]): DelayMap[k, v] =
-        let Map(t) = m;
-        let f = (_, v) -> lazy v;
-        DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
 
     ///
     /// Returns the result of running all the actions in the map `m`.

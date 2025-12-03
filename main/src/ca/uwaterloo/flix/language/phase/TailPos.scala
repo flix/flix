@@ -46,7 +46,7 @@ object TailPos {
 
   /** Identifies expressions in tail position in `defn`. */
   private def visitDef(defn: Def): Def = {
-    defn.copy(expr = visitExp(defn.expr)(defn))
+    defn.copy(exp = visitExp(defn.exp)(defn))
   }
 
   /**
@@ -56,15 +56,15 @@ object TailPos {
     * position with [[Expr.ApplySelfTail]].
     */
   private def visitExp(exp0: Expr)(implicit defn: Def): Expr = exp0 match {
-    case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+    case Expr.Let(sym, exp1, exp2, loc) =>
       // `exp2` is in tail position.
       val e2 = visitExp(exp2)
-      Expr.Let(sym, exp1, e2, tpe, purity, loc)
+      Expr.Let(sym, exp1, e2, loc)
 
-    case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+    case Expr.Stmt(exp1, exp2, loc) =>
       // `exp2` is in tail position.
       val e2 = visitExp(exp2)
-      Expr.Stmt(exp1, e2, tpe, purity, loc)
+      Expr.Stmt(exp1, e2, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       // The branches are in tail position.
@@ -100,10 +100,10 @@ object TailPos {
     case Expr.ApplyOp(_, _, _, _, _) => exp0
     case Expr.ApplyAtomic(_, _, _, _, _) => exp0
     case Expr.ApplySelfTail(_, _, _, _, _) => exp0
-    case Expr.Cst(_, _, _) => exp0
+    case Expr.Cst(_, _) => exp0
     case Expr.JumpTo(_, _, _, _) => exp0
     case Expr.NewObject(_, _, _, _, _, _) => exp0
-    case Expr.Scope(_, _, _, _, _) => exp0
+    case Expr.Region(_, _, _, _, _) => exp0
     case Expr.TryCatch(_, _, _, _, _) => exp0
     case Expr.Var(_, _, _) => exp0
   }

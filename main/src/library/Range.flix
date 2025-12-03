@@ -17,7 +17,9 @@
 ///
 /// Represents a range (b, e) of discrete values from `b` (inclusive) to `e` (exclusive).
 ///
-enum Range[t](t, t)
+enum Range[t] with Eq, ToString {
+    case Range(t, t)
+}
 
 instance ForEach[Range[t]] with Discrete[t] {
     type Elm = t
@@ -34,7 +36,7 @@ mod Range {
         def loop(i) =
             if (i < e) {
                 f(i); loop(Discrete.succ(i))
-            } else ();
+            };
         loop(b)
 
 }

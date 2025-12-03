@@ -602,10 +602,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   test("UndefinedJvmConstructor.01") {
     val input =
-      raw"""
+      """
            |import java.io.File
+           |
            |def foo(): Unit =
-           |    let _ = unsafe new File();
+           |    let _ = new File();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -616,8 +617,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.io.File
-           |def foo(): Unit =
-           |    let _ = unsafe new File(0);
+           |
+           |def foo(): Unit \ IO =
+           |    let _ = new File(0);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -628,8 +630,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
-           |def foo(): Unit =
-           |    let _ = unsafe new String(true);
+           |
+           |def foo(): Unit \ IO =
+           |    let _ = new String(true);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -640,8 +643,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
-           |def foo(): Unit =
-           |    let _ = unsafe new String(true, 'a', "test");
+           |
+           |def foo(): Unit \ IO =
+           |    let _ = new String(true, 'a', "test");
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -689,9 +693,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ = unsafe obj.getFoo();
+           |    let o = new String();
+           |    let _ = o.getFoo();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -702,9 +707,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ = unsafe obj.charAt();
+           |    let o = new String();
+           |    let _ = o.charAt();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -715,9 +721,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ = unsafe obj.charAt(0, 1);
+           |    let o = new String();
+           |    let _ = o.charAt(0, 1);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -728,9 +735,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ = unsafe obj.isEmpty(true);
+           |    let o = new String();
+           |    let _ = o.isEmpty(true);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -741,8 +749,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let _ = unsafe String.isEmpty();
+           |    let _ = String.isEmpty();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -753,9 +762,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ = unsafe obj.valueOf(false);
+           |    let o = new String();
+           |    let _ = o.valueOf(false);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -814,9 +824,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |import java.lang.String
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ : Unit = unsafe obj.hashCode();
+           |    let o = new String();
+           |    let _ : Unit = o.hashCode();
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -828,9 +839,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |import java.lang.String
            |import java.util.Iterator
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ : Iterator = unsafe obj.subSequence(4, -1);
+           |    let o = new String();
+           |    let _ : Iterator = o.subSequence(4, -1);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -842,10 +854,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
       raw"""
            |import java.lang.String
            |import java.util.Iterator
+           |
            |type alias AliasedReturnType = Iterator
+           |
            |def foo(): Unit =
-           |    let obj = unsafe new String();
-           |    let _ : AliasedReturnType = unsafe obj.subSequence(-1, 18);
+           |    let o = new String();
+           |    let _ : AliasedReturnType = o.subSequence(-1, 18);
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -856,8 +870,9 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |import java.util.Objects
+        |
         |def isThisThingNull(x: a): Bool =
-        |    unsafe Objects.isNull(x)
+        |    Objects.isNull(x)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.MismatchedTypes](result)
@@ -1496,39 +1511,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("UndefinedName.ForEachYield.01") {
-    val input =
-      """
-        |def foo(): List[String] =
-        |    foreach (x <- "1" :: "2" :: Nil; if y != "0")
-        |        yield x
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.ForEachYield.02") {
-    val input =
-      """
-        |def foo(): List[String] =
-        |    foreach (x <- "1" :: "2" :: Nil)
-        |        yield y
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.ForEachYield.03") {
-    val input =
-      """
-        |def foo(): List[(String, Int32)] =
-        |    foreach (x <- "1" :: "2" :: Nil; if y > 0; y <- 0 :: 1 :: Nil)
-        |        yield (x, y)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedKind.01") {

@@ -20,7 +20,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
+import ca.uwaterloo.flix.language.ast.shared.SymbolSet
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
+import ca.uwaterloo.flix.language.ast.shared.Denotation
+import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -75,8 +78,8 @@ object TypeError {
     * Java field not found type error.
     *
     * @param base the source location of the receiver expression.
-    * @param tpe the type of the receiver object.
-    * @param loc the location where the error occurred.
+    * @param tpe  the type of the receiver object.
+    * @param loc  the location where the error occurred.
     */
   case class FieldNotFound(base: SourceLocation, fieldName: Name.Ident, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Java field '$fieldName' in type '$tpe' not found."
@@ -136,6 +139,58 @@ object TypeError {
   }
 
   /**
+    * Mismatched Predicate Arity.
+    *
+    * @param pred   the predicate label.
+    * @param arity1 the first arity.
+    * @param arity2 the second arity.
+    * @param loc1   the location where the predicate is used with the first arity.
+    * @param loc2   the location where the predicate is used with the second arity.
+    * @param loc    the location where the unification error occurred.
+    */
+  case class MismatchedPredicateArity(pred: Name.Pred, arity1: Int, arity2: Int, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Mismatched predicate arity: '${pred.name}/$arity1' and '${pred.name}/$arity2'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Mismatched predicate arity: '${cyan(pred.name)}/$arity1' and '${cyan(pred.name)}/$arity2'.
+         |
+         |${code(loc1, s"here '${pred.name}' has arity $arity1.")}
+         |
+         |${code(loc2, s"here '${pred.name}' has arity $arity2.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Mismatched Predicate Denotation.
+    *
+    * @param pred the predicate label.
+    * @param den1 the first denotation.
+    * @param den2 the second denotation.
+    * @param loc1 the location where the predicate is used with the first denotation.
+    * @param loc2 the location where the predicate is used with the second denotation.
+    * @param loc  the location where the unification error occurred.
+    */
+  case class MismatchedPredicateDenotation(pred: Name.Pred, den1: Denotation, den2: Denotation, loc1: SourceLocation, loc2: SourceLocation, loc: SourceLocation) extends TypeError {
+    def summary: String = s"Mismatched predicate denotation for '${pred.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      def pretty(den: Denotation): String = den match {
+        case Denotation.Relational => "relation"
+        case Denotation.Latticenal => "lattice"
+      }
+      s""">> Mismatched predicate denotation for '${cyan(pred.name)}'.
+         |
+         |${code(loc1, s"here '${pred.name}' is a ${magenta(pretty(den1))}.")}
+         |
+         |${code(loc2, s"here '${pred.name}' is a ${magenta(pretty(den2))}.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Mismatched Types.
     *
     * @param baseType1 the first base type.
@@ -146,16 +201,17 @@ object TypeError {
     * @param loc       the location where the error occurred.
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true)}'."
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
+    def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true))}'.
+      s""">> Unable to unify the types: '${red(formatType(baseType1, Some(renv), minimizeEffs = true, amb = amb))}' and '${red(formatType(baseType2, Some(renv), minimizeEffs = true, amb = amb))}'.
          |
          |${code(loc, "mismatched types.")}
          |
-         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true)}
-         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true)}
+         |Type One: ${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}
+         |Type Two: ${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}
          |""".stripMargin
     }
   }
@@ -169,11 +225,11 @@ object TypeError {
     * @param loc  the location where the error occurred.
     */
   case class MissingInstance(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$trt' class for the type '${formatType(tpe, Some(renv))}'."
+    def summary: String = s"No instance of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> No instance of the '${cyan(trt.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> No instance of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing instance")}
          |
@@ -184,17 +240,17 @@ object TypeError {
   /**
     * Missing trait instance for a function type.
     *
-    * @param trt  the class of the instance.
+    * @param trt  the trait of the instance.
     * @param tpe  the type of the instance.
     * @param renv the rigidity environment.
     * @param loc  the location where the error occurred.
     */
   case class MissingInstanceArrow(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"No instance of the '$trt' class for the function type '${formatType(tpe, Some(renv))}'."
+    def summary: String = s"No instance of the '$trt' trait for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> No instance of the '${cyan(trt.toString)}' class for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> No instance of the '${cyan(trt.toString)}' trait for the ${magenta("function")} type '${red(formatType(tpe, Some(renv)))}'.
          |
          |>> Did you forget to apply the function to all of its arguments?
          |
@@ -520,11 +576,13 @@ object TypeError {
     * @param loc      the location of the inferred type.
     */
   case class UnexpectedType(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
+    def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(expected), SymbolSet.symbolsOf(inferred))
+
+    def summary: String = s"Expected type '${formatType(expected, Some(renv), amb = amb)}' but found type: '${formatType(inferred, Some(renv), amb = amb)}'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
+      s""">> Expected type: '${red(formatType(expected, Some(renv), amb = amb))}' but found type: '${red(formatType(inferred, Some(renv), amb = amb))}'.
          |
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
@@ -532,9 +590,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved constructor type error.
-   * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
-   */
+    * Unresolved constructor type error.
+    * This is a dummy error used in Java constructor type reconstruction for InvokeConstructor.
+    */
   case class UnresolvedConstructor(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved constructor"
 
@@ -542,9 +600,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved field type error.
-   * This is a dummy error used in Java field type reconstruction for GetField.
-   */
+    * Unresolved field type error.
+    * This is a dummy error used in Java field type reconstruction for GetField.
+    */
   case class UnresolvedField(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved field"
 
@@ -552,9 +610,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeMethod.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeMethod.
+    */
   case class UnresolvedMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved method"
 
@@ -562,9 +620,9 @@ object TypeError {
   }
 
   /**
-   * Unresolved method type error.
-   * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
-   */
+    * Unresolved method type error.
+    * This is a dummy error used in Java method type reconstruction for InvokeStaticMethod.
+    */
   case class UnresolvedStaticMethod(loc: SourceLocation) extends TypeError {
     def summary: String = s"Unresolved static method"
 
@@ -587,6 +645,25 @@ object TypeError {
       s""">> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing constraint")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Non-unit type used in statement position.
+    *
+    * @param tpe the actual type.
+    * @param loc the location where the error occurred.
+    */
+  case class NonUnitStatement(tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = "Non-unit type used in statement position."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Statement has non-unit type: ${FormatType.formatType(tpe)}.
+         |
+         |${code(loc, s"non-unit type")}
          |
          |""".stripMargin
     }

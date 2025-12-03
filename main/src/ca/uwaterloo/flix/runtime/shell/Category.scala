@@ -43,14 +43,14 @@ object Category {
     * Returns the syntactic category of the given source code string `s`.
     */
   def categoryOf(s: String): Category = {
-    val input = Input.Text("<shell>", s, SecurityContext.AllPermissions)
+    val input = Input.Text("<shell>", s, SecurityContext.Unrestricted)
     val source = Source(input, s.toCharArray)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     val (tokens, errors) = Lexer.lex(source)
     if (errors.isEmpty) {
       val start = tokens(0).kind
-      (start.isFirstDecl, start.isFirstExpr) match {
+      (start.isFirstInDecl, start.isFirstInExp) match {
         case (true, _) => Category.Decl
         case (_, true) => Category.Expr
         case _ => Category.Unknown

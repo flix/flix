@@ -20,22 +20,21 @@
 /// A benchmark has a name and a function to evaluate.
 ///
 def benchmarks(): Map[String, Unit -> Unit \ IO] = Map#{
-    "Iterator.filter"    => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filter(x -> Int32.modulo(x, 2) == 0) |> Iterator.toVector |> blackhole },
-    "Iterator.filterMap" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> Iterator.toVector |> blackhole },
-    "Iterator.foldLeft"  => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.foldLeft(Add.add, 0) |> blackhole },
-    "Iterator.foldRight" => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.foldRight(Add.add, 0) |> blackhole },
-    "Iterator.map"       => () -> region rc { Iterator.range(rc, 0, 10_000) |> Iterator.map(x -> x + 1) |> Iterator.toVector |> blackhole },
-    "List.filter"        => () -> List.range(0, 10_000) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
-    "List.foldLeft"      => () -> List.range(0, 10_000) |> List.foldLeft(Add.add, 0) |> blackhole,
-    "List.foldRight"     => () -> List.range(0, 10_000) |> List.foldRight(Add.add, 0) |> blackhole,
-    "List.map"           => () -> List.range(0, 10_000) |> List.map(x -> x + 1) |> blackhole,
-    "List.length"        => () -> List.range(0, 10_000) |> List.length |> blackhole,
-    "List.reverse"       => () -> List.range(0, 10_000) |> List.reverse |> blackhole,
-    "List.filterMap"     => () -> List.range(0, 10_000) |> List.filterMap(x -> if (Int32.remainder(x, 2) == 0) Some(x) else None) |> blackhole,
-    "Map.filter"         => () -> List.range(0, 100) |> List.toMapWith(k -> k) |> Map.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
-    "Map.foldLeft"       => () -> List.range(0, 100) |> List.toMapWith(k -> k) |> Map.foldLeft(Add.add, 0) |> blackhole,
-    "Map.foldRight"      => () -> List.range(0, 100) |> List.toMapWith(k -> k) |> Map.foldRight(Add.add, 0) |> blackhole,
-    "Set.filter"         => () -> Set.range(0, 100) |> Set.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
-    "Set.foldLeft"       => () -> Set.range(0, 100) |> Set.foldLeft(Add.add, 0) |> blackhole,
-    "Set.foldRight"      => () -> Set.range(0, 100) |> Set.foldRight(Add.add, 0) |> blackhole
+    "Iterator.filter"    => () -> region rc { Vector.range(0, size()) |> Vector.iterator(rc) |> Iterator.filter(x -> Int32.modulo(x, 2) == 0) |> Iterator.toVector |> blackhole },
+    "Iterator.foldLeft"  => () -> region rc { Vector.range(0, size()) |> Vector.iterator(rc) |> Iterator.foldLeft(Add.add, 0) |> blackhole },
+    "Iterator.foldRight" => () -> region rc { Vector.range(0, size()) |> Vector.iterator(rc) |> Iterator.foldRight(Add.add, 0) |> blackhole },
+    "Iterator.map"       => () -> region rc { Vector.range(0, size()) |> Vector.iterator(rc) |> Iterator.map(x -> x + 1) |> Iterator.toVector |> blackhole },
+    "List.filter"        => () -> List.range(0, size()) |> List.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
+    "List.foldLeft"      => () -> List.range(0, size()) |> List.foldLeft(Add.add, 0) |> blackhole,
+    "List.foldRight"     => () -> List.range(0, size()) |> List.foldRight(Add.add, 0) |> blackhole,
+    "List.map"           => () -> List.range(0, size()) |> List.map(x -> x + 1) |> blackhole,
+    "Vector.filter"      => () -> Vector.range(0, size()) |> Vector.filter(x -> Int32.modulo(x, 2) == 0) |> blackhole,
+    "Vector.foldLeft"    => () -> Vector.range(0, size()) |> Vector.foldLeft(Add.add, 0) |> blackhole,
+    "Vector.foldRight"   => () -> Vector.range(0, size()) |> Vector.foldRight(Add.add, 0) |> blackhole,
+    "Vector.map"         => () -> Vector.range(0, size()) |> Vector.map(x -> x + 1) |> blackhole
 }
+
+///
+/// Returns the size of the collections to use.
+///
+def size(): Int32 = 1_000

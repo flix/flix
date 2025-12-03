@@ -1,22 +1,7 @@
-/*
- * Copyright 2025 Jakob Schneider Villumsen
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 mod Test.Exp.ExtMatch {
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on various types.
+    /// `ematch` should support matching variants with different types.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -320,7 +305,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on various arities.
+    /// `ematch` should support matching on variants with different arities.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -371,7 +356,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on nullary constructors.
+    /// `ematch` should support matching on nullary variants.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -417,7 +402,7 @@ mod Test.Exp.ExtMatch {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// Match on unit constructors.
+    /// `ematch` should support matching on `Unit` variants.
     ///////////////////////////////////////////////////////////////////////////
 
     @Test
@@ -451,9 +436,116 @@ mod Test.Exp.ExtMatch {
         }
     }
 
+    @Test
+    def testExtMatchUnit05(): Bool = {
+        ematch xvar Q() {
+            case Q() => true
+        }
+    }
+
+    @Test
+    def testExtMatchUnit06(): Bool = {
+        ematch xvar Q() {
+            case Q(u) => u == ()
+        }
+    }
+
+    @Test
+    def testExtMatchUnit07(): Bool = {
+        ematch xvar Q(()) {
+            case Q() => true
+        }
+    }
+
+    @Test
+    def testExtMatchUnit08(): Bool = {
+        ematch xvar A((), ()) {
+            case A(x, y) => x == () and y == ()
+        }
+    }
+
+
     ///////////////////////////////////////////////////////////////////////////
-    /// Other.
+    /// `ematch` should support matching on default patterns.
     ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchDefault01(): Bool = {
+        ematch xvar A(1) {
+            case _ => true
+        }
+    }
+
+    @Test
+    def testExtMatchDefault02(): Bool = {
+        ematch xvar A(1) {
+            case A(x) => x == 1
+            case _ => false
+        }
+    }
+
+    @Test
+    def testExtMatchDefault03(): Bool = {
+        ematch xvar A(1) {
+            case B(_) => false
+            case _ => true
+        }
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    /// Unsorted.
+    ///////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testExtMatchDatalog01(): Bool = {
+        let p = #{
+            A(1).
+        };
+        let v = pquery p select A(1) with {A};
+        ematch Vector.get(0, v) {
+            case A(x) => x == 1
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees01(): Bool = {
+        let scrutinee = if (true) xvar A(1) else xvar B(1);
+        ematch scrutinee {
+            case A(x) => x == 1
+            case B(_) => false
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees02(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case A(x) => x == 1
+            case B(_) => false
+            case C(x) => x
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees03(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case B(_) => false
+            case C(x) => x
+            case A(x) => x == 1
+        }
+    }
+
+    @Test
+    def testExtMatchMultipleScrutinees04(): Bool = {
+        let scrutinee = if (true) xvar A(1) else if (true) xvar B(2) else xvar C(false);
+        ematch scrutinee {
+            case B(_) => false
+            case _ => true
+        }
+    }
+
     @Test
     def testExtMatchCall01(): Bool = {
         ematch generatesA() {
@@ -463,19 +555,45 @@ mod Test.Exp.ExtMatch {
 
     @Test
     def testExtMatchCall02(): Bool = {
-        matchesA(xvar A(1))
+        ematch generatesAOpen() {
+            case B(i) => i == 1
+            case A(i) => i == 1
+        }
     }
 
     @Test
     def testExtMatchCall03(): Bool = {
+        matchesA(xvar A(1))
+    }
+
+    @Test
+    def testExtMatchCall04(): Bool = {
         not matchesA(xvar B(1))
+    }
+
+    @Test
+    def testExtMatchCall05(): Bool = {
+        matchesAOpen(xvar A(1))
+    }
+
+    @Test
+    def testExtMatchCall06(): Bool = {
+        not matchesAOpen(xvar C(1))
     }
 
     def generatesA(): #| A(Int32) |# = xvar A(1)
 
+    def generatesAOpen(): #| A(Int32) | r |# = xvar A(1)
+
     def matchesA(var: #| A(Int32), B(Int32) |#): Bool = ematch var {
         case A(_) => true
         case B(_) => false
+    }
+
+    def matchesAOpen(var: #| A(Int32), B(Int32) | r |#): Bool = ematch var {
+        case A(_) => true
+        case B(_) => false
+        case _ => false
     }
 
 }

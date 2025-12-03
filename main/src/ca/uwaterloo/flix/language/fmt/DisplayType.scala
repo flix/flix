@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.fmt
 
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.Type.JvmMember
-import ca.uwaterloo.flix.language.ast.shared.VarText
+import ca.uwaterloo.flix.language.ast.shared.{SymbolSet, VarText}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -160,33 +160,25 @@ object DisplayType {
   case class SchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   //////////////////////////////
-  // Extensible Variants Schemas
+  // Extensible Variants
   //////////////////////////////
 
   /**
-    * A schema constructor. `arg` should be a variable or a Hole.
+    * An extensible constructor.
+    *
+    * `arg` should be a variable or a Hole.
     */
-  case class ExtSchemaConstructor(arg: DisplayType) extends DisplayType
+  case class ExtensibleUnknown(arg: DisplayType) extends DisplayType
+
+  /** An unextended extensible type. */
+  case class Extensible(fields: List[PredicateFieldType]) extends DisplayType
 
   /**
-    * An unextended schema.
+    * An extended extensible type.
+    *
+    * `arg` should be a variable or a Hole.
     */
-  case class ExtSchema(fields: List[PredicateFieldType]) extends DisplayType
-
-  /**
-    * An extended schema. `arg` should be a variable or a Hole.
-    */
-  case class ExtSchemaExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
-
-  /**
-    * An unextended schema row.
-    */
-  case class ExtSchemaRow(fields: List[PredicateFieldType]) extends DisplayType
-
-  /**
-    * An extended schema row. `arg` should be a variable or a Hole.
-    */
-  case class ExtSchemaRowExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
+  case class ExtensibleExtend(fields: List[PredicateFieldType], rest: DisplayType) extends DisplayType
 
   ////////////////////
   // Boolean Operators
@@ -374,13 +366,13 @@ object DisplayType {
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type): DisplayType = {
+  def fromWellKindedType(t0: Type, amb : SymbolSet = SymbolSet.empty): DisplayType = {
 
     def visit(t: Type): DisplayType = t.baseType match {
       case Type.Var(sym, _) =>
         mkApply(Var(sym.id, sym.kind, sym.text), t.typeArguments.map(visit))
       case Type.Alias(cst, args, _, _) =>
-        mkApply(Name(cst.sym.name), (args ++ t.typeArguments).map(visit))
+        mkApply(Name(amb.qualify(cst.sym)), (args ++ t.typeArguments).map(visit))
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.JvmToType(tpe, _) =>
@@ -472,12 +464,12 @@ object DisplayType {
           val args = t.typeArguments.map(visit)
           args match {
             // Case 1: No args. { ? }
-            case Nil => ExtSchemaConstructor(Hole)
+            case Nil => ExtensibleUnknown(Hole)
             // Case 2: One row argument. Extract its values.
             case tpe :: Nil => tpe match {
-              case SchemaRow(fields) => ExtSchema(fields)
-              case SchemaRowExtend(fields, rest) => ExtSchemaExtend(fields, rest)
-              case nonSchema => ExtSchemaConstructor(nonSchema)
+              case SchemaRow(fields) => Extensible(fields)
+              case SchemaRowExtend(fields, rest) => ExtensibleExtend(fields, rest)
+              case nonSchema => ExtensibleUnknown(nonSchema)
             }
             // Case 3: Too many args. Error.
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
@@ -524,9 +516,10 @@ object DisplayType {
         case TypeConstructor.Sender => mkApply(Sender, t.typeArguments.map(visit))
         case TypeConstructor.Receiver => mkApply(Receiver, t.typeArguments.map(visit))
         case TypeConstructor.Lazy => mkApply(Lazy, t.typeArguments.map(visit))
-        case TypeConstructor.Enum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.Struct(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
-        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.Enum(sym, _) =>
+          mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
+        case TypeConstructor.Struct(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
+        case TypeConstructor.RestrictableEnum(sym, _) => mkApply(Name(amb.qualify(sym)), t.typeArguments.map(visit))
         case TypeConstructor.Native(clazz) => mkApply(Name(clazz.getName), t.typeArguments.map(visit))
         case TypeConstructor.JvmConstructor(constructor) => mkApply(JvmConstructor(constructor), t.typeArguments.map(visit))
         case TypeConstructor.JvmMethod(method) => mkApply(JvmMethod(method), t.typeArguments.map(visit))
@@ -660,6 +653,14 @@ object DisplayType {
             case Nil => Plus(Hole :: Hole :: Nil)
             case arg :: Nil => Plus(arg :: Hole :: Nil)
             case arg1 :: arg2 :: Nil => Plus(arg1 :: arg2 :: Nil)
+            case _ => throw new OverAppliedType(t.loc)
+          }
+
+        case TypeConstructor.CaseSymmetricDiff(_) =>
+          t.typeArguments.map(visit) match {
+            case Nil => SymmetricDiff(Hole :: Hole :: Nil)
+            case arg :: Nil => SymmetricDiff(arg :: Hole :: Nil)
+            case arg1 :: arg2 :: Nil => SymmetricDiff(arg1 :: arg2 :: Nil)
             case _ => throw new OverAppliedType(t.loc)
           }
 

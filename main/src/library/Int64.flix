@@ -72,7 +72,7 @@ mod Int64 {
         if (n == 0i64)
             0i64
         else
-            $INT64_REM$($INT64_REM$(x, n) + n, n)
+            %%INT64_REM%%(%%INT64_REM%%(x, n) + n, n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -84,7 +84,7 @@ mod Int64 {
         if (n == 0i64)
             0i64
         else
-            $INT64_REM$(x, n)
+            %%INT64_REM%%(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -117,7 +117,7 @@ mod Int64 {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = Int64}, n: Int64): Int64 = $INT64_EXP$(base#base, n)
+    pub def pow(base: {base = Int64}, n: Int64): Int64 = %%INT64_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `distance`.
@@ -289,32 +289,32 @@ mod Int64 {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int64, y: Int32): Int64 = $INT64_SHL$(x, y)
+    pub def leftShift(x: Int64, y: Int32): Int64 = %%INT64_SHL%%(x, y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int64, y: Int32): Int64 = $INT64_SHR$(x, y)
+    pub def rightShift(x: Int64, y: Int32): Int64 = %%INT64_SHR%%(x, y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: Int64, y: Int64): Int64 = $INT64_AND$(x, y)
+    pub def bitwiseAnd(x: Int64, y: Int64): Int64 = %%INT64_AND%%(x, y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: Int64): Int64 = $INT64_NOT$(x)
+    pub def bitwiseNot(x: Int64): Int64 = %%INT64_NOT%%(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int64, y: Int64): Int64 = $INT64_OR$(x, y)
+    pub def bitwiseOr(x: Int64, y: Int64): Int64 = %%INT64_OR%%(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: Int64, y: Int64): Int64 = $INT64_XOR$(x, y)
+    pub def bitwiseXor(x: Int64, y: Int64): Int64 = %%INT64_XOR%%(x, y)
 
     ///
     /// Returns the factorial of `x`.
@@ -341,7 +341,7 @@ mod Int64 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int64] = try {
-        Some(Long.parseLong(unsafe s.strip()))
+        Some(Long.parseLong(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -352,7 +352,7 @@ mod Int64 {
     /// A successful parse is wrapped with `Ok(x)`, a parse failure is indicated by `Err(_)`.
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int64] = try {
-        Ok(Long.parseLong(unsafe s.strip(), radix))
+        Ok(Long.parseLong(s.strip(), radix))
     } catch {
         case _: NumberFormatException => Err("Int64.parse")
     }
@@ -404,7 +404,7 @@ mod Int64 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int64): BigInt =
-        unsafe BigInteger.valueOf(Long.valueOf(x).longValue())
+        BigInteger.valueOf(Long.valueOf(x).longValue())
 
     ///
     /// Convert `x` to a Float32.
@@ -428,7 +428,7 @@ mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toBigDecimal(x: Int64): BigDecimal =
-        unsafe new BigDecimal(x)
+        new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.

@@ -381,9 +381,7 @@ object Visitor {
         visitExpr(exp1)
         visitExpr(exp2)
 
-      case Expr.Region(_, _) => ()
-
-      case Expr.Scope(bnd, _, exp, _, _, _) =>
+      case Expr.Region(bnd, _, exp, _, _, _) =>
         visitBinder(bnd)
         visitExpr(exp)
 
@@ -462,7 +460,7 @@ object Visitor {
             visitStructFieldSymUse(symUse)
             visitExpr(exp)
         }
-        visitExpr(region)
+        region.foreach(visitExpr)
 
       case Expr.StructGet(exp, symUse, _, _, _) =>
         visitExpr(exp)
@@ -497,9 +495,9 @@ object Visitor {
         declaredType.foreach(visitType)
         declaredEff.foreach(visitType)
 
-      case Expr.Unsafe(exp, runEff, _, _, _) =>
-        // runEff is first syntactically
+      case Expr.Unsafe(exp, runEff, asEff, _, _, _) =>
         visitType(runEff)
+        asEff.foreach(visitType)
         visitExpr(exp)
 
       case Expr.Without(exp, symUse, _, _, _) =>
@@ -589,17 +587,18 @@ object Visitor {
         exps.foreach(visitExpr)
         visitPredicate(select)
 
-      case Expr.FixpointSolve(exp, _, _, _, _) =>
-        visitExpr(exp)
+      case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, _, _, _) =>
+        exps.foreach(visitExpr)
+        visitExpr(queryExp)
+        selects.foreach(visitExpr)
+        from.foreach(visitPredicate)
+        where.foreach(visitExpr)
 
-      case Expr.FixpointFilter(_, exp, _, _, _) =>
-        visitExpr(exp)
+      case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
+        exps.foreach(visitExpr)
 
-      case Expr.FixpointInject(exp, _, _, _, _) =>
-        visitExpr(exp)
-
-      case Expr.FixpointProject(_, _, exp, _, _, _) =>
-        visitExpr(exp)
+      case Expr.FixpointInjectInto(exps, _, _, _, _) =>
+        exps.foreach(visitExpr)
 
       case Expr.Error(_, _, _) => ()
     }
@@ -694,7 +693,7 @@ object Visitor {
   }
 
   private def visitFormalParam(fparam: FormalParam)(implicit a: Acceptor, c: Consumer): Unit = {
-    val FormalParam(bnd, _, tpe, _, loc) = fparam
+    val FormalParam(bnd, tpe, _, loc) = fparam
     if (!a.accept(loc)) {
       return
     }
@@ -753,14 +752,14 @@ object Visitor {
   }
 
   private def visitExtMatchRule(rule: ExtMatchRule)(implicit a: Acceptor, c: Consumer): Unit = rule match {
-    case ExtMatchRule(_, pats, exp, loc) =>
+    case ExtMatchRule(pat, exp, loc) =>
       if (!a.accept(loc)) {
         return
       }
 
       c.consumeExtMatchRule(rule)
 
-      pats.foreach(visitExtPattern)
+      visitExtPattern(pat)
       visitExpr(exp)
   }
 
@@ -894,9 +893,13 @@ object Visitor {
     c.consumeExtPattern(pat)
 
     pat match {
-      case ExtPattern.Wild(_, _) => ()
-      case ExtPattern.Var(bnd, _, _) => visitBinder(bnd)
-      case ExtPattern.Error(_, _) => ()
+      case ExtPattern.Default(_) => ()
+      case ExtPattern.Tag(_, pats, _) =>
+        pats.foreach {
+          case ExtTagPattern.Var(bnd, _, _) => visitBinder(bnd)
+          case _ => ()
+        }
+      case ExtPattern.Error(_) => ()
     }
   }
 

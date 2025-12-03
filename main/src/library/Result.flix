@@ -21,7 +21,6 @@
 /// The constructor `Ok(v)` represents the successful value `v`,
 /// whereas the constructor `Err(v)` represents the error value `v`.
 ///
-@MustUse
 pub enum Result[e, t] with Eq, Order, ToString {
     case Ok(t),
     case Err(e)
@@ -45,6 +44,15 @@ instance Applicative[Result[e]] {
 
 instance Monad[Result[e]] {
     pub def flatMap(f: a -> Result[e, b] \ ef, x : Result[e, a]): Result[e, b] \ ef = Result.flatMap(f, x)
+}
+
+instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
+    type Aef = Formattable.Aef[e] + Formattable.Aef[t]
+
+    pub def format(x: Result[e, t]): RichString \ (Formattable.Aef[e] + Formattable.Aef[t]) = match x {
+        case Ok(v)  => RichString.fromString("Ok(") + Formattable.format(v) + RichString.fromString(")")
+        case Err(e) => RichString.fromString("Err(") + Formattable.format(e) + RichString.fromString(")")
+    }
 }
 
 mod Result {
@@ -153,7 +161,7 @@ mod Result {
     /// Returns `v` if `r` is `Ok(v)` else `0`.
     ///
     pub def sum(r: Result[e, Int32]): Int32 =
-        foldLeft((acc, x) -> acc + x, 0, r)
+        foldLeft((+), 0, r)
 
     ///
     /// Returns `f(v)` if `r` is `Ok(v)` else `0`.
@@ -184,16 +192,6 @@ mod Result {
     ///
     pub def foldRight(f: (t, a) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
         case Ok(v)  => f(v, z)
-        case Err(_) => z
-    }
-
-    ///
-    /// Returns `f(v, z)` if `r` is `Ok(v)`. Otherwise returns `z`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (t, Unit -> a \ ef) -> a \ ef, z: a, r: Result[e, t]): a \ ef = match r {
-        case Ok(v)  => f(v, _ -> checked_ecast(z))
         case Err(_) => z
     }
 
@@ -422,12 +420,6 @@ mod Result {
     }
 
     ///
-    /// Returns an iterator over `r` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], r: Result[e, t]): Iterator[(Int32, t), r, r] \ r =
-        iterator(rc, r) |> Iterator.zipWithIndex
-
-    ///
     /// Returns `Ok(x)` if `f` was invoked without throwing an exception.
     ///
     /// If `f` throws a Java `Exception`, `Err(e)` is returned
@@ -437,7 +429,7 @@ mod Result {
         try {
             Ok(f())
         } catch {
-            case e: Exception => Err(unsafe e.getMessage())
+            case e: Exception => Err(e.getMessage())
         }
 
 }

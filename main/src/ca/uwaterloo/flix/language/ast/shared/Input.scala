@@ -30,7 +30,7 @@ sealed trait Input {
     case Input.TxtFile(_, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
-    case Input.Unknown => SecurityContext.AllPermissions
+    case Input.Unknown => SecurityContext.Unrestricted
   }
 
 }

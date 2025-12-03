@@ -6,5 +6,7 @@ class AstSuite extends Suites(
   new SourcePositionSuite,
   new SourceLocationSuite,
   new TestChangeSet,
+  new TestSymbolSet,
+  new TestSecurityContext
 )
 

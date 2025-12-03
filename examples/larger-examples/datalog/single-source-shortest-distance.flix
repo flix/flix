@@ -182,22 +182,22 @@ mod ShortestDistance {
 
     @Test
     def testExampleGraphShortestDistances01(): Bool =
-        Assert.eq(Map#{0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10}, sssd(0, exampleGraph01()))
+        sssd(0, exampleGraph01()) == Map#{0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10}
 
     @Test
     def testExampleGraphShortestDistances02(): Bool =
-        Assert.eq(Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3}, sssd(0, exampleGraph02()))
+        sssd(0, exampleGraph02()) == Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3}
 
     @Test
     def testExampleGraphShortestDistances03(): Bool =
-        Assert.eq(Map#{0 => 0, 1 => 10, 2 => 11, 3 => 21}, sssd(0, exampleGraph03()))
+        sssd(0, exampleGraph03()) == Map#{0 => 0, 1 => 10, 2 => 11, 3 => 21}
 
     @Test
     def testExampleGraphShortestDistances04(): Bool =
-        Assert.eq(Map#{0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 22, 10 => 35}, sssd(0, exampleGraph04()))
+        sssd(0, exampleGraph04()) == Map#{0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 22, 10 => 35}
 
     @Test
     def testExampleGraphShortestDistances05(): Bool =
-        Assert.eq(Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 7, 5 => 2, 6 => 3}, sssd(0, exampleGraph05()))
+        sssd(0, exampleGraph05()) == Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 7, 5 => 2, 6 => 3}
 
 }

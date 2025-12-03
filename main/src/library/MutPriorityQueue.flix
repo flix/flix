@@ -41,6 +41,14 @@ instance ForEach[MutPriorityQueue[a, r]] {
     pub def forEach(f: a -> Unit \ ef, q: MutPriorityQueue[a, r]): Unit \ ef + r = MutPriorityQueue.forEach(f, q)
 }
 
+instance Formattable[MutPriorityQueue[a, r]] with Formattable[a], Order[a] {
+    type Aef = Formattable.Aef[a] + r
+
+    pub def format(x: MutPriorityQueue[a, r]): RichString \ (Formattable.Aef[a] + r) =
+        use RichString.{fromString, joinWith};
+        fromString("MutPriorityQueue#{") + joinWith(Formattable.format, fromString(", "), MutPriorityQueue.toList(x)) + fromString("}")
+}
+
 mod MutPriorityQueue {
 
     ///
@@ -136,7 +144,7 @@ mod MutPriorityQueue {
             if (i < size) {
                 f(Array.get(i, arr));
                 loop(i + 1)
-            } else ()
+            }
         };
         loop(0)
     }
@@ -194,9 +202,7 @@ mod MutPriorityQueue {
                 Array.put(cur, parentIdx, mq->values);
                 heapifyUp(parentIdx, mq)
             }
-            else ()
         }
-        else ()
 
     ///
     /// Reinforces the max heap invariant from `idx` after an element is removed from `mq`.
@@ -213,7 +219,6 @@ mod MutPriorityQueue {
                     Array.put(child, idx, mq->values);
                     Array.put(cur, lChildIdx, mq->values)
                 }
-                else ()
             }
             else {
                 let lChild = Array.get(lChildIdx, mq->values);
@@ -230,10 +235,8 @@ mod MutPriorityQueue {
                         heapifyDown(rChildIdx, mq)
                     }
                 }
-                else ()
             }
         }
-        else ()
 
     ///
     /// Expands the internal array of `mq` if its capacity is full.
@@ -246,6 +249,5 @@ mod MutPriorityQueue {
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), mq->values);
             mq->values = newArr
         }
-        else ()
 
 }

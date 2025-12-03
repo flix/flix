@@ -69,12 +69,14 @@ mod Fixpoint3.Phase.RenamePredSyms {
                 })
                 |> Model
         case Provenance(rules, facts) =>
+            let transformer = mapForward(mapping);
+            let newRules = remapConstraints(rules, transformer);
             (Map#{}, facts)
                 ||> Map.foldLeftWithKey(acc -> match RelSym.Symbol(predSym, arity, den) -> v ->
                     let newSym = RelSym.Symbol(mapForward(mapping, predSym), arity, den);
                     Map.insert(newSym, v, acc)
                 )
-                |> Provenance(rules)
+                |> Provenance(newRules)
         case Join(d1, d2) =>
             Join(fixPredSymsInternal(d1, mapping), fixPredSymsInternal(d2, mapping))
         case _ => bug!("PredSym error")
@@ -122,7 +124,7 @@ mod Fixpoint3.Phase.RenamePredSyms {
     ///
     def mapForward(state: UniqueInts[PredSym, r], pred: PredSym): PredSym \ r =
         let PredSym(name, _) = pred;
-        let index = UniqueInts.getIndex(pred, state);
+        let index = UniqueInts.createIndex(pred, state);
         PredSym(name, Int32.toInt64(index))
 
     ///

@@ -87,7 +87,11 @@ instance MonadZip[Nec] {
 instance Foldable[Nec] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
+    redef head(c: Nec[a]): Option[a] = Some(Nec.head(c))
+    redef isEmpty(_: Nec[a]): Bool = false
+    redef memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
+    redef forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
+    redef exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
 }
 
 instance UnorderedFoldable[Nec] {
@@ -121,6 +125,13 @@ instance Reducible[Nec] {
     redef toArray(rc: Region[r], l: Nec[a]): Array[a, r] \ r = Nec.toArray(rc, l)
     redef toVector(l: Nec[a]): Vector[a] = Nec.toVector(l)
     redef toList(l: Nec[a]): List[a] = Nec.toList(l)
+}
+
+instance Formattable[Nec[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Nec[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Nec#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
 }
 
 instance ToString[Nec[a]] with ToString[a] {
@@ -329,6 +340,21 @@ mod Nec {
             case ViewLeft.SomeLeft(x, c2) => if (x == a) Some(acc) else loop(acc + 1, c2)
         };
         loop(0, c)
+
+    ///
+    /// Returns the positions of all occurrences of `x` in `c`.
+    ///
+    pub def indicesOf(x: a, c: Nec[a]): Vector[Int32] with Eq[a] =
+        def loop(acc: Int32, c1: Nec[a], indices: List[Int32]) = match viewLeft(c1) {
+            case ViewLeft.OneLeft(y)      => if (x == y) acc :: indices else indices
+            case ViewLeft.SomeLeft(y, c2) => if (x == y) loop(acc + 1, c2, acc :: indices) else loop(acc + 1, c2, indices)
+        };
+        loop(0, c, Nil) |> List.reverse |> List.toVector
+
+    ///
+    /// Returns a range of all valid indices of the non-empty chain `c`.
+    ///
+    pub def indices(c: Nec[a]): Range[Int32] = Range.Range(0, length(c))
 
     ///
     /// Alias for `findLeft`.
@@ -583,17 +609,6 @@ mod Nec {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `c` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, c: Nec[a]): b \ ef = match viewLeft(c) {
-        case ViewLeft.OneLeft(x)      => f(x, _ -> checked_ecast(z))
-        case ViewLeft.SomeLeft(x, rs) => f(x, _ -> foldRightWithCont(f, z, rs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with Monoid[b] =
@@ -754,24 +769,9 @@ mod Nec {
         foldRight((x, acc) -> x :: acc, Nil, c)
 
     ///
-    /// Returns `c` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), c);
-        d
-
-    ///
-    /// Returns `c` as a mutable list.
-    ///
-    pub def toMutList(rc1: Region[r], c: Nec[a]): MutList[a, r] \ r = region rc2 {
-        Array.toMutList(rc1, toArray(rc2, c)) // `Array.toMutList` respects the invariant of `MutList`
-    }
-
-    ///
     /// Returns the list `c` as a set.
     ///
-    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight((x, acc) -> Set.insert(x, acc), Set.empty(), c)
+    pub def toSet(c: Nec[a]): Set[a] with Order[a] = foldRight(Set.insert, Set.empty(), c)
 
     ///
     /// Returns the Nec of pairs `c` that represents an association list as a map.
@@ -829,12 +829,6 @@ mod Nec {
                 Some(x)
         };
         Iterator.iterate(rc, next)
-
-    ///
-    /// Returns an iterator over `c` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], c: Nec[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, c) |> Iterator.zipWithIndex
 
     ///
     /// Helper for the `sort` functions.
@@ -945,7 +939,7 @@ mod Nec {
     ///
     pub def reduce(c: Nec[a]): a with SemiGroup[a] = match viewLeft(c) {
         case ViewLeft.OneLeft(x)      => x
-        case ViewLeft.SomeLeft(x, xs) => foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
+        case ViewLeft.SomeLeft(x, xs) => foldLeft(SemiGroup.combine, x, xs)
     }
 
     ///
@@ -1032,7 +1026,7 @@ mod Nec {
     ///
     /// Optionally returns the Nec `c` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ NonDet = region rc {
+    pub def shuffle(c: Nec[a]): Option[Nec[a]] \ Shuffle = region rc {
         toArray(rc, c) !> Array.shuffle |> Array.toNec
     }
 

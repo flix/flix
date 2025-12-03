@@ -18,8 +18,8 @@ def main(): Unit \ IO + Sys + Net =
     } with Display.runWithIO
     with Analyse.runWithGithub
     with Github.runWithConfigHttp
-    with Config.runWithEnvironment
+    with Config.runWithEnv
     with HttpWithResult.runWithIO
-    with Environment.runWithIO
+    with Env.runWithIO
     with AnalysisFailure.handleAnalysisFailure
     with Exit.runWithIO

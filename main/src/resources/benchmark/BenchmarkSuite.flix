@@ -20,7 +20,7 @@ import java.lang.System
 /// Main entry point.
 ///
 def main(): Unit \ IO =
-    let results = runAllBenchmarks(benchmarks(), 100, 1000);
+    let results = runAllBenchmarks(benchmarks(), 100, 10_000);
     println(toJSON(results))
 
 ///
@@ -55,7 +55,7 @@ def iterateN(f: Unit -> Unit \ IO, n: Int32): Unit \ IO = match n {
 /// Consumes `t` in a way that the optimizer cannot discard.
 ///
 def blackhole(t: a): Unit \ IO =
-    Ref.fresh(Static, t); ()
+    discard Ref.fresh(Static, t)
 
 ///
 /// Returns the median of the given list `l`.

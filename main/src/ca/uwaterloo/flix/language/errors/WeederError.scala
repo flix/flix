@@ -396,7 +396,7 @@ object WeederError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      underline("Tip:") + " Only variables or wildcards are allowed."
+      underline("Tip:") + " Only a default pattern or tags with wild or variable patterns are allowed, e.g., '_' or 'A(x, _, z)', respectively."
     })
   }
 
@@ -572,6 +572,31 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate a qualified extensible variant pattern.
+    *
+    * @param qname the offending qualified name.
+    */
+  case class IllegalQualifiedExtPattern(qname: Name.QName) extends WeederError {
+    override val loc: SourceLocation = qname.loc
+
+    override def summary: String = "Unexpected qualified extensible variant pattern."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected qualified extensible variant pattern.
+         |
+         |${code(loc, "unexpected qualified pattern")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter.*
+      underline("Tip:") + " Extensible variants can never be qualified, i.e., A.B is not allowed. Consider using just B instead."
+    })
+  }
+
+  /**
     * An error raised to indicate that the extension of a record pattern is malformed.
     *
     * @param loc the location where the error occurred.
@@ -584,6 +609,26 @@ object WeederError {
       s""">> Unexpected record extension pattern.
          |
          |${code(loc, "A record extension must be either a variable or wildcard.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate that a record literal contained an operation.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalRecordOperation(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal record extension in record literal"
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal record extension in record literal.
+         |
+         |${code(loc, "A record literal may not contain record extensions or restrictions.")}
          |
          |""".stripMargin
     }
@@ -614,6 +659,75 @@ object WeederError {
       import formatter.*
       s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
     })
+  }
+
+  /**
+    * An error raised to indicate more than one trait parameters was declared.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalNumberOfTraitParameters(loc: SourceLocation) extends WeederError {
+    override def summary: String = "Illegal number of trait parameters."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal number of trait parameters. Exactly one trait parameter must be declared.
+         |
+         |${code(loc, "exactly one trait parameter required.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal BigDecimal pattern.
+    *
+    * @param loc the location where the illegal BigDecimal pattern occurs.
+    */
+  case class IllegalBigDecimalPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal BigDecimal pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal BigDecimal pattern.
+         |
+         |${code(loc, "BigDecimal not allowed here.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate an illegal constant pattern.
+    *
+    * @param loc the location where the constant pattern occurs.
+    */
+  case class IllegalConstantPattern(loc: SourceLocation) extends WeederError {
+    def summary: String = "Unexpected constant pattern"
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected constant pattern.
+         |
+         |${code(loc, "Constants are not allowed in let or lambda matches.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate illegal syntax: empty tuple type.
+    *
+    * @param loc the location where the error occurs.
+    */
+  case class IllegalEmptyTupleType(loc: SourceLocation) extends WeederError {
+    def summary: String = "Illegal syntax: empty tuple type."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Illegal syntax: empty tuple type.
+         |
+         |${code(loc, "empty tuple type")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**
@@ -948,6 +1062,24 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an empty type parameter list.
+    *
+    * @param loc the location of the list.
+    */
+  case class EmptyTypeParamList(loc: SourceLocation) extends WeederError {
+    def summary: String = "Empty type parameter list."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Empty type parameter list.
+         |
+         |${code(loc, "empty list.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.
@@ -1028,31 +1160,13 @@ object WeederError {
     * @param loc the location where the illegal intrinsic occurs.
     */
   case class UndefinedIntrinsic(loc: SourceLocation) extends WeederError {
-    def summary: String = "Illegal intrinsic"
+    def summary: String = "Undefined or misapplied intrinsic"
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Illegal intrinsic.
+      s""">> Undefined or misapplied intrinsic.
          |
-         |${code(loc, "illegal intrinsic.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate an unapplied intrinsic.
-    *
-    * @param intrinsic name of the intrinsic.
-    * @param loc       the location where the illegal intrinsic occurs.
-    */
-  case class UnappliedIntrinsic(intrinsic: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Unapplied intrinsic '$intrinsic'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unapplied intrinsic '${red(intrinsic)}'.
-         |
-         |${code(loc, "unapplied intrinsic.")}
+         |${code(loc, "undefined or misapplied intrinsic.")}
          |""".stripMargin
     }
   }

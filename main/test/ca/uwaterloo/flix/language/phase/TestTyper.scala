@@ -117,6 +117,18 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestMismatchedNullaryTypes.01") {
+    val input = "def foo(): #{A(Unit)| x} = #{A.}"
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestMismatchedNullaryTypes.02") {
+    val input = "def foo(): #{A| x} = #{A()}"
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
   test("TestMismatchedTypes.01") {
     val input = "def foo(): {| x} = {a = 2} <+> {a = 2}"
     val result = compile(input, Options.TestWithLibNix)
@@ -472,7 +484,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
       """
         |def mkArray(): Array[Int32, Static] \ IO = Array#{} @ Static
         |
-        |def zero(): Int32 \ {} = $ARRAY_LENGTH$(mkArray())
+        |def zero(): Int32 \ {} = %%ARRAY_LENGTH%%(mkArray())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
@@ -1507,7 +1519,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1527,7 +1539,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1547,7 +1559,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1569,7 +1581,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1590,7 +1602,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
 
@@ -1612,7 +1624,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -1633,7 +1645,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    }
         |}
         |""".stripMargin
-    val result = compile(input, Options.DefaultTest)
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
@@ -2061,4 +2073,262 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UndefinedLabel](result)
     expectError[TypeError.ExtraLabel](result)
   }
+
+  test("ExtMatchError#11283") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    ematch xvar A(1) {
+        |        case A() => true
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X("hello") {
+        |        case A() => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(42i32, "test", true) {
+        |        case B(x, y)       => ()
+        |        case A(a, b, c, d) => ()
+        |        case C()           => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.03") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(true, 'a', 3.14f64, "hello", 100i8) {
+        |        case C(b, c, d)    => ()
+        |        case A(x, y, z, w) => ()
+        |        case B()           => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.04") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(3.14f64, 42i16, 'x', true, "world", 999i64) {
+        |        case A(s, t)                => ()
+        |        case C(a, b, c, d, e)       => ()
+        |        case B()                    => ()
+        |        case X(p, q, r, s, t, u, v) => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.05") {
+    val input =
+      """
+        |def f(): Unit =
+        |    ematch xvar X(1i32, 2i32, 3i32, 4i32) {
+        |        case C(x, y, z)       => ()
+        |        case A(a, b, c, d, e) => ()
+        |        case B()              => ()
+        |        case X(p, q)          => ()
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.06") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    let scrutinee = if (true) xvar A(1) else xvar B(1);
+        |    ematch scrutinee {
+        |        case A(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.07") {
+    val input =
+      """
+        |def f(var: #| A(Int32), B(Int32) | r |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.08") {
+    val input =
+      """
+        |def f(var: #| A(Int32), B(Int32) | r |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |        case B(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.MismatchedTypes](result)
+  }
+
+  test("TypeError.ExtMatch.09") {
+    val input =
+      """
+        |def g(): Bool = f(xvar C(1))
+        |
+        |def f(var: #| A(Int32), B(Int32) |#): Bool = {
+        |    ematch var {
+        |        case A(x) => x == 1
+        |        case B(x) => x == 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedArg](result)
+  }
+
+  test("TypeError.ExtMatch.10") {
+    val input =
+      """
+        |def f(): Bool = {
+        |    let scrutinee = if (true) xvar A(false) else xvar B(true);
+        |    (ematch A(x) -> x)(scrutinee)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.UnexpectedType](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1).
+        |        Foo(1, 2).
+        |        Foo(1, 2, 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateArity.03") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(;1).
+        |        Foo(1; 2).
+        |        Foo(1, 2; 3).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateArity](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.01") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1, 2).
+        |        Foo(1; 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.MismatchedPredicateDenotation.02") {
+    val input =
+      """
+        |def main(): Unit \ IO =
+        |    let _ = #{
+        |        Foo(1; 2).
+        |        Foo(1, 2).
+        |    };
+        |    println("Hello World!")
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[TypeError.MismatchedPredicateDenotation](result)
+  }
+
+  test("TypeError.NonUnitStatement.01") {
+    val input =
+      """
+        |def f(): String = 123; "hi"
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError.NonUnitStatement](result)
+  }
+
+  test("TypeError.NonUnitStatement.Jvm.01") {
+    val input =
+      """
+        |def f(): String \ IO = "".toString(); ""
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
+  test("TypeError.NonUnitStatement.Jvm.02") {
+    val input =
+      """
+        |import java.lang.Object
+        |def f(): String \ IO = Objects.toString(""); ""
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    rejectError[TypeError](result)
+  }
+
 }

@@ -58,11 +58,6 @@ eff Process {
     def stderr(ph: ProcessHandle): Process.StdErr
 
     ///
-    /// Returns Process output as a string.
-    ///
-    def output(ph: ProcessHandle): Result[IoError, String]
-
-    ///
     /// Stops the process.
     ///
     def stop(ph: ProcessHandle): Unit
@@ -148,9 +143,9 @@ mod Process {
     ///
     /// Handles the `Process` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + {Exec, IO} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ (ef - Process) + IO = x ->
         run {
             Ok(f(x))
         } with handler Process {
@@ -213,9 +208,6 @@ mod Process {
                 let ProcessHandle(jProc) = ph;
                 k(StdErr(jProc.getErrorStream()))
 
-            def output(ph, k) = ???
-
-
             def stop(ph, k) =
                 try {
                     let ProcessHandle(jProc) = ph;
@@ -250,9 +242,9 @@ mod Process {
     ///
     /// Runs the `Process` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `Process` effect using the `Exec` effect.
+    /// In other words, re-interprets the `Process` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + {Exec, IO} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ (ef - Process) + IO = handle(f)()
 
 }
 

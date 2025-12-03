@@ -1,185 +1,189 @@
-/*
- * Copyright 2024 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 mod TestIterable {
+
+    use Assert.{assertEq, assertTrue};
 
     /////////////////////////////////////////////////////////////////////////////
     // Array instance                                                          //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableArray01(): Bool = region rc {
+    @Test
+    def iterableArray01(): Unit \ Assert = region rc {
         let a : Array[Int32, rc] = Array#{} @ rc;
-        Iterable.iterator(rc, a) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, a) |> Iterator.toList)
     }
 
-    @test
-    def iterableArray02(): Bool = region rc {
+    @Test
+    def iterableArray02(): Unit \ Assert = region rc {
         let a = Array#{2, 5, 11, 8} @ rc;
-        Iterable.iterator(rc, a) |> Iterator.toList == List#{2, 5, 11, 8}
+        assertEq(expected = List#{2, 5, 11, 8}, Iterable.iterator(rc, a) |> Iterator.toList)
     }
 
-    @test
-    def iterableArray03(): Bool = region rc {
+    @Test
+    def iterableArray03(): Unit \ Assert = region rc {
         let a = Array#{'A', 'B', 'D', 'C'} @ rc;
-        Iterable.iterator(rc, a) |> Iterator.toList == List#{'A', 'B', 'D', 'C'}
+        assertEq(expected = List#{'A', 'B', 'D', 'C'}, Iterable.iterator(rc, a) |> Iterator.toList)
     }
 
-    @test
-    def iterableArray04(): Bool = region rc {
+    @Test
+    def iterableArray04(): Unit \ Assert = region rc {
         let a = Array#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} @ rc;
-        Iterable.iterator(rc, a) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, a) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // DelayMap instance                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableDelayMap01(): Bool = region rc {
+    @Test
+    def iterableDelayMap01(): Unit \ Assert = region rc {
         let m : DelayMap[Int32, Char] = DelayMap.empty();
-        Iterable.iterator(rc, m) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, m) |> Iterator.toList)
     }
 
-    @test
-    def iterableDelayMap02(): Bool = region rc {
-        let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toDelayMap;
-        Iterable.iterator(rc, m) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+    @Test
+    def iterableDelayMap02(): Unit \ Assert = region rc {
+        let m = {
+            let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
+            let f = (_, v) -> lazy v;
+            DelayMap.DMap(RedBlackTree.mapWithKey(f, t))
+        };
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, m) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // List instance                                                           //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableList01(): Bool = region rc {
+    @Test
+    def iterableList01(): Unit \ Assert = region rc {
         let l : List[Int32] = Nil;
-        Iterable.iterator(rc, l) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableList02(): Bool = region rc {
+    @Test
+    def iterableList02(): Unit \ Assert = region rc {
         let l = List#{2, 5, 11, 8};
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{2, 5, 11, 8}
+        assertEq(expected = List#{2, 5, 11, 8}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableList03(): Bool = region rc {
+    @Test
+    def iterableList03(): Unit \ Assert = region rc {
         let l = List#{'A', 'B', 'D', 'C'};
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{'A', 'B', 'D', 'C'}
+        assertEq(expected = List#{'A', 'B', 'D', 'C'}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableList04(): Bool = region rc {
+    @Test
+    def iterableList04(): Unit \ Assert = region rc {
         let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Map instance                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableMap01(): Bool = region rc {
+    @Test
+    def iterableMap01(): Unit \ Assert = region rc {
         let m : Map[Int32, Char] = Map.empty();
-        Iterable.iterator(rc, m) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, m) |> Iterator.toList)
     }
 
-    @test
-    def iterableMap02(): Bool = region rc {
+    @Test
+    def iterableMap02(): Unit \ Assert = region rc {
         let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
-        Iterable.iterator(rc, m) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, m) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // MutDeque instance                                                       //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableMutDeque01(): Bool = region rc {
+    @Test
+    def iterableMutDeque01(): Unit \ Assert = region rc {
         let d : MutDeque[Int32, rc] = MutDeque.empty(rc);
-        Iterable.iterator(rc, d) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, d) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutDeque02(): Bool = region rc {
-        let d = List#{2, 5, 11, 8} |> List.toMutDeque(rc);
-        Iterable.iterator(rc, d) |> Iterator.toList == List#{2, 5, 11, 8}
+    @Test
+    def iterableMutDeque02(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List#{2, 5, 11, 8});
+        assertEq(expected = List#{2, 5, 11, 8}, Iterable.iterator(rc, d) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutDeque03(): Bool = region rc {
-        let d = List#{'A', 'B', 'D', 'C'} |> List.toMutDeque(rc);
-        Iterable.iterator(rc, d) |> Iterator.toList == List#{'A', 'B', 'D', 'C'}
+    @Test
+    def iterableMutDeque03(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List#{'A', 'B', 'D', 'C'});
+        assertEq(expected = List#{'A', 'B', 'D', 'C'}, Iterable.iterator(rc, d) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutDeque04(): Bool = region rc {
-        let d = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutDeque(rc);
-        Iterable.iterator(rc, d) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
+    @Test
+    def iterableMutDeque04(): Unit \ Assert = region rc {
+        let d = MutDeque.empty(rc);
+        List.forEach(x -> MutDeque.pushBack(x, d), List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')});
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, d) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // MutList instance                                                        //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableMutList01(): Bool = region rc {
+    @Test
+    def iterableMutList01(): Unit \ Assert = region rc {
         let l : MutList[Int32, rc] = MutList.empty(rc);
-        Iterable.iterator(rc, l) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutList02(): Bool = region rc {
-        let l = List#{2, 5, 11, 8} |> List.toMutList(rc);
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{2, 5, 11, 8}
+    @Test
+    def iterableMutList02(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{2, 5, 11, 8}, l);
+        assertEq(expected = List#{2, 5, 11, 8}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutList03(): Bool = region rc {
-        let l = List#{'A', 'B', 'D', 'C'} |> List.toMutList(rc);
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{'A', 'B', 'D', 'C'}
+    @Test
+    def iterableMutList03(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{'A', 'B', 'D', 'C'}, l);
+        assertEq(expected = List#{'A', 'B', 'D', 'C'}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutList04(): Bool = region rc {
-        let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutList(rc);
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
+    @Test
+    def iterableMutList04(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, l);
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutList05(): Bool = region rc {
-        let l = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> List.toMutList(rc);
-        Iterable.iterator(rc, l) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}
+    @Test
+    def iterableMutList05(): Unit \ Assert = region rc {
+        let l = MutList.empty(rc);
+        MutList.pushAll(List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, l);
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')}, Iterable.iterator(rc, l) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // MutMap instance                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableMutMap01(): Bool = region rc {
+    @Test
+    def iterableMutMap01(): Unit \ Assert = region rc {
         let m : MutMap[Int32, Char, rc] = MutMap.empty(rc);
-        Iterable.iterator(rc, m) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, m) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutMap02(): Bool = region rc {
-        let m = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'} |> Map.toMutMap(rc);
-        Iterable.iterator(rc, m) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+    @Test
+    def iterableMutMap02(): Unit \ Assert = region rc {
+        let m = MutMap.empty(rc);
+        Map.forEach((k, v) -> MutMap.put(k, v, m), Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'});
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, m) |> Iterator.toList)
     }
 
 
@@ -187,96 +191,105 @@ mod TestIterable {
     // MutPriorityQueue instance                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableMutPriorityQueue01(): Bool = region rc {
+    @Test
+    def iterableMutPriorityQueue01(): Unit \ Assert = region rc {
         let mq : MutPriorityQueue[Int32, rc] = MutPriorityQueue.empty(rc);
-        Iterable.iterator(rc, mq) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, mq) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutPriorityQueue02(): Bool = region rc {
+    @Test
+    def iterableMutPriorityQueue02(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(List#{2, 5, 11, 8}, mq);
-        Iterable.iterator(rc, mq) |> Iterator.toList == List#{11, 8, 5, 2}
+        assertEq(expected = List#{11, 8, 5, 2}, Iterable.iterator(rc, mq) |> Iterator.toList)
     }
 
-    @test
-    def iterableMutPriorityQueue03(): Bool = region rc {
+    @Test
+    def iterableMutPriorityQueue03(): Unit \ Assert = region rc {
         let mq = MutPriorityQueue.empty(rc);
         MutPriorityQueue.enqueueAll(List#{'A', 'B', 'D', 'C'}, mq);
-        Iterable.iterator(rc, mq) |> Iterator.toList == List#{'D', 'C', 'B', 'A'}
+        assertEq(expected = List#{'D', 'C', 'B', 'A'}, Iterable.iterator(rc, mq) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // MutSet instance                                                         //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableMutSet01(): Bool = region rc {
+    @Test
+    def iterableMutSet01(): Unit \ Assert = region rc {
         let s : MutSet[Int32, rc] = MutSet.empty(rc);
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set.empty()
+        assertEq(expected = Set.empty(), Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
-    @test
-    def iterableMutSet02(): Bool = region rc {
-        let s = Set#{2, 5, 11, 8} |> Set.toMutSet(rc);
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{2, 5, 8, 11}
+    @Test
+    def iterableMutSet02(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.addAll(2 :: 5 :: 11 :: 8 :: Nil, s);
+        assertEq(expected = Set#{2, 5, 8, 11}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
-    @test
-    def iterableMutSet03(): Bool = region rc {
-        let s = Set#{'A', 'B', 'D', 'C'} |> Set.toMutSet(rc);
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{'A', 'B', 'C', 'D'}
+    @Test
+    def iterableMutSet03(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.addAll('A' :: 'B' :: 'D' :: 'C' :: Nil, s);
+        assertEq(expected = Set#{'A', 'B', 'C', 'D'}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
-    @test
-    def iterableMutSet04(): Bool = region rc {
-        let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')} |> Set.toMutSet(rc);
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+    @Test
+    def iterableMutSet04(): Unit \ Assert = region rc {
+        let s = MutSet.empty(rc);
+        MutSet.add((2, 'A'), s);
+        MutSet.add((5, 'B'), s);
+        MutSet.add((11, 'D'), s);
+        MutSet.add((8, 'C'), s);
+        assertEq(expected = Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // RedBlackTree instance                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableRedBlackTree01(): Bool = region rc {
+    @Test
+    def iterableRedBlackTree01(): Unit \ Assert = region rc {
         let t : RedBlackTree[Int32, Char] = RedBlackTree.empty();
-        Iterable.iterator(rc, t) |> Iterator.toList == Nil
+        assertEq(expected = Nil, Iterable.iterator(rc, t) |> Iterator.toList)
     }
 
-    @test
-    def iterableRedBlackTree02(): Bool = region rc {
+    @Test
+    def iterableRedBlackTree02(): Unit \ Assert = region rc {
         let Map.Map(t) = Map#{2 => 'A', 5 => 'B', 11 => 'D', 8 => 'C'};
-        Iterable.iterator(rc, t) |> Iterator.toList == List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+        assertEq(expected = List#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, t) |> Iterator.toList)
     }
+
 
     /////////////////////////////////////////////////////////////////////////////
     // Set instance                                                            //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def iterableSet01(): Bool = region rc {
+    @Test
+    def iterableSet01(): Unit \ Assert = region rc {
         let s : Set[Int32] = Set.empty();
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set.empty()
+        assertEq(expected = Set.empty(), Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
-    @test
-    def iterableSet02(): Bool = region rc {
+    @Test
+    def iterableSet02(): Unit \ Assert = region rc {
         let s = Set#{2, 5, 11, 8};
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{2, 5, 8, 11}
+        assertEq(expected = Set#{2, 5, 8, 11}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
-    @test
-    def iterableSet03(): Bool = region rc {
+    @Test
+    def iterableSet03(): Unit \ Assert = region rc {
         let s = Set#{'A', 'B', 'D', 'C'};
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{'A', 'B', 'C', 'D'}
+        assertEq(expected = Set#{'A', 'B', 'C', 'D'}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
-    @test
-    def iterableSet04(): Bool = region rc {
+    @Test
+    def iterableSet04(): Unit \ Assert = region rc {
         let s = Set#{(2, 'A'), (5, 'B'), (11, 'D'), (8, 'C')};
-        Iterable.iterator(rc, s) |> Iterator.toSet == Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}
+        assertEq(expected = Set#{(2, 'A'), (5, 'B'), (8, 'C'), (11, 'D')}, Iterable.iterator(rc, s) |> Iterator.toSet)
     }
 
 }

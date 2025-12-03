@@ -38,6 +38,14 @@ instance ToString[Vector[a]] with ToString[a] {
     pub def toString(v: Vector[a]): String = Vector.toString(v)
 }
 
+instance Formattable[Vector[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Vector[a]): RichString \ Formattable.Aef[a] =
+        use RichString.{fromString, joinWith};
+        fromString("Vector#{") + joinWith(Formattable.format, fromString(", "), Vector.toList(x)) + fromString("}")
+}
+
 instance Hash[Vector[a]] with Hash[a] {
     pub def hash(v: Vector[a]): Int32 =
         Vector.foldLeft((acc, x) -> acc `Hash.combine` Hash.hash(x), Hash.magic(), v)
@@ -78,7 +86,11 @@ instance MonadZip[Vector] {
 instance Foldable[Vector] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldLeft(f, s, v)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRight(f, s, v)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRightWithCont(f, s, v)
+    redef head(v: Vector[a]): Option[a] = Vector.head(v)
+    redef isEmpty(v: Vector[a]): Bool = Vector.isEmpty(v)
+    redef memberOf(x: a, v: Vector[a]): Bool with Eq[a] = Vector.memberOf(x, v)
+    redef forAll(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.forAll(f, v)
+    redef exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.exists(f, v)
 }
 
 instance UnorderedFoldable[Vector] {
@@ -133,7 +145,7 @@ instance ForEach[Vector[a]] {
 instance ToFlix[Vector[a]] {
     type In = JList
     pub def toFlix(l: JList): Vector[a] = region rc {
-        let iter = unchecked_cast ((l.iterator(): _ \ IO) as _ \ rc);
+        let iter = unsafe IO { l.iterator() };
         iter |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toVector
     }
 }
@@ -230,7 +242,7 @@ mod Vector {
     ///
     /// Retrieves the value at position `i` in the vector `v`.
     ///
-    pub def get(i: Int32, v: Vector[a]): a = $VECTOR_GET$(v, i)
+    pub def get(i: Int32, v: Vector[a]): a = %%VECTOR_GET%%(v, i)
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
@@ -254,7 +266,7 @@ mod Vector {
     ///
     /// Returns the number of elements in the vector `v`.
     ///
-    pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)
+    pub def length(v: Vector[a]): Int32 = %%VECTOR_LENGTH%%(v)
 
     ///
     /// Returns the number of elements in the vector `v`.
@@ -297,12 +309,6 @@ mod Vector {
         foldRight(step, None, v)
 
     ///
-    /// Returns the vector `v` as a `DelayList`.
-    ///
-    pub def toDelayList(v: Vector[a]): DelayList[a] =
-        foldRight((x, acc) -> DelayList.ECons(x, acc), DelayList.ENil, v)
-
-    ///
     /// Returns the vector `v` as a chain.
     ///
     pub def toChain(v: Vector[a]): Chain[a] =
@@ -319,14 +325,6 @@ mod Vector {
             case Some(c) => Some(Nec.cons(x, c))
         };
         foldRight(step, None, v)
-
-    ///
-    /// Returns `v` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), v);
-        d
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `v`.
@@ -434,8 +432,13 @@ mod Vector {
     ///
     /// Return the positions of the all the occurrences of `a` in `v`.
     ///
-    pub def indices(a: a, v: Vector[a]): Vector[Int32] with Eq[a] =
+    pub def indicesOf(a: a, v: Vector[a]): Vector[Int32] with Eq[a] =
         findIndices(b -> a == b, v)
+
+    ///
+    /// Returns a range of all valid indices of the vector `v`.
+    ///
+    pub def indices(v: Vector[a]): Range[Int32] = Range.Range(0, length(v))
 
     ///
     /// Alias for `findLeft`.
@@ -492,14 +495,16 @@ mod Vector {
             let l = MutList.empty(rc);
             // We handle the first element twice.
             MutList.push(Vector.get(0, v), l);
-            (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
-                if (f(head, cur)) {
-                    head
-                } else {
-                    MutList.push(cur, l);
-                    cur
-                }
-            });
+            discard {
+                (Vector.get(0, v), v) ||> Vector.foldLeft(head -> cur -> {
+                    if (f(head, cur)) {
+                        head
+                    } else {
+                        MutList.push(cur, l);
+                        cur
+                    }
+                })
+            };
             MutList.toVector(l)
         }
     }
@@ -863,7 +868,7 @@ mod Vector {
         else if (j >= len2)
             // `b` exhausted, `a` still trying to match, so failure
             false
-        else if(get(i, a) == get(j, b))
+        else if (get(i, a) == get(j, b))
             isInfixOfCheck(a, b, len1, len2, i+1, j+1)
         else
             isInfixOfSearch(a, b, len1, len2, j+1)
@@ -922,21 +927,6 @@ mod Vector {
         loop(length(v) - 1, s)
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `v` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], f(a[n], z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, v: Vector[a]): b \ ef =
-        def loop(i) = {
-            if (i == length(v))
-                z
-            else
-                f(get(i, v), _ -> loop(i + 1))
-        };
-        loop(0)
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, v: Vector[a]): b \ ef with Monoid[b] =
@@ -988,7 +978,7 @@ mod Vector {
     /// Returns the sum of all elements in the vector `v`.
     ///
     pub def sum(v: Vector[Int32]): Int32 =
-        foldLeft((acc, x) -> acc + x, 0, v)
+        foldLeft((+), 0, v)
 
     ///
     /// Returns the sum of all elements in the vector `v` according to the function `f`.
@@ -1050,7 +1040,7 @@ mod Vector {
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
         let m = MutList.empty(rc);
-        forEach(a -> if (f(a)) MutList.push(a, m) else (), v);
+        forEach(a -> if (f(a)) { MutList.push(a, m) }, v);
         MutList.toVector(m)
     }
 
@@ -1373,12 +1363,6 @@ mod Vector {
         foldRight((x, m) -> Map.insert(fst(x), snd(x), m), Map.empty(), v)
 
     ///
-    /// Returns the array `a` as a MutList.
-    ///
-    pub def toMutList(rc: Region[r], v: Vector[a]): MutList[a, r] \ r =
-        toArray(rc, v) |> Array.toMutList(rc)
-
-    ///
     /// Alias for `findIndexOfLeft`.
     ///
     pub def findIndexOf(f: a -> Bool \ ef, v: Vector[a]): Option[Int32] \ ef =
@@ -1426,7 +1410,7 @@ mod Vector {
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
         let l = MutList.empty(rc);
-        forEachWithIndex((i, x) -> if (f(x)) MutList.push(i, l) else (), v);
+        forEachWithIndex((i, x) -> if (f(x)) { MutList.push(i, l) }, v);
         MutList.toVector(l)
     }
 
@@ -1439,7 +1423,7 @@ mod Vector {
             if (i < len) {
                 Array.put(f(i), i, arr);
                 loop(i + 1)
-            } else ()
+            }
         };
         loop(0);
         Array.toVector(arr)
@@ -1469,15 +1453,6 @@ mod Vector {
     ///
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r =
         Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
-
-    ///
-    /// Returns an iterator over `v` zipped with the indices of the elements.
-    ///
-    /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
-    ///
-    pub def enumerator(rc: Region[r], v: Vector[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, v) |> Iterator.zipWithIndex
-
 
     ///
     /// Apply the effectful function `f` to all the elements in the vector `v`.
@@ -1573,7 +1548,7 @@ mod Vector {
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(v: Vector[a]): Vector[a] \ NonDet = region rc {
+    pub def shuffle(v: Vector[a]): Vector[a] \ Shuffle = region rc {
         let arr = toArray(rc, v);
         Array.shuffle(arr);
         Array.toVector(arr)

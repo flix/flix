@@ -18,14 +18,15 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.SimpleType
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.{BytecodeAst, SimpleType}
+import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugNoOp
+import ca.uwaterloo.flix.util.collection.MapOps
 
 object JvmBackend {
 
   /** Emits JVM bytecode for `root`. */
-  def run(root: Root)(implicit flix: Flix): (Root, List[JvmClass]) = flix.phase("JvmBackend") {
+  def run(root: Root)(implicit flix: Flix): BytecodeAst.Root = flix.phase("JvmBackend") {
     implicit val r: Root = root
 
     // Types/classes required for Flix runtime.
@@ -62,11 +63,11 @@ object JvmBackend {
     }.map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val taggedAbstractClass = List(JvmClass(BackendObjType.Tagged.jvmName, BackendObjType.Tagged.genByteCode()))
-    val tagClasses = JvmOps.getErasedTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val tagClasses = root.enums.values.flatMap(JvmOps.getTagsOf).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
     val extensibleTagClasses = JvmOps.getExtensibleTagTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val tupleClasses = JvmOps.getTupleTypesOf(allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
-    val structClasses = JvmOps.getErasedStructTypesOf(root, allTypes).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
+    val structClasses = root.structs.values.map(JvmOps.getStructType).map(bt => JvmClass(bt.jvmName, bt.genByteCode())).toList
 
     val recordInterfaces = List(JvmClass(BackendObjType.Record.jvmName, BackendObjType.Record.genByteCode()))
     val recordEmptyClasses = List(JvmClass(BackendObjType.RecordEmpty.jvmName, BackendObjType.RecordEmpty.genByteCode()))
@@ -151,7 +152,19 @@ object JvmBackend {
       resumptionWrappers
     ).flatten
 
-    (root, allClasses)
+    val classMap = allClasses.map(clazz => clazz.name -> clazz).toMap
+
+    val tests = MapOps.mapValues(root.defs.filter(_._2.ann.isTest)) {
+      case defn =>
+        val nsType = BackendObjType.Namespace(defn.sym.namespace)
+        BytecodeAst.Test(nsType.jvmName, nsType.ShimMethod(defn).name, defn.ann.isSkip)
+    }
+    val main = root.mainEntryPoint.map{
+      case _ =>
+        val mainType = BackendObjType.Main
+        BytecodeAst.Def(mainType.jvmName, mainType.MainMethod.name)
+    }
+    BytecodeAst.Root(classMap, tests, main, root.sources)
   }(DebugNoOp())
 
 }

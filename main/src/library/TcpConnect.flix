@@ -32,9 +32,9 @@ mod TcpConnect {
     ///
     /// Handles the `TcpConnect` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpConnect` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpConnect` effect using the `IO` effect.
     ///
-    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpConnect + {IO, Net} = x ->
+    pub def handle(f: a -> b \ ef): a -> Result[IoError, b] \ ef - TcpConnect + IO = x ->
         run {
             Ok(f(x))
         } with handler TcpConnect {
@@ -54,8 +54,8 @@ mod TcpConnect {
     ///
     /// Runs the `TcpConnect` effect of the given function `f`.
     ///
-    /// In other words, re-interprets the `TcpConnect` effect using the `Net` and `IO` effects.
+    /// In other words, re-interprets the `TcpConnect` effect using the `IO` effect.
     ///
-    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpConnect + {IO, Net} = handle(f)()
+    pub def runWithIO(f: Unit -> a \ ef): Result[IoError, a] \ ef - TcpConnect + IO = handle(f)()
 
 }

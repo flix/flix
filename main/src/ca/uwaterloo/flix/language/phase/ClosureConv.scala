@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst.*
-import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Modifiers, Scope}
+import ca.uwaterloo.flix.language.ast.shared.{BoundBy, Scope}
 import ca.uwaterloo.flix.language.ast.{SimpleType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugSimplifiedAst
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -108,8 +108,8 @@ object ClosureConv {
 
     case e: Expr.LocalDef => visitLocalDef(e)
 
-    case Expr.Scope(sym, e, tpe, purity, loc) =>
-      Expr.Scope(sym, visitExp(e), tpe, purity, loc)
+    case Expr.Region(sym, e, tpe, purity, loc) =>
+      Expr.Region(sym, visitExp(e), tpe, purity, loc)
 
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = visitExp(exp)
@@ -124,11 +124,11 @@ object ClosureConv {
       // Lift the body and all the rule expressions
       val expLoc = exp.loc.asSynthetic
       val freshSym = Symbol.freshVarSym("_closureConv", BoundBy.FormalParam, expLoc)
-      val fp = FormalParam(freshSym, Modifiers.Empty, SimpleType.Unit, expLoc)
-      val e = mkLambdaClosure(List(fp), exp, SimpleType.Arrow(List(SimpleType.Unit), tpe), expLoc)
+      val fp = FormalParam(freshSym, SimpleType.Unit, expLoc)
+      val e = mkLambdaClosure(List(fp), exp, SimpleType.mkArrow(List(SimpleType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val cloType = SimpleType.Arrow(fparams.map(_.tpe), body.tpe)
+          val cloType = SimpleType.mkArrow(fparams.map(_.tpe), body.tpe)
           val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
           HandlerRule(opUse, fparams, clo)
       }
@@ -137,7 +137,7 @@ object ClosureConv {
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, methodPurity, methodLoc) =>
-          val cloType = SimpleType.Arrow(fparams.map(_.tpe), retTpe)
+          val cloType = SimpleType.mkArrow(fparams.map(_.tpe), retTpe)
           val clo = mkLambdaClosure(fparams, exp, cloType, methodLoc)
           JvmMethod(ident, fparams, clo, retTpe, methodPurity, methodLoc)
       }
@@ -176,7 +176,7 @@ object ClosureConv {
       case FreeVar(oldSym, ptpe) =>
         val newSym = Symbol.freshVarSym(oldSym)
         subst += (oldSym -> newSym)
-        FormalParam(newSym, Modifiers.Empty, ptpe, loc)
+        FormalParam(newSym, ptpe, loc)
     }
     (fparams, subst.toMap)
   }
@@ -232,7 +232,7 @@ object ClosureConv {
       filterBoundVars(freeVars(exp1), bound) ++
         filterBoundVar(freeVars(exp2), sym)
 
-    case Expr.Scope(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
+    case Expr.Region(sym, exp, _, _, _) => filterBoundVar(freeVars(exp), sym)
 
     case Expr.TryCatch(exp, rules, _, _, _) => rules.foldLeft(freeVars(exp)) {
       case (acc, CatchRule(sym, _, body)) =>
@@ -364,10 +364,10 @@ object ClosureConv {
         val e2 = visitExp(exp2)
         Expr.LocalDef(sym, fps, e1, e2, tpe, purity, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         val newSym = subst.getOrElse(sym, sym)
         val e = visitExp(exp)
-        Expr.Scope(newSym, e, tpe, purity, loc)
+        Expr.Region(newSym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visitExp(exp)
@@ -396,10 +396,10 @@ object ClosureConv {
     }
 
     def visitFormalParam(fparam: FormalParam): FormalParam = fparam match {
-      case FormalParam(sym, mod, tpe, loc) =>
+      case FormalParam(sym, tpe, loc) =>
         subst.get(sym) match {
-          case None => FormalParam(sym, mod, tpe, loc)
-          case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
+          case None => FormalParam(sym, tpe, loc)
+          case Some(newSym) => FormalParam(newSym, tpe, loc)
         }
     }
 
@@ -588,9 +588,9 @@ object ClosureConv {
         val e2 = visit(exp2)
         Expr.LocalDef(sym, fparams, e1, e2, tpe, purity, loc)
 
-      case Expr.Scope(sym, exp, tpe, purity, loc) =>
+      case Expr.Region(sym, exp, tpe, purity, loc) =>
         val e = visit(exp)
-        Expr.Scope(sym, e, tpe, purity, loc)
+        Expr.Region(sym, e, tpe, purity, loc)
 
       case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
         val e = visit(exp)

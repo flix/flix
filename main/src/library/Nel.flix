@@ -23,6 +23,13 @@ pub enum Nel[a] {
     case Nel(a, List[a])
 }
 
+instance Formattable[Nel[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Nel[a]): RichString \ Formattable.Aef[a] =
+        RichString.fromString("Nel#{") + RichString.joinWith(Formattable.format, RichString.fromString(", "), x) + RichString.fromString("}")
+}
+
 instance ToString[Nel[a]] with ToString[a] {
     pub def toString(l: Nel[a]): String = Nel.toString(l)
 }
@@ -73,7 +80,11 @@ instance MonadZip[Nel] {
 instance Foldable[Nel] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
+    redef head(l: Nel[a]): Option[a] = Some(Nel.head(l))
+    redef isEmpty(_: Nel[a]): Bool = false
+    redef memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
+    redef forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
+    redef exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
 }
 
 instance UnorderedFoldable[Nel] {
@@ -234,6 +245,11 @@ mod Nel {
         reduceLeft(Order.maxBy(cmp), l)
 
     ///
+    /// Returns a range of all valid indices of the non-empty list `l`.
+    ///
+    pub def indices(l: Nel[a]): Range[Int32] = Range.Range(0, length(l))
+
+    ///
     /// Alias for `findLeft`.
     ///
     pub def find(f: a -> Bool \ ef, l: Nel[a]): Option[a] \ ef = findLeft(f, l)
@@ -377,16 +393,6 @@ mod Nel {
     }
 
     ///
-    /// Applies `f` to a start value `z` and all elements in `l` going from right to left.
-    ///
-    /// That is, the result is of the form: `f(x1, ...f(xn-1, f(xn, z))...)`.
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, z: b, l: Nel[a]): b \ ef = match l {
-        case Nel(x, xs) => f(x, _ -> List.foldRightWithCont(f, z, xs))
-    }
-
-    ///
     /// Returns the result of mapping each element and combining the results.
     ///
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with Monoid[b] =
@@ -419,7 +425,7 @@ mod Nel {
     /// Applies `combine` to all elements in `l` until a single value is obtained.
     ///
     pub def reduce(l: Nel[a]): a with SemiGroup[a] = match l {
-        case Nel(x, xs) => Foldable.foldLeft((acc, y) -> SemiGroup.combine(acc, y), x, xs)
+        case Nel(x, xs) => Foldable.foldLeft(SemiGroup.combine, x, xs)
     }
 
     ///
@@ -571,14 +577,6 @@ mod Nel {
     }
 
     ///
-    /// Returns `l` as a MutDeque.
-    ///
-    pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.empty(rc);
-        forEach(x -> MutDeque.pushBack(x, d), l);
-        d
-
-    ///
     /// Applies `f` to every element of `l`.
     ///
     pub def forEach(f: a -> Unit \ ef, l: Nel[a]): Unit \ ef = match l {
@@ -648,12 +646,6 @@ mod Nel {
        List.iterator(rc, x :: xs)
 
     ///
-    /// Returns an iterator over `l` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], l: Nel[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, l) |> Iterator.zipWithIndex
-
-    ///
     /// Returns the result of applying the applicative mapping function `f` to all the elements of the
     /// non-empty list `l`.
     ///
@@ -710,7 +702,7 @@ mod Nel {
     ///
     /// Optionally returns the Nel `l` shuffled using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ NonDet = region rc {
+    pub def shuffle(l: Nel[a]): Option[Nel[a]] \ Shuffle = region rc {
         toArray(rc, l) !> Array.shuffle |> Array.toNel
     }
 

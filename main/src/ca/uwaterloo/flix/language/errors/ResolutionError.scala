@@ -211,24 +211,24 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that a signature does not include the class's type parameter.
+    * An error raised to indicate that a signature does not include the trait's type parameter.
     *
     * @param sym the symbol of the signature.
     * @param loc the location where the error occurred.
     */
   case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError {
-    def summary: String = s"Unexpected signature which does not mention the type variable of the class."
+    def summary: String = s"Unexpected signature which does not mention the type variable of the trait."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the class.
+      s""">> Unexpected signature '${red(sym.name)}' which does not mention the type variable of the trait.
          |
          |${code(loc, "unexpected signature.")}
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
-      "Every signature in a trait must mention the type variable of the class."
+      "Every signature in a trait must mention the type variable of the trait."
     })
 
   }
@@ -582,27 +582,27 @@ object ResolutionError {
   }
 
   /**
-    * Sealed Class Error.
+    * Sealed Trait Error.
     *
-    * @param sym the class symbol.
-    * @param ns  the namespace from which the class is sealed.
+    * @param sym the trait symbol.
+    * @param ns  the namespace from which the trait is sealed.
     * @param loc the location where the error occurred.
     */
   case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError {
-    def summary: String = "Sealed."
+    def summary: String = "Sealed trait."
 
     def message(formatter: Formatter): String = messageWithLink {
       import formatter.*
-      s""">> Class '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
-         |${code(loc, "sealed class.")}
+         |${code(loc, "sealed trait.")}
          |
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      s"${underline("Tip:")} Move the instance or sub class to the class's module."
+      s"${underline("Tip:")} Move the instance or subtrait to the trait's module."
     })
 
   }
@@ -959,7 +959,7 @@ object ResolutionError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter.*
-      s"${underline("Tip:")} Possible typo or non-existent class?"
+      s"${underline("Tip:")} Possible typo or non-existent trait?"
     })
 
   }

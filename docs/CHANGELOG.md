@@ -1,5 +1,55 @@
 # Changelog
 
+Version 0.67.1:
+- Compiler: Simplified command-line arguments (thanks Magnus!)
+
+Version 0.67.0:
+- Language: Added support for `@DefaultHandler`s (thanks Neo!)
+- Language: Added support for if-statements (thanks Casper!)
+- Language: Reworked `unsafe` block (thanks Magnus!)
+- Library: Added `Formattable` trait (thanks Magnus!)
+- Library: Improved `RichString` data type (thanks Magnus!)
+
+Version 0.66.2:
+- LSP: Added infrastructure for code formatting (thanks Din!)
+
+Version 0.66.1:
+- Compiler: Fixed build to target Java 21 (thanks Magnus!)
+
+Version 0.66.0:
+- Package Manager: Added support for security trust levels (thanks Jakob!)
+
+Version 0.65.0:
+- Compiler: Added `MagicDefCompleter` (thanks Magnus!)
+- Library: Added `MutHashSet` (thanks Magnus!)
+- Library: Added `MutHashMap` (thanks Magnus!)
+
+Version 0.64.0:
+- Language: Added support for `Debug.dprintln` (thanks Magnus!)
+- Language: Added support for debug string interpolations (thanks Magnus!)
+- Compiler: Improved lexer performance (thanks Jonathan!)
+
+Version 0.63.1:
+- Compiler: Fixed a bug in the package manager (thanks Jakob!)
+
+Version 0.63.0:
+- Library: Added more colorful asserts (thanks Magnus!)
+- Compiler: Significantly reduced memory usage of backend (thanks Magnus!)
+- Compiler: Improved parsing of numbers (thanks Jonathan!)
+
+Version 0.62.0:
+- Library: Added `Assert` module (thanks Neo and Magnus!)
+- Library: Added `RichString` module (thanks Magnus!)
+
+Version 0.61.1:
+- Compiler: Improve type error messages (thanks Magnus!)
+
+Version 0.61.0:
+- Compiler: Reworked `foreach` to use the `ForEach` trait (thanks Ry!)
+- Library: Added completely new Datalog engine with much improved performance (thanks Adam and Casper!)
+- Library: Added algebraic effects for networking (thanks Cade!)
+- Library: Added `Readable`, `Writable`, and `Peekable` traits (thanks Ry!)
+
 Version 0.60.0:
 - Compiler: Introduced brand new inliner (thanks Jakob!)
 - Compiler: Improved JVM bytecode generation (thanks Jonathan and Jakob!)

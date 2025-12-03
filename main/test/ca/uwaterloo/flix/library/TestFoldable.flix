@@ -1,21 +1,6 @@
-/*
- *  Copyright 2021 Stephen Tetley
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
 mod TestFoldable {
 
+    use Assert.{assertEq, assertNeq, assertTrue, assertFalse};
     use Applicative.{point, *>}
 
     /// To test foldLeftM, foldRightM, foreachM we want a monad with
@@ -58,93 +43,75 @@ mod TestFoldable {
     // head                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def head01(): Bool =
-        Foldable.head((Nil: List[String])) == None
+    @Test
+    def head01(): Unit \ Assert = assertEq(expected = None, Foldable.head((Nil: List[String])))
 
-    @test
-    def head02(): Bool =
-        Foldable.head("a" :: Nil) == Some("a")
+    @Test
+    def head02(): Unit \ Assert = assertEq(expected = Some("a"), Foldable.head("a" :: Nil))
 
-    @test
-    def head03(): Bool =
-        Foldable.head("a" :: "b" :: Nil) == Some("a")
+    @Test
+    def head03(): Unit \ Assert = assertEq(expected = Some("a"), Foldable.head("a" :: "b" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // last                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def last01(): Bool =
-        Foldable.last((Nil: List[String])) == None
+    @Test
+    def last01(): Unit \ Assert = assertEq(expected = None, Foldable.last((Nil: List[String])))
 
-    @test
-    def last02(): Bool =
-        Foldable.last("a" :: Nil) == Some("a")
+    @Test
+    def last02(): Unit \ Assert = assertEq(expected = Some("a"), Foldable.last("a" :: Nil))
 
-    @test
-    def last03(): Bool =
-        Foldable.last("a" :: "b" :: Nil) == Some("b")
+    @Test
+    def last03(): Unit \ Assert = assertEq(expected = Some("b"), Foldable.last("a" :: "b" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // findLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def findLeft01(): Bool =
-        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, (Nil: List[Int32])) == None
+    @Test
+    def findLeft01(): Unit \ Assert = assertEq(expected = None, Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, (Nil: List[Int32])))
 
-    @test
-    def findLeft02(): Bool =
-        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: Nil) == None
+    @Test
+    def findLeft02(): Unit \ Assert = assertEq(expected = None, Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: Nil))
 
-    @test
-    def findLeft03(): Bool =
-        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: Nil) == Some(2)
+    @Test
+    def findLeft03(): Unit \ Assert = assertEq(expected = Some(2), Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: Nil))
 
-    @test
-    def findLeft04(): Bool =
-        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
+    @Test
+    def findLeft04(): Unit \ Assert = assertEq(expected = Some(2), Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def foldMap01(): Bool =
-        Foldable.foldMap(x -> 2 * x, Nil) == 0
+    @Test
+    def foldMap01(): Unit \ Assert = assertEq(expected = 0, Foldable.foldMap(x -> 2 * x, Nil))
 
-    @test
-    def foldMap02(): Bool =
-        Foldable.foldMap(x -> 2 * x, 1 :: 2 :: Nil) == 6
+    @Test
+    def foldMap02(): Unit \ Assert = assertEq(expected = 6, Foldable.foldMap(x -> 2 * x, 1 :: 2 :: Nil))
 
-    @test
-    def foldMap03(): Bool =
-        Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil) == "b"
+    @Test
+    def foldMap03(): Unit \ Assert = assertEq(expected = "b", Foldable.foldMap(x -> if (x == "a") "b" else x, "a" :: Nil))
 
-    @test
-    def foldMap04(): Bool =
-        Foldable.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c":: Nil) == "abb"
+    @Test
+    def foldMap04(): Unit \ Assert = assertEq(expected = "abb", Foldable.foldMap(x -> if (x == "c") "b" else x, "a" :: "b" :: "c":: Nil))
 
-    @test
-    def foldMap05(): Bool =
-        Foldable.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil) == "123"
+    @Test
+    def foldMap05(): Unit \ Assert = assertEq(expected = "123", Foldable.foldMap(Int32.toString, 1 :: 2 :: 3 :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // fold                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def fold01(): Bool =
-        Foldable.fold((Nil: List[String])) == ""
+    @Test
+    def fold01(): Unit \ Assert = assertEq(expected = "", Foldable.fold((Nil: List[String])))
 
-    @test
-    def fold02(): Bool =
-        Foldable.fold("a" :: Nil) == "a"
+    @Test
+    def fold02(): Unit \ Assert = assertEq(expected = "a", Foldable.fold("a" :: Nil))
 
-    @test
-    def fold03(): Bool =
-        Foldable.fold("a" :: "b" :: Nil) == "ab"
+    @Test
+    def fold03(): Unit \ Assert = assertEq(expected = "ab", Foldable.fold("a" :: "b" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldLeftM                                                                //
@@ -153,20 +120,20 @@ mod TestFoldable {
     def foldLeftStep(acc: Int32, a: Int32): Logger[Int32, Int32] =
         tell(a) *> point(acc+a)
 
-    @test
-    def foldLeftM01(): Bool =
+    @Test
+    def foldLeftM01(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)) == (Nil, 0)
+        assertEq(expected = (Nil, 0), runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)))
 
-    @test
-    def foldLeftM02(): Bool =
+    @Test
+    def foldLeftM02(): Unit \ Assert =
         let xs = 1 :: 2 :: Nil;
-        runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)) == (1 :: 2 :: Nil, 3)
+        assertEq(expected = (1 :: 2 :: Nil, 3), runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)))
 
-    @test
-    def foldLeftM03(): Bool =
+    @Test
+    def foldLeftM03(): Unit \ Assert =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
-        runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, 15)
+        assertEq(expected = (1 :: 2 :: 3 :: 4 :: 5 :: Nil, 15), runLogger(Foldable.foldLeftM(foldLeftStep, 0, xs)))
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightM                                                              //
@@ -175,488 +142,346 @@ mod TestFoldable {
     def foldRightStep(a: Int32, acc: Int32): Logger[Int32, Int32] =
         tell(a) *> point(acc+a)
 
-    @test
-    def foldRightM01(): Bool =
+    @Test
+    def foldRightM01(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (Nil, 0)
+        assertEq(expected = (Nil, 0), runLogger(Foldable.foldRightM(foldRightStep, 0, xs)))
 
-    @test
-    def foldRightM02(): Bool =
+    @Test
+    def foldRightM02(): Unit \ Assert =
         let xs = 1 :: 2 :: Nil;
-        runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (2 :: 1 :: Nil, 3)
+        assertEq(expected = (2 :: 1 :: Nil, 3), runLogger(Foldable.foldRightM(foldRightStep, 0, xs)))
 
-    @test
-    def foldRightM03(): Bool =
+    @Test
+    def foldRightM03(): Unit \ Assert =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
-        runLogger(Foldable.foldRightM(foldRightStep, 0, xs)) == (5 :: 4 :: 3 :: 2 :: 1 :: Nil, 15)
+        assertEq(expected = (5 :: 4 :: 3 :: 2 :: 1 :: Nil, 15), runLogger(Foldable.foldRightM(foldRightStep, 0, xs)))
 
     /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def length01(): Bool =
-        Foldable.length((Nil: List[String])) == 0
+    @Test
+    def length01(): Unit \ Assert =
+        assertEq(expected = 0, Foldable.length((Nil: List[String])))
 
-    @test
-    def length02(): Bool =
-        Foldable.length("a" :: "b" :: Nil) == 2
+    @Test
+    def length02(): Unit \ Assert =
+        assertEq(expected = 2, Foldable.length("a" :: "b" :: Nil))
 
-    @test
-    def length03(): Bool =
-        Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil) == 4
+    @Test
+    def length03(): Unit \ Assert =
+        assertEq(expected = 4, Foldable.length(Some(5) :: None :: Some(18) :: None :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // size                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def size01(): Bool =
-        Foldable.size((Nil: List[String])) == 0
+    @Test
+    def size01(): Unit \ Assert =
+        assertEq(expected = 0, Foldable.size((Nil: List[String])))
 
-    @test
-    def size02(): Bool =
-        Foldable.size("a" :: "b" :: Nil) == 2
+    @Test
+    def size02(): Unit \ Assert =
+        assertEq(expected = 2, Foldable.size("a" :: "b" :: Nil))
 
-    @test
-    def size03(): Bool =
-        Foldable.size(Some(5) :: None :: Some(18) :: None :: Nil) == 4
+    @Test
+    def size03(): Unit \ Assert =
+        assertEq(expected = 4, Foldable.size(Some(5) :: None :: Some(18) :: None :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // count                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def count01(): Bool =
+    @Test
+    def count01(): Unit \ Assert =
         let f = x -> x == "a";
-        Foldable.count(f, Nil) == 0
+        assertEq(expected = 0, Foldable.count(f, Nil))
 
-    @test
-    def count02(): Bool =
+    @Test
+    def count02(): Unit \ Assert =
         let xs = "a" :: "b" :: "a" :: "c" :: "a" :: Nil;
         let f = x -> x == "a";
-        Foldable.count(f, xs) == 3
+        assertEq(expected = 3, Foldable.count(f, xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // sum                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sum01(): Bool =
-        Foldable.sum(None) == 0
+    @Test
+    def sum01(): Unit \ Assert =
+        assertEq(expected = 0, Foldable.sum(None))
 
-    @test
-    def sum02(): Bool =
+    @Test
+    def sum02(): Unit \ Assert =
         let num = Some(8);
-        Foldable.sum(num) == 8
+        assertEq(expected = 8, Foldable.sum(num))
 
-    @test
-    def sum03(): Bool =
+    @Test
+    def sum03(): Unit \ Assert =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
-        Foldable.sum(xs) == 15
+        assertEq(expected = 15, Foldable.sum(xs))
 
     /////////////////////////////////////////////////////////////////////////////
     // sumWith                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def sumWith01(): Bool =
+    @Test
+    def sumWith01(): Unit \ Assert =
         let f = x -> x + 1;
-        Foldable.sumWith(f, Nil) == 0
+        assertEq(expected = 0, Foldable.sumWith(f, Nil))
 
-    @test
-    def sumWith02(): Bool =
+    @Test
+    def sumWith02(): Unit \ Assert =
         let f = x -> x + 1;
-        Foldable.sumWith(f, 1 :: 2 :: 3 :: 4 :: Nil) == 14
+        assertEq(expected = 14, Foldable.sumWith(f, 1 :: 2 :: 3 :: 4 :: Nil))
 
-    @test
-    def sumWith03(): Bool =
+    @Test
+    def sumWith03(): Unit \ Assert =
         let f = x -> match x {
             case None    => 0
             case Some(v) => 2 * v
         };
-        Foldable.sumWith(f, Some(Some(5))) == 10
+        assertEq(expected = 10, Foldable.sumWith(f, Some(Some(5))))
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def exists01(): Bool =
+    @Test
+    def exists01(): Unit \ Assert =
         let f = x -> x == 3;
-        Foldable.exists(f, Nil) == false
+        assertFalse(Foldable.exists(f, Nil))
 
-    @test
-    def exists02(): Bool =
+    @Test
+    def exists02(): Unit \ Assert =
         let f = x -> x == "d";
-        Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == true
+        assertTrue(Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil))
 
-    @test
-    def exists03(): Bool =
+    @Test
+    def exists03(): Unit \ Assert =
         let f = x -> x == "f";
-        Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil) == false
+        assertFalse(Foldable.exists(f, "a" :: "b" :: "c" :: "d" :: "e" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // forAll                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forAll01(): Bool =
+    @Test
+    def forAll01(): Unit \ Assert =
         let f = x -> x == 3;
-        Foldable.forAll(f, Nil) == true
+        assertTrue(Foldable.forAll(f, Nil))
 
-    @test
-    def forAll02(): Bool =
+    @Test
+    def forAll02(): Unit \ Assert =
         let f = x -> x == "a";
-        Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "a" :: Nil) == true
+        assertTrue(Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "a" :: Nil))
 
-    @test
-    def forAll03(): Bool =
+    @Test
+    def forAll03(): Unit \ Assert =
         let f = x -> x == "a";
-        Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "b" :: Nil) == false
+        assertFalse(Foldable.forAll(f, "a" :: "a" :: "a" :: "a" :: "b" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // forEachM                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def forEachM01(): Bool =
+    @Test
+    def forEachM01(): Unit \ Assert =
         let xs: List[Int32] = Nil;
-        runLogger(Foldable.forEachM(tell, xs)) == (Nil, ())
+        assertEq(expected = (Nil, ()), runLogger(Foldable.forEachM(tell, xs)))
 
-    @test
-    def forEachM02(): Bool =
+    @Test
+    def forEachM02(): Unit \ Assert =
         let xs = 1 :: 2 :: Nil;
-        runLogger(Foldable.forEachM(tell, xs)) == (1 :: 2 :: Nil, ())
+        assertEq(expected = (1 :: 2 :: Nil, ()), runLogger(Foldable.forEachM(tell, xs)))
 
-    @test
-    def forEachM03(): Bool =
+    @Test
+    def forEachM03(): Unit \ Assert =
         let xs = 1 :: 2 :: 3 :: 4 :: 5 :: Nil;
-        runLogger(Foldable.forEachM(tell, xs)) == (1 :: 2 :: 3 :: 4 :: 5 :: Nil, ())
+        assertEq(expected = (1 :: 2 :: 3 :: 4 :: 5 :: Nil, ()), runLogger(Foldable.forEachM(tell, xs)))
 
     /////////////////////////////////////////////////////////////////////////////
     // toChain                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toChain01(): Bool =
-        Foldable.toChain((Nil: List[Int32])) == (Chain.empty(): Chain[Int32])
+    @Test
+    def toChain01(): Unit \ Assert =
+        assertEq(expected = (Chain.empty(): Chain[Int32]), Foldable.toChain((Nil: List[Int32])))
 
-    @test
-    def toChain02(): Bool =
-        Foldable.toChain(1 :: 2 :: Nil) == List.toChain(1 :: 2 :: Nil)
+    @Test
+    def toChain02(): Unit \ Assert =
+        assertEq(expected = List.toChain(1 :: 2 :: Nil), Foldable.toChain(1 :: 2 :: Nil))
 
-    @test
-    def toChain03(): Bool =
-        Foldable.toChain(Set#{0, 1, 2, 3, 4}) == List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toDelayList                                                             //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toDelayList01(): Bool =
-        Foldable.toDelayList((Nil: List[Int32])) == (DelayList.empty(): DelayList[Int32])
-
-    @test
-    def toDelayList02(): Bool =
-        Foldable.toDelayList(1 :: 2 :: Nil) == List.toDelayList(1 :: 2 :: Nil)
-
-    @test
-    def toDelayList03(): Bool =
-        Foldable.toDelayList(Set#{0, 1, 2, 3, 4}) == List.toDelayList(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+    @Test
+    def toChain03(): Unit \ Assert =
+        assertEq(expected = List.toChain(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toChain(Set#{0, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toArray                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toArray01(): Bool = region rc {
-        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc)
+    @Test
+    def toArray01(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, Nil)), Array#{1} @ rc))
     }
 
-    @test
-    def toArray02(): Bool = region rc {
-        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc)
+    @Test
+    def toArray02(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 2 :: 3 :: Nil)), Array#{1, 2, 3} @ rc))
     }
 
-    @test
-    def toArray03(): Bool = region rc {
-        Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc)
+    @Test
+    def toArray03(): Unit \ Assert = region rc {
+        assertTrue(Array.sameElements(Foldable.toArray(rc, Nel.Nel(1, 1 :: 2 :: 3 :: Nil)), Array#{1, 1, 2, 3} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////
     // toVector                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toVector01(): Bool =
-        Foldable.toVector(Nel.Nel(1, Nil)) == Vector#{1}
+    @Test
+    def toVector01(): Unit \ Assert =
+        assertEq(expected = Vector#{1}, Foldable.toVector(Nel.Nel(1, Nil)))
 
-    @test
-    def toVector02(): Bool =
-        Foldable.toVector(Nel.Nel(1, 2 :: 3 :: Nil)) == Vector#{1, 2, 3}
+    @Test
+    def toVector02(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 2, 3}, Foldable.toVector(Nel.Nel(1, 2 :: 3 :: Nil)))
 
-    @test
-    def toVector03(): Bool =
-        Foldable.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)) == Vector#{1, 1, 2, 3}
+    @Test
+    def toVector03(): Unit \ Assert =
+        assertEq(expected = Vector#{1, 1, 2, 3}, Foldable.toVector(Nel.Nel(1, 1 :: 2 :: 3 :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // toMutDeque                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMutDeque01(): Bool = region rc {
-        let l = (Nil: List[Unit]);
-        let d = Foldable.toMutDeque(rc, l);
-
-        l == MutDeque.toList(d)
-    }
-
-    @test
-    def toMutDeque02(): Bool = region rc {
-        let l = 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        l == MutDeque.toList(d)
-    }
-
-    @test
-    def toMutDeque03(): Bool = region rc {
-        let l = 3 :: 1 :: 2 :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        l == MutDeque.toList(d)
-    }
-
-    @test
-    def toMutDeque04(): Bool = region rc {
-        let l = 'a' :: 'b' :: 'c' :: Nil;
-        let d = Foldable.toMutDeque(rc, l);
-
-        l == MutDeque.toList(d)
-    }
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutSet                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toMutSet01(): Bool = region rc {
-        let s1 = (Set#{}: Set[Int32]);
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        s1 == MutSet.toSet(s2)
-    }
-
-    @test
-    def toMutSet02(): Bool = region rc {
-        let s1 = Set#{1, 2};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        s1 == MutSet.toSet(s2)
-    }
-
-    @test
-    def toMutSet03(): Bool = region rc {
-        let s1 = Set#{1, 2, 3};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        s1 == MutSet.toSet(s2)
-    }
-
-    @test
-    def toMutSet04(): Bool = region rc {
-        let s1 = Set#{'a', 'b', 'c'};
-        let s2 = Foldable.toMutSet(rc, s1);
-
-        s1 == MutSet.toSet(s2)
-    }
-
     /////////////////////////////////////////////////////////////////////////////
     // toMapWith                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toMapWith01(): Bool =
-        Foldable.toMapWith(x -> 0 * x, List.toChain(Nil)) == Map#{}
+    @Test
+    def toMapWith01(): Unit \ Assert =
+        assertEq(expected = Map#{}, Foldable.toMapWith(x -> 0 * x, List.toChain(Nil)))
 
-    @test
-    def toMapWith02(): Bool =
-        Foldable.toMapWith(x -> 0 * x, List.toChain(1 :: 2 :: Nil)) == Map#{1 => 0, 2 => 0}
+    @Test
+    def toMapWith02(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 0, 2 => 0}, Foldable.toMapWith(x -> 0 * x, List.toChain(1 :: 2 :: Nil)))
 
-    @test
-    def toMapWith03(): Bool =
-        Foldable.toMapWith(x -> 2 * x, List.toChain(1 :: 2 :: Nil)) == Map#{1 => 2, 2 => 4}
+    @Test
+    def toMapWith03(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 2, 2 => 4}, Foldable.toMapWith(x -> 2 * x, List.toChain(1 :: 2 :: Nil)))
 
-    @test
-    def toMapWith04(): Bool =
-        Foldable.toMapWith(x -> x + 10, List.toChain(1 :: 2 :: Nil)) == Map#{1 => 11, 2 => 12}
+    @Test
+    def toMapWith04(): Unit \ Assert =
+        assertEq(expected = Map#{1 => 11, 2 => 12}, Foldable.toMapWith(x -> x + 10, List.toChain(1 :: 2 :: Nil)))
 
-    @test
-    def toMapWith05(): Bool =
-        Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)) == Map#{"a" => "ab", "aa" => "aab"}
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toDelayMap                                                              //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toDelayMap01(): Bool =
-        let l = (Nil: List[(Int32, Int32)]);
-        let d1 = Foldable.toDelayMap(List.toChain(l));
-        (d1 |> DelayMap.toList) == l
-
-    @test
-    def toDelayMap02(): Bool =
-        let l = (1, 2) :: (2, 3) :: (3, 4) :: Nil;
-        let d1 = Foldable.toDelayMap(List.toChain(l));
-        (d1 |> DelayMap.toList) == l
-
-    @test
-    def toDelayMap03(): Bool =
-        let s = Set#{(0, 2), (1, 4), (2, 6), (3, 8), (4, 10)};
-        let d1 = Foldable.toDelayMap(s);
-        (d1 |> DelayMap.toSet) == s
-
-    /////////////////////////////////////////////////////////////////////////////
-    // toMutMap                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def toMutMap01(): Bool = region rc {
-        let l = (Nil: List[(Unit, Unit)]);
-        let m = Foldable.toMutMap(rc, l);
-
-        l == MutMap.toList(m)
-    }
-
-    @test
-    def toMutMap02(): Bool = region rc {
-        let l = (1, 2) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(rc, l);
-
-        l == MutMap.toList(m)
-    }
-
-    @test
-    def toMutMap03(): Bool = region rc {
-        let l = (1, 4) :: (2, 3) :: (3, 4) :: Nil;
-        let m = Foldable.toMutMap(rc, l);
-
-        l == MutMap.toList(m)
-    }
-
-    @test
-    def toMutMap04(): Bool = region rc {
-        let l = (1, 'a') :: (2, 'b') :: (3, 'c') :: Nil;
-        let m = Foldable.toMutMap(rc, l);
-
-        l == MutMap.toList(m)
-    }
+    @Test
+    def toMapWith05(): Unit \ Assert =
+        assertEq(expected = Map#{"a" => "ab", "aa" => "aab"}, Foldable.toMapWith(x -> x + "b", List.toChain("aa" :: "a" :: Nil)))
 
     /////////////////////////////////////////////////////////////////////////////
     // toNec                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNec01(): Bool =
-        Foldable.toNec((Nil: List[Int32])) == None
+    @Test
+    def toNec01(): Unit \ Assert =
+        assertEq(expected = None, Foldable.toNec((Nil: List[Int32])))
 
-    @test
-    def toNec02(): Bool =
-        Foldable.toNec(1 :: 2 :: Nil) == Some(Nec.cons(1, Nec.singleton(2)))
+    @Test
+    def toNec02(): Unit \ Assert =
+        assertEq(expected = Some(Nec.cons(1, Nec.singleton(2))), Foldable.toNec(1 :: 2 :: Nil))
 
-    @test
-    def toNec03(): Bool =
-        Foldable.toNec(Set#{0, 1, 2, 3, 4}) == List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+    @Test
+    def toNec03(): Unit \ Assert =
+        assertEq(expected = List.toNec(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toNec(Set#{0, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // toNel                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def toNel01(): Bool =
-        Foldable.toNel((Nil: List[Int32])) == None
+    @Test
+    def toNel01(): Unit \ Assert =
+        assertEq(expected = None, Foldable.toNel((Nil: List[Int32])))
 
-    @test
-    def toNel02(): Bool =
-        Foldable.toNel(1 :: 2 :: Nil) == Some(Nel.cons(1, Nel.singleton(2)))
+    @Test
+    def toNel02(): Unit \ Assert =
+        assertEq(expected = Some(Nel.cons(1, Nel.singleton(2))), Foldable.toNel(1 :: 2 :: Nil))
 
-    @test
-    def toNel03(): Bool =
-        Foldable.toNel(Set#{0, 1, 2, 3, 4}) == List.toNel(0 :: 1 :: 2 :: 3 :: 4 :: Nil)
+    @Test
+    def toNel03(): Unit \ Assert =
+        assertEq(expected = List.toNel(0 :: 1 :: 2 :: 3 :: 4 :: Nil), Foldable.toNel(Set#{0, 1, 2, 3, 4}))
 
     /////////////////////////////////////////////////////////////////////////////
     // join                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def join01(): Bool =
-        Foldable.join(",", (Nil: List[Int32])) == ""
+    @Test
+    def join01(): Unit \ Assert =
+        assertEq(expected = "", Foldable.join(",", (Nil: List[Int32])))
 
-    @test
-    def join02(): Bool =
-        Foldable.join(",", 1 :: Nil) == "1"
+    @Test
+    def join02(): Unit \ Assert =
+        assertEq(expected = "1", Foldable.join(",", 1 :: Nil))
 
-    @test
-    def join03(): Bool =
-        Foldable.join(",", 1 :: 2 :: 3 :: Nil) == "1,2,3"
+    @Test
+    def join03(): Unit \ Assert =
+        assertEq(expected = "1,2,3", Foldable.join(",", 1 :: 2 :: 3 :: Nil))
 
-    @test
-    def join04(): Bool =
-        Foldable.join(",", "1" :: "2" :: "3" :: Nil) == "1,2,3"
+    @Test
+    def join04(): Unit \ Assert =
+        assertEq(expected = "1,2,3", Foldable.join(",", "1" :: "2" :: "3" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // joinWith                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def joinWith01(): Bool =
-        Foldable.joinWith(x -> "${x + 1}", ",", (Nil: List[Int32])) == ""
+    @Test
+    def joinWith01(): Unit \ Assert =
+        assertEq(expected = "", Foldable.joinWith(x -> "${x + 1}", ",", (Nil: List[Int32])))
 
-    @test
-    def joinWith02(): Bool =
-        Foldable.joinWith(x -> "${x + 1}", ",", 1 :: Nil) == "2"
+    @Test
+    def joinWith02(): Unit \ Assert =
+        assertEq(expected = "2", Foldable.joinWith(x -> "${x + 1}", ",", 1 :: Nil))
 
-    @test
-    def joinWith03(): Bool =
-        Foldable.joinWith(x -> "${x + 1}", ",", 1 :: 2 :: 3 :: Nil) == "2,3,4"
+    @Test
+    def joinWith03(): Unit \ Assert =
+        assertEq(expected = "2,3,4", Foldable.joinWith(x -> "${x + 1}", ",", 1 :: 2 :: 3 :: Nil))
 
-    @test
-    def joinWith04(): Bool =
-        Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil) == "11,22,33"
+    @Test
+    def joinWith04(): Unit \ Assert =
+        assertEq(expected = "11,22,33", Foldable.joinWith(x -> x + x, ",", "1" :: "2" :: "3" :: Nil))
 
     /////////////////////////////////////////////////////////////////////////////
     // filter                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
-    def filter01(): Bool =
-        Foldable.filter(_ -> true, (Nil: List[Int32])) == (Nil: List[Int32])
+    @Test
+    def filter01(): Unit \ Assert =
+        assertEq(expected = (Nil: List[Int32]), Foldable.filter(_ -> true, (Nil: List[Int32])))
 
-    @test
-    def filter02(): Bool =
-        Foldable.filter(_ -> false, List#{1, 2}) == Nil
+    @Test
+    def filter02(): Unit \ Assert =
+        assertEq(expected = Nil, Foldable.filter(_ -> false, List#{1, 2}))
 
-    @test
-    def filter03(): Bool =
-        Foldable.filter(x -> x > 2, List#{1, 8, 2, 3}) == List#{8, 3}
+    @Test
+    def filter03(): Unit \ Assert =
+        assertEq(expected = List#{8, 3}, Foldable.filter(x -> x > 2, List#{1, 8, 2, 3}))
 
-    @test
-    def filter04(): Bool =
-        Foldable.filter(x -> x <= 2, List#{1, 8, 2, 3}) == List#{1, 2}
+    @Test
+    def filter04(): Unit \ Assert =
+        assertEq(expected = List#{1, 2}, Foldable.filter(x -> x <= 2, List#{1, 8, 2, 3}))
 
     eff Capture {
         def capture(x: Int32): Int32
     }
 
-    @test
-    def filter05(): Bool = region rc {
+    @Test
+    def filter05(): Unit \ Assert = region rc {
         let xs = Vector#{1, 2, 3, 4};
         let effects = MutList.empty(rc);
         def f(x) = if (x > 2) {
-            Capture.capture(x);
+            discard Capture.capture(x);
             false
         } else {
             true
@@ -669,6 +494,7 @@ mod TestFoldable {
                 resume(x)
             }
         };
-        Assert.eq(List#{1, 2}, filtered) and Assert.eq(List#{3, 4}, MutList.toList(effects))
+        assertEq(expected = List#{1, 2}, filtered);
+        assertEq(expected = List#{3, 4}, MutList.toList(effects))
     }
 }

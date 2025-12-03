@@ -38,9 +38,6 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   // A new Flix instance is created and initialized with some source code for each test.
   private var flix: Flix = _
 
-  // The default security context.
-  private implicit val sctx: SecurityContext = SecurityContext.AllPermissions
-
   before {
     flix = new Flix()
     flix.addSourceCode(FileA,

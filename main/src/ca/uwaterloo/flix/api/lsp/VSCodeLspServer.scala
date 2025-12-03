@@ -186,6 +186,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       case JString("lsp/inlayHints") => Request.parseInlayHint(json)
       case JString("lsp/showAst") => Request.parseShowAst(json)
       case JString("lsp/codeAction") => Request.parseCodeAction(json)
+      case JString("lsp/formatting") => Request.parseFormatting(json)
 
       case _ => Err(s"Unsupported request: '$s'.")
     }
@@ -197,7 +198,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)(SecurityContext.AllPermissions) // TODO
+    flix.addSourceCode(uri, src)(SecurityContext.Unrestricted) // TODO
     sources += (uri -> src)
   }
 
@@ -329,6 +330,10 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.CodeAction(id, uri, range, _) =>
       ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> CodeActionProvider.getCodeActions(uri, range, currentErrors)(root).map(_.toJSON))
+
+    case Request.Formatting(id, uri, options) =>
+      val edits = FormattingProvider.formatDocument(uri, options)(flix).map(_.toJSON)
+      ("id" -> id) ~ ("uri" -> uri) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> JArray(edits))
 
   }
 

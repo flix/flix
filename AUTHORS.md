@@ -1,4 +1,13 @@
-# Contributors
+# Authors
+
+## Core Team
+
+- [Matthew Lutze](https://github.com/mlutze)
+- [Magnus Madsen](https://github.com/magnus-madsen)
+- [Jonathan Lindegaard Starup](https://github.com/JonathanStarup)
+- [Jakob Schneider Villumsen](https://github.com/jaschdoc)
+
+## Contributors
 
 By adding your name to this document, you agree to release all your contributions to Flix under the [Apache 2.0 License](LICENSE.md).
 
@@ -6,7 +15,6 @@ By adding your name to this document, you agree to release all your contribution
 - [Luqman Aden](https://github.com/luqmana)
 - [Nada Amin](https://github.com/namin)
 - [Ondřej Lhoták](https://github.com/olhotak)
-- [Magnus Madsen](https://github.com/magnus-madsen)
 - [Ming-Ho Yee](https://github.com/mhyee)
 - [Paul Phillips](https://github.com/paulp)
 - [Liam Palmer](https://github.com/liampalmer43)
@@ -21,13 +29,11 @@ By adding your name to this document, you agree to release all your contribution
 - [Patrick Bering Tietze](https://github.com/Tietze95)
 - [Simon Dalgas Christensen](https://github.com/Dalgas104)
 - [Frederik Kirk Kristensen](https://github.com/FkirkK)
-- [Jonathan Lindegaard Starup](https://github.com/JonathanStarup)
 - [Simon Meldahl Schmidt](https://github.com/SimonMeldahl)
 - [Miguel Angelo Nicolau Fialho](https://github.com/ma-fialho)
 - [Frederik Arp Frandsen](https://github.com/fredeaf)
 - [Quentin Stiévenart](https://github.com/acieroid)
 - [Stephen Tetley](https://github.com/stephentetley)
-- [Matthew Lutze](https://github.com/mlutze)
 - [Esben Bjerre](https://github.com/esbenbjerre)
 - [Erik Funder Carstensen](https://github.com/halvko)
 - [Rasmus Larsen](https://github.com/herbstein)
@@ -39,7 +45,6 @@ By adding your name to this document, you agree to release all your contribution
 - [Andreas Heglingegård](https://github.com/racerand)
 - [Felix Wiemuth](https://github.com/felixwiemuth)
 - [Manoj Kumar](https://github.com/manoj2601)
-- [Jakob Schneider Villumsen](https://github.com/jaschdoc)
 - [Ramiro Calle](https://github.com/rrramiro)
 - [Jacob Harris Cryer Kragh](https://github.com/jhckragh)
 - [Nicola Dardanis](https://github.com/nicdard)
@@ -74,7 +79,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Alexander Dybdahl Troelsen](https://github.com/LoZander)
 - [Chenhao Gao](https://github.com/stormckey)
 - [Maksim Gusev](https://github.com/emaisty)
-- [gwydd](https://github.com/gwydd12)
+- [Din Jakupi](https://github.com/gwydd12)
 - [Adam Yasser Tallouzi](https://github.com/JumpTwiice)
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
 - [Gagan Chandan](https://github.com/gaganchandan)
@@ -82,3 +87,6 @@ By adding your name to this document, you agree to release all your contribution
 - [Asher Frost](https://github.com/wizard7377)
 - [Ry Wiese](https://github.com/rywiese)
 - [Michał Kukieła](https://github.com/kukimik)
+- [Alex Asafov](https://github.com/Alex1005a)
+- [Daniel Neo López Martínez](https://github.com/NeonOxide)
+- [Jeff Beu](https://github.com/hexagonhill)

@@ -18,13 +18,14 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.*
+import ca.uwaterloo.flix.language.ast.JvmAst.*
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
-import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition}
+import ca.uwaterloo.flix.language.ast.shared.{Constant, ExpPosition, Mutability}
 import ca.uwaterloo.flix.language.ast.{SimpleType, *}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 import org.objectweb.asm
 import org.objectweb.asm.*
 import org.objectweb.asm.Opcodes.*
@@ -98,14 +99,13 @@ object GenExpression {
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
   def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
-    case Expr.Cst(cst, tpe, loc) => cst match {
+    case Expr.Cst(cst, loc) => cst match {
       case Constant.Unit =>
         BytecodeInstructions.GETSTATIC(BackendObjType.Unit.SingletonField)
 
       case Constant.Null =>
         import BytecodeInstructions.*
         ACONST_NULL()
-        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case Constant.Bool(b) =>
         BytecodeInstructions.pushBool(b)
@@ -171,10 +171,16 @@ object GenExpression {
       case Constant.RecordEmpty =>
         BytecodeInstructions.GETSTATIC(BackendObjType.RecordEmpty.SingletonField)
 
+      case Constant.Static =>
+        import BytecodeInstructions.*
+        //!TODO: For now, just emit null
+        ACONST_NULL()
+        CHECKCAST(BackendObjType.Region.jvmName)
+
     }
 
-    case Expr.Var(sym, tpe, _) =>
-      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), sym.getStackOffset(ctx.localOffset))
+    case Expr.Var(_, offset, tpe, _) =>
+      BytecodeInstructions.xLoad(BackendType.toBackendType(tpe), JvmOps.getIndex(offset, ctx.localOffset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
@@ -580,34 +586,20 @@ object GenExpression {
             throw InternalCompilerException(s"Unexpected BinaryOperator StringOp.Concat. It should have been eliminated by Simplifier", loc)
         }
 
-      case AtomicOp.Region =>
-        import BytecodeInstructions.*
-        //!TODO: For now, just emit null
-        ACONST_NULL()
-        CHECKCAST(BackendObjType.Region.jvmName)
-
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        val SimpleType.Enum(_, targs) = exp.tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
         compileIsTag(sym.name, exp, termTypes)
 
       case AtomicOp.Tag(sym) =>
-        val SimpleType.Enum(_, targs) = tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
         compileTag(sym.name, exps, termTypes)
 
       case AtomicOp.Untag(sym, idx) =>
-        import BytecodeInstructions.*
         val List(exp) = exps
-        val SimpleType.Enum(_, targs) = exp.tpe
-        val cases = JvmOps.instantiateEnum(root.enums(sym.enumSym), targs)
-        val termTypes = cases(sym)
+        val termTypes = root.enums(sym.enumSym).cases(sym).tpes.map(BackendType.toBackendType)
 
         compileUntag(exp, idx, termTypes)
-        castIfNotPrim(BackendType.toBackendType(tpe))
 
       case AtomicOp.Index(idx) =>
         import BytecodeInstructions.*
@@ -740,16 +732,22 @@ object GenExpression {
         compileExpr(exp)
         ARRAYLENGTH()
 
-      case AtomicOp.StructNew(_, _) =>
+      case AtomicOp.StructNew(sym, mutability, _) =>
         import BytecodeInstructions.*
-
-        val region :: fieldExps = exps
-        val SimpleType.Struct(sym, targs) = tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
-
-        // Evaluate the region and ignore its value
-        compileExpr(region)
-        xPop(BackendType.toBackendType(region.tpe))
+        val structType = getStructType(root.structs(sym))
+        val (fieldExps, regionOpt) = mutability match {
+          case Mutability.Immutable => (exps, None)
+          case Mutability.Mutable =>
+            val region :: fields = exps
+            (fields, Some(region))
+        }
+        // If we have a region evaluate it and remove the result from the stack.
+        regionOpt match {
+          case None => ()
+          case Some(region) =>
+            compileExpr(region)
+            xPop(BackendType.toBackendType(region.tpe))
+        }
         NEW(structType.jvmName)
         DUP()
         fieldExps.foreach(compileExpr)
@@ -759,9 +757,9 @@ object GenExpression {
         import BytecodeInstructions.*
 
         val List(exp) = exps
-        val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
-        val SimpleType.Struct(sym, targs) = exp.tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
+        val struct = root.structs(field.structSym)
+        val structType = getStructType(struct)
+        val idx = struct.fields.indexWhere(_.sym == field)
 
         compileExpr(exp)
         GETFIELD(structType.IndexField(idx))
@@ -770,9 +768,9 @@ object GenExpression {
         import BytecodeInstructions.*
 
         val List(exp1, exp2) = exps
-        val idx = root.structs(field.structSym).fields.indexWhere(_.sym == field)
-        val SimpleType.Struct(sym, targs) = exp1.tpe
-        val structType = BackendObjType.Struct(JvmOps.instantiateStruct(sym, targs))
+        val struct = root.structs(field.structSym)
+        val idx = struct.fields.indexWhere(_.sym == field)
+        val structType = getStructType(struct)
 
         compileExpr(exp1)
         compileExpr(exp2)
@@ -931,7 +929,7 @@ object GenExpression {
         val List(exp1, exp2) = exps
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
+          case Expr.Cst(Constant.Static, _) =>
             addLoc(loc)
             compileExpr(exp1)
             CHECKCAST(JvmName.Runnable)
@@ -1101,7 +1099,7 @@ object GenExpression {
         if (canCallStaticMethod) {
           val paramTpes = defn.fparams.map(fp => BackendType.toBackendType(fp.tpe))
           // Call the static method, using exact types
-          for ((arg, tpe) <- exps.zip(paramTpes)) {
+          for ((arg, tpe) <- ListOps.zip(exps, paramTpes)) {
             compileExpr(arg)
             BytecodeInstructions.castIfNotPrim(tpe)
           }
@@ -1248,10 +1246,10 @@ object GenExpression {
           // Evaluate the argument and push the result on the stack.
           compileExpr(arg)
         }
-        for ((arg, fp) <- exps.zip(defn.fparams).reverse) {
+        for ((arg, fp) <- ListOps.zip(exps, defn.fparams).reverse) {
           // Store it in the ith parameter.
           val tpe = BackendType.toBackendType(arg.tpe)
-          val offset = fp.sym.getStackOffset(ctx.localOffset)
+          val offset = JvmOps.getIndex(fp.offset, ctx.localOffset)
           BytecodeInstructions.xStore(tpe, offset)
         }
         // Jump to the entry point of the method.
@@ -1292,21 +1290,21 @@ object GenExpression {
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, _, _) =>
+    case Expr.Let(_, offset, exp1, exp2, _) =>
       import BytecodeInstructions.*
       val bType = BackendType.toBackendType(exp1.tpe)
       compileExpr(exp1)
       castIfNotPrim(bType)
-      xStore(bType, sym.getStackOffset(ctx.localOffset))
+      xStore(bType, JvmOps.getIndex(offset, ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.Stmt(exp1, exp2, _, _, _) =>
+    case Expr.Stmt(exp1, exp2, _) =>
       import BytecodeInstructions.*
       compileExpr(exp1)
       xPop(BackendType.toBackendType(exp1.tpe))
       compileExpr(exp2)
 
-    case Expr.Scope(sym, exp, _, _, loc) =>
+    case Expr.Region(_, offset, exp, _, _, loc) =>
       // Adding source line number for debugging
       BytecodeInstructions.addLoc(loc)
 
@@ -1328,7 +1326,7 @@ object GenExpression {
       mv.visitMethodInsn(INVOKESPECIAL, BackendObjType.Region.jvmName.toInternalName, JvmName.ConstructorMethod,
         MethodDescriptor.NothingToVoid.toDescriptor, false)
 
-      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xStore(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1339,14 +1337,14 @@ object GenExpression {
       mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, finallyBlock, null)
 
       // When we exit the scope, call the region's `exit` method
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1354,7 +1352,7 @@ object GenExpression {
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, sym.getStackOffset(ctx.localOffset))
+      BytecodeInstructions.xLoad(BackendObjType.Region.toTpe, JvmOps.getIndex(offset, ctx.localOffset))
       mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
@@ -1386,12 +1384,12 @@ object GenExpression {
       mv.visitJumpInsn(GOTO, afterTryAndCatch)
 
       // Emit code for each catch rule.
-      for ((CatchRule(sym, _, body), handlerLabel) <- rulesAndLabels) {
+      for ((CatchRule(_, offset, _, body), handlerLabel) <- rulesAndLabels) {
         // Emit the label.
         mv.visitLabel(handlerLabel)
 
         // Store the exception in a local variable.
-        BytecodeInstructions.xStore(BackendType.Object, sym.getStackOffset(ctx.localOffset))
+        BytecodeInstructions.xStore(BackendType.Object, JvmOps.getIndex(offset, ctx.localOffset))
 
         // Emit code for the handler body expression.
         compileExpr(body)
@@ -1400,7 +1398,7 @@ object GenExpression {
 
       // Emit a try catch block for each catch rule. It's important to do this after compiling
       // sub-expressions to ensure correct catch case ordering.
-      for ((CatchRule(_, clazz, _), handlerLabel) <- rulesAndLabels) {
+      for ((CatchRule(_, _, clazz, _), handlerLabel) <- rulesAndLabels) {
         mv.visitTryCatchBlock(beforeTryBlock, afterTryBlock, handlerLabel, asm.Type.getInternalName(clazz))
       }
 
@@ -1469,6 +1467,10 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getErasedClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  private def getStructType(struct: Struct)(implicit root: Root): BackendObjType.Struct = {
+    BackendObjType.Struct(struct.fields.map(field => BackendType.toBackendType(field.tpe)))
   }
 
   private def compileIsTag(name: String, exp: Expr, tpes: List[BackendType])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, Pattern, RestrictableChoosePattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, ExtPattern, ExtTagPattern, Pattern, RestrictableChoosePattern, Root}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -66,7 +66,7 @@ object Dependencies {
     * The value is fixed to () since it doesn't matter.
     */
   private def addDependency(src: SourceLocation, dst: SourceLocation)(implicit sctx: SharedContext): Unit = {
-    sctx.deps.put((src.sp1.source.input, dst.sp1.source.input), ())
+    sctx.deps.put((src.source.input, dst.source.input), ())
   }
 
   private def visitDef(defn: TypedAst.Def)(implicit sctx: SharedContext): TypedAst.Def =  {
@@ -197,10 +197,7 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Region(tpe, _) =>
-      visitType(tpe)
-
-    case Expr.Scope(bnd, _, exp, tpe, eff, _) =>
+    case Expr.Region(bnd, _, exp, tpe, eff, _) =>
       visitBinder(bnd)
       visitExp(exp)
       visitType(tpe)
@@ -319,7 +316,7 @@ object Dependencies {
         visitSymUse(field._1)
         visitExp(field._2)
       }
-      visitExp(region)
+      region.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
@@ -370,9 +367,10 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.Unsafe(exp, runEff, tpe, eff, _) =>
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, _) =>
       visitExp(exp)
       visitType(runEff)
+      asEff.foreach(visitType)
       visitType(tpe)
       visitType(eff)
 
@@ -508,23 +506,22 @@ object Dependencies {
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointSolve(exp, tpe, eff, _, _) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
+      visitExp(queryExp)
+      selects.foreach(visitExp)
+      from.foreach(visitConstraintBody)
+      where.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointFilter(_, exp, tpe, eff, _) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, _, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
-    case Expr.FixpointInject(exp, _, tpe, eff, _) =>
-      visitExp(exp)
-      visitType(tpe)
-      visitType(eff)
-
-    case Expr.FixpointProject(_, _, exp, tpe, eff, _) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, _, tpe, eff, _) =>
+      exps.foreach(visitExp)
       visitType(tpe)
       visitType(eff)
 
@@ -608,8 +605,8 @@ object Dependencies {
   }
 
   private def visitExtMatchRule(r: TypedAst.ExtMatchRule)(implicit sctx: SharedContext): Unit = r match {
-    case ExtMatchRule(_, pats, exp, _) =>
-      pats.foreach(visitExtPattern)
+    case ExtMatchRule(pat, exp, _) =>
+      visitExtPattern(pat)
       visitExp(exp)
   }
 
@@ -633,14 +630,28 @@ object Dependencies {
   }
 
   private def visitExtPattern(p: TypedAst.ExtPattern)(implicit sctx: SharedContext): Unit = p match {
-    case ExtPattern.Wild(tpe, _) =>
+    case ExtPattern.Default(_) =>
+      ()
+
+    case ExtPattern.Tag(_, pats, _) =>
+      pats.foreach(visitExtTagPattern)
+
+    case ExtPattern.Error(_) =>
+      ()
+  }
+
+  private def visitExtTagPattern(v: TypedAst.ExtTagPattern)(implicit sctx: SharedContext): Unit = v match {
+    case ExtTagPattern.Wild(tpe, _) =>
       visitType(tpe)
 
-    case ExtPattern.Var(bnd, tpe, _) =>
+    case ExtTagPattern.Var(bnd, tpe, _) =>
       visitBinder(bnd)
       visitType(tpe)
 
-    case ExtPattern.Error(tpe, _) =>
+    case ExtTagPattern.Unit(tpe, _) =>
+      visitType(tpe)
+
+    case ExtTagPattern.Error(tpe, _) =>
       visitType(tpe)
   }
 

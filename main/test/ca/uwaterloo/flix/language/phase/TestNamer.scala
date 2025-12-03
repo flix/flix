@@ -23,54 +23,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestNamer extends AnyFunSuite with TestUtils {
 
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.01") {
-    val input =
-      """
-        |import java.lang.StringBuffer
-        |import java.lang.StringBuffer
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.02") {
-    val input =
-      """
-        |import java.lang.{StringBuffer => StringThingy}
-        |import java.lang.{StringBuffer => StringThingy}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.03") {
-    val input =
-      """
-        |mod A {
-        |    import java.lang.StringBuffer
-        |    import java.lang.StringBuffer
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.04") {
-    val input =
-      """
-        |mod A {
-        |    import java.lang.{StringBuffer => StringThingy}
-        |    import java.lang.{StringBuilder => StringThingy}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
   test("DuplicateLowerName.01") {
     val input =
       s"""
@@ -515,17 +467,6 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.21") {
-    val input =
-      """
-        |import java.sql.Statement
-        |enum Statement
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
   test("DuplicateUpperName.22") {
     val input =
       """
@@ -536,74 +477,37 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.23") {
-    val input =
-      """
-        |use A.Statement
-        |enum Statement
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.24") {
-    val input =
-      """
-        |mod A {
-        |    import java.sql.Statement
-        |    enum Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.25") {
-    val input =
-      """
-        |mod A {
-        |    use B.Statement
-        |    import java.sql.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.26") {
-    val input =
-      """
-        |enum Statement
-        |mod A {
-        |    use B.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateUpperName.27") {
-    val input =
-      """
-        |enum Statement
-        |mod A {
-        |    import B.Statement
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
   test("DuplicateUpperName.28") {
     val input =
       """
         |struct S[r] {}
         |enum S {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.29") {
+    val input =
+      """
+        |enum S {case S}
+        |enum S {}
+        |def main(): Unit = {
+        |    discard S.S
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.30") {
+    val input =
+      """
+        |enum S {}
+        |enum S {case S}
+        |def main(): Unit = {
+        |    discard S.S
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.DuplicateUpperName](result)
@@ -667,7 +571,7 @@ class TestNamer extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.IllegalReservedName](result)
   }
-  
+
   test("IllegalReservedName.Alias.01") {
     val input =
       """type alias Float32[k] = (k,k)

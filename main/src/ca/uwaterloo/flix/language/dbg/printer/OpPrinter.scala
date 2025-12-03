@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.language.dbg.printer
 
 import ca.uwaterloo.flix.language.ast.SemanticOp.*
 import ca.uwaterloo.flix.language.ast.*
+import ca.uwaterloo.flix.language.ast.shared.Mutability
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr
 import ca.uwaterloo.flix.language.dbg.DocAst.Expr.*
+import ca.uwaterloo.flix.util.collection.ListOps
 
 object OpPrinter {
 
@@ -166,7 +168,6 @@ object OpPrinter {
     * Returns the [[DocAst.Expr]] representation of `op`.
     */
   def print(op: AtomicOp, ds: List[Expr], tpe: DocAst.Type, eff: DocAst.Type): Expr = (op, ds) match {
-    case (AtomicOp.Region, Nil) => Region
     case (AtomicOp.GetStaticField(field), Nil) => JavaGetStaticField(field)
     case (AtomicOp.HoleError(sym), Nil) => HoleError(sym)
     case (AtomicOp.MatchError, Nil) => MatchError
@@ -175,7 +176,7 @@ object OpPrinter {
     case (AtomicOp.Binary(sop), List(d1, d2)) => Binary(d1, OpPrinter.print(sop), d2)
     case (AtomicOp.Is(sym), List(d)) => Is(sym, d)
     case (AtomicOp.Tag(sym), _) => Tag(sym, ds)
-    case (AtomicOp.Untag(sym, idx), List(d)) => Untag(sym, d, idx)
+    case (AtomicOp.Untag(_, idx), List(d)) => Untag(d, idx)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
     case (AtomicOp.Cast, List(d)) => UncheckedCast(d, Some(tpe), Some(eff))
     case (AtomicOp.Unbox, List(d)) => Unbox(d, tpe)
@@ -184,7 +185,16 @@ object OpPrinter {
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)
     case (AtomicOp.ArrayLength, List(d)) => ArrayLength(d)
-    case (AtomicOp.StructNew(sym, fields), d :: rs) => Expr.StructNew(sym, fields.zip(rs), d)
+    case (AtomicOp.StructNew(sym, Mutability.Mutable, fields), d :: rs) =>
+      ListOps.zipOption(fields, rs) match {
+        case None => Expr.Unknown
+        case Some(fs) => Expr.StructNew(sym, fs, Some(d))
+      }
+    case (AtomicOp.StructNew(sym, Mutability.Immutable, fields), rs) =>
+      ListOps.zipOption(fields, rs) match {
+        case None => Expr.Unknown
+        case Some(fs) => Expr.StructNew(sym, fs, None)
+      }
     case (AtomicOp.StructGet(field), List(d)) => Expr.StructGet(d, field)
     case (AtomicOp.StructPut(field), List(d1, d2)) => Expr.StructPut(d1, field, d2)
     case (AtomicOp.Lazy, List(d)) => Lazy(d)
@@ -204,7 +214,7 @@ object OpPrinter {
     case (AtomicOp.ArrayStore, List(d1, d2, d3)) => ArrayStore(d1, d2, d3)
     case (AtomicOp.InvokeMethod(method), d :: rs) => JavaInvokeMethod(method, d, rs)
     // fall back if non other applies
-    case (op, ds) => App(Meta(op.toString), ds)
+    case (op1, ds1) => App(Meta(op1.toString), ds1)
   }
 
 }

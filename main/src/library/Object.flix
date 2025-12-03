@@ -21,18 +21,11 @@ mod Object {
     ///
     /// Returns `true` if the given value `x` is `null`.
     ///
+    @Inline
     pub def isNull(x: a): Bool =
-        typematch x {
-            case _: Bool => false
-            case _: Char => false
-            case _: Float32 => false
-            case _: Float64 => false
-            case _: Int8 => false
-            case _: Int16 => false
-            case _: Int32 => false
-            case _: Int64 => false
-            case _: _ =>
-                unsafe Objects.isNull(unchecked_cast(x as Object))
+        match Reflect.reflect(x) {
+            case Reflect.JvmValue.JvmObject(obj) => Objects.isNull(obj)
+            case _ => false
         }
 
     ///

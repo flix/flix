@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.{Flix, PhaseTime}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.unification.EffUnification3
 import ca.uwaterloo.flix.util.StatUtils.{minimum, average, median}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{FileOps, LocalResource, Options, StatUtils}
 import org.json4s.JValue
 import org.json4s.JsonDSL.*
@@ -270,11 +271,11 @@ object CompilerPerf {
         ("maxThreads" -> MaxThreads) ~
         ("incremental" -> false) ~
         ("lines" -> lines) ~
-        ("results" -> baseline.phases.zip(baselineWithPar.phases).map {
+        ("results" -> ListOps.zipTruncate(baseline.phases, baselineWithPar.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("speedup" -> combine(times1.zip(times2).map(p => p._1.toDouble / p._2.toDouble)))
+            ("phase" -> phase) ~ ("speedup" -> combine(ListOps.zip(times1, times2).map(p => p._1.toDouble / p._2.toDouble)))
         })
-    writeFile("speedupWithPar.json", speedupPar)
+    writeFile("speedupWithPar.json", speedupPar, o)
 
     //
     // Incrementalism
@@ -284,11 +285,11 @@ object CompilerPerf {
         ("threads" -> MaxThreads) ~
         ("incremental" -> true) ~
         ("lines" -> lines) ~
-        ("results" -> baselineWithPar.phases.zip(baselineWithParInc.phases).map {
+        ("results" -> ListOps.zipTruncate(baselineWithPar.phases, baselineWithParInc.phases).map {
           case ((phase, times1), (_, times2)) =>
-            ("phase" -> phase) ~ ("ratio" -> combine(times1.zip(times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
+            ("phase" -> phase) ~ ("ratio" -> combine(ListOps.zip(times1, times2).map(p => Math.max(0.0, 1.toDouble - (p._2.toDouble / p._1.toDouble)))))
         })
-    writeFile("incrementalism.json", incrementalism)
+    writeFile("incrementalism.json", incrementalism, o)
 
     //
     // Throughput
@@ -302,7 +303,7 @@ object CompilerPerf {
         ("results" -> baseline.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughput.json", throughoutBaseLine)
+    writeFile("throughput.json", throughoutBaseLine, o)
 
     val throughputPar =
       ("timestamp" -> timestamp) ~
@@ -313,7 +314,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputWithPar.json", throughputPar)
+    writeFile("throughputWithPar.json", throughputPar, o)
 
     val throughputParInc =
       ("timestamp" -> timestamp) ~
@@ -324,7 +325,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.times.zipWithIndex.map({
           case (time, i) => ("i" -> s"Run $i") ~ ("throughput" -> throughput(lines, time))
         }))
-    writeFile("throughputWithParInc.json", throughputParInc)
+    writeFile("throughputWithParInc.json", throughputParInc, o)
 
     //
     // Time
@@ -337,7 +338,7 @@ object CompilerPerf {
         ("results" -> baseline.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("time.json", timeBaseline)
+    writeFile("time.json", timeBaseline, o)
 
     val timeWithPar =
       ("timestamp" -> timestamp) ~
@@ -347,7 +348,7 @@ object CompilerPerf {
         ("results" -> baselineWithPar.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("timeWithPar.json", timeWithPar)
+    writeFile("timeWithPar.json", timeWithPar, o)
 
     val timeWithParInc =
       ("timestamp" -> timestamp) ~
@@ -357,7 +358,7 @@ object CompilerPerf {
         ("results" -> baselineWithParInc.phases.map {
           case (phase, times) => ("phase" -> phase) ~ ("time" -> milliseconds(combine(times)))
         })
-    writeFile("timeWithParInc.json", timeWithParInc)
+    writeFile("timeWithParInc.json", timeWithParInc, o)
 
     //
     // Summary
@@ -369,12 +370,12 @@ object CompilerPerf {
         ("iterations" -> N) ~
         ("throughput" -> ("min" -> min) ~ ("max" -> max) ~ ("avg" -> avg) ~ ("median" -> mdn))
     val s = JsonMethods.pretty(JsonMethods.render(summaryJSON))
-    writeFile("summary.json", s)
+    writeFile("summary.json", s, o)
 
     //
     // Python Plot
     //
-    FileOps.writeString(Path.of("./build/").resolve("perf/").resolve("plots.py"), Python)
+    FileOps.writeString(o.outputPath.resolve("perf/").resolve("plots.py"), Python)
 
     println("~~~~ Flix Compiler Performance ~~~~")
     println()
@@ -477,7 +478,7 @@ object CompilerPerf {
 
     val phaseMatrix = l.map(_.phases.map(_._2))
     val transposedMatrix = phaseMatrix.transpose.map(_.toList).toList
-    val transposedWithPhases = phases.zip(transposedMatrix)
+    val transposedWithPhases = ListOps.zip(phases, transposedMatrix)
 
     Runs(lines, times, transposedWithPhases)
   }
@@ -499,7 +500,7 @@ object CompilerPerf {
     * Adds test code to the benchmarking suite.
     */
   private def addInputs(flix: Flix): Unit = {
-    implicit val sctx: SecurityContext = SecurityContext.AllPermissions
+    implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     flix.addSourceCode("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
     flix.addSourceCode("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
     flix.addSourceCode("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
@@ -521,8 +522,8 @@ object CompilerPerf {
   /**
     * Writes the given `json` to the given `file`.
     */
-  private def writeFile(file: String, json: JValue): Unit = {
-    val directory = Path.of("./build/").resolve("perf/")
+  private def writeFile(file: String, json: JValue, opts: Options): Unit = {
+    val directory = opts.outputPath.resolve("perf/")
     val filePath = directory.resolve(s"$file")
     FileOps.writeJSON(filePath, json)
   }

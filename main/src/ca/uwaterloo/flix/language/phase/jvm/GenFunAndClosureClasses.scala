@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{SimpleType, Purity, Symbol}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
+import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -86,7 +86,7 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, null)
 
     compileConstructor(functionInterface, visitor)
@@ -146,7 +146,7 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
     // Fields
@@ -227,7 +227,7 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
     // Fields
@@ -343,9 +343,9 @@ object GenFunAndClosureClasses {
     implicit val m: MethodVisitor = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, BackendType.toBackendType(cp.tpe), None) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", JvmOps.getIndex(lp.offset, localOffset), lp.sym.isWild, BackendType.toBackendType(lp.tpe), None) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", JvmOps.getIndex(cp.offset, localOffset), false, BackendType.toBackendType(cp.tpe), None) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", JvmOps.getIndex(fp.offset, localOffset), false, BackendType.toErasedBackendType(fp.tpe), Some(BackendType.toBackendType(fp.tpe))) }
 
     def loadParamsOf(params: List[(String, Int, Boolean, BackendType, Option[BackendType])]): Unit = {
       params.foreach { case (name, offset, _, fieldType, castTo) => loadFromField(m, className, name, offset, fieldType, castTo) }

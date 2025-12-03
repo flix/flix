@@ -133,8 +133,7 @@ object EffectVerifier {
       val expected = exp2.eff
       val actual = eff
       expectType(expected, actual, loc)
-    case Expr.Region(tpe, loc) => ()
-    case Expr.Scope(sym, regSym, exp, tpe, eff, loc) =>
+    case Expr.Region(sym, regSym, exp, tpe, eff, loc) =>
       visitExp(exp)
       val expected = Type.purifyRegion(exp.eff, regSym)
       val actual = eff
@@ -246,7 +245,7 @@ object EffectVerifier {
       ()
     case Expr.StructNew(sym, fields, region, tpe, eff, loc) =>
       fields.map { case (k, v) => v }.foreach(visitExp)
-      visitExp(region)
+      region.foreach(visitExp)
       // TODO region stuff
       ()
     case Expr.StructGet(e, _, t, _, _) =>
@@ -277,9 +276,9 @@ object EffectVerifier {
       visitExp(exp)
     case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       visitExp(exp)
-    case Expr.Unsafe(exp, runEff, tpe, eff, loc) =>
+    case Expr.Unsafe(exp, runEff, asEff, tpe, eff, loc) =>
       visitExp(exp)
-      val expected = Type.mkDifference(exp.eff, runEff, loc)
+      val expected = Type.mkUnion(Type.mkDifference(exp.eff, runEff, loc), Type.Pure, loc)
       val actual = eff
       expectType(expected, actual, loc)
     case Expr.Without(exp, symUse, tpe, eff, loc) =>
@@ -390,20 +389,17 @@ object EffectVerifier {
       }
       // TODO ?
       ()
-    case Expr.FixpointSolve(exp, tpe, eff, _, loc) =>
-      visitExp(exp)
+    case Expr.FixpointQueryWithSelect(exps, queryExp, selects, from, where, pred, tpe, eff, loc) =>
+      exps.foreach(visitExp)
+      where.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.FixpointSolveWithProject(exps, optPreds, mode, tpe, eff, loc) =>
+      exps.foreach(visitExp)
       // TODO ?
       ()
-    case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
-      visitExp(exp)
-      // TODO ?
-      ()
-    case Expr.FixpointProject(pred, _, exp, tpe, eff, loc) =>
-      visitExp(exp)
+    case Expr.FixpointInjectInto(exps, predsAndArities, tpe, eff, loc) =>
+      exps.foreach(visitExp)
       // TODO ?
       ()
     case Expr.Error(m, tpe, eff) => ()
@@ -413,9 +409,7 @@ object EffectVerifier {
     * Throws an exception if the actual type does not match the expected type.
     */
   private def expectType(expected: Type, actual: Type, loc: SourceLocation)(implicit eqEnv: EqualityEnv, flix: Flix): Unit = {
-    // mark everything as rigid
-    val renv = RigidityEnv.ofRigidVars(expected.typeVars.map(_.sym) ++ actual.typeVars.map(_.sym))
-    if (ConstraintSolver2.fullyUnify(expected, actual, Scope.Top, renv).isEmpty) {
+    if (!ConstraintSolver2.isEquivalent(expected, actual)) {
       throw InternalCompilerException(s"Expected type $expected but found $actual", loc)
     }
   }

@@ -63,6 +63,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Doc)
   }
 
+  test("format") {
+    val args = Array("format")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Format)
+  }
+
   test("run") {
     val args = Array("run")
     val opts = Main.parseCmdOpts(args).get
@@ -81,22 +87,44 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Repl)
   }
 
-  test("--args --abc --def") {
-    val args = Array("--args", "--abc --def")
+  test("check") {
+    val args = Array("check")
     val opts = Main.parseCmdOpts(args).get
-    assert(opts.args.contains("--abc --def"))
+    assert(opts.command == Main.Command.Check)
+  }
+
+  test("check with files") {
+    val args = Array("check", "foo.flix", "bar.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Check)
+    assert(opts.files.length == 2)
+  }
+
+  test("test with files") {
+    val args = Array("test", "foo.flix", "bar.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Test)
+    assert(opts.files.length == 2)
+  }
+
+  test("doc with files") {
+    val args = Array("doc", "foo.flix")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Doc)
+    assert(opts.files.length == 1)
+  }
+
+  test("run -- arg1 arg2") {
+    val args = Array("run", "--", "arg1", "arg2")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Run)
+    assert(opts.args == Seq("arg1", "arg2"))
   }
 
   test("--explain foo") {
     val args = Array("--explain", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.explain)
-  }
-
-  test("--entrypoint foo") {
-    val args = Array("--entrypoint", "foo", "p.flix")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.entryPoint.nonEmpty)
   }
 
   test("--json") {
@@ -187,12 +215,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--Xsummary")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xsummary)
-  }
-
-  test("--Xchaos-monkey") {
-    val args = Array("--Xchaos-monkey")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xchaosMonkey)
   }
 
 }

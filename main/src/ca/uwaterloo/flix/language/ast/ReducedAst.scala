@@ -24,28 +24,15 @@ import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
-
   case class Root(defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
                   structs: Map[Symbol.StructSym, Struct],
                   effects: Map[Symbol.EffSym, Effect],
-                  types: Set[SimpleType],
-                  anonClasses: List[AnonClass],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
-                  sources: Map[Source, SourceLocation]) {
+                  sources: Map[Source, SourceLocation])
 
-    def getMain: Option[Def] = mainEntryPoint.map(defs(_))
-
-  }
-
-  /**
-    * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
-    */
-  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation) {
-    val arrowType: SimpleType.Arrow = SimpleType.Arrow(fparams.map(_.tpe), tpe)
-  }
+  case class Def(ann: Annotations, mod: Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], exp: Expr, tpe: SimpleType, unboxedType: UnboxedType, loc: SourceLocation)
 
   /** Remember the unboxed return type for test function generation. */
   case class UnboxedType(tpe: SimpleType)
@@ -68,7 +55,8 @@ object ReducedAst {
 
   object Expr {
 
-    case class Cst(cst: Constant, tpe: SimpleType, loc: SourceLocation) extends Expr {
+    case class Cst(cst: Constant, loc: SourceLocation) extends Expr {
+      def tpe: SimpleType = cst.tpe
       def purity: Purity = Pure
     }
 
@@ -92,11 +80,19 @@ object ReducedAst {
 
     case class JumpTo(sym: Symbol.LabelSym, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+      // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
+      def tpe: SimpleType = exp2.tpe
+      def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
+    }
 
-    case class Stmt(exp1: Expr, exp2: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Stmt(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr {
+      // Note: We use an implicit representation of type and purity to aid correctness and to save memory.
+      def tpe: SimpleType = exp2.tpe
+      def purity: Purity = Purity.combine(exp1.purity, exp2.purity)
+    }
 
-    case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
+    case class Region(sym: Symbol.VarSym, exp: Expr, tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], tpe: SimpleType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -120,10 +116,13 @@ object ReducedAst {
 
   case class HandlerRule(op: OpSymUse, fparams: List[FormalParam], exp: Expr)
 
-  case class FormalParam(sym: Symbol.VarSym, mod: Modifiers, tpe: SimpleType, loc: SourceLocation)
+  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
+  case class FormalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
-  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym, loc: SourceLocation)
+  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
+  case class TypeParam(name: Name.Ident, sym: Symbol.KindedTypeVarSym)
 
+  // Note: We deliberately omit the source location because it (a) is unused and (b) takes memory.
   case class LocalParam(sym: Symbol.VarSym, tpe: SimpleType)
 
 }

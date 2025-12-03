@@ -64,7 +64,7 @@ object GitHub {
       val stream = conn.getInputStream
       StreamOps.readAll(stream)
     } catch {
-      case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
+      case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
     }
     val releaseJsons = try {
       parse(json).asInstanceOf[JArray]
@@ -312,11 +312,14 @@ object GitHub {
     *
     * * `v2.3.4`
     */
-  private def parseSemVer(string: String): SemVer = {
-    val semVer = """v(\d+)\.(\d+)\.(\d+)""".r
-    string match {
-      case semVer(major, minor, patch) => SemVer(major.toInt, minor.toInt, patch.toInt)
-      case _ => throw new RuntimeException(s"Invalid semantic version: $string")
+  private def parseSemVer(str: String): SemVer = {
+    val (v, num) = str.splitAt(1)
+    if (v != "v") {
+      throw new RuntimeException(s"Invalid semantic version: $str")
+    }
+    SemVer.ofString(num) match {
+      case Some(semver) => semver
+      case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
   }
 }

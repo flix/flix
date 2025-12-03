@@ -138,11 +138,7 @@ object TypedAst {
 
     case class LocalDef(bnd: Binder, fparams: List[FormalParam], exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Region(tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
-
-    case class Scope(bnd: Binder, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Region(bnd: Binder, regSym: Symbol.RegionSym, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -188,7 +184,7 @@ object TypedAst {
       def tpe: Type = Type.Unit
     }
 
-    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class StructNew(sym: Symbol.StructSym, fields: List[(StructFieldSymUse, Expr)], region: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class StructGet(exp: Expr, symUse: StructFieldSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -216,7 +212,7 @@ object TypedAst {
 
     case class UncheckedCast(exp: Expr, declaredType: Option[Type], declaredEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Unsafe(exp: Expr, runEff: Type, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Unsafe(exp: Expr, runEff: Type, asEff: Option[Type], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Without(exp: Expr, symUse: EffSymUse, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
@@ -274,13 +270,11 @@ object TypedAst {
 
     case class FixpointQueryWithProvenance(exps: List[Expr], select: Predicate.Head, withh: List[Name.Pred], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointSolve(exp: Expr, tpe: Type, eff: Type, mode: SolveMode, loc: SourceLocation) extends Expr
+    case class FixpointQueryWithSelect(exps: List[Expr], queryExp: Expr, selects: List[Expr], from: List[Predicate.Body], where: List[Expr], pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointFilter(pred: Name.Pred, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointSolveWithProject(exps: List[Expr], optPreds: Option[List[Name.Pred]], mode: SolveMode, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class FixpointInject(exp: Expr, pred: Name.Pred, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class FixpointProject(pred: Name.Pred, arity: Int, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class FixpointInjectInto(exps: List[Expr], predsAndArities: List[PredicateAndArity], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage, tpe: Type, eff: Type) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -332,18 +326,35 @@ object TypedAst {
   }
 
   sealed trait ExtPattern {
-    def tpe: Type
-
     def loc: SourceLocation
   }
 
   object ExtPattern {
 
-    case class Wild(tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Default(loc: SourceLocation) extends ExtPattern
 
-    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Tag(label: Name.Label, pats: List[ExtTagPattern], loc: SourceLocation) extends ExtPattern
 
-    case class Error(tpe: Type, loc: SourceLocation) extends ExtPattern
+    case class Error(loc: SourceLocation) extends ExtPattern
+
+  }
+
+  sealed trait ExtTagPattern {
+    def tpe: Type
+
+    def loc: SourceLocation
+  }
+
+  object ExtTagPattern {
+
+    case class Wild(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Var(bnd: Binder, tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Unit(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
+    case class Error(tpe: Type, loc: SourceLocation) extends ExtTagPattern
+
   }
 
   sealed trait Predicate {
@@ -386,7 +397,7 @@ object TypedAst {
 
   case class ConstraintParam(bnd: Binder, tpe: Type, loc: SourceLocation)
 
-  case class FormalParam(bnd: Binder, mod: Modifiers, tpe: Type, src: TypeSource, loc: SourceLocation)
+  case class FormalParam(bnd: Binder, tpe: Type, src: TypeSource, loc: SourceLocation)
 
   case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
@@ -398,7 +409,7 @@ object TypedAst {
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 
-  case class ExtMatchRule(label: Name.Label, pats: List[ExtPattern], exp: Expr, loc: SourceLocation)
+  case class ExtMatchRule(pat: ExtPattern, exp: Expr, loc: SourceLocation)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr, loc: SourceLocation)
 

@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.ResolvedAst.{Expr, ExtPattern, ExtTagPattern, Pattern}
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{DefSymUse, LocalDefSymUse, SigSymUse}
 import ca.uwaterloo.flix.language.ast.{ResolvedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
@@ -62,8 +62,7 @@ object ResolvedAstPrinter {
     case Expr.Discard(exp, _) => DocAst.Expr.Discard(print(exp))
     case Expr.Let(sym, exp1, exp2, _) => DocAst.Expr.Let(printVarSym(sym), None, print(exp1), print(exp2))
     case Expr.LocalDef(sym, fparams, exp1, exp2, _) => DocAst.Expr.LocalDef(DocAst.Expr.Var(sym), fparams.map(printFormalParam), None, None, print(exp1), print(exp2))
-    case Expr.Region(_, _) => DocAst.Expr.Region
-    case Expr.Scope(sym, _, exp, _) => DocAst.Expr.Scope(printVarSym(sym), print(exp))
+    case Expr.Region(sym, _, exp, _) => DocAst.Expr.Region(printVarSym(sym), print(exp))
     case Expr.Match(exp, rules, _) => DocAst.Expr.Match(print(exp), rules.map {
       case ResolvedAst.MatchRule(pat, guard, body, _) => (printPattern(pat), guard.map(print), print(body))
     })
@@ -71,10 +70,10 @@ object ResolvedAstPrinter {
       case ResolvedAst.TypeMatchRule(sym, tpe, body, _) => (printVarSym(sym), UnkindedTypePrinter.print(tpe), print(body))
     })
     case Expr.RestrictableChoose(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtMatch(_, _, _) => DocAst.Expr.Unknown
+    case Expr.ExtMatch(exp, rules, _) => DocAst.Expr.ExtMatch(print(exp), rules.map(printExtMatchRule))
     case Expr.Tag(symUse, exps, _) => DocAst.Expr.Tag(symUse.sym, exps.map(print))
     case Expr.RestrictableTag(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.ExtTag(_, _, _) => DocAst.Expr.Unknown // TODO: Ext-Variants
+    case Expr.ExtTag(label, exps, _) => DocAst.Expr.ExtTag(label, exps.map(print))
     case Expr.Tuple(exps, _) => DocAst.Expr.Tuple(exps.map(print))
     case Expr.RecordSelect(exp, label, _) => DocAst.Expr.RecordSelect(label, print(exp))
     case Expr.RecordExtend(label, value, rest, _) => DocAst.Expr.RecordExtend(label, print(value), print(rest))
@@ -84,9 +83,10 @@ object ResolvedAstPrinter {
     case Expr.ArrayLoad(base, index, _) => DocAst.Expr.ArrayLoad(print(base), print(index))
     case Expr.ArrayStore(base, index, elm, _) => DocAst.Expr.ArrayStore(print(base), print(index), print(elm))
     case Expr.ArrayLength(base, _) => DocAst.Expr.ArrayLength(print(base))
-    case Expr.StructNew(sym, exps, region, _) => DocAst.Expr.StructNew(sym, exps.map {
-      case (symUse, exp) => (symUse.sym, print(exp))
-    }, print(region))
+    case Expr.StructNew(sym, exps, regionOpt, _) =>
+      DocAst.Expr.StructNew(sym, exps.map {
+        case (symUse, exp) => (symUse.sym, print(exp))
+      }, regionOpt.map(print))
     case Expr.StructGet(exp, symUse, _) => DocAst.Expr.StructGet(print(exp), symUse.sym)
     case Expr.StructPut(exp1, symUse, exp2, _) => DocAst.Expr.StructPut(print(exp1), symUse.sym, print(exp2))
     case Expr.VectorLit(exps, _) => DocAst.Expr.VectorLit(exps.map(print))
@@ -96,7 +96,7 @@ object ResolvedAstPrinter {
     case Expr.InstanceOf(exp, clazz, _) => DocAst.Expr.InstanceOf(print(exp), clazz)
     case Expr.CheckedCast(cast, exp, _) => DocAst.Expr.CheckedCast(cast, print(exp))
     case Expr.UncheckedCast(exp, tpe, eff, _) => DocAst.Expr.UncheckedCast(print(exp), tpe.map(UnkindedTypePrinter.print), eff.map(UnkindedTypePrinter.print))
-    case Expr.Unsafe(exp, runEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff))
+    case Expr.Unsafe(exp, runEff, asEff, _) => DocAst.Expr.Unsafe(print(exp), UnkindedTypePrinter.print(runEff), asEff.map(UnkindedTypePrinter.print))
     case Expr.Without(exp, symUse, _) => DocAst.Expr.Without(print(exp), symUse.sym)
     case Expr.TryCatch(exp, rules, _) => DocAst.Expr.TryCatch(print(exp), rules.map {
       case ResolvedAst.CatchRule(sym, clazz, body, _) => (sym, clazz, print(body))
@@ -126,11 +126,18 @@ object ResolvedAstPrinter {
     case Expr.FixpointLambda(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointMerge(_, _, _) => DocAst.Expr.Unknown
     case Expr.FixpointQueryWithProvenance(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointSolve(_, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointFilter(_, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointInject(_, _, _, _) => DocAst.Expr.Unknown
-    case Expr.FixpointProject(_, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointQueryWithSelect(_, _, _, _, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointSolveWithProject(_, _, _, _) => DocAst.Expr.Unknown
+    case Expr.FixpointInjectInto(_, _, _) => DocAst.Expr.Unknown
     case Expr.Error(_) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst]] representation of `rule`.
+    */
+  private def printExtMatchRule(rule: ResolvedAst.ExtMatchRule): (DocAst.Expr, DocAst.Expr) = rule match {
+    case ResolvedAst.ExtMatchRule(pat, exp, _) =>
+      (printExtPattern(pat), print(exp))
   }
 
   /** Returns the [[DocAst.Expr]] representation of `pat`. */
@@ -144,11 +151,30 @@ object ResolvedAstPrinter {
     case Pattern.Error(_) => DocAst.Expr.Error
   }
 
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pat`.
+    */
+  private def printExtPattern(pat: ResolvedAst.ExtPattern): DocAst.Expr = pat match {
+    case ExtPattern.Default(_) => DocAst.Expr.Wild
+    case ExtPattern.Tag(label, pats, _) => DocAst.Pattern.ExtTag(label, pats.map(printExtTagPattern))
+    case ExtPattern.Error(_) => DocAst.Expr.Error
+  }
+
+  /**
+    * Returns the [[DocAst.Expr]] representation of `pat`.
+    */
+  private def printExtTagPattern(pat: ResolvedAst.ExtTagPattern): DocAst.Expr = pat match {
+    case ExtTagPattern.Wild(_) => DocAst.Expr.Wild
+    case ExtTagPattern.Var(sym, _) => DocAst.Expr.Var(sym)
+    case ExtTagPattern.Unit(_) => DocAst.Expr.Unit
+    case ExtTagPattern.Error(_) => DocAst.Expr.Error
+  }
+
   /** Returns the [[DocAst.Expr.AscriptionTpe]] representation of `fp`. */
   private def printFormalParam(fp: ResolvedAst.FormalParam): DocAst.Expr.AscriptionTpe = fp match {
-    case ResolvedAst.FormalParam(sym, _, Some(tpe), _) =>
+    case ResolvedAst.FormalParam(sym, Some(tpe), _) =>
       DocAst.Expr.AscriptionTpe(printVarSym(sym), UnkindedTypePrinter.print(tpe))
-    case ResolvedAst.FormalParam(sym, _, None, _) =>
+    case ResolvedAst.FormalParam(sym, None, _) =>
       DocAst.Expr.AscriptionTpe(printVarSym(sym), DocAst.Type.Wild)
   }
 

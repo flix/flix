@@ -100,7 +100,9 @@ instance MonadZip[Option] {
 instance Foldable[Option] {
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRightWithCont(f, o, s)
+    redef isEmpty(o: Option[a]): Bool = Option.isEmpty(o)
+    redef forAll(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = Option.forAll(f, o)
+    redef exists(f: a -> Bool \ ef, o: Option[a]): Bool \ ef = Option.exists(f, o)
 }
 
 instance UnorderedFoldable[Option] {
@@ -157,6 +159,15 @@ instance Iterable[Option[a]] {
 instance ForEach[Option[a]] {
     type Elm = a
     pub def forEach(f: a -> Unit \ ef, o: Option[a]): Unit \ ef = Option.forEach(f, o)
+}
+
+instance Formattable[Option[a]] with Formattable[a] {
+    type Aef = Formattable.Aef[a]
+
+    pub def format(x: Option[a]): RichString \ Formattable.Aef[a] = match x {
+        case None    => RichString.fromString("None")
+        case Some(v) => RichString.fromString("Some(") + Formattable.format(v) + RichString.fromString(")")
+    }
 }
 
 mod Option {
@@ -320,16 +331,6 @@ mod Option {
     pub def foldRight(f: (a, b) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
         case None    => z
         case Some(v) => f(v, z)
-    }
-
-    ///
-    /// Returns `f(v, z)` if `o` is `Some(v)`. Otherwise returns `z`.
-    ///
-    /// A `foldRightWithCont` allows early termination by not calling the continuation.
-    ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, o: Option[a], z: b): b \ ef = match o {
-        case None    => z
-        case Some(v) => f(v, _ -> checked_ecast(z))
     }
 
     ///
@@ -580,11 +581,5 @@ mod Option {
         case None    => Iterator.empty(rc)
         case Some(x) => Iterator.singleton(rc, x)
     }
-
-    ///
-    /// Returns an iterator over `o` zipped with the indices of the elements.
-    ///
-    pub def enumerator(rc: Region[r], o: Option[a]): Iterator[(Int32, a), r, r] \ r =
-        iterator(rc, o) |> Iterator.zipWithIndex
 
 }

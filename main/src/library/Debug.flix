@@ -1,3 +1,24 @@
+/*
+ * Copyright 2025 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+///
+/// An effect used for print debugging.
+///
+eff Debug
+
 mod Debug {
 
     import java.lang.Byte
@@ -12,22 +33,27 @@ mod Debug {
     import java.util.Objects
 
     ///
-    /// Prints the stringified representation of `x` with the given `prefix`.
+    /// Prints `x` to the standard out.
     ///
-    /// Note: For internal use only. The actual `dbg(exp)` expression is parsed and ultimately rewritten to call this function.
+    pub def dprint(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
+        let rs = Formattable.format(x);
+        let s = RichString.toString(rs);
+        unsafe IO as Debug { System.out.print(s) }
+
     ///
-    @Internal
-    pub def debugWithPrefix(prefix: String, x: a): a = unsafe {
-        System.out.println("${prefix}%{x}");
-        x
-    }
+    /// Prints `x` to the standard out followed by a new line.
+    ///
+    pub def dprintln(x: a): Unit \ (Debug + Formattable.Aef[a]) with Formattable[a] =
+        let rs = Formattable.format(x);
+        let s = RichString.toString(rs);
+        unsafe IO as Debug { System.out.println(s) }
 
     ///
     /// Escapes the given string per Flix's escaping rules.
     ///
     @Internal
     def escape(s: String): String = {
-        def replace(src: String, dst: String, subject: String): String = unsafe subject.replace(src, dst);
+        def replace(src: String, dst: String, subject: String): String = subject.replace(src, dst);
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")
@@ -44,7 +70,6 @@ mod Debug {
     @Internal
     pub def stringify(x: a): String = {
         typematch x {
-            case _: Unit => "()"
             case b: Bool => if (b) "true" else "false"
             case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
@@ -52,10 +77,10 @@ mod Debug {
             case y: Float64 =>
                 Double.toString(y)
             case y: BigDecimal =>
-                if (unsafe Objects.isNull(y)) {
+                if (Objects.isNull(y)) {
                     "null"
                 } else {
-                    unsafe y.toString() + "ff"
+                    y.toString() + "ff"
                 }
             case y: Int8 =>
                 Byte.toString(y) + "i8"
@@ -66,47 +91,37 @@ mod Debug {
             case y: Int64 =>
                 Long.toString(y) + "i64"
             case y: BigInt =>
-                if (unsafe Objects.isNull(y)) {
+                if (Objects.isNull(y)) {
                     "null"
                 } else {
-                    unsafe y.toString() + "ii"
+                    y.toString() + "ii"
                 }
             case s: String =>
-                if (unsafe Objects.isNull(s)) {
+                if (Objects.isNull(s)) {
                     "null"
                 } else {
                     "\"" + escape(s) + "\""
                 }
             case y: Array[Bool, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Bool, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Bool, Static])) }
             case y: Array[Char, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Char, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Char, Static])) }
             case y: Array[Float32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float32, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Float32, Static])) }
             case y: Array[Float64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Float64, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Float64, Static])) }
             case y: Array[Int8, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int8, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int8, Static])) }
             case y: Array[Int16, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int16, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int16, Static])) }
             case y: Array[Int32, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int32, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int32, Static])) }
             case y: Array[Int64, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Int64, Static]))
-            case y: Array[Unit, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigInt, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[BigDecimal, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[String, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
-            case y: Array[Array[_, _], _] =>
-                unsafe Arrays.deepToString(unchecked_cast(y as Array[Object, Static]))
+                unsafe IO { Arrays.toString(unchecked_cast(y as Array[Int64, Static])) }
             case y: Array[_, _] =>
-                unsafe Arrays.toString(unchecked_cast(y as Array[Object, Static]))
+                unsafe IO { Arrays.deepToString(unchecked_cast(y as Array[Object, Static])) }
             case y: _ =>
-                unsafe Objects.toString(unchecked_cast(y as Object))
+                unsafe IO { Objects.toString(unchecked_cast(y as Object)) }
         }
     }
 

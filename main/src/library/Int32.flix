@@ -72,7 +72,7 @@ mod Int32 {
         if (n == 0i32)
             0i32
         else
-            $INT32_REM$($INT32_REM$(x, n) + n, n)
+            %%INT32_REM%%(%%INT32_REM%%(x, n) + n, n)
 
     ///
     /// Returns the remainder of `x / n`.
@@ -84,7 +84,7 @@ mod Int32 {
         if (n == 0i32)
             0i32
         else
-            $INT32_REM$(x, n)
+            %%INT32_REM%%(x, n)
 
     ///
     /// Returns the distance between `x` and `y`.
@@ -117,7 +117,7 @@ mod Int32 {
     ///
     /// Returns `base` raised to the power of `n`.
     ///
-    pub def pow(base: {base = Int32}, n: Int32): Int32 = $INT32_EXP$(base#base, n)
+    pub def pow(base: {base = Int32}, n: Int32): Int32 = %%INT32_EXP%%(base#base, n)
 
     ///
     /// Returns the logical right shift of `x` by `dist`.
@@ -289,32 +289,32 @@ mod Int32 {
     ///
     /// Returns `x` with the bits shifted left by `y` places
     ///
-    pub def leftShift(x: Int32, y: Int32): Int32 = $INT32_SHL$(x, y)
+    pub def leftShift(x: Int32, y: Int32): Int32 = %%INT32_SHL%%(x, y)
 
     ///
     /// Returns `x` with the bits shifted right by `y` places
     ///
-    pub def rightShift(x: Int32, y: Int32): Int32 = $INT32_SHR$(x, y)
+    pub def rightShift(x: Int32, y: Int32): Int32 = %%INT32_SHR%%(x, y)
 
     ///
     /// Returns the bitwise AND of `x` and `y`.
     ///
-    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = $INT32_AND$(x, y)
+    pub def bitwiseAnd(x: Int32, y: Int32): Int32 = %%INT32_AND%%(x, y)
 
     ///
     /// Returns the bitwise NOT of `x`.
     ///
-    pub def bitwiseNot(x: Int32): Int32 = $INT32_NOT$(x)
+    pub def bitwiseNot(x: Int32): Int32 = %%INT32_NOT%%(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
     ///
-    pub def bitwiseOr(x: Int32, y: Int32): Int32 = $INT32_OR$(x, y)
+    pub def bitwiseOr(x: Int32, y: Int32): Int32 = %%INT32_OR%%(x, y)
 
     ///
     /// Returns the bitwise XOR of `x` and `y`.
     ///
-    pub def bitwiseXor(x: Int32, y: Int32): Int32 = $INT32_XOR$(x, y)
+    pub def bitwiseXor(x: Int32, y: Int32): Int32 = %%INT32_XOR%%(x, y)
 
     ///
     /// Returns the factorial of `x`.
@@ -341,7 +341,7 @@ mod Int32 {
     /// A successful parse is wrapped with `Some(x)`, a parse failure is indicated by `None`.
     ///
     pub def fromString(s: String): Option[Int32] = try {
-        Some(Integer.parseInt(unsafe s.strip()))
+        Some(Integer.parseInt(s.strip()))
     } catch {
         case _: NumberFormatException => None
     }
@@ -353,7 +353,7 @@ mod Int32 {
     ///
     pub def parse(radix: Int32, s: String): Result[String, Int32] =
         try {
-            Ok(Integer.parseInt(unsafe s.strip(), radix))
+            Ok(Integer.parseInt(s.strip(), radix))
         } catch {
             case _: NumberFormatException => Err("Int32.parse")
         }
@@ -400,7 +400,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigInt(x: Int32): BigInt =
-        unsafe BigInteger.valueOf(Integer.valueOf(x).longValue())
+        BigInteger.valueOf(Integer.valueOf(x).longValue())
 
     ///
     /// Convert `x` to an Float32.
@@ -424,7 +424,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        unsafe new BigDecimal(x)
+        new BigDecimal(x)
 
     ///
     /// Helper function for the `clamp` conversion functions.
