@@ -78,6 +78,9 @@ object GitHub {
     val reqBuilder = HttpRequest.newBuilder(url.toURI)
     // add the API key as bearer if needed
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
+    if (apiKey.isDefined) {
+      println("API Key is defined")
+    }
     val req = reqBuilder.GET().build()
     val json = try {
       openConnectionWithRateLimiting(req).body()
