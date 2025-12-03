@@ -376,7 +376,7 @@ object GitHub {
     val newRateLimitReset = java.lang.Long.parseLong(resetStr)
     val newRateLimitRemaining = java.lang.Long.parseLong(remainingStr)
     rateLimitReset = Math.max(rateLimitReset, newRateLimitReset)
-    rateLimitRemaining = Math.max(rateLimitRemaining, newRateLimitRemaining)
+    rateLimitRemaining = newRateLimitRemaining
   }
 
   private def isWithinRateLimit: Boolean = {
