@@ -380,6 +380,7 @@ object GitHub {
   }
 
   private def isWithinRateLimit: Boolean = {
+    println(s"Checking rateLimitRemaining > 0 = ${rateLimitRemaining > 0}")
     rateLimitRemaining > 0
   }
 }
