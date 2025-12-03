@@ -365,7 +365,7 @@ object GitHub {
     val interval = Math.max(rateLimitReset - currentTime, 0) // Ensure that interval cannot be negative
     println(s"interval = $interval")
     if (currentTime < rateLimitReset) {
-      println(s"SLEEPING FOR $interval SECONDS")
+      println(s"SLEEPING FOR $interval MILLIS")
       Thread.sleep(Duration.of(interval, ChronoUnit.MILLIS))
     }
   }
