@@ -71,6 +71,6 @@ mod Test.Exp.CheckedTypeCast {
 
     type alias Num = Int32
 
-    def upcast(x: Num): Object = checked_cast(x)
+    def upcast(x: Num): Object = checked_cast(Box.box(x))
 
 }
