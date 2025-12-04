@@ -334,6 +334,8 @@ object GitHub {
       * Sends the HTTP request, `request`, and returns the response.
       *
       * Is blocking and thread-safe.
+      *
+      * May throw [[IOException]].
       */
     def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
       HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
