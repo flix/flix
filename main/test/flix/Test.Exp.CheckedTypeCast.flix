@@ -66,8 +66,13 @@ mod Test.Exp.CheckedTypeCast {
     @test
     def testCheckedTypeCast18(): Object = upcast(42)
 
+    @test
+    def testCheckedTypeCast19(): Object = polyUpcast(42)
+
     type alias Num = Int32
 
     def upcast(x: Num): Object = checked_cast(Box.box(x))
+
+    def polyUpcast(x: a): Object with Box[a] = checked_cast(Box.box(x))
 
 }
