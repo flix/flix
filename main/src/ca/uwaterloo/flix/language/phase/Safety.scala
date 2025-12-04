@@ -437,62 +437,61 @@ object Safety {
   /** Checks if `cast` is legal. */
   private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
-      (unpackAssocType(exp.tpe), unpackAssocType(tpe)) match {
-        case (None, _) => sctx.errors.add(IllegalCheckedCast(exp.tpe, tpe, loc))
-        case (_, None) => sctx.errors.add(IllegalCheckedCast(exp.tpe, tpe, loc))
-        case (Some(from), Some(to)) => (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
+      // Attempt to unpack the associated type. Fall back to the original type if unsuccessful.
+      val from = unpackAssocType(exp.tpe).getOrElse(exp.tpe)
+      val to = unpackAssocType(tpe).getOrElse(tpe)
+      (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
 
-          // Allow casting Null to a Java type.
-          case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => ()
-          case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => ()
-          case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => ()
-          case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => ()
-          case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => ()
-          case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => ()
+        // Allow casting Null to a Java type.
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Native(_), _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigInt, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.BigDecimal, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Str, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Regex, _)) => ()
+        case (Type.Cst(TypeConstructor.Null, _), Type.Cst(TypeConstructor.Array, _)) => ()
 
-          // Allow casting one Java type to another if there is a sub-type relationship.
-          case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-            if (right.isAssignableFrom(left)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        // Allow casting one Java type to another if there is a sub-type relationship.
+        case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(left)) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-          // Similar, but for String.
-          case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-            if (right.isAssignableFrom(classOf[String])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        // Similar, but for String.
+        case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[String])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-          // Similar, but for Regex.
-          case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-            if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        // Similar, but for Regex.
+        case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-          // Similar, but for BigInt.
-          case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-            if (right.isAssignableFrom(classOf[BigInteger])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        // Similar, but for BigInt.
+        case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[BigInteger])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-          // Similar, but for BigDecimal.
-          case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-            if (right.isAssignableFrom(classOf[java.math.BigDecimal])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        // Similar, but for BigDecimal.
+        case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[java.math.BigDecimal])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-          // Similar, but for Arrays.
-          case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-            if (right.isAssignableFrom(classOf[Array[Object]])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
+        // Similar, but for Arrays.
+        case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
+          if (right.isAssignableFrom(classOf[Array[Object]])) () else sctx.errors.add(IllegalCheckedCast(from, to, loc))
 
-          // Disallow casting a type variable.
-          case (src@Type.Var(_, _), _) =>
-            sctx.errors.add(IllegalCheckedCastFromVar(src, to, loc))
+        // Disallow casting a type variable.
+        case (src@Type.Var(_, _), _) =>
+          sctx.errors.add(IllegalCheckedCastFromVar(src, to, loc))
 
-          // Disallow casting a type variable (symmetric case)
-          case (_, dst@Type.Var(_, _)) =>
-            sctx.errors.add(IllegalCheckedCastToVar(from, dst, loc))
+        // Disallow casting a type variable (symmetric case)
+        case (_, dst@Type.Var(_, _)) =>
+          sctx.errors.add(IllegalCheckedCastToVar(from, dst, loc))
 
-          // Disallow casting a Java type to any other type.
-          case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-            sctx.errors.add(IllegalCheckedCastToNonJava(clazz, to, loc))
+        // Disallow casting a Java type to any other type.
+        case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
+          sctx.errors.add(IllegalCheckedCastToNonJava(clazz, to, loc))
 
-          // Disallow casting a Java type to any other type (symmetric case).
-          case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-            sctx.errors.add(IllegalCheckedCastFromNonJava(from, clazz, loc))
+        // Disallow casting a Java type to any other type (symmetric case).
+        case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
+          sctx.errors.add(IllegalCheckedCastFromNonJava(from, clazz, loc))
 
-          // Disallow all other casts.
-          case _ => sctx.errors.add(IllegalCheckedCast(from, to, loc))
-        }
+        // Disallow all other casts.
+        case _ => sctx.errors.add(IllegalCheckedCast(from, to, loc))
       }
   }
 
