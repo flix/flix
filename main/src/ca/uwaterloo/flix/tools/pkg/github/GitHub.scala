@@ -34,9 +34,6 @@ import java.nio.file.Path
   */
 object GitHub {
 
-  /** Internally re-used Http Client. */
-  private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
-
   /**
     * A GitHub project.
     */
@@ -66,7 +63,7 @@ object GitHub {
     apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
     val req = reqBuilder.GET().build()
     val json = try {
-      sendRequest(req).body()
+      Client.sendRequest(req).body()
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
     }
@@ -103,7 +100,7 @@ object GitHub {
 
     try {
       // Send request
-      val resp = sendRequest(req)
+      val resp = Client.sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -140,7 +137,7 @@ object GitHub {
 
     val json = try {
       // Send request
-      val resp = sendRequest(req)
+      val resp = Client.sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -182,7 +179,7 @@ object GitHub {
 
     try {
       // Send request
-      val resp = sendRequest(req)
+      val resp = Client.sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -213,7 +210,7 @@ object GitHub {
 
     try {
       // Send request
-      val resp = sendRequest(req)
+      val resp = Client.sendRequest(req)
 
       // Process response errors
       val code = resp.statusCode()
@@ -319,8 +316,28 @@ object GitHub {
     }
   }
 
-  /** Sends the HTTP request, `request`, and returns the response. */
-  private def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
-    HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
+  /** A thread-safe HTTP Client. */
+  private object Client {
+
+    /**
+      * Internally re-used Http Client.
+      *
+      * Reusing the instance yields better performance since it can
+      * keep connections open.
+      *
+      * This field should only be accessed in a thread-safe manner, e.g.,
+      * such as using `this.synchronized` blocks or some other locking mechanism.
+      */
+    private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
+
+    /**
+      * Sends the HTTP request, `request`, and returns the response.
+      *
+      * Is blocking and thread-safe.
+      */
+    def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
+      HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
+    }
+
   }
 }
