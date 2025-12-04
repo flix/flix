@@ -5,11 +5,11 @@ import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps.*
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst, shared}
+import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, ParOps}
 
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -22,6 +22,7 @@ object Safety {
   /** Checks the safety and well-formedness of `root`. */
   def run(root: Root, oldRoot: Root, changeSet: ChangeSet)(implicit flix: Flix): (Root, List[SafetyError]) = flix.phaseNew("Safety") {
     implicit val sctx: SharedContext = SharedContext.mk()
+    implicit val _r: Root = root
 
     val defs = changeSet.updateStaleValues(root.defs, oldRoot.defs)(ParOps.parMapValues(_)(visitDef))
     val traits = changeSet.updateStaleValues(root.traits, oldRoot.traits)(ParOps.parMapValues(_)(visitTrait))
@@ -32,7 +33,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `defn`. */
-  private def visitDef(defn: Def)(implicit sctx: SharedContext, flix: Flix): Def = {
+  private def visitDef(defn: Def)(implicit sctx: SharedContext, root: Root, flix: Flix): Def = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(defn.spec.tparams.map(_.sym))
     checkSpecPermissions(defn.spec)
     visitExp(defn.exp)
@@ -40,14 +41,14 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `trt`. */
-  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, flix: Flix): Trait = {
+  private def visitTrait(trt: Trait)(implicit sctx: SharedContext, root: Root, flix: Flix): Trait = {
     trt.assocs.foreach(as => as.tpe.foreach(t => checkIOPermissions(t.effects, as.loc)))
     trt.sigs.foreach(visitSig)
     trt
   }
 
   /** Checks the safety and well-formedness of `inst`. */
-  private def visitInstance(inst: TypedAst.Instance)(implicit flix: Flix, sctx: SharedContext): TypedAst.Instance = {
+  private def visitInstance(inst: TypedAst.Instance)(implicit sctx: SharedContext, root: Root, flix: Flix): TypedAst.Instance = {
     inst.assocs.foreach(as => checkIOPermissions(as.tpe.effects, as.loc))
     inst.econstrs.foreach { constr =>
       checkIOPermissions(constr.tpe1.effects, constr.loc)
@@ -58,7 +59,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `sig`. */
-  private def visitSig(sig: Sig)(implicit flix: Flix, sctx: SharedContext): Unit = {
+  private def visitSig(sig: Sig)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = {
     implicit val renv: RigidityEnv = RigidityEnv.ofRigidVars(sig.spec.tparams.map(_.sym))
     checkSpecPermissions(sig.spec)
     sig.exp.foreach(visitExp(_))
@@ -75,7 +76,7 @@ object Safety {
     *   - [[Expr.NewObject]] are valid (see [[checkObjectImplementation]]).
     *   - [[Expr.FixpointConstraintSet]] are valid (see [[checkConstraint]]).
     */
-  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = exp0 match {
+  private def visitExp(exp0: Expr)(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = exp0 match {
     case Expr.Cst(_, _, _) =>
       ()
 
@@ -433,10 +434,10 @@ object Safety {
   }
 
   /** Checks if `cast` is legal. */
-  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, flix: Flix): Unit = cast match {
+  private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
-      val from = exp.tpe
-      val to = tpe
+      val from = unpackAssocType(exp.tpe)
+      val to = unpackAssocType(tpe)
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
 
         // Allow casting Null to a Java type.
@@ -492,6 +493,25 @@ object Safety {
       }
   }
 
+  /** Returns all concrete types for all associated types in `tpe0`. */
+  private def unpackAssocType(tpe0: Type)(implicit root: Root): Type = tpe0 match {
+    case Type.Var(_, _) => tpe0
+    case Type.Cst(_, _) => tpe0
+    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(unpackAssocType(tpe1), unpackAssocType(tpe2), loc)
+    case Type.Alias(symUse, args, tpe, loc) => Type.Alias(symUse, args.map(unpackAssocType), unpackAssocType(tpe), loc)
+    case Type.AssocType(SymUse.AssocTypeSymUse(sym, _), arg, _, _) =>
+      // Recurse on arg
+      val t = unpackAssocType(arg)
+
+      // Find instance of `sym.trt` with the given type arg (guaranteed to exist)
+      val inst = root.instances(sym.trt).find(i => i.tpe == t).get
+
+      // Find the concrete type of the associated type with symbol `sym` (guaranteed to exist)
+      inst.assocs.find(assoc => assoc.symUse.sym == sym).get.tpe
+
+    case _ => throw InternalCompilerException(s"Unexpected JvmType '$tpe0'", tpe0.loc)
+  }
+
   /**
     * Checks if there are any impossible casts, i.e. casts that always fail.
     *
@@ -542,7 +562,7 @@ object Safety {
   }
 
   /** Checks the safety and well-formedness of `c`. */
-  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, flix: Flix): Unit = {
+  private def checkConstraint(c: Constraint)(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = {
     // Compute the set of positively defined variable symbols in the constraint.
     val posVars = positivelyDefinedVariables(c)
 
@@ -595,7 +615,7 @@ object Safety {
     * @param quantVars the quantified variables, not bound by lexical scope.
     * @param latVars   the variables in lattice position.
     */
-  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, flix: Flix, sctx: SharedContext): Unit = p match {
+  private def checkBodyPredicate(p: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym])(implicit renv: RigidityEnv, sctx: SharedContext, root: Root, flix: Flix): Unit = p match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // Check for non-positively bound negative variables.
       polarity match {
