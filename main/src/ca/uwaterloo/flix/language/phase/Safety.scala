@@ -509,7 +509,7 @@ object Safety {
       // Find the concrete type of the associated type with symbol `sym` (guaranteed to exist)
       inst.assocs.find(assoc => assoc.symUse.sym == sym).get.tpe
 
-    case _ => throw InternalCompilerException(s"Unexpected JvmType '$tpe0'", tpe0.loc)
+    case tpe => throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
   }
 
   /**
