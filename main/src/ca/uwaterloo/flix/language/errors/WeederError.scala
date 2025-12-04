@@ -1172,6 +1172,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an unexpected binary type operator.
+    *
+    * @param op  the unexpected operator.
+    * @param loc the location of the operator.
+    */
+  case class UnexpectedBinaryTypeOperator(op: String, loc: SourceLocation) extends WeederError {
+
+    override def summary: String = s"Unexpected binary type operator '$op'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected binary type operator.
+         |
+         |${code(loc, "unknown binary type operator.")}
+         |
+         |""".stripMargin
+    }
+
+  }
+
+  /**
     * An error raised to indicate an invalid function call in a select rule.
     *
     * @param qname the name of the function being called
@@ -1186,7 +1207,7 @@ object WeederError {
       import formatter.*
       s""">> Unexpected channel function.
          |
-         |${code(loc, s"select-rules must apply `Channel.recv` to the channel.")}
+         |${code(loc, "select-rules must apply `Channel.recv` to the channel.")}
          |
          |""".stripMargin
     }

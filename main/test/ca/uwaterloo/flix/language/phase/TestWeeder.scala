@@ -1055,7 +1055,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordOperation](result)
   }
 
-  test("IllegalSelectChannelRuleFunctionCall.01") {
+  test("UnexpectedBinaryTypeOperator.01") {
+    val input =
+      """
+        |def f(): A[true not false] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnexpectedBinaryTypeOperator](result)
+  }
+
+  test("UnexpectedSelectChannelRuleFunctionCall.01") {
     val input =
       """
         |def f(): Int32 = select {
