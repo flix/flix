@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters.*
@@ -327,7 +327,7 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val cases = cases0.map(visitCase(_, sym))
+      val cases = ChaosMonkey.chaos(cases0.map(visitCase(_, sym)))
 
       NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc)
   }
@@ -346,7 +346,7 @@ object Namer {
       val tparams = tparams0.map(visitTypeParam)
 
       val mod = visitModifiers(mod0, ns0)
-      val fields = fields0.map(visitField(sym, _))
+      val fields = ChaosMonkey.chaos(fields0.map(visitField(sym, _)))
 
       NamedAst.Declaration.Struct(doc, ann, mod, sym, tparams, fields, loc)
   }
@@ -368,7 +368,7 @@ object Namer {
 
       val mod = visitModifiers(mod0, ns0)
       val derives = visitDerivations(derives0)
-      val cs = cases.map(visitRestrictableCase(_, sym))
+      val cs = ChaosMonkey.chaos(cases.map(visitRestrictableCase(_, sym)))
 
       NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cs, loc)
   }
@@ -517,8 +517,8 @@ object Namer {
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = tconstrs.map(visitTraitConstraint)
-      val ecsts = econstrs.map(visitEqualityConstraint)
+      val tcsts = ChaosMonkey.chaos(tconstrs.map(visitTraitConstraint))
+      val ecsts = ChaosMonkey.chaos(econstrs.map(visitEqualityConstraint))
 
       // Then visit the parts depending on the parameters
       val e = exp.map(visitExp(_)(Scope.Top, sctx, flix))
@@ -543,8 +543,8 @@ object Namer {
       val fps = fparams.map(visitFormalParam(_)(Scope.Top, sctx, flix))
       val t = visitType(tpe)
       val ef = eff.map(visitType)
-      val tcsts = tconstrs.map(visitTraitConstraint)
-      val ecsts = econstrs.map(visitEqualityConstraint)
+      val tcsts = ChaosMonkey.chaos(tconstrs.map(visitTraitConstraint))
+      val ecsts = ChaosMonkey.chaos(econstrs.map(visitEqualityConstraint))
 
       // Then visit the parts depending on the parameters
       val e = visitExp(exp)(Scope.Top, sctx, flix)
@@ -806,10 +806,11 @@ object Namer {
       val ef = eff.map(visitType)
       NamedAst.Expr.UncheckedCast(e, t, ef, loc)
 
-    case DesugaredAst.Expr.Unsafe(exp, eff0, loc) =>
+    case DesugaredAst.Expr.Unsafe(exp, eff0, asEff0, loc) =>
       val e = visitExp(exp)
       val eff = visitType(eff0)
-      NamedAst.Expr.Unsafe(e, eff, loc)
+      val asEff = asEff0.map(visitType)
+      NamedAst.Expr.Unsafe(e, eff, asEff, loc)
 
     case DesugaredAst.Expr.Without(exp, qname, loc) =>
       val e = visitExp(exp)

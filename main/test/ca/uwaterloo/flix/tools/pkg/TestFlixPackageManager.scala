@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub.Project
@@ -17,15 +16,8 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   private implicit val formatter: Formatter = Formatter.NoFormatter
   private implicit val out: PrintStream = System.out
 
-  before { // before each test, sleep for 1000 ms
-    Thread.sleep(1000)
-  }
-
-  private def throttle[A](action: => A): A = {
-    Thread.sleep(3000)
-    val result = action
-    Thread.sleep(1500)
-    result
+  before { // sleep before each test to avoid rate limiting
+    Thread.sleep(5000)
   }
 
   private val Main: String =
@@ -65,15 +57,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      val resolution = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
-          case Ok(res) => res
-          case Err(e) => fail(e.message(formatter))
-        }
+      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+        case Ok(res) => res
+        case Err(e) => fail(e.message(formatter))
       }
-      throttle {
-        FlixPackageManager.installAll(resolution, path, None)
-      } match {
+
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match {
         case Ok(l) =>
           val (p, _) = l.head
           p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg")
@@ -107,15 +96,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      val manifests = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
+      val manifests =
+        FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
           case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
           case Err(e) => fail(e.message(formatter))
         }
-      }
-      throttle {
-        FlixPackageManager.installAll(manifests, path, None)
-      } match {
+      FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken) match {
         case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
           l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") }
         case Err(e) => e
@@ -170,23 +156,18 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
 
-      val resolution1 = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest1, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
-          case Ok(res) => res
-          case Err(e) => fail(e.message(formatter))
-        }
+      val resolution1 = FlixPackageManager.findTransitiveDependencies(manifest1, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+        case Ok(res) => res
+        case Err(e) => fail(e.message(formatter))
       }
-      val resolution2 = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest2, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
-          case Ok(res) => res
-          case Err(e) => fail(e.message(formatter))
-        }
+      val resolution2 = FlixPackageManager.findTransitiveDependencies(manifest2, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+        case Ok(res) => res
+        case Err(e) => fail(e.message(formatter))
       }
       val resolution = FlixPackageManager.SecureResolution(origin = manifest1, security = resolution1.security ++ resolution2.security, manifestToFlixDeps = resolution1.manifestToFlixDeps ++ resolution2.manifestToFlixDeps)
 
-      throttle {
-        FlixPackageManager.installAll(resolution, path, None)
-      } match {
+
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match {
         case Ok(l) => l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") } &&
           l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") }
         case Err(e) => e.message(formatter)
@@ -220,18 +201,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
 
-      val resolution = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels) match {
-          case Ok(res) => res
-          case Err(e) => fail(e.message(formatter))
-        }
+      val resolution = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
+        case Ok(res) => res
+        case Err(e) => fail(e.message(formatter))
       }
-      throttle {
-        FlixPackageManager.installAll(resolution, path, None) //installs the dependency
-      }
-      throttle {
-        FlixPackageManager.installAll(resolution, path, None) //does nothing
-      } match {
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) // installs the dependency
+      FlixPackageManager.installAll(resolution, path, PkgTestUtils.gitHubToken) match { // does nothing
         case Ok(l) =>
           l.exists { case (p, _) => p.endsWith(s"flix${s}museum-giftshop${s}1.1.0${s}museum-giftshop-1.1.0.fpkg") }
         case Err(e) => e.message(formatter)
@@ -264,9 +239,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None)
-      } match {
+      FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
         case Ok(resolution) => resolution.manifests.contains(manifest) && resolution.manifests.exists(m => m.name == "museum-clerk")
         case Err(e) => e.message(formatter)
       }
@@ -297,9 +270,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val path = Files.createTempDirectory("")
-    throttle {
-      FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels)
-    } match {
+    FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
       case Ok(res) => fail(res.toString)
       case Err(e) =>
         e.message(formatter)
@@ -332,9 +303,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       }
 
       val path = Files.createTempDirectory("")
-      throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None).map(FlixPackageManager.resolveSecurityLevels)
-      } match {
+      FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken).map(FlixPackageManager.resolveSecurityLevels) match {
         case Ok(res) => res
         case Err(e) => e.message(formatter)
       }
@@ -365,15 +334,11 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
 
       val path = Files.createTempDirectory("")
 
-      val manifests = throttle {
-        FlixPackageManager.findTransitiveDependencies(manifest, path, None) match {
-          case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
-          case Err(e) => fail(e.message(formatter))
-        }
+      val manifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
+        case Ok(resolution) => FlixPackageManager.resolveSecurityLevels(resolution)
+        case Err(e) => fail(e.message(formatter))
       }
-      throttle {
-        FlixPackageManager.installAll(manifests, path, None)
-      } match {
+      FlixPackageManager.installAll(manifests, path, PkgTestUtils.gitHubToken) match {
         case Ok(l) =>
           l.exists { case (p, _) => p.endsWith(s"flix${s}museum${s}1.4.0${s}museum-1.4.0.fpkg") } &&
             l.exists { case (p, _) => p.endsWith(s"flix${s}museum-clerk${s}1.1.0${s}museum-clerk-1.1.0.fpkg") } &&
@@ -709,9 +674,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val path = Files.createTempDirectory("")
-    throttle {
-      FlixPackageManager.findTransitiveDependencies(manifest, path, None)
-    } match {
+    FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
       case Ok(_) => fail("expected error, got success")
       case Err(_: PackageError.MismatchedVersions) => succeed
       case Err(e) => fail(e.message(formatter))
@@ -731,9 +694,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       case Err(e) => fail(e.message(formatter))
     }
 
-    val allManifests = throttle {
-      FlixPackageManager.findTransitiveDependencies(manifest, path, None)
-    } match {
+    val allManifests = FlixPackageManager.findTransitiveDependencies(manifest, path, PkgTestUtils.gitHubToken) match {
       case Ok(ms) => ms
       case Err(e) => fail(e.message(formatter))
     }
@@ -745,14 +706,12 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
       return (true, securityResolutionErrors.mkString(System.lineSeparator()))
     }
 
-    val pkgs = throttle {
-      FlixPackageManager.installAll(manifestsWithSecurity, path, None)
-    } match {
+    val pkgs = FlixPackageManager.installAll(manifestsWithSecurity, path, PkgTestUtils.gitHubToken) match {
       case Ok(ps) => ps
       case Err(e) => fail(e.message(formatter))
     }
 
-    val flix = new Flix()
+    val flix = PkgTestUtils.mkFlix
     flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
 
     for ((path, sctx) <- pkgs) {

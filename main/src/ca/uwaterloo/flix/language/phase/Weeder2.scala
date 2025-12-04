@@ -907,7 +907,6 @@ object Weeder2 {
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCastExpr(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCastExpr(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCastExpr(tree)
-        case TreeKind.Expr.UnsafeOld => visitUnsafeOldExpr(tree)
         case TreeKind.Expr.Unsafe => visitUnsafeExpr(tree)
         case TreeKind.Expr.Without => visitWithoutExpr(tree)
         case TreeKind.Expr.Run => visitRunExpr(tree)
@@ -1195,7 +1194,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree)) { op =>
         op.children.head match {
           // User-defined operators - use the operator text directly
-          case t @ Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+          case t@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
             Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
 
           // Built-in operators - lookup
@@ -1833,15 +1832,12 @@ object Weeder2 {
 
     private def visitUnsafeExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
       expect(tree, TreeKind.Expr.Unsafe)
-      mapN(Types.pickType(tree), pickExpr(tree)) {
-        (eff, expr) => Expr.Unsafe(expr, eff, tree.loc)
+      val optAs = tryPick(TreeKind.Expr.UnsafeAsEffFragment, tree) match {
+        case None => Validation.Success(None)
+        case Some(fragment) => mapN(Types.pickType(fragment))(Some(_))
       }
-    }
-
-    private def visitUnsafeOldExpr(tree: Tree)(implicit sctx: SharedContext): Validation[Expr, CompilationMessage] = {
-      expect(tree, TreeKind.Expr.UnsafeOld)
-      mapN(pickExpr(tree)) {
-        expr => Expr.UnsafeOld(expr, tree.loc)
+      mapN(Types.pickType(tree), optAs, pickExpr(tree)) {
+        (eff, asEff, expr) => Expr.Unsafe(expr, eff, asEff, tree.loc)
       }
     }
 
@@ -3202,7 +3198,9 @@ object Weeder2 {
               tree.loc
             ))
             // UNRECOGNIZED
-            case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
+            case kind =>
+              sctx.errors.add(WeederError.UnexpectedBinaryTypeOperator(kind, tree.loc))
+              Validation.Success(Type.Error(tree.loc))
           }
 
         case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: $operands", tree.loc)

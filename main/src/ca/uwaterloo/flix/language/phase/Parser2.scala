@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.*
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
@@ -65,7 +65,7 @@ object Parser2 {
 
   private object State {
     /** The reset value of [[State.fuel]]. */
-    val FuelReset = 2048
+    val FuelReset: Int = CompilerConstants.MaxParserFuel
   }
 
   private class State(val tokens: Array[Token], val src: Source) {
@@ -567,6 +567,7 @@ object Parser2 {
                         )(implicit sctx: SyntacticContext, s: State): Int = {
     def atEnd(): Boolean = at(delimiterR) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
+    comments()
     if (!at(delimiterL)) {
       expect(delimiterL)
       return 0
@@ -574,11 +575,12 @@ object Parser2 {
     expect(delimiterL)
     var continue = true
     var numItems = 0
+    comments()
     while (continue && !atEnd() && !eof()) {
-      comments()
       val kind = nth(0)
       if (checkForItem(kind)) {
         getItem()
+        comments()
         numItems += 1
         if (!atEnd()) {
           // Check for separator if needed.
@@ -587,6 +589,7 @@ object Parser2 {
             case Separation.Optional(separator, _) => eat(separator)
             case Separation.None =>
           }
+          comments()
           // Check for trailing separator if needed.
           if (atEnd()) {
             separation match {
@@ -614,6 +617,7 @@ object Parser2 {
     optionallyWith match {
       case Some((indicator, rule)) => if (eat(indicator)) {
         rule()
+        comments()
       }
       case None =>
     }
@@ -1866,7 +1870,6 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCastExpr()
         case TokenKind.KeywordUncheckedCast => uncheckedCastExpr()
         case TokenKind.KeywordUnsafe => unsafeExpr()
-        case TokenKind.KeywordUnsafely => unsafelyRunExpr()
         case TokenKind.KeywordRun => runExpr()
         case TokenKind.KeywordHandler => handlerExpr()
         case TokenKind.KeywordTry => tryExpr()
@@ -2670,32 +2673,32 @@ object Parser2 {
       close(mark, TreeKind.Expr.UncheckedCast)
     }
 
+    /**
+      * `'unsafe' TTYPE [as TTYPE] { STATEMENT }`
+      *
+      * produces
+      *
+      *   - TreeKind.Expr.Unsafe
+      *     - TreeKind.Type.Type
+      *     - TreeKind.UnsafeAsEffFragment
+      *       - TreeKind.Type.Type
+      *     - TreeKind.Expr.Expr
+      */
     private def unsafeExpr()(implicit s: State): Mark.Closed = {
       implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
       assert(at(TokenKind.KeywordUnsafe))
       val mark = open()
       expect(TokenKind.KeywordUnsafe)
-      expression()
-      close(mark, TreeKind.Expr.UnsafeOld)
-    }
-
-    /**
-      * `'unsafely' TTYPE 'run' EXPRESSION`
-      *
-      * produces
-      *
-      *   - TreeKind.Expr.UnsafelyRun
-      *     - TreeKind.Type.Type
-      *     - TreeKind.Expr.Expr
-      */
-    private def unsafelyRunExpr()(implicit s: State): Mark.Closed = {
-      implicit val sctx: SyntacticContext = SyntacticContext.Expr.OtherExpr
-      assert(at(TokenKind.KeywordUnsafely))
-      val mark = open()
-      expect(TokenKind.KeywordUnsafely)
       Type.ttype()
-      expect(TokenKind.KeywordRun)
-      expression()
+      if (at(TokenKind.KeywordAs)) {
+        eat(TokenKind.KeywordAs)
+        val mark = open()
+        Type.ttype()
+        close(mark, TreeKind.Expr.UnsafeAsEffFragment)
+      }
+      expect(TokenKind.CurlyL)
+      statement()
+      expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Unsafe)
     }
 

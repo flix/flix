@@ -15,16 +15,11 @@
  */
 package ca.uwaterloo.flix.language.phase.optimizer
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.MonoAst
 import ca.uwaterloo.flix.language.dbg.AstPrinter.DebugMonoAst
 
 object Optimizer {
-
-  /**
-    * The maximum number of rounds to run the inliner for.
-    */
-  private val MaxRounds: Int = 5
 
   /**
     * Returns an optimized version of the given AST `root`.
@@ -32,7 +27,7 @@ object Optimizer {
   def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Optimizer") {
     var currentRoot = root
     var currentDelta = currentRoot.defs.keys.toSet
-    for (_ <- 0 until MaxRounds) {
+    for (_ <- 0 until CompilerConstants.MaxOptimizerRounds) {
       if (currentDelta.nonEmpty) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(currentRoot, currentDelta)
         val (newRoot, newDelta) = Inliner.run(afterOccurrenceAnalyzer)

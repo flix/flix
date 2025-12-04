@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.util.{FileOps, Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -25,21 +25,21 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.check(new Flix())
+    b.check(PkgTestUtils.mkFlix)
   }
 
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(new Flix())
+    b.build(PkgTestUtils.mkFlix)
   }
 
   test("build-jar") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix = new Flix
+    val flix = PkgTestUtils.mkFlix
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
@@ -53,7 +53,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    val flix = new Flix
+    val flix = PkgTestUtils.mkFlix
     b.build(flix)
     b.buildJar(flix)(Formatter.getDefault)
 
@@ -67,13 +67,13 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  test("build-jar always generates package that is byte-for-byte exactly the same") {
+  test("build-jar always generates package that is byte-for-byte exactly the same modulo concurrency") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
-    val flix1 = new Flix()
+    val flix1 = PkgTestUtils.mkFlix
     // Use 1 thread for deterministic symbols
     flix1.setOptions(flix1.options.copy(threads = 1))
 
@@ -82,7 +82,7 @@ class TestBootstrap extends AnyFunSuite {
     val hash1 = calcHash(jarPath)
 
     // Use new flix instance to reset symbol generation
-    val flix2 = new Flix()
+    val flix2 = PkgTestUtils.mkFlix
     // Use 1 thread for deterministic symbols
     flix2.setOptions(flix2.options.copy(threads = 1))
     b.buildJar(flix2)(Formatter.getDefault)
@@ -129,7 +129,7 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    val flix = new Flix()
+    val flix = PkgTestUtils.mkFlix
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(flix)
@@ -151,21 +151,21 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.run(new Flix(), Array("arg0", "arg1"))
+    b.run(PkgTestUtils.mkFlix, Array("arg0", "arg1"))
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.test(new Flix())
+    b.test(PkgTestUtils.mkFlix)
   }
 
   test("clean-command-should-remove-class-files-and-directories-if-compiled-previously") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(new Flix())
+    b.build(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
     val buildFiles = FileOps.getFilesIn(buildDir, Int.MaxValue)
     if (buildFiles.isEmpty || buildFiles.exists(!FileOps.checkExt(_, "class"))) {
@@ -188,7 +188,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out).unsafeGet
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(new Flix())
+    b.build(PkgTestUtils.mkFlix)
     val buildDir = p.resolve("./build/").normalize()
     FileOps.writeString(buildDir.resolve("./other.txt").normalize(), "hello")
     b.clean() match {
