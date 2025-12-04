@@ -21,6 +21,19 @@ import java.lang.{StringBuilder => JStringBuilder}
 ///
 enum StringBuilder[_: Region](JStringBuilder)
 
+instance Writable[StringBuilder[r]] {
+
+    type Elm = Char
+
+    type Aef = r
+
+    pub def write(buffer: Array[Char, r1], sb: StringBuilder[r]): Result[IoError.IoError, Int32] \ r1 + r =
+        let len = Array.length(buffer);
+        Array.forEach(c -> StringBuilder.append(c, sb), buffer);
+        Ok(len)
+
+}
+
 mod StringBuilder {
     import java.lang.{StringBuilder => JStringBuilder};
 
@@ -129,18 +142,5 @@ mod StringBuilder {
     pub def toString(sb: StringBuilder[r]): String \ r =
         let StringBuilder(msb) = sb;
         unsafe IO as r { msb.toString() }
-
-}
-
-instance Writable[StringBuilder[r]] {
-
-    type Elm = Char
-
-    type Aef = r
-
-    pub def write(buffer: Array[Char, r1], sb: StringBuilder[r]): Result[IoError.IoError, Int32] \ r1 + r =
-        let len = Array.length(buffer);
-        Array.forEach(c -> StringBuilder.append(c, sb), buffer);
-        checked_ecast(Ok(len))
 
 }

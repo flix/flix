@@ -675,48 +675,36 @@ mod TestStringBuilder {
     @Test
     def writable03(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
-        let result = Writable.writeString("hello world", sb);
+        let result = forM(
+            _ <- Writable.writeString("hello", sb);
+            _ <- Writable.writeString(" ", sb);
+            _ <- Writable.writeString("world", sb)
+        ) yield ();
         assertEq(expected = Ok(()), result);
         assertEq(expected = "hello world", StringBuilder.toString(sb))
     }
 
     @Test
-    def writable04(): Unit \ Assert = region rc {
+    def writable04(): Unit \ {Assert, IO} = region rc {
         let sb = StringBuilder.empty(rc);
-        discard Writable.writeString("hello", sb);
-        discard Writable.writeString(" ", sb);
-        let result = Writable.writeString("world", sb);
+        let result = Writable.writeNewLine(sb);
         assertEq(expected = Ok(()), result);
-        assertEq(expected = "hello world", StringBuilder.toString(sb))
+        assertEq(expected = String.lineSeparator(), StringBuilder.toString(sb))
     }
 
     @Test
     def writable05(): Unit \ {Assert, IO} = region rc {
         let sb = StringBuilder.empty(rc);
-        let result = Writable.writeNewLine(sb);
-        assertEq(expected = Ok(()), result);
-        assertEq(expected = String.lineSeparator(), StringBuilder.toString(sb))
-    }
-
-    @Test
-    def writable06(): Unit \ {Assert, IO} = region rc {
-        let sb = StringBuilder.empty(rc);
-        discard Writable.writeString("hello", sb);
-        let result = Writable.writeNewLine(sb);
+        let result = forM(
+            _ <- Writable.writeString("hello", sb);
+            _ <- Writable.writeNewLine(sb)
+        ) yield ();
         assertEq(expected = Ok(()), result);
         assertEq(expected = "hello" ++ String.lineSeparator(), StringBuilder.toString(sb))
     }
 
     @Test
-    def writable07(): Unit \ {Assert, IO} = region rc {
-        let sb = StringBuilder.empty(rc);
-        let result = Writable.writeLine("", sb);
-        assertEq(expected = Ok(()), result);
-        assertEq(expected = String.lineSeparator(), StringBuilder.toString(sb))
-    }
-
-    @Test
-    def writable08(): Unit \ {Assert, IO} = region rc {
+    def writable06(): Unit \ {Assert, IO} = region rc {
         let sb = StringBuilder.empty(rc);
         let result = Writable.writeLine("hello", sb);
         assertEq(expected = Ok(()), result);
@@ -724,18 +712,20 @@ mod TestStringBuilder {
     }
 
     @Test
-    def writable09(): Unit \ {Assert, IO} = region rc {
+    def writable07(): Unit \ {Assert, IO} = region rc {
         let sb = StringBuilder.empty(rc);
-        discard Writable.writeLine("line1", sb);
-        discard Writable.writeLine("line2", sb);
-        let result = Writable.writeLine("line3", sb);
+        let result = forM(
+            _ <- Writable.writeLine("line1", sb);
+            _ <- Writable.writeLine("line2", sb);
+            _ <- Writable.writeLine("line3", sb)
+        ) yield ();
         assertEq(expected = Ok(()), result);
         let expected = "line1" ++ String.lineSeparator() ++ "line2" ++ String.lineSeparator() ++ "line3" ++ String.lineSeparator();
         assertEq(expected = expected, StringBuilder.toString(sb))
     }
 
     @Test
-    def writable10(): Unit \ Assert = region rc {
+    def writable08(): Unit \ Assert = region rc {
         let sb = StringBuilder.empty(rc);
         StringBuilder.appendString("prefix: ", sb);
         let result = Writable.writeString("suffix", sb);
