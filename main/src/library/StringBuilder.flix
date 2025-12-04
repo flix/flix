@@ -131,3 +131,16 @@ mod StringBuilder {
         unsafe IO as r { msb.toString() }
 
 }
+
+instance Writable[StringBuilder[r]] {
+
+    type Elm = Char
+
+    type Aef = r
+
+    pub def write(buffer: Array[Char, r1], sb: StringBuilder[r]): Result[IoError.IoError, Int32] \ r1 + r =
+        let len = Array.length(buffer);
+        Array.forEach(c -> StringBuilder.append(c, sb), buffer);
+        checked_ecast(Ok(len))
+
+}
