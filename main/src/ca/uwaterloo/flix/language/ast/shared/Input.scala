@@ -40,15 +40,15 @@ object Input {
   /**
     * Represents an input that originates from a virtual path.
     */
-  case class Text(name: String, text: String, sctx: SecurityContext) extends Input {
-    override def hashCode(): Int = name.hashCode
+  case class Text(virtualPath: String, text: String, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = virtualPath.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
-      case that: Text => this.name == that.name
+      case that: Text => this.virtualPath == that.virtualPath
       case _ => false
     }
 
-    override def toString: String = name
+    override def toString: String = virtualPath
   }
 
   /**
