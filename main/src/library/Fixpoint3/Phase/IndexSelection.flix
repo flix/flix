@@ -76,7 +76,6 @@ mod Fixpoint3.Phase.IndexSelection {
     ///
     /// For details about memory positions see `lookupIndex`.
     ///
-    @Internal
     pub def indexProgram(program: RamProgram): RamProgram = match program {
         case RamProgram.Program(stmt, facts, meta, _, typeInfo) =>
             // This type annotation is apparently needed?
@@ -325,7 +324,6 @@ mod Fixpoint3.Phase.IndexSelection {
         /// `{0 < 1 < 2}` does not cover `{0, 2}` as no permutation of `{0, 2}`
         /// is a prefix of `{0 < 1 < 2}`.
         ///
-        @Internal
         pub def minIndex(searches: List[Search]): List[Search] = match searches {
             case Nil => Nil
             case _ :: Nil => searches

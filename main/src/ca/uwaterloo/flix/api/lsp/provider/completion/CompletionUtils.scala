@@ -204,8 +204,7 @@ object CompletionUtils {
   /**
     * Checks if the given class is public.
     */
-  def isAvailable(decl: Decl): Boolean =
-    !decl.ann.isInternal && decl.mod.isPublic
+  def isAvailable(decl: Decl): Boolean = decl.mod.isPublic
 
   /**
     * Checks if the given def is public.

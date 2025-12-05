@@ -43,7 +43,6 @@
     /// If `withProv` is `True`: Augment `program` to maintain proof depth of atoms and
     /// rule used to generate them. Further add extend facts to contain a depth and rule.
     ///
-    @Internal
     pub def augmentProgram(withProv: Bool, program: RamProgram): RamProgram =
         if (not withProv) program
         else augmentProgramInternal(program)

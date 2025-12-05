@@ -67,7 +67,6 @@ mod Fixpoint3.Interpreter {
     /// The `IDB` or result as it is exposed to the Solver. It maps `RelSym` to an `Index`,
     /// which uses `MutMap` instead of a `BPlusTree`.
     ///
-    @Internal
     pub type alias Database[r: Region] = MutMap[RelSym, BPlusTree[Vector[Boxed], Boxed, Static], r]
 
     ///
@@ -141,7 +140,6 @@ mod Fixpoint3.Interpreter {
     ///
     /// Executes the `RamProgram` in `fst(input)` using the `Boxing` in `snd(input)`.
     ///
-    @Internal
     pub def interpret(rc: Region[r], input: (RamProgram[r], Boxing[r])): (Database[r], Predicates) \ r =
         let (program, boxing) = input;
         // Create `Indexes` from `program`.
