@@ -398,7 +398,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   test("security:plain-dep:unchecked-cast") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", security = "plain" }
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.1", security = "plain" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
@@ -443,7 +443,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   test("security:unrestricted-dep:unchecked-cast") {
     val deps = List(
       """
-        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.0", security = "unrestricted" }
+        |"github:flix/test-pkg-trust-unchecked-cast" = { version = "0.1.1", security = "unrestricted" }
         |""".stripMargin
     )
     val (forbidden, message) = checkForbidden(deps, Main)
