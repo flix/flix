@@ -208,7 +208,7 @@ mod Result {
         loop(l, ks -> Ok(ks))
 
     ///
-    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Ok(v_i)`.
+    /// Returns `Ok(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///
     pub def traverse(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, List[b]] \ ef =
