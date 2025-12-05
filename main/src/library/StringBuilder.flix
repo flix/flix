@@ -16,6 +16,8 @@
 
 import java.lang.{StringBuilder => JStringBuilder}
 
+use IoError.IoError
+
 ///
 /// Represents a StringBuilder.
 ///
@@ -27,7 +29,7 @@ instance Writable[StringBuilder[r]] {
 
     type Aef = r
 
-    pub def write(buffer: Array[Char, r1], sb: StringBuilder[r]): Result[IoError.IoError, Int32] \ r1 + r =
+    pub def write(buffer: Array[Char, r1], sb: StringBuilder[r]): Result[IoError, Int32] \ r1 + r =
         let len = Array.length(buffer);
         Array.forEach(c -> StringBuilder.append(c, sb), buffer);
         Ok(len)
