@@ -146,6 +146,11 @@ object Name {
     def nonEmpty: Boolean = idents.nonEmpty
 
     /**
+      * Returns all prefixes of `this` namespace.
+      */
+    def prefixes: List[Name.NName] = idents.inits.map(ids => NName(ids, loc)).toList.reverse
+
+    /**
       * Returns `true` if `this` namespace equals `that`.
       */
     override def equals(o: scala.Any): Boolean = o match {

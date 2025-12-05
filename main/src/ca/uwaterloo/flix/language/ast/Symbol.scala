@@ -965,6 +965,9 @@ object Symbol {
       case _ => false
     }
 
+
+    def getParent(): Option[ModuleSym] = ??? // TODO
+
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
@@ -982,6 +985,7 @@ object Symbol {
       * Human-readable representation.
       */
     override def toString: String = ns.mkString(".")
+
   }
 
   /**

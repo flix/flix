@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -59,6 +60,21 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
+
+      // Check that every module has a parent
+      for ((_, m) <- symbols) {
+        for ((_, decls) <- m) {
+          for (decl <- decls) {
+            decl match {
+              case Declaration.Mod(sym, _, _, _) => sym.getParent() match {
+                case None => // nop
+                case Some(parentSym) => // TODO
+              }
+            }
+          }
+        }
+      }
+
       val errors = sctx.errors.asScala.toList
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
@@ -77,7 +93,7 @@ object Namer {
     * Performs naming on the given declaration.
     */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration = decl0 match {
-    case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
+    case decl: DesugaredAst.Declaration.Mod => visitNamespace(decl, ns0)
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
@@ -92,13 +108,17 @@ object Namer {
   /**
     * Performs naming on the given namespace.
     */
-  private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Namespace = decl match {
-    case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls, loc) =>
-      val ns = Name.NName(ns0.idents :+ ident, ident.loc)
+  private def visitNamespace(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
+    case DesugaredAst.Declaration.Mod(qname, usesAndImports0, decls, loc) =>
+      val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
+      val debug = ns.toString
+      if (debug.contains("Phase")) {
+        println(debug)
+      }
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
-      NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
+      NamedAst.Declaration.Mod(sym, usesAndImports, ds, loc)
   }
 
   /**
@@ -109,7 +129,7 @@ object Namer {
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
+    case NamedAst.Declaration.Mod(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
@@ -276,7 +296,7 @@ object Namer {
     val symbols0 = table.symbols.getOrElse(ns0, ListMap.empty)
     // ignore namespaces
     symbols0(name).flatMap {
-      case _: NamedAst.Declaration.Namespace => None
+      case _: NamedAst.Declaration.Mod => None
       case decl => Some(decl)
     }.headOption match {
       // Case 1: The name is unused.
@@ -1510,7 +1530,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Namespace(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Mod(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**
