@@ -437,9 +437,9 @@ object Safety {
   /** Checks if `cast` is legal. */
   private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
-      // Attempt to unpack any associated type in the types. Fall back to the original type if unsuccessful.
-      val from = unpackAssocType(exp.tpe).getOrElse(exp.tpe)
-      val to = unpackAssocType(tpe).getOrElse(tpe)
+      // Attempt to unpack any associated type in the types
+      val from = attemptUnpackAssocType(exp.tpe)
+      val to = attemptUnpackAssocType(tpe)
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
 
         // Allow casting Null to a Java type.
@@ -496,36 +496,32 @@ object Safety {
   }
 
   /**
-    * Converts associated types in `tpe0` to concrete types.
+    * Attempts to convert associated types in `tpe0` to concrete types.
     *
-    * Returns `None` if `tpe0` contains a type variable.
-    * Returns `Some(tpe)` otherwise where `tpe` is a concrete type.
+    * If `tpe0` is monomorphic, then the concrete associated type can be found.
     */
-  private def unpackAssocType(tpe0: Type)(implicit root: Root): Option[Type] = tpe0 match {
+  private def attemptUnpackAssocType(tpe0: Type)(implicit root: Root): Type = tpe0 match {
     case Type.Var(_, _) =>
-      None
+      tpe0
 
     case Type.Cst(_, _) =>
-      Some(tpe0)
+      tpe0
 
     case Type.Apply(tpe1, tpe2, loc) =>
-      for {
-        t1 <- unpackAssocType(tpe1)
-        t2 <- unpackAssocType(tpe2)
-      } yield Type.Apply(t1, t2, loc)
+      Type.Apply(attemptUnpackAssocType(tpe1), attemptUnpackAssocType(tpe2), loc)
 
     case Type.Alias(symUse, args, tpe, loc) =>
-      for {
-        t <- unpackAssocType(tpe)
-        ts <- ListOps.traverse(args)(unpackAssocType)
-      } yield Type.Alias(symUse, ts, t, loc)
+      Type.Alias(symUse, args.map(attemptUnpackAssocType), attemptUnpackAssocType(tpe), loc)
 
-    case Type.AssocType(SymUse.AssocTypeSymUse(sym, _), arg, _, _) =>
-      for {
-        tpe <- unpackAssocType(arg)
-        inst <- root.instances.get(sym.trt).find(i => i.tpe == tpe)
-        concreteAssoc <- inst.assocs.find(assoc => assoc.symUse.sym == sym)
-      } yield concreteAssoc.tpe
+    case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
+      val tpe = attemptUnpackAssocType(arg)
+      val optConcreteType = root.instances.get(sym.trt)
+        .find(i => i.tpe == tpe)
+        .flatMap(_.assocs.find(assoc => assoc.symUse.sym == sym))
+        .map(_.tpe)
+
+      // Optionally return the concrete type, falling back to any unpacked type in the arg.
+      optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
 
     case tpe =>
       throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
