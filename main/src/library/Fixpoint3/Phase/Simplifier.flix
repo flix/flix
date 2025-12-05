@@ -39,7 +39,6 @@ mod Fixpoint3.Phase.Simplifier {
     ///
     /// The returned RAM program is always the same size or smaller.
     ///
-    @Internal
     pub def simplifyProgram(program: RamProgram): RamProgram = unsafe IO {
         match program {
             case RamProgram.Program(stmt, facts, predicates, index, typeInfo) =>
@@ -60,7 +59,6 @@ mod Fixpoint3.Phase.Simplifier {
     ///
     /// `Predicates` is a structure for interacting with predicate symbols.
     ///
-    @Internal
     pub def simplifyStmt(stmt: RamStmt, nonEmpty: Set[RelSym], predicates: Predicates): RamStmt =
         Option.getWithDefault(RamStmt.Seq(Vector#{}), simplifyHelper(nonEmpty, predicates, false, stmt))
 

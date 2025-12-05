@@ -21,31 +21,26 @@ mod Fixpoint3.Options {
     ///
     /// Prints the Datalog program before the fixpoint computation.
     ///
-    @Internal
     pub def enableDebugging(): Bool = false
 
     ///
     /// Prints the input and output facts when debugging is enabled.
     ///
-    @Internal
     pub def enableDebugPrintFacts(): Bool = false
 
     ///
     /// Prints the debug output to the file given by `debugFileName`.
     ///
-    @Internal
     pub def enableDebugToFile(): Bool = true
 
     ///
     /// Returns the name of the debug file.
     ///
-    @Internal
     pub def debugFileName(): String = "fixpoint_debug.txt"
 
     ///
     /// The arity of the B+ trees in the interpreter.
     ///
-    @Internal
     pub def usedArity(): Int32 = 64
 
     ///
@@ -71,7 +66,6 @@ mod Fixpoint3.Options {
     /// For the example, if we allow a maximum of 2 parallel nestings, we would not spawn
     /// threads when evaluating `search c ∈ C do`.
     ///
-    @Internal
     pub def parLevel(): Int32 = 2
 
 }

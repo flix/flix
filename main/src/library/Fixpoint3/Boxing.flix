@@ -64,7 +64,6 @@ mod Fixpoint3.Boxing {
     /// Returns a `(boxing, facts, idToBoxing)` where `Boxing` is information as described above,
     /// `facts` are the EDB of `program` as `Int64`, with respect to `boxing`.
     ///
-    @Internal
     pub def initialize(rc: Region[r], withProv: Bool, program: RamProgram): (Boxing[r], EFacts[r]) \ r =
         let boxingInfo = initializeInternal(rc, program, withProv);
         let facts = unsafe IO { initializeFacts(rc, program, boxingInfo) };
@@ -188,7 +187,6 @@ mod Fixpoint3.Boxing {
     /// Unbox `v` given the type information stored at `typeInfo[index]` in `info`.
     /// Returns `v` unboxed.
     ///
-    @Internal
     pub def unboxWith(v: Boxed, index: UnifiedTypePos, info: Boxing[r]): Int64 \ r =
         let (_, _, symInfo, _) = info;
         match v {
@@ -227,7 +225,6 @@ mod Fixpoint3.Boxing {
     /// Boxes `v` given its type information at `typeInfo[index]` in `info`.
     /// Returns `v` boxed.
     ///
-    @Internal
     pub def boxWith(v: Int64, index: UnifiedTypePos, info: Boxing[r]): Boxed \ r =
         let (_, _, typeInfo, _) = info;
         match BoxingType.getType(index, typeInfo) {

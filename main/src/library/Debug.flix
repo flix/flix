@@ -51,7 +51,6 @@ mod Debug {
     ///
     /// Escapes the given string per Flix's escaping rules.
     ///
-    @Internal
     def escape(s: String): String = {
         def replace(src: String, dst: String, subject: String): String = subject.replace(src, dst);
         s
@@ -67,7 +66,6 @@ mod Debug {
     ///
     /// Returns an automatic string representation of `x`.
     ///
-    @Internal
     pub def stringify(x: a): String = {
         typematch x {
             case b: Bool => if (b) "true" else "false"

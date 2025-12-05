@@ -698,7 +698,6 @@ object Weeder2 {
         case "@Experimental" => Experimental(loc)
         case "@Export" => Export(loc)
         case "@Inline" => Inline(loc)
-        case "@Internal" => Internal(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
         case "@LoweringTarget" => LoweringTarget(loc)

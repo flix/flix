@@ -28,7 +28,6 @@ mod MutDisjointSets {
     ///
     /// Represents an element in the disjoint set forest.
     ///
-    @Internal
     pub struct Node[t: Type, r: Region]{
         rc: Region[r],
         value: t,

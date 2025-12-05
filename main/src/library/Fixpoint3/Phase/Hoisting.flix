@@ -92,7 +92,6 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// Hoists `program` as described above.
     ///
-    @Internal
     pub def hoistProgram(program: RamProgram): RamProgram = match program {
         case RamProgram.Program(stmt, facts, meta, index, typeInfo) => region rc {
             let equalitySets = MutDisjointSets.empty(rc);
@@ -635,7 +634,6 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// In `constEqualities`, we save a list of which literals a `(rv, i)` were equal to.
     ///
-    @Internal
     pub def unifyEqualitiesStmt(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],
@@ -658,7 +656,6 @@ mod Fixpoint3.Phase.Hoisting {
     ///
     /// See `unifyEqualitiesStmt`.
     ///
-    @Internal
     pub def unifyEqualitiesOp(
         equalitySets: MutDisjointSets[(RowVar, Int32), r],
         constEqualities: MutMap[(RowVar, Int32), List[(Boxed, Type)], r],

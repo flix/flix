@@ -127,7 +127,6 @@ mod Fixpoint3.ProvenanceReconstruct {
     }
 
     mod ProofTree {
-        @Internal
         pub def toString(p: ProofTree[r], indentChild: Int32): String \ r = match p {
             case EDB(pred, fact) =>
                 let indentCur = String.repeat(indentChild, " ");
@@ -175,7 +174,6 @@ mod Fixpoint3.ProvenanceReconstruct {
     ///
     /// Crashes if `d` is not a provenance model.
     ///
-    @Internal
     pub def provQuery(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
         unsafe IO { provQueryInternal(predSym, fact, withh, d) }
 
