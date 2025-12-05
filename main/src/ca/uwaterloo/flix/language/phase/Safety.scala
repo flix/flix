@@ -437,7 +437,7 @@ object Safety {
   /** Checks if `cast` is legal. */
   private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
-      // Attempt to unpack the associated type. Fall back to the original type if unsuccessful.
+      // Attempt to unpack any associated type in the types. Fall back to the original type if unsuccessful.
       val from = unpackAssocType(exp.tpe).getOrElse(exp.tpe)
       val to = unpackAssocType(tpe).getOrElse(tpe)
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
