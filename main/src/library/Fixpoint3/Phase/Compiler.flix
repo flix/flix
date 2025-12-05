@@ -42,7 +42,6 @@ mod Fixpoint3.Phase.Compiler {
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    @Internal
     pub def compile(d: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]], strat: Map[PredSym, (Int32, Int32)], withProv: Bool): RamProgram = match d {
         case Datalog(facts, _) => region rc {
             let predicates = Predicate.initialize(d, db);
@@ -88,7 +87,6 @@ mod Fixpoint3.Phase.Compiler {
     ///
     /// Collect all rules in `d` and assign them a number, deterministically.
     ///
-    @Internal
     pub def enumerateRules(d: Datalog): Vector[(Int32, Constraint)] = match d {
         case Datalog(_, rules) => Vector.mapWithIndex(i -> r -> (i, r), rules)
         case _                 => unreachable!()
@@ -99,7 +97,6 @@ mod Fixpoint3.Phase.Compiler {
     /// by assigning them -1. `functionalRelSym` should only be placed in `RowLoads`. Only `Lowering.flix` uses
     /// the `RelSym` part and does not use the `PredSym`.
     ///
-    @Internal
     pub def functionalRelSym(arity: Int32): RelSym = RelSym.Symbol(PredSym.PredSym("", -1i64), arity, Relational)
 
     ///

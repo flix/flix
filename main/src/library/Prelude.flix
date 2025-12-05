@@ -156,7 +156,6 @@ pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 ///
 pub def bug!(m: String): a = unsafe IO { printBugMsg(m); ?panic }
 
-@Internal
 pub def printBugMsg(m: String): Unit \ IO = {
     System.err.println("*".repeat(80));
     System.err.println("**") ;
