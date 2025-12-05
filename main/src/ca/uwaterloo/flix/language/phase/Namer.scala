@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
@@ -61,18 +62,38 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
+      val missingModule = mutable.Set.empty[Symbol.ModuleSym]
       // Check that every module has a parent
       for ((_, m) <- symbols) {
         for ((_, decls) <- m) {
           for (decl <- decls) {
             decl match {
-              case Declaration.Mod(sym, _, _, _) => sym.getParent() match {
+              // We check that if the module is A.B.C then A must have a module declaration B.
+              case Declaration.Mod(sym, _, _, _) => sym.parent() match {
                 case None => // nop
-                case Some(parentSym) => // TODO
+                case Some(parentSym) => parentSym.parent() match {
+                  case None => // nop
+                  case Some(parentParentSym) =>
+                    val ns = Name.NName(parentParentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
+                    val decls = symbols.getOrElse(ns, Map.empty)
+                    val ds = decls.getOrElse(parentSym.ns.last, Nil)
+                    val exists = ds.exists {
+                      case Declaration.Mod(otherSym, _, _, _) => parentSym == otherSym
+                      case _ => false
+                    }
+                    if (!exists) {
+                      missingModule += parentSym
+                    }
+                }
               }
+              case _ => // nop
             }
           }
         }
+      }
+
+      for (sym <- missingModule) {
+        println(s"Missing module ${sym}")
       }
 
       val errors = sctx.errors.asScala.toList
@@ -111,10 +132,6 @@ object Namer {
   private def visitNamespace(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
     case DesugaredAst.Declaration.Mod(qname, usesAndImports0, decls, loc) =>
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
-      val debug = ns.toString
-      if (debug.contains("Phase")) {
-        println(debug)
-      }
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)

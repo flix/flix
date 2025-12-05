@@ -958,15 +958,12 @@ object Symbol {
     def isRoot: Boolean = ns.isEmpty
 
     /**
-      * Returns `true` if this is a standalone module.
+      * Optionally returns the parent module of `this` symbol.
       */
-    def isStandalone: Boolean = kind match {
-      case ModuleKind.Standalone => true
-      case _ => false
+    def parent(): Option[ModuleSym] = ns.init match {
+      case Nil => None
+      case xs => Some(new ModuleSym(xs, ModuleKind.Standalone))
     }
-
-
-    def getParent(): Option[ModuleSym] = ??? // TODO
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
