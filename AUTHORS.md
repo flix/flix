@@ -90,3 +90,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Alex Asafov](https://github.com/Alex1005a)
 - [Daniel Neo López Martínez](https://github.com/NeonOxide)
 - [Jeff Beu](https://github.com/hexagonhill)
+- [Daniel John](https://github.com/danieljohnprojects)
