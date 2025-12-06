@@ -103,7 +103,13 @@ object Namer {
     }
 
     orphanedModules.toList.map {
-      case (sym, parentSym, loc) => NameError.OrphanModule(sym, parentSym, loc)
+      case (sym, parentSym, loc) =>
+        // Unfortunately the source location `loc` spans the entire module,
+        // so we create a source location here to just point to the mod declaration.
+        val sp1 = loc.sp1
+        val sp2 = loc.sp1.copy(colOneIndexed = (loc.sp1.colOneIndexed + 3).toShort)
+        val loc2 = SourceLocation(loc.isReal, loc.source, sp1, sp2)
+        NameError.OrphanModule(sym, parentSym, loc2)
     }
   }
 
