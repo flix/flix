@@ -46,6 +46,7 @@ mod Test.Integ.Enum {}
 mod Test.Integ.Fixpoint {}
 mod Test.Integ.Trait {}
 mod Test.Instance.Eq.Constraint {}
+mod Test.Java {}
 mod Test.Java.Function {}
 mod Test.Kind {}
 mod Test.Lit {}
