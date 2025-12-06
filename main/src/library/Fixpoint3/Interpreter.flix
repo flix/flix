@@ -150,7 +150,12 @@ mod Fixpoint3.Interpreter {
         };
         let indexes = Array.empty(rc, indexNum);
         foreach ((relSym, searches) <- indexMap) {
-            let tuples = Map.getWithDefault(relSym, BPlusTree.empty(rc), facts);
+            // We need to ensure that we do not pass a tree with `null` as search.
+            let default = match Vector.head(searches) {
+                case None => BPlusTree.empty(rc) // The foreach will be empty.
+                case Some(search0) => BPlusTree.emptyWithArityAndSearch(rc, usedArity(), search0)
+            };
+            let tuples = Map.getWithDefault(relSym, default, facts);
             foreach ((num, search) <- ForEach.withIndex(searches)) {
                 let pos = match Map.get((relSym, num), posMap) {
                     case Some(v) => v

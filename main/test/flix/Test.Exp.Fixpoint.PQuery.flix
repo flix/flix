@@ -241,7 +241,7 @@ mod Test.Exp.Fixpoint.PQuery {
         assertEq(expected = expected, actual)
 
     @Test
-    def testPQueryDepth2Nullary(): Unit \ Assert =
+    def testPQueryDepth2Nullary01(): Unit \ Assert =
         let pr = #{
             A.
             B :- A.
@@ -250,6 +250,25 @@ mod Test.Exp.Fixpoint.PQuery {
         let pp = pquery pr select R with {A};
         let expected = Vector#{42, 42};
         let actual = Vector.map(v -> ematch v { case A => 42 }, pp);
+        assertEq(expected = expected, actual)
+
+    @Test
+    def testPQueryDepth2Nullary02(): Unit \ Assert =
+        // We use negative dependencies because it forces the use of `memberOf`.
+        // Positive dependencies would simply translate to foreach loop.
+        let pr = #{
+            A.
+            B :- not A.
+            C :- not B.
+        };
+
+        let pp = pquery pr select C with {A, B, C};
+        let expected = Vector#{'C'};
+        let actual = Vector.map(v -> ematch v {
+            case A => 'A'
+            case B => 'B'
+            case C => 'C'
+        }, pp);
         assertEq(expected = expected, actual)
 
     ///////////////////////////////////////////////////////////////////////////
