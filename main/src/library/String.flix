@@ -69,13 +69,13 @@ mod String {
     pub def nonEmpty(s: String): Bool = not isEmpty(s)
 
     ///
-    /// Returns the number of characters the string `s`.
+    /// Returns the number of characters in the string `s`.
     ///
     pub def length(s: String): Int32 =
         s.length()
 
     ///
-    /// Returns the number of characters the string `s`.
+    /// Returns the number of characters in the string `s`.
     ///
     pub def size(s: String): Int32 = length(s)
 
@@ -479,7 +479,7 @@ mod String {
             s
 
     ///
-    /// Alias for `takeWileLeft`.
+    /// Alias for `takeWhileLeft`.
     ///
     pub def takeWhile(f: Char -> Bool, s: String): String = takeWhileLeft(f, s)
 
@@ -709,7 +709,7 @@ mod String {
     ///
     /// Returns `true` if and only if at least one char in `s` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `a` is empty.
+    /// Returns `false` if `s` is empty.
     ///
     pub def exists(f: Char -> Bool \ ef, s: String): Bool \ ef = match findIndexOfLeft(f, s) {
         case None    => false
