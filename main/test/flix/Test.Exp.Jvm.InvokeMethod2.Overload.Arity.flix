@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.Overload.Arity {
+mod Test.Exp.Jvm.InvokeMethod2.Overload.Arity {
 
    @test
    def testInvokeMethod_01(): Bool =
