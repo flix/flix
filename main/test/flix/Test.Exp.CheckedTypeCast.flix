@@ -39,4 +39,35 @@ mod Test.Exp.CheckedTypeCast {
         checked_cast(Array#{} @ rc)
     }
 
+    @test
+    def testCheckedTypeCast10(): Object = checked_cast(Box.box(42i8))
+
+    @test
+    def testCheckedTypeCast11(): Object = checked_cast(Box.box(42i16))
+
+    @test
+    def testCheckedTypeCast12(): Object = checked_cast(Box.box(42i32))
+
+    @test
+    def testCheckedTypeCast13(): Object = checked_cast(Box.box(42i64))
+
+    @test
+    def testCheckedTypeCast14(): Object = checked_cast(Box.box(42.0f32))
+
+    @test
+    def testCheckedTypeCast15(): Object = checked_cast(Box.box(42.0f64))
+
+    @test
+    def testCheckedTypeCast16(): Object = checked_cast(Box.box('c'))
+
+    @test
+    def testCheckedTypeCast17(): Object = checked_cast(Box.box(true))
+
+    @test
+    def testCheckedTypeCast18(): Object = upcast(42)
+
+    type alias Num = Int32
+
+    def upcast(x: Num): Object = checked_cast(Box.box(x))
+
 }
