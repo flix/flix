@@ -197,8 +197,8 @@ mod Fixpoint3.Ast.Ram {
     ///
     /// `IsEmpty(relSym)`: True if there are no facts in relation `relSym`.
     ///
-    /// `NotMemberOf(terms, relSym)`: True if the tuple constructed from `terms` is not
-    /// in relation `relSym`.
+    /// `NotMemberOf(terms, relSym, repNegative)`: True if the tuple constructed from `terms` is not
+    /// in relation `relSym`. `repNegative` is true if `NotMemberOf` is introduced by a `not A(...)`.
     ///
     /// `NotBot(term, leq, bot)`: True if `term` is not a `bot`.
     /// `term` must be a Meet or RowLoad of a lattice var.
@@ -216,7 +216,7 @@ mod Fixpoint3.Ast.Ram {
     pub enum BoolExp {
         case Not(BoolExp)
         case IsEmpty(RelSym)
-        case NotMemberOf(Vector[RamTerm], RelSym)
+        case NotMemberOf(Vector[RamTerm], RelSym, Bool)
         case NotBot(RamTerm, Boxed -> Boxed -> Bool, Boxed)
         case Leq(Boxed, RowVar, RelSym)
         case Eq(RamTerm, RamTerm)
@@ -232,7 +232,7 @@ mod Fixpoint3.Ast.Ram {
             match exp {
                 case BoolExp.Not(boolExp)                  => "not (${boolExp})"
                 case BoolExp.IsEmpty(relSym)               => "${relSym} = ∅"
-                case BoolExp.NotMemberOf(terms, relSym)    => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
+                case BoolExp.NotMemberOf(terms, relSym, _) => "(${terms |> Vector.join(", ")}) ∉ ${relSym}"
                 case BoolExp.NotBot(term, _, _)            => "(${term}) ≠ ⊥"
                 case BoolExp.Leq(elem, _, term)            => "${elem} ≤ (${term})"
                 case BoolExp.Eq(lhs, rhs)                  => "${lhs} = ${rhs}"

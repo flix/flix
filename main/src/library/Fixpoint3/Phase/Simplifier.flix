@@ -165,8 +165,8 @@ mod Fixpoint3.Phase.Simplifier {
                     })
                     // Partition into membership tests and rest.
                     |> Vector.partition(e -> match e {
-                        case BoolExp.NotMemberOf(_, _) => true
-                        case _                         => false
+                        case BoolExp.NotMemberOf(_, _, _) => true
+                        case _                            => false
                     });
                 let newTest = rest ++ memberOf;
                 // Simplify `if () then body` to `body`.

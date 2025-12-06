@@ -462,7 +462,7 @@ mod Fixpoint3.Phase.Lowering {
                 let (_, placements) = indexInfo;
                 let sPos = getOrCrash(Map.get((s, 0), placements));
                 Some(ExecutableRam.BoolExp.IsEmpty(sPos))
-            case Ram.BoolExp.NotMemberOf(terms, s) =>
+            case Ram.BoolExp.NotMemberOf(terms, s, _) =>
                 let (_, placements) = indexInfo;
                 let den = toDenotation(s);
                 let sPos = getOrCrash(Map.get((s, 0), placements));

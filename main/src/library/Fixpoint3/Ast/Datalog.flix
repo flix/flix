@@ -131,9 +131,9 @@ mod Fixpoint3.Ast.Datalog {
                     Map.joinWith(predSym -> facts -> {
                         let builder = StringBuilder.empty(rc);
                         foreach ((fact, annotation) <- facts) {
-                            StringBuilder.append("${indent}${fact} @ ${annotation},{String.lineSeparator()}${indent}", builder)
+                            StringBuilder.append("${indent}${fact} @ ${annotation},${String.lineSeparator()}${indent}", builder)
                         };
-                        let textOverflow = String.length("$,{String.lineSeparator()}${indent}");
+                        let textOverflow = String.length("$,${String.lineSeparator()}${indent}");
                         let rawFactString = StringBuilder.toString(builder);
                         let factsString = String.sliceLeft(end = String.length(rawFactString)- textOverflow, rawFactString);
                         "${predSym}:${String.lineSeparator()}${factsString}"
