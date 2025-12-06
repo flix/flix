@@ -69,16 +69,23 @@ object Namer {
   /**
     * Check that every module has a parent.
     *
-    * For example, if there is a module `A.B.C.D` then the module `A.B.C` must exist.
+    * For example:
+    *
+    * If there is a module `A.B.C.D` then the module `A.B.C` must exist.
     * Moreover, the module `A.B.C` must contain a module declaration for `D`.
     */
   private def checkOrphanModules(symbols: Map[Name.NName, Map[String, List[Declaration]]]): List[NameError] = {
-    val missingModule = mutable.Set.empty[(Symbol.ModuleSym, Symbol.ModuleSym, SourceLocation)]
-    // Check that every module has a parent
+    // A collection of orphaned modules, their missing parent, and the source location of the orphan.
+    val orphanedModules = mutable.Set.empty[(Symbol.ModuleSym, Symbol.ModuleSym, SourceLocation)]
+
+    // For every namespace,
     for ((_, m) <- symbols) {
+      // For every declaration in that namespace,
       for ((_, decls) <- m) {
+        // For every declaration in that namespace, for a given name,
         for (decl <- decls) {
           decl match {
+            // If it is a module declaration, check that if it is A.B.C then A must have a module declaration B.
             // We check that if the module is A.B.C then A must have a module declaration B.
             case Declaration.Mod(sym, _, _, loc) => sym.parent() match {
               case None => // nop
@@ -93,7 +100,7 @@ object Namer {
                     case _ => false
                   }
                   if (!exists) {
-                    missingModule += ((sym, parentSym, loc))
+                    orphanedModules += ((sym, parentSym, loc))
                   }
               }
             }
@@ -103,7 +110,7 @@ object Namer {
       }
     }
 
-    missingModule.toList.map {
+    orphanedModules.toList.map {
       case (sym, parentSym, loc) => NameError.OrphanModule(sym, parentSym, loc)
     }
   }
