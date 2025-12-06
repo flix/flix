@@ -36,6 +36,7 @@
     use Fixpoint3.Boxed
     use Fixpoint3.Boxed.BoxedInt64
     use Fixpoint3.Counter
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.TypeInfo.{expandTypeToProv, expandTypeInfoToProv, provType}
 
     ///
@@ -75,7 +76,7 @@
     /// `[42i64, "someString", Nil, 0, -1]`.
     ///
     def augmentFacts(oldTree: BPlusTree[Vector[Boxed], Boxed, Static]): BPlusTree[Vector[Boxed], Boxed, Static] \ IO = {
-        let newTree = BPlusTree.empty(Static);
+        let newTree = BPlusTree.emptyWithArity(Static, usedArity());
         BPlusTree.forEach(tuple -> v ->
             let annotatedVector = tuple ++ Vector#{BoxedInt64(0i64), BoxedInt64(-1i64)};
             BPlusTree.put(annotatedVector, v, newTree)

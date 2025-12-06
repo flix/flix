@@ -89,7 +89,9 @@ mod Fixpoint3.Boxing {
         };
         foreach ((relSym, relFacts) <- f2) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
-            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
+            // Get some search. This means that we have to create one less index in the interpreter.
+            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search), newFacts);
             // `id` will always be a full `id`.
             mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree)
         };
