@@ -447,7 +447,7 @@ mod List {
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
     ///
-    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, i, acc) = match ll {
