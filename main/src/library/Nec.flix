@@ -408,7 +408,7 @@ mod Nec {
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
     ///
-    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Nec[a]): Nec[b] \ ef =
         def loop(c1: Nec[a], i: Int32, k: Nec[b] -> Nec[b] \ ef) = match viewLeft(c1) {
