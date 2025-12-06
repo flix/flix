@@ -62,10 +62,10 @@ object Desugar {
     * Compiles `decl0` to a [[DesugaredAst.Declaration]].
     */
   private def visitDecl(decl0: WeededAst.Declaration)(implicit flix: Flix): DesugaredAst.Declaration = decl0 match {
-    case WeededAst.Declaration.Namespace(ident, usesAndImports0, decls0, loc) =>
+    case WeededAst.Declaration.Mod(qname, usesAndImports0, decls0, loc) =>
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val decls = decls0.map(visitDecl)
-      DesugaredAst.Declaration.Namespace(ident, usesAndImports, decls, loc)
+      DesugaredAst.Declaration.Mod(qname, usesAndImports, decls, loc)
 
     case d: WeededAst.Declaration.Trait => visitTrait(d)
     case d: WeededAst.Declaration.Instance => visitInstance(d)

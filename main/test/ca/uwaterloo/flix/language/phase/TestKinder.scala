@@ -1538,12 +1538,10 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.AssocType.05") {
     val input =
       """
-        |mod Test.Dec.AssociatedTypes.Negative {
-        |    trait Foo[t] {
-        |        type K: Type
-        |        type E: Type
-        |        pub def f(x: t): Foo.K[t][Foo.E[t]]
-        |    }
+        |trait Foo[t] {
+        |   type K: Type
+        |   type E: Type
+        |   pub def f(x: t): Foo.K[t][Foo.E[t]]
         |}
         |
         |""".stripMargin
