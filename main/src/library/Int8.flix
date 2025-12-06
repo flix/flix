@@ -142,7 +142,7 @@ mod Int8 {
     }
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
@@ -151,7 +151,7 @@ mod Int8 {
         bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =

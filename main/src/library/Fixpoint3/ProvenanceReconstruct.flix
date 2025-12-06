@@ -57,7 +57,7 @@ mod Fixpoint3.ProvenanceReconstruct {
     type alias BPLookup[r: Region] = BPlusTree[Vector[Boxed], List[(Vector[Boxed], Int64, Int32)], r]
 
     ///
-    /// A mutable map from `PredSym` to a `MutMap` from the the wanted lookup-slice to
+    /// A mutable map from `PredSym` to a `MutMap` from the wanted lookup-slice to
     /// a `BPLookup` on said slice.
     ///
     /// Using the previous example with predicate `P` we would have

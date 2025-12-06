@@ -548,8 +548,6 @@ mod Nec {
     ///
     /// Returns `true` if and only if at least one element in `c` satisfies the predicate `f`.
     ///
-    /// Returns `false` if `c` is empty.
-    ///
     pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
         case ViewLeft.OneLeft(x)      => f(x)
         case ViewLeft.SomeLeft(x, rs) => if (f(x)) true else exists(f, rs)
@@ -557,8 +555,6 @@ mod Nec {
 
     ///
     /// Returns `true` if and only if all elements in `c` satisfy the predicate `f`.
-    ///
-    /// Returns `true` if `c` is empty.
     ///
     pub def forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = match viewLeft(c) {
         case ViewLeft.OneLeft(x)      => f(x)
@@ -955,7 +951,7 @@ mod Nec {
     ///
     /// Applies `f` to all elements in `c` going from right to left until a single value `v` is obtained.
     ///
-    /// That is, the result is of the form: `Some(f(x1, ...f(xn-2, f(xn-1, xn))...))`
+    /// That is, the result is of the form: `f(x1, ...f(xn-2, f(xn-1, xn))...)`
     ///
     pub def reduceRight(f: (a, a) -> a \ ef, c: Nec[a]): a \ ef = match viewRight(c) {
         case ViewRight.OneRight(x)      => x

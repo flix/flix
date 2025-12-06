@@ -366,7 +366,7 @@ mod Option {
     ///
     /// Returns `Some()` if each of `f(l_i)` is `Some(_)`. Otherwise returns `None`.
     ///
-    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// This function is the "forgetful" version of `traverse`, use it when you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
     pub def traverseX(f: a -> Option[b] \ ef, l: List[a]): Option[Unit] \ ef = match l {
@@ -402,7 +402,7 @@ mod Option {
     /// If at any step applying `f` fails (i.e. it produces a `None` value) the traversal
     /// of `l` is short-circuited and `None` is returned.
     ///
-    /// If `f` is successfully applied to al elements in `l` the result is of the form:
+    /// If `f` is successfully applied to all elements in `l` the result is of the form:
     /// `Some(f(x1, ...f(xn-1, f(xn, s))...))`.
     ///
     pub def foldRightM(f: (a, b) -> Option[b] \ ef, s: b, l: List[a]): Option[b] \ ef =

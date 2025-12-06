@@ -1350,7 +1350,7 @@ mod BPlusTree {
 
         ///
         /// Attempts to grab the lock of `node` and insert the `key => val` mapping. Restarts with
-        /// `putIfInternal` if this is not successfull.
+        /// `putIfInternal` if this is not successful.
         ///
         /// Lock invariants:
         ///
