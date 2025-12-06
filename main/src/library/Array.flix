@@ -464,7 +464,7 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
     ///
-    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    /// That is, the result is of the form: `[ f(0, a[0]), f(1, a[1]), ... ]`.
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
