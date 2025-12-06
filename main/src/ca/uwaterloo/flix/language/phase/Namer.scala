@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
@@ -87,22 +87,10 @@ object Namer {
           decl match {
             // If it is a module declaration, check that if it is A.B.C then A must have a module declaration B.
             // We check that if the module is A.B.C then A must have a module declaration B.
-            case Declaration.Mod(sym, _, _, loc) => sym.parent() match {
-              case None => // nop
-              case Some(parentSym) => parentSym.parent() match {
-                case None => // nop
-                case Some(parentParentSym) =>
-                  val ns = Name.NName(parentParentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
-                  val decls = symbols.getOrElse(ns, Map.empty)
-                  val ds = decls.getOrElse(parentSym.ns.last, Nil)
-                  val exists = ds.exists {
-                    case Declaration.Mod(otherSym, _, _, _) => parentSym == otherSym
-                    case _ => false
-                  }
-                  if (!exists) {
-                    orphanedModules += ((sym, parentSym, loc))
-                  }
-              }
+            case Declaration.Mod(sym, _, _, loc) => isOrphan(sym, symbols) match {
+              case Result.Ok(()) => // nop
+              case Result.Err(parentSym) =>
+                orphanedModules += ((sym, parentSym, loc))
             }
             case _ => // nop
           }
@@ -112,6 +100,35 @@ object Namer {
 
     orphanedModules.toList.map {
       case (sym, parentSym, loc) => NameError.OrphanModule(sym, parentSym, loc)
+    }
+  }
+
+  /**
+    * Checks whether `sym` is an orphaned module.
+    *
+    * Returns `Ok(())` if `sym` has a parent module.
+    * Returns `Err(parentSym)` if `sym` was expected to have a parent module `parentSym`, but it does not exist.
+    */
+  private def isOrphan(sym: Symbol.ModuleSym, symbols: Map[Name.NName, Map[String, List[Declaration]]]): Result[Unit, Symbol.ModuleSym] = {
+    sym.parent() match {
+      case None => Result.Ok(()) // nop
+      case Some(parentSym) => parentSym.parent() match {
+        case None => Result.Ok(()) // nop
+        case Some(parentParentSym) =>
+          val ns = Name.NName(parentParentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
+          val decls = symbols.getOrElse(ns, Map.empty)
+          val ds = decls.getOrElse(parentSym.ns.last, Nil)
+          val exists = ds.exists {
+            case Declaration.Mod(otherSym, _, _, _) => parentSym == otherSym
+            case _ => false
+          }
+          if (exists) {
+            Result.Ok(())
+          } else {
+            Result.Err(parentSym)
+          }
+      }
+
     }
   }
 
