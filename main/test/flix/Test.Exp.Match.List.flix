@@ -1,102 +1,104 @@
 mod Test.Exp.Match.List {
 
+    use Assert.{assertEq, assertTrue, success, fail}
+
     // Define an enum with a `Cons` tag to ensure that it's not used in any of the following tests
     pub enum Foo {
         case Cons
     }
 
-    @test
-    def testMatchList01(): Bool = match Nil {
-        case Nil => true
-        case _   => false
+    @Test
+    def matchList01(): Unit \ Assert = match Nil {
+        case Nil => success("matched Nil")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchList02(): Bool = match Nil {
-        case Nil      => true
-        case 1 :: Nil => false
-        case _        => false
+    @Test
+    def matchList02(): Unit \ Assert = match Nil {
+        case Nil      => success("matched Nil")
+        case 1 :: Nil => fail("unexpected match on 1 :: Nil")
+        case _        => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchList03(): Bool = match Nil {
-        case Nil           => true
-        case 1 :: Nil      => false
-        case 1 :: 2 :: Nil => false
-        case _             => false
+    @Test
+    def matchList03(): Unit \ Assert = match Nil {
+        case Nil           => success("matched Nil")
+        case 1 :: Nil      => fail("unexpected match on 1 :: Nil")
+        case 1 :: 2 :: Nil => fail("unexpected match on 1 :: 2 :: Nil")
+        case _             => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchList04(): Bool = match 1 :: Nil {
-        case Nil      => false
-        case 1 :: Nil => true
-        case _        => false
+    @Test
+    def matchList04(): Unit \ Assert = match 1 :: Nil {
+        case Nil      => fail("unexpected match on Nil")
+        case 1 :: Nil => success("matched 1 :: Nil")
+        case _        => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchList05(): Bool = match 1 :: 2 :: Nil {
-        case Nil      => false
-        case _ :: _   => true
+    @Test
+    def matchList05(): Unit \ Assert = match 1 :: 2 :: Nil {
+        case Nil      => fail("unexpected match on Nil")
+        case _ :: _   => success("matched _ :: _")
     }
 
-    @test
-    def testMatchList06(): Bool = match 1 :: 2 :: Nil {
-        case Nil            => false
-        case 1 :: Nil       => false
-        case 1 :: 2 :: Nil  => true
-        case _              => false
+    @Test
+    def matchList06(): Unit \ Assert = match 1 :: 2 :: Nil {
+        case Nil            => fail("unexpected match on Nil")
+        case 1 :: Nil       => fail("unexpected match on 1 :: Nil")
+        case 1 :: 2 :: Nil  => success("matched 1 :: 2 :: Nil")
+        case _              => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchList07(): Bool = match 1 :: 2 :: Nil {
-        case x :: y :: Nil  => x + 1 == y
-        case _              => false
+    @Test
+    def matchList07(): Unit \ Assert = match 1 :: 2 :: Nil {
+        case x :: y :: Nil  => assertTrue(x + 1 == y)
+        case _              => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchList08(): Bool = match 1 :: 2 :: 3 :: Nil {
-        case x :: 2 :: z :: Nil => x + 2 == z
-        case _                  => false
+    @Test
+    def matchList08(): Unit \ Assert = match 1 :: 2 :: 3 :: Nil {
+        case x :: 2 :: z :: Nil => assertTrue(x + 2 == z)
+        case _                  => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testPatternOption01(): Bool = match Nil {
-        case Nil => true
-        case _   => false
+    @Test
+    def patternOption01(): Unit \ Assert = match Nil {
+        case Nil => success("matched Nil")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testPatternOption02(): Bool = match None :: Nil {
-        case Nil         => false
-        case None :: Nil => true
-        case _           => false
+    @Test
+    def patternOption02(): Unit \ Assert = match None :: Nil {
+        case Nil         => fail("unexpected match on Nil")
+        case None :: Nil => success("matched None :: Nil")
+        case _           => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testPatternOption03(): Bool = match Some(123) :: Nil {
-        case Nil              => false
-        case Some(x) :: Nil   => x == 123
-        case _                => false
+    @Test
+    def patternOption03(): Unit \ Assert = match Some(123) :: Nil {
+        case Nil              => fail("unexpected match on Nil")
+        case Some(x) :: Nil   => assertEq(expected = 123, x)
+        case _                => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testListList01(): Bool = match (Nil : List[List[Int32]]) {
-        case Nil              => true
-        case _                => false
+    @Test
+    def listList01(): Unit \ Assert = match (Nil : List[List[Int32]]) {
+        case Nil              => success("matched Nil")
+        case _                => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testListList02(): Bool = match (1 :: Nil) :: Nil {
-        case Nil                => false
-        case (1 :: Nil) :: Nil  => true
-        case _                  => false
+    @Test
+    def listList02(): Unit \ Assert = match (1 :: Nil) :: Nil {
+        case Nil                => fail("unexpected match on Nil")
+        case (1 :: Nil) :: Nil  => success("matched (1 :: Nil) :: Nil")
+        case _                  => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testListList03(): Bool = match (1 :: Nil) :: (2 :: Nil) :: Nil {
-        case Nil                             => false
-        case (x :: Nil) :: (y :: Nil) :: Nil => x + 1 == y
-        case _                               => false
+    @Test
+    def listList03(): Unit \ Assert = match (1 :: Nil) :: (2 :: Nil) :: Nil {
+        case Nil                             => fail("unexpected match on Nil")
+        case (x :: Nil) :: (y :: Nil) :: Nil => assertTrue(x + 1 == y)
+        case _                               => fail("unexpected match on wildcard")
     }
 
 }

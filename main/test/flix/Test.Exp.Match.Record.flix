@@ -1,249 +1,253 @@
 mod Test.Exp.Match.Record {
 
+    use Assert.{assertEq, assertTrue, success, fail}
+
     enum A {
         case A,
         case B
     }
 
-    @test
-    def testEmptyRecord01(): Bool = match { } {
-        case { } => true
+    @Test
+    def emptyRecord01(): Unit \ Assert = match { } {
+        case { } => success("matched empty record")
     }
 
-    @test
-    def testEmptyRecord02(): Bool = match { } {
-        case { } => true
-        case _   => false
+    @Test
+    def emptyRecord02(): Unit \ Assert = match { } {
+        case { } => success("matched empty record")
+        case _   => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testRecordLabelValue01(): Bool = match { a = 1 } {
-        case { a } => a == 1
+    @Test
+    def recordLabelValue01(): Unit \ Assert = match { a = 1 } {
+        case { a } => assertEq(expected = 1, a)
     }
 
-    @test
-    def testRecordLabelValue02(): Bool = match { a = 1 } {
-        case { a = b } => b == 1
+    @Test
+    def recordLabelValue02(): Unit \ Assert = match { a = 1 } {
+        case { a = b } => assertEq(expected = 1, b)
     }
 
-    @test
-    def testRecordLabelValue03(): Bool = match { a = 1 } {
-        case { a = 1 } => true
-        case { a = _ } => false
+    @Test
+    def recordLabelValue03(): Unit \ Assert = match { a = 1 } {
+        case { a = 1 } => success("matched { a = 1 }")
+        case { a = _ } => fail("unexpected match on { a = _ }")
     }
 
-    @test
-    def testRecordLabelValue04(): Bool = match { a = 1, b = 2 } {
-        case { a = 1, b = 2 } => true
-        case { a = _, b = _ } => false
+    @Test
+    def recordLabelValue04(): Unit \ Assert = match { a = 1, b = 2 } {
+        case { a = 1, b = 2 } => success("matched { a = 1, b = 2 }")
+        case { a = _, b = _ } => fail("unexpected match on { a = _, b = _ }")
     }
 
-    @test
-    def testRecordLabelValue05(): Bool = match { a = 1, b = 2 } {
-        case { a = 1, b = 2 | _ } => true
-        case { a = _, b = _ | _ } => false
+    @Test
+    def recordLabelValue05(): Unit \ Assert = match { a = 1, b = 2 } {
+        case { a = 1, b = 2 | _ } => success("matched { a = 1, b = 2 | _ }")
+        case { a = _, b = _ | _ } => fail("unexpected match on { a = _, b = _ | _ }")
     }
 
-    @test
-    def testExtension01(): Bool = match { a = 1, b = 2 } {
-        case { a = _ | _ } => true
+    @Test
+    def extension01(): Unit \ Assert = match { a = 1, b = 2 } {
+        case { a = _ | _ } => success("matched { a = _ | _ }")
     }
 
-    @test
-    def testExtension03(): Bool = match { a = 1, b = 2 } {
-        case { a = _, b = _ | _ } => true
+    @Test
+    def extension03(): Unit \ Assert = match { a = 1, b = 2 } {
+        case { a = _, b = _ | _ } => success("matched { a = _, b = _ | _ }")
     }
 
-    @test
-    def testNestedRecord01(): Bool = match { a = { } } {
-        case { a = { } } => true
+    @Test
+    def nestedRecord01(): Unit \ Assert = match { a = { } } {
+        case { a = { } } => success("matched { a = { } }")
     }
 
-    @test
-    def testNestedRecord02(): Bool = match { a = { a = { } } } {
-        case { a = { a = { } } } => true
+    @Test
+    def nestedRecord02(): Unit \ Assert = match { a = { a = { } } } {
+        case { a = { a = { } } } => success("matched { a = { a = { } } }")
     }
 
-    @test
-    def testNestedRecord03(): Bool = match { a = { a = { a = { } } } } {
-        case { a = { a = { a = { } } } } => true
+    @Test
+    def nestedRecord03(): Unit \ Assert = match { a = { a = { a = { } } } } {
+        case { a = { a = { a = { } } } } => success("matched { a = { a = { a = { } } } }")
     }
 
-    @test
-    def testNestedRecordExtension01(): Bool = match { a = { a = { } } } {
-        case { a = { a = { } } | _ } => true
+    @Test
+    def nestedRecordExtension01(): Unit \ Assert = match { a = { a = { } } } {
+        case { a = { a = { } } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension02(): Bool = match { a = { a = { } } } {
-        case { a = { a = { } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension02(): Unit \ Assert = match { a = { a = { } } } {
+        case { a = { a = { } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension03(): Bool = match { a = { a = { a = { } } } } {
-        case { a = { a = { a = { } } } | _ } => true
+    @Test
+    def nestedRecordExtension03(): Unit \ Assert = match { a = { a = { a = { } } } } {
+        case { a = { a = { a = { } } } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension04(): Bool = match { a = { a = { a = { } } } } {
-        case { a = { a = { a = { } } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension04(): Unit \ Assert = match { a = { a = { a = { } } } } {
+        case { a = { a = { a = { } } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension05(): Bool = match { a = { a = { a = { } } } } {
-        case { a = { a = { a = { } | _ } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension05(): Unit \ Assert = match { a = { a = { a = { } } } } {
+        case { a = { a = { a = { } | _ } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension06(): Bool = match { a = { a = { a = { } } }, b = { } } {
-        case { a = { a = { a = { } | _ } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension06(): Unit \ Assert = match { a = { a = { a = { } } }, b = { } } {
+        case { a = { a = { a = { } | _ } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension07(): Bool = match { a = { a = { a = { } }, b = { } }, b = { } } {
-        case { a = { a = { a = { } | _ } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension07(): Unit \ Assert = match { a = { a = { a = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { } | _ } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension08(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
-        case { a = { a = { a = { } | _ } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension08(): Unit \ Assert = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { } | _ } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension09(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
-        case { a = { a = { b = { } | _ } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension09(): Unit \ Assert = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { b = { } | _ } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension10(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
-        case { a = { a = { a = { }, b = { } | _ } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension10(): Unit \ Assert = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { }, b = { } | _ } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension11(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
-        case { a = { a = { a = { }, b = { } | _ }, b = { } | _ } | _ } => true
+    @Test
+    def nestedRecordExtension11(): Unit \ Assert = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { }, b = { } | _ }, b = { } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testNestedRecordExtension12(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
-        case { a = { a = { a = { }, b = { } | _ }, b = { } | _ }, b = { } | _ } => true
+    @Test
+    def nestedRecordExtension12(): Unit \ Assert = match { a = { a = { a = { }, b = { } }, b = { } }, b = { } } {
+        case { a = { a = { a = { }, b = { } | _ }, b = { } | _ }, b = { } | _ } => success("matched")
     }
 
-    @test
-    def testExhaustiveness01(): Bool = match { a = 1, b = 2 } {
-        case { a = _, b = _ } => true
-    }
-    @test
-    def testExhaustiveness02(): Bool = match { a = { a = { a = { }, b = { } }, b = { } }, b = { x = A.A } } {
-        case { a = { a = { a = { } | _ } | _ }, b = { x = A.A } } => true
-        case { a = { a = { a = { } | _ } | _ }, b = { x = A.B } } => false
+    @Test
+    def exhaustiveness01(): Unit \ Assert = match { a = 1, b = 2 } {
+        case { a = _, b = _ } => success("matched")
     }
 
-    @test
-    def testExhaustiveness03(): Bool = match { a = { a = { a = { }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
-        case { a = { a = { a = { } | _ } | _ }, b = { x = A.A } } => true
-        case { a = { a = { a = { } | _ } | _ }, b = { x = A.B } } => false
+    @Test
+    def exhaustiveness02(): Unit \ Assert = match { a = { a = { a = { }, b = { } }, b = { } }, b = { x = A.A } } {
+        case { a = { a = { a = { } | _ } | _ }, b = { x = A.A } } => success("matched A.A")
+        case { a = { a = { a = { } | _ } | _ }, b = { x = A.B } } => fail("unexpected match on A.B")
     }
 
-    @test
-    def testExhaustiveness04(): Bool = match { a = { a = { a = { a = A.B }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
-        case { a = { a = { a = { a = A.A } | _ } | _ }, b = { x = A.A } } => false
-        case { a = { a = { a = { a = A.A } | _ } | _ }, b = { x = A.B } } => false
-        case { a = { a = { a = { a = A.B } | _ } | _ }, b = { x = A.A } } => true
-        case { a = { a = { a = { a = A.B } | _ } | _ }, b = { x = A.B } } => false
+    @Test
+    def exhaustiveness03(): Unit \ Assert = match { a = { a = { a = { }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
+        case { a = { a = { a = { } | _ } | _ }, b = { x = A.A } } => success("matched A.A")
+        case { a = { a = { a = { } | _ } | _ }, b = { x = A.B } } => fail("unexpected match on A.B")
     }
 
-    @test
-    def testExhaustiveness05(): Bool = match { a = A.A, b = A.A } {
-        case { b = A.A, a = A.A } => true
-        case { b = A.A, a = A.B } => false
-        case { b = A.B, a = A.A } => false
-        case { b = A.B, a = A.B } => false
+    @Test
+    def exhaustiveness04(): Unit \ Assert = match { a = { a = { a = { a = A.B }, b = { b = A.B } }, b = { } }, b = { x = A.A } } {
+        case { a = { a = { a = { a = A.A } | _ } | _ }, b = { x = A.A } } => fail("unexpected match on A.A, A.A")
+        case { a = { a = { a = { a = A.A } | _ } | _ }, b = { x = A.B } } => fail("unexpected match on A.A, A.B")
+        case { a = { a = { a = { a = A.B } | _ } | _ }, b = { x = A.A } } => success("matched A.B, A.A")
+        case { a = { a = { a = { a = A.B } | _ } | _ }, b = { x = A.B } } => fail("unexpected match on A.B, A.B")
     }
 
-    @test
-    def testDuplicateLabelsExhaustiveness01(): Bool = match { a = A.A, a = A.B } {
-        case { a = A.A, a = A.A } => false
-        case { a = A.A, a = A.B } => true
-        case { a = A.B, a = A.A } => false
-        case { a = A.B, a = A.B } => false
+    @Test
+    def exhaustiveness05(): Unit \ Assert = match { a = A.A, b = A.A } {
+        case { b = A.A, a = A.A } => success("matched A.A, A.A")
+        case { b = A.A, a = A.B } => fail("unexpected match on A.A, A.B")
+        case { b = A.B, a = A.A } => fail("unexpected match on A.B, A.A")
+        case { b = A.B, a = A.B } => fail("unexpected match on A.B, A.B")
     }
 
-    @test
-    def testDuplicateLabelsExhaustiveness02(): Bool = match { a = A.B, a = A.B } {
-        case { a = A.A, a = A.A } => false
-        case { a = A.A, a = A.B } => false
-        case { a = A.B, a = A.A } => false
-        case { a = A.B, a = A.B } => true
+    @Test
+    def duplicateLabelsExhaustiveness01(): Unit \ Assert = match { a = A.A, a = A.B } {
+        case { a = A.A, a = A.A } => fail("unexpected match on A.A, A.A")
+        case { a = A.A, a = A.B } => success("matched A.A, A.B")
+        case { a = A.B, a = A.A } => fail("unexpected match on A.B, A.A")
+        case { a = A.B, a = A.B } => fail("unexpected match on A.B, A.B")
     }
 
-    @test
-    def testDuplicateLabelsExhaustiveness03(): Bool = match { a = A.B, a = A.A } {
-        case { a = A.A, a = A.A } => false
-        case { a = A.A, a = A.B } => false
-        case { a = A.B, a = A.A } => true
-        case { a = A.B, a = A.B } => false
+    @Test
+    def duplicateLabelsExhaustiveness02(): Unit \ Assert = match { a = A.B, a = A.B } {
+        case { a = A.A, a = A.A } => fail("unexpected match on A.A, A.A")
+        case { a = A.A, a = A.B } => fail("unexpected match on A.A, A.B")
+        case { a = A.B, a = A.A } => fail("unexpected match on A.B, A.A")
+        case { a = A.B, a = A.B } => success("matched A.B, A.B")
     }
 
-    @test
-    def testDuplicateLabelsExhaustiveness04(): Bool = match { a = A.B, a = A.A } {
-        case { a = A.A | _ } => false
-        case { a = A.B | _ } => true
+    @Test
+    def duplicateLabelsExhaustiveness03(): Unit \ Assert = match { a = A.B, a = A.A } {
+        case { a = A.A, a = A.A } => fail("unexpected match on A.A, A.A")
+        case { a = A.A, a = A.B } => fail("unexpected match on A.A, A.B")
+        case { a = A.B, a = A.A } => success("matched A.B, A.A")
+        case { a = A.B, a = A.B } => fail("unexpected match on A.B, A.B")
     }
 
-    @test
-    def testDuplicateLabelsExhaustiveness05(): Bool = match { a = A.B, a = A.A } {
-        case { a = A.A, a = _ } => false
-        case { a = A.B, a = _ } => true
+    @Test
+    def duplicateLabelsExhaustiveness04(): Unit \ Assert = match { a = A.B, a = A.A } {
+        case { a = A.A | _ } => fail("unexpected match on A.A")
+        case { a = A.B | _ } => success("matched A.B")
     }
 
-    @test
-    def testExhaustiveness06(): Bool = match { a = { a = { }, b = A.B }, b = A.A } {
-        case { a = { a = { } | _ } | _ } => true
-    }
-    @test
-    def testExtensionLabels01(): Bool = match { a = true, b = true } {
-        case { a | r } => a and r#b
+    @Test
+    def duplicateLabelsExhaustiveness05(): Unit \ Assert = match { a = A.B, a = A.A } {
+        case { a = A.A, a = _ } => fail("unexpected match on A.A")
+        case { a = A.B, a = _ } => success("matched A.B")
     }
 
-    @test
-    def testDuplicateLabels01(): Bool = match { a = false, a = true } {
-        case { a = x, a = y } => (not x) and y
+    @Test
+    def exhaustiveness06(): Unit \ Assert = match { a = { a = { }, b = A.B }, b = A.A } {
+        case { a = { a = { } | _ } | _ } => success("matched")
     }
 
-    @test
-    def testDuplicateLabels02(): Bool = match { a = true, a = 42 } {
-        case { a = x, a = y } => x and y == 42
+    @Test
+    def extensionLabels01(): Unit \ Assert = match { a = true, b = true } {
+        case { a | r } => assertTrue(a and r#b)
     }
 
-    @test
-    def testRandomOrder01(): Bool = match { a = true, b = 2, a = 42 } {
-        case { b, a = x, a = y } => (x and y == 42) and b == 2
+    @Test
+    def duplicateLabels01(): Unit \ Assert = match { a = false, a = true } {
+        case { a = x, a = y } => assertTrue((not x) and y)
     }
 
-    @test
-    def testRandomOrder02(): Bool = match { a = true, b = 2, a = 42 } {
-        case { a = x, a = y, b } => (x and y == 42) and b == 2
+    @Test
+    def duplicateLabels02(): Unit \ Assert = match { a = true, a = 42 } {
+        case { a = x, a = y } => assertTrue(x and y == 42)
     }
 
-    @test
-    def testRandomOrder03(): Bool = match { q = true, b = 2, a = 42 } {
-        case { a, q, b } => (q and a == 42) and b == 2
+    @Test
+    def randomOrder01(): Unit \ Assert = match { a = true, b = 2, a = 42 } {
+        case { b, a = x, a = y } => assertTrue((x and y == 42) and b == 2)
     }
 
-    @test
-    def testRandomOrder04(): Bool = match { q = true, b = 2, a = 42 } {
-        case { b, a, q } => (q and a == 42) and b == 2
+    @Test
+    def randomOrder02(): Unit \ Assert = match { a = true, b = 2, a = 42 } {
+        case { a = x, a = y, b } => assertTrue((x and y == 42) and b == 2)
     }
 
-    @test
-    def testDuplicateLabelsWithExtensionLabels01(): Bool = match { a = false, a = true, a = 42 } {
-        case { a = x, a = y | r } => ((not x) and y) and r#a == 42
+    @Test
+    def randomOrder03(): Unit \ Assert = match { q = true, b = 2, a = 42 } {
+        case { a, q, b } => assertTrue((q and a == 42) and b == 2)
     }
 
-    @test
-    def testDuplicateLabelsWithExtensionLabels02(): Bool = match { a = false, a = true, a = 42, a = 3 } {
-        case { a = x, a = y | r } => ((not x) and y) and r#a == 42
+    @Test
+    def randomOrder04(): Unit \ Assert = match { q = true, b = 2, a = 42 } {
+        case { b, a, q } => assertTrue((q and a == 42) and b == 2)
+    }
+
+    @Test
+    def duplicateLabelsWithExtensionLabels01(): Unit \ Assert = match { a = false, a = true, a = 42 } {
+        case { a = x, a = y | r } => assertTrue(((not x) and y) and r#a == 42)
+    }
+
+    @Test
+    def duplicateLabelsWithExtensionLabels02(): Unit \ Assert = match { a = false, a = true, a = 42, a = 3 } {
+        case { a = x, a = y | r } => assertTrue(((not x) and y) and r#a == 42)
     }
 
 }

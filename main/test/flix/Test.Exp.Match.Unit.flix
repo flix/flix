@@ -1,13 +1,15 @@
 mod Test.Exp.Match.Unit {
 
-    @test
-    def testMatchUnit01(): Bool = match () {
-        case () => true
+    use Assert.{assertEq, success}
+
+    @Test
+    def matchUnit01(): Unit \ Assert = match () {
+        case () => success("matched unit")
     }
 
-    @test
-    def testMatchUnitVar01(): Bool = match () {
-        case x => x == ()
+    @Test
+    def matchUnitVar01(): Unit \ Assert = match () {
+        case x => assertEq(expected = (), x)
     }
 
 }
