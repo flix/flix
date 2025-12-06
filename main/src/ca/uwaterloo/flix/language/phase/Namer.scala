@@ -62,43 +62,51 @@ object Namer {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
 
-      val missingModule = mutable.Set.empty[Symbol.ModuleSym]
-      // Check that every module has a parent
-      for ((_, m) <- symbols) {
-        for ((_, decls) <- m) {
-          for (decl <- decls) {
-            decl match {
-              // We check that if the module is A.B.C then A must have a module declaration B.
-              case Declaration.Mod(sym, _, _, _) => sym.parent() match {
+      val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
+      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
+    }
+
+  /**
+    * Check that every module has a parent.
+    *
+    * For example, if there is a module `A.B.C.D` then the module `A.B.C` must exist.
+    * Moreover, the module `A.B.C` must contain a module declaration for `D`.
+    */
+  private def checkOrphanModules(symbols: Map[Name.NName, Map[String, List[Declaration]]]): List[NameError] = {
+    val missingModule = mutable.Set.empty[(Symbol.ModuleSym, Symbol.ModuleSym, SourceLocation)]
+    // Check that every module has a parent
+    for ((_, m) <- symbols) {
+      for ((_, decls) <- m) {
+        for (decl <- decls) {
+          decl match {
+            // We check that if the module is A.B.C then A must have a module declaration B.
+            case Declaration.Mod(sym, _, _, loc) => sym.parent() match {
+              case None => // nop
+              case Some(parentSym) => parentSym.parent() match {
                 case None => // nop
-                case Some(parentSym) => parentSym.parent() match {
-                  case None => // nop
-                  case Some(parentParentSym) =>
-                    val ns = Name.NName(parentParentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
-                    val decls = symbols.getOrElse(ns, Map.empty)
-                    val ds = decls.getOrElse(parentSym.ns.last, Nil)
-                    val exists = ds.exists {
-                      case Declaration.Mod(otherSym, _, _, _) => parentSym == otherSym
-                      case _ => false
-                    }
-                    if (!exists) {
-                      missingModule += parentSym
-                    }
-                }
+                case Some(parentParentSym) =>
+                  val ns = Name.NName(parentParentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
+                  val decls = symbols.getOrElse(ns, Map.empty)
+                  val ds = decls.getOrElse(parentSym.ns.last, Nil)
+                  val exists = ds.exists {
+                    case Declaration.Mod(otherSym, _, _, _) => parentSym == otherSym
+                    case _ => false
+                  }
+                  if (!exists) {
+                    missingModule += ((sym, parentSym, loc))
+                  }
               }
-              case _ => // nop
             }
+            case _ => // nop
           }
         }
       }
-
-      for (sym <- missingModule) {
-        println(s"Missing module ${sym}")
-      }
-
-      val errors = sctx.errors.asScala.toList
-      (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
+
+    missingModule.toList.map {
+      case (sym, parentSym, loc) => NameError.OrphanModule(sym, parentSym, loc)
+    }
+  }
 
   /**
     * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
