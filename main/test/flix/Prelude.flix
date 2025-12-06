@@ -24,6 +24,7 @@ mod Test.Exp.Fixpoint.Solve {}
 mod Test.Exp.Jvm {}
 mod Test.Exp.Jvm.InvokeMethod {}
 mod Test.Exp.Jvm.InvokeMethod2 {}
+mod Test.Exp.Jvm.InvokeMethod2.Overload {}
 mod Test.Exp.Lambda {}
 mod Test.Exp.Let {}
 mod Test.Exp.Match {}
@@ -40,12 +41,19 @@ mod Test.Handler.OneShot {}
 mod Test.Handler.ZeroShot {}
 mod Test.Instance {}
 mod Test.Instance.Eq {}
+mod Test.Integ {}
+mod Test.Integ.Enum {}
+mod Test.Integ.Fixpoint {}
+mod Test.Integ.Trait {}
+mod Test.Instance.Eq.Constraint {}
+mod Test.Java.Function {}
 mod Test.Kind {}
 mod Test.Lit {}
 mod Test.Predicate {}
 mod Test.Stratification {}
 mod Test.Term {}
 mod Test.Term.Lit {}
+mod Test.Term.Lit.Var {}
 mod Test.Term.Var {}
 mod Test.Type {}
 mod Test.Unused {}

@@ -1,6 +1,6 @@
 mod Test.Stratification {
 
-    mod Test.Stratification.Not {
+    mod Not {
 
         //
         //
@@ -321,7 +321,7 @@ mod Test.Stratification {
             > 0
     }
 
-    mod Test.Stratification.Fix {
+    mod Fix {
 
         //
         //
