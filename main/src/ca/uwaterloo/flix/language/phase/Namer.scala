@@ -37,7 +37,7 @@ object Namer {
   /**
     * If enabled, enforces that every module has a parent.
     */
-  val NoOrphans: Boolean = false
+  private val NoOrphans: Boolean = false
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
