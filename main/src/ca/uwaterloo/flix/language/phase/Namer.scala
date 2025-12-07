@@ -35,6 +35,11 @@ import scala.jdk.CollectionConverters.*
 object Namer {
 
   /**
+    * If enabled, enforces that every module has a parent.
+    */
+  val NoOrphans: Boolean = false
+
+  /**
     * Introduces unique names for each syntactic entity in the given `program`.
     * */
   def run(program: DesugaredAst.Root)(implicit flix: Flix): (NamedAst.Root, List[NameError]) =
@@ -75,6 +80,10 @@ object Namer {
     * Moreover, the module `A.B.C` must contain a module declaration for `D`.
     */
   private def checkOrphanModules(symbols: Map[Name.NName, Map[String, List[Declaration]]]): List[NameError] = {
+    if (!NoOrphans) {
+      return Nil
+    }
+
     // A collection of orphaned modules, their missing parent, and the source location of the orphan.
     val orphanedModules = mutable.Set.empty[(Symbol.ModuleSym, Symbol.ModuleSym, SourceLocation)]
 
