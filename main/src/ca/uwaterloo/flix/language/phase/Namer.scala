@@ -150,7 +150,7 @@ object Namer {
     * Performs naming on the given declaration.
     */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration = decl0 match {
-    case decl: DesugaredAst.Declaration.Mod => visitNamespace(decl, ns0)
+    case decl: DesugaredAst.Declaration.Mod => visitMod(decl, ns0)
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
@@ -163,9 +163,9 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given namespace.
+    * Performs naming on the given module.
     */
-  private def visitNamespace(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
+  private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
     case DesugaredAst.Declaration.Mod(qname, usesAndImports0, decls, loc) =>
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
