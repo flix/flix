@@ -231,18 +231,14 @@ object Weeder2 {
       }
     }
 
-    private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Namespace, CompilationMessage] = {
+    private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Mod, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Module)
       mapN(
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (qname, usesAndImports, declarations) =>
-          val base = Declaration.Namespace(qname.ident, usesAndImports, declarations, tree.loc)
-          qname.namespace.idents.foldRight(base: Declaration.Namespace) {
-            case (ident, acc) => Declaration.Namespace(ident, Nil, List(acc), tree.loc)
-          }
+        (qname, usesAndImports, declarations) => Declaration.Mod(qname, usesAndImports, declarations, tree.loc)
       }
     }
 

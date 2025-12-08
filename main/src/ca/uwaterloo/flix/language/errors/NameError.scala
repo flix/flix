@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.errors
 
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{SourceLocation,Name}
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -104,6 +105,25 @@ object NameError {
 
     def loc: SourceLocation = loc1
 
+  }
+
+  /**
+    * An error raised to indicate that the module `sym` is orphaned because the module `parentSym` does not exist.
+    *
+    * @param sym       the orphaned module symbol.
+    * @param parentSym the missing parent module symbol.
+    * @param loc       the location where the orphaned module is declared.
+    */
+  case class OrphanModule(sym: Symbol.ModuleSym, parentSym: Symbol.ModuleSym, loc: SourceLocation) extends NameError {
+    def summary: String = s"Module '$sym' is orphaned. Missing declaration of parent: '$parentSym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Module '${blue(sym.toString)}' is orphaned. Missing declaration of parent: '${red(parentSym.toString)}'.
+         |
+         |${code(loc, "orphaned module")}
+         |""".stripMargin
+    }
   }
 
   /**
