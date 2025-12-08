@@ -177,13 +177,22 @@ object Namer {
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
     case DesugaredAst.Declaration.Mod(qname, usesAndImports0, decls, loc) =>
 
+      //
+      // Check for [[NameError.IllegalModuleFile]].
+      //
+      def expectedPath(qname0: Name.QName): List[String] = {
+        qname0.namespace.idents.map(_.name) ::: qname0.ident.name :: Nil
+      }
+
+      def actualPath(path: String): List[String] = {
+        path.stripSuffix(".flix").split("/").toList
+      }
+
       loc.source.input match {
-        case Input.Text(virtualPath, _, _) =>
-          val expect = qname.namespace.idents.map(_.name) ::: qname.ident.name :: Nil
-          val actual = virtualPath.stripSuffix(".flix").split("/").toList
-          if (expect != actual) {
-            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
-          }
+        case Input.TxtFile(path, _) if expectedPath(qname) != actualPath(path.toString) =>
+          sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
+        case Input.Text(virtualPath, _, _) if expectedPath(qname) != actualPath(virtualPath) =>
+          sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
         case _ => // Nop
       }
 
