@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
 class VisitorSuite extends AnyFunSuite {
-  val source: Source = Source(Input.Text("test", "test", SecurityContext.Unrestricted), Array.emptyCharArray)
+  val source: Source = Source(Input.VirtualFile("test", "test", SecurityContext.Unrestricted), Array.emptyCharArray)
   val uri = "test"
 
   test("inside when strictly within lines") {
