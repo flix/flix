@@ -754,7 +754,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def mkSource(content: String): Source = {
     val sctx = SecurityContext.Unrestricted
-    val input = Input.Text(Uri, content, sctx)
+    val input = Input.VirtualFile(Uri, content, sctx)
     Source(input, content.toCharArray)
   }
 

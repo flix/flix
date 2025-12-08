@@ -10,7 +10,7 @@ class TestChangeSet extends AnyFunSuite {
     override def src: Source = Source(input, Array.emptyCharArray)
   }
 
-  private def mkInput(name: String): Input = Input.Text(name, "", Unrestricted)
+  private def mkInput(name: String): Input = Input.VirtualFile(name, "", Unrestricted)
 
   private val input1 = mkInput("input1")
   private val input2 = mkInput("input2")
