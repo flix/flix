@@ -175,7 +175,18 @@ object Namer {
     * Performs naming on the given module.
     */
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
-    case DesugaredAst.Declaration.Mod(_, _, qname, usesAndImports0, decls, loc) =>
+    case DesugaredAst.Declaration.Mod(qname, usesAndImports0, decls, loc) =>
+
+      loc.source.input match {
+        case Input.Text(virtualPath, _, _) =>
+          val expect = qname.namespace.idents.map(_.name) ::: qname.ident.name :: Nil
+          val actual = virtualPath.stripSuffix(".flix").split("/").toList
+          if (expect != actual) {
+            println(s"Module '${qname}' unexpectedly declared in file: '${actual.mkString("/")}.flix'")
+          }
+        case _ => // Nop
+      }
+
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
