@@ -175,10 +175,10 @@ object Namer {
     * Performs naming on the given module.
     */
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
-    case DesugaredAst.Declaration.Mod(qname, usesAndImports0, decls, loc) =>
+    case DesugaredAst.Declaration.Mod(_, mod, qname, usesAndImports0, decls, loc) =>
 
       //
-      // Check for [[NameError.IllegalModuleFile]].
+      // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
       //
       def expectedPath(qname0: Name.QName): List[String] = {
         qname0.namespace.idents.map(_.name) ::: qname0.ident.name :: Nil
@@ -188,12 +188,14 @@ object Namer {
         path.stripSuffix(".flix").split("/").toList
       }
 
-      loc.source.input match {
-        case Input.TxtFile(path, _) if expectedPath(qname) != actualPath(path.toString) =>
-          sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
-        case Input.Text(virtualPath, _, _) if expectedPath(qname) != actualPath(virtualPath) =>
-          sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
-        case _ => // Nop
+      if (mod.isPublic) {
+        loc.source.input match {
+          case Input.TxtFile(path, _) if expectedPath(qname) != actualPath(path.toString) =>
+            sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
+          case Input.VirtualFile(virtualPath, _, _) if expectedPath(qname) != actualPath(virtualPath) =>
+            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
+          case _ => // Nop
+        }
       }
 
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
