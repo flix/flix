@@ -3515,9 +3515,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, LocalScope.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil =>
-        tryLookupName(qname, LocalScope.empty, ns, root)
-        Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
+      case Nil => Validation.Failure(ResolutionError.UndefinedUse(qname, ns, Map.empty, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>

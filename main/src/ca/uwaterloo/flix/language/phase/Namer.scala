@@ -35,9 +35,9 @@ import scala.jdk.CollectionConverters.*
 object Namer {
 
   /**
-    * If enabled, enforces that every module has a parent.
+    * When enabled, allows orphan modules, i.e. modules without a parent module.
     */
-  private val NoOrphans: Boolean = false
+  private val AllowOrphans: Boolean = true
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
@@ -80,7 +80,7 @@ object Namer {
     * Moreover, the module `A.B.C` must contain a module declaration for `D`.
     */
   private def checkOrphanModules(symbols: Map[Name.NName, Map[String, List[Declaration]]]): List[NameError] = {
-    if (!NoOrphans) {
+    if (AllowOrphans) {
       return Nil
     }
 
