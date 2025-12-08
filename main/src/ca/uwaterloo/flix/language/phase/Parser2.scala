@@ -893,14 +893,14 @@ object Parser2 {
       implicit val sctx: SyntacticContext = SyntacticContext.Decl.Module
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle modules.
-      if (at(TokenKind.KeywordMod)) {
-        return moduleDecl(mark, nestingLevel)
-      }
       // Handle declarations
       val wasAtEofBeforeAnnotations = at(TokenKind.Eof)
       annotations()
       modifiers()
+      // Handle modules.
+      if (at(TokenKind.KeywordMod)) {
+        return moduleDecl(mark, nestingLevel)
+      }
       // If a new declaration is added to this then add it to FIRST_DECL too.
       nth(0) match {
         case TokenKind.KeywordTrait => traitDecl(mark)
