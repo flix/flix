@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.VarText.Absent
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
-import ca.uwaterloo.flix.language.phase.unification.EffUnification3
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.CofiniteSet
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -649,6 +649,46 @@ object Type {
   /////////////////////////////////////////////////////////////////////////////
   // Utility Functions                                                       //
   /////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Evaluates `eff` if it is well-formed and has no type variables,
+    * associated types, or error types.
+    */
+  def eval(eff: Type): Result[CofiniteSet[Symbol.EffSym], Unit] = eff match {
+    case Type.Cst(tc, _) => tc match {
+      case TypeConstructor.Pure => Result.Ok(CofiniteSet.empty)
+      case TypeConstructor.Univ => Result.Ok(CofiniteSet.universe)
+      case TypeConstructor.Effect(sym, _) => Result.Ok(CofiniteSet.mkSet(sym))
+      case _ => Result.Err(())
+    }
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), x0, _) =>
+      Result.mapN(eval(x0)) {
+        case x => CofiniteSet.complement(x)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.union(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.intersection(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Difference, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.difference(x, y)
+      }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SymmetricDiff, _), x0, _), y0, _) =>
+      Result.mapN(eval(x0), eval(y0)) {
+        case (x, y) => CofiniteSet.xor(x, y)
+      }
+    case Type.Alias(_, _, tpe, _) => eval(tpe)
+    case Type.Var(_, _) => Result.Err(())
+    case Type.Apply(_, _, _) => Result.Err(())
+    case Type.AssocType(_, _, _, _) => Result.Err(())
+    case Type.JvmToType(_, _) => Result.Err(())
+    case Type.JvmToEff(_, _) => Result.Err(())
+    case Type.UnresolvedJvmType(_, _) => Result.Err(())
+  }
 
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.

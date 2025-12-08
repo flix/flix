@@ -26,7 +26,29 @@ import java.lang.reflect.{Constructor, Field, Method}
 
 object TypedAst {
 
-  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
+  val empty: Root = Root(ListMap.empty, Map.empty, ListMap.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, ListMap.empty, None, Set.empty, List.empty,Map.empty, TraitEnv.empty, EqualityEnv.empty, AvailableClasses.empty, LabelledPrecedenceGraph.empty, DependencyGraph.empty, Map.empty)
+
+  /**
+    * Default handler components
+    *
+    * Given:
+    * {{{
+    *     eff E
+    *     mod E {
+    *         @DefaultHandler
+    *         def handle(f: Unit -> a \ ef): a \ (ef - E) + IO = exp
+    *     }
+    * }}}
+    *
+    *   - handlerSym: handle's [[Symbol.DefnSym]].
+    *   - handlerDef: E's [[Type]].
+    *   - handlerDef: E's [[Symbol.EffSym]].
+    * */
+  case class DefaultHandler(
+                             handlerSym: Symbol.DefnSym,
+                             handledEff: Type,
+                             handledSym: Symbol.EffSym,
+                           )
 
   case class Root(modules: ListMap[Symbol.ModuleSym, Symbol],
                   traits: Map[Symbol.TraitSym, Trait],
@@ -41,6 +63,7 @@ object TypedAst {
                   uses: ListMap[Symbol.ModuleSym, UseOrImport],
                   mainEntryPoint: Option[Symbol.DefnSym],
                   entryPoints: Set[Symbol.DefnSym],
+                  defaultHandlers: List[DefaultHandler],
                   sources: Map[Source, SourceLocation],
                   traitEnv: TraitEnv,
                   eqEnv: EqualityEnv,
