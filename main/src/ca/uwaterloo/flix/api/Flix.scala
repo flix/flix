@@ -389,7 +389,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.Text(name, text, sctx))
+    addInput(name, Input.VirtualFile(name, text, sctx))
     this
   }
 
@@ -399,7 +399,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.Plain))
+    remInput(name, Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -516,7 +516,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.Plain)
+      inputs += name -> Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -916,7 +916,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.Unrestricted) :: xs
+    case (xs, (virtualPath, text)) => Input.VirtualFile(virtualPath, text, SecurityContext.Unrestricted) :: xs
   }
 
   /**
