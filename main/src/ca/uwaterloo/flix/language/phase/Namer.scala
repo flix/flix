@@ -182,7 +182,7 @@ object Namer {
           val expect = qname.namespace.idents.map(_.name) ::: qname.ident.name :: Nil
           val actual = virtualPath.stripSuffix(".flix").split("/").toList
           if (expect != actual) {
-            println(s"Module '${qname}' unexpectedly declared in file: '${actual.mkString("/")}.flix'")
+            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
           }
         case _ => // Nop
       }
