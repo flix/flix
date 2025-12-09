@@ -452,7 +452,7 @@ object Specialization {
       MonoAst.Expr.Var(env0(sym), Lowering.lowerType(subst(tpe)), loc)
 
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
-      MonoAst.Expr.Cst(cst, subst(tpe), loc)
+      MonoAst.Expr.Cst(cst, Lowering.lowerType(subst(tpe)), loc)
 
     case LoweredAst.Expr.Lambda(fparam, exp, tpe, loc) =>
       val (p, env1) = specializeFormalParam(fparam, subst)
@@ -484,7 +484,7 @@ object Specialization {
       val it = subst(itpe)
       val newSym = specializeDefnSym(sym, it)
       val es = exps.map(specializeExp(_, env0, subst))
-      MonoAst.Expr.ApplyDef(newSym, es, it, Lowering.lowerType(subst(tpe)), subst(eff), loc)
+      MonoAst.Expr.ApplyDef(newSym, es, Lowering.lowerType(it), Lowering.lowerType(subst(tpe)), subst(eff), loc)
 
     case LoweredAst.Expr.ApplyLocalDef(sym, exps, tpe, eff, loc) =>
       val newSym = env0(sym)
@@ -638,16 +638,16 @@ object Specialization {
 
     case LoweredAst.Expr.NewChannel(innerExp, tpe, eff, loc) =>
       val exp = specializeExp(innerExp, env0, subst)
-      Lowering.visitNewChannel(exp, subst(tpe), eff, loc)
+      Lowering.visitNewChannel(exp, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.GetChannel(innerExp, tpe, eff, loc) =>
       val exp = specializeExp(innerExp, env0, subst)
-      Lowering.mkGetChannel(exp, subst(tpe), eff, loc)
+      Lowering.mkGetChannel(exp, subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.PutChannel(innerExp1, innerExp2, _, eff, loc) =>
       val exp1 = specializeExp(innerExp1, env0, subst)
       val exp2 = specializeExp(innerExp2, env0, subst)
-      Lowering.mkPutChannel(exp1, exp2, eff, loc)
+      Lowering.mkPutChannel(exp1, exp2, subst(eff), loc)
 
     case LoweredAst.Expr.SelectChannel(rules0, default0, tpe, eff, loc) =>
       val rules = rules0.map {
@@ -657,7 +657,7 @@ object Specialization {
           (freshSym, specializeExp(chan, env1, subst), specializeExp(exp, env1, subst))
       }
       val default = default0.map { d => specializeExp(d, env0, subst) }
-      Lowering.mkSelectChannel(rules, default, subst(tpe), eff, loc)
+      Lowering.mkSelectChannel(rules, default, subst(tpe), subst(eff), loc)
 
   }
 
@@ -740,26 +740,26 @@ object Specialization {
     */
   private def specializePat(p0: LoweredAst.Pattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
     case LoweredAst.Pattern.Wild(tpe, loc) =>
-      (MonoAst.Pattern.Wild(subst(tpe), loc), Map.empty)
+      (MonoAst.Pattern.Wild(Lowering.lowerType(subst(tpe)), loc), Map.empty)
     case LoweredAst.Pattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.Pattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
-    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, subst(tpe), loc), Map.empty)
+      (MonoAst.Pattern.Var(freshSym, Lowering.lowerType(subst(tpe)), Occur.Unknown, loc), Map(sym -> freshSym))
+    case LoweredAst.Pattern.Cst(cst, tpe, loc) => (MonoAst.Pattern.Cst(cst, Lowering.lowerType(subst(tpe)), loc), Map.empty)
     case LoweredAst.Pattern.Tag(symUse, pats, tpe, loc) =>
       val (ps, envs) = pats.map(specializePat(_, subst)).unzip
-      (MonoAst.Pattern.Tag(symUse, ps, subst(tpe), loc), combineEnvs(envs))
+      (MonoAst.Pattern.Tag(symUse, ps, Lowering.lowerType(subst(tpe)), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val (ps, envs) = elms.map(specializePat(_, subst)).unzip
-      (MonoAst.Pattern.Tuple(ps, subst(tpe), loc), combineEnvs(envs))
+      (MonoAst.Pattern.Tuple(ps, Lowering.lowerType(subst(tpe)), loc), combineEnvs(envs))
     case LoweredAst.Pattern.Record(pats, pat, tpe, loc) =>
       val (ps, envs) = pats.map {
         case LoweredAst.Pattern.Record.RecordLabelPattern(label, pat1, tpe1, loc1) =>
           val (p1, env1) = specializePat(pat1, subst)
-          (MonoAst.Pattern.Record.RecordLabelPattern(label, p1, subst(tpe1), loc1), env1)
+          (MonoAst.Pattern.Record.RecordLabelPattern(label, p1, Lowering.lowerType(subst(tpe1)), loc1), env1)
       }.unzip
       val (p, env1) = specializePat(pat, subst)
       val finalEnv = env1 :: envs
-      (MonoAst.Pattern.Record(ps, p, subst(tpe), loc), combineEnvs(finalEnv))
+      (MonoAst.Pattern.Record(ps, p, Lowering.lowerType(subst(tpe)), loc), combineEnvs(finalEnv))
   }
 
   /**
@@ -782,14 +782,14 @@ object Specialization {
     */
   private def specializeExtTagPat(pat0: LoweredAst.ExtTagPattern, subst: StrictSubstitution)(implicit root: LoweredAst.Root, flix: Flix): (MonoAst.ExtTagPattern, Map[Symbol.VarSym, Symbol.VarSym]) = pat0 match {
     case LoweredAst.ExtTagPattern.Wild(tpe, loc) =>
-      (MonoAst.ExtTagPattern.Wild(subst(tpe), loc), Map.empty)
+      (MonoAst.ExtTagPattern.Wild(Lowering.lowerType(subst(tpe)), loc), Map.empty)
 
     case LoweredAst.ExtTagPattern.Var(sym, tpe, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
-      (MonoAst.ExtTagPattern.Var(freshSym, subst(tpe), Occur.Unknown, loc), Map(sym -> freshSym))
+      (MonoAst.ExtTagPattern.Var(freshSym, Lowering.lowerType(subst(tpe)), Occur.Unknown, loc), Map(sym -> freshSym))
 
     case LoweredAst.ExtTagPattern.Unit(tpe, loc) =>
-      (MonoAst.ExtTagPattern.Unit(subst(tpe), loc), Map.empty)
+      (MonoAst.ExtTagPattern.Unit(Lowering.lowerType(subst(tpe)), loc), Map.empty)
   }
 
   /** Specializes `method` w.r.t. `subst`. */
@@ -797,7 +797,7 @@ object Specialization {
     case LoweredAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
       val exp = specializeExp(exp0, env0 ++ env1, subst)
-      MonoAst.JvmMethod(ident, fparams, exp, subst(tpe), subst(eff), loc)
+      MonoAst.JvmMethod(ident, fparams, exp, Lowering.lowerType(subst(tpe)), subst(eff), loc)
   }
 
   /**

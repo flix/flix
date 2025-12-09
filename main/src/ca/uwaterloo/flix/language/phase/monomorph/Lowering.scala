@@ -1,6 +1,6 @@
 /*
  * Copyright 2021 Magnus Madsen
- *                Casper Dalgaard Nielsen
+ *           2025 Casper Dalgaard Nielsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,43 +50,43 @@ object Lowering {
     * @param tpe0 the type to be lowered.
     * @return
     */
-   def lowerType(tpe0: Type): Type = tpe0 match {
-     case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
+  def lowerType(tpe0: Type): Type = tpe0 match {
+    case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
 
-     case Type.Var(_, _) => tpe0
+    case Type.Var(_, _) => tpe0
 
-     // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
-     case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
-       val t = lowerType(tpe)
-       mkChannelTpe(t, loc)
+    // Rewrite Sender[t] to Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _) =>
+      val t = lowerType(tpe)
+      mkChannelTpe(t, loc)
 
-     // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
-     case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
-       val t = lowerType(tpe)
-       mkChannelTpe(t, loc)
+    // Rewrite Receiver[t] to Concurrent.Channel.Mpmc[t, IO]
+    case Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _) =>
+      val t = lowerType(tpe)
+      mkChannelTpe(t, loc)
 
-     case Type.Apply(tpe1, tpe2, loc) =>
-       val t1 = lowerType(tpe1)
-       val t2 = lowerType(tpe2)
-       // Performance: Reuse tpe0, if possible.
-       if ((t1 eq tpe1) && (t2 eq tpe2)) {
-         tpe0
-       } else {
-         Type.Apply(t1, t2, loc)
-       }
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = lowerType(tpe1)
+      val t2 = lowerType(tpe2)
+      // Performance: Reuse tpe0, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2)) {
+        tpe0
+      } else {
+        Type.Apply(t1, t2, loc)
+      }
 
-     case Type.Alias(sym, args, t, loc) =>
-       Type.Alias(sym, args.map(lowerType), lowerType(t), loc)
+    case Type.Alias(sym, args, t, loc) =>
+      Type.Alias(sym, args.map(lowerType), lowerType(t), loc)
 
-     case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
+    case Type.AssocType(_, _, _, loc) => throw InternalCompilerException("unexpected associated type", loc)
 
-     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
 
-     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
+    case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JVM eff", loc)
 
-     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
+    case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("unexpected JVM type", loc)
 
-   }
+  }
 
   /**
     * Returns the definition associated with the given symbol `sym`.
@@ -107,9 +107,9 @@ object Lowering {
     * @param tpe The specialized type of the result
     */
   protected[monomorph] def visitNewChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
+    val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelNewTuple, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, lowerType(itpe), lowerType(tpe), eff, loc)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, lowerType(tpe), eff, loc)
   }
 
   /**
@@ -121,9 +121,9 @@ object Lowering {
     * {{{ Concurrent/Channel.get(c) }}}
     */
   protected[monomorph] def mkGetChannel(exp: MonoAst.Expr, tpe: Type, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
-    val itpe = Type.mkIoArrow(exp.tpe, tpe, loc)
+    val itpe = lowerType(Type.mkIoArrow(exp.tpe, tpe, loc))
     val defnSym = lookup(Defs.ChannelGet, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, lowerType(itpe), lowerType(tpe), eff, loc)
+    MonoAst.Expr.ApplyDef(defnSym, exp :: Nil, itpe, lowerType(tpe), eff, loc)
   }
 
   /**
@@ -135,9 +135,9 @@ object Lowering {
     * {{{ Concurrent/Channel.put(42, c) }}}
     */
   protected[monomorph] def mkPutChannel(exp1: MonoAst.Expr, exp2: MonoAst.Expr, eff: Type, loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
-    val itpe = Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc)
+    val itpe = lowerType(Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc))
     val defnSym = lookup(Defs.ChannelPut, itpe)
-    MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), lowerType(itpe), Type.Unit, eff, loc)
+    MonoAst.Expr.ApplyDef(defnSym, List(exp2, exp1), itpe, Type.Unit, eff, loc)
   }
 
   /**
@@ -194,9 +194,9 @@ object Lowering {
   private def mkChannelAdminList(rs: List[(Symbol.VarSym, MonoAst.Expr, MonoAst.Expr)], channels: List[(Symbol.VarSym, MonoAst.Expr)], loc: SourceLocation)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = {
     val admins = ListOps.zip(rs, channels) map {
       case ((_, c, _), (chanSym, _)) =>
-        val itpe = Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc)
+        val itpe = lowerType(Type.mkPureArrow(c.tpe, Types.ChannelMpmcAdmin, loc))
         val defnSym = lookup(Defs.ChannelMpmcAdmin, itpe)
-        MonoAst.Expr.ApplyDef(defnSym, List(MonoAst.Expr.Var(chanSym, lowerType(c.tpe), loc)), lowerType(itpe), Types.ChannelMpmcAdmin, Type.Pure, loc)
+        MonoAst.Expr.ApplyDef(defnSym, List(MonoAst.Expr.Var(chanSym, lowerType(c.tpe), loc)), itpe, Types.ChannelMpmcAdmin, Type.Pure, loc)
     }
     mkList(admins, Types.ChannelMpmcAdmin, loc)
   }
@@ -244,7 +244,7 @@ object Lowering {
         val locksSym = mkLetSym("locks", loc)
         val pat = mkTuplePattern(Nel(MonoAst.Pattern.Cst(Constant.Int32(i), Type.Int32, loc), List(MonoAst.Pattern.Var(locksSym, locksType, Occur.Unknown, loc))), loc)
         val getTpe = extractChannelTpe(chan.tpe)
-        val itpe = Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc)
+        val itpe = lowerType(Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc))
         val args = List(MonoAst.Expr.Var(chSym, lowerType(chan.tpe), loc), MonoAst.Expr.Var(locksSym, locksType, loc))
         val defnSym = lookup(Defs.ChannelUnsafeGetAndUnlock, itpe)
         val getExp = MonoAst.Expr.ApplyDef(defnSym, args, lowerType(itpe), lowerType(getTpe), eff, loc)
