@@ -659,6 +659,17 @@ object Specialization {
       val default = default0.map { d => specializeExp(d, env0, subst) }
       Lowering.mkSelectChannel(rules, default, subst(tpe), subst(eff), loc)
 
+    case LoweredAst.Expr.ParYield(frags, exp, tpe, eff, loc) =>
+      var curEnv = env0
+      val fs = frags.map {
+        case LoweredAst.ParYieldFragment(pat, fragExp, fragLoc) =>
+          val (p, env1) = specializePat(pat, subst)
+          curEnv ++= env1
+          (p, specializeExp(fragExp, curEnv, subst), fragLoc)
+      }
+      val e = specializeExp(exp, curEnv, subst)
+      Lowering.mkParYield(fs, e, subst(tpe), subst(eff), loc)
+
   }
 
   /**
