@@ -389,7 +389,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.VirtualFile(sanitizePath(name), text, sctx))
+    addInput(name, Input.VirtualFile(parsePath(name), text, sctx))
     this
   }
 
@@ -399,7 +399,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.VirtualFile(sanitizePath(name), "", /* unused */ SecurityContext.Plain))
+    remInput(name, Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -516,7 +516,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.VirtualFile(sanitizePath(name), "", /* unused */ SecurityContext.Plain)
+      inputs += name -> Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -901,19 +901,15 @@ class Flix {
   }
 
   /**
-    * Converts a source name to a valid Path by replacing invalid path characters.
-    * On Windows, characters like <, >, :, ", |, ?, * are invalid in file paths.
+    * Parses the given `name` into a Path.
+    * If `name` is a file:// URI, it is parsed as a URI; otherwise it is parsed directly.
     */
-  private def sanitizePath(name: String): Path = {
-    val sanitized = name
-      .replace('<', '_')
-      .replace('>', '_')
-      .replace(':', '_')
-      .replace('"', '_')
-      .replace('|', '_')
-      .replace('?', '_')
-      .replace('*', '_')
-    Path.of(sanitized)
+  private def parsePath(name: String): Path = {
+    if (name.startsWith("file://")) {
+      java.nio.file.Paths.get(new java.net.URI(name))
+    } else {
+      Path.of(name)
+    }
   }
 
   /**
