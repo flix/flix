@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
+import java.net.URI
+import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -180,19 +182,24 @@ object Namer {
       //
       // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
       //
-      def expectedPath(qname0: Name.QName): List[String] = {
-        qname0.namespace.idents.map(_.name) ::: qname0.ident.name :: Nil
+      val expectedPath: List[String] = {
+        qname.namespace.idents.map(_.name) ::: qname.ident.name :: Nil
       }
 
       def actualPath(path: String): List[String] = {
-        path.stripSuffix(".flix").split("/").toList
+        val p = if (path.startsWith("file://")) {
+          Paths.get(new URI(path.stripSuffix(".flix")))
+        } else {
+          Paths.get(path.stripSuffix(".flix"))
+        }
+        p.iterator().asScala.toList.map(_.toString)
       }
 
       if (mod.isPublic) {
         loc.source.input match {
-          case Input.TxtFile(path, _) if expectedPath(qname) != actualPath(path.toString) =>
+          case Input.TxtFile(path, _) if !actualPath(path.toString).endsWith(expectedPath) =>
             sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
-          case Input.VirtualFile(virtualPath, _, _) if expectedPath(qname) != actualPath(virtualPath) =>
+          case Input.VirtualFile(virtualPath, _, _) if !actualPath(virtualPath).endsWith(expectedPath) =>
             sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
           case _ => // Nop
         }
