@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
+import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
@@ -400,6 +401,20 @@ class Flix {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     remInput(name, Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain))
+    this
+  }
+
+  /**
+    * Adds the given string `text` with the given `name`.
+    */
+  def addVirtualUri(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(name, Input.VirtualUri(new URI(name), text, sctx))
     this
   }
 

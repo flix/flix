@@ -198,7 +198,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Add the given source code to the compiler
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addSourceCode(uri, src)(SecurityContext.Unrestricted) // TODO
+    flix.addVirtualUri(uri, src)(SecurityContext.Unrestricted) // TODO
     sources += (uri -> src)
   }
 
@@ -206,7 +206,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     * Remove the source code associated with the given uri from the compiler
     */
   private def remSourceCode(uri: String): Unit = {
-    flix.remSourceCode(uri)
+    flix.remSourceCode(uri) // TODO: Use removeVirtualUri
     sources -= uri
   }
 

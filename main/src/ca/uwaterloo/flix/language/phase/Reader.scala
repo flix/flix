@@ -46,6 +46,10 @@ object Reader {
             val src = Source(input, text.toCharArray)
             result += (src -> ())
 
+          case Input.VirtualUri(_, text, _) =>
+            val src = Source(input, text.toCharArray)
+            result += (src -> ())
+
           case Input.TxtFile(path, _) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)

@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast.shared
 
+import java.net.URI
 import java.nio.file.Path
 
 /**
@@ -27,6 +28,7 @@ sealed trait Input {
     */
   def security: SecurityContext = this match {
     case Input.VirtualFile(_, _, sctx) => sctx
+    case Input.VirtualUri(_, _, sctx) => sctx
     case Input.TxtFile(_, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
@@ -45,6 +47,17 @@ object Input {
 
     override def equals(obj: Any): Boolean = obj match {
       case that: VirtualFile => this.virtualPath == that.virtualPath
+      case _ => false
+    }
+
+    override def toString: String = virtualPath.toString
+  }
+
+  case class VirtualUri(virtualPath: URI, text: String, sctx: SecurityContext) extends Input {
+    override def hashCode(): Int = virtualPath.hashCode
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: VirtualUri => this.virtualPath == that.virtualPath
       case _ => false
     }
 
