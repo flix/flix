@@ -200,7 +200,7 @@ object Namer {
           case Input.TxtFile(path, _) if !actualPath(path.toString).endsWith(expectedPath) =>
             sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
           case Input.VirtualFile(virtualPath, _, _) if !actualPath(virtualPath.toString).endsWith(expectedPath) =>
-            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
+            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath.toString, qname.loc))
           case _ => // Nop
         }
       }
