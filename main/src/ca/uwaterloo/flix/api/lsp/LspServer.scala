@@ -67,7 +67,7 @@ object LspServer {
     /**
       * A map from source URIs to source code.
       */
-    val sources: mutable.Map[String, String] = mutable.Map.empty
+    val sources: mutable.Map[URI, String] = mutable.Map.empty
 
     /**
       * The current AST root. The root is null until the source code is compiled.
@@ -148,7 +148,7 @@ object LspServer {
       flixSources.foreach { case p =>
         if (FileOps.checkExt(p, "flix")) {
           val source = Files.readString(p)
-          addSourceCode(p.toUri.toString, source)
+          addSourceCode(p.toUri, source)
         }
       }
     }
@@ -221,8 +221,8 @@ object LspServer {
     /**
       * Adds the given source code to the Flix instance.
       */
-    def addSourceCode(uri: String, src: String): Unit = {
-      flix.addVirtualUri(new URI(uri), src)(SecurityContext.Unrestricted)
+    def addSourceCode(uri: URI, src: String): Unit = {
+      flix.addVirtualUri(uri, src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 
@@ -237,7 +237,7 @@ object LspServer {
             this.root = root1
             this.currentErrors = errors
             // We provide diagnostics for errors and code hints.
-            val codeHints = CodeHinter.run(sources.keySet.toSet)(root1)
+            val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root1)
             PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
 
           // Case 2: Compilation failed so that we have only errors.
@@ -262,7 +262,7 @@ object LspServer {
       // We do not publish diagnostics for errors from the library
       val validDiagnostics = diagnostics.filter(_.uri.startsWith("file://"))
       val sourcesWithDiagnostics = validDiagnostics.map(d => d.uri).toSet
-      val sourcesWithoutDiagnostics = sources.keySet.diff(sourcesWithDiagnostics)
+      val sourcesWithoutDiagnostics = sources.keysIterator.map(_.toString).toSet.diff(sourcesWithDiagnostics)
       sourcesWithoutDiagnostics.foreach { source =>
         flixLanguageClient.publishDiagnostics(PublishDiagnosticsParams(source, Nil).toLsp4j)
       }
@@ -283,7 +283,8 @@ object LspServer {
       System.err.println(s"didOpen: $didOpenTextDocumentParams")
       val textDocument = didOpenTextDocumentParams.getTextDocument
       if (textDocument.getLanguageId == "flix") {
-        flixLanguageServer.addSourceCode(textDocument.getUri, textDocument.getText)
+        val uri = new URI(textDocument.getUri)
+        flixLanguageServer.addSourceCode(uri, textDocument.getText)
         flixLanguageServer.processCheck()
       }
     }
@@ -294,7 +295,7 @@ object LspServer {
       */
     override def didChange(didChangeTextDocumentParams: DidChangeTextDocumentParams): Unit = {
       System.err.println(s"didChange: $didChangeTextDocumentParams")
-      val uri = didChangeTextDocumentParams.getTextDocument.getUri
+      val uri = new URI(didChangeTextDocumentParams.getTextDocument.getUri)
       if (flixLanguageServer.sources.contains(uri)) {
         //Since the TextDocumentSyncKind is Full, we can assume that there is only one change that is a full content change.
         val src = didChangeTextDocumentParams.getContentChanges.get(0).getText
