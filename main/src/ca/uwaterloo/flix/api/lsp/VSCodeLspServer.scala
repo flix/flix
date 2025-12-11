@@ -82,7 +82,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * A map from source URIs to source code.
     */
-  private val sources: mutable.Map[String, String] = mutable.Map.empty
+  private val sources: mutable.Map[URI, String] = mutable.Map.empty
 
   /**
     * The current AST root. The root is null until the source code is compiled.
@@ -195,19 +195,21 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   }
 
   /**
-    * Add the given source code to the compiler
+    * Add the given source code to the compiler.
     */
   private def addSourceCode(uri: String, src: String): Unit = {
-    flix.addVirtualUri(uri, src)(SecurityContext.Unrestricted) // TODO
-    sources += (uri -> src)
+    val u = new URI(uri)
+    flix.addVirtualUri(u, src)(SecurityContext.Unrestricted)
+    sources += (u -> src)
   }
 
   /**
     * Remove the source code associated with the given uri from the compiler
     */
   private def remSourceCode(uri: String): Unit = {
-    flix.remSourceCode(uri) // TODO: Use removeVirtualUri
-    sources -= uri
+    val u = new URI(uri)
+    flix.remVirtualUri(u)
+    sources -= u
   }
 
   /**
@@ -242,9 +244,9 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
 
     case Request.RemPkg(id, uri) =>
       // clone is necessary because `remSourceCode` modifies `sources`
-      for ((file, _) <- sources.clone()
-           if file.startsWith(uri)) {
-        remSourceCode(file)
+      for ((u, _) <- sources.clone()
+           if u.toString.startsWith(uri)) {
+        remSourceCode(u.toString)
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
@@ -389,7 +391,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
     // println(s"lsp/check: ${e / 1_000_000}ms")
 
     // Compute Code Quality hints.
-    val codeHints = CodeHinter.run(sources.keySet.toSet)(root)
+    val codeHints = CodeHinter.run(sources.keysIterator.map(_.toString).toSet)(root)
 
     // Determine the status based on whether there are errors.
     val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)

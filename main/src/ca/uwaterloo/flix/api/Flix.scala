@@ -405,16 +405,26 @@ class Flix {
   }
 
   /**
-    * Adds the given string `text` with the given `name`.
+    * Adds the given virtual `uri` with the given source code `text`.
     */
-  def addVirtualUri(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
-    if (name == null)
+  def addVirtualUri(uri: URI, text: String)(implicit sctx: SecurityContext): Flix = {
+    if (uri == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.VirtualUri(new URI(name), text, sctx))
+    addInput(uri.toString, Input.VirtualUri(uri, text, sctx))
+    this
+  }
+
+  /**
+    * Removes the source code with the given `uri`.
+    */
+  def remVirtualUri(uri: URI): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
     this
   }
 
