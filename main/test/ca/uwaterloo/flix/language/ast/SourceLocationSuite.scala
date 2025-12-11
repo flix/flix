@@ -4,11 +4,9 @@ import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.nio.file.Path
-
 class SourceLocationSuite extends AnyFunSuite {
 
-  private val Src = Source(Input.VirtualFile(Path.of(CompilerConstants.VirtualTestFile), "dummy dummy", SecurityContext.Unrestricted), Array.emptyCharArray)
+  private val Src = Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "dummy dummy", SecurityContext.Unrestricted), Array.emptyCharArray)
 
   test("l1 contains l2 when l1 starts on earlier line and ends on later") {
     val l1 = SourceLocation(

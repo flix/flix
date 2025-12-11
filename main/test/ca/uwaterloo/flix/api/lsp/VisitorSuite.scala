@@ -20,11 +20,9 @@ import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
-import java.nio.file.Path
-
 class VisitorSuite extends AnyFunSuite {
-  val source: Source = Source(Input.VirtualFile(Path.of(CompilerConstants.VirtualTestFile), "test", SecurityContext.Unrestricted), Array.emptyCharArray)
-  val uri = CompilerConstants.VirtualTestFile
+  val source: Source = Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), Array.emptyCharArray)
+  val uri = CompilerConstants.VirtualTestFile.toString
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(

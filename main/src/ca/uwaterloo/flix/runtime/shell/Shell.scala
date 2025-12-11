@@ -30,6 +30,7 @@ import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, User
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
 import java.io.PrintStream
+import java.nio.file.Path
 import java.util.logging.{Level, Logger}
 import scala.collection.mutable
 
@@ -300,7 +301,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addVirtualPath(name, s)(SecurityContext.Unrestricted)
+        flix.addVirtualPath(Path.of(name), s)(SecurityContext.Unrestricted)
 
         // And try to compile!
         compile(progress = false).toResult match {
@@ -310,7 +311,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case Result.Err(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
-            flix.remVirtualPath(name)
+            flix.remVirtualPath(Path.of(name))
             w.println("Error: Declaration ignored due to previous error(s).")
         }
 
@@ -368,7 +369,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def clearFragments(): Unit = {
     for (i <- 0 to fragments.length)
-      flix.remVirtualPath("$" + i)
+      flix.remVirtualPath(Path.of("$" + i))
     fragments.clear()
   }
 

@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.api
 
+import java.nio.file.Path
+
 /**
   * A collection of Flix compiler constants that are hard coded.
   */
@@ -44,11 +46,16 @@ object CompilerConstants {
   /**
     * The virtual file name used in the shell.
     */
-  val VirtualShellFile: String = "__SHELL__.flix"
+  val VirtualShellFile: Path = Path.of("__SHELL__.flix")
 
   /**
     * The virtual file name used in tests.
     */
-  val VirtualTestFile: String = "__TEST__.flix"
+  val VirtualTestFile: Path = Path.of("__TEST__.flix")
+
+  /**
+    * The virtual file name used in the playground.
+    */
+  val VirtualPlaygroundFile: Path = Path.of("__PLAY__.flix")
 
 }

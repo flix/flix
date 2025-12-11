@@ -307,7 +307,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.VirtualFile(Path.of(CompilerConstants.VirtualTestFile), "", SecurityContext.Unrestricted), Array.emptyCharArray)
+    Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "", SecurityContext.Unrestricted), Array.emptyCharArray)
 
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(

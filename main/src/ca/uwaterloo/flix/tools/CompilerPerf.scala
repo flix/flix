@@ -501,22 +501,22 @@ object CompilerPerf {
     */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    flix.addVirtualPath("TestArray.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
-    flix.addVirtualPath("TestChain.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
-    flix.addVirtualPath("TestIterator.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
-    flix.addVirtualPath("TestDelayList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
-    flix.addVirtualPath("TestList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
-    flix.addVirtualPath("TestMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
-    flix.addVirtualPath("TestMutDeque.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
-    flix.addVirtualPath("TestMutList.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
-    flix.addVirtualPath("TestMutMap.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
-    flix.addVirtualPath("TestMutSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
-    flix.addVirtualPath("TestNel.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
-    flix.addVirtualPath("TestOption.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
-    flix.addVirtualPath("TestPrelude.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
-    flix.addVirtualPath("TestResult.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
-    flix.addVirtualPath("TestSet.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
-    flix.addVirtualPath("TestValidation.flix", LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
+    flix.addVirtualPath(Path.of("TestArray.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"))
+    flix.addVirtualPath(Path.of("TestChain.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"))
+    flix.addVirtualPath(Path.of("TestIterator.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"))
+    flix.addVirtualPath(Path.of("TestDelayList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"))
+    flix.addVirtualPath(Path.of("TestList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"))
+    flix.addVirtualPath(Path.of("TestMap.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"))
+    flix.addVirtualPath(Path.of("TestMutDeque.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"))
+    flix.addVirtualPath(Path.of("TestMutList.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"))
+    flix.addVirtualPath(Path.of("TestMutMap.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"))
+    flix.addVirtualPath(Path.of("TestMutSet.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"))
+    flix.addVirtualPath(Path.of("TestNel.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestNel.flix"))
+    flix.addVirtualPath(Path.of("TestOption.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"))
+    flix.addVirtualPath(Path.of("TestPrelude.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestPrelude.flix"))
+    flix.addVirtualPath(Path.of("TestResult.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"))
+    flix.addVirtualPath(Path.of("TestSet.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"))
+    flix.addVirtualPath(Path.of("TestValidation.flix"), LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"))
   }
 
   /**

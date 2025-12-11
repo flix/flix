@@ -26,14 +26,14 @@ import java.nio.file.Path
 
 class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
 
-  private val FileA = "FileA.flix"
-  private val FileB = "FileB.flix"
-  private val FileC = "FileC.flix"
-  private val FileD = "FileD.flix"
-  private val FileE = "FileE.flix"
-  private val FileF = "FileF.flix"
-  private val FileG = "FileG.flix"
-  private val FileH = "FileH.flix"
+  private val FileA = Path.of("FileA.flix")
+  private val FileB = Path.of("FileB.flix")
+  private val FileC = Path.of("FileC.flix")
+  private val FileD = Path.of("FileD.flix")
+  private val FileE = Path.of("FileE.flix")
+  private val FileF = Path.of("FileF.flix")
+  private val FileG = Path.of("FileG.flix")
+  private val FileH = Path.of("FileH.flix")
 
   // A new Flix instance is created and initialized with some source code for each test.
   private var flix: Flix = _
@@ -110,11 +110,11 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    pub def cg(x: a): a
          |}
          |""".stripMargin)
-    flix.remFile(Path.of(FileE))
-    flix.remFile(Path.of(FileD))
-    flix.remFile(Path.of(FileF))
-    flix.remFile(Path.of(FileG))
-    flix.remFile(Path.of(FileH))
+    flix.remFile(FileE)
+    flix.remFile(FileD)
+    flix.remFile(FileF)
+    flix.remFile(FileG)
+    flix.remFile(FileH)
 
     flix.compile().unsafeGet
   }

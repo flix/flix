@@ -411,26 +411,26 @@ class Flix {
   }
 
   /**
-    * Adds the given string `text` with the given `name`.
+    * Adds the given string `text` with the given `path`.
     */
-  def addVirtualPath(path: String, src: String)(implicit sctx: SecurityContext): Flix = {
+  def addVirtualPath(path: Path, src: String)(implicit sctx: SecurityContext): Flix = {
     if (path == null)
       throw new IllegalArgumentException("'path' must be non-null.")
     if (src == null)
       throw new IllegalArgumentException("'src' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(path, Input.VirtualFile(parsePath(path), src, sctx))
+    addInput(path.toString, Input.VirtualFile(path, src, sctx))
     this
   }
 
   /**
-    * Removes the source code with the given `name`.
+    * Removes the source code with the given `path`.
     */
-  def remVirtualPath(path: String): Flix = {
+  def remVirtualPath(path: Path): Flix = {
     if (path == null)
       throw new IllegalArgumentException("'path' must be non-null.")
-    remInput(path, Input.VirtualFile(parsePath(path), "", /* unused */ SecurityContext.Plain))
+    remInput(path.toString, Input.VirtualFile(path, "", /* unused */ SecurityContext.Plain))
     this
   }
 

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp
 
 import ca.uwaterloo.flix.api.lsp.provider.*
-import ca.uwaterloo.flix.api.lsp.{CompletionList, Position, PublishDiagnosticsParams, Range, FormattingOptions}
+import ca.uwaterloo.flix.api.lsp.{CompletionList, FormattingOptions, Position, PublishDiagnosticsParams, Range}
 import ca.uwaterloo.flix.api.{CrashHandler, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst
@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.jsonrpc.messages
 import org.eclipse.lsp4j.launch.LSPLauncher
 import org.eclipse.lsp4j.services.*
 
+import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.concurrent.CompletableFuture
@@ -221,7 +222,7 @@ object LspServer {
       * Adds the given source code to the Flix instance.
       */
     def addSourceCode(uri: String, src: String): Unit = {
-      flix.addVirtualPath(uri, src)(SecurityContext.Unrestricted)
+      flix.addVirtualUri(new URI(uri), src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 
