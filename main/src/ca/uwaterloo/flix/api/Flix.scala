@@ -389,7 +389,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.VirtualFile(name, text, sctx))
+    addInput(name, Input.VirtualFile(sanitizePath(name), text, sctx))
     this
   }
 
@@ -399,7 +399,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain))
+    remInput(name, Input.VirtualFile(sanitizePath(name), "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -516,7 +516,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain)
+      inputs += name -> Input.VirtualFile(sanitizePath(name), "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -901,6 +901,22 @@ class Flix {
   }
 
   /**
+    * Converts a source name to a valid Path by replacing invalid path characters.
+    * On Windows, characters like <, >, :, ", |, ?, * are invalid in file paths.
+    */
+  private def sanitizePath(name: String): Path = {
+    val sanitized = name
+      .replace('<', '_')
+      .replace('>', '_')
+      .replace(':', '_')
+      .replace('"', '_')
+      .replace('|', '_')
+      .replace('?', '_')
+      .replace('*', '_')
+    Path.of(sanitized)
+  }
+
+  /**
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
@@ -916,7 +932,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.VirtualFile(virtualPath, text, SecurityContext.Unrestricted) :: xs
+    case (xs, (virtualPath, text)) => Input.VirtualFile(Path.of(virtualPath), text, SecurityContext.Unrestricted) :: xs
   }
 
   /**

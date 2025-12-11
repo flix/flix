@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
+
+import java.nio.file.Path
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -754,7 +756,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def mkSource(content: String): Source = {
     val sctx = SecurityContext.Unrestricted
-    val input = Input.VirtualFile(Uri, content, sctx)
+    val input = Input.VirtualFile(Path.of(Uri), content, sctx)
     Source(input, content.toCharArray)
   }
 

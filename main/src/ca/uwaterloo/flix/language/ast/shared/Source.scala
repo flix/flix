@@ -30,7 +30,7 @@ object Source {
 case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   def name: String = input match {
-    case Input.VirtualFile(name, _, _) => name
+    case Input.VirtualFile(name, _, _) => name.toString
     case Input.TxtFile(path, _) => path.toString
     case Input.PkgFile(path, _) => path.toString
     case Input.FileInPackage(_, virtualPath, _, _) => virtualPath

@@ -40,7 +40,7 @@ object Input {
   /**
     * Represents an input that originates from a virtual file path.
     */
-  case class VirtualFile(virtualPath: String, text: String, sctx: SecurityContext) extends Input {
+  case class VirtualFile(virtualPath: Path, text: String, sctx: SecurityContext) extends Input {
     override def hashCode(): Int = virtualPath.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
@@ -48,7 +48,7 @@ object Input {
       case _ => false
     }
 
-    override def toString: String = virtualPath
+    override def toString: String = virtualPath.toString
   }
 
   /**

@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityCo
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import java.nio.file.Path
 import scala.collection.mutable
 
 object Summary {
@@ -152,7 +153,7 @@ object Summary {
     }
 
     def zero(name: String): FileSummary =
-      FileSummary(Source(Input.VirtualFile(name, "", SecurityContext.Unrestricted), Array.emptyCharArray), FileData.zero)
+      FileSummary(Source(Input.VirtualFile(Path.of(name), "", SecurityContext.Unrestricted), Array.emptyCharArray), FileData.zero)
 
     sums.groupBy(sum => prefixFileName(sum.src.name, nsDepth)).map {
       case (name, sums) => sums.foldLeft(zero(name))(comb).copy(src = zero(name).src)
@@ -305,7 +306,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.VirtualFile("generated", "", SecurityContext.Unrestricted), Array.emptyCharArray)
+    Source(Input.VirtualFile(Path.of("generated.flix"), "", SecurityContext.Unrestricted), Array.emptyCharArray)
 
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(
