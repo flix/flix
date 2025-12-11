@@ -62,7 +62,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
       // We use the same name for all inputs to simulate editing a file
-      flix.addSourceCode(CompilerConstants.VirtualTestFile, prefix)(SecurityContext.Unrestricted)
+      flix.addVirtualPath(CompilerConstants.VirtualTestFile, prefix)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

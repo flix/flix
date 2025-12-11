@@ -65,7 +65,7 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
       // We use the same name for all inputs to simulate editing a file
-      flix.addSourceCode(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
+      flix.addVirtualPath(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

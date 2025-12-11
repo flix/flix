@@ -300,7 +300,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addSourceCode(name, s)(SecurityContext.Unrestricted)
+        flix.addVirtualPath(name, s)(SecurityContext.Unrestricted)
 
         // And try to compile!
         compile(progress = false).toResult match {
@@ -310,7 +310,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case Result.Err(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
-            flix.remSourceCode(name)
+            flix.remVirtualPath(name)
             w.println("Error: Declaration ignored due to previous error(s).")
         }
 
@@ -332,10 +332,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
              |checked_ecast(())
              |""".stripMargin
         }
-        flix.addSourceCode(CompilerConstants.VirtualShellFile, src)(SecurityContext.Unrestricted)
+        flix.addVirtualPath(CompilerConstants.VirtualShellFile, src)(SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
-        flix.remSourceCode(CompilerConstants.VirtualShellFile)
+        flix.remVirtualPath(CompilerConstants.VirtualShellFile)
         flix.setOptions(flix.options.copy(entryPoint = None))
 
       case Category.Unknown =>
@@ -368,7 +368,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def clearFragments(): Unit = {
     for (i <- 0 to fragments.length)
-      flix.remSourceCode("$" + i)
+      flix.remVirtualPath("$" + i)
     fragments.clear()
   }
 

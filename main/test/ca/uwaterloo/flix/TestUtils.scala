@@ -37,14 +37,14 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options)(implicit sctx: SecurityContext): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    new Flix().setOptions(o).addSourceCode(CompilerConstants.VirtualTestFile, s).check()
+    new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).check()
   }
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   def compile(s: String, o: Options)(implicit sctx: SecurityContext): Validation[CompilationResult, CompilationMessage] = {
-    new Flix().setOptions(o).addSourceCode(CompilerConstants.VirtualTestFile, s).compile()
+    new Flix().setOptions(o).addVirtualPath(CompilerConstants.VirtualTestFile, s).compile()
   }
 
   private def errorString(errors: Seq[CompilationMessage]): String = {

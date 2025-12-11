@@ -708,7 +708,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     }
 
     val flix = PkgTestUtils.mkFlix
-    flix.addSourceCode("Main.flix", main)(SecurityContext.Unrestricted)
+    flix.addVirtualPath("Main.flix", main)(SecurityContext.Unrestricted)
 
     for ((path, sctx) <- pkgs) {
       flix.addPkg(path)(sctx)

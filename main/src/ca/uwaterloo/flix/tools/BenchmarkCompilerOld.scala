@@ -249,8 +249,8 @@ object BenchmarkCompilerOld {
     */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    flix.addSourceCode("Test.Exp.Fixpoint.PQuery.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
-    flix.addSourceCode("Test.Exp.Fixpoint.PSolve.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
+    flix.addVirtualPath("Test.Exp.Fixpoint.PQuery.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
+    flix.addVirtualPath("Test.Exp.Fixpoint.PSolve.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
   }
 
   case object SummaryStatistics {

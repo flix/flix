@@ -221,7 +221,7 @@ object LspServer {
       * Adds the given source code to the Flix instance.
       */
     def addSourceCode(uri: String, src: String): Unit = {
-      flix.addSourceCode(uri, src)(SecurityContext.Unrestricted)
+      flix.addVirtualPath(uri, src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
 

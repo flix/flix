@@ -381,9 +381,39 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /**
+    * Adds the given path `p` as Flix source file.
+    */
+  def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+    if (p == null)
+      throw new IllegalArgumentException(s"'p' must be non-null.")
+    if (!Files.exists(p))
+      throw new IllegalArgumentException(s"'$p' must be a file.")
+    if (!Files.isRegularFile(p))
+      throw new IllegalArgumentException(s"'$p' must be a regular file.")
+    if (!Files.isReadable(p))
+      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+
+    addInput(p.toString, Input.RealFile(p, sctx))
+    this
+  }
+
+  /**
+    * Removes the given path `p` as a Flix source file.
+    */
+  def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+
+    remInput(p.toString, Input.RealFile(p, sctx))
+    this
+  }
+
+  /**
     * Adds the given string `text` with the given `name`.
     */
-  def addSourceCode(path: String, src: String)(implicit sctx: SecurityContext): Flix = {
+  def addVirtualPath(path: String, src: String)(implicit sctx: SecurityContext): Flix = {
     if (path == null)
       throw new IllegalArgumentException("'path' must be non-null.")
     if (src == null)
@@ -397,7 +427,7 @@ class Flix {
   /**
     * Removes the source code with the given `name`.
     */
-  def remSourceCode(path: String): Flix = {
+  def remVirtualPath(path: String): Flix = {
     if (path == null)
       throw new IllegalArgumentException("'path' must be non-null.")
     remInput(path, Input.VirtualFile(parsePath(path), "", /* unused */ SecurityContext.Plain))
@@ -425,25 +455,6 @@ class Flix {
     if (uri == null)
       throw new IllegalArgumentException("'uri' must be non-null.")
     remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
-    this
-  }
-
-  /**
-    * Adds the given path `p` as Flix source file.
-    */
-  def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-    if (!p.getFileName.toString.endsWith(".flix"))
-      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    addInput(p.toString, Input.RealFile(p, sctx))
     this
   }
 
@@ -490,17 +501,6 @@ class Flix {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
     }
     Result.Ok(())
-  }
-
-  /**
-    * Removes the given path `p` as a Flix source file.
-    */
-  def remFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (!p.getFileName.toString.endsWith(".flix"))
-      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    remInput(p.toString, Input.RealFile(p, sctx))
-    this
   }
 
   /**

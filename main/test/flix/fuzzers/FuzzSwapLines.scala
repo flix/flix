@@ -71,7 +71,7 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
         val jStepped = Math.min(j * step, numLines)
         val src = lines.updated(iStepped, lines(jStepped)).updated(jStepped, lines(iStepped)).mkString("\n")
         // We use the same name for all inputs to simulate editing a file
-        flix.addSourceCode(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
+        flix.addVirtualPath(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
         flix.compile() // We simply care that this does not crash.
       }
     }

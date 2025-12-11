@@ -111,7 +111,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     // Add the given path.
     for (p <- paths) {
-      Flix.addFlix(p)
+      Flix.addFile(p)
     }
 
     try {
@@ -126,7 +126,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     } finally {
       // Remove the source path.
       for (p <- paths) {
-        Flix.remFlix(p)
+        Flix.remFile(p)
       }
     }
   }
