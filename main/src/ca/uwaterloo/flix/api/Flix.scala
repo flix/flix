@@ -407,14 +407,14 @@ class Flix {
   /**
     * Adds the given virtual `uri` with the given source code `text`.
     */
-  def addVirtualUri(uri: URI, text: String)(implicit sctx: SecurityContext): Flix = {
+  def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
     if (uri == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
+    if (src == null)
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(uri.toString, Input.VirtualUri(uri, text, sctx))
+    addInput(uri.toString, Input.VirtualUri(uri, src, sctx))
     this
   }
 
@@ -443,7 +443,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    addInput(p.toString, Input.TxtFile(p, sctx))
+    addInput(p.toString, Input.RealFile(p, sctx))
     this
   }
 
@@ -499,7 +499,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p, sctx))
+    remInput(p.toString, Input.RealFile(p, sctx))
     this
   }
 

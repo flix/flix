@@ -50,7 +50,7 @@ object Reader {
             val src = Source(input, text.toCharArray)
             result += (src -> ())
 
-          case Input.TxtFile(path, _) =>
+          case Input.RealFile(path, _) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
