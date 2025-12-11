@@ -383,24 +383,24 @@ class Flix {
   /**
     * Adds the given string `text` with the given `name`.
     */
-  def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
+  def addSourceCode(path: String, src: String)(implicit sctx: SecurityContext): Flix = {
+    if (path == null)
+      throw new IllegalArgumentException("'path' must be non-null.")
+    if (src == null)
+      throw new IllegalArgumentException("'src' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.VirtualFile(parsePath(name), text, sctx))
+    addInput(path, Input.VirtualFile(parsePath(path), src, sctx))
     this
   }
 
   /**
     * Removes the source code with the given `name`.
     */
-  def remSourceCode(name: String): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain))
+  def remSourceCode(path: String): Flix = {
+    if (path == null)
+      throw new IllegalArgumentException("'path' must be non-null.")
+    remInput(path, Input.VirtualFile(parsePath(path), "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -409,9 +409,9 @@ class Flix {
     */
   def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
     if (uri == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
+      throw new IllegalArgumentException("'uri' must be non-null.")
     if (src == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
+      throw new IllegalArgumentException("'src' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
     addInput(uri.toString, Input.VirtualUri(uri, src, sctx))
@@ -423,7 +423,7 @@ class Flix {
     */
   def remVirtualUri(uri: URI): Flix = {
     if (uri == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
+      throw new IllegalArgumentException("'uri' must be non-null.")
     remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
     this
   }
