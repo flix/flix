@@ -16,7 +16,7 @@
 package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 
 import scala.jdk.CollectionConverters.*
@@ -66,7 +66,7 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
       val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.drop(1)).mkString("\n")
       // We use the same name for all inputs to simulate editing a file
-      flix.addSourceCode("<input>", src)(SecurityContext.Unrestricted)
+      flix.addSourceCode(CompilerConstants.VirtualTestFile, src)(SecurityContext.Unrestricted)
       flix.compile() // We simply care that this does not crash.
     }
   }

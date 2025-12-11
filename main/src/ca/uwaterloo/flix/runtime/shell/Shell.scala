@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -332,10 +332,10 @@ class Shell(bootstrap: Bootstrap, options: Options) {
              |checked_ecast(())
              |""".stripMargin
         }
-        flix.addSourceCode("<shell>", src)(SecurityContext.Unrestricted)
+        flix.addSourceCode(CompilerConstants.VirtualShellFile, src)(SecurityContext.Unrestricted)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
-        flix.remSourceCode("<shell>")
+        flix.remSourceCode(CompilerConstants.VirtualShellFile)
         flix.setOptions(flix.options.copy(entryPoint = None))
 
       case Category.Unknown =>
