@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
+import java.net.URI
+import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -175,7 +177,34 @@ object Namer {
     * Performs naming on the given module.
     */
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
-    case DesugaredAst.Declaration.Mod(_, _, qname, usesAndImports0, decls, loc) =>
+    case DesugaredAst.Declaration.Mod(_, mod, qname, usesAndImports0, decls, loc) =>
+
+      //
+      // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
+      //
+      val expectedPath: List[String] = {
+        qname.namespace.idents.map(_.name) ::: qname.ident.name :: Nil
+      }
+
+      def actualPath(path: String): List[String] = {
+        val p = if (path.startsWith("file://")) {
+          Paths.get(new URI(path.stripSuffix(".flix")))
+        } else {
+          Paths.get(path.stripSuffix(".flix"))
+        }
+        p.iterator().asScala.toList.map(_.toString)
+      }
+
+      if (mod.isPublic) {
+        loc.source.input match {
+          case Input.TxtFile(path, _) if !actualPath(path.toString).endsWith(expectedPath) =>
+            sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
+          case Input.VirtualFile(virtualPath, _, _) if !actualPath(virtualPath.toString).endsWith(expectedPath) =>
+            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
+          case _ => // Nop
+        }
+      }
+
       val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))

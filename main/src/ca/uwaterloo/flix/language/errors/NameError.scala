@@ -16,9 +16,8 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -122,6 +121,25 @@ object NameError {
       s""">> Module '${blue(sym.toString)}' is orphaned. Missing declaration of parent: '${red(parentSym.toString)}'.
          |
          |${code(loc, "orphaned module")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * An error raised to indicate that the module `qname` is wrongly declared in the file specified by `path`.
+    *
+    * @param qname The name of the module.
+    * @param path  The path where the module is declared.
+    * @param loc   The source location the qname.
+    */
+  case class IllegalModuleFile(qname: Name.QName, path: String, loc: SourceLocation) extends NameError {
+    def summary: String = s"Module '$qname' unexpectedly declared in file '$path'."
+
+    def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Module '${blue(qname.toString)}' unexpectedly declared in file '${red(path)}'.
+         |
+         |${code(loc, "illegal file")}
          |""".stripMargin
     }
   }
