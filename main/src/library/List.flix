@@ -155,7 +155,7 @@ instance ToFlix[List[a]] {
     pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
 }
 
-mod List {
+pub mod List {
 
     ///
     /// Renders the list `l` to a String.
