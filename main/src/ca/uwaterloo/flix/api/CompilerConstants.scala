@@ -41,5 +41,14 @@ object CompilerConstants {
     */
   val MaxParserFuel: Int = 2048
 
+  /**
+    * The virtual file name used in the shell.
+    */
+  val VirtualShellFile: String = "__SHELL__.flix"
+
+  /**
+    * The virtual file name used in tests.
+    */
+  val VirtualTestFile: String = "__TEST__.flix"
 
 }

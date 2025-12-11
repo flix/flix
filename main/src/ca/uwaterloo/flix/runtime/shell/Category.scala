@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.runtime.shell
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 
 import java.nio.file.Path
@@ -45,7 +46,7 @@ object Category {
     * Returns the syntactic category of the given source code string `s`.
     */
   def categoryOf(s: String): Category = {
-    val input = Input.VirtualFile(Path.of("Shell.flix"), s, SecurityContext.Unrestricted)
+    val input = Input.VirtualFile(Path.of(CompilerConstants.VirtualShellFile), s, SecurityContext.Unrestricted)
     val source = Source(input, s.toCharArray)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.

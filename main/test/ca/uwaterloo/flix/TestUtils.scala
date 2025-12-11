@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
@@ -37,14 +37,14 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options)(implicit sctx: SecurityContext): (Option[TypedAst.Root], List[CompilationMessage]) = {
-    new Flix().setOptions(o).addSourceCode("<test>", s).check()
+    new Flix().setOptions(o).addSourceCode(CompilerConstants.VirtualTestFile, s).check()
   }
 
   /**
     * Compiles the given input string `s` with the given compilation options `o`.
     */
   def compile(s: String, o: Options)(implicit sctx: SecurityContext): Validation[CompilationResult, CompilationMessage] = {
-    new Flix().setOptions(o).addSourceCode("<test>", s).compile()
+    new Flix().setOptions(o).addSourceCode(CompilerConstants.VirtualTestFile, s).compile()
   }
 
   private def errorString(errors: Seq[CompilationMessage]): String = {

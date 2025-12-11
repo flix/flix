@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, ExtMatchRule, Root}
 import ca.uwaterloo.flix.language.ast.shared.{CheckedCastType, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Type, TypeConstructor, TypedAst}
@@ -306,7 +307,7 @@ object Summary {
   }
 
   private val unknownSource =
-    Source(Input.VirtualFile(Path.of("generated.flix"), "", SecurityContext.Unrestricted), Array.emptyCharArray)
+    Source(Input.VirtualFile(Path.of(CompilerConstants.VirtualTestFile), "", SecurityContext.Unrestricted), Array.emptyCharArray)
 
   /** debugSrc is just for consistency checking exceptions */
   private sealed case class FileData(

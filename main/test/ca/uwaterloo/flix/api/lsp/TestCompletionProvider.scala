@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
@@ -123,7 +123,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * Every test will use the same uri so that adding a new source with this uri will replace the old one.
     */
-  private val Uri = "<test>"
+  private val Uri = CompilerConstants.VirtualTestFile
 
   /**
     * A limit on the maximum number of inputs tested by each property.

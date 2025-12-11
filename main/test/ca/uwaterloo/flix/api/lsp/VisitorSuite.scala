@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,8 +23,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import java.nio.file.Path
 
 class VisitorSuite extends AnyFunSuite {
-  val source: Source = Source(Input.VirtualFile(Path.of("test.flix"), "test", SecurityContext.Unrestricted), Array.emptyCharArray)
-  val uri = "test.flix"
+  val source: Source = Source(Input.VirtualFile(Path.of(CompilerConstants.VirtualTestFile), "test", SecurityContext.Unrestricted), Array.emptyCharArray)
+  val uri = CompilerConstants.VirtualTestFile
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(
