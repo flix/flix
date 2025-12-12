@@ -381,7 +381,10 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given path `p` as Flix source file.
+    * Adds Flix source code from a file on the filesystem.
+    *
+    * @param p    the path to the Flix source file. Must be a readable `.flix` file.
+    * @param sctx the security context for the input.
     */
   def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
@@ -400,7 +403,10 @@ class Flix {
   }
 
   /**
-    * Removes the given path `p` as a Flix source file.
+    * Removes Flix source code associated with a file on the filesystem.
+    *
+    * @param p    the path to the Flix source file. Must be a `.flix` file.
+    * @param sctx the security context for the input.
     */
   def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
@@ -411,7 +417,11 @@ class Flix {
   }
 
   /**
-    * Adds the given string `text` with the given `path`.
+    * Adds Flix source code from a string with an associated virtual path.
+    *
+    * @param path the virtual path to associate with the source code.
+    * @param src  the Flix source code.
+    * @param sctx the security context for the input.
     */
   def addVirtualPath(path: Path, src: String)(implicit sctx: SecurityContext): Flix = {
     if (path == null)
@@ -425,7 +435,9 @@ class Flix {
   }
 
   /**
-    * Removes the source code with the given `path`.
+    * Removes Flix source code associated with a virtual path.
+    *
+    * @param path the virtual path of the source code to remove.
     */
   def remVirtualPath(path: Path): Flix = {
     if (path == null)
@@ -435,7 +447,11 @@ class Flix {
   }
 
   /**
-    * Adds the given virtual `uri` with the given source code `text`.
+    * Adds Flix source code from a string with an associated virtual URI.
+    *
+    * @param uri  the virtual URI to associate with the source code.
+    * @param src  the Flix source code.
+    * @param sctx the security context for the input.
     */
   def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
     if (uri == null)
@@ -449,7 +465,9 @@ class Flix {
   }
 
   /**
-    * Removes the source code with the given `uri`.
+    * Removes Flix source code associated with a virtual URI.
+    *
+    * @param uri the virtual URI of the source code to remove.
     */
   def remVirtualUri(uri: URI): Flix = {
     if (uri == null)
@@ -459,7 +477,10 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` as a Flix package file.
+    * Adds Flix source code from a Flix package file (.fpkg).
+    *
+    * @param p    the path to the Flix package file. Must be a readable `.fpkg` zip archive.
+    * @param sctx the security context for the input.
     */
   def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     isValidFpkgFile(p) match {
@@ -504,7 +525,9 @@ class Flix {
   }
 
   /**
-    * Adds the JAR file at path `p` to the class loader.
+    * Adds a JAR file to the class loader and extends the set of known Java classes and interfaces.
+    *
+    * @param p the path to the JAR file. Must be a readable `.jar` file.
     */
   def addJar(p: Path): Flix = {
     if (p == null)
