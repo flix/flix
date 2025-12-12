@@ -41,6 +41,7 @@ jobs:
       matrix:
         repo:
           - "flix/datalog2"
+          - "flix/museum"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
           - "magnus-madsen/bibblitz"
@@ -68,4 +69,4 @@ jobs:
         timeout-minutes: 10
         run: |
           # Build the project.
-          java -jar flix.jar build --github-token ${{ github.token }}
+          java -jar flix.jar build --github-token ${{ secrets.GITHUB_TOKEN }}
