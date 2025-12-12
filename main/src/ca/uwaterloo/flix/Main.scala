@@ -50,7 +50,7 @@ object Main {
     // get GitHub token
     val githubToken =
       cmdOpts.githubToken
-        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN").normalize()))
         .orElse(sys.env.get("GITHUB_TOKEN"))
 
     // compute the main entry point
