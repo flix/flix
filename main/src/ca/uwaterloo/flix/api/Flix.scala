@@ -32,6 +32,7 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.collection.{Chain, MultiMap}
 import ca.uwaterloo.flix.util.tc.Debug
 
+import java.net.URI
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
@@ -380,33 +381,12 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given string `text` with the given `name`.
+    * Adds Flix source code from a file on the filesystem.
+    *
+    * @param p    the path to the Flix source file. Must be a readable `.flix` file.
+    * @param sctx the security context for the input.
     */
-  def addSourceCode(name: String, text: String)(implicit sctx: SecurityContext): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    if (text == null)
-      throw new IllegalArgumentException("'text' must be non-null.")
-    if (sctx == null)
-      throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.VirtualFile(name, text, sctx))
-    this
-  }
-
-  /**
-    * Removes the source code with the given `name`.
-    */
-  def remSourceCode(name: String): Flix = {
-    if (name == null)
-      throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain))
-    this
-  }
-
-  /**
-    * Adds the given path `p` as Flix source file.
-    */
-  def addFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
+  def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -418,12 +398,89 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    addInput(p.toString, Input.TxtFile(p, sctx))
+    addInput(p.toString, Input.RealFile(p, sctx))
     this
   }
 
   /**
-    * Adds the given path `p` as a Flix package file.
+    * Removes Flix source code associated with a file on the filesystem.
+    *
+    * @param p    the path to the Flix source file. Must be a `.flix` file.
+    * @param sctx the security context for the input.
+    */
+  def remFile(p: Path)(implicit sctx: SecurityContext): Flix = {
+    if (!p.getFileName.toString.endsWith(".flix"))
+      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+
+    remInput(p.toString, Input.RealFile(p, sctx))
+    this
+  }
+
+  /**
+    * Adds Flix source code from a string with an associated virtual path.
+    *
+    * @param path the virtual path to associate with the source code.
+    * @param src  the Flix source code.
+    * @param sctx the security context for the input.
+    */
+  def addVirtualPath(path: Path, src: String)(implicit sctx: SecurityContext): Flix = {
+    if (path == null)
+      throw new IllegalArgumentException("'path' must be non-null.")
+    if (src == null)
+      throw new IllegalArgumentException("'src' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(path.toString, Input.VirtualFile(path, src, sctx))
+    this
+  }
+
+  /**
+    * Removes Flix source code associated with a virtual path.
+    *
+    * @param path the virtual path of the source code to remove.
+    */
+  def remVirtualPath(path: Path): Flix = {
+    if (path == null)
+      throw new IllegalArgumentException("'path' must be non-null.")
+    remInput(path.toString, Input.VirtualFile(path, "", /* unused */ SecurityContext.Plain))
+    this
+  }
+
+  /**
+    * Adds Flix source code from a string with an associated virtual URI.
+    *
+    * @param uri  the virtual URI to associate with the source code.
+    * @param src  the Flix source code.
+    * @param sctx the security context for the input.
+    */
+  def addVirtualUri(uri: URI, src: String)(implicit sctx: SecurityContext): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    if (src == null)
+      throw new IllegalArgumentException("'src' must be non-null.")
+    if (sctx == null)
+      throw new IllegalArgumentException("'sctx' must be non-null.")
+    addInput(uri.toString, Input.VirtualUri(uri, src, sctx))
+    this
+  }
+
+  /**
+    * Removes Flix source code associated with a virtual URI.
+    *
+    * @param uri the virtual URI of the source code to remove.
+    */
+  def remVirtualUri(uri: URI): Flix = {
+    if (uri == null)
+      throw new IllegalArgumentException("'uri' must be non-null.")
+    remInput(uri.toString, Input.VirtualUri(uri, "", /* unused */ SecurityContext.Plain))
+    this
+  }
+
+  /**
+    * Adds Flix source code from a Flix package file (.fpkg).
+    *
+    * @param p    the path to the Flix package file. Must be a readable `.fpkg` zip archive.
+    * @param sctx the security context for the input.
     */
   def addPkg(p: Path)(implicit sctx: SecurityContext): Flix = {
     isValidFpkgFile(p) match {
@@ -468,18 +525,9 @@ class Flix {
   }
 
   /**
-    * Removes the given path `p` as a Flix source file.
-    */
-  def remFlix(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (!p.getFileName.toString.endsWith(".flix"))
-      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    remInput(p.toString, Input.TxtFile(p, sctx))
-    this
-  }
-
-  /**
-    * Adds the JAR file at path `p` to the class loader.
+    * Adds a JAR file to the class loader and extends the set of known Java classes and interfaces.
+    *
+    * @param p the path to the JAR file. Must be a readable `.jar` file.
     */
   def addJar(p: Path): Flix = {
     if (p == null)
@@ -516,7 +564,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain)
+      inputs += name -> Input.VirtualFile(parsePath(name), "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -901,6 +949,18 @@ class Flix {
   }
 
   /**
+    * Parses the given `name` into a Path.
+    * If `name` is a file:// URI, it is parsed as a URI; otherwise it is parsed directly.
+    */
+  private def parsePath(name: String): Path = {
+    if (name.startsWith("file://")) {
+      java.nio.file.Paths.get(new java.net.URI(name))
+    } else {
+      Path.of(name)
+    }
+  }
+
+  /**
     * Returns a list of inputs constructed from the strings and paths passed to Flix.
     */
   private def getInputs: List[Input] = {
@@ -916,7 +976,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.VirtualFile(virtualPath, text, SecurityContext.Unrestricted) :: xs
+    case (xs, (virtualPath, text)) => Input.VirtualFile(Path.of(virtualPath), text, SecurityContext.Unrestricted) :: xs
   }
 
   /**

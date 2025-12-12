@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix, Version}
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -190,7 +190,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       logSourceCode(input)
 
       // Compile the program.
-      flix.addSourceCode("<playground>", input)(SecurityContext.Plain)
+      flix.addVirtualPath(CompilerConstants.VirtualPlaygroundFile, input)(SecurityContext.Plain)
 
       flix.compile().toResult match {
         case Result.Ok(compilationResult) =>

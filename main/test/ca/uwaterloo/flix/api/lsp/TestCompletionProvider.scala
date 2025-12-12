@@ -16,13 +16,15 @@
 
 package ca.uwaterloo.flix.api.lsp
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.api.lsp.acceptors.FileAcceptor
 import ca.uwaterloo.flix.api.lsp.provider.CompletionProvider
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
+
+import java.nio.file.Path
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
@@ -121,7 +123,7 @@ class TestCompletionProvider extends AnyFunSuite {
     *
     * Every test will use the same uri so that adding a new source with this uri will replace the old one.
     */
-  private val Uri = "<test>"
+  private val Uri = CompilerConstants.VirtualTestFile.toString
 
   /**
     * A limit on the maximum number of inputs tested by each property.
@@ -663,7 +665,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def compile(program: String): (Root, List[CompilationMessage]) = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addSourceCode(Uri, program)
+    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
     Flix.check() match {
       case (Some(root), errors) => (root, errors)
       case (None, _) => fail("Compilation failed: a root is expected.")
@@ -679,7 +681,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def compileWithSuccess(program: String): Root = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    Flix.addSourceCode(Uri, program)
+    Flix.addVirtualPath(CompilerConstants.VirtualTestFile, program)
     Flix.check() match {
       case (Some(root), Nil) => root
       case (_, errors) =>
@@ -754,7 +756,7 @@ class TestCompletionProvider extends AnyFunSuite {
     */
   private def mkSource(content: String): Source = {
     val sctx = SecurityContext.Unrestricted
-    val input = Input.VirtualFile(Uri, content, sctx)
+    val input = Input.VirtualFile(CompilerConstants.VirtualTestFile, content, sctx)
     Source(input, content.toCharArray)
   }
 

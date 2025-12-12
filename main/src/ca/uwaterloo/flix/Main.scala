@@ -158,7 +158,7 @@ object Main {
           for (file <- cmdOpts.files) {
             val ext = file.getName.split('.').last
             ext match {
-              case "flix" => flix.addFlix(file.toPath)
+              case "flix" => flix.addFile(file.toPath)
               case "fpkg" => flix.addPkg(file.toPath)
               case "jar" => flix.addJar(file.toPath)
               case _ =>
@@ -684,7 +684,7 @@ object Main {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
     for (file <- files) {
       if (file.getName.endsWith(".flix")) {
-        flix.addFlix(file.toPath)
+        flix.addFile(file.toPath)
       } else {
         Console.println(s"Unrecognized file: '${file.getName}'. Only .flix files are supported.")
         System.exit(1)
