@@ -361,16 +361,16 @@ mod Chain {
     ///
     /// Returns a list of all integers between `b` (inclusive) and `e` (exclusive).
     ///
-    /// Returns `Nil` if `b >= e`.
+    /// Returns an empty chain if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): Chain[Int32] =
         def loop(i, acc) = if (i >= e) acc else loop(i + 1, snoc(acc, i));
         loop(b, Chain.empty())
 
     ///
-    /// Returns a list with the element `a` repeated `n` times.
+    /// Returns a chain with the element `a` repeated `n` times.
     ///
-    /// Returns `Nil` if `n < 0`.
+    /// Returns an empty chain if `n < 0`.
     ///
     pub def repeat(n: Int32, a: a): Chain[a] =
         def loop(i, acc) = {
@@ -429,7 +429,7 @@ mod Chain {
     ///
     /// Returns the result of applying `f` to every element in `c` along with that element's index.
     ///
-    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, c: Chain[a]): Chain[b] \ ef =
         def loop(cc, i, acc) = match viewLeft(cc) {
@@ -522,7 +522,7 @@ mod Chain {
     }
 
     ///
-    /// Returns a list of every element in `c` that satisfies the predicate `f`.
+    /// Returns a chain of every element in `c` that satisfies the predicate `f`.
     ///
     /// The function `f` must be pure.
     ///
@@ -562,7 +562,7 @@ mod Chain {
     ///
     /// Returns `c` without the first `n` elements.
     ///
-    /// Returns `Nil` if `n > length(c)`.
+    /// Returns an empty chain if `n > length(c)`.
     /// Returns `c` if `n < 0`.
     ///
     pub def dropLeft(n: Int32, c: Chain[a]): Chain[a] =
@@ -577,7 +577,7 @@ mod Chain {
     ///
     /// Returns `c` without the last `n` elements.
     ///
-    /// Returns `Nil` if `n > length(c)`.
+    /// Returns an empty chain if `n > length(c)`.
     /// Returns `c` if `n < 0`.
     ///
     pub def dropRight(n: Int32, c: Chain[a]): Chain[a] =
@@ -609,7 +609,7 @@ mod Chain {
     /// Returns the first `n` elements of `c`.
     ///
     /// Returns `c` if `n > length(c)`.
-    /// Returns `Nil` if `n < 0`.
+    /// Returns an empty chain if `n < 0`.
     ///
     pub def takeLeft(n: Int32, c: Chain[a]): Chain[a] =
         def loop(cc, i, acc) = match viewLeft(cc) {
@@ -626,7 +626,7 @@ mod Chain {
     /// Returns the last `n` elements of `c`.
     ///
     /// Returns `c` if `n > length(c)`.
-    /// Returns `Nil` if `n < 0`.
+    /// Returns an empty chain if `n < 0`.
     ///
     pub def takeRight(n: Int32, c: Chain[a]): Chain[a] =
         def loop(cc, i, acc) = match viewRight(cc) {
@@ -733,7 +733,7 @@ mod Chain {
         loop(c, Chain.empty(), Chain.empty())
 
     ///
-    /// `mapAccumLeft` is a stateful version of `map`. The accumulating paramter `s` is updated at each
+    /// `mapAccumLeft` is a stateful version of `map`. The accumulating parameter `s` is updated at each
     /// step in a left-to-right traversal.
     ///
     pub def mapAccumLeft(f: (s, a) -> (s, b) \ ef, start: s, c: Chain[a]): (s, Chain[b]) \ ef =

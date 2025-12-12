@@ -26,13 +26,11 @@
 /// represented by a unique SCC in the topological order.
 ///
 mod Fixpoint3.PrecedenceGraph {
-    @Internal
     pub type alias Vertex = Int32
 
     ///
     /// A `PseudoStratum` is an unordered list of strata without dependencies between them.
     ///
-    @Internal
     pub type alias PseudoStratum = List[Set[Vertex]]
 
     ///
@@ -51,7 +49,6 @@ mod Fixpoint3.PrecedenceGraph {
     /// they are merged into the same pseudostratum `[{1}, {4}]`. Thus, the list of
     /// pseudostrata is `[[{1}, {4}], {2, 3}]`.
     ///
-    @Internal
     pub def getPseudoStrata(g: MutGraph[r]): List[PseudoStratum] \ r = region rc {
         let sorted = MutGraph.getSCCOrder(g);
         let pseudoStratums = MutList.empty(rc);
@@ -80,7 +77,6 @@ mod Fixpoint3.PrecedenceGraph {
     ///
     /// A mutable graph.
     ///
-    @Internal
     pub struct MutGraph[r] {
         vertices: MutSet[Vertex, r],
         adjList: MutMap[Vertex, Set[Vertex], r]
@@ -106,7 +102,6 @@ mod Fixpoint3.PrecedenceGraph {
         ///
         /// Returns an empty graph with no vertices or edges.
         ///
-        @Internal
         pub def empty(rc: Region[r]): MutGraph[r] \ r =
             new MutGraph @ rc {
                 vertices = MutSet.empty(rc),
@@ -116,7 +111,6 @@ mod Fixpoint3.PrecedenceGraph {
         ///
         /// Returns `true` if `g` contains the edge `(u, v)`.
         ///
-        @Internal
         pub def hasEdge(u: Vertex, v: Vertex, g: MutGraph[r]): Bool \ r =
             g->adjList |> MutMap.getWithDefault(u, Set.empty()) |> Set.memberOf(v)
 
@@ -134,7 +128,6 @@ mod Fixpoint3.PrecedenceGraph {
         ///
         /// Returns the number of vertices in `g`. `MutGraph`s should start with vertex 0.
         ///
-        @Internal
         pub def numberOfVertices(g: MutGraph[r]): Int32 \ r = match MutSet.maximum(g->vertices) {
             case Some(v) => v + 1
             case None    => 0
@@ -145,7 +138,6 @@ mod Fixpoint3.PrecedenceGraph {
         ///
         /// The vertices `u` and `v` are automatically added to `g`.
         ///
-        @Internal
         pub def addEdge(u: Vertex, v: Vertex, g: MutGraph[r]): Unit \ r = {
             MutSet.add(v, g->vertices);
             MutSet.add(u, g->vertices);
@@ -159,13 +151,11 @@ mod Fixpoint3.PrecedenceGraph {
         ///
         /// Adds the edge `(u, v)` to `g`.
         ///
-        @Internal
         pub def addVertex(v: Vertex, g: MutGraph[r]): Unit \ r = MutSet.add(v, g->vertices)
 
         ///
         /// Returns a string representation of `g`.
         ///
-        @Internal
         pub def toString(g: MutGraph[r]): String \ r =
             let edges = g->adjList |>
                 MutMap.joinWith(u -> vSet ->
@@ -177,7 +167,6 @@ mod Fixpoint3.PrecedenceGraph {
         /// Returns the strongly connected components of `g` in a topologically sorted
         /// order where the SCC's are represented by the set of vertices in them.
         ///
-        @Internal
         pub def getSCCOrder(g: MutGraph[r]): List[Set[Vertex]] \ r = region rc {
             let components = stronglyConnectedComponents(g);
             let condensation = empty(rc);

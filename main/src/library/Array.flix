@@ -295,7 +295,7 @@ mod Array {
         reduceLeft(Order.maxBy(cmp), a)
 
     ///
-    /// Alias for `IndexOfLeft`
+    /// Alias for `indexOfLeft`
     ///
     pub def indexOf(x: a, a: Array[a, r]): Option[Int32] \ r with Eq[a] =
         indexOfLeft(x,a)
@@ -440,8 +440,6 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a`.
     ///
-    /// The result is an empty array.
-    ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
         init(rc1, i -> f(get(i, a)), len)
@@ -464,7 +462,7 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a` along with that element's index.
     ///
-    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    /// That is, the result is of the form: `[ f(0, a[0]), f(1, a[1]), ... ]`.
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
@@ -638,7 +636,7 @@ mod Array {
     ///
     /// Return the new write position which is `pos + length(sub)`.
     ///
-    /// Helper function for `intercalate` which needs to do sucessive writing.
+    /// Helper function for `intercalate` which needs to do successive writing.
     ///
     def arrayWrites(pos: Int32, sub: Array[a, r1], out: Array[a, r2]): Int32 \ { r1, r2 } =
         updateSequence(pos, sub, out);
@@ -713,7 +711,7 @@ mod Array {
             loop(0)
 
     ///
-    /// Returns `true` if and only if `a1` is a infix of `a2`.
+    /// Returns `true` if and only if `a1` is an infix of `a2`.
     ///
     pub def isInfixOf(a1: Array[a, r1], a2: Array[a, r2]): Bool \ { r1, r2 } with Eq[a] =
         let len1 = length(a1);

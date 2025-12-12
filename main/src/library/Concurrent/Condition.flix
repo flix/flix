@@ -20,7 +20,6 @@ mod Concurrent {
     ///
     /// A wrapper around a Java Condition.
     ///
-    @Internal
     pub enum Condition(JCondition)
 
     mod Condition {
@@ -30,7 +29,6 @@ mod Concurrent {
         ///
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
-        @Internal
         pub def await(condition: Condition): Unit \ IO =
             let Condition(c) = condition;
             c.await()
@@ -40,7 +38,6 @@ mod Concurrent {
         /// time(nanos) elapses. The method returns an estimate of the number of nanoseconds remaining to wait
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
-        @Internal
         pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
             let Condition(c) = condition;
             c.awaitNanos(timeout)
@@ -48,7 +45,6 @@ mod Concurrent {
         ///
         /// Wakes up one waiting thread.
         ///
-        @Internal
         pub def signal(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
             let Condition(c) = condition;
             try {
@@ -60,7 +56,6 @@ mod Concurrent {
         ///
         /// Wakes up all waiting threads.
         ///
-        @Internal
         pub def signalAll(condition: Condition): Result[IllegalMonitorStateException, Unit] \ IO =
             let Condition(c) = condition;
             try {

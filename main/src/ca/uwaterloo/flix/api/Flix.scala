@@ -249,6 +249,7 @@ class Flix {
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
     "Concurrent/ReentrantLock.flix" -> LocalResource.get("/src/library/Concurrent/ReentrantLock.flix"),
 
+    "Fixpoint3/Ast.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast.flix"),
     "Fixpoint3/Boxable.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxable.flix"),
     "Fixpoint3/Boxed.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxed.flix"),
     "Fixpoint3/Boxing.flix" -> LocalResource.get("/src/library/Fixpoint3/Boxing.flix"),
@@ -257,6 +258,7 @@ class Flix {
     "Fixpoint3/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint3/Debugging.flix"),
     "Fixpoint3/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint3/Interpreter.flix"),
     "Fixpoint3/Options.flix" -> LocalResource.get("/src/library/Fixpoint3/Options.flix"),
+    "Fixpoint3/Phase.flix" -> LocalResource.get("/src/library/Fixpoint3/Phase.flix"),
     "Fixpoint3/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint3/PrecedenceGraph.flix"),
     "Fixpoint3/Predicate.flix" -> LocalResource.get("/src/library/Fixpoint3/Predicate.flix"),
     "Fixpoint3/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint3/PredSymsOf.flix"),
@@ -387,7 +389,7 @@ class Flix {
       throw new IllegalArgumentException("'text' must be non-null.")
     if (sctx == null)
       throw new IllegalArgumentException("'sctx' must be non-null.")
-    addInput(name, Input.Text(name, text, sctx))
+    addInput(name, Input.VirtualFile(name, text, sctx))
     this
   }
 
@@ -397,7 +399,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", /* unused */ SecurityContext.Plain))
+    remInput(name, Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain))
     this
   }
 
@@ -514,7 +516,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input, cachedTyperAst.dependencyGraph)
-      inputs += name -> Input.Text(name, "", /* unused */ SecurityContext.Plain)
+      inputs += name -> Input.VirtualFile(name, "", /* unused */ SecurityContext.Plain)
   }
 
   /**
@@ -914,7 +916,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(l: List[(String, String)]): List[Input] = l.foldLeft(List.empty[Input]) {
-    case (xs, (virtualPath, text)) => Input.Text(virtualPath, text, SecurityContext.Unrestricted) :: xs
+    case (xs, (virtualPath, text)) => Input.VirtualFile(virtualPath, text, SecurityContext.Unrestricted) :: xs
   }
 
   /**
