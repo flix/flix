@@ -42,19 +42,19 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
+          case Input.RealFile(path, _) =>
+            val bytes = Files.readAllBytes(path)
+            val str = new String(bytes, flix.defaultCharset)
+            val arr = str.toCharArray
+            val src = Source(input, arr)
+            result += (src -> ())
+
           case Input.VirtualFile(_, text, _) =>
             val src = Source(input, text.toCharArray)
             result += (src -> ())
 
           case Input.VirtualUri(_, text, _) =>
             val src = Source(input, text.toCharArray)
-            result += (src -> ())
-
-          case Input.RealFile(path, _) =>
-            val bytes = Files.readAllBytes(path)
-            val str = new String(bytes, flix.defaultCharset)
-            val arr = str.toCharArray
-            val src = Source(input, arr)
             result += (src -> ())
 
           case Input.PkgFile(path, sctx) =>

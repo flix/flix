@@ -27,9 +27,9 @@ sealed trait Input {
     * Returns the security context associated with the input.
     */
   def security: SecurityContext = this match {
+    case Input.RealFile(_, sctx) => sctx
     case Input.VirtualFile(_, _, sctx) => sctx
     case Input.VirtualUri(_, _, sctx) => sctx
-    case Input.RealFile(_, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
     case Input.Unknown => SecurityContext.Unrestricted
