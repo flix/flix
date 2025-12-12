@@ -78,23 +78,4 @@ object ListOps {
       case Some(value) => value
     }
   }
-
-  /**
-    * Applies `f` to each element of `list`.
-    *
-    * Returns `None` if `f(x) == None` for some `x` in `list`. This results in early termination.
-    * Returns `Some(l)` if for all `x` in `list`, `f(x) == Some(y)`.
-    */
-  def traverse[A, B](list: List[A])(f: A => Option[B]): Option[List[B]] = {
-    @tailrec
-    def trav(l: List[A], g: A => Option[B], acc: Option[List[B]]): Option[List[B]] = l match {
-      case Nil => acc.map(_.reverse)
-      case x :: xs => g(x) match {
-        case None => None
-        case Some(y) => trav(xs, g, acc.map(y :: _))
-      }
-    }
-
-    trav(list, f, Some(Nil))
-  }
 }
