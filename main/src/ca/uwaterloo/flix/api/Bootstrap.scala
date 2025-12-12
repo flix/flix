@@ -1054,7 +1054,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.FlixPackageError(securityResolutionErrors))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter))))
           }
       }
     }
