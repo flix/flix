@@ -207,7 +207,7 @@ object Namer {
           case None => // Nop
           case Some(actualPath) =>
             if (!actualPath.endsWith(expectedPath)) {
-              sctx.errors.add(NameError.IllegalModuleFile(qname, actualPath.toString, qname.loc))
+              sctx.errors.add(NameError.IllegalModuleFile(qname, actualPath, qname.loc))
             }
         }
       }
