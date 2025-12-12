@@ -9,8 +9,7 @@ import ca.uwaterloo.flix.language.ast.{ChangeSet, RigidityEnv, SourceLocation, S
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError.*
-import ca.uwaterloo.flix.util.collection.ListOps
-import ca.uwaterloo.flix.util.{InternalCompilerException, JvmUtils, ParOps}
+import ca.uwaterloo.flix.util.{JvmUtils, ParOps}
 
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -517,19 +516,38 @@ object Safety {
       // Optionally return the concrete type, falling back to the erased type in the argument.
       optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
 
-    case Type.JvmToType(tpe, loc) => ???
-    case Type.JvmToEff(tpe, loc) => ???
-    case Type.UnresolvedJvmType(member, loc) => ???
+    case Type.JvmToType(tpe, loc) =>
+      Type.JvmToType(eraseKnownAssociatedTypes(tpe), loc)
+
+    case Type.JvmToEff(tpe, loc) =>
+      Type.JvmToEff(eraseKnownAssociatedTypes(tpe), loc)
+
+    case Type.UnresolvedJvmType(member, loc) =>
+      Type.UnresolvedJvmType(member.map(eraseKnownAssociatedTypes), loc)
+
   }
 
-  /** Returns the concrete associated type if it exists. */
-  private def tryEraseAssocType(sym: Symbol.AssocTypeSym, tpe: Type)(implicit root: Root): Option[Type] = {
+  /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
+  private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
     // Gracefully look up all instances of the trait, then finding the instance on `tpe` (if it exists),
     // then in that instance find the associated type with symbol `sym`, and map that to the concrete type.
-    root.instances.get(sym.trt)
-      .find(i => i.tpe == tpe)
-      .flatMap(_.assocs.find(assoc => assoc.symUse.sym == sym))
+    root.instances.get(sym0.trt)
+      .find(i => i.tpe == tpe0)
+      .flatMap(_.assocs.find(assoc => assoc.symUse.sym == sym0))
       .map(_.tpe)
+      .filter(isMonomorphicType)
+  }
+
+  /** Returns `true` iff all types in `tpe0` are monomorphic (i.e. there are no type variables). */
+  private def isMonomorphicType(tpe0: Type): Boolean = tpe0 match {
+    case Type.Var(_, _) => false
+    case Type.Cst(_, _) => true
+    case Type.Apply(tpe1, tpe2, _) => isMonomorphicType(tpe1) && isMonomorphicType(tpe2)
+    case Type.Alias(_, args, tpe, _) => args.forall(isMonomorphicType) && isMonomorphicType(tpe)
+    case Type.AssocType(_, arg, _, _) => isMonomorphicType(arg)
+    case Type.JvmToType(tpe, _) => isMonomorphicType(tpe)
+    case Type.JvmToEff(tpe, _) => isMonomorphicType(tpe)
+    case Type.UnresolvedJvmType(member, _) => member.getTypeArguments.forall(isMonomorphicType)
   }
 
   /**
