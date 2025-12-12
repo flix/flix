@@ -521,8 +521,9 @@ object Safety {
       // Optionally return the concrete type, falling back to any unpacked type in the arg.
       optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
 
-    case tpe =>
-      throw InternalCompilerException(s"Unexpected type '$tpe'", tpe.loc)
+    case Type.JvmToType(tpe, loc) => ???
+    case Type.JvmToEff(tpe, loc) => ???
+    case Type.UnresolvedJvmType(member, loc) => ???
   }
 
   /**
