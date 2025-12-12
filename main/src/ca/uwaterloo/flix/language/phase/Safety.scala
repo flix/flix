@@ -512,7 +512,7 @@ object Safety {
 
     case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
       val tpe = eraseKnownAssociatedTypes(arg)
-      val optConcreteType = tryEraseAssocType(root, sym, tpe)
+      val optConcreteType = tryEraseAssocType(sym, tpe)
       // Optionally return the concrete type, falling back to the erased type in the argument.
       optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
 
@@ -528,7 +528,7 @@ object Safety {
   }
 
   /** Returns the monomorphic / concrete associated type of `sym0` from trait instance on `tpe0` if it exists. */
-  private def tryEraseAssocType(root: Root, sym0: Symbol.AssocTypeSym, tpe0: Type): Option[Type] = {
+  private def tryEraseAssocType(sym0: Symbol.AssocTypeSym, tpe0: Type)(implicit root: Root): Option[Type] = {
     root.eqEnv.getAssocDef(sym0, tpe0).map(_.ret).filter(isMonomorphicType)
   }
 
