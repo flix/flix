@@ -118,7 +118,7 @@ object PackageError {
   case class DepGraphSecurityError(manifest: Manifest, dependency: FlixDependency, sctx: SecurityContext) extends PackageError {
     // TODO: Show the offending original dependency/-ies (from origin manifest)
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
-    override def message(f: Formatter): String =
+    override def message(f: Formatter): String = {
       s"""${f.underline("Found security violation in the dependency graph:")}
          |  Dependency '$dependency' of package ${manifest.name} requires security context '${dependency.sctx}' but context '$sctx' was given.
          |
@@ -127,6 +127,7 @@ object PackageError {
          |    - Use a different dependency.
          |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
          |""".stripMargin
+    }
   }
 
   /**
@@ -138,7 +139,7 @@ object PackageError {
   case class IllegalJavaDependencyForSctx(manifest: Manifest, dependency: Dependency, sctx: SecurityContext) extends PackageError {
     // TODO: Show the offending original dependency/-ies (from origin manifest)
     // TODO: Maybe collect list of errors that can all be displayed in a single error message.
-    override def message(f: Formatter): String =
+    override def message(f: Formatter): String = {
       s"""${f.underline("Found security violation in the dependency graph:")}
          |  Project '${manifest.name}' declares Java dependency '$dependency' which requires security context '${SecurityContext.Unrestricted}' but only $sctx was given.
          |
@@ -147,6 +148,7 @@ object PackageError {
          |    - Use a different dependency.
          |    - Increase security level. ${f.yellow("WARNING")}: This can be dangerous and may expose you to supply chain attacks.
          |""".stripMargin
+    }
   }
 
   /**
