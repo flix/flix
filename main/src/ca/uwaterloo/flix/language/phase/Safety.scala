@@ -501,11 +501,9 @@ object Safety {
     * Only erases associated types and effects for monomorphic (i.e. concrete known types).
     */
   private def eraseKnownAssociatedTypes(tpe0: Type)(implicit root: Root): Type = tpe0 match {
-    case Type.Var(_, _) =>
-      tpe0
+    case Type.Var(_, _) => tpe0
 
-    case Type.Cst(_, _) =>
-      tpe0
+    case Type.Cst(_, _) => tpe0
 
     case Type.Apply(tpe1, tpe2, loc) =>
       Type.Apply(eraseKnownAssociatedTypes(tpe1), eraseKnownAssociatedTypes(tpe2), loc)
