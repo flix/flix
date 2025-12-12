@@ -513,17 +513,23 @@ object Safety {
 
     case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
       val tpe = eraseKnownAssociatedTypes(arg)
-      val optConcreteType = root.instances.get(sym.trt)
-        .find(i => i.tpe == tpe)
-        .flatMap(_.assocs.find(assoc => assoc.symUse.sym == sym))
-        .map(_.tpe)
-
-      // Optionally return the concrete type, falling back to any unpacked type in the arg.
+      val optConcreteType = tryEraseAssocType(sym, tpe)
+      // Optionally return the concrete type, falling back to the erased type in the argument.
       optConcreteType.getOrElse(Type.AssocType(symUse, tpe, kind, loc))
 
     case Type.JvmToType(tpe, loc) => ???
     case Type.JvmToEff(tpe, loc) => ???
     case Type.UnresolvedJvmType(member, loc) => ???
+  }
+
+  /** Returns the concrete associated type if it exists. */
+  private def tryEraseAssocType(sym: Symbol.AssocTypeSym, tpe: Type)(implicit root: Root): Option[Type] = {
+    // Gracefully look up all instances of the trait, then finding the instance on `tpe` (if it exists),
+    // then in that instance find the associated type with symbol `sym`, and map that to the concrete type.
+    root.instances.get(sym.trt)
+      .find(i => i.tpe == tpe)
+      .flatMap(_.assocs.find(assoc => assoc.symUse.sym == sym))
+      .map(_.tpe)
   }
 
   /**
