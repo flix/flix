@@ -728,7 +728,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val rows = flixDeps.flatMap { dep =>
       val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
         case Ok(u) => u
-        case Err(e) => return Result.Err(BootstrapError.FlixPackageError(e))
+        case Err(e) => return Result.Err(BootstrapError.FlixPackageError(List(e)))
       }
 
       if (updates.isEmpty)
@@ -995,7 +995,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           flixPackagePaths = result.map { case (path, _) => path }
           Ok(flixPackagePaths)
         case Err(e) =>
-          Err(BootstrapError.FlixPackageError(e))
+          Err(BootstrapError.FlixPackageError(List(e)))
       }
     }
 
@@ -1048,13 +1048,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       */
     def resolveFlixDependencies(manifest: Manifest)(implicit formatter: Formatter, out: PrintStream): Result[FlixPackageManager.SecureResolution, BootstrapError] = {
       FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey).map(FlixPackageManager.resolveSecurityLevels) match {
-        case Err(e) => Err(BootstrapError.FlixPackageError(e))
+        case Err(e) => Err(BootstrapError.FlixPackageError(List(e)))
         case Ok(securityMap) =>
           val securityResolutionErrors = FlixPackageManager.checkSecurity(securityMap)
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
+            Err(BootstrapError.FlixPackageError(securityResolutionErrors))
           }
       }
     }
