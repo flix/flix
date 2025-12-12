@@ -356,7 +356,7 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] = 
+    pub def map(rc1: Region[r1], f: v1 -> v2 \ ef, t: BPlusTree[k, v1, r]): BPlusTree[k, v2, r1] \ ef + r + r1 with Order[k] =
         mapWithKey(rc1, _ -> v -> f(v), t)
 
     ///
@@ -403,17 +403,17 @@ mod BPlusTree {
     ///
     /// Not thread-safe.
     ///
-    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] = 
+    pub def toMap(t: BPlusTree[k, v, r]): Map[k, v] \ r with Order[k] =
         (Map.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Map.insert(k, v, acc))
-    
+
     ///
     /// Returns `t` as a set of key-value pairs.
     ///
     /// Not thread-safe.
     ///
-    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] = 
+    pub def toSet(t: BPlusTree[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =
         (Set.empty(), t) ||> foldLeftWithKey(acc -> k -> v -> Set.insert((k, v), acc))
-    
+
     ///
     /// Returns `t` as a vector of key-value pairs.
     ///
@@ -431,14 +431,14 @@ mod BPlusTree {
     /// Returns a fresh empty BPlusTree tree of standard arity.
     ///
     pub def empty(rc: Region[r]): BPlusTree[k, v, r] \ r =
-        emptyWithSearch(rc, Vector#{})
+        emptyWithSearch(rc, unchecked_cast(null as Vector[Int32]))
 
     ///
     /// Returns a fresh empty BPlusTree tree with arity `m` (the maximum keys/values per node).
     /// The arity must be at least 3.
     ///
     pub def emptyWithArity(rc: Region[r], m: Int32): BPlusTree[k, v, r] \ r =
-        emptyWithArityAndSearch(rc, m `Int32.max` 3, Vector#{})
+        emptyWithArityAndSearch(rc, m `Int32.max` 3, unchecked_cast(null as Vector[Int32]))
 
     ///
     /// Returns a fresh empty BPlusTree tree of arity `m` (the maximum keys/values per node).
@@ -545,7 +545,7 @@ mod BPlusTree {
     ///
     /// Returns `v` if `k => v` is in `t`. Otherwise, returns `d`.
     ///
-    /// Thread-safe. 
+    /// Thread-safe.
     ///
     pub def getWithDefault(k: k, d: v, t: BPlusTree[k, v, r]): v \ r with Order[k] =
         let (leaf, stamp) = BPlusTree.findLeaf(k, t);
@@ -1093,15 +1093,15 @@ mod BPlusTree {
         /// The elements will be compared in the order given by `search`.
         ///
         def comparison(val1: k, val2: k, search: Search): Int32 with Order[k] = {
-            let len = Vector.length(search);
-            // If the values are of type Vector[Int64] check whether a specific search is given.
-            // If so use the custom compare function for that search.
-            if (len == 0) {
+            // For the Datalog engine we support a custom order, but only for `Vector[Int64]`.
+            // This is checked by testing whether `search` is `null`.
+            if (Object.isNull(search)) {
                 let comp = val1 <=> val2;
                 if (comp == Comparison.GreaterThan) 1
                 else if (comp == Comparison.LessThan) -1
                 else 0
             } else {
+                let len = Vector.length(search);
                 vectorComp(unchecked_cast(val1 as Vector[Int64]), unchecked_cast(val2 as Vector[Int64]), len, 0, search)
             }
         }
@@ -1147,7 +1147,7 @@ mod BPlusTree {
             loop(1, node)
 
         ///
-        /// Return the mapping `k => v` at position `index` in `node`. Crashes if 
+        /// Return the mapping `k => v` at position `index` in `node`. Crashes if
         /// `index >= node->size`.
         ///
         pub def getKeyAndValueAt(index: Int32, node: Node[k, v, r]): (k, v) \ r = {
@@ -1350,7 +1350,7 @@ mod BPlusTree {
 
         ///
         /// Attempts to grab the lock of `node` and insert the `key => val` mapping. Restarts with
-        /// `putIfInternal` if this is not successfull.
+        /// `putIfInternal` if this is not successful.
         ///
         /// Lock invariants:
         ///

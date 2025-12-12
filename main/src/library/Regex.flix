@@ -108,7 +108,7 @@ mod Regex {
         }
 
     ///
-    /// Return the regular expression string that matches the the literal string `s`.
+    /// Return the regular expression string that matches the literal string `s`.
     ///
     pub def quote(s: String): String =
         Pattern.quote(s)
@@ -559,7 +559,7 @@ mod Regex {
 
 
     ///
-    /// Matcher is imperative - it can be seen a a stepper through a stream
+    /// Matcher is imperative - it can be seen as a stepper through a stream
     /// of matches. The matcher is updated with the function find to move to
     /// the next match.
     ///

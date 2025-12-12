@@ -26,7 +26,7 @@ sealed trait Input {
     * Returns the security context associated with the input.
     */
   def security: SecurityContext = this match {
-    case Input.Text(_, _, sctx) => sctx
+    case Input.VirtualFile(_, _, sctx) => sctx
     case Input.TxtFile(_, sctx) => sctx
     case Input.PkgFile(_, sctx) => sctx
     case Input.FileInPackage(_, _, _, sctx) => sctx
@@ -38,13 +38,13 @@ sealed trait Input {
 object Input {
 
   /**
-    * Represents an input that originates from a virtual path.
+    * Represents an input that originates from a virtual file path.
     */
-  case class Text(virtualPath: String, text: String, sctx: SecurityContext) extends Input {
+  case class VirtualFile(virtualPath: String, text: String, sctx: SecurityContext) extends Input {
     override def hashCode(): Int = virtualPath.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
-      case that: Text => this.virtualPath == that.virtualPath
+      case that: VirtualFile => this.virtualPath == that.virtualPath
       case _ => false
     }
 

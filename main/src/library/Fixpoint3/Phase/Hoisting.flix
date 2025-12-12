@@ -440,7 +440,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => boolVariablesOf(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => Set#{}
-            case BoolExp.NotMemberOf(terms, _) => Vector.foldMap(termVarsOf, terms)
+            case BoolExp.NotMemberOf(terms, _, _) => Vector.foldMap(termVarsOf, terms)
             case BoolExp.NotBot(t1, _, _) => termVarsOf(t1)
             case BoolExp.Leq(_, rv, relSym) => getRepRowVar(termMap, equalitySets, rv, arityOfNonLat(relSym))
             case BoolExp.Eq(_, _) => Set#{}
@@ -527,7 +527,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => BoolExp.Not(replaceRec(boolExp))
             case BoolExp.IsEmpty(_) => bexp
-            case BoolExp.NotMemberOf(terms, rel) => BoolExp.NotMemberOf(Vector.map(replaceTerm, terms), rel)
+            case BoolExp.NotMemberOf(terms, rel, repNegative) => BoolExp.NotMemberOf(Vector.map(replaceTerm, terms), rel, repNegative)
             case BoolExp.NotBot(t1, f, bot) => BoolExp.NotBot(replaceTerm(t1), f, bot)
             case BoolExp.Leq(_, _, _) => bexp
             case BoolExp.Eq(t1, t2) => BoolExp.Eq(replaceTerm(t1), replaceTerm(t2))
@@ -583,7 +583,7 @@ mod Fixpoint3.Phase.Hoisting {
         match bexp {
             case BoolExp.Not(boolExp) => isBoolGround(termMap, equalitySets, boolExp)
             case BoolExp.IsEmpty(_) => unreachable!()
-            case BoolExp.NotMemberOf(terms, _) => Vector.forAll(termGround, terms)
+            case BoolExp.NotMemberOf(terms, _, _) => Vector.forAll(termGround, terms)
             case BoolExp.NotBot(t1, _, _) => termGround(t1)
             case BoolExp.Leq(_, rv, relSym) =>
                 Map.memberOf(getOrCrash(MutDisjointSets.find((rv, arityOfNonLat(relSym)), equalitySets)), termMap)

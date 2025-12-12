@@ -123,6 +123,8 @@ object LoweredAstPrinter {
 
     case LoweredAst.Expr.SelectChannel(_, _, _, _, _) => DocAst.Expr.Unknown
 
+    case LoweredAst.Expr.ParYield(_, _, _, _, _) => DocAst.Expr.Unknown
+
   }
 
   /**

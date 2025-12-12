@@ -82,6 +82,7 @@ By adding your name to this document, you agree to release all your contribution
 - [Din Jakupi](https://github.com/gwydd12)
 - [Adam Yasser Tallouzi](https://github.com/JumpTwiice)
 - [Casper Dalgaard Nielsen](https://github.com/CasperDN)
+- [Patrick Nicodemus](https://github.com/patrick-nicodemus)
 - [Gagan Chandan](https://github.com/gaganchandan)
 - [Cade Lueker](https://github.com/cademichael)
 - [Asher Frost](https://github.com/wizard7377)
@@ -90,3 +91,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Alex Asafov](https://github.com/Alex1005a)
 - [Daniel Neo López Martínez](https://github.com/NeonOxide)
 - [Jeff Beu](https://github.com/hexagonhill)
+- [Daniel John](https://github.com/danieljohnprojects)
