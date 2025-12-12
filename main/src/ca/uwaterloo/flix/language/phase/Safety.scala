@@ -438,8 +438,8 @@ object Safety {
   private def checkCheckedTypeCast(cast: Expr.CheckedCast)(implicit sctx: SharedContext, root: Root, flix: Flix): Unit = cast match {
     case Expr.CheckedCast(_, exp, tpe, _, loc) =>
       // Attempt to unpack any associated type in the types
-      val from = attemptUnpackAssocType(exp.tpe)
-      val to = attemptUnpackAssocType(tpe)
+      val from = eraseKnownAssociatedTypes(exp.tpe)
+      val to = eraseKnownAssociatedTypes(tpe)
       (Type.eraseAliases(from).baseType, Type.eraseAliases(to).baseType) match {
 
         // Allow casting Null to a Java type.
@@ -496,11 +496,11 @@ object Safety {
   }
 
   /**
-    * Attempts to convert associated types in `tpe0` to concrete types.
+    * Returns `tpe0` where known associated types and effects have been erased (i.e. replaced by their actual types).
     *
-    * If `tpe0` is monomorphic, then the concrete associated type can be found.
+    * Only erases associated types and effects for monomorphic (i.e. concrete known types).
     */
-  private def attemptUnpackAssocType(tpe0: Type)(implicit root: Root): Type = tpe0 match {
+  private def eraseKnownAssociatedTypes(tpe0: Type)(implicit root: Root): Type = tpe0 match {
     case Type.Var(_, _) =>
       tpe0
 
@@ -508,13 +508,13 @@ object Safety {
       tpe0
 
     case Type.Apply(tpe1, tpe2, loc) =>
-      Type.Apply(attemptUnpackAssocType(tpe1), attemptUnpackAssocType(tpe2), loc)
+      Type.Apply(eraseKnownAssociatedTypes(tpe1), eraseKnownAssociatedTypes(tpe2), loc)
 
     case Type.Alias(symUse, args, tpe, loc) =>
-      Type.Alias(symUse, args.map(attemptUnpackAssocType), attemptUnpackAssocType(tpe), loc)
+      Type.Alias(symUse, args.map(eraseKnownAssociatedTypes), eraseKnownAssociatedTypes(tpe), loc)
 
     case Type.AssocType(symUse@SymUse.AssocTypeSymUse(sym, _), arg, kind, loc) =>
-      val tpe = attemptUnpackAssocType(arg)
+      val tpe = eraseKnownAssociatedTypes(arg)
       val optConcreteType = root.instances.get(sym.trt)
         .find(i => i.tpe == tpe)
         .flatMap(_.assocs.find(assoc => assoc.symUse.sym == sym))
