@@ -148,7 +148,7 @@ object LspServer {
       flixSources.foreach { case p =>
         if (FileOps.checkExt(p, "flix")) {
           val source = Files.readString(p)
-          addSourceCode(p.toUri, source)
+          addUri(p.toUri, source)
         }
       }
     }
@@ -221,7 +221,7 @@ object LspServer {
     /**
       * Adds the given source code to the Flix instance.
       */
-    def addSourceCode(uri: URI, src: String): Unit = {
+    def addUri(uri: URI, src: String): Unit = {
       flix.addVirtualUri(uri, src)(SecurityContext.Unrestricted)
       sources.put(uri, src)
     }
@@ -284,7 +284,7 @@ object LspServer {
       val textDocument = didOpenTextDocumentParams.getTextDocument
       if (textDocument.getLanguageId == "flix") {
         val uri = new URI(textDocument.getUri)
-        flixLanguageServer.addSourceCode(uri, textDocument.getText)
+        flixLanguageServer.addUri(uri, textDocument.getText)
         flixLanguageServer.processCheck()
       }
     }
@@ -299,7 +299,7 @@ object LspServer {
       if (flixLanguageServer.sources.contains(uri)) {
         //Since the TextDocumentSyncKind is Full, we can assume that there is only one change that is a full content change.
         val src = didChangeTextDocumentParams.getContentChanges.get(0).getText
-        flixLanguageServer.addSourceCode(uri, src)
+        flixLanguageServer.addUri(uri, src)
         flixLanguageServer.processCheck()
       }
     }

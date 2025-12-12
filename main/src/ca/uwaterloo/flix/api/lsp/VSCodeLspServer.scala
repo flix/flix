@@ -197,7 +197,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * Add the given source code to the compiler.
     */
-  private def addSourceCode(uri: String, src: String): Unit = {
+  private def addUri(uri: String, src: String): Unit = {
     val u = new URI(uri)
     flix.addVirtualUri(u, src)(SecurityContext.Unrestricted)
     sources += (u -> src)
@@ -206,7 +206,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   /**
     * Remove the source code associated with the given uri from the compiler
     */
-  private def remSourceCode(uri: String): Unit = {
+  private def remUri(uri: String): Unit = {
     val u = new URI(uri)
     flix.remVirtualUri(u)
     sources -= u
@@ -218,11 +218,11 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
   private def processRequest(request: Request)(implicit ws: WebSocket, root: Root): JValue = request match {
 
     case Request.AddUri(id, uri, src) =>
-      addSourceCode(uri, src)
+      addUri(uri, src)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.RemUri(id, uri) =>
-      remSourceCode(uri)
+      remUri(uri)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
     case Request.AddPkg(id, uri, data) =>
@@ -234,7 +234,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
         if (name.endsWith(".flix")) {
           val bytes = StreamOps.readAllBytes(inputStream)
           val src = new String(bytes, Charset.forName("UTF-8"))
-          addSourceCode(s"$uri/$name", src)
+          addUri(s"$uri/$name", src)
         }
         entry = inputStream.getNextEntry
       }
@@ -246,7 +246,7 @@ class VSCodeLspServer(port: Int, o: Options) extends WebSocketServer(new InetSoc
       // clone is necessary because `remSourceCode` modifies `sources`
       for ((u, _) <- sources.clone()
            if u.toString.startsWith(uri)) {
-        remSourceCode(u.toString)
+        remUri(u.toString)
       }
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 

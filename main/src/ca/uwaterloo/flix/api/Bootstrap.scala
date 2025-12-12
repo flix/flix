@@ -1087,7 +1087,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
-        flix.remVirtualPath(path)
+        flix.remFile(path)(SecurityContext.Unrestricted)
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap

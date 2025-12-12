@@ -44,18 +44,18 @@ object CompilerConstants {
   val MaxParserFuel: Int = 2048
 
   /**
-    * The virtual file name used in the shell.
+    * The virtual file name used by the playground.
+    */
+  val VirtualPlaygroundFile: Path = Path.of("__PLAY__.flix")
+
+  /**
+    * The virtual file name used by the shell.
     */
   val VirtualShellFile: Path = Path.of("__SHELL__.flix")
 
   /**
-    * The virtual file name used in tests.
+    * The virtual file name used by tests.
     */
   val VirtualTestFile: Path = Path.of("__TEST__.flix")
-
-  /**
-    * The virtual file name used in the playground.
-    */
-  val VirtualPlaygroundFile: Path = Path.of("__PLAY__.flix")
 
 }
