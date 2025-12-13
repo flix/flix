@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.api.effectlock.serialization.*
+import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -315,7 +316,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
+    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
 
     assert(actual == expected)
@@ -338,7 +339,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
+    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
 
     assert(actual == expected)
@@ -357,7 +358,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
+    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
 
     assert(actual == expected)
@@ -373,7 +374,8 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
+    val erasedBaseType = Type.eraseAliases(defn.spec.declaredScheme.base)
+    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme.copy(base = erasedBaseType)))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
 
     assert(actual == expected)
@@ -393,7 +395,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
+    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
 
     assert(actual == expected)

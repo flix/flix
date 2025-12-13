@@ -197,7 +197,7 @@ object Serialize {
     *
     * To account for change in signatures, symbols with different kinds are renamed differently.
     */
-  private def alpha(sc0: Scheme): Scheme = {
+  def alpha(sc0: Scheme): Scheme = {
     val seen = mutable.Map.empty[Kind, mutable.Map[Symbol.KindedTypeVarSym, Symbol.KindedTypeVarSym]]
 
     def visit(tpe0: Type): Type = tpe0 match {
