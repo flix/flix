@@ -143,11 +143,11 @@ object Deserialize {
     case clazz => Class.forName(clazz)
   }
 
-  private def deserializeKindedTypeVarSym(sym0: VarSym)(implicit flix: Flix): Symbol.KindedTypeVarSym = sym0 match {
-    case VarSym(text, kind) => // TODO store and reuse ID or ignore ids
+  private def deserializeKindedTypeVarSym(sym0: VarSym): Symbol.KindedTypeVarSym = sym0 match {
+    case VarSym(id, text, kind) =>
       val t = deserializeVarText(text)
       val k = deserializeKind(kind)
-      Symbol.freshKindedTypeVarSym(t, k, isSlack = false, SourceLocation.Unknown)(Scope.Top, flix)
+      new Symbol.KindedTypeVarSym(id, t, k, isSlack = false, Scope.Top, SourceLocation.Unknown)
   }
 
   private def deserializeLabel(label0: String): Name.Label = {
