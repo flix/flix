@@ -96,8 +96,8 @@ object Namer {
         // For every declaration in that namespace, for a given name,
         for (decl <- decls) {
           decl match {
-            // We check if it is a module declaration.
-            case Declaration.Mod(sym, _, _, loc) =>
+            // We check if it is a *public* module declaration.
+            case Declaration.Mod(_, mod, sym, _, _, loc) if mod.isPublic =>
               // Check if `sym` has parent.
               sym.parent() match {
                 case None => // No parent, nothing to check.
@@ -140,7 +140,7 @@ object Namer {
       val ds = decls.getOrElse(sym.ns.last, Nil)
       // Check that the declarations contain a module declaration for `sym`.
       val exists = ds.exists {
-        case Declaration.Mod(otherSym, _, _, _) => sym == otherSym
+        case Declaration.Mod(_, _, otherSym, _, _, _) => sym == otherSym
         case _ => false
       }
       // If no declaration exists then `sym` is an orphan.
@@ -177,7 +177,7 @@ object Namer {
     * Performs naming on the given module.
     */
   private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
-    case DesugaredAst.Declaration.Mod(_, mod, qname, usesAndImports0, decls, loc) =>
+    case DesugaredAst.Declaration.Mod(ann, mod, qname, usesAndImports0, decls, loc) =>
 
       //
       // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
@@ -216,7 +216,7 @@ object Namer {
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
-      NamedAst.Declaration.Mod(sym, usesAndImports, ds, loc)
+      NamedAst.Declaration.Mod(ann, mod, sym, usesAndImports, ds, loc)
   }
 
   /**
@@ -227,7 +227,7 @@ object Namer {
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
-    case NamedAst.Declaration.Mod(sym, usesAndImports, decls, _) =>
+    case NamedAst.Declaration.Mod(_, _, sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
@@ -1628,7 +1628,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Mod(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Mod(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**
