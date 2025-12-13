@@ -41,9 +41,13 @@ jobs:
       matrix:
         repo:
           - "flix/datalog2"
+          - "flix/test-pkg-trust-plain"
+          - "flix/test-pkg-trust-unchecked-cast"
           - "JonathanStarup/ListSet"
           - "JonathanStarup/talpin1992-in-flix"
           - "magnus-madsen/bibblitz"
+          - "jaschdoc/flix-test-pkg-trust-transitive-plain"
+          - "jaschdoc/flix-test-pkg-trust-transitive-java"
           - "mlutze/flix-json"
           - "mlutze/flixball"
           - "rywiese/scope-graphs"
