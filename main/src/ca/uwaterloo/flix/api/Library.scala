@@ -74,6 +74,7 @@ object Library {
     "CommutativeGroup.flix" -> LocalResource.get("/src/library/CommutativeGroup.flix"),
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
+    "Concurrent.flix" -> LocalResource.get("/src/library/Concurrent.flix"),
     "Concurrent/Channel.flix" -> LocalResource.get("/src/library/Concurrent/Channel.flix"),
     "Concurrent/Condition.flix" -> LocalResource.get("/src/library/Concurrent/Condition.flix"),
     "Concurrent/CyclicBarrier.flix" -> LocalResource.get("/src/library/Concurrent/CyclicBarrier.flix"),
