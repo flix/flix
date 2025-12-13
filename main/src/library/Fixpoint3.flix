@@ -43,4 +43,11 @@ pub mod Fixpoint3 {
     ///
     enum ReadWriteLock[_: Region](JReadWriteLock)
 
+    ///
+    /// A trait for types with predicate symbols that can be substituted.
+    ///
+    pub trait SubstitutePredSym[t] {
+        pub def substitute(x: t, s: Map[PredSym, PredSym]): t
+    }
+
 }
