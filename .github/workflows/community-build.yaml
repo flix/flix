@@ -36,8 +36,6 @@ jobs:
     strategy:
       # collect all the failures
       fail-fast: false
-      # run them one at a time
-      # max-parallel: 1
       matrix:
         repo:
           - "flix/datalog2"

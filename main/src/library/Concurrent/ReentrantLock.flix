@@ -14,92 +14,82 @@
  * limitations under the License.
  */
 
-mod Concurrent {
+pub mod Concurrent.ReentrantLock {
 
+    import java.util.concurrent.TimeUnit
+    import java.lang.InterruptedException
+    import java.lang.IllegalMonitorStateException
     import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
+    use Concurrent.Condition
+    use Concurrent.Condition.Condition
+
     ///
-    /// A wrapper around a Java ReentrantLock.
+    /// Creates an instance of ReentrantLock with the given fairness policy.
+    /// `fair = False` is the default for Java.
     ///
-    pub enum ReentrantLock(JReentrantLock)
+    pub def newLock(fair: Bool): ReentrantLock \ IO =
+        ReentrantLock(new JReentrantLock(fair))
 
-    mod ReentrantLock {
+    ///
+    /// Returns true if this lock has fairness set true.
+    ///
+    pub def isFair(lock: ReentrantLock): Bool \ {} =
+        let ReentrantLock(l) = lock;
+        l.isFair()
 
-        import java.util.concurrent.TimeUnit
-        import java.lang.InterruptedException
-        import java.lang.IllegalMonitorStateException
-        import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
+    ///
+    /// Acquires the lock.
+    ///
+    pub def lock(lock: ReentrantLock): Unit \ IO =
+        let ReentrantLock(l) = lock;
+        l.lock()
 
-        use Concurrent.Condition
-        use Concurrent.Condition.Condition
+    ///
+    /// Acquires the lock unless the current thread is interrupted.
+    ///
+    pub def lockInterruptibly(lock: ReentrantLock): Result[InterruptedException, Unit] \ IO =
+        let ReentrantLock(l) = lock;
+        try {
+            Ok(l.lockInterruptibly())
+        } catch {
+            case e: InterruptedException => Err(e)
+        }
 
-        ///
-        /// Creates an instance of ReentrantLock with the given fairness policy.
-        /// `fair = False` is the default for Java.
-        ///
-        pub def newLock(fair: Bool): ReentrantLock \ IO =
-            ReentrantLock(new JReentrantLock(fair))
+    ///
+    /// Returns a Condition instance for use with this Lock instance.
+    ///
+    pub def newCondition(lock: ReentrantLock): Condition \ IO =
+        let ReentrantLock(l) = lock;
+        Condition(l.newCondition())
 
-        ///
-        /// Returns true if this lock has fairness set true.
-        ///
-        pub def isFair(lock: ReentrantLock): Bool \ {} =
-            let ReentrantLock(l) = lock;
-            l.isFair()
+    ///
+    /// Acquires the lock only if it is not held by another thread at the time of invocation.
+    ///
+    pub def tryLock(lock: ReentrantLock): Bool \ IO =
+        let ReentrantLock(l) = lock;
+        l.tryLock()
 
-        ///
-        /// Acquires the lock.
-        ///
-        pub def lock(lock: ReentrantLock): Unit \ IO =
-            let ReentrantLock(l) = lock;
-            l.lock()
+    ///
+    /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
+    ///
+    pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[InterruptedException, Bool] \ IO =
+        let ReentrantLock(l) = lock;
+        try {
+            Ok(l.tryLock(nanosTimeout, TimeUnit.NANOSECONDS))
+        } catch {
+            case e: InterruptedException => Err(e)
+        }
 
-        ///
-        /// Acquires the lock unless the current thread is interrupted.
-        ///
-        pub def lockInterruptibly(lock: ReentrantLock): Result[InterruptedException, Unit] \ IO =
-            let ReentrantLock(l) = lock;
-            try {
-                Ok(l.lockInterruptibly())
-            } catch {
-                case e: InterruptedException => Err(e)
-            }
+    ///
+    /// Attempts to release this lock.
+    ///
+    pub def unlock(lock: ReentrantLock): Result[IllegalMonitorStateException, Unit] \ IO =
+        let ReentrantLock(l) = lock;
+        try {
+            Ok(l.unlock())
+        } catch {
+            case e: IllegalMonitorStateException => Err(e)
+        }
 
-        ///
-        /// Returns a Condition instance for use with this Lock instance.
-        ///
-        pub def newCondition(lock: ReentrantLock): Condition \ IO =
-            let ReentrantLock(l) = lock;
-            Condition(l.newCondition())
-
-        ///
-        /// Acquires the lock only if it is not held by another thread at the time of invocation.
-        ///
-        pub def tryLock(lock: ReentrantLock): Bool \ IO =
-            let ReentrantLock(l) = lock;
-            l.tryLock()
-
-        ///
-        /// Acquires the lock if it is not held by another thread within the given waiting time (nanos) and the current thread has not been interrupted.
-        ///
-        pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[InterruptedException, Bool] \ IO =
-            let ReentrantLock(l) = lock;
-            try {
-                Ok(l.tryLock(nanosTimeout, TimeUnit.NANOSECONDS))
-            } catch {
-                case e: InterruptedException => Err(e)
-            }
-
-        ///
-        /// Attempts to release this lock.
-        ///
-        pub def unlock(lock: ReentrantLock): Result[IllegalMonitorStateException, Unit] \ IO =
-            let ReentrantLock(l) = lock;
-            try {
-                Ok(l.unlock())
-            } catch {
-                case e: IllegalMonitorStateException => Err(e)
-            }
-
-    }
 }
