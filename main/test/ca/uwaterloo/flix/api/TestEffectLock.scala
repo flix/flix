@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestEffectLock extends AnyFunSuite with TestUtils {
 
-  test("Safe.00") {
+  test("Safe.01") {
     val input =
       """
         |pub def f(x: Int32): Int32 = x
@@ -21,7 +21,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.01") {
+  test("Safe.02") {
     val input =
       """
         |pub def f(): Unit = ???
@@ -33,7 +33,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.02") {
+  test("Safe.03") {
     val input =
       """
         |pub def f(): Bool -> Unit = ???
@@ -45,7 +45,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.03") {
+  test("Safe.04") {
     val input =
       """
         |pub eff E {
@@ -61,7 +61,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.04") {
+  test("Safe.05") {
     val input =
       """
         |pub eff E {
@@ -77,7 +77,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.05") {
+  test("Safe.06") {
     val input =
       """
         |pub eff E {
@@ -85,25 +85,6 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(_: String): String \ E = unchecked_cast("str" as String \ E)
-        |
-        |pub def g(_: String): String = ???
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
-  }
-
-  test("Safe.06") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: String): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
         |
         |pub def g(_: String): String = ???
         |
@@ -124,7 +105,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |pub def f(_: String): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
         |
-        |pub def g(_: String): String \ A = unchecked_cast("str" as String \ A)
+        |pub def g(_: String): String = ???
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
@@ -132,6 +113,25 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
   }
 
   test("Safe.08") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |pub eff A {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: String): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
+        |
+        |pub def g(_: String): String \ A = unchecked_cast("str" as String \ A)
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result.get))
+  }
+
+  test("Safe.09") {
     val input =
       """
         |pub eff E {
@@ -150,25 +150,6 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.09") {
-    val input =
-      """
-        |pub eff E {
-        |    def e(): Unit
-        |}
-        |pub eff A {
-        |    def e(): Unit
-        |}
-        |
-        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |pub def g(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
-        |
-        |""".stripMargin
-    val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
-  }
-
   test("Safe.10") {
     val input =
       """
@@ -181,7 +162,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
         |
-        |pub def g(_: a -> b \ ef): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
+        |pub def g(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
@@ -200,6 +181,25 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |
         |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
         |
+        |pub def g(_: a -> b \ ef): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
+        |
+        |""".stripMargin
+    val (result, _) = check(input, Options.TestWithLibNix)
+    assert(checkIsSafe("f", "g", result.get))
+  }
+
+  test("Safe.12") {
+    val input =
+      """
+        |pub eff E {
+        |    def e(): Unit
+        |}
+        |pub eff A {
+        |    def e(): Unit
+        |}
+        |
+        |pub def f(_: a -> b \ ef): String \ {ef, A, E} = unchecked_cast("str" as String \ {ef, A, E})
+        |
         |pub def g(_: a -> b): String \ {A, E} = unchecked_cast("str" as String \ {A, E})
         |
         |""".stripMargin
@@ -207,7 +207,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  ignore("Safe.12") {
+  ignore("Safe.13") {
     val input =
       """
         |pub eff E {
@@ -226,7 +226,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result.get))
   }
 
-  ignore("Safe.13") {
+  ignore("Safe.14") {
     val input =
       """
         |pub eff E {
@@ -245,7 +245,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result.get))
   }
 
-  ignore("Safe.14") {
+  ignore("Safe.15") {
     val input =
       """
         |pub eff E {
@@ -264,7 +264,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result.get))
   }
 
-  test("Safe.15") {
+  test("Safe.16") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -276,7 +276,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.16") {
+  test("Safe.17") {
     val input =
       """
         |pub def f(_: Unit -> Unit \ ef): Unit = ()
@@ -288,7 +288,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.17") {
+  test("Safe.18") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -300,7 +300,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.18") {
+  test("Safe.19") {
     val input =
       """
         |pub eff E {
@@ -316,7 +316,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.19") {
+  test("Safe.20") {
     val input =
       """
         |pub eff E {
