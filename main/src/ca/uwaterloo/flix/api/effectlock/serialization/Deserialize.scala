@@ -11,7 +11,7 @@ import scala.collection.immutable.SortedSet
 object Deserialize {
 
   def deserializeDef(defn0: SDef)(implicit flix: Flix): (Symbol.DefnSym, Scheme) = defn0 match {
-    case SDef(namespace, text, scheme, source) => // source unused?
+    case SDef(namespace, text, scheme) =>
       val ns = namespace.mkString(".")
       val t = if (ns.isBlank || ns.isEmpty) text else s".$text"
       val sym = Symbol.mkDefnSym(ns + t)

@@ -24,7 +24,7 @@ package ca.uwaterloo.flix.api.effectlock
 package object serialization {
 
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
+  case class SDef(namespace: List[String], text: String, scheme: SScheme)
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)

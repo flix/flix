@@ -18,7 +18,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Unit))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "fun", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -34,7 +34,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Int32))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "fun", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -50,7 +50,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Unit))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "toUnit", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "toUnit", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -66,7 +66,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "answer", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "answer", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -97,7 +97,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
       ), Cst(Int32)
     )
     val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List(), "toInt32", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List(), "toInt32", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -117,7 +117,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(0, Text("a"), StarKind))), Cst(Str))
     val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(0, Text("a"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "pretty", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "pretty", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -141,7 +141,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(EffSym(List.empty, "A"), EffKind))), Var(VarSym(0, Text("t"), StarKind))), Cst(Unit))
     val scheme = SScheme(List(VarSym(0, Text("t"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(0, Text("t"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "prettyPrint", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -179,7 +179,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
       ), Var(VarSym(1, Text("b"), StarKind))
     )
     val scheme = SScheme(List(VarSym(0, Text("a"), StarKind), VarSym(0, Text("ef"), EffKind), VarSym(1, Text("b"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "prettyPrint", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -197,7 +197,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val erasedAlias = Cst(Int32)
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), erasedAlias), erasedAlias)
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "fun", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -220,7 +220,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val tb = AssocTypeSym(TraitSym(List(), "T"), "B")
     val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, Var(a), StarKind))), Var(a)), AssocType(tb, Var(a), StarKind))
     val scheme = SScheme(List(a), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "h", scheme, CompilerConstants.VirtualTestFile.toString)
+    val expected = SDef(List.empty, "h", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
