@@ -29,7 +29,7 @@ object Serialize {
     * Erases type aliases and associated type source locations.
     */
   def serializeDef(defn0: TypedAst.Def): SDef = defn0 match {
-    case TypedAst.Def(sym, spec, _, loc) =>
+    case TypedAst.Def(sym, spec, _, _) =>
       val ns = sym.namespace
       val text = sym.name
       val sscheme = serializeSpec(spec)
