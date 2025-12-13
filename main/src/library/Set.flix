@@ -124,7 +124,7 @@ instance ToFlix[Set[a]] with Order[a] {
     pub def toFlix(s: JSet): Set[a] = Adaptor.fromSet(s)
 }
 
-mod Set {
+pub mod Set {
 
     ///
     /// Returns a string representation of the given set `s`.

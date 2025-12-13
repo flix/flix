@@ -25,7 +25,7 @@
 /// A `PseudoStratum` is a group of mutually independent, consecutive strata, each
 /// represented by a unique SCC in the topological order.
 ///
-mod Fixpoint3.PrecedenceGraph {
+pub mod Fixpoint3.PrecedenceGraph {
     pub type alias Vertex = Int32
 
     ///

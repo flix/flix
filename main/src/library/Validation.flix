@@ -60,7 +60,7 @@ instance Formattable[Validation[e, t]] with Formattable[e], Formattable[t] {
     }
 }
 
-mod Validation {
+pub mod Validation {
 
     ///
     /// Applies the function in `v1` to the value in `v2`.

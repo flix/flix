@@ -26,7 +26,7 @@
 /// This purpose of this module is to transform `PredSym`s defined by `(name, id)`, to `PredSym`s
 /// uniquely defined by their `id`.
 ///
-mod Fixpoint3.Phase.RenamePredSyms {
+pub mod Fixpoint3.Phase.RenamePredSyms {
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Datalog.Constraint.Constraint

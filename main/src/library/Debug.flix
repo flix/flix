@@ -19,7 +19,7 @@
 ///
 eff Debug
 
-mod Debug {
+pub mod Debug {
 
     import java.lang.Byte
     import java.lang.Double

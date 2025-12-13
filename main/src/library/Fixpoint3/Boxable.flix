@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-mod Fixpoint3.Boxable {
+pub mod Fixpoint3.Boxable {
     import java.lang.Object
 
     use Vector.get

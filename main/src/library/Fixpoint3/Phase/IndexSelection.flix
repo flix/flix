@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.IndexSelection {
+pub mod Fixpoint3.Phase.IndexSelection {
     use Fixpoint3.Ast.Ram.{RamStmt, RamProgram, RelOp, BoolExp, RelSym, RamTerm, Search, Indexes, IndexInformation, RowVar, arityOf, arityOfNonLat};
     use Fixpoint3.Predicate.{relSymFromPredType, relSymToPredType, PredType, relSymsOfProgram}
     use Fixpoint3.UniqueInts

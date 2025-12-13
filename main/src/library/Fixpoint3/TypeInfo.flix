@@ -24,7 +24,7 @@
 /// their identifiers in same order. It also has a tight coupling with `Lowering`, which assumes
 /// that a `Type` is the same as a `UnifiedTypePoss`.
 ///
-mod Fixpoint3.TypeInfo {
+pub mod Fixpoint3.TypeInfo {
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Datalog, Constraint, HeadPredicate, HeadTerm, VarSym}
     use Fixpoint3.Ast.Ram.{RamProgram, RelSym, Predicates}
     use Fixpoint3.Ast.Shared.PredSym

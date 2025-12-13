@@ -70,7 +70,7 @@ instance Formattable[MutHashMap[k, v, r]] with Formattable[k], Formattable[v] {
         fromString("MutHashMap#{") + joinWith(identity, fromString(", "), kvs) + fromString("}")
 }
 
-mod MutHashMap {
+pub mod MutHashMap {
 
     ///
     /// Represents an internal entry node for the hash map.

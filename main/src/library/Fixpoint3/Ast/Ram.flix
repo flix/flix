@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Ast.Ram {
+pub mod Fixpoint3.Ast.Ram {
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation, PredSym}
     use Fixpoint3.Ast.Shared.Denotation.{Relational}
     use Fixpoint3.Boxed

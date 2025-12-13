@@ -140,7 +140,7 @@ instance ToJava[Nel[a]] {
     pub def toJava(l: Nel[a]): JList \ IO = Adaptor.toList(l)
 }
 
-mod Nel {
+pub mod Nel {
 
     ///
     /// Returns a string representation of the given non-empty list `l`.

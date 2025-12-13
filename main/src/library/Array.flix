@@ -61,7 +61,7 @@ instance Formattable[Array[a, r]] with Formattable[a] {
         fromString("Array#{") + joinWith(Formattable.format, fromString(", "), Array.toList(x)) + fromString("}")
 }
 
-mod Array {
+pub mod Array {
     import java.lang.Object
     import java.lang.System
     import java.util.Arrays
