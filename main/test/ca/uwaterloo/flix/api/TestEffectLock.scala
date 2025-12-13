@@ -751,7 +751,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     implicit val flix: Flix = new Flix()
     val orig = stringToDef(original, root).get
     val upgr = stringToDef(upgrade, root).get
-    EffectUpgrade.isSafe(orig.spec.declaredScheme, upgr.spec.declaredScheme)
+    EffectUpgrade.isEffSafeUpgrade(orig.spec.declaredScheme, upgr.spec.declaredScheme)
   }
 
   private def stringToDef(defn: String, root: TypedAst.Root): Option[TypedAst.Def] = {

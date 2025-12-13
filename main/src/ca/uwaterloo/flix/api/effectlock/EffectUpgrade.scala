@@ -39,7 +39,7 @@ object EffectUpgrade {
     *   - `upgrade` is unifiable with `original`.
     *   - `upgrade` is a monomorphic downgrade of `original`.
     */
-  def isSafe(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
+  def isEffSafeUpgrade(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     debug(s"original = $original")
     debug(s"upgrade = $upgrade")
     // Alpha rename so equality of types can be done via `==`.
