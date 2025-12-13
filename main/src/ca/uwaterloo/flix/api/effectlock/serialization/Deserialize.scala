@@ -31,7 +31,7 @@ object Deserialize {
     case AssocType(symUse, arg, kind) => Type.AssocType(deserializeAssocTypeSymUse(symUse), deserializeType(arg), deserializeKind(kind), SourceLocation.Unknown)
   }
 
-  private def deserializeTypeConstructor(tc0: STC)(implicit flix: Flix): TypeConstructor = tc0 match {
+  private def deserializeTypeConstructor(tc0: STC): TypeConstructor = tc0 match {
     case Void => TypeConstructor.Void
     case AnyType => TypeConstructor.AnyType
     case Unit => TypeConstructor.Unit
@@ -152,9 +152,10 @@ object Deserialize {
     Name.Pred(pred0, SourceLocation.Unknown)
   }
 
-  private def deserializeRegionSym(sym0: RegionSym)(implicit flix: Flix): Symbol.RegionSym = sym0 match {
-    case RegionSym(text) => // TODO store and reuse ID or ignore ids
-      Symbol.freshRegionSym(deserializeIdent(text))
+  private def deserializeRegionSym(sym0: RegionSym): Symbol.RegionSym = sym0 match {
+    case RegionSym(id, text) =>
+      val ident = deserializeIdent(text)
+      new Symbol.RegionSym(id, ident.name, ident.loc)
   }
 
   private def deserializeRestrictableEnumSym(sym0: RestrictableEnumSym): Symbol.RestrictableEnumSym = sym0 match {

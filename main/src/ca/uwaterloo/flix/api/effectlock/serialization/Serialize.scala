@@ -159,7 +159,7 @@ object Serialize {
   }
 
   private def serializeRegionSym(sym0: Symbol.RegionSym): RegionSym = {
-    RegionSym(sym0.text)
+    RegionSym(sym0.id, sym0.text)
   }
 
   private def serializeRestrictableCaseSym(sym0: Symbol.RestrictableCaseSym): RestrictableCaseSym = {

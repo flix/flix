@@ -201,7 +201,7 @@ package object serialization {
 
   case class EffSym(namespace: List[String], name: String) extends SSym
 
-  case class RegionSym(text: String) extends SSym
+  case class RegionSym(id: Int, text: String) extends SSym
 
   case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[String]) extends SSym
 
