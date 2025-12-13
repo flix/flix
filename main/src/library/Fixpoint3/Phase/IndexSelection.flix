@@ -60,7 +60,7 @@ mod Fixpoint3.Phase.IndexSelection {
     /// In the example for `PrimitiveSearch` a naive algorithm would create an index for each
     /// primitive search occuring in the program. A better solution, due to Subotić, Pavle, et al.
     /// (Automatic Index Selection for Large-Scale Datalog Computation), is to find the minimal
-    /// set of indexes needed for a relation. This is implemented in `AutomaticIndexSelection` is.
+    /// set of indexes needed for a relation. This is implemented in `AutomaticIndexSelection`.
     /// Thus, the program consisting of the 3 rules could produce the minimal set of searches to
     /// query relation `B` as `{0 < 1 < 2, 0 < 2}`.
     ///
@@ -76,7 +76,6 @@ mod Fixpoint3.Phase.IndexSelection {
     ///
     /// For details about memory positions see `lookupIndex`.
     ///
-    @Internal
     pub def indexProgram(program: RamProgram): RamProgram = match program {
         case RamProgram.Program(stmt, facts, meta, _, typeInfo) =>
             // This type annotation is apparently needed?
@@ -325,7 +324,6 @@ mod Fixpoint3.Phase.IndexSelection {
         /// `{0 < 1 < 2}` does not cover `{0, 2}` as no permutation of `{0, 2}`
         /// is a prefix of `{0 < 1 < 2}`.
         ///
-        @Internal
         pub def minIndex(searches: List[Search]): List[Search] = match searches {
             case Nil => Nil
             case _ :: Nil => searches

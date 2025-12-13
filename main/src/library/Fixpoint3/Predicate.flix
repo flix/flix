@@ -59,7 +59,6 @@ mod Fixpoint3.Predicate {
     ///
     /// `New` relations contains, in iteration `i`, all facts computed in iteration `i` in fixpoints computations.
     ///
-    @Internal
     pub enum PredType with Eq {
         case Full,
         case Delta,
@@ -69,7 +68,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns 1 plus the maximum full predicate in `predicates`.
     ///
-    @Internal
     pub def getMax(predicates: Predicates): Int64 = {
         let (_, _, res) = predicates;
         res
@@ -78,7 +76,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a list of all full `RelSym` in `predInfo`.
     ///
-    @Internal
     pub def allFullRelSyms(predInfo: Predicates): List[RelSym] =
         let (_, full, _) = predInfo;
         full
@@ -86,7 +83,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a list of all `RelSym` in `predInfo`.
     ///
-    @Internal
     pub def allRelSyms(predInfo: Predicates): List[RelSym] =
         let (relSyms, _, _) = predInfo;
         relSyms
@@ -94,7 +90,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns the full `RelSym` associated with the `PredSym` in `body` according to `predInfo`.
     ///
-    @Internal
     pub def bodyAtomToRelSym(body: BodyPredicate, wantedType: PredType, predInfo: Predicates): RelSym =
         let fullRel = bodyAtomToFullRelSym(body);
         getRelSymAsType(fullRel, wantedType, predInfo)
@@ -113,7 +108,6 @@ mod Fixpoint3.Predicate {
     /// Returns a `RelSym` of type `wantedType` given the `RelSym` `relSym`, which must be
     /// a full `RelSym`.
     ///
-    @Internal
     pub def fullRelSymToType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym =
         fullRelSymToTypeInternal(relSym, wantedType, getMax(predInfo))
 
@@ -142,7 +136,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns the `RelSym` of type `wantedType` from `relSym` according to `predInfo`.
     ///
-    @Internal
     pub def getRelSymAsType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym = match relSym {
         case RelSym.Symbol(pred, arity, den) => RelSym.Symbol(getPredSymAsType(pred, wantedType, predInfo), arity, den)
     }
@@ -150,7 +143,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns the full `RelSym` associated with the `PredSym` in `head` according to `predInfo`.
     ///
-    @Internal
     pub def headAtomToRelSym(head: HeadPredicate, wantedType: PredType, predInfo: Predicates): RelSym =
         let fullRel = headAtomToFullRelSym(head);
         getRelSymAsType(fullRel, wantedType, predInfo)
@@ -185,21 +177,18 @@ mod Fixpoint3.Predicate {
     ///
     /// Collect all preciate information given a Datalog program `program` and database `db`.
     ///
-    @Internal
     pub def initialize(program: Datalog, db: Map[RelSym, BPlusTree[Vector[Boxed], Boxed, Static]]): Predicates =
         relSymsOfProgramWithDb(program, db)
 
     ///
     /// Returns true if `id` is the id of a full `PredSym` according to `predInfo`.
     ///
-    @Internal
     pub def isFullId(id: Int64, predInfo: Predicates): Bool =
         PredType.Full == idToPredType(id, predInfo)
 
     ///
     /// Returns a `RelSym` of type `wantedType` from `relSym` according to `predInfo`.
     ///
-    @Internal
     pub def relSymFromPredType(relSym: RelSym, wantedType: PredType, predInfo: Predicates): RelSym = match relSym {
         case RelSym.Symbol(PredSym.PredSym(name, id), arity, den) =>
             RelSym.Symbol(PredSym.PredSym(name, fullIdtoPredType(idToFullPredId(id, predInfo), wantedType, getMax(predInfo))), arity, den)
@@ -208,7 +197,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a list of all `RelSym` known in `program`.
     ///
-    @Internal
     pub def relSymsOfProgram(program: RamProgram): List[RelSym] = match program {
         case RamProgram.Program(_, _, predInfo, _, _) => allRelSyms(predInfo)
     }
@@ -216,7 +204,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns a list of all `RelSym` known in `program`.
     ///
-    @Internal
     pub def fullRelSymsOfProgram(program: RamProgram): List[RelSym] = match program {
         case RamProgram.Program(_, _, predInfo, _, _) => allFullRelSyms(predInfo)
     }
@@ -224,7 +211,6 @@ mod Fixpoint3.Predicate {
     ///
     /// Returns the type of the `PredSym` in `relSym` according to `predInfo`.
     ///
-    @Internal
     pub def relSymToPredType(relSym: RelSym, predInfo: Predicates): PredType = match relSym {
         case RelSym.Symbol(PredSym.PredSym(_, id), _, _) => idToPredType(id, predInfo)
     }

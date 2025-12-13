@@ -208,7 +208,7 @@ mod Result {
         loop(l, ks -> Ok(ks))
 
     ///
-    /// Returns `Some(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Ok(v_i)`.
+    /// Returns `Ok(v1 :: v2 :: ... v :: vn)` if each of `f(l_i)` is `Ok(v_i)`.
     /// Otherwise returns the first `Err` encountered.
     ///
     pub def traverse(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, List[b]] \ ef =
@@ -222,9 +222,9 @@ mod Result {
         loop(l, ks -> Ok(ks))
 
     ///
-    /// Returns `Ok()` if each of `f(l_i)` is `Ok(_)`. Otherwise returns `None`.
+    /// Returns `Ok()` if each of `f(l_i)` is `Ok(_)`. Otherwise returns the first `Err`.
     ///
-    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// This function is the "forgetful" version of `traverse`, use it when you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
     pub def traverseX(f: a -> Result[e, b] \ ef, l: List[a]): Result[e, Unit] \ ef = match l {
@@ -290,7 +290,7 @@ mod Result {
     }
 
     ///
-    /// Returns a singleton map with the mapping `k -> v` if `o` is `Ok((k, v))`. Otherwise returns the empty map.
+    /// Returns a singleton map with the mapping `k -> v` if `r` is `Ok((k, v))`. Otherwise returns the empty map.
     ///
     pub def toMap(r: Result[e, (k, v)]): Map[k, v] with Order[k] = match r {
         case Ok((k, v)) => Map.singleton(k, v)

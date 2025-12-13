@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.{NamedAst, *}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
@@ -24,13 +25,21 @@ import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
+import java.net.URI
+import java.nio.file.{FileSystemNotFoundException, Path, Paths}
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 /**
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
 object Namer {
+
+  /**
+    * When enabled, allows orphan modules, i.e. modules without a parent module.
+    */
+  private val AllowOrphans: Boolean = true
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
@@ -59,9 +68,84 @@ object Namer {
       val uses = uses0.map {
         case (k, v) => Name.mkUnlocatedNName(k) -> v
       }
-      val errors = sctx.errors.asScala.toList
+
+      val errors = sctx.errors.asScala.toList ++ checkOrphanModules(symbols)
       (NamedAst.Root(symbols, instances, uses, units, program.mainEntryPoint, locations, program.availableClasses, program.tokens), errors)
     }
+
+  /**
+    * Check that every module has a parent.
+    *
+    * For example:
+    *
+    * If there is a module `A.B.C.D` then the module `A.B.C` must exist.
+    * Moreover, the module `A.B.C` must contain a module declaration for `D`.
+    */
+  private def checkOrphanModules(symbols: Map[Name.NName, Map[String, List[Declaration]]]): List[NameError] = {
+    if (AllowOrphans) {
+      return Nil
+    }
+
+    // A collection of orphaned modules, their missing parent, and the source location of the orphan.
+    val orphanedModules = mutable.Set.empty[(Symbol.ModuleSym, Symbol.ModuleSym, SourceLocation)]
+
+    // For every namespace,
+    for ((_, m) <- symbols) {
+      // For every declaration in that namespace,
+      for ((_, decls) <- m) {
+        // For every declaration in that namespace, for a given name,
+        for (decl <- decls) {
+          decl match {
+            // We check if it is a module declaration.
+            case Declaration.Mod(sym, _, _, loc) =>
+              // Check if `sym` has parent.
+              sym.parent() match {
+                case None => // No parent, nothing to check.
+                case Some(parentSym) =>
+                  // We have a parent. We have A.B.C and we must check that A.B declares C.
+                  if (isOrphan(parentSym, symbols)) {
+                    orphanedModules += ((sym, parentSym, loc))
+                  }
+              }
+            case _ => // nop
+          }
+        }
+      }
+    }
+
+    orphanedModules.toList.map {
+      case (sym, parentSym, loc) =>
+        // Unfortunately the source location `loc` spans the entire module,
+        // so we create a source location here to just point to the mod declaration.
+        // That is, if the module is `mod Foo { ... }` we create a source location that is the `mod` keyword.
+        // We cannot do better until we refactor modules to be non-overlapping.
+        val sp1 = loc.sp1
+        val sp2 = loc.sp1.copy(colOneIndexed = (loc.sp1.colOneIndexed + 3).toShort)
+        val loc2 = SourceLocation(loc.isReal, loc.source, sp1, sp2)
+        NameError.OrphanModule(sym, parentSym, loc2)
+    }
+  }
+
+  /**
+    * Given a module `A.B.C` returns `true` if `A.B` does *NOT* declare a module `C`.
+    *
+    * Special case: If `sym` has no parent then no declaration is required.
+    */
+  private def isOrphan(sym: Symbol.ModuleSym, symbols: Map[Name.NName, Map[String, List[Declaration]]]): Boolean = sym.parent() match {
+    case None => false
+    case Some(parentSym) =>
+      // Compute the declarations in the parent module.
+      val ns = Name.NName(parentSym.ns.map(s => Name.Ident(s, SourceLocation.Unknown)), SourceLocation.Unknown)
+      val decls = symbols.getOrElse(ns, Map.empty)
+      val ds = decls.getOrElse(sym.ns.last, Nil)
+      // Check that the declarations contain a module declaration for `sym`.
+      val exists = ds.exists {
+        case Declaration.Mod(otherSym, _, _, _) => sym == otherSym
+        case _ => false
+      }
+      // If no declaration exists then `sym` is an orphan.
+      !exists
+  }
 
   /**
     * Performs naming on the given compilation unit `unit` under the given (partial) program `prog0`.
@@ -77,7 +161,7 @@ object Namer {
     * Performs naming on the given declaration.
     */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration = decl0 match {
-    case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
+    case decl: DesugaredAst.Declaration.Mod => visitMod(decl, ns0)
     case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
@@ -90,15 +174,49 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given namespace.
+    * Performs naming on the given module.
     */
-  private def visitNamespace(decl: DesugaredAst.Declaration.Namespace, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Namespace = decl match {
-    case DesugaredAst.Declaration.Namespace(ident, usesAndImports0, decls, loc) =>
-      val ns = Name.NName(ns0.idents :+ ident, ident.loc)
+  private def visitMod(decl: DesugaredAst.Declaration.Mod, ns0: Name.NName)(implicit sctx: SharedContext, flix: Flix): NamedAst.Declaration.Mod = decl match {
+    case DesugaredAst.Declaration.Mod(_, mod, qname, usesAndImports0, decls, loc) =>
+
+      //
+      // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
+      //
+
+      // If the module is A.B.C then we build the path A/B/C.flix.
+      val expectedPath: Path = qname.namespace.idents.map(_.name).foldLeft(Path.of("")) {
+        case (p, name) => p.resolve(name)
+      }.resolve(qname.ident.name + ".flix")
+
+      if (mod.isPublic) {
+        val optPath = loc.source.input match {
+          case Input.RealFile(realPath, _)  => Some(realPath)
+          case Input.VirtualFile(virtualPath, _, _) => Some(virtualPath)
+          case Input.VirtualUri(virtualUri, _, _) => try {
+            Some(Path.of(virtualUri))
+          } catch {
+            case _: IllegalArgumentException => None
+            case _: FileSystemNotFoundException => None
+          }
+          case Input.PkgFile(_, _) => None
+          case Input.FileInPackage(_, _, _, _) => None
+          case Input.Unknown => None
+        }
+
+        optPath match {
+          case None => // Nop
+          case Some(actualPath) =>
+            if (!actualPath.endsWith(expectedPath)) {
+              sctx.errors.add(NameError.IllegalModuleFile(qname, actualPath, qname.loc))
+            }
+        }
+      }
+
+      val ns = Name.NName(ns0.idents ++ qname.namespace.idents ++ List(qname.ident), qname.loc)
       val usesAndImports = usesAndImports0.map(visitUseOrImport)
       val ds = decls.map(visitDecl(_, ns))
       val sym = new Symbol.ModuleSym(ns.parts, ModuleKind.Standalone)
-      NamedAst.Declaration.Namespace(sym, usesAndImports, ds, loc)
+      NamedAst.Declaration.Mod(sym, usesAndImports, ds, loc)
   }
 
   /**
@@ -109,7 +227,7 @@ object Namer {
   }
 
   private def tableDecl(table0: SymbolTable, decl: NamedAst.Declaration)(implicit sctx: SharedContext): SymbolTable = decl match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, _) =>
+    case NamedAst.Declaration.Mod(sym, usesAndImports, decls, _) =>
       // Add the namespace to the table (no validation needed)
       val table1 = addDeclToTable(table0, sym.ns.init, sym.ns.last, decl)
       val table2 = decls.foldLeft(table1)(tableDecl)
@@ -276,7 +394,7 @@ object Namer {
     val symbols0 = table.symbols.getOrElse(ns0, ListMap.empty)
     // ignore namespaces
     symbols0(name).flatMap {
-      case _: NamedAst.Declaration.Namespace => None
+      case _: NamedAst.Declaration.Mod => None
       case decl => Some(decl)
     }.headOption match {
       // Case 1: The name is unused.
@@ -1510,7 +1628,7 @@ object Namer {
     case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _, _) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(_, _, _, _, _, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(_, _, _, _, _, _, _, _, _, _, _, loc) => throw InternalCompilerException("Unexpected instance", loc)
-    case NamedAst.Declaration.Namespace(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
+    case NamedAst.Declaration.Mod(_, _, _, loc) => throw InternalCompilerException("Unexpected namespace", loc)
   }
 
   /**

@@ -33,13 +33,11 @@ mod Fixpoint3 {
         ///
         /// Returns a fresh `Counter` initialized to `0`.
         ///
-        @Internal
         pub def fresh(rc: Region[r]): Counter[r] \ r = new Counter @ rc {state = 0}
 
         ///
         /// Returns the state of `counter` and increments it.
         ///
-        @Internal
         pub def getAndIncrement(counter: Counter[r]): Int32 \ r =
             let newId = counter->state;
             counter->state = newId + 1;
@@ -48,21 +46,18 @@ mod Fixpoint3 {
         ///
         /// Increments the state of `counter`.
         ///
-        @Internal
         pub def increment(counter: Counter[r]): Unit \ r =
             discard getAndIncrement(counter)
 
         ///
         /// Returns the state of `counter`.
         ///
-        @Internal
         pub def get(counter: Counter[r]): Int32 \ r =
             counter->state
 
         ///
         /// Sets the state of `counter` to `i`.
         ///
-        @Internal
         pub def set(i: Int32, counter: Counter[r]): Unit \ r =
             counter->state = i
     }

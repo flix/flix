@@ -57,7 +57,7 @@ mod Fixpoint3.ProvenanceReconstruct {
     type alias BPLookup[r: Region] = BPlusTree[Vector[Boxed], List[(Vector[Boxed], Int64, Int32)], r]
 
     ///
-    /// A mutable map from `PredSym` to a `MutMap` from the the wanted lookup-slice to
+    /// A mutable map from `PredSym` to a `MutMap` from the wanted lookup-slice to
     /// a `BPLookup` on said slice.
     ///
     /// Using the previous example with predicate `P` we would have
@@ -127,7 +127,6 @@ mod Fixpoint3.ProvenanceReconstruct {
     }
 
     mod ProofTree {
-        @Internal
         pub def toString(p: ProofTree[r], indentChild: Int32): String \ r = match p {
             case EDB(pred, fact) =>
                 let indentCur = String.repeat(indentChild, " ");
@@ -175,7 +174,6 @@ mod Fixpoint3.ProvenanceReconstruct {
     ///
     /// Crashes if `d` is not a provenance model.
     ///
-    @Internal
     pub def provQuery(predSym: PredSym, fact: Vector[Boxed], withh: Vector[PredSym], d: Datalog): Option[Vector[(PredSym, Vector[Boxed])]] =
         unsafe IO { provQueryInternal(predSym, fact, withh, d) }
 

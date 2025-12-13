@@ -54,7 +54,6 @@ mod MutPriorityQueue {
     ///
     /// Constant which stores the minimum capacity of a MutPriorityQueue.
     ///
-    @Internal
     pub def minCapacity(): Int32 = 8
 
     ///

@@ -231,18 +231,19 @@ object Weeder2 {
       }
     }
 
-    private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Namespace, CompilationMessage] = {
+    private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Mod, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Module)
+      val annotations = pickAnnotations(tree)
+      for (ann <- annotations.annotations) {
+        sctx.errors.add(WeederError.IllegalAnnotation(ann.loc))
+      }
+      val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (qname, usesAndImports, declarations) =>
-          val base = Declaration.Namespace(qname.ident, usesAndImports, declarations, tree.loc)
-          qname.namespace.idents.foldRight(base: Declaration.Namespace) {
-            case (ident, acc) => Declaration.Namespace(ident, Nil, List(acc), tree.loc)
-          }
+        (qname, usesAndImports, declarations) => Declaration.Mod(annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 
@@ -698,7 +699,6 @@ object Weeder2 {
         case "@Experimental" => Experimental(loc)
         case "@Export" => Export(loc)
         case "@Inline" => Inline(loc)
-        case "@Internal" => Internal(loc)
         case "@Parallel" => Parallel(loc)
         case "@ParallelWhenPure" => ParallelWhenPure(loc)
         case "@LoweringTarget" => LoweringTarget(loc)
@@ -1194,7 +1194,7 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree)) { op =>
         op.children.head match {
           // User-defined operators - use the operator text directly
-          case t @ Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+          case t@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
             Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
 
           // Built-in operators - lookup
@@ -3198,7 +3198,9 @@ object Weeder2 {
               tree.loc
             ))
             // UNRECOGNIZED
-            case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
+            case kind =>
+              sctx.errors.add(WeederError.UnexpectedBinaryTypeOperator(kind, tree.loc))
+              Validation.Success(Type.Error(tree.loc))
           }
 
         case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands: $operands", tree.loc)

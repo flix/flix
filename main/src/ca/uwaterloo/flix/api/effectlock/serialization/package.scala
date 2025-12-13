@@ -197,7 +197,7 @@ package object serialization {
   /** Represents a serializable symbol. */
   sealed trait SSym
 
-  case class VarSym(text: SVarText, kind: SKind) extends SSym
+  case class VarSym(id: Int, text: SVarText, kind: SKind) extends SSym
 
   case class TypeAliasSym(namespace: List[String], name: String) extends SSym
 
