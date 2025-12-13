@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse, TypeAliasSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
 
@@ -65,9 +66,9 @@ object Deserialize {
     case Struct(sym, kind) => TypeConstructor.Struct(deserializeStructSym(sym), deserializeKind(kind))
     case RestrictableEnum(sym, kind) => TypeConstructor.RestrictableEnum(deserializeRestrictableEnumSym(sym), deserializeKind(kind))
     case Native(clazz) => TypeConstructor.Native(deserializeJvmClass(Native(clazz)))
-    case JvmConstructor(clazz, params) => TypeConstructor.JvmConstructor(deserializeJvmConstructor(clazz, params))
-    case JvmMethod(clazz, method, params) => TypeConstructor.JvmMethod(deserializeJvmMethod(clazz, method, params))
-    case JvmField(clazz, field) => TypeConstructor.JvmField(deserializeJvmField(clazz, field))
+    case JvmConstructor(_, _) => throw InternalCompilerException(s"unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case JvmMethod(_, _, _) => throw InternalCompilerException(s"unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case JvmField(_, _) => throw InternalCompilerException(s"unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case Array => TypeConstructor.Array
     case ArrayWithoutRegion => TypeConstructor.ArrayWithoutRegion
     case Vector => TypeConstructor.Vector
@@ -140,23 +141,6 @@ object Deserialize {
     case "S" => Short.getClass
     case "Z" => Boolean.getClass
     case clazz => Class.forName(clazz)
-  }
-
-  private def deserializeJvmConstructor(clazz0: Native, params0: List[Native]): java.lang.reflect.Constructor[?] = {
-    val clazz = deserializeJvmClass(clazz0)
-    val params = params0.map(deserializeJvmClass).toArray
-    clazz.getDeclaredConstructor(params *)
-  }
-
-  private def deserializeJvmMethod(clazz0: Native, method0: String, params0: List[Native]): java.lang.reflect.Method = {
-    val clazz = deserializeJvmClass(clazz0)
-    val params = params0.map(deserializeJvmClass).toArray
-    clazz.getDeclaredMethod(method0, params *)
-  }
-
-  private def deserializeJvmField(clazz0: Native, field0: String): java.lang.reflect.Field = {
-    val clazz = deserializeJvmClass(clazz0)
-    clazz.getDeclaredField(field0)
   }
 
   private def deserializeKindedTypeVarSym(sym0: VarSym)(implicit flix: Flix): Symbol.KindedTypeVarSym = sym0 match {
