@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Concurrent.Condition {
+pub mod Concurrent.Condition {
 
     import java.lang.IllegalMonitorStateException
 
