@@ -95,6 +95,7 @@ object Library {
     "FileWrite.flix" -> LocalResource.get("/src/library/FileWrite.flix"),
     "FileWriteWithResult.flix" -> LocalResource.get("/src/library/FileWriteWithResult.flix"),
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
+    "Fixpoint3.flix" -> LocalResource.get("/src/library/Fixpoint3.flix"),
     "Fixpoint3/Ast.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast.flix"),
     "Fixpoint3/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/Datalog.flix"),
     "Fixpoint3/Ast/ExecutableRam.flix" -> LocalResource.get("/src/library/Fixpoint3/Ast/ExecutableRam.flix"),
