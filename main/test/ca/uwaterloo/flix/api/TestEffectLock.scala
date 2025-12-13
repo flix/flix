@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestEffectLock extends AnyFunSuite with TestUtils {
 
-  test("Safe.01") {
+  test("IsEffectSafeUpgrade.01") {
     val input =
       """
         |pub def f(x: Int32): Int32 = x
@@ -21,7 +21,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.02") {
+  test("IsEffectSafeUpgrade.02") {
     val input =
       """
         |pub def f(): Unit = ???
@@ -33,7 +33,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.03") {
+  test("IsEffectSafeUpgrade.03") {
     val input =
       """
         |pub def f(): Bool -> Unit = ???
@@ -45,7 +45,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.04") {
+  test("IsEffectSafeUpgrade.04") {
     val input =
       """
         |pub eff E {
@@ -61,7 +61,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.05") {
+  test("IsEffectSafeUpgrade.05") {
     val input =
       """
         |pub eff E {
@@ -77,7 +77,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.06") {
+  test("IsEffectSafeUpgrade.06") {
     val input =
       """
         |pub eff E {
@@ -93,7 +93,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.07") {
+  test("IsEffectSafeUpgrade.07") {
     val input =
       """
         |pub eff E {
@@ -112,7 +112,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.08") {
+  test("IsEffectSafeUpgrade.08") {
     val input =
       """
         |pub eff E {
@@ -131,7 +131,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.09") {
+  test("IsEffectSafeUpgrade.09") {
     val input =
       """
         |pub eff E {
@@ -150,7 +150,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.10") {
+  test("IsEffectSafeUpgrade.10") {
     val input =
       """
         |pub eff E {
@@ -169,7 +169,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.11") {
+  test("IsEffectSafeUpgrade.11") {
     val input =
       """
         |pub eff E {
@@ -188,7 +188,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.12") {
+  test("IsEffectSafeUpgrade.12") {
     val input =
       """
         |pub eff E {
@@ -207,7 +207,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  ignore("Safe.13") {
+  ignore("IsEffectSafeUpgrade.13") {
     val input =
       """
         |pub eff E {
@@ -226,7 +226,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result.get))
   }
 
-  ignore("Safe.14") {
+  ignore("IsEffectSafeUpgrade.14") {
     val input =
       """
         |pub eff E {
@@ -245,7 +245,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result.get))
   }
 
-  ignore("Safe.15") {
+  ignore("IsEffectSafeUpgrade.15") {
     val input =
       """
         |pub eff E {
@@ -264,7 +264,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("g", "f", result.get))
   }
 
-  test("Safe.16") {
+  test("IsEffectSafeUpgrade.16") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -276,7 +276,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.17") {
+  test("IsEffectSafeUpgrade.17") {
     val input =
       """
         |pub def f(_: Unit -> Unit \ ef): Unit = ()
@@ -288,7 +288,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.18") {
+  test("IsEffectSafeUpgrade.18") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -300,7 +300,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.19") {
+  test("IsEffectSafeUpgrade.19") {
     val input =
       """
         |pub eff E {
@@ -316,7 +316,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.20") {
+  test("IsEffectSafeUpgrade.20") {
     val input =
       """
         |pub eff E {
@@ -332,7 +332,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Safe.21") {
+  test("IsEffectSafeUpgrade.21") {
     val input =
       """
         |pub def f(_: a -> b): Unit = ()
@@ -344,7 +344,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(checkIsSafe("f", "g", result.get))
   }
 
-  test("Unsafe.01") {
+  test("IsEffectSafeUpgrade.Negative.01") {
     val input =
       """
         |pub eff E {
@@ -360,7 +360,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.02") {
+  test("IsEffectSafeUpgrade.Negative.02") {
     val input =
       """
         |pub eff E {
@@ -376,7 +376,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.03") {
+  test("IsEffectSafeUpgrade.Negative.03") {
     val input =
       """
         |pub eff E {
@@ -392,7 +392,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.04") {
+  test("IsEffectSafeUpgrade.Negative.04") {
     val input =
       """
         |pub eff E {
@@ -411,7 +411,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.05") {
+  test("IsEffectSafeUpgrade.Negative.05") {
     val input =
       """
         |pub eff E {
@@ -430,7 +430,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.06") {
+  test("IsEffectSafeUpgrade.Negative.06") {
     val input =
       """
         |pub eff E {
@@ -449,7 +449,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.07") {
+  test("IsEffectSafeUpgrade.Negative.07") {
     val input =
       """
         |pub def f(_: Unit -> Unit \ ef): Unit = ()
@@ -461,7 +461,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.08") {
+  test("IsEffectSafeUpgrade.Negative.08") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -473,7 +473,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.09") {
+  test("IsEffectSafeUpgrade.Negative.09") {
     val input =
       """
         |pub def f(_: Unit -> Unit \ ef): Unit = ()
@@ -485,7 +485,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.10") {
+  test("IsEffectSafeUpgrade.Negative.10") {
     val input =
       """
         |pub def f(_: Unit -> Unit): Unit = ()
@@ -497,7 +497,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.11") {
+  test("IsEffectSafeUpgrade.Negative.11") {
     val input =
       """
         |pub eff E {
@@ -513,7 +513,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     assert(!checkIsSafe("g", "f", result.get))
   }
 
-  test("Unsafe.12") {
+  test("IsEffectSafeUpgrade.Negative.12") {
     val input =
       """
         |pub eff E {
