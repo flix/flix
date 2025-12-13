@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestEffectLock extends AnyFunSuite with TestUtils {
+class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
 
   test("IsEffectSafeUpgrade.01") {
     val input =
