@@ -63,6 +63,8 @@ object Library {
     "BigInt.flix" -> LocalResource.get("/src/library/BigInt.flix"),
     "Box.flix" -> LocalResource.get("/src/library/Box.flix"),
     "BPlusTree.flix" -> LocalResource.get("/src/library/BPlusTree.flix"),
+    "BPlusTree/AtomicCounter.flix" -> LocalResource.get("/src/library/BPlusTree/AtomicCounter.flix"),
+    "BPlusTree/Lock.flix" -> LocalResource.get("/src/library/BPlusTree/Lock.flix"),
     "BufReader.flix" -> LocalResource.get("/src/library/BufReader.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Channel.flix" -> LocalResource.get("/src/library/Channel.flix"),

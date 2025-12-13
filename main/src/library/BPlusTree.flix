@@ -84,36 +84,6 @@ pub mod BPlusTree {
     ///
     pub enum AtomicCounter[_: Region](JLongAdder)
 
-    mod AtomicCounter {
-        import java.util.concurrent.atomic.{LongAdder => JLongAdder}
-
-        ///
-        /// Returns a fresh counter with initialized to `initialVal`.
-        ///
-        pub def mkCounter(_: Region[r], initialValue: Int32): AtomicCounter[r] \ r =
-            unsafe IO as r {
-                let adder = new JLongAdder();
-                adder.add(Int32.toInt64(initialValue));
-                AtomicCounter(adder)
-            }
-
-
-        ///
-        /// Increments `counter` by `1`.
-        ///
-        pub def increment(counter: AtomicCounter[r]): Unit \ r =
-            let AtomicCounter(c) = counter;
-            unsafe IO as r { c.increment() }
-
-        ///
-        /// Returns the current state of `counter`.
-        ///
-        pub def get(counter: AtomicCounter[r]): Int32 \ r =
-            let AtomicCounter(c) = counter;
-            unsafe IO as r { c.intValue() }
-    }
-
-
     ///
     /// The purpose of Lock is to provide a thin wrapper around Java's StampedLock without
     /// the IO effect. The lock is optimistic in the sense that reads are performed by
@@ -147,96 +117,6 @@ pub mod BPlusTree {
     /// For Java's memory model see: https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4
     ///
     pub enum Lock[_: Region](JStampedLock)
-
-    mod Lock {
-        import java.util.concurrent.locks.{StampedLock => JStampedLock}
-        use BPlusTree.Lock
-
-        // Unchecked casts are here used to remove the IO effect. It is replaced with an
-        // effect to a region to ensure that the code is not optimized away.
-
-        ///
-        /// Wait for `lock` to be unlocked by the current holder of the write-lock on it.
-        ///
-        /// Why:
-        ///
-        /// Virtual threads can exhibit weird behaviour when using all physical threads
-        /// and using locking. Without this the threads using optimistic reading will
-        /// never be removed from the physical thread. Meanwhile a thread that holds the
-        /// lock will never get to run and we have a deadlock. Progress can happen, but it
-        /// appears to be extremely unlikely. To fix this call a blocking operation which
-        /// makes the JVM remove the virtual threads from the physical threads allowing
-        /// the lock-holder to unlock.
-        ///
-        /// For a better explanation see Netflix's encounter of a similar problem:
-        /// https://netflixtechblog.com/java-21-virtual-threads-dude-wheres-my-lock-3052540e231d?gi=128dba0ad426
-        ///
-        pub def yieldBasedOn(lock: Lock[r]): Unit \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.unlockRead(l.readLock()) }
-
-        ///
-        /// Returns `true` if `lock` is currently held by a thread.
-        ///
-        /// Only supposed to be used for testing.
-        ///
-        pub def isLocked(lock: Lock[r]): Bool \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.isWriteLocked() or l.isReadLocked() }
-
-        ///
-        /// Returns a fresh lock.
-        ///
-        pub def mkLock(_: Region[r]): Lock[r] \ r =
-            Lock(unsafe IO as r { new JStampedLock() })
-
-        /// Attempt to upgrade `stamp` on `lock` to a write-lock on `lock`.
-        /// The returned stamp cannot be invalidated if it was valid when issued.
-        ///
-        /// This operation is non-blocking.
-        ///
-        pub def tryConvertToWrite(stamp: Int64, lock: Lock[r]): Int64 \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.tryConvertToWriteLock(stamp) }
-
-        ///
-        /// Return an optimistic stamp on `lock` which can be used in `valid` to
-        /// assert that no thread has taken a write lock since `stamp` was issued.
-        ///
-        /// This operation is non-blocking.
-        ///
-        pub def tryReadLock(lock: Lock[r]): Int64 \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.tryOptimisticRead() }
-
-        ///
-        /// Unlock `lock` with the issued write-stamp, `stamp`.
-        ///
-        /// This operation is non-blocking.
-        ///
-        pub def unlockWrite(stamp: Int64, lock: Lock[r]): Unit \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.unlockWrite(stamp) }
-
-        ///
-        /// Returns true if `stamp` is still valid on `lock`, meaning no thread
-        /// has acquired a write-lock on `lock` since `stamp` was issued.
-        ///
-        /// This operation is non-blocking.
-        ///
-        pub def valid(stamp: Int64, lock: Lock[r]): Bool \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.validate(stamp) }
-
-        ///
-        /// Lock `lock` and returns the stamp.
-        ///
-        /// This operation is blocking.
-        ///
-        pub def writeLock(lock: Lock[r]): Int64 \ r =
-            let Lock(l) = lock;
-            unsafe IO as r { l.writeLock() }
-    }
 
     ///
     /// Updates `t` with `k => f(v)` if `k => v` is in `t`.
