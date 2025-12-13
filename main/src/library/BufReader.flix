@@ -63,7 +63,7 @@ instance Peekable[BufReader[a, t, r]] with Readable[t] where Readable.Elm[t] ~ a
 
 }
 
-mod BufReader {
+pub mod BufReader {
 
     ///
     /// Constructs a `BufReader` wrapping `reader` with a default capacity of 4096 items.

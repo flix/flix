@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Ast.Datalog {
+pub mod Fixpoint3.Ast.Datalog {
     use Fixpoint3.Boxed;
 
     use Fixpoint3.PredSymsOf

@@ -55,7 +55,7 @@ instance Formattable[Result[e, t]] with Formattable[e], Formattable[t] {
     }
 }
 
-mod Result {
+pub mod Result {
 
     import java.lang.Exception
 

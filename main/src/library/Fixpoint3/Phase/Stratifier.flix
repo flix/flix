@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.Stratifier {
+pub mod Fixpoint3.Phase.Stratifier {
     use Fixpoint3.Ast.Datalog.BodyPredicate.BodyAtom
     use Fixpoint3.Ast.Datalog.Constraint.Constraint
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Join, Model, Provenance}

@@ -38,7 +38,7 @@ pub lawful trait Monoid[a] with SemiGroup[a] {
 
 }
 
-mod Monoid {
+pub mod Monoid {
 
     ///
     /// Returns the result of applying `combine` to all the elements in `t`, using `empty` as the initial value.

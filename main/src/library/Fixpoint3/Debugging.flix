@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Debugging {
+pub mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.Ram

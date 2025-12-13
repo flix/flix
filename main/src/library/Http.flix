@@ -21,7 +21,7 @@ eff Http {
     def request(method: String, url: String, headers: Map[String, List[String]], body: Option[String]): Http.Response
 }
 
-mod Http {
+pub mod Http {
 
     use IoError.ErrorKind
     use IoError.IoError
