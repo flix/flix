@@ -18,6 +18,8 @@
 pub mod Fixpoint3 {
     import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
 
+    use Fixpoint3.Ast.Shared.PredSym
+
     ///
     /// `Counter` is a wrapper around `Ref` for a simple counter.
     ///
@@ -27,6 +29,13 @@ pub mod Fixpoint3 {
     ///
     pub struct Counter[r: Region] {
         mut state: Int32
+    }
+
+    ///
+    /// A trait for types that contain predicate symbols.
+    ///
+    pub trait PredSymsOf[t] {
+        pub def predSymsOf(x: t): Set[PredSym]
     }
 
     ///
