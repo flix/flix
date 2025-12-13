@@ -67,28 +67,36 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  test("build-jar always generates package that is byte-for-byte exactly the same") {
+  test("build-jar twice is very rarely equal due to concurrency") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
-
-    val flix = PkgTestUtils.mkFlix
-
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(flix)
-    b.buildJar(flix)(Formatter.getDefault)
 
-    def hash1 = calcHash(jarPath)
+    val flix1 = PkgTestUtils.mkFlix
+    b.build(flix1)
+    b.buildJar(flix1)(Formatter.getDefault)
+    val hash1 = calcHash(jarPath)
 
-    b.build(flix)
-    b.buildJar(flix)(Formatter.getDefault)
+    val flix2 = PkgTestUtils.mkFlix
+    b.build(flix2)
+    b.buildJar(flix2)(Formatter.getDefault)
+    var hash2 = calcHash(jarPath)
 
-    def hash2 = calcHash(jarPath)
+    // Retry if hashes are equal, fail after 10 tries, in which case it seems to be always equal
+    var tries = 0
+    while (hash1 == hash2 && tries < 10) {
+      val flix3 = PkgTestUtils.mkFlix
+      b.build(flix3)
+      b.buildJar(flix3)(Formatter.getDefault)
+      hash2 = calcHash(jarPath)
+      tries += 1
+    }
 
     assert(
-      hash1.equals(hash2),
-      s"Two file hashes are not same: $hash1 and $hash2")
+      hash1 != hash2,
+      s"Two file hashes are the same: $hash1 and $hash2")
   }
 
   test("build-pkg") {
