@@ -178,15 +178,6 @@ object Deserialize {
       Symbol.mkTraitSym(deserializeNamespace(namespace), deserializeIdent(name))
   }
 
-  private def deserializeTypeAliasSym(sym0: TypeAliasSym): Symbol.TypeAliasSym = sym0 match {
-    case TypeAliasSym(namespace, name) =>
-      Symbol.mkTypeAliasSym(deserializeNamespace(namespace), deserializeIdent(name))
-  }
-
-  private def deserializeTypeAliasSymUse(symUse0: TypeAliasSym): TypeAliasSymUse = {
-    TypeAliasSymUse(deserializeTypeAliasSym(symUse0), SourceLocation.Unknown)
-  }
-
   private def deserializeVarText(text0: SVarText): VarText = text0 match {
     case Absent => VarText.Absent
     case Text(s) => VarText.SourceText(s)

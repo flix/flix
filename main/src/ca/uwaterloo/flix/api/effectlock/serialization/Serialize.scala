@@ -23,26 +23,10 @@ import scala.collection.mutable
 
 object Serialize {
 
-  def eraseAssocTypeLocs(tpe0: Type)(implicit root: TypedAst.Root): Type = tpe0 match {
-    case Type.Var(_, _) => tpe0
-    case Type.Cst(_, _) => tpe0
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(eraseAssocTypeLocs(tpe1), eraseAssocTypeLocs(tpe2), loc)
-    case Type.Alias(symUse, args, tpe, loc) => Type.Alias(symUse, args.map(eraseAssocTypeLocs), eraseAssocTypeLocs(tpe), loc)
-    case Type.AssocType(symUse, arg, kind, _) =>
-      val tpe = eraseAssocTypeLocs(arg)
-      val assocDef = root.eqEnv.getAssocDef(symUse.sym, tpe)
-      ???
-    case Type.JvmToType(tpe, loc) => Type.JvmToType(eraseAssocTypeLocs(tpe), loc)
-    case Type.JvmToEff(tpe, loc) => Type.JvmToEff(eraseAssocTypeLocs(tpe), loc)
-    case Type.UnresolvedJvmType(member, loc) => Type.UnresolvedJvmType(member.map(eraseAssocTypeLocs), loc)
-  }
-
   /**
     * Serializes a [[TypedAst.Def]].
     *
-    * Erases type aliases.
-    * The caller must erase locations associated types.
-    * You can do so by calling [[eraseAssocTypeLocs]].
+    * Erases type aliases and associated type source locations.
     */
   def serializeDef(defn0: TypedAst.Def): SDef = defn0 match {
     case TypedAst.Def(sym, spec, _, loc) =>
