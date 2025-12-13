@@ -38,8 +38,6 @@ package object serialization {
 
   case class Apply(tpe1: SType, tpe2: SType) extends SType
 
-  case class Alias(symUse: TypeAliasSym, args: List[SType], tpe: SType) extends SType
-
   case class AssocType(symUse: AssocTypeSym, arg: SType, kind: SKind) extends SType
 
   /** Represents a serializable type constructor (STC). */
@@ -108,12 +106,6 @@ package object serialization {
   case class RestrictableEnum(sym: RestrictableEnumSym, kind: SKind) extends STC
 
   case class Native(clazz: String) extends STC
-
-  case class JvmConstructor(clazz: Native, params: List[Native]) extends STC
-
-  case class JvmMethod(clazz: Native, method: String, params: List[Native]) extends STC
-
-  case class JvmField(clazz: Native, field: String) extends STC
 
   case object Array extends STC
 
@@ -188,8 +180,6 @@ package object serialization {
 
   case object PredicateKind extends SKind
 
-  case object JvmKind extends SKind
-
   case class CaseSetKind(sym: RestrictableEnumSym) extends SKind
 
   case class ArrowKind(k1: SKind, k2: SKind) extends SKind
@@ -239,7 +229,6 @@ package object serialization {
         classOf[Var],
         classOf[Cst],
         classOf[Apply],
-        classOf[Alias],
         classOf[AssocType],
         Void.getClass,
         AnyType.getClass,
@@ -273,9 +262,6 @@ package object serialization {
         classOf[Struct],
         classOf[RestrictableEnum],
         classOf[Native],
-        classOf[JvmConstructor],
-        classOf[JvmMethod],
-        classOf[JvmField],
         Array.getClass,
         ArrayWithoutRegion.getClass,
         Vector.getClass,
@@ -311,7 +297,6 @@ package object serialization {
         RecordRowKind.getClass,
         SchemaRowKind.getClass,
         PredicateKind.getClass,
-        JvmKind.getClass,
         classOf[CaseSetKind],
         classOf[ArrowKind],
         classOf[VarSym],

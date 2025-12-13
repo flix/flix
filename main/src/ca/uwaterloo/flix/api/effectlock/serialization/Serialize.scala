@@ -128,7 +128,7 @@ object Serialize {
     case Kind.RecordRow => RecordRowKind
     case Kind.SchemaRow => SchemaRowKind
     case Kind.Predicate => PredicateKind
-    case Kind.Jvm => JvmKind
+    case Kind.Jvm => throw InternalCompilerException(s"Unexpected kind '$kind0'", SourceLocation.Unknown)
     case Kind.CaseSet(sym) => CaseSetKind(serializeRestrictableEnumSym(sym))
     case Kind.Arrow(k1, k2) => ArrowKind(serializeKind(k1), serializeKind(k2))
     case Kind.Error => throw InternalCompilerException("unexpected error kind in serialization", SourceLocation.Unknown)

@@ -193,8 +193,8 @@ class TestSerialization extends AnyFunSuite with TestUtils {
         |pub def fun(x: Num): Num = x + x
         |""".stripMargin
 
-    val alias = Alias(TypeAliasSym(List.empty, "Num"), List.empty, Cst(Int32))
-    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), alias), alias)
+    val erasedAlias = Cst(Int32)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), erasedAlias), erasedAlias)
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
     val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
 

@@ -29,7 +29,6 @@ object Deserialize {
     case Var(sym) => Type.Var(deserializeKindedTypeVarSym(sym), SourceLocation.Unknown)
     case Cst(tc) => Type.Cst(deserializeTypeConstructor(tc), SourceLocation.Unknown)
     case Apply(tpe1, tpe2) => Type.Apply(deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
-    case Alias(symUse, args, tpe) => Type.Alias(deserializeTypeAliasSymUse(symUse), args.map(deserializeType), deserializeType(tpe), SourceLocation.Unknown)
     case AssocType(symUse, arg, kind) => Type.AssocType(deserializeAssocTypeSymUse(symUse), deserializeType(arg), deserializeKind(kind), SourceLocation.Unknown)
   }
 
@@ -66,9 +65,6 @@ object Deserialize {
     case Struct(sym, kind) => TypeConstructor.Struct(deserializeStructSym(sym), deserializeKind(kind))
     case RestrictableEnum(sym, kind) => TypeConstructor.RestrictableEnum(deserializeRestrictableEnumSym(sym), deserializeKind(kind))
     case Native(clazz) => TypeConstructor.Native(deserializeJvmClass(Native(clazz)))
-    case JvmConstructor(_, _) => throw InternalCompilerException(s"unexpected type constructor: '$tc0'", SourceLocation.Unknown)
-    case JvmMethod(_, _, _) => throw InternalCompilerException(s"unexpected type constructor: '$tc0'", SourceLocation.Unknown)
-    case JvmField(_, _) => throw InternalCompilerException(s"unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case Array => TypeConstructor.Array
     case ArrayWithoutRegion => TypeConstructor.ArrayWithoutRegion
     case Vector => TypeConstructor.Vector
@@ -107,7 +103,6 @@ object Deserialize {
     case RecordRowKind => Kind.RecordRow
     case SchemaRowKind => Kind.SchemaRow
     case PredicateKind => Kind.Predicate
-    case JvmKind => Kind.Jvm
     case CaseSetKind(sym) => Kind.CaseSet(deserializeRestrictableEnumSym(sym))
     case ArrowKind(k1, k2) => Kind.Arrow(deserializeKind(k1), deserializeKind(k2))
   }
