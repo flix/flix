@@ -36,7 +36,7 @@ trait ForEach[t] {
 
 }
 
-mod ForEach {
+pub mod ForEach {
 
      ///
      /// A view for `ForEach` instance `t` that wraps each element with its index.

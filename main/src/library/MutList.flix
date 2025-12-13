@@ -61,7 +61,7 @@ instance Formattable[MutList[a, r]] with Formattable[a] {
         fromString("MutList#{") + joinWith(Formattable.format, fromString(", "), MutList.toList(x)) + fromString("}")
 }
 
-mod MutList {
+pub mod MutList {
 
     ///
     /// Constant which stores the minimum capacity of a MutList.

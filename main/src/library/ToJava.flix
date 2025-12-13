@@ -32,7 +32,7 @@ pub trait ToJava[t: Type] {
     pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
 }
 
-mod ToJava {
+pub mod ToJava {
 
     import java.lang.Object
 

@@ -170,7 +170,7 @@ instance Formattable[Option[a]] with Formattable[a] {
     }
 }
 
-mod Option {
+pub mod Option {
 
     ///
     /// Returns the empty option variant `None`.

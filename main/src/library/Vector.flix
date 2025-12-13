@@ -150,7 +150,7 @@ instance ToFlix[Vector[a]] {
     }
 }
 
-mod Vector {
+pub mod Vector {
 
     ///
     /// Perform a binary search for `x` on the sorted vector `v` and returns the position of `x`.

@@ -23,7 +23,7 @@ pub struct MutDisjointSets[t: Type, r: Region] {
     forest: MutMap[t, MutDisjointSets.Node[t, r], r]
 }
 
-mod MutDisjointSets {
+pub mod MutDisjointSets {
 
     ///
     /// Represents an element in the disjoint set forest.

@@ -22,7 +22,7 @@ mod Concurrent {
   pub enum CyclicBarrier(JCyclicBarrier)
 }
 
-mod Concurrent.CyclicBarrier {
+pub mod Concurrent.CyclicBarrier {
     import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
 
   ///

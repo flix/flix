@@ -142,7 +142,7 @@ instance ToFlix[Map[k, v]] with Order[k] {
     pub def toFlix(m: JMap): Map[k, v] = Adaptor.fromMap(m)
 }
 
-mod Map {
+pub mod Map {
 
     ///
     /// Returns a string representation of the given map `m`.

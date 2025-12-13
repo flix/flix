@@ -31,7 +31,7 @@
 /// > String.breakOnRight ~> Regex/Text.breakOnLast
 ///
 
-mod Regex {
+pub mod Regex {
 
     import java.util.regex.Pattern
     import java.util.regex.{Matcher => JMatcher}

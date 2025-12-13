@@ -46,7 +46,7 @@ eff Console {
 
 }
 
-mod Console {
+pub mod Console {
 
     import java.lang.System
 

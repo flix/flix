@@ -85,7 +85,7 @@ pub eff FileWriteWithResult {
 
 }
 
-mod FileWriteWithResult {
+pub mod FileWriteWithResult {
 
     import java.io.IOException
     import java.lang.IllegalArgumentException

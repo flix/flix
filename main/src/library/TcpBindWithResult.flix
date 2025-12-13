@@ -21,7 +21,7 @@ eff TcpBindWithResult {
     def bind(ip: IpAddr, port: Int16): Result[IoError, TcpServer]
 }
 
-mod TcpBindWithResult {
+pub mod TcpBindWithResult {
     import java.net.InetAddress
     import java.net.ServerSocket
     use IoError.ErrorKind
