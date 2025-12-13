@@ -238,7 +238,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -253,7 +253,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -268,7 +268,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -283,7 +283,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -298,7 +298,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -317,7 +317,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -340,7 +340,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -359,7 +359,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -376,7 +376,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defn = defs.head
     val erasedBaseType = Type.eraseAliases(defn.spec.declaredScheme.base)
     val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme.copy(base = erasedBaseType)))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
@@ -396,7 +396,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))(new Flix())
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
   }
