@@ -46,7 +46,7 @@ object Serialize {
     case Type.Var(sym, _) => Var(serializeKindedTypeVarSym(sym))
     case Type.Cst(tc, _) => Cst(serializeTypeConstructor(tc))
     case Type.Apply(tpe1, tpe2, _) => Apply(serializeType(tpe1), serializeType(tpe2))
-    case Type.Alias(symUse, args, tpe, _) => Alias(serializeTypeAliasSym(symUse.sym), args.map(serializeType), serializeType(tpe))
+    case Type.Alias(_, _, tpe, _) => serializeType(tpe) // Inline type alias erasure
     case Type.AssocType(symUse, arg, kind, _) => AssocType(serializeAssocTypeSym(symUse.sym), serializeType(arg), serializeKind(kind))
     case Type.JvmToType(_, loc) => throw InternalCompilerException("unexpected JvmToType", loc)
     case Type.JvmToEff(_, loc) => throw InternalCompilerException("unexpected JvmToEff", loc)
@@ -85,10 +85,10 @@ object Serialize {
     case TypeConstructor.Enum(sym, kind) => Enum(serializeEnumSym(sym), serializeKind(kind))
     case TypeConstructor.Struct(sym, kind) => Struct(serializeStructSym(sym), serializeKind(kind))
     case TypeConstructor.RestrictableEnum(sym, kind) => RestrictableEnum(serializeRestrictableEnumSym(sym), serializeKind(kind))
-    case TypeConstructor.Native(clazz) => serializeJvmClass(clazz) // Should not be possible?
-    case TypeConstructor.JvmConstructor(constructor) => serializeJvmConstructor(constructor) // Should not be possible?
-    case TypeConstructor.JvmMethod(method) => serializeJvmMethod(method) // Should not be possible?
-    case TypeConstructor.JvmField(field) => serializeJvmField(field) // Should not be possible?
+    case TypeConstructor.Native(clazz) => serializeJvmClass(clazz)
+    case TypeConstructor.JvmConstructor(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case TypeConstructor.JvmMethod(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
+    case TypeConstructor.JvmField(_) => throw InternalCompilerException(s"Unexpected type constructor: '$tc0'", SourceLocation.Unknown)
     case TypeConstructor.Array => Array
     case TypeConstructor.ArrayWithoutRegion => ArrayWithoutRegion
     case TypeConstructor.Vector => Vector
@@ -150,25 +150,6 @@ object Serialize {
     Native(clazz.descriptorString())
   }
 
-  private def serializeJvmConstructor(constructor0: java.lang.reflect.Constructor[?]): JvmConstructor = {
-    val clazz = serializeJvmClass(constructor0.getDeclaringClass)
-    val params = constructor0.getParameterTypes.toList.map(serializeJvmClass)
-    JvmConstructor(clazz, params)
-  }
-
-  private def serializeJvmMethod(method0: java.lang.reflect.Method): JvmMethod = {
-    val clazz = serializeJvmClass(method0.getDeclaringClass)
-    val methodName = method0.getName
-    val params = method0.getParameterTypes.toList.map(serializeJvmClass)
-    JvmMethod(clazz, methodName, params)
-  }
-
-  private def serializeJvmField(field0: java.lang.reflect.Field): JvmField = {
-    val clazz = serializeJvmClass(field0.getDeclaringClass)
-    val name = field0.getName
-    JvmField(clazz, name)
-  }
-
   private def serializeKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): VarSym = {
     VarSym(sym0.id, serializeVarText(sym0.text), serializeKind(sym0.kind))
   }
@@ -191,10 +172,6 @@ object Serialize {
 
   private def serializeTraitSym(sym0: Symbol.TraitSym): TraitSym = {
     TraitSym(sym0.namespace, sym0.name)
-  }
-
-  private def serializeTypeAliasSym(sym0: Symbol.TypeAliasSym): TypeAliasSym = {
-    TypeAliasSym(sym0.namespace, sym0.name)
   }
 
   private def serializeVarText(text0: VarText): SVarText = text0 match {
