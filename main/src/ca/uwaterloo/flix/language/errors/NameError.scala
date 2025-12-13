@@ -20,6 +20,8 @@ import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.util.Formatter
 
+import java.nio.file.Path
+
 /**
   * A common super-type for naming errors.
   */
@@ -129,17 +131,17 @@ object NameError {
     * An error raised to indicate that the module `qname` is wrongly declared in the file specified by `path`.
     *
     * @param qname The name of the module.
-    * @param path  The path where the module is declared.
+    * @param path  The real or virtual path where the module is declared.
     * @param loc   The source location the qname.
     */
-  case class IllegalModuleFile(qname: Name.QName, path: String, loc: SourceLocation) extends NameError {
+  case class IllegalModuleFile(qname: Name.QName, path: Path, loc: SourceLocation) extends NameError {
     def summary: String = s"Module '$qname' unexpectedly declared in file '$path'."
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Module '${blue(qname.toString)}' unexpectedly declared in file '${red(path)}'.
+      s""">> Module '${blue(qname.toString)}' unexpectedly declared in '${red(path.toString)}'.
          |
-         |${code(loc, "illegal file")}
+         |${code(loc, "mismatched module name and path.")}
          |""".stripMargin
     }
   }
