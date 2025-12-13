@@ -32,7 +32,7 @@
 ///
 /// The current implementation does not output the negative atoms. They can be derived from the positive.
 ///
-mod Fixpoint3.ProvenanceReconstruct {
+pub mod Fixpoint3.ProvenanceReconstruct {
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Ram.{makeFakeRelSym, RelSym}

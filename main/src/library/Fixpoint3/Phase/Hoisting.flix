@@ -82,7 +82,7 @@
 ///
 /// When arriving at `if (...)` and `project(...)` `termMap` will remain unchanged.
 ///
-mod Fixpoint3.Phase.Hoisting {
+pub mod Fixpoint3.Phase.Hoisting {
     use Fixpoint3.Ast.Ram.{arityOf, arityOfNonLat, BoolExp, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Boxed
     use Fixpoint3.Phase.Compiler.functionalRelSym

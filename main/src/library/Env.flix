@@ -94,7 +94,7 @@ eff Env {
 
 }
 
-mod Env {
+pub mod Env {
 
     import dev.flix.runtime.Global
     import java.lang.Exception

@@ -333,7 +333,7 @@ pub trait Foldable[t : Type -> Type] {
 
 }
 
-mod Foldable {
+pub mod Foldable {
 
     use Applicative.{*>}
 

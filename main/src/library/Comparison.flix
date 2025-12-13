@@ -20,7 +20,7 @@ pub enum Comparison with Eq, ToString {
     case GreaterThan
 }
 
-mod Comparison {
+pub mod Comparison {
 
     ///
     /// Converts a `Comparison` value to an integer.

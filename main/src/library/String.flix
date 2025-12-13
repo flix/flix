@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod String {
+pub mod String {
 
     import java.lang.System
     import java.util.regex.Pattern

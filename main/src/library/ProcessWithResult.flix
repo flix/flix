@@ -56,7 +56,7 @@ eff ProcessWithResult {
 
 }
 
-mod ProcessWithResult {
+pub mod ProcessWithResult {
 
     use IoError.ErrorKind
     use IoError.IoError

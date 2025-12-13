@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 
-mod Concurrent.Channel {
+pub mod Concurrent.Channel {
 
     import dev.flix.runtime.Global
 

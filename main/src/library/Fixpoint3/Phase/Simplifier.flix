@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.Simplifier {
+pub mod Fixpoint3.Phase.Simplifier {
     use Fixpoint3.Ast.Ram.{BoolExp, Facts, Predicates, RamProgram, RamStmt, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Ram.RamTerm.RowLoad
     use Fixpoint3.Predicate.{getRelSymAsType, PredType}

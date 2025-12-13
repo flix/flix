@@ -22,7 +22,7 @@ instance UpperBound[Float64] {
     pub def maxValue(): Float64 = Float64.maxValue()
 }
 
-mod Float64 {
+pub mod Float64 {
 
     import java.lang.Double
     import java.lang.Math

@@ -22,7 +22,7 @@ eff DnsWithResult {
     def lookupAll(host: String): Result[IoError, List[IpAddr]]
 }
 
-mod DnsWithResult {
+pub mod DnsWithResult {
     use IoError.ErrorKind
     use IoError.IoError
 

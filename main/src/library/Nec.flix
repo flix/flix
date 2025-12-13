@@ -156,7 +156,7 @@ instance ToJava[Nec[a]] {
     pub def toJava(l: Nec[a]): JList \ IO = Adaptor.toList(l)
 }
 
-mod Nec {
+pub mod Nec {
     use ViewLeft.{OneLeft, SomeLeft}
     use ViewRight.{OneRight, SomeRight}
 

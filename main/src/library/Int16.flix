@@ -22,7 +22,7 @@ instance UpperBound[Int16] {
     pub def maxValue(): Int16 = Int16.maxValue()
 }
 
-mod Int16 {
+pub mod Int16 {
 
     import java.lang.NumberFormatException
     import java.lang.Short

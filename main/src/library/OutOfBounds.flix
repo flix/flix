@@ -25,7 +25,7 @@ eff OutOfBounds {
 
 }
 
-mod OutOfBounds {
+pub mod OutOfBounds {
 
     /// Turns the `OutOfBounds` effect into `Err(msg)`.
     @Experimental

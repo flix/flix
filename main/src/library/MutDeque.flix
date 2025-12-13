@@ -54,7 +54,7 @@ instance Formattable[MutDeque[a, r]] with Formattable[a] {
         fromString("MutDeque#{") + joinWith(Formattable.format, fromString(", "), MutDeque.toList(x)) + fromString("}")
 }
 
-mod MutDeque {
+pub mod MutDeque {
 
     ///
     /// Constant denoting the minimum allowed capacity of the backing array.

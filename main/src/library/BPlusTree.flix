@@ -69,7 +69,7 @@ instance ForEach[BPlusTree[k, v, r]] {
     pub def forEach(f: ((k, v)) -> Unit \ ef, m: BPlusTree[k, v, r]): Unit \ ef + r = BPlusTree.forEach(k -> v -> f((k, v)), m)
 }
 
-mod BPlusTree {
+pub mod BPlusTree {
     import java.lang.Runtime
     import java.util.concurrent.atomic.{LongAdder => JLongAdder}
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
