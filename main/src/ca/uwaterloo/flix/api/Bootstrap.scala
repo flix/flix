@@ -1054,7 +1054,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter))))
           }
       }
     }
@@ -1068,7 +1068,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val previousSources = timestamps.keySet
 
       for (path <- sourcePaths if hasChanged(path)) {
-        flix.addFlix(path)(SecurityContext.Unrestricted)
+        flix.addFile(path)(SecurityContext.Unrestricted)
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
@@ -1087,7 +1087,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
-        flix.remSourceCode(path.toString)
+        flix.remFile(path)(SecurityContext.Unrestricted)
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap

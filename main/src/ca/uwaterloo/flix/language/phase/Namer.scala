@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
 import java.net.URI
-import java.nio.file.Paths
+import java.nio.file.{FileSystemNotFoundException, Path, Paths}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -182,26 +182,33 @@ object Namer {
       //
       // Check for [[NameError.IllegalModuleFile]] -- i.e. that public modules reside at correct paths.
       //
-      val expectedPath: List[String] = {
-        qname.namespace.idents.map(_.name) ::: qname.ident.name :: Nil
-      }
 
-      def actualPath(path: String): List[String] = {
-        val p = if (path.startsWith("file://")) {
-          Paths.get(new URI(path.stripSuffix(".flix")))
-        } else {
-          Paths.get(path.stripSuffix(".flix"))
-        }
-        p.iterator().asScala.toList.map(_.toString)
-      }
+      // If the module is A.B.C then we build the path A/B/C.flix.
+      val expectedPath: Path = qname.namespace.idents.map(_.name).foldLeft(Path.of("")) {
+        case (p, name) => p.resolve(name)
+      }.resolve(qname.ident.name + ".flix")
 
       if (mod.isPublic) {
-        loc.source.input match {
-          case Input.TxtFile(path, _) if !actualPath(path.toString).endsWith(expectedPath) =>
-            sctx.errors.add(NameError.IllegalModuleFile(qname, path.toString, qname.loc))
-          case Input.VirtualFile(virtualPath, _, _) if !actualPath(virtualPath.toString).endsWith(expectedPath) =>
-            sctx.errors.add(NameError.IllegalModuleFile(qname, virtualPath, qname.loc))
-          case _ => // Nop
+        val optPath = loc.source.input match {
+          case Input.RealFile(realPath, _)  => Some(realPath)
+          case Input.VirtualFile(virtualPath, _, _) => Some(virtualPath)
+          case Input.VirtualUri(virtualUri, _, _) => try {
+            Some(Path.of(virtualUri))
+          } catch {
+            case _: IllegalArgumentException => None
+            case _: FileSystemNotFoundException => None
+          }
+          case Input.PkgFile(_, _) => None
+          case Input.FileInPackage(_, _, _, _) => None
+          case Input.Unknown => None
+        }
+
+        optPath match {
+          case None => // Nop
+          case Some(actualPath) =>
+            if (!actualPath.endsWith(expectedPath)) {
+              sctx.errors.add(NameError.IllegalModuleFile(qname, actualPath, qname.loc))
+            }
         }
       }
 
