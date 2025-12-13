@@ -31,8 +31,8 @@ object BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class FlixPackageError(e: List[PackageError]) extends BootstrapError {
-    override def message(f: Formatter): String = e.map(_.message(f)).mkString(System.lineSeparator())
+  case class FlixPackageError(e: PackageError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
   }
 
   case class MavenPackageError(e: PackageError) extends BootstrapError {
