@@ -137,8 +137,8 @@ object EffectUpgrade {
       }
 
     case (_, _) =>
-      // Any non-arrow type has no effects so they are trivially always effect subsets of each other
-      true
+      // Any non-arrow type has no effects so their effect sets do not exist and cannot be subsets of one anotherUtil.
+      false
   }
 
 }
