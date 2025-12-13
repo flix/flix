@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Paul Butcher
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-pub mod Concurrent.CyclicBarrier {
+pub mod Concurrent {
+    import java.util.concurrent.locks.{Condition => JCondition}
     import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
+    import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
     ///
-    /// Create a new CyclicBarrier which will wait for `parties` threads
+    /// A wrapper around a Java Condition.
     ///
-    pub def newCyclicBarrier(parties: Int32): CyclicBarrier \ IO =
-        CyclicBarrier(new JCyclicBarrier(parties))
+    pub enum Condition(JCondition)
 
     ///
-    /// Waits until all parties have invoked `await` on this barrier
+    /// A wrapper around a Java CyclicBarrier.
     ///
-    pub def awaitBarrier(barrier: CyclicBarrier): Int32 \ IO =
-        let CyclicBarrier(b) = barrier;
-        b.await()
+    pub enum CyclicBarrier(JCyclicBarrier)
+
+    ///
+    /// A wrapper around a Java ReentrantLock.
+    ///
+    pub enum ReentrantLock(JReentrantLock)
 }
