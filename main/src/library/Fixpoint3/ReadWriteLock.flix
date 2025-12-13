@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.ReadWriteLock {
+pub mod Fixpoint3.ReadWriteLock {
     import java.util.concurrent.locks.{StampedLock => JStampedLock}
 
     pub def mkLock(_: Region[r]): ReadWriteLock[r] \ r =

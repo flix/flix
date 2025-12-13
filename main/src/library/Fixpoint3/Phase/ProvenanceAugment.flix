@@ -30,7 +30,7 @@
 /// must ensure this property. Note that only this does not refers to the `NotMemberOf` relating
 /// to negative dependencies/the `not A(...)` constructs.
 ///
- mod Fixpoint3.Phase.ProvenanceAugment {
+ pub mod Fixpoint3.Phase.ProvenanceAugment {
     use Fixpoint3.Ast.Ram
     use Fixpoint3.Ast.Ram.{RamProgram, RamStmt, RelOp, RamTerm, RelSym, arityOf, RowVar, BoolExp}
     use Fixpoint3.Boxed
