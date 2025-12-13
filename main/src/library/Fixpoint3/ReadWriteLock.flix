@@ -21,7 +21,6 @@
 mod Fixpoint3 {
     import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
 
-    @Internal
     enum ReadWriteLock[_: Region](JReadWriteLock)
 
     mod ReadWriteLock {

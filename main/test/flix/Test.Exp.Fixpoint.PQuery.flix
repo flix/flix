@@ -241,7 +241,7 @@ mod Test.Exp.Fixpoint.PQuery {
         assertEq(expected = expected, actual)
 
     @Test
-    def testPQueryDepth2Nullary(): Unit \ Assert =
+    def testPQueryDepth2Nullary01(): Unit \ Assert =
         let pr = #{
             A.
             B :- A.
@@ -250,6 +250,25 @@ mod Test.Exp.Fixpoint.PQuery {
         let pp = pquery pr select R with {A};
         let expected = Vector#{42, 42};
         let actual = Vector.map(v -> ematch v { case A => 42 }, pp);
+        assertEq(expected = expected, actual)
+
+    @Test
+    def testPQueryDepth2Nullary02(): Unit \ Assert =
+        // We use negative dependencies because it forces the use of `memberOf`.
+        // Positive dependencies would simply translate to foreach loop.
+        let pr = #{
+            A.
+            B :- not A.
+            C :- not B.
+        };
+
+        let pp = pquery pr select C with {A, B, C};
+        let expected = Vector#{'C'};
+        let actual = Vector.map(v -> ematch v {
+            case A => 'A'
+            case B => 'B'
+            case C => 'C'
+        }, pp);
         assertEq(expected = expected, actual)
 
     ///////////////////////////////////////////////////////////////////////////
@@ -1171,5 +1190,39 @@ mod Test.Exp.Fixpoint.PQuery {
         }, pp);
         assertEq(expected = expected, actual)
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    /// `pquery` should work with negative dependencies.
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testPQueryNegative01(): Unit \ Assert =
+        let pr = #{
+            B(1) :- not A(1).
+        };
+
+        let pp = pquery pr select B(1) with {B};
+        let expected = Vector#{0};
+        let actual = Vector.map(v -> ematch v {
+            case B(_) => 0
+        }, pp);
+        assertEq(expected = expected, actual)
+
+    @Test
+    def testPQueryNegative02(): Unit \ Assert =
+        let pr = #{
+            A(1).
+            B(1) :- not A(1).
+            C(1) :- not B(1).
+        };
+
+        let pp = pquery pr select C(1) with {A, B, C};
+        let expected = Vector#{1};
+        let actual = Vector.map(v -> ematch v {
+            case A(_) => -1
+            case B(_) => 0
+            case C(_) => 1
+        }, pp);
+        assertEq(expected = expected, actual)
 
 }

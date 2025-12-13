@@ -16,9 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.{CompilerConstants, Flix}
 import ca.uwaterloo.flix.language.ast.JvmAst.{Def, Root}
-import ca.uwaterloo.flix.language.ast.{SimpleType, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.{Purity, SimpleType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.StaticMethod
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
@@ -86,7 +86,7 @@ object GenFunAndClosureClasses {
 
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, null)
 
     compileConstructor(functionInterface, visitor)
@@ -146,7 +146,7 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedFunctionInterfaceType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
     // Fields
@@ -227,7 +227,7 @@ object GenFunAndClosureClasses {
     // Header
     val functionInterface = JvmOps.getErasedClosureAbstractClassType(defn.arrowType).jvmName
     val frameInterface = BackendObjType.Frame
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
+    visitor.visit(CompilerConstants.JvmTargetVersion, ACC_PUBLIC + ACC_FINAL, className.toInternalName, null,
       functionInterface.toInternalName, Array(frameInterface.jvmName.toInternalName))
 
     // Fields

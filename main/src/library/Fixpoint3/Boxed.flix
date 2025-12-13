@@ -26,7 +26,6 @@ mod Fixpoint3 {
     /// `NoValue` is used for relational predicates which do not map to anything and therefore
     /// contain no value.
     ///
-    @Internal
     pub enum Boxed {
         case BoxedBool(Bool)
         case BoxedChar(Char)

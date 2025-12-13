@@ -20,7 +20,6 @@ mod Fixpoint3 {
     ///
     /// A trait for types that contain predicate symbols.
     ///
-    @Internal
     pub trait PredSymsOf[t] {
         pub def predSymsOf(x: t): Set[PredSym]
     }

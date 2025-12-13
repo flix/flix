@@ -134,7 +134,7 @@ object Resolver {
     * Builds a symbol table from the declaration.
     */
   private def tableDecl(decl: ResolvedAst.Declaration): SymbolTable = decl match {
-    case ResolvedAst.Declaration.Namespace(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
+    case ResolvedAst.Declaration.Mod(_, _, decls, _) => SymbolTable.traverse(decls)(tableDecl)
     case trt: ResolvedAst.Declaration.Trait => SymbolTable.empty.addTrait(trt)
     case inst: ResolvedAst.Declaration.Instance => SymbolTable.empty.addInstance(inst)
     case defn: ResolvedAst.Declaration.Def => SymbolTable.empty.addDef(defn)
@@ -174,7 +174,7 @@ object Resolver {
         case usesAndImports =>
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val namespaces = decls.collect {
-            case ns: NamedAst.Declaration.Namespace => ns
+            case ns: NamedAst.Declaration.Mod => ns
           }
           val aliases0 = decls.collect {
             case alias: NamedAst.Declaration.TypeAlias => alias
@@ -190,15 +190,15 @@ object Resolver {
   /**
     * Semi-resolves the type aliases in the namespace.
     */
-  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Namespace, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls, _) =>
+  private def semiResolveTypeAliasesInNamespace(ns0: NamedAst.Declaration.Mod, defaultUses: LocalScope, root: NamedAst.Root)(implicit sctx: SharedContext, flix: Flix): Validation[List[ResolvedAst.Declaration.TypeAlias], ResolutionError] = ns0 match {
+    case NamedAst.Declaration.Mod(sym, usesAndImports0, decls, _) =>
       val ns0 = Name.mkUnlocatedNName(sym.ns)
       val usesAndImportsVal = traverse(usesAndImports0)(visitUseOrImport(_, ns0, root))
       flatMapN(usesAndImportsVal) {
         case usesAndImports =>
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val namespaces = decls.collect {
-            case ns: NamedAst.Declaration.Namespace => ns
+            case ns: NamedAst.Declaration.Mod => ns
           }
           val aliases0 = decls.collect {
             case alias: NamedAst.Declaration.TypeAlias => alias
@@ -337,7 +337,7 @@ object Resolver {
     * Performs name resolution on the declaration.
     */
   private def visitDecl(decl: NamedAst.Declaration, scp0: LocalScope, ns0: Name.NName, defaultUses: LocalScope)(implicit taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], sctx: SharedContext, root: NamedAst.Root, flix: Flix): Validation[ResolvedAst.Declaration, ResolutionError] = decl match {
-    case NamedAst.Declaration.Namespace(sym, usesAndImports0, decls0, loc) =>
+    case NamedAst.Declaration.Mod(sym, usesAndImports0, decls0, loc) =>
       // TODO NS-REFACTOR move to helper for consistency
       // use the new namespace
       val ns = Name.mkUnlocatedNNameWithLoc(sym.ns, loc)
@@ -348,7 +348,7 @@ object Resolver {
           val scp = appendAllUseScp(defaultUses, usesAndImports, root)
           val declsVal = traverse(decls0)(visitDecl(_, scp, ns, defaultUses))
           mapN(declsVal) {
-            case decls => ResolvedAst.Declaration.Namespace(sym, usesAndImports, decls, loc)
+            case decls => ResolvedAst.Declaration.Mod(sym, usesAndImports, decls, loc)
           }
       }
     case trt@NamedAst.Declaration.Trait(_, _, _, _, _, _, _, _, _, _) =>
@@ -3071,7 +3071,7 @@ object Resolver {
   private def tryLookupModule(name: String, scp0: LocalScope, ns0: Name.NName, root: NamedAst.Root): Option[List[String]] = {
     // First see if there's a module with this name imported into our LocalScope
     scp0(name).collectFirst {
-      case Resolution.Declaration(ns: NamedAst.Declaration.Namespace) => ns.sym.ns
+      case Resolution.Declaration(ns: NamedAst.Declaration.Mod) => ns.sym.ns
       case Resolution.Declaration(trt: NamedAst.Declaration.Trait) => trt.sym.namespace :+ trt.sym.name
       case Resolution.Declaration(enum0: NamedAst.Declaration.Enum) => enum0.sym.namespace :+ enum0.sym.name
       case Resolution.Declaration(struct: NamedAst.Declaration.Struct) => struct.sym.namespace :+ struct.sym.name
@@ -3080,7 +3080,7 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in our namespace
       root.symbols.getOrElse(ns0, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Namespace(sym, _, _, _) => sym.ns
+        case Declaration.Mod(sym, _, _, _) => sym.ns
         case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
@@ -3090,7 +3090,7 @@ object Resolver {
     }.orElse {
       // Then see if there's a module with this name declared in the root namespace
       root.symbols.getOrElse(Name.RootNS, Map.empty).getOrElse(name, Nil).collectFirst {
-        case Declaration.Namespace(sym, _, _, _) => sym.ns
+        case Declaration.Mod(sym, _, _, _) => sym.ns
         case Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Enum(_, _, _, sym, _, _, _, _) => sym.namespace :+ sym.name
         case Declaration.Struct(_, _, _, sym, _, _, _) => sym.namespace :+ sym.name
@@ -3465,7 +3465,7 @@ object Resolver {
     * Gets the proper symbol from the given named symbol.
     */
   private def getSym(symbol: NamedAst.Declaration): Symbol = symbol match {
-    case NamedAst.Declaration.Namespace(sym, _, _, _) => sym
+    case NamedAst.Declaration.Mod(sym, _, _, _) => sym
     case NamedAst.Declaration.Trait(_, _, _, sym, _, _, _, _, _, _) => sym
     case NamedAst.Declaration.Sig(sym, _, _, _) => sym
     case NamedAst.Declaration.Def(sym, _, _, _) => sym
@@ -3758,12 +3758,52 @@ object Resolver {
 
     def addInstance(inst: ResolvedAst.Declaration.Instance): SymbolTable = copy(instances = instances + (inst.symUse.sym -> inst))
 
+    /**
+      * Optionally merges `enum1` and `enum2`. If `enum2` is [[None]] `enum1` is returned. If `enum2`
+      * is [[Some]] it indicates that it is a duplicate, and we merge the 2 enums.
+      *
+      * This is done to ensure that all cases of the enum are included.
+      * This is assumed to be the case by later phases which can cause crashes.
+      *
+      * An example transformation is
+      * {{{
+      * enum X[t] {
+      *   case A(t)
+      *   case B(t)
+      * }
+      * enum X[t] {
+      *   case B(t, t)
+      *   case C(t)
+      * }
+      * }}}
+      * becoming
+      * {{{
+      * enum X[t] {
+      *  case A(t)
+      *  case B(t, t)
+      *  case C(t)
+      * }
+      * }}}
+      *
+      * No guarantees about whether cases from the `enum1` or `enum2` is kept.
+      */
+    private def resilientMergeEnums(enum1: ResolvedAst.Declaration.Enum, enum2: Option[ResolvedAst.Declaration.Enum]): Option[ResolvedAst.Declaration.Enum] = (enum1, enum2) match {
+      case (_, None) => Some(enum1)
+      case (ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, tparams1, Derivations(derives1, derLoc), cases1, loc1), Some(ResolvedAst.Declaration.Enum(_, _, _, _, tparams2, Derivations(derives2, _), cases2, loc2))) =>
+        val combinedTparams = (tparams1 ++ tparams2).distinctBy(_.name.name)
+        val combinedDerivations = Derivations((derives1 ++ derives2).distinctBy(_.sym), derLoc)
+        val combinedCases = (cases1 ++ cases2).distinctBy(_.sym)
+        Some(ResolvedAst.Declaration.Enum(doc1, ann1, mod1, sym, combinedTparams, combinedDerivations, combinedCases, loc1))
+    }
+
     private def ++(that: SymbolTable): SymbolTable = {
       SymbolTable(
         traits = this.traits ++ that.traits,
         instances = this.instances ++ that.instances,
         defs = this.defs ++ that.defs,
-        enums = this.enums ++ that.enums,
+        enums = that.enums.foldLeft(this.enums) {
+          case (acc, (newSym, enum0)) => acc.updatedWith(newSym)(resilientMergeEnums(enum0, _))
+        },
         structs = this.structs ++ that.structs,
         structFields = this.structFields ++ that.structFields,
         restrictableEnums = this.restrictableEnums ++ that.restrictableEnums,

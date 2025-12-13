@@ -1,66 +1,68 @@
 mod Test.Exp.Match.String {
 
-    @test
-    def testMatchString01(): Bool = match "" {
-        case ""    => true
-        case "a"   => false
-        case "abc" => false
-        case _     => false
+    use Assert.{assertEq, success, fail}
+
+    @Test
+    def matchString01(): Unit \ Assert = match "" {
+        case ""    => success("matched empty string")
+        case "a"   => fail("unexpected match on 'a'")
+        case "abc" => fail("unexpected match on 'abc'")
+        case _     => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchString02(): Bool = match "a" {
-        case ""    => false
-        case "a"   => true
-        case "abc" => false
-        case _     => false
+    @Test
+    def matchString02(): Unit \ Assert = match "a" {
+        case ""    => fail("unexpected match on empty string")
+        case "a"   => success("matched 'a'")
+        case "abc" => fail("unexpected match on 'abc'")
+        case _     => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchString03(): Bool = match "abc" {
-        case ""    => false
-        case "a"   => false
-        case "abc" => true
-        case _     => false
+    @Test
+    def matchString03(): Unit \ Assert = match "abc" {
+        case ""    => fail("unexpected match on empty string")
+        case "a"   => fail("unexpected match on 'a'")
+        case "abc" => success("matched 'abc'")
+        case _     => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchString04(): Bool = match "def" {
-        case ""    => false
-        case "a"   => false
-        case "abc" => false
-        case _     => true
+    @Test
+    def matchString04(): Unit \ Assert = match "def" {
+        case ""    => fail("unexpected match on empty string")
+        case "a"   => fail("unexpected match on 'a'")
+        case "abc" => fail("unexpected match on 'abc'")
+        case _     => success("matched wildcard")
     }
 
-    @test
-    def testMatchString05(): Bool = match "\"" {
-        case "\"" => true
-        case _ => false
+    @Test
+    def matchString05(): Unit \ Assert = match "\"" {
+        case "\"" => success("matched quote")
+        case _    => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchString06(): Bool = match "\'\u1234\'" {
-        case "\'\u1234\'" => true
-        case _ => false
+    @Test
+    def matchString06(): Unit \ Assert = match "\'\u1234\'" {
+        case "\'\u1234\'" => success("matched unicode string")
+        case _            => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchString07(): Bool = match "\r\n" {
-        case "\r\n" => true
-        case _ => false
+    @Test
+    def matchString07(): Unit \ Assert = match "\r\n" {
+        case "\r\n" => success("matched CRLF")
+        case _      => fail("unexpected match on wildcard")
     }
 
-    @test
-    def testMatchStringVar01(): Bool = match "abc" {
-        case x => x == "abc"
+    @Test
+    def matchStringVar01(): Unit \ Assert = match "abc" {
+        case x => assertEq(expected = "abc", x)
     }
 
-    @test
-    def testMatchStringVar02(): Bool = match "def" {
-        case ""    => false
-        case "a"   => false
-        case "abc" => false
-        case x     => x == "def"
+    @Test
+    def matchStringVar02(): Unit \ Assert = match "def" {
+        case ""    => fail("unexpected match on empty string")
+        case "a"   => fail("unexpected match on 'a'")
+        case "abc" => fail("unexpected match on 'abc'")
+        case x     => assertEq(expected = "def", x)
     }
 
 }

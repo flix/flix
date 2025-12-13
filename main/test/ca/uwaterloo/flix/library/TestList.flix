@@ -1621,32 +1621,49 @@ mod TestList {
     /////////////////////////////////////////////////////////////////////////////
     // groupBy                                                                 //
     /////////////////////////////////////////////////////////////////////////////
-     def listToNel(head: v, list: List[v]): Nel[v] =
+
+    def listToNel(head: v, list: List[v]): Nel[v] =
         (Nel.singleton(head), list) ||> List.foldLeft(acc -> cur -> Nel.cons(cur, acc)) |> Nel.reverse
 
-    @Test
-    def groupBy01(): Unit \ Assert = assertEq(expected = Nil, List.groupBy((a, b) -> a > 3 or b > 8, (Nil: List[Int32])))
+    enum A with ToString {
+        case A(Int32, Int32)
+    }
+
+    instance Eq[A] {
+        pub def eq(l1: A, l2: A): Bool = match (l1, l2) {
+            case (A.A(x, _), A.A(y, _)) => x == y
+        }
+    }
 
     @Test
-    def groupBy02(): Unit \ Assert = assertEq(expected = (Nel.singleton(1)) :: Nil, List.groupBy((a, b) -> a > 3 or b > 8, 1 :: Nil))
+    def groupBy01(): Unit \ Assert = assertEq(expected = Nil, List.groupBy(identity, (Nil: List[A])))
 
     @Test
-    def groupBy03(): Unit \ Assert = assertEq(expected = Nel.singleton(1) :: Nel.singleton(4) :: Nil, List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: Nil))
+    def groupBy02(): Unit \ Assert = assertEq(expected = (Nel.singleton(A.A(1, 1))) :: Nil, List.groupBy(identity, (A.A(1, 1) :: Nil)))
 
     @Test
-    def groupBy04(): Unit \ Assert = assertEq(expected = (listToNel(1, 9 :: Nil)) :: Nil, List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 9 :: Nil))
+    def groupBy03(): Unit \ Assert = assertEq(expected = listToNel(A.A(1, 1), A.A(1, 2) :: A.A(1, 1) :: Nil) :: (listToNel(A.A(2, 1), A.A(2, 4) :: Nil)) :: Nil, List.groupBy(identity, (A.A(1, 1) :: A.A(2, 1) :: A.A(1, 2) :: A.A(1, 1) :: A.A(2, 4) :: Nil)))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // groupWith                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def groupBy05(): Unit \ Assert =
-        assertEq(expected = listToNel(1, 9 :: 16 :: Nil) :: listToNel(4, 7 :: 6 :: 4 :: 4 :: 8 :: Nil) :: listToNel(2, Nil) :: Nil, List.groupBy((a, b) -> a > 3 or b > 8, 1 :: 4 :: 7 :: 6 :: 9 :: 2 :: 4 :: 4 :: 8 :: 16 :: Nil))
+    def groupWith01(): Unit \ Assert = assertEq(expected = Nil, List.groupWith((a, b) -> a > 3 and b > 3, (Nil: List[Int32])))
 
     @Test
-    def groupBy06(): Unit \ Assert =
-        assertEq(expected = listToNel(-1, -11 :: -11 :: 0 :: -3 :: -24 :: Nil) :: listToNel(4, 8 :: 2 :: 1 :: Nil) :: Nil, List.groupBy((a, b) -> a > -6 or a*b >= 0, -1 :: -11 :: 4 :: -11 :: 0 :: 8 :: 2 :: 1 :: -3 :: -24 :: Nil))
+    def groupWith02(): Unit \ Assert = assertEq(expected = (Nel.singleton(1)) :: Nil, List.groupWith((a, b) -> a > 3 and b > 3, 1 :: Nil))
 
     @Test
-    def groupBy07(): Unit \ Assert =
-        assertEq(expected = listToNel(-5, 11 :: -11 :: -1 :: -1 :: Nil) :: listToNel(6, Nil) :: listToNel(8, 8 :: Nil) :: listToNel(0, Nil) :: listToNel(4, Nil) :: Nil, List.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), -5 :: 6 :: 11 :: 8 :: 8 :: -11 :: -1 :: 0 :: 4 :: -1 :: Nil))
+    def groupWith03(): Unit \ Assert = assertEq(expected = Nel.singleton(1) :: Nel.singleton(4) :: Nil, List.groupWith((a, b) -> a > 3 and b > 3, 1 :: 4 :: Nil))
+
+    @Test
+    def groupWith04(): Unit \ Assert = assertEq(expected = (listToNel(4, 9 :: Nil)) :: Nil, List.groupWith((a, b) -> a > 3 and b > 3, 4 :: 9 :: Nil))
+
+    @Test
+    def groupWith05(): Unit \ Assert =
+        assertEq(expected = listToNel(1, 2 :: Nil) :: listToNel(4, 7 :: 6 :: 9 :: 4 :: 4 :: 8 :: 16 :: Nil) :: listToNel(-1, -5 :: 0 :: Nil) :: Nil, List.groupWith((a, b) -> (a > 3 and b > 3) or (a < 1 and b < 1) or ((a >= 1 and a <= 3) and (b >= 1 and b <= 3)), 1 :: 4 :: 7 :: 6 :: 9 :: 2 :: 4 :: -1 :: 4 :: -5 :: 8 :: 16 :: 0 :: Nil))
+
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
@@ -2925,6 +2942,10 @@ mod TestList {
     @Test
     def literal06(): Unit \ Assert =
         assertFalse(List.isEmpty(List#{{}}))
+
+    @Test
+    def literal07(): Unit \ Assert =
+        assertTrue(List.isEmpty(List#{/**/}))
 
     /////////////////////////////////////////////////////////////////////////////
     // frequency                                                               //

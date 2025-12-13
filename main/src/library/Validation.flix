@@ -131,7 +131,7 @@ mod Validation {
     }
 
     ///
-    /// Returns `Success(f(v))` if `o` is `Success(v)`. Otherwise returns `v`.
+    /// Returns `Success(f(t))` if `v` is `Success(t)`. Otherwise returns `v`.
     ///
     pub def map(f: t -> u \ ef, v: Validation[e, t]): Validation[e, u] \ ef = match v {
         case Success(t) => Success(f(t))
@@ -171,7 +171,7 @@ mod Validation {
     ///
     /// Otherwise returns `Failure(e1 :: ... :: en)` with all of the failures concatenated.
     ///
-    /// This function is the "forgetful" version of `traverse`, use it when the you want the effect
+    /// This function is the "forgetful" version of `traverse`, use it when you want the effect
     /// of applying `f` to each element but do not care about collecting the results.
     ///
     pub def traverseX(f: a -> Validation[e, b] \ ef, l: List[a]): Validation[e, Unit] \ ef = match l {
@@ -218,7 +218,7 @@ mod Validation {
     ///
     /// Converts a Validation to a List.
     ///
-    /// Returns `t :: Nil` if `v` is `Success(v)`.
+    /// Returns `t :: Nil` if `v` is `Success(t)`.
     /// Returns `Nil` if `v` is `Failure(e)`.
     ///
     pub def toList(v: Validation[e, t]): List[t] = match v {

@@ -17,16 +17,17 @@ package ca.uwaterloo.flix.tools.pkg.github
 
 import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Result, StreamOps}
+import ca.uwaterloo.flix.util.Result
 import org.json4s.*
 import org.json4s.JsonAST.{JArray, JValue}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods.{compact, parse, render}
 
 import java.io.{IOException, InputStream}
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.{HttpClient, HttpRequest, HttpResponse}
 import java.net.{URI, URL}
-import java.nio.file.{Files, Path}
-import javax.net.ssl.HttpsURLConnection
+import java.nio.file.Path
 
 /**
   * An interface for the GitHub API.
@@ -57,12 +58,12 @@ object GitHub {
     */
   def getReleases(project: Project, apiKey: Option[String]): Result[List[Release], PackageError] = {
     val url = releasesUrl(project)
+    val reqBuilder = HttpRequest.newBuilder(url.toURI)
+    // add the API key as bearer if needed
+    apiKey.foreach(key => reqBuilder.header("Authorization", "Bearer " + key))
+    val req = reqBuilder.GET().build()
     val json = try {
-      val conn = url.openConnection()
-      // add the API key as bearer if needed
-      apiKey.foreach(key => conn.addRequestProperty("Authorization", "Bearer " + key))
-      val stream = conn.getInputStream
-      StreamOps.readAll(stream)
+      Client.sendRequest(req).body()
     } catch {
       case ex: IOException => return Err(PackageError.ProjectNotFound(url, project, ex))
     }
@@ -92,17 +93,21 @@ object GitHub {
     */
   private def verifyRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
     val url = releaseVersionUrl(project, version)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .GET()
+      .build()
 
     try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      // Send request
+      val resp = Client.sendRequest(req)
 
-      val code = conn.getResponseCode
+      // Process response errors
+      val code = resp.statusCode()
       code match {
         case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Ok(())
       }
-
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
     }
@@ -124,25 +129,23 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releasesUrl(project)
-    val json = try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
-      conn.setRequestMethod("POST")
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
-      conn.setDoOutput(true)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .header("Content-Type", "application/json")
+      .POST(BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
+      .build()
 
+    val json = try {
       // Send request
-      val outStream = conn.getOutputStream
-      outStream.write(jsonCompact.getBytes("utf-8"))
+      val resp = Client.sendRequest(req)
 
       // Process response errors
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
-        case 201 =>
-          val inStream = conn.getInputStream
-          StreamOps.readAll(inStream)
+        case 201 => resp.body()
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
         case 404 => return Err(ReleaseError.RepositoryNotFound(project))
-        case _ => return Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+        case _ => return Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
 
     } catch {
@@ -166,28 +169,24 @@ object GitHub {
     */
   private def uploadAsset(assetPath: Path, project: Project, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
     val assetName = assetPath.getFileName.toString
-    val assetData = Files.readAllBytes(assetPath)
 
     val url = releaseAssetUploadUrl(project, releaseId, assetName)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .header("Content-Type", "application/octet-stream")
+      .POST(BodyPublishers.ofFile(assetPath))
+      .build()
 
     try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
-
-      conn.setRequestMethod("POST")
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
-      conn.addRequestProperty("Content-Type", "application/octet-stream")
-      conn.setDoOutput(true)
-
       // Send request
-      val outStream = conn.getOutputStream
-      outStream.write(assetData)
+      val resp = Client.sendRequest(req)
 
       // Process response errors
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
         case 201 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
-        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
 
     } catch {
@@ -203,31 +202,25 @@ object GitHub {
     val jsonCompact = compact(render(content))
 
     val url = releaseIdUrl(project, releaseId)
+    val req = HttpRequest.newBuilder(url.toURI)
+      .header("Authorization", "Bearer " + apiKey)
+      .header("Content-Type", "application/json")
+      .method("PATCH", BodyPublishers.ofByteArray(jsonCompact.getBytes("utf-8")))
+      .build()
 
     try {
-      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
-
-      // Java doesn't recognize "PATCH" as a valid request method (???)
-      conn.setRequestMethod("POST")
-      conn.setRequestProperty("X-HTTP-Method-Override", "PATCH")
-
-      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
-      conn.setDoOutput(true)
-
       // Send request
-      val outStream = conn.getOutputStream
-      outStream.write(jsonCompact.getBytes("utf-8"))
+      val resp = Client.sendRequest(req)
 
       // Process response errors
-      val code = conn.getResponseCode
+      val code = resp.statusCode()
       code match {
         case 200 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.RepositoryNotFound(project))
         case 422 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
-        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, resp.body()))
       }
-
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
     }
@@ -321,5 +314,32 @@ object GitHub {
       case Some(semver) => semver
       case _ => throw new RuntimeException(s"Invalid semantic version: $str")
     }
+  }
+
+  /** A thread-safe HTTP Client. */
+  private object Client {
+
+    /**
+      * Internally re-used Http Client.
+      *
+      * Reusing the instance yields better performance since it can
+      * keep connections open.
+      *
+      * This field should only be accessed in a thread-safe manner, e.g.,
+      * such as using `this.synchronized` blocks or some other locking mechanism.
+      */
+    private val HTTP_CLIENT: HttpClient = HttpClient.newHttpClient()
+
+    /**
+      * Sends the HTTP request, `request`, and returns the response.
+      *
+      * Is blocking and thread-safe.
+      *
+      * May throw [[IOException]].
+      */
+    def sendRequest(request: HttpRequest): HttpResponse[String] = this.synchronized {
+      HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
+    }
+
   }
 }

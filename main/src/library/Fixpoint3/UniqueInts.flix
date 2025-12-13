@@ -29,7 +29,6 @@
 ///
 
 mod Fixpoint3 {
-    @Internal
     struct UniqueInts[k: Type, r: Region] {
         map: MutMap[k, Int32, r],
         counter: Counter[r]
@@ -42,7 +41,6 @@ mod Fixpoint3 {
         ///
         /// Returns an empty mapping from `k` to identifiers.
         ///
-        @Internal
         pub def empty(rc: Region[r]): UniqueInts[k, r] \ r =
             new UniqueInts @ rc {
                 map = MutMap.empty(rc),
@@ -55,7 +53,6 @@ mod Fixpoint3 {
         /// If an index does not exist for `val` it is created.
         /// Otherwise the existing index for `val` is returned.
         ///
-        @Internal
         pub def createIndex(val: k, state: UniqueInts[k, r]): Int32 \ r with Order[k] =
             let map = state->map;
             let counter = state->counter;
@@ -70,7 +67,6 @@ mod Fixpoint3 {
         ///
         /// Returns the current mapping of `state` as a map.
         ///
-        @Internal
         pub def toMap(state: UniqueInts[k, r]): Map[k, Int32] \ r = {
             MutMap.toMap(state->map)
         }
@@ -78,7 +74,6 @@ mod Fixpoint3 {
         ///
         /// Returns the maximal assigned identifier of `state`.
         ///
-        @Internal
         pub def get(state: UniqueInts[k, r]): Int32 \ r = {
             Counter.get(state->counter)
         }
@@ -87,7 +82,6 @@ mod Fixpoint3 {
         /// Returns an `ReverseUniqueInts` of `state` allowing mapping identifiers
         /// back to the values they represent.
         ///
-        @Internal
         pub def reverse(state: UniqueInts[k, r]): Map[Int32, k] \ r with Order[k] =
             let map = state->map;
             let reverseMap = MutMap.foldLeftWithKey(acc -> key -> val -> Map.insert(val, key, acc), Map#{}, map);

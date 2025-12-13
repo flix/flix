@@ -196,6 +196,11 @@ object Bootstrap {
   private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/").normalize()
 
   /**
+    * Returns the directory of the generated documentation files relative to the given path `p`.
+    */
+  private def getDocumentationDirectory(p: Path): Path = getBuildDirectory(p).resolve("./doc/").normalize()
+
+  /**
     * Returns the path to the artifact directory relative to the given path `p`.
     */
   private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
@@ -455,6 +460,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     val buildDir = Bootstrap.getBuildDirectory(projectPath)
+    val classDir = Bootstrap.getClassDirectory(projectPath)
+    val docDir = Bootstrap.getDocumentationDirectory(projectPath)
 
     // Ensure `buildDir` is not dangerous
     checkForDangerousPath(buildDir) match {
@@ -465,12 +472,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Ensure all files in `buildDir` are valid class files.
     val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
     for (file <- files) {
-      if (!FileOps.checkExt(file, "class")) {
-        return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
-      }
+      if (file.startsWith(classDir)) {
+        if (!FileOps.checkExt(file, "class")) {
+          return Err(BootstrapError.FileError(s"Unexpected file extension in build directory (only '.class' files are allowed): '${projectPath.relativize(file)}'"))
+        }
 
-      if (!FileOps.isClassFile(file)) {
-        return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
+        if (!FileOps.isClassFile(file)) {
+          return Err(BootstrapError.FileError(s"Invalid class file in build directory: '${projectPath.relativize(file)}'"))
+        }
+      } else if (file.startsWith(docDir)) {
+        isValidDocumentFile(file) match {
+          case Err(e) => return Err(e)
+          case Ok(()) => ()
+        }
+      } else {
+        return Err(BootstrapError.FileError(s"Unexpected directory in build directory: '${projectPath.relativize(file)}'"))
       }
 
       checkForDangerousPath(file) match {
@@ -566,6 +582,23 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
+  }
+
+  /** Returns `Err` if `path` is not a file that could be produced by [[HtmlDocumentor]]. */
+  private def isValidDocumentFile(path: Path): Result[Unit, BootstrapError] = {
+    val knownFiles = List("favicon.png", "index.js", "styles.css")
+    if (knownFiles.contains(path.getFileName.toString)) {
+      return Ok(())
+    }
+    if (FileOps.checkExt(path, "html")) {
+      return Ok(())
+    }
+    val iconsDir = Bootstrap.getDocumentationDirectory(projectPath).resolve("./icons/").normalize()
+    if (path.startsWith(iconsDir) && FileOps.checkExt(path, "svg")) {
+      return Ok(())
+    }
+
+    Err(BootstrapError.FileError(s"Unexpected file '${projectPath.relativize(path)}'. Refusing to run 'clean'."))
   }
 
   /**
@@ -1021,7 +1054,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter))))
           }
       }
     }
@@ -1035,7 +1068,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val previousSources = timestamps.keySet
 
       for (path <- sourcePaths if hasChanged(path)) {
-        flix.addFlix(path)(SecurityContext.Unrestricted)
+        flix.addFile(path)(SecurityContext.Unrestricted)
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
@@ -1054,7 +1087,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
-        flix.remSourceCode(path.toString)
+        flix.remFile(path)(SecurityContext.Unrestricted)
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap

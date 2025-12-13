@@ -8,6 +8,8 @@ import ca.uwaterloo.flix.util.{LocalResource, Options, StatUtils}
 import org.json4s.JsonDSL.*
 import org.json4s.native.JsonMethods
 
+import java.nio.file.Path
+
 /**
   * A collection of internal utilities to measure the performance of the Flix compiler itself.
   */
@@ -249,8 +251,8 @@ object BenchmarkCompilerOld {
     */
   private def addInputs(flix: Flix): Unit = {
     implicit val sctx: SecurityContext = SecurityContext.Unrestricted
-    flix.addSourceCode("Test.Exp.Fixpoint.PQuery.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
-    flix.addSourceCode("Test.Exp.Fixpoint.PSolve.flix", LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
+    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PQuery.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PQuery.flix"))
+    flix.addVirtualPath(Path.of("Test.Exp.Fixpoint.PSolve.flix"), LocalResource.get("/test/flix/Test.Exp.Fixpoint.PSolve.flix"))
   }
 
   case object SummaryStatistics {

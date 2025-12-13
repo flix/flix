@@ -487,6 +487,32 @@ class TestNamer extends AnyFunSuite with TestUtils {
     expectError[NameError.DuplicateUpperName](result)
   }
 
+  test("DuplicateUpperName.29") {
+    val input =
+      """
+        |enum S {case S}
+        |enum S {}
+        |def main(): Unit = {
+        |    discard S.S
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  test("DuplicateUpperName.30") {
+    val input =
+      """
+        |enum S {}
+        |enum S {case S}
+        |def main(): Unit = {
+        |    discard S.S
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
   test("DuplicateUpperName.Tag.01") {
     val input =
       """enum Color {

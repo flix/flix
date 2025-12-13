@@ -537,7 +537,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Unit))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, "<test>")
+    val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -553,7 +553,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Int32))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, "<test>")
+    val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -569,7 +569,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Int32)), Cst(Unit))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "toUnit", scheme, "<test>")
+    val expected = SDef(List.empty, "toUnit", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -585,7 +585,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
 
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "answer", scheme, "<test>")
+    val expected = SDef(List.empty, "answer", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -609,14 +609,14 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
             Apply(
               Apply(
                 Cst(Arrow(2)), Cst(Pure)
-              ), Var(VarSym(Text("a"), StarKind))
+              ), Var(VarSym(0, Text("a"), StarKind))
             ), Cst(Int32)
           )
-        ), Var(VarSym(Text("a"), StarKind))
+        ), Var(VarSym(0, Text("a"), StarKind))
       ), Cst(Int32)
     )
-    val scheme = SScheme(List(VarSym(Text("a"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List(), "toInt32", scheme, "<test>")
+    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), List.empty, List.empty, tpe)
+    val expected = SDef(List(), "toInt32", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -634,9 +634,9 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def pretty(x: a): String with ToString[a] = ToString.toString(x)
         |""".stripMargin
 
-    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(Text("a"), StarKind))), Cst(Str))
-    val scheme = SScheme(List(VarSym(Text("a"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(Text("a"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "pretty", scheme, "<test>")
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(0, Text("a"), StarKind))), Cst(Str))
+    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(0, Text("a"), StarKind)))), List.empty, tpe)
+    val expected = SDef(List.empty, "pretty", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -658,9 +658,9 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def prettyPrint(x: t): Unit \ A with ToString[t] = A.thing(ToString.toString(x))
         |""".stripMargin
 
-    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(EffSym(List.empty, "A"), EffKind))), Var(VarSym(Text("t"), StarKind))), Cst(Unit))
-    val scheme = SScheme(List(VarSym(Text("t"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(Text("t"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme, "<test>")
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(EffSym(List.empty, "A"), EffKind))), Var(VarSym(0, Text("t"), StarKind))), Cst(Unit))
+    val scheme = SScheme(List(VarSym(0, Text("t"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(0, Text("t"), StarKind)))), List.empty, tpe)
+    val expected = SDef(List.empty, "prettyPrint", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -682,7 +682,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
       Apply(
         Apply(
           Apply(
-            Cst(Arrow(3)), Var(VarSym(Text("ef"), EffKind))
+            Cst(Arrow(3)), Var(VarSym(0, Text("ef"), EffKind))
           ),
           Apply(
             Apply(
@@ -690,15 +690,15 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
                 Cst(Arrow(2)),
                 Apply(
                   Apply(
-                    Cst(Difference), Var(VarSym(Text("ef"), EffKind))
+                    Cst(Difference), Var(VarSym(0, Text("ef"), EffKind))
                   ), Cst(Effect(EffSym(List(), "A"), EffKind)))
-              ), Var(VarSym(Text("a"), StarKind))
-            ), Var(VarSym(Text("b"), StarKind)))
-        ), Var(VarSym(Text("a"), StarKind))
-      ), Var(VarSym(Text("b"), StarKind))
+              ), Var(VarSym(0, Text("a"), StarKind))
+            ), Var(VarSym(1, Text("b"), StarKind)))
+        ), Var(VarSym(0, Text("a"), StarKind))
+      ), Var(VarSym(1, Text("b"), StarKind))
     )
-    val scheme = SScheme(List(VarSym(Text("a"), StarKind), VarSym(Text("ef"), EffKind), VarSym(Text("b"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme, "<test>")
+    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind), VarSym(0, Text("ef"), EffKind), VarSym(1, Text("b"), StarKind)), List.empty, List.empty, tpe)
+    val expected = SDef(List.empty, "prettyPrint", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -716,7 +716,7 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
     val alias = Alias(TypeAliasSym(List.empty, "Num"), List.empty, Cst(Int32))
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), alias), alias)
     val scheme = SScheme(List.empty, List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "fun", scheme, "<test>")
+    val expected = SDef(List.empty, "fun", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
@@ -735,11 +735,11 @@ class TestEffectLock extends AnyFunSuite with TestUtils {
         |pub def h(q: a -> T.B[a], x: a): T.B[a] = q(x)
         |""".stripMargin
 
-    val a = VarSym(Text("a"), StarKind)
+    val a = VarSym(0, Text("a"), StarKind)
     val tb = AssocTypeSym(TraitSym(List(), "T"), "B")
     val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, Var(a), StarKind))), Var(a)), AssocType(tb, Var(a), StarKind))
     val scheme = SScheme(List(a), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "h", scheme, "<test>")
+    val expected = SDef(List.empty, "h", scheme, CompilerConstants.VirtualTestFile.toString)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)

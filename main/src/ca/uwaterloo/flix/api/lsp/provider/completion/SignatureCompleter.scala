@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.SigCompletion
 import ca.uwaterloo.flix.api.lsp.{Position, Range}
-import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Namespace, Sig, Trait}
+import ca.uwaterloo.flix.language.ast.NamedAst.Declaration.{Mod, Sig, Trait}
 import ca.uwaterloo.flix.language.ast.shared.{AnchorPosition, LocalScope, Resolution}
 import ca.uwaterloo.flix.language.ast.{Name, Symbol, TypedAst}
 
@@ -68,7 +68,7 @@ object SignatureCompleter {
   private def partiallyQualifiedCompletions(qn: Name.QName, range: Range, ap: AnchorPosition, scp: LocalScope, ectx: ExprContext)(implicit root: TypedAst.Root): Iterable[Completion] = {
     val fullyQualifiedNamespaceHead = scp.resolve(qn.namespace.idents.head.name) match {
       case Some(Resolution.Declaration(Trait(_, _, _, name, _, _, _, _, _, _))) => name.toString
-      case Some(Resolution.Declaration(Namespace(name, _, _, _))) => name.toString
+      case Some(Resolution.Declaration(Mod(name, _, _, _))) => name.toString
       case _ => return Nil
     }
     val namespaceTail = qn.namespace.idents.tail.map(_.name).mkString(".")

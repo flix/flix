@@ -60,7 +60,6 @@ mod Fixpoint3.BoxingType {
     /// know the type of `x` in the body atom `P(x)` until we meet a value, (for instance
     /// `P(1)`)
     ///
-    @Internal
     pub enum Types {
         case TyUnknown
         case TyBool
@@ -78,7 +77,6 @@ mod Fixpoint3.BoxingType {
     /// Describes the placement of type-information of a group of values that share the
     /// same type.
     ///
-    @Internal
     pub type alias UnifiedTypePos = Int32
 
     ///
@@ -90,14 +88,12 @@ mod Fixpoint3.BoxingType {
     ///
     /// Store the type `t` of a value saved at `index` in `typeInfo`.
     ///
-    @Internal
     pub def setType(t: Types, index: UnifiedTypePos, typeInfo: TypeInfo[r]): Unit \ r =
         Array.put(t, index, typeInfo)
 
     ///
     /// Return the type of value saved at `index` in `typeInfo`.
     ///
-    @Internal
     pub def getType(index: Int32, typeInfo: TypeInfo[r]): Types \ r =
         Array.get(index, typeInfo)
 
@@ -122,7 +118,6 @@ mod Fixpoint3.BoxingType {
     ///
     /// `locks[i]` must be acquired before a specific `values[i]` can be interacted with.
     ///
-    @Internal
     pub type alias Boxing[r: Region] = (
         Vector[MutList[Boxed, r]],
         Vector[BPlusTree[Boxed, Int64, r]],

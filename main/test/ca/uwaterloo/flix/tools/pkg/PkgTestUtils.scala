@@ -26,7 +26,7 @@ object PkgTestUtils {
     * GitHub token of the CI runner if available.
     */
   val gitHubToken: Option[String] = {
-    val propValue = System.getProperty("GITHUB_CI_RUNNER_TOKEN")
+    val propValue = System.getenv("GITHUB_CI_RUNNER_TOKEN")
     if (propValue == null || propValue.isBlank || propValue.isEmpty)
       None
     else
