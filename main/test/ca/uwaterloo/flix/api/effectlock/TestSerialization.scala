@@ -331,7 +331,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
@@ -354,7 +354,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
@@ -373,7 +373,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
@@ -390,7 +390,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
     val erasedBaseType = Type.eraseAliases(defn.spec.declaredScheme.base)
-    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme.copy(base = erasedBaseType)))
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme.copy(base = erasedBaseType)))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
@@ -410,7 +410,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val defs = root.defs.keys.flatMap(root.defs.get)
     val defn = defs.head
-    val expected = (defn.sym, Serialize.alpha(defn.spec.declaredScheme))
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
 
     assert(actual == expected)
