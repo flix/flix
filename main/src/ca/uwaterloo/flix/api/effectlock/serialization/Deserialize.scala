@@ -1,6 +1,5 @@
 package ca.uwaterloo.flix.api.effectlock.serialization
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.shared.SymUse.{AssocTypeSymUse, TraitSymUse}
 import ca.uwaterloo.flix.language.ast.shared.{EqualityConstraint, Scope, TraitConstraint, VarText}
 import ca.uwaterloo.flix.language.ast.{Kind, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
@@ -9,7 +8,7 @@ import scala.collection.immutable.SortedSet
 
 object Deserialize {
 
-  def deserializeDef(defn0: SDef)(implicit flix: Flix): (Symbol.DefnSym, Scheme) = defn0 match {
+  def deserializeDef(defn0: SDef): (Symbol.DefnSym, Scheme) = defn0 match {
     case SDef(namespace, text, scheme) =>
       val ns = namespace.mkString(".")
       val t = if (ns.isBlank || ns.isEmpty) text else s".$text"
@@ -18,13 +17,13 @@ object Deserialize {
       sym -> sc
   }
 
-  private def deserializeScheme(sc0: SScheme)(implicit flix: Flix): Scheme = sc0 match {
+  private def deserializeScheme(sc0: SScheme): Scheme = sc0 match {
     case SScheme(quantifiers, tconstrs, econstrs, base) =>
       val qs = quantifiers.map(deserializeKindedTypeVarSym)
       Scheme(qs, tconstrs.map(deserializeTraitConstraint), econstrs.map(deserializeEqualityConstraint), deserializeType(base))
   }
 
-  private def deserializeType(tpe0: SType)(implicit flix: Flix): Type = tpe0 match {
+  private def deserializeType(tpe0: SType): Type = tpe0 match {
     case Var(sym) => Type.Var(deserializeKindedTypeVarSym(sym), SourceLocation.Unknown)
     case Cst(tc) => Type.Cst(deserializeTypeConstructor(tc), SourceLocation.Unknown)
     case Apply(tpe1, tpe2) => Type.Apply(deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
@@ -191,12 +190,12 @@ object Deserialize {
     Name.NName(ns0.map(deserializeIdent), SourceLocation.Unknown)
   }
 
-  private def deserializeEqualityConstraint(econstr0: EqConstr)(implicit flix: Flix): EqualityConstraint = econstr0 match {
+  private def deserializeEqualityConstraint(econstr0: EqConstr): EqualityConstraint = econstr0 match {
     case EqConstr(sym, tpe1, tpe2) =>
       EqualityConstraint(deserializeAssocTypeSymUse(sym), deserializeType(tpe1), deserializeType(tpe2), SourceLocation.Unknown)
   }
 
-  private def deserializeTraitConstraint(tconstr0: TraitConstr)(implicit flix: Flix): TraitConstraint = tconstr0 match {
+  private def deserializeTraitConstraint(tconstr0: TraitConstr): TraitConstraint = tconstr0 match {
     case TraitConstr(sym, tpe) =>
       TraitConstraint(TraitSymUse(deserializeTraitSym(sym), SourceLocation.Unknown), deserializeType(tpe), SourceLocation.Unknown)
   }
