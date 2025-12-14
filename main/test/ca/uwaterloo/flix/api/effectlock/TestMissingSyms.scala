@@ -262,7 +262,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
   test("MissingSyms.13") {
     val input =
       """
-        |pub def f(x: a): String with ToString[a], Bla[a] = ToString.toString(x)
+        |pub def f(x: a): String with ToString[a] = Bla.write(ToString.toString(x))
         |pub def g(x: a): Unit with Bla[a] = h(x)
         |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
         |
