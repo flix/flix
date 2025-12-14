@@ -35,14 +35,6 @@ pub mod MutDisjointSets {
         mut rank: Int32
     }
 
-    mod Node {
-        pub def parent(n: Node[t, r]): Option[Node[t, r]] \ r = n->parent
-        pub def rank(n: Node[t, r]): Int32 \ r = n->rank
-        pub def incrementRank(n: Node[t, r]): Unit \ r = n->rank = n->rank + 1
-        pub def setParent(newParent: Option[Node[t, r]], n: Node[t, r]): Unit \ r = n->parent = newParent
-        pub def value(n: Node[t, r]): t = n->value
-    }
-
     ///
     /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
