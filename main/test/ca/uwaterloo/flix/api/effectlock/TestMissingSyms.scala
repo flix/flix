@@ -67,7 +67,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = exclude("g", root)
+    val filtered = excludeDef("g", root)
     val result = MissingSyms.run(filtered)
     assert(containsDef("g", result))
   }
@@ -81,7 +81,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = exclude("g", root)
+    val filtered = excludeDef("g", root)
     val result = MissingSyms.run(filtered)
     assert(containsDef("g", result))
   }
@@ -99,7 +99,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = exclude("a", exclude("b", exclude("c", root)))
+    val filtered = excludeDefs(List("a", "b", "c"), root)
     val result = MissingSyms.run(filtered)
     assert(
       containsDef("a", result) &&
@@ -108,12 +108,41 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
     )
   }
 
-  private def exclude(defn0: String, root: TypedAst.Root): TypedAst.Root = {
+  test("MissingSyms.07") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a] = ToString.toString(x)
+        |
+        |trait ToString[a: Type] {
+        |
+        |    pub def toString(x: a): String
+        |
+        |}
+        |""".stripMargin
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeSig("ToString.toString", root)
+    val result = MissingSyms.run(filtered)
+    assert(containsSig("ToString.toString", result))
+  }
+
+  private def excludeDef(defn0: String, root: TypedAst.Root): TypedAst.Root = {
     root.copy(defs = root.defs.filter { case (sym, _) => sym.toString != defn0 })
+  }
+
+  private def excludeDefs(defs0: List[String], root: TypedAst.Root): TypedAst.Root = {
+    defs0.foldLeft(root)((r, defn) => excludeDef(defn, r))
+  }
+
+  private def excludeSig(sig0: String, root: TypedAst.Root): TypedAst.Root = {
+    root.copy(sigs = root.sigs.filter { case (sym, _) => sym.toString != sig0 })
   }
 
   private def containsDef(defn0: String, root: MissingSyms): Boolean = {
     root.defs.exists(g => g.toString == defn0)
+  }
+
+  private def containsSig(sig0: String, root: MissingSyms): Boolean = {
+    root.sigs.exists(g => g.toString == sig0)
   }
 
 }
