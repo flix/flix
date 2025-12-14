@@ -27,10 +27,6 @@ import scala.collection.immutable.SortedSet
 
 object EffectUpgrade {
 
-  private def debug(obj: Object): Unit = {
-    println(s"[DEBUG] $obj")
-  }
-
   /**
     * Returns `true` if `upgrade` is a safe upgrade of `original`.
     *
@@ -39,18 +35,10 @@ object EffectUpgrade {
     *   - `upgrade` is a monomorphic downgrade of `original`.
     */
   def isEffSafeUpgrade(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
-    debug(s"original = $original")
-    debug(s"upgrade = $upgrade")
     // Alpha rename so equality of types can be done via `==`.
     val orig = Util.alpha(original)
     val upgr = Util.alpha(upgrade)
-    debug(s"orig = $orig")
-    debug(s"upgr = $upgr")
-    val res1 = isGeneralizable(original, upgrade)
-    debug(s"isGeneralizable(original, upgrade) = $res1")
-    val res2 = isSubset(orig, upgr)
-    debug(s"isSubset(orig, upgr) = $res2")
-    res1 || res2
+    isGeneralizable(original, upgrade) || isSubset(orig, upgr)
   }
 
   /**
@@ -65,13 +53,9 @@ object EffectUpgrade {
     implicit val eqEnv: EqualityEnv = EqualityEnv.empty
     val renv = RigidityEnv.apply(SortedSet.from(original.quantifiers))
     val unification = ConstraintSolver2.fullyUnify(original.base, upgrade.base, Scope.Top, renv)
-
     unification match {
-      case Some(subst) =>
-        original.base == subst(upgrade.base)
-
-      case None =>
-        false
+      case Some(subst) => original.base == subst(upgrade.base)
+      case None => false
     }
   }
 
@@ -80,20 +64,14 @@ object EffectUpgrade {
     *
     * 𝜑 ∪ 𝜑' ≡ 𝜑
     * ----------
-    * 𝜏1 −→ 𝜏2 \ 𝜑 ⪯ 𝜏1 -→ 𝜏2 \ 𝜑′
+    * 𝜏1 −→ 𝜏2 \ 𝜑' ⪯ 𝜏1 -→ 𝜏2 \ 𝜑
     *
     * `𝜑` are the effects of `original` and `𝜑'` are the effects of `upgrade`.
     *
     * Assumes that `original` and `upgrade` have been alpha-renamed so the variables have the same names if they are equal.
     */
   private def isSubset(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
-    val res1 = isSameType(original, upgrade)
-    val res2 = isEffectSubset(original, upgrade)
-    debug(s"[isSubset]: original = $original")
-    debug(s"[isSubset]: upgrade = $upgrade")
-    debug(s"[isSubset]: isSameType(original, upgrade) = $res1")
-    debug(s"[isSubset]: isEffectSubset(original, upgrade) = $res2")
-    res1 && res2
+    isSameType(original, upgrade) && isEffectSubset(original, upgrade)
   }
 
   /**
@@ -102,32 +80,35 @@ object EffectUpgrade {
     */
   private def isSameType(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = (original.base.typeConstructor, upgrade.base.typeConstructor) match {
     case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
-      // Check same args
-      debug(s"[isSameType]: original.base.arrowArgTypes = ${original.base.arrowArgTypes}")
-      debug(s"[isSameType]: upgrade.base.arrowArgTypes = ${upgrade.base.arrowArgTypes}")
-      val isSameArgs = ListOps.zip(original.base.arrowArgTypes, upgrade.base.arrowArgTypes).map {
-        case (argTpe1, argTpe2) => (original.copy(base = argTpe1), upgrade.copy(base = argTpe2))
-      }.forall { case (argOrig, argUpgr) => argOrig == argUpgr } // Scheme.lessThanEqual(upgrade, orig) or recursive isSameType(sc1, sc2) or Scheme.equals?
-
-      // Check same result
-      val isSameResult = (original.base.arrowResultType.typeConstructor, upgrade.base.arrowResultType.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(n03)), Some(TypeConstructor.Arrow(n04))) if n03 == n04 =>
-          // Check relation holds recursively if result is a function
-          isSubset(original.copy(base = original.base.arrowResultType), upgrade.copy(base = upgrade.base.arrowResultType))
-
-        case (_, _) =>
-          debug(s"[isSameType]: Base result case: original.base.arrowResultType == upgrade.base.arrowResultType = ${original.base.arrowResultType == upgrade.base.arrowResultType}")
-          original.base.arrowResultType == upgrade.base.arrowResultType // Scheme.equals?
-      }
-
-      // Assert both hold
-      isSameArgs && isSameResult
+      isSameArgTypes(original, upgrade) && isSameResultType(original, upgrade)
 
     case (_, _) =>
-      // Base case: Non-arrow types. Directly compare for equality
-      debug(s"[isSameType]: Non-arrow type: $original")
-      debug(s"[isSameType]: Non-arrow type: $upgrade")
+      // Base case: Non-arrow types. Directly compare types for equality
       original.base == upgrade.base
+  }
+
+  /**
+    * Checks the argument types of schemes `original` and `upgrade` for equality,
+    * assuming that they are both arrow types of same arity.
+    */
+  private def isSameArgTypes(original: Scheme, upgrade: Scheme) = {
+    ListOps.zip(original.base.arrowArgTypes, upgrade.base.arrowArgTypes).map {
+      case (argTpe1, argTpe2) => (original.copy(base = argTpe1), upgrade.copy(base = argTpe2))
+    }.forall { case (argOrig, argUpgr) => argOrig == argUpgr }
+  }
+
+  /**
+    * Checks that [[isSubset]] holds for the result types of `original` and `upgrade`,
+    * assuming that they are both arrow types of same arity.
+    */
+  private def isSameResultType(original: Scheme, upgrade: Scheme)(implicit flix: Flix) = {
+    (original.base.arrowResultType.typeConstructor, upgrade.base.arrowResultType.typeConstructor) match {
+      case (Some(TypeConstructor.Arrow(n03)), Some(TypeConstructor.Arrow(n04))) if n03 == n04 =>
+        // Check relation holds recursively if result is a function
+        isSubset(original.copy(base = original.base.arrowResultType), upgrade.copy(base = upgrade.base.arrowResultType))
+
+      case (_, _) => original.base.arrowResultType == upgrade.base.arrowResultType
+    }
   }
 
   /**
@@ -135,8 +116,6 @@ object EffectUpgrade {
     */
   private def isEffectSubset(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = (original.base.typeConstructor, upgrade.base.typeConstructor) match {
     case (Some(TypeConstructor.Arrow(n01)), Some(TypeConstructor.Arrow(n02))) if n01 == n02 =>
-      debug(s"[isEffectSubset]: original = $original")
-      debug(s"[isEffectSubset]: upgrade = $upgrade")
       val originalEff = original.base.arrowEffectType
       val upgradeEff = upgrade.base.arrowEffectType
       val union = Type.mkUnion(originalEff, upgradeEff, upgradeEff.loc)
@@ -149,9 +128,7 @@ object EffectUpgrade {
       }
 
     case (_, _) =>
-      debug(s"[isEffectSubset]: Non-arrow type: original = $original")
-      debug(s"[isEffectSubset]: Non-arrow type: upgrade = $upgrade")
-      // Any non-arrow type has no effects so their effect sets do not exist and cannot be subsets of one anotherUtil.
+      // Any non-arrow type has no effects so their effect sets do not exist and cannot be subsets of one another.
       false
   }
 
