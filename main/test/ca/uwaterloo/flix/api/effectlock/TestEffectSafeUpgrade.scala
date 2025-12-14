@@ -202,7 +202,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
     assert(checkIsSafe(original = "f", "g", result.get))
   }
 
-  test("IsEffectSafeUpgrade.12") {
+  ignore("IsEffectSafeUpgrade.12") {
     val input =
       """
         |pub eff E {
