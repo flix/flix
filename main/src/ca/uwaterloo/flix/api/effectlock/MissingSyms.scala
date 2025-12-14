@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse
   * contain only definitions from the local program and find the
   * reachable library functions by calling [[run]].
   */
-object Reachability {
+object MissingSyms {
 
   /**
     * Returns the reachable missing symbols in `root`.
