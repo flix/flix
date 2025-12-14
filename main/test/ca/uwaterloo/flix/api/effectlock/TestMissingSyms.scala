@@ -117,13 +117,179 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |    pub def toString(x: a): String
         |}
         |""".stripMargin
+
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSig("ToString.toString", root)
     val result = MissingSyms.run(filtered)
     assert(containsSig("ToString.toString", result))
   }
 
-  test("MissingSyms.100") {
+  test("MissingSyms.08") {
+    val input =
+      """
+        |pub def f(g: a -> b, x: a): String with ToString[b] = ToString.toString(g(x))
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val result = MissingSyms.run(root)
+    assert(!containsDef("g", result))
+  }
+
+  test("MissingSyms.09") {
+    val input =
+      """
+        |pub def f(x: a): Unit with ToString[a], Bla[a] = Bla.write(ToString.toString(x))
+        |pub def g(x: a): Unit with Bla[a] = h(x)
+        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Bla[a: Type] {
+        |    pub def write(x: a): Unit
+        |}
+        |
+        |instance Bla[String] {
+        |    pub def write(_: String): Unit = ()
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeDef("h", excludeSigs(List("ToString.toString", "Bla.write"), root))
+    val result = MissingSyms.run(filtered)
+    assert(
+      containsDef("h", result) &&
+        containsSig("ToString.toString", result) &&
+        containsSig("Bla.write", result)
+    )
+  }
+
+  test("MissingSyms.10") {
+    val input =
+      """
+        |pub def f(x: a): Unit with ToString[a], Bla[a] = Bla.write(ToString.toString(x))
+        |pub def g(x: a): Unit with Bla[a] = h(x)
+        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Bla[a: Type] {
+        |    pub def write(x: a): Unit
+        |}
+        |
+        |instance Bla[String] {
+        |    pub def write(_: String): Unit = ()
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeSigs(List("ToString.toString", "Bla.write"), root)
+    val result = MissingSyms.run(filtered)
+    assert(
+      !containsDef("h", result) &&
+        containsSig("ToString.toString", result) &&
+        containsSig("Bla.write", result)
+    )
+  }
+
+  test("MissingSyms.11") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a], Bla[a] = ToString.toString(x)
+        |pub def g(x: a): Unit with Bla[a] = h(x)
+        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Bla[a: Type] {
+        |    pub def write(x: a): Unit
+        |}
+        |
+        |instance Bla[String] {
+        |    pub def write(_: String): Unit = ()
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeSigs(List("ToString.toString", "Bla.write"), root)
+    val result = MissingSyms.run(filtered)
+    assert(
+      !containsDef("h", result) &&
+        containsSig("ToString.toString", result) &&
+        containsSig("Bla.write", result)
+    )
+  }
+
+  test("MissingSyms.12") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a], Bla[a] = ToString.toString(x)
+        |pub def g(x: a): Unit with Bla[a] = h(x)
+        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Bla[a: Type] {
+        |    pub def write(x: a): Unit
+        |}
+        |
+        |instance Bla[String] {
+        |    pub def write(_: String): Unit = ()
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeSigs(List("ToString.toString"), root)
+    val result = MissingSyms.run(filtered)
+    assert(
+      !containsDef("h", result) &&
+        containsSig("ToString.toString", result) &&
+        !containsSig("Bla.write", result)
+    )
+  }
+
+  test("MissingSyms.13") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a], Bla[a] = ToString.toString(x)
+        |pub def g(x: a): Unit with Bla[a] = h(x)
+        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Bla[a: Type] {
+        |    pub def write(x: a): Unit
+        |}
+        |
+        |instance Bla[String] {
+        |    pub def write(_: String): Unit = ()
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeDef("h", excludeSigs(List("ToString.toString"), root))
+    val result = MissingSyms.run(filtered)
+    assert(
+      containsDef("h", result) &&
+        containsSig("ToString.toString", result) &&
+        containsSig("Bla.write", result)
+    )
+  }
+
+  test("MissingSyms.14") {
     val input =
       """
         |pub def f(x: a): String with ToString[a] = ToString.toString(x)
@@ -136,8 +302,28 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |    pub def unreachable(x: a): String
         |}
         |""".stripMargin
+
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeSig("ToString.toString", root)
+    val result = MissingSyms.run(root)
+    assert(!containsSig("Unused.unreachable", result))
+  }
+
+  test("MissingSyms.15") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a] = ToString.toString(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Unused[a: Type] {
+        |    pub def unreachable(x: a): String
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeSig("Unused.unreachable", root)
     val result = MissingSyms.run(filtered)
     assert(!containsSig("Unused.unreachable", result))
   }
@@ -152,6 +338,10 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
   private def excludeSig(sig0: String, root: TypedAst.Root): TypedAst.Root = {
     root.copy(sigs = root.sigs.filter { case (sym, _) => sym.toString != sig0 })
+  }
+
+  private def excludeSigs(sigs0: List[String], root: TypedAst.Root): TypedAst.Root = {
+    sigs0.foldLeft(root)((r, defn) => excludeSig(defn, r))
   }
 
   private def containsDef(defn0: String, root: MissingSyms): Boolean = {
