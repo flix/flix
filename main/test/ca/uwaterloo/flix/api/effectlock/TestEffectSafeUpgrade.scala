@@ -32,7 +32,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.02") {
@@ -44,7 +44,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.03") {
@@ -56,7 +56,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.04") {
@@ -72,7 +72,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.05") {
@@ -88,7 +88,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.06") {
@@ -104,7 +104,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.07") {
@@ -123,7 +123,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.08") {
@@ -142,7 +142,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.09") {
@@ -161,7 +161,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.10") {
@@ -180,7 +180,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.11") {
@@ -199,7 +199,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.12") {
@@ -218,7 +218,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   ignore("IsEffectSafeUpgrade.13") {
@@ -237,7 +237,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result.get))
+    assert(checkIsSafe(original = "g", "f", result.get))
   }
 
   ignore("IsEffectSafeUpgrade.14") {
@@ -256,7 +256,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result.get))
+    assert(checkIsSafe(original = "g", "f", result.get))
   }
 
   ignore("IsEffectSafeUpgrade.15") {
@@ -275,7 +275,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("g", "f", result.get))
+    assert(checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.16") {
@@ -287,7 +287,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.17") {
@@ -299,7 +299,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.18") {
@@ -311,7 +311,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.19") {
@@ -327,7 +327,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.20") {
@@ -343,7 +343,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.21") {
@@ -355,7 +355,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(checkIsSafe("f", "g", result.get))
+    assert(checkIsSafe(original = "f", "g", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.01") {
@@ -371,7 +371,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.02") {
@@ -387,7 +387,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.03") {
@@ -403,7 +403,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.04") {
@@ -422,7 +422,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.05") {
@@ -441,7 +441,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.06") {
@@ -460,7 +460,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.07") {
@@ -472,7 +472,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.08") {
@@ -484,7 +484,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.09") {
@@ -496,7 +496,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.10") {
@@ -508,7 +508,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.11") {
@@ -524,7 +524,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   test("IsEffectSafeUpgrade.Negative.12") {
@@ -540,7 +540,7 @@ class TestEffectSafeUpgrade extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val (result, _) = check(input, Options.TestWithLibNix)
-    assert(!checkIsSafe("g", "f", result.get))
+    assert(!checkIsSafe(original = "g", "f", result.get))
   }
 
   private def checkIsSafe(original: String, upgrade: String, root: TypedAst.Root): Boolean = {
