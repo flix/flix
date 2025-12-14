@@ -25,8 +25,7 @@ import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{ChaosMonkey, InternalCompilerException, ParOps}
 
-import java.net.URI
-import java.nio.file.{FileSystemNotFoundException, Path, Paths}
+import java.nio.file.{FileSystemNotFoundException, Path}
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -35,11 +34,6 @@ import scala.jdk.CollectionConverters.*
   * The Namer phase introduces unique symbols for each syntactic entity in the program.
   */
 object Namer {
-
-  /**
-    * When enabled, allows orphan modules, i.e. modules without a parent module.
-    */
-  private val AllowOrphans: Boolean = true
 
   /**
     * Introduces unique names for each syntactic entity in the given `program`.
@@ -82,10 +76,6 @@ object Namer {
     * Moreover, the module `A.B.C` must contain a module declaration for `D`.
     */
   private def checkOrphanModules(symbols: Map[Name.NName, Map[String, List[Declaration]]]): List[NameError] = {
-    if (AllowOrphans) {
-      return Nil
-    }
-
     // A collection of orphaned modules, their missing parent, and the source location of the orphan.
     val orphanedModules = mutable.Set.empty[(Symbol.ModuleSym, Symbol.ModuleSym, SourceLocation)]
 
