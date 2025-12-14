@@ -21,12 +21,19 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse
 
 /**
-  * Computes the set of reachable public library functions from the source project.
+  * Computes the set of reachable missing symbols in the program.
+  *
+  * For effect locking, the caller can filter the program down to
+  * contain only definitions from the local program and find the
+  * reachable library functions by calling [[run]].
   */
 object Reachability {
 
   case class ReachableSyms(defs: Set[Symbol.DefnSym], sigs: Set[Symbol.SigSym])
 
+  /**
+    * Computes the set of reachable symbols not present in `root`.
+    */
   def run(root: TypedAst.Root): ReachableSyms = {
     val initDefnSyms = root.defs.keys.map(ReachableSym.DefnSym.apply).toSet
     val initTraitSyms = root.traits.keys.map(ReachableSym.TraitSym.apply)
