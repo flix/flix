@@ -43,18 +43,6 @@ pub mod Http {
     ///
     pub enum Response({status = Int32, headers = Map[String, List[String]], body = String})
 
-    mod Response {
-        pub def status(r: Response): Int32 = match r {
-            case Response(x) => x#status
-        }
-        pub def headers(r: Response): Map[String, List[String]] = match r {
-            case Response(x) => x#headers
-        }
-        pub def body(r: Response): String = match r {
-            case Response(x) => x#body
-        }
-    }
-
     ///
     /// Send a `GET` request to the given `url` with the given `headers` and wait for the response.
     ///
