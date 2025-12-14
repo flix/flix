@@ -61,12 +61,11 @@ instance Formattable[MutList[a, r]] with Formattable[a] {
         fromString("MutList#{") + joinWith(Formattable.format, fromString(", "), MutList.toList(x)) + fromString("}")
 }
 
-mod MutList {
+pub mod MutList {
 
     ///
     /// Constant which stores the minimum capacity of a MutList.
     ///
-    @Internal
     pub def minCapacity(): Int32 = 8
 
     ///
@@ -258,7 +257,7 @@ mod MutList {
         if (v->length > 0) Some(Array.get(v->length - 1, v->values)) else None
 
     ///
-    /// Alias for `IndexOfLeft`
+    /// Alias for `indexOfLeft`
     ///
     pub def indexOf(x: a, v: MutList[a, r]): Option[Int32] \ r with Eq[a] =
         indexOfLeft(x, v)
@@ -391,8 +390,6 @@ mod MutList {
     ///
     /// Apply `f` to every element in `v`.
     ///
-    /// The result is an empty mutable list.
-    ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
             MutList.empty(rc1)
@@ -500,9 +497,9 @@ mod MutList {
         loop(0, s)
 
     ///
-    /// Applies `f` to a start value `s` and all elements in `a` going from left to right.
+    /// Applies `f` to a start value `s` and all elements in `v` going from right to left.
     ///
-    /// That is, the result is of the form: `f(...f(f(s, a[0]), a[1])..., xn)`.
+    /// That is, the result is of the form: `f(a[0], ...f(a[n-1], s)...)`.
     ///
     /// The implementation is tail recursive.
     ///

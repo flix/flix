@@ -72,23 +72,29 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     * This function compiles each file separately, so files cannot depend
     * each other. If that is a requirement use [[mkTestDirCollected]] instead.
     *
+    * If `prelude` is specified, it is always included.
+    *
     * Subdirectories are excluded.
     *
     */
-  def mkTestDir(path: String)(implicit options: Options): Unit = {
+  def mkTestDir(path: String, prelude: Option[String] = None)(implicit options: Options): Unit = {
     val files = FileOps.getFlixFilesIn(Paths.get(path), 1)
     for (p <- files) {
-      mkTest(p.toString)
+      mkTest(p.toString, prelude)
     }
   }
 
   /**
     * Runs all the tests in the file located at `path`.
     */
-  def mkTest(path: String)(implicit options: Options): Unit = {
+  def mkTest(path: String, prelude: Option[String])(implicit options: Options): Unit = {
     val p = Paths.get(path)
     val n = p.getFileName.toString
-    test(n)(compileAndRun(List(p)))
+    val ps = prelude match {
+      case None => List(p)
+      case Some(p2) => List(p, Paths.get(p2))
+    }
+    test(n)(compileAndRun(ps))
   }
 
   private def compileAndRun(paths: List[Path])(implicit options: Options): Unit = {
@@ -105,7 +111,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     // Add the given path.
     for (p <- paths) {
-      Flix.addFlix(p)
+      Flix.addFile(p)
     }
 
     try {
@@ -120,7 +126,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     } finally {
       // Remove the source path.
       for (p <- paths) {
-        Flix.remFlix(p)
+        Flix.remFile(p)
       }
     }
   }

@@ -22,7 +22,7 @@ instance UpperBound[Int64] {
     pub def maxValue(): Int64 = Int64.maxValue()
 }
 
-mod Int64 {
+pub mod Int64 {
 
     import java.lang.Long
     import java.lang.NumberFormatException
@@ -141,14 +141,14 @@ mod Int64 {
     }
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int64): Int64 =
         bitwiseOr(logicalRightShift(dist = dist#dist, x), leftShift(x, -dist#dist))
 
     ///
-    /// Returns the the value obtained by rotating the two's complement
+    /// Returns the value obtained by rotating the two's complement
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int64): Int64 =
@@ -216,7 +216,7 @@ mod Int64 {
 
     ///
     /// Returns a value with at most a single one-bit, in the position
-    /// of the highest-order/leftmost one-bit in `x`.
+    /// of the lowest-order/rightmost one-bit in `x`.
     /// Returns 0 if x=0.
     ///
     pub def lowestOneBit(x: Int64): Int64 =

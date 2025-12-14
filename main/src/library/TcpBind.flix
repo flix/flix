@@ -21,7 +21,7 @@ eff TcpBind {
     def bind(ip: IpAddr, port: Int16): TcpServer
 }
 
-mod TcpBind {
+pub mod TcpBind {
     use IoError.ErrorKind
     use IoError.IoError
 

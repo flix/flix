@@ -216,44 +216,21 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an inner function is annotated with an illegal annotation.
+    * An error raised to indicate that a specific annotation is not allowed here.
     *
     * @param loc the location of the illegal annotation.
     */
   case class IllegalAnnotation(loc: SourceLocation) extends WeederError {
-    override def summary: String = "Unexpected annotation on inner function."
+    override def summary: String = "Unexpected annotation."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation on local function.
+      s""">> Unexpected annotation not allowed here.
          |
          |${code(loc, "unexpected annotation")}
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
-  }
-
-  /**
-    * An error raised to indicate that a lowercase name was expected.
-    *
-    * @param name the non-lowercase name.
-    * @param loc  the location of the non-lowercase name.
-    */
-  case class UnexpectedNonLowerCaseName(name: String, loc: SourceLocation) extends WeederError {
-    override def summary: String = "Expected a lowercase name."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected non-lowercase name: '$name'
-         |
-         |${code(loc, "unexpected name")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -877,22 +854,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a name is not a valid Flix identifier.
-    */
-  case class MalformedIdentifier(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Malformed identifier: '$name'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Malformed identifier '${red(name)}'.
-         |
-         |${code(loc, "illegal identifier")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that an int is out of bounds.
     *
     * @param loc the location where the illegal int occurs.
@@ -1172,6 +1133,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an unexpected binary type operator.
+    *
+    * @param op  the unexpected operator.
+    * @param loc the location of the operator.
+    */
+  case class UnexpectedBinaryTypeOperator(op: String, loc: SourceLocation) extends WeederError {
+
+    override def summary: String = s"Unexpected binary type operator '$op'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter.*
+      s""">> Unexpected binary type operator.
+         |
+         |${code(loc, "unknown binary type operator.")}
+         |
+         |""".stripMargin
+    }
+
+  }
+
+  /**
     * An error raised to indicate an invalid function call in a select rule.
     *
     * @param qname the name of the function being called
@@ -1186,7 +1168,7 @@ object WeederError {
       import formatter.*
       s""">> Unexpected channel function.
          |
-         |${code(loc, s"select-rules must apply `Channel.recv` to the channel.")}
+         |${code(loc, "select-rules must apply `Channel.recv` to the channel.")}
          |
          |""".stripMargin
     }

@@ -94,7 +94,7 @@
 /// is met. If the query is deeply nested with some values bound higher up in the nesting,
 /// we do not need to evaluate these every time.
 ///
-mod Fixpoint3.Phase.Lowering {
+pub mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.ExecutableRam.WriteTuple
     use Fixpoint3.Ast.Ram
@@ -164,7 +164,6 @@ mod Fixpoint3.Phase.Lowering {
     ///
     /// Returns the result along with the `Boxing` used for the program
     ///
-    @Internal
     pub def lowerProgram(rc: Region[r], withProv: Bool, program: Ram.RamProgram): (ExecutableRam.RamProgram[r], Boxing[r]) \ r = match program {
         case Ram.RamProgram.Program(stmt, _, meta, indexInfo, typeInfo) =>
             let idToIndex = UniqueInts.empty(rc);
@@ -463,7 +462,7 @@ mod Fixpoint3.Phase.Lowering {
                 let (_, placements) = indexInfo;
                 let sPos = getOrCrash(Map.get((s, 0), placements));
                 Some(ExecutableRam.BoolExp.IsEmpty(sPos))
-            case Ram.BoolExp.NotMemberOf(terms, s) =>
+            case Ram.BoolExp.NotMemberOf(terms, s, _) =>
                 let (_, placements) = indexInfo;
                 let den = toDenotation(s);
                 let sPos = getOrCrash(Map.get((s, 0), placements));

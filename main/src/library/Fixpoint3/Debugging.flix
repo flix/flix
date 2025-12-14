@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Debugging {
+pub mod Fixpoint3.Debugging {
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.Ram
@@ -46,7 +46,6 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    @Internal
     pub def notifyPreSolve(d: Datalog): Datalog = unsafe IO {
         if (Options.enableDebugging()) region rc {
             let strings = MutList.empty(rc);
@@ -69,7 +68,6 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    @Internal
     pub def notifyPostSolve(d: Datalog): Datalog = unsafe IO {
         if (Options.enableDebugging() and Options.enableDebugPrintFacts()) region rc {
             let strings = MutList.empty(rc);
@@ -92,7 +90,6 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `d` to ensure it is not erased.
     ///
-    @Internal
     pub def notifyPreLowering(phase: String, program: Ram.RamProgram): Ram.RamProgram = match program {
         case Ram.RamProgram.Program(stmt, _, _, _, _) => unsafe IO {
             if (Options.enableDebugging()) region rc {
@@ -117,7 +114,6 @@ mod Fixpoint3.Debugging {
     ///
     /// Note: Returns `s` to ensure it is not erased.
     ///
-    @Internal
     pub def notifyPreInterpret(
         input: (ExecutableRam.RamProgram[r], BoxingType.Boxing[r])
     ): (ExecutableRam.RamProgram[r], BoxingType.Boxing[r]) = match fst(input) {

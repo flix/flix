@@ -155,7 +155,7 @@ instance ToFlix[List[a]] {
     pub def toFlix(l: JList): List[a] = Adaptor.fromList(l)
 }
 
-mod List {
+pub mod List {
 
     ///
     /// Renders the list `l` to a String.
@@ -447,7 +447,7 @@ mod List {
     ///
     /// Returns the result of applying `f` to every element in `l` along with that element's index.
     ///
-    /// That is, the result is of the form: `f(x1, 0) :: f(x2, 1) :: ...`.
+    /// That is, the result is of the form: `f(0, x0) :: f(1, x1) :: ...`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: List[a]): List[b] \ ef =
         def loop(ll, i, acc) = match ll {
@@ -961,15 +961,25 @@ mod List {
     /// A sublist is created by iterating through the remaining elements of `l` from left to right and adding an
     /// element to the sublist if and only if doing so creates no conflicts with the elements already in the sublist.
     ///
-    /// The function `f` must be pure.
+    /// The function `f` must be pure and define an equivalence relation.
     ///
-    pub def groupBy(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
+    pub def groupWith(f: (a, a) -> Bool, l: List[a]): List[Nel[a]] =
         (Nil, l) ||> List.foldLeft(acc -> value -> {
-            groupByHelper(value, f, acc)
+            groupWithHelper(value, f, acc)
         }) |> List.map(Nel.reverse)
 
     ///
-    /// Helper function for `groupBy`.
+    /// Partitions `l` into sublists such that for any two elements `x` and `y` in a sublist,
+    /// if `f(x)` and `f(y)` are equal according to `Eq` on `b`.
+    ///
+    /// A sublist is created by iterating through the remaining elements of `l` from left to right and adding an
+    /// element to the sublist if and only if doing so creates no conflicts with the elements already in the sublist.
+    ///
+    pub def groupBy(f: a -> b, l: List[a]): List[Nel[a]] with Eq[b] =
+        groupWith(Eq.eq `on` f, l)
+
+    ///
+    /// Helper function for `groupWith`.
     ///
     /// Handles the 2 cases:
     ///
@@ -978,12 +988,12 @@ mod List {
     ///
     /// In either case the created `Nel`'s are reversed.
     ///
-    def groupByHelper(value: a, f: (a, a) -> Bool, currentNels: List[Nel[a]]): List[Nel[a]] =
+    def groupWithHelper(value: a, f: (a, a) -> Bool, currentNels: List[Nel[a]]): List[Nel[a]] =
         // Record seen elements in reverse order in `acc`.
         def loop(cur, acc) = match cur {
             case Nil => (Nel.singleton(value) :: acc) |> List.reverse
             case x :: xs =>
-                if (Nel.forAll(v -> f(value, v) and f(v, value), x)) {
+                if (f(value, Nel.head(x))) {
                     let newNel = Nel.cons(value, x);
                     List.reverse(newNel :: acc) ::: xs
                 } else {

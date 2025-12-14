@@ -15,56 +15,36 @@
  * limitations under the License.
  */
 
-///
-/// `Counter` is a wrapper around `Ref` for a simple counter.
-///
-/// Its primary use is for generating identifiers.
-///
-/// Not thread-safe.
-///
-mod Fixpoint3 {
-    struct Counter[r: Region] {
-        mut state: Int32
-    }
+pub mod Fixpoint3.Counter {
 
-    mod Counter {
-        use Fixpoint3.Counter
+    ///
+    /// Returns a fresh `Counter` initialized to `0`.
+    ///
+    pub def fresh(rc: Region[r]): Counter[r] \ r = new Counter @ rc {state = 0}
 
-        ///
-        /// Returns a fresh `Counter` initialized to `0`.
-        ///
-        @Internal
-        pub def fresh(rc: Region[r]): Counter[r] \ r = new Counter @ rc {state = 0}
+    ///
+    /// Returns the state of `counter` and increments it.
+    ///
+    pub def getAndIncrement(counter: Counter[r]): Int32 \ r =
+        let newId = counter->state;
+        counter->state = newId + 1;
+        newId
 
-        ///
-        /// Returns the state of `counter` and increments it.
-        ///
-        @Internal
-        pub def getAndIncrement(counter: Counter[r]): Int32 \ r =
-            let newId = counter->state;
-            counter->state = newId + 1;
-            newId
+    ///
+    /// Increments the state of `counter`.
+    ///
+    pub def increment(counter: Counter[r]): Unit \ r =
+        discard getAndIncrement(counter)
 
-        ///
-        /// Increments the state of `counter`.
-        ///
-        @Internal
-        pub def increment(counter: Counter[r]): Unit \ r =
-            discard getAndIncrement(counter)
+    ///
+    /// Returns the state of `counter`.
+    ///
+    pub def get(counter: Counter[r]): Int32 \ r =
+        counter->state
 
-        ///
-        /// Returns the state of `counter`.
-        ///
-        @Internal
-        pub def get(counter: Counter[r]): Int32 \ r =
-            counter->state
-
-        ///
-        /// Sets the state of `counter` to `i`.
-        ///
-        @Internal
-        pub def set(i: Int32, counter: Counter[r]): Unit \ r =
-            counter->state = i
-    }
-
+    ///
+    /// Sets the state of `counter` to `i`.
+    ///
+    pub def set(i: Int32, counter: Counter[r]): Unit \ r =
+        counter->state = i
 }

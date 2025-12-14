@@ -28,7 +28,7 @@ pub eff Abort {
 
 }
 
-mod Abort {
+pub mod Abort {
 
     import java.lang.System
 

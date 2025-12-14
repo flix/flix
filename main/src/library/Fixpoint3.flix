@@ -1,5 +1,4 @@
 /*
- * Copyright 2021 Magnus Madsen
  * Copyright 2025 Casper Dalgaard Nielsen
  *                Adam Yasser Tallouzi
  *
@@ -7,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,9 +15,11 @@
  * limitations under the License.
  */
 
-mod Fixpoint3 {
-
+pub mod Fixpoint3 {
     import java.lang.Object
+    import java.util.concurrent.locks.{ReadWriteLock => JReadWriteLock}
+
+    use Fixpoint3.Ast.Shared.PredSym
 
     ///
     /// Represents a boxed value.
@@ -26,7 +27,6 @@ mod Fixpoint3 {
     /// `NoValue` is used for relational predicates which do not map to anything and therefore
     /// contain no value.
     ///
-    @Internal
     pub enum Boxed {
         case BoxedBool(Bool)
         case BoxedChar(Char)
@@ -89,6 +89,53 @@ mod Fixpoint3 {
             case Boxed.BoxedObject(v, _) => Debug.stringify(v)
             case Boxed.NoValue           => "Boxed.NoValue"
         }
+    }
+
+    ///
+    /// `Counter` is a wrapper around `Ref` for a simple counter.
+    ///
+    /// Its primary use is for generating identifiers.
+    ///
+    /// Not thread-safe.
+    ///
+    pub struct Counter[r: Region] {
+        mut state: Int32
+    }
+
+    ///
+    /// A trait for types that contain predicate symbols.
+    ///
+    pub trait PredSymsOf[t] {
+        pub def predSymsOf(x: t): Set[PredSym]
+    }
+
+    ///
+    /// A wrapper around a Java read-write-lock.
+    ///
+    enum ReadWriteLock[_: Region](JReadWriteLock)
+
+    ///
+    /// A trait for types with predicate symbols that can be substituted.
+    ///
+    pub trait SubstitutePredSym[t] {
+        pub def substitute(x: t, s: Map[PredSym, PredSym]): t
+    }
+
+    ///
+    /// The purpose of `UniqueInts` is to assign unique numbers/identifiers to elements.
+    ///
+    /// Example of use: When generating joins automatically we have data of type
+    /// `(RelSym, Search)`. These needs to be placed somewhere in memory. For
+    /// a pair `(rel, search)` calling `createIndex((rel, search))` will return its
+    /// index if it has been seen before and otherwise return the new index
+    /// which henceforth will be returned for subsequent queries of `(rel, search)`.
+    ///
+    /// `ReverseUniqueInts` allows using an index, `i`, assigned by `UniqueInts`, and get
+    /// the value, which `UniqueInts` assigned index `i`.
+    ///
+    pub struct UniqueInts[k: Type, r: Region] {
+        map: MutMap[k, Int32, r],
+        counter: Counter[r]
     }
 
 }

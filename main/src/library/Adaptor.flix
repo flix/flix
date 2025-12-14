@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-mod Adaptor {
+pub mod Adaptor {
 
     import java.lang.Object
     import java.util.ArrayList

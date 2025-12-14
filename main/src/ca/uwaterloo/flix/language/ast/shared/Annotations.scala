@@ -67,11 +67,6 @@ case class Annotations(annotations: List[Annotation]) {
   def isInline: Boolean = annotations.exists(_.isInstanceOf[Annotation.Inline])
 
   /**
-    * Returns `true` if `this` sequence contains the `@Internal` annotation.
-    */
-  def isInternal: Boolean = annotations exists (_.isInstanceOf[Annotation.Internal])
-
-  /**
     * Returns `true` if `this` sequence contains the `@Lazy` annotation.
     */
   def isLazy: Boolean = annotations exists (_.isInstanceOf[Annotation.Lazy])

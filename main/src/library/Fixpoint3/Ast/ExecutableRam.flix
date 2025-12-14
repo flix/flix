@@ -19,7 +19,7 @@
 /// `ExecutableRam` is a low level representation of the Datalog program to be executed.
 /// This representation is tightly coupled to the current interpreter.
 ///
-mod Fixpoint3.Ast.ExecutableRam {
+pub mod Fixpoint3.Ast.ExecutableRam {
     use Fixpoint3.Ast.Ram.{Predicates, RelSym, IndexInformation}
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation}
     use Fixpoint3.Boxed
@@ -40,7 +40,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     ///
     /// The extensible database (EDB) of a program.
     ///
-    @Internal
     pub type alias Facts[r: Region] = Map[RelSym, BPlusTree[Vector[Int64], Boxed, r]]
 
     ///
@@ -51,7 +50,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     /// They come from rules with constants like `Head(x):- Body(4, x)`. We would here
     /// a `ConstWrite` of `Vector#{(idOfBody, 0, 4)}`.
     ///
-    @Internal
     pub type alias ConstWrites = Vector[(Int32, Int32, Int64)]
 
     ///
@@ -64,7 +62,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     /// This should be read as: The first value of `Body1` should be saved as `idOfBody2`'s
     /// (the position of `Body2`) second value.
     ///
-    @Internal
     pub type alias WriteTuple = (Int32, Int32, Int32)
 
     ///
@@ -103,7 +100,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     ///
     /// `Comment(string)` is a comment for debugging.
     ///
-    @Internal
     pub enum RamStmt {
         case Insert(RelOp)
         case MergeInto(Int32, Int32, Denotation)
@@ -165,7 +161,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     ///
     /// `If(bools, body)` evaluates `body` if `bools` is true.
     ///
-    @Internal
     pub enum RelOp {
         case Search(Int32, Int32, Int32, Denotation, Vector[WriteTuple], RelOp)
         case Query(Int32, Int32, Int32, Denotation, Vector[WriteTuple], RelOp)
@@ -223,7 +218,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     ///
     /// `Guard5(f, term1, term2, term3, term4, term5)`: True if `f(term1, term2, term3, term4, term5) == true`.
     ///
-    @Internal
     pub enum BoolExp {
         case Not(BoolExp)
         case IsEmpty(Int32)
@@ -289,7 +283,6 @@ mod Fixpoint3.Ast.ExecutableRam {
     /// `App5(f, term1, term2, term3, term4, term5)` represents `f(term1, term2, term3, term4, term4)`.
     /// Can be unboxed using `unboxingInfo`.
     ///
-    @Internal
     pub enum RamTerm {
         case Lit(Int64, Boxed)
         case ProvMax(Vector[(Int32, Int32)])

@@ -21,7 +21,7 @@ eff TcpAcceptWithResult {
     def accept(server: TcpServer): Result[IoError, TcpSocket]
 }
 
-mod TcpAcceptWithResult {
+pub mod TcpAcceptWithResult {
     use IoError.ErrorKind
     use IoError.IoError
 
