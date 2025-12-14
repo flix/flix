@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Counter {
+pub mod Fixpoint3.Counter {
 
     ///
     /// Returns a fresh `Counter` initialized to `0`.

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.UniqueInts {
+pub mod Fixpoint3.UniqueInts {
     use Fixpoint3.Counter
 
     ///
