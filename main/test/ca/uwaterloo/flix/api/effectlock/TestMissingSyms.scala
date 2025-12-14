@@ -114,15 +114,32 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |pub def f(x: a): String with ToString[a] = ToString.toString(x)
         |
         |trait ToString[a: Type] {
-        |
         |    pub def toString(x: a): String
-        |
         |}
         |""".stripMargin
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSig("ToString.toString", root)
     val result = MissingSyms.run(filtered)
     assert(containsSig("ToString.toString", result))
+  }
+
+  test("MissingSyms.100") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a] = ToString.toString(x)
+        |
+        |trait ToString[a: Type] {
+        |    pub def toString(x: a): String
+        |}
+        |
+        |trait Unused[a: Type] {
+        |    pub def unreachable(x: a): String
+        |}
+        |""".stripMargin
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = excludeSig("ToString.toString", root)
+    val result = MissingSyms.run(filtered)
+    assert(!containsSig("Unused.unreachable", result))
   }
 
   private def excludeDef(defn0: String, root: TypedAst.Root): TypedAst.Root = {
