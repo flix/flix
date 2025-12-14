@@ -32,4 +32,29 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
     assert(result.isEmpty)
   }
 
+  test("MissingSyms.02") {
+    val input =
+      """
+        |pub def f(): Unit = ()
+        |pub def g(): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val result = MissingSyms.run(root)
+    assert(result.isEmpty)
+  }
+
+  test("MissingSyms.03") {
+    val input =
+      """
+        |pub def f(): Unit = ()
+        |pub def g(): Unit = ()
+        |pub def h(): Int32 = 42
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val result = MissingSyms.run(root)
+    assert(result.isEmpty)
+  }
+
 }
