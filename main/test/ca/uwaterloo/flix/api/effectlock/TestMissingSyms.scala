@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.effectlock.MissingSyms.MissingSyms
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -55,6 +57,63 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val result = MissingSyms.run(root)
     assert(result.isEmpty)
+  }
+
+  test("MissingSyms.04") {
+    val input =
+      """
+        |pub def f(): Unit = g()
+        |pub def g(): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = exclude("g", root)
+    val result = MissingSyms.run(filtered)
+    assert(containsDef("g", result))
+  }
+
+  test("MissingSyms.05") {
+    val input =
+      """
+        |pub def f(): Unit = g()
+        |pub def h(): Unit = g()
+        |pub def g(): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = exclude("g", root)
+    val result = MissingSyms.run(filtered)
+    assert(containsDef("g", result))
+  }
+
+  test("MissingSyms.06") {
+    val input =
+      """
+        |pub def f(): Unit = a()
+        |pub def g(): Unit = b()
+        |pub def h(): Unit = c()
+        |
+        |pub def a(): Unit = ()
+        |pub def b(): Unit = ()
+        |pub def c(): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val filtered = exclude("a", exclude("b", exclude("c", root)))
+    val result = MissingSyms.run(filtered)
+    assert(
+      containsDef("a", result) &&
+        containsDef("b", result) &&
+        containsDef("c", result)
+    )
+  }
+
+  private def exclude(defn0: String, root: TypedAst.Root): TypedAst.Root = {
+    root.copy(defs = root.defs.filter { case (sym, _) => sym.toString != defn0 })
+  }
+
+  private def containsDef(defn0: String, root: MissingSyms): Boolean = {
+    root.defs.exists(g => g.toString == defn0)
   }
 
 }
