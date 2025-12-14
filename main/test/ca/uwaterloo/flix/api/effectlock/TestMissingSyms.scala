@@ -16,8 +16,20 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestMissingSyms extends AnyFunSuite with TestUtils {
+
+  test("MissingSyms.01") {
+    val input =
+      """
+        |pub def f(): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val result = MissingSyms.run(root)
+    assert(result.isEmpty)
+  }
 
 }

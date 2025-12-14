@@ -346,6 +346,8 @@ object MissingSyms {
 
     def ++(that: MissingSyms): MissingSyms = MissingSyms(this.defs ++ that.defs, this.sigs ++ that.sigs)
 
+    def isEmpty: Boolean = defs.isEmpty && sigs.isEmpty
+
   }
 
   private object MissingSyms {
