@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Phase.Compiler {
+pub mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Ram.{arityOfNonLat, BoolExp, Facts, Predicates, RamProgram, RamStmt, RamTerm, RelOp, RelSym, RowVar}
     use Fixpoint3.Ast.Datalog.{BodyPredicate, BodyTerm, Constraint, Datalog, Fixity, HeadTerm, Polarity, VarSym}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog}
@@ -30,10 +30,11 @@ mod Fixpoint3.Phase.Compiler {
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Boxed
     use Fixpoint3.Counter
-    use Fixpoint3.Util.getOrCrash
+    use Fixpoint3.Options.usedArity
     use Fixpoint3.Predicate
     use Fixpoint3.Predicate.PredType.{Full, Delta, New}
     use Fixpoint3.TypeInfo.{getType, getTypeOf, Type, typeDatalog, TypeInformation}
+    use Fixpoint3.Util.getOrCrash
 
     ///
     /// Compile the given Datalog program `d` to RAM.
@@ -110,7 +111,7 @@ mod Fixpoint3.Phase.Compiler {
             match den {
                 case Relational =>
                     let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                    let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.emptyWithArity(Static, usedArity()), newFacts);
                     BPlusTree.put(x, Boxed.NoValue, newFactsTree)
                 case Latticenal(bot, leq, lub, _) =>
                     // Remove p(;bot) from the facts
@@ -119,7 +120,7 @@ mod Fixpoint3.Phase.Compiler {
                         ()
                     } else {
                         let sym = Predicate.headAtomToRelSym(headAtom, Full, predicates);
-                        let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.empty(Static), newFacts);
+                        let newFactsTree = MutMap.getOrElsePut(sym, BPlusTree.emptyWithArity(Static, usedArity()), newFacts);
                         BPlusTree.putWith(lub, Vector.dropRight(1, x), latVal, newFactsTree)
                     }
             }

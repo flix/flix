@@ -50,7 +50,7 @@ pub eff Random {
 
 }
 
-mod Random {
+pub mod Random {
 
     import java.util.{Random => JRandom}
 

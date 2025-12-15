@@ -27,7 +27,7 @@ enum TimeUnit with Eq {
     case Seconds
 }
 
-mod TimeUnit {
+pub mod TimeUnit {
 
     ///
     /// Returns the number of miliseconds for timeunit `u`

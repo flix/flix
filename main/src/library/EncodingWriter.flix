@@ -34,7 +34,7 @@ instance Writable[EncodingWriter[t]] with Writable[t] where Writable.Elm[t] ~ In
 
 }
 
-mod EncodingWriter {
+pub mod EncodingWriter {
     import java.nio.charset.CharsetEncoder
     import java.nio.charset.CodingErrorAction
     import java.nio.ByteBuffer

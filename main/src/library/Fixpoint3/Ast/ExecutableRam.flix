@@ -19,7 +19,7 @@
 /// `ExecutableRam` is a low level representation of the Datalog program to be executed.
 /// This representation is tightly coupled to the current interpreter.
 ///
-mod Fixpoint3.Ast.ExecutableRam {
+pub mod Fixpoint3.Ast.ExecutableRam {
     use Fixpoint3.Ast.Ram.{Predicates, RelSym, IndexInformation}
     use Fixpoint3.Ast.Shared.{BoxedDenotation => Denotation}
     use Fixpoint3.Boxed

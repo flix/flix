@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Channel {
+pub mod Channel {
 
     import java.lang.{Thread => JThread}
 

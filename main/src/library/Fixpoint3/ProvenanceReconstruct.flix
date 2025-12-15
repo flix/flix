@@ -32,7 +32,7 @@
 ///
 /// The current implementation does not output the negative atoms. They can be derived from the positive.
 ///
-mod Fixpoint3.ProvenanceReconstruct {
+pub mod Fixpoint3.ProvenanceReconstruct {
     use Fixpoint3.Ast.Datalog.{Datalog, Constraint, VarSym, BodyPredicate, HeadPredicate, HeadTerm, BodyTerm, Polarity}
     use Fixpoint3.Ast.Datalog.Datalog.{Datalog, Model, Join, Provenance}
     use Fixpoint3.Ast.Ram.{makeFakeRelSym, RelSym}
@@ -57,7 +57,7 @@ mod Fixpoint3.ProvenanceReconstruct {
     type alias BPLookup[r: Region] = BPlusTree[Vector[Boxed], List[(Vector[Boxed], Int64, Int32)], r]
 
     ///
-    /// A mutable map from `PredSym` to a `MutMap` from the the wanted lookup-slice to
+    /// A mutable map from `PredSym` to a `MutMap` from the wanted lookup-slice to
     /// a `BPLookup` on said slice.
     ///
     /// Using the previous example with predicate `P` we would have
@@ -124,24 +124,6 @@ mod Fixpoint3.ProvenanceReconstruct {
         case EDB(PredSym, Vector[Boxed])
         case Negative(PredSym, Vector[Boxed])
         case IDB(PredSym, Vector[Boxed], Array[ProofTree[r], r])
-    }
-
-    mod ProofTree {
-        pub def toString(p: ProofTree[r], indentChild: Int32): String \ r = match p {
-            case EDB(pred, fact) =>
-                let indentCur = String.repeat(indentChild, " ");
-                let factString = Vector.join(", ", fact);
-                "${indentCur}${pred}(${factString}). Fact"
-            case Negative(pred, fact) =>
-                let indentCur = String.repeat(indentChild, " ");
-                let factString = Vector.join(", ", fact);
-                "${indentCur}No ${pred}(${factString})"
-            case IDB(pred, fact, subs) =>
-                let factString = Vector.join(", ", fact);
-                let indentCur = String.repeat(indentChild, " ");
-                let subProofs = Array.joinWith(sub -> toString(sub, indentChild + 4), "${String.lineSeparator()}", subs);
-                "${indentCur}${pred}(${factString}). Proof:${String.lineSeparator()}${subProofs}"
-        }
     }
 
     ///

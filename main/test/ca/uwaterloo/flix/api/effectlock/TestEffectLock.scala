@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2025 Jakob Schneider Villumsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.api.effectlock
 
-mod Fixpoint3 {
+import ca.uwaterloo.flix.TestUtils
+import org.scalatest.funsuite.AnyFunSuite
 
-    use Fixpoint3.Ast.Shared.PredSym
-
-    ///
-    /// A trait for types with predicate symbols that can be substituted.
-    ///
-    pub trait SubstitutePredSym[t] {
-        pub def substitute(x: t, s: Map[PredSym, PredSym]): t
-    }
+class TestEffectLock extends AnyFunSuite with TestUtils {
 
 }

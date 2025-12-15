@@ -44,7 +44,7 @@ instance Writable[TcpSocket] {
 
 }
 
-mod TcpSocket {
+pub mod TcpSocket {
 
     pub def read(buffer: Array[Int8, r], socket: TcpSocket): Result[IoError, Int32] \ r + IO =
         let TcpSocket(_, inputStream, _) = socket;

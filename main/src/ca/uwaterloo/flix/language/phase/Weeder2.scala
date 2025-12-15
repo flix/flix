@@ -231,18 +231,19 @@ object Weeder2 {
       }
     }
 
-    private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Namespace, CompilationMessage] = {
+    private def visitModuleDecl(tree: Tree)(implicit sctx: SharedContext, flix: Flix): Validation[Declaration.Mod, CompilationMessage] = {
       expect(tree, TreeKind.Decl.Module)
+      val annotations = pickAnnotations(tree)
+      for (ann <- annotations.annotations) {
+        sctx.errors.add(WeederError.IllegalAnnotation(ann.loc))
+      }
+      val modifiers = pickModifiers(tree, allowed = Set(TokenKind.KeywordPub))
       mapN(
         pickQName(tree),
         pickAllUsesAndImports(tree),
         pickAllDeclarations(tree)
       ) {
-        (qname, usesAndImports, declarations) =>
-          val base = Declaration.Namespace(qname.ident, usesAndImports, declarations, tree.loc)
-          qname.namespace.idents.foldRight(base: Declaration.Namespace) {
-            case (ident, acc) => Declaration.Namespace(ident, Nil, List(acc), tree.loc)
-          }
+        (qname, usesAndImports, declarations) => Declaration.Mod(annotations, modifiers, qname, usesAndImports, declarations, tree.loc)
       }
     }
 

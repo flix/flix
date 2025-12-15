@@ -36,7 +36,7 @@ instance Writable[StringBuilder[r]] {
 
 }
 
-mod StringBuilder {
+pub mod StringBuilder {
     import java.lang.{StringBuilder => JStringBuilder};
 
     ///

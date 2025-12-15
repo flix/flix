@@ -42,7 +42,7 @@
 /// The module operates on `Ram.Program`, so it uses, `Eq(x, y)`, `Meet(x, y)`, `Project(_)`
 /// and so on to compute the equality constraints.
 ///
-mod Fixpoint3.Boxing {
+pub mod Fixpoint3.Boxing {
     import java.lang.{Float, Double, Object, Character, Runtime}
     use Fixpoint3.Ast.Datalog.Datalog
     use Fixpoint3.Ast.ExecutableRam.{Facts => EFacts}
@@ -89,7 +89,9 @@ mod Fixpoint3.Boxing {
         };
         foreach ((relSym, relFacts) <- f2) {
             let RelSym.Symbol(PredSym.PredSym(_, id), _, _) = relSym;
-            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.empty(rc1), newFacts);
+            // Get some search. This means that we have to create one less index in the interpreter.
+            let search = getOrCrash(Map.get(relSym, indexes)) |> Vector.get(0);
+            let newTree = MutMap.getOrElsePut(relSym, BPlusTree.emptyWithArityAndSearch(rc1, usedArity(), search), newFacts);
             // `id` will always be a full `id`.
             mapAllFacts(relFacts, boxingInfo, TypeInfo.getTypeOf(id, typeInfo), newTree)
         };

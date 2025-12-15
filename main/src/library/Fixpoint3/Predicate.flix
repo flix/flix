@@ -39,7 +39,7 @@
 ///
 /// In the above way `PredType` is encoded in the identifier of a `PredSym`.
 ///
-mod Fixpoint3.Predicate {
+pub mod Fixpoint3.Predicate {
     use Fixpoint3.Ast.Shared.PredSym
     use Fixpoint3.Ast.Shared.PredSym.PredSym
     use Fixpoint3.Ast.Datalog.Datalog.Datalog

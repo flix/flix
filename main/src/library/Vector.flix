@@ -150,7 +150,7 @@ instance ToFlix[Vector[a]] {
     }
 }
 
-mod Vector {
+pub mod Vector {
 
     ///
     /// Perform a binary search for `x` on the sorted vector `v` and returns the position of `x`.
@@ -392,7 +392,7 @@ mod Vector {
         reduceLeft(Order.maxBy(cmp), v)
 
     ///
-    /// Alias for `IndexOfLeft`
+    /// Alias for `indexOfLeft`
     ///
     pub def indexOf(x: a, v: Vector[a]): Option[Int32] with Eq[a] =
         indexOfLeft(x, v)
@@ -576,7 +576,7 @@ mod Vector {
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
-    /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
+    /// That is, the result is of the form: `[ f(0, a[0]), f(1, a[1]), ... ]`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
         init(i -> f(i, get(i, v)), length(v))
@@ -833,7 +833,7 @@ mod Vector {
             loop(0)
 
     ///
-    /// Returns `true` if and only if `a` is a infix of `b`.
+    /// Returns `true` if and only if `a` is an infix of `b`.
     ///
     pub def isInfixOf(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
         let len1 = length(a);
@@ -1036,7 +1036,7 @@ mod Vector {
         loop(0)
 
     ///
-    /// Returns an array of every element in `arr` that satisfies the predicate `f`.
+    /// Returns a vector of every element in `v` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
         let m = MutList.empty(rc);
@@ -1430,7 +1430,7 @@ mod Vector {
     }
 
     ///
-    /// Returns `true` if arrays `a` and `b` have the same elements in the same order, i.e. are structurally equal.
+    /// Returns `true` if vectors `a` and `b` have the same elements in the same order, i.e. are structurally equal.
     ///
     pub def equals(a: Vector[a], b: Vector[a]): Bool with Eq[a] =
         let alen = length(a);
