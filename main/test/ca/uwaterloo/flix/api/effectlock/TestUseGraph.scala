@@ -16,25 +16,25 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.effectlock.UseGraph.MissingSyms
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestUseGraph extends AnyFunSuite with TestUtils {
 
-  test("MissingSyms.01") {
+  test("UseGraph.01") {
     val input =
       """
         |pub def f(): Unit = ()
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = UseGraph.computeGraph(root)
-    assert(result.isEmpty)
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.02") {
+  test("UseGraph.02") {
     val input =
       """
         |pub def f(): Unit = ()
@@ -42,11 +42,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = UseGraph.computeGraph(root)
-    assert(result.isEmpty)
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.03") {
+  test("UseGraph.03") {
     val input =
       """
         |pub def f(): Unit = ()
@@ -55,11 +56,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = UseGraph.computeGraph(root)
-    assert(result.isEmpty)
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.04") {
+  test("UseGraph.04") {
     val input =
       """
         |pub def f(): Unit = g()
@@ -67,12 +69,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeDef("g", root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(containsDef("g", result))
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.05") {
+  test("UseGraph.05") {
     val input =
       """
         |pub def f(): Unit = g()
@@ -81,12 +83,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeDef("g", root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(containsDef("g", result))
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.06") {
+  test("UseGraph.06") {
     val input =
       """
         |pub def f(): Unit = a()
@@ -99,16 +101,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeDefs(List("a", "b", "c"), root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(
-      containsDef("a", result) &&
-        containsDef("b", result) &&
-        containsDef("c", result)
-    )
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.07") {
+  test("UseGraph.07") {
     val input =
       """
         |pub def f(x: a): String with ToString[a] = ToString.toString(x)
@@ -119,12 +117,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeSig("ToString.toString", root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(containsSig("ToString.toString", result))
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.08") {
+  test("UseGraph.08") {
     val input =
       """
         |pub def f(g: a -> b, x: a): String with ToString[b] = ToString.toString(g(x))
@@ -135,11 +133,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = UseGraph.computeGraph(root)
-    assert(!containsDef("g", result))
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.09") {
+  test("UseGraph.09") {
     val input =
       """
         |pub def f(x: a): Unit with ToString[a], Bla[a] = Bla.write(ToString.toString(x))
@@ -160,136 +159,12 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeDef("h", excludeSigs(List("ToString.toString", "Bla.write"), root))
-    val result = UseGraph.computeGraph(filtered)
-    assert(
-      containsDef("h", result) &&
-        containsSig("ToString.toString", result) &&
-        containsSig("Bla.write", result)
-    )
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.10") {
-    val input =
-      """
-        |pub def f(x: a): Unit with ToString[a], Bla[a] = Bla.write(ToString.toString(x))
-        |pub def g(x: a): Unit with Bla[a] = h(x)
-        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
-        |
-        |trait ToString[a: Type] {
-        |    pub def toString(x: a): String
-        |}
-        |
-        |trait Bla[a: Type] {
-        |    pub def write(x: a): Unit
-        |}
-        |
-        |instance Bla[String] {
-        |    pub def write(_: String): Unit = ()
-        |}
-        |""".stripMargin
-
-    val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeSigs(List("ToString.toString", "Bla.write"), root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(
-      !containsDef("h", result) &&
-        containsSig("ToString.toString", result) &&
-        containsSig("Bla.write", result)
-    )
-  }
-
-  test("MissingSyms.11") {
-    val input =
-      """
-        |pub def f(x: a): String with ToString[a], Bla[a] = ToString.toString(x)
-        |pub def g(x: a): Unit with Bla[a] = h(x)
-        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
-        |
-        |trait ToString[a: Type] {
-        |    pub def toString(x: a): String
-        |}
-        |
-        |trait Bla[a: Type] {
-        |    pub def write(x: a): Unit
-        |}
-        |
-        |instance Bla[String] {
-        |    pub def write(_: String): Unit = ()
-        |}
-        |""".stripMargin
-
-    val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeSigs(List("ToString.toString", "Bla.write"), root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(
-      !containsDef("h", result) &&
-        containsSig("ToString.toString", result) &&
-        containsSig("Bla.write", result)
-    )
-  }
-
-  test("MissingSyms.12") {
-    val input =
-      """
-        |pub def f(x: a): String with ToString[a], Bla[a] = ToString.toString(x)
-        |pub def g(x: a): Unit with Bla[a] = h(x)
-        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
-        |
-        |trait ToString[a: Type] {
-        |    pub def toString(x: a): String
-        |}
-        |
-        |trait Bla[a: Type] {
-        |    pub def write(x: a): Unit
-        |}
-        |
-        |instance Bla[String] {
-        |    pub def write(_: String): Unit = ()
-        |}
-        |""".stripMargin
-
-    val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeSigs(List("ToString.toString"), root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(
-      !containsDef("h", result) &&
-        containsSig("ToString.toString", result) &&
-        !containsSig("Bla.write", result)
-    )
-  }
-
-  test("MissingSyms.13") {
-    val input =
-      """
-        |pub def f(x: a): String with ToString[a] = Bla.write(ToString.toString(x))
-        |pub def g(x: a): Unit with Bla[a] = h(x)
-        |pub def h(x: a): Unit with Bla[a] = Bla.write(x)
-        |
-        |trait ToString[a: Type] {
-        |    pub def toString(x: a): String
-        |}
-        |
-        |trait Bla[a: Type] {
-        |    pub def write(x: a): Unit
-        |}
-        |
-        |instance Bla[String] {
-        |    pub def write(_: String): Unit = ()
-        |}
-        |""".stripMargin
-
-    val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeDef("h", excludeSigs(List("ToString.toString"), root))
-    val result = UseGraph.computeGraph(filtered)
-    assert(
-      containsDef("h", result) &&
-        containsSig("ToString.toString", result) &&
-        containsSig("Bla.write", result)
-    )
-  }
-
-  test("MissingSyms.14") {
+  test("UseGraph.10") {
     val input =
       """
         |pub def f(x: a): String with ToString[a] = ToString.toString(x)
@@ -304,52 +179,34 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = UseGraph.computeGraph(root)
-    assert(!containsSig("Unused.unreachable", result))
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  test("MissingSyms.15") {
+  test("UseGraph.11") {
     val input =
       """
-        |pub def f(x: a): String with ToString[a] = ToString.toString(x)
-        |
-        |trait ToString[a: Type] {
-        |    pub def toString(x: a): String
-        |}
-        |
-        |trait Unused[a: Type] {
-        |    pub def unreachable(x: a): String
-        |}
+        |pub def f(x: a): Unit = g(x)
+        |pub def g(x: a): Unit = f(x)
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val filtered = excludeSig("Unused.unreachable", root)
-    val result = UseGraph.computeGraph(filtered)
-    assert(!containsSig("Unused.unreachable", result))
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
-  private def excludeDef(defn0: String, root: TypedAst.Root): TypedAst.Root = {
-    root.copy(defs = root.defs.filter { case (sym, _) => sym.toString != defn0 })
-  }
+  test("UseGraph.12") {
+    val input =
+      """
+        |pub def f(x: a): Unit = f(x)
+        |""".stripMargin
 
-  private def excludeDefs(defs0: List[String], root: TypedAst.Root): TypedAst.Root = {
-    defs0.foldLeft(root)((r, defn) => excludeDef(defn, r))
-  }
-
-  private def excludeSig(sig0: String, root: TypedAst.Root): TypedAst.Root = {
-    root.copy(sigs = root.sigs.filter { case (sym, _) => sym.toString != sig0 })
-  }
-
-  private def excludeSigs(sigs0: List[String], root: TypedAst.Root): TypedAst.Root = {
-    sigs0.foldLeft(root)((r, defn) => excludeSig(defn, r))
-  }
-
-  private def containsDef(defn0: String, root: MissingSyms): Boolean = {
-    root.defs.exists(g => g.toString == defn0)
-  }
-
-  private def containsSig(sig0: String, root: MissingSyms): Boolean = {
-    root.sigs.exists(g => g.toString == sig0)
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val actual = UseGraph.computeGraph(root)
+    val expected = ListMap.empty
+    assert(actual == expected)
   }
 
 }
