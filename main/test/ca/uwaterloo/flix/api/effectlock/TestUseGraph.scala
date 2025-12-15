@@ -16,12 +16,12 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.effectlock.MissingSyms.MissingSyms
+import ca.uwaterloo.flix.api.effectlock.UseGraph.MissingSyms
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestMissingSyms extends AnyFunSuite with TestUtils {
+class TestUseGraph extends AnyFunSuite with TestUtils {
 
   test("MissingSyms.01") {
     val input =
@@ -30,7 +30,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = MissingSyms.run(root)
+    val result = UseGraph.computeGraph(root)
     assert(result.isEmpty)
   }
 
@@ -42,7 +42,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = MissingSyms.run(root)
+    val result = UseGraph.computeGraph(root)
     assert(result.isEmpty)
   }
 
@@ -55,7 +55,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = MissingSyms.run(root)
+    val result = UseGraph.computeGraph(root)
     assert(result.isEmpty)
   }
 
@@ -68,7 +68,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeDef("g", root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(containsDef("g", result))
   }
 
@@ -82,7 +82,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeDef("g", root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(containsDef("g", result))
   }
 
@@ -100,7 +100,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeDefs(List("a", "b", "c"), root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(
       containsDef("a", result) &&
         containsDef("b", result) &&
@@ -120,7 +120,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSig("ToString.toString", root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(containsSig("ToString.toString", result))
   }
 
@@ -135,7 +135,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = MissingSyms.run(root)
+    val result = UseGraph.computeGraph(root)
     assert(!containsDef("g", result))
   }
 
@@ -161,7 +161,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeDef("h", excludeSigs(List("ToString.toString", "Bla.write"), root))
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(
       containsDef("h", result) &&
         containsSig("ToString.toString", result) &&
@@ -191,7 +191,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSigs(List("ToString.toString", "Bla.write"), root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(
       !containsDef("h", result) &&
         containsSig("ToString.toString", result) &&
@@ -221,7 +221,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSigs(List("ToString.toString", "Bla.write"), root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(
       !containsDef("h", result) &&
         containsSig("ToString.toString", result) &&
@@ -251,7 +251,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSigs(List("ToString.toString"), root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(
       !containsDef("h", result) &&
         containsSig("ToString.toString", result) &&
@@ -281,7 +281,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeDef("h", excludeSigs(List("ToString.toString"), root))
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(
       containsDef("h", result) &&
         containsSig("ToString.toString", result) &&
@@ -304,7 +304,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val result = MissingSyms.run(root)
+    val result = UseGraph.computeGraph(root)
     assert(!containsSig("Unused.unreachable", result))
   }
 
@@ -324,7 +324,7 @@ class TestMissingSyms extends AnyFunSuite with TestUtils {
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
     val filtered = excludeSig("Unused.unreachable", root)
-    val result = MissingSyms.run(filtered)
+    val result = UseGraph.computeGraph(filtered)
     assert(!containsSig("Unused.unreachable", result))
   }
 

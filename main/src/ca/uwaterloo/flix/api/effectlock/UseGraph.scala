@@ -15,10 +15,10 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.Symbol
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.shared.SymUse
+import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
   * Computes the set of reachable missing symbols in the program.
@@ -28,19 +28,18 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse
   *
   * For effect locking, the caller can filter the program down to
   * contain only definitions from the local program and find the
-  * reachable library functions by calling [[run]].
+  * reachable library functions by calling [[computeGraph]].
   */
-object MissingSyms {
+object UseGraph {
 
   /**
     * Returns the reachable missing symbols in `root`.
     *
     * A symbol is missing if the root does not contain its definition.
     */
-  def run(root: TypedAst.Root): MissingSyms = {
-    implicit val _r: TypedAst.Root = root
-    val missingFromDefs = root.defs.values.map(visitDef).foldLeft(MissingSyms.empty)(_ ++ _)
-    val missingFromSigs = root.sigs.values.map(visitSig).foldLeft(MissingSyms.empty)(_ ++ _)
+  def computeGraph(root: TypedAst.Root): ListMap[ReachableSym, ReachableSym] = {
+    val missingFromDefs = root.defs.values.map(visitDef).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
+    val missingFromSigs = root.sigs.values.map(visitSig).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
     missingFromDefs ++ missingFromSigs
   }
 
@@ -49,8 +48,8 @@ object MissingSyms {
     *
     * A symbol is missing if the root does not contain its definition.
     */
-  private def visitDef(defn0: TypedAst.Def)(implicit root: TypedAst.Root): MissingSyms = defn0 match {
-    case TypedAst.Def(_, _, exp, _) => visitExp(exp)
+  private def visitDef(defn0: TypedAst.Def): ListMap[ReachableSym, ReachableSym] = defn0 match {
+    case TypedAst.Def(sym, _, exp, _) => visitExp(exp)(ReachableSym.DefnSym(sym))
   }
 
   /**
@@ -58,8 +57,8 @@ object MissingSyms {
     *
     * A symbol is missing if the root does not contain its definition.
     */
-  private def visitSig(sig0: TypedAst.Sig)(implicit root: TypedAst.Root): MissingSyms = sig0 match {
-    case TypedAst.Sig(_, _, exp, _) => exp.map(visitExp).getOrElse(MissingSyms.empty)
+  private def visitSig(sig0: TypedAst.Sig): ListMap[ReachableSym, ReachableSym] = sig0 match {
+    case TypedAst.Sig(sym, _, exp, _) => exp.map(visitExp(_)(ReachableSym.SigSym(sym))).getOrElse(ListMap.empty)
   }
 
   /**
@@ -67,15 +66,15 @@ object MissingSyms {
     *
     * A symbol is missing if the root does not contain its definition.
     */
-  private def visitExp(exp0: Expr)(implicit root: TypedAst.Root): MissingSyms = exp0 match {
+  private def visitExp(exp0: Expr)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = exp0 match {
     case Expr.Cst(_, _, _) =>
-      MissingSyms.empty
+      ListMap.empty
 
     case Expr.Var(_, _, _) =>
-      MissingSyms.empty
+      ListMap.empty
 
     case Expr.Hole(_, _, _, _, _) =>
-      MissingSyms.empty
+      ListMap.empty
 
     case Expr.HoleWithExp(exp, _, _, _, _) =>
       visitExp(exp)
@@ -93,8 +92,7 @@ object MissingSyms {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _) =>
-      val missing = if (isMissingSymbol(sym)) MissingSyms.from(sym) else MissingSyms.empty
-      missing ++ visitExps(exps)
+      visitExps(exps) + (sym0 -> ReachableSym.DefnSym(sym))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       visitExps(exps)
@@ -103,8 +101,7 @@ object MissingSyms {
       visitExps(exps)
 
     case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
-      val missing = if (isMissingSymbol(sym)) MissingSyms.from(sym) else MissingSyms.empty
-      missing ++ visitExps(exps)
+      visitExps(exps) + (sym0 -> ReachableSym.SigSym(sym))
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -179,7 +176,7 @@ object MissingSyms {
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
     case Expr.StructNew(_, fields, exp, _, _, _) =>
-      visitExps(fields.map { case (_, e) => e }) ++ exp.map(visitExp).getOrElse(MissingSyms.empty)
+      visitExps(fields.map { case (_, e) => e }) ++ exp.map(visitExp).getOrElse(ListMap.empty)
 
     case Expr.StructGet(exp, _, _, _, _) =>
       visitExp(exp)
@@ -242,7 +239,7 @@ object MissingSyms {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.GetStaticField(_, _, _, _) =>
-      MissingSyms.empty
+      ListMap.empty
 
     case Expr.PutStaticField(_, exp, _, _, _) =>
       visitExp(exp)
@@ -260,7 +257,7 @@ object MissingSyms {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.SelectChannel(selects, optExp, _, _, _) =>
-      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(MissingSyms.empty)
+      visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(ListMap.empty)
 
     case Expr.Spawn(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
@@ -275,7 +272,7 @@ object MissingSyms {
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(constrs, _, _) =>
-      constrs.map(visitFixpointConstraint).foldLeft(MissingSyms.empty)(_ ++ _)
+      constrs.map(visitFixpointConstraint).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
 
     case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
@@ -290,7 +287,7 @@ object MissingSyms {
       visitExps(exps1) ++
         visitExp(exp) ++
         visitExps(exps2) ++
-        from.map(visitPredicateBody).foldLeft(MissingSyms.empty)(_ ++ _) ++
+        from.map(visitPredicateBody).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _) ++
         visitExps(exps3)
 
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
@@ -300,63 +297,43 @@ object MissingSyms {
       visitExps(exps)
 
     case Expr.Error(_, _, _) =>
-      MissingSyms.empty
+      ListMap.empty
 
   }
 
   /** Returns the symbols reachable from `exps`. */
-  private def visitExps(exps: List[Expr])(implicit root: TypedAst.Root): MissingSyms = {
-    exps.map(visitExp).foldLeft(MissingSyms.empty)(_ ++ _)
+  private def visitExps(exps: List[Expr])(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = {
+    exps.map(visitExp).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
   }
 
   /** Returns the symbols reachable from `head0`. */
-  private def visitFixpointConstraint(constr0: TypedAst.Constraint)(implicit root: TypedAst.Root): MissingSyms = constr0 match {
+  private def visitFixpointConstraint(constr0: TypedAst.Constraint)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = constr0 match {
     case TypedAst.Constraint(_, head, body, _) =>
-      visitPredicateHead(head) ++ body.map(visitPredicateBody).foldLeft(MissingSyms.empty)(_ ++ _)
+      visitPredicateHead(head) ++ body.map(visitPredicateBody).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
   }
 
   /** Returns the symbols reachable from `head0`. */
-  private def visitPredicateHead(head0: TypedAst.Predicate.Head)(implicit root: TypedAst.Root): MissingSyms = head0 match {
+  private def visitPredicateHead(head0: TypedAst.Predicate.Head)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = head0 match {
     case TypedAst.Predicate.Head.Atom(_, _, exps, _, _) => visitExps(exps)
   }
 
   /** Returns the symbols reachable from `body0`. */
-  private def visitPredicateBody(body0: TypedAst.Predicate.Body)(implicit root: TypedAst.Root): MissingSyms = body0 match {
-    case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => MissingSyms.empty
+  private def visitPredicateBody(body0: TypedAst.Predicate.Body)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = body0 match {
+    case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => ListMap.empty
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
   }
 
-  /** Returns `true` if the program does not contain the definition of `defnSym0`. */
-  private def isMissingSymbol(defnSym0: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = {
-    !root.defs.contains(defnSym0)
-  }
-
-  /** Returns `true` if the program does not contain the definition of `sigSym0`. */
-  private def isMissingSymbol(sigSym0: Symbol.SigSym)(implicit root: TypedAst.Root): Boolean = {
-    !root.sigs.contains(sigSym0)
-  }
-
   /**
-    * Represents a set of missing [[Symbol.DefnSym]]s and [[Symbol.SigSym]]s.
-    *
-    * A symbol is missing if the root does not contain its definition.
+    * Represents a reachable symbol.
     */
-  case class MissingSyms(defs: Set[Symbol.DefnSym], sigs: Set[Symbol.SigSym]) {
+  sealed trait ReachableSym
 
-    def ++(that: MissingSyms): MissingSyms = MissingSyms(this.defs ++ that.defs, this.sigs ++ that.sigs)
+  object ReachableSym {
 
-    def isEmpty: Boolean = defs.isEmpty && sigs.isEmpty
+    case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 
-  }
-
-  private object MissingSyms {
-
-    val empty: MissingSyms = MissingSyms(Set.empty, Set.empty)
-
-    def from(defnSym0: Symbol.DefnSym): MissingSyms = MissingSyms(Set(defnSym0), Set.empty)
-
-    def from(sigSym0: Symbol.SigSym): MissingSyms = MissingSyms(Set.empty, Set(sigSym0))
+    case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 
   }
 
