@@ -45,7 +45,8 @@ object Category {
     */
   def categoryOf(s: String): Category = {
     val input = Input.VirtualFile(CompilerConstants.VirtualShellFile, s, SecurityContext.Unrestricted)
-    val source = Source(input, s.toCharArray)
+    val arr = s.toCharArray
+    val source = Source(input, arr)
 
     // Tokenize the input and check if the first token looks like the start of a declaration or an expression.
     val (tokens, errors) = Lexer.lex(source)

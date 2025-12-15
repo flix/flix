@@ -110,7 +110,7 @@ object Namer {
         // That is, if the module is `mod Foo { ... }` we create a source location that is the `mod` keyword.
         // We cannot do better until we refactor modules to be non-overlapping.
         val sp1 = loc.sp1
-        val sp2 = loc.sp1.copy(colOneIndexed = (loc.sp1.colOneIndexed + 3).toShort)
+        val sp2 = loc.sp1 + 3
         val loc2 = SourceLocation(loc.isReal, loc.source, sp1, sp2)
         NameError.OrphanModule(sym, parentSym, loc2)
     }
