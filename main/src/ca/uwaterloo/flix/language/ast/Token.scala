@@ -34,7 +34,7 @@ import ca.uwaterloo.flix.language.ast.shared.Source
   * @param sp1   The source position that the lexeme __starts__ on.
   * @param sp2   The source position that the lexeme __ends__ on (exclusive).
   */
-case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
+case class Token(moved ...) extends SyntaxTree.Child {
   /**
     * Computes the lexeme that the token refers to by slicing it from `src`.
     *

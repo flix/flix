@@ -39,42 +39,7 @@ object SimpleType {
   // Primitive Types.
   //
 
-  /**
-    * Represents an uninhabited type, not an absent value like in Java.
-    */
-  case object Void extends SimpleType
 
-  case object AnyType extends SimpleType
-
-  case object Unit extends SimpleType
-
-  case object Bool extends SimpleType
-
-  case object Char extends SimpleType
-
-  case object Float32 extends SimpleType
-
-  case object Float64 extends SimpleType
-
-  case object BigDecimal extends SimpleType
-
-  case object Int8 extends SimpleType
-
-  case object Int16 extends SimpleType
-
-  case object Int32 extends SimpleType
-
-  case object Int64 extends SimpleType
-
-  case object BigInt extends SimpleType
-
-  case object String extends SimpleType
-
-  case object Regex extends SimpleType
-
-  case object Region extends SimpleType
-
-  case object Null extends SimpleType
 
   //
   // Compound Types.
@@ -82,27 +47,7 @@ object SimpleType {
 
   val Object: SimpleType = Native(classOf[java.lang.Object])
 
-  case class Array(tpe: SimpleType) extends SimpleType
 
-  case class Lazy(tpe: SimpleType) extends SimpleType
-
-  case class Tuple(tpes: List[SimpleType]) extends SimpleType
-
-  case class Enum(sym: Symbol.EnumSym, targs: List[SimpleType]) extends SimpleType
-
-  case class Struct(sym: Symbol.StructSym, targs: List[SimpleType]) extends SimpleType
-
-  case class Arrow(targs: List[SimpleType], result: SimpleType) extends SimpleType
-
-  case object RecordEmpty extends SimpleType
-
-  case class RecordExtend(label: String, value: SimpleType, rest: SimpleType) extends SimpleType
-
-  case object ExtensibleEmpty extends SimpleType
-
-  case class ExtensibleExtend(cons: Name.Pred, tpes: List[SimpleType], rest: SimpleType) extends SimpleType
-
-  case class Native(clazz: Class[?]) extends SimpleType
 
   /**
     * Smart constructor for [[SimpleType.Array]].

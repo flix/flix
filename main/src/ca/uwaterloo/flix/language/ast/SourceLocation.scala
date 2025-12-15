@@ -37,7 +37,7 @@ object SourceLocation {
   *
   * @param isReal true if real location, false if synthetic location.
   */
-case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, sp2: SourcePosition) {
+case class SourceLocation(moved..) {
 
   /**
    * Returns the security context associated with the source location.

@@ -107,17 +107,3 @@ sealed trait ChangeSet {
   }
 }
 
-object ChangeSet {
-
-  /**
-    * Represents a change set where everything is dirty (used for a complete re-compilation).
-    */
-  case object Everything extends ChangeSet
-
-  /**
-    * Represents a change set where everything in `s` is dirty (must be recompiled).
-    */
-  case class Dirty(s: Set[Input]) extends ChangeSet
-
-}
-

@@ -20,14 +20,7 @@ sealed trait SemanticOp
 
 object SemanticOp {
 
-  sealed trait UnaryOp extends SemanticOp
 
-  sealed trait BinaryOp extends SemanticOp
-
-  /**
-    * Boolean Operators.
-    */
-  sealed trait BoolOp extends SemanticOp
 
   object BoolOp {
 
@@ -58,10 +51,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Char Operators.
-    */
-  sealed trait CharOp extends SemanticOp
+
 
   object CharOp {
 
@@ -97,10 +87,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Float32 Operators.
-    */
-  sealed trait Float32Op extends SemanticOp
+
 
   object Float32Op {
 
@@ -166,10 +153,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Float64 Operators.
-    */
-  sealed trait Float64Op extends SemanticOp
+
 
   object Float64Op {
 
@@ -235,10 +219,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Int8 Operators.
-    */
-  sealed trait Int8Op extends SemanticOp
+
 
   object Int8Op {
 
@@ -339,10 +320,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Int16 Operators.
-    */
-  sealed trait Int16Op extends SemanticOp
+
 
   object Int16Op {
 
@@ -443,10 +421,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Int32 Operators.
-    */
-  sealed trait Int32Op extends SemanticOp
+
 
   object Int32Op {
 
@@ -547,10 +522,7 @@ object SemanticOp {
 
   }
 
-  /**
-    * Int64 Operators.
-    */
-  sealed trait Int64Op extends SemanticOp
+
 
   object Int64Op {
 
@@ -650,11 +622,6 @@ object SemanticOp {
     case object Ge extends Int64Op with BinaryOp
 
   }
-
-  /**
-    * String Operators.
-    */
-  sealed trait StringOp extends SemanticOp
 
   object StringOp {
 

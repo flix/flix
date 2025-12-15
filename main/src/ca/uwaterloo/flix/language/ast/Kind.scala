@@ -41,7 +41,6 @@ sealed trait Kind {
     */
   override def toString: String = FormatKind.formatKind(this)
 
-
 }
 
 object Kind {
@@ -51,69 +50,6 @@ object Kind {
     */
   private val Cache: ConcurrentCache[Kind] = new ConcurrentCache
 
-  /**
-    * Represents a wild kind.
-    * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
-    * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
-    */
-  case object Wild extends Kind
-
-  /**
-    * Represents the wildcard kind only matching Case Sets.
-    * A wild kind exists during the kinding phase, but should be eliminated before the following phase,
-    * unless the kind is deemed irrelevant (e.g. the kind of a wildcard type).
-    */
-  case object WildCaseSet extends Kind
-
-  /**
-    * Represents the kind of types.
-    */
-  case object Star extends Kind
-
-  /**
-    * Represents the kind of effect sets.
-    */
-  case object Eff extends Kind
-
-  /**
-    * Represents the kind of Boolean formulas
-    */
-  case object Bool extends Kind
-
-  /**
-    * Represents the kind of record rows.
-    */
-  case object RecordRow extends Kind
-
-  /**
-    * Represents the kind of schema rows.
-    */
-  case object SchemaRow extends Kind
-
-  /**
-    * Represents the kind of predicates.
-    */
-  case object Predicate extends Kind
-
-  /**
-   * Represents the kind of a Java constructor, method, or field.
-   */
-  case object Jvm extends Kind
-
-  /**
-    * Represents the kind of sets of restrictable enum cases.
-    */
-  case class CaseSet(sym: Symbol.RestrictableEnumSym) extends Kind
-
-  /**
-    * Represents the kind of type expressions `k1 -> k2`.
-    */
-  case class Arrow(k1: Kind, k2: Kind) extends Kind
-
-  /**
-    * Represents an error kind.
-    */
-  case object Error extends Kind
 
   /**
     * A smart constructor for the [[Arrow]] kind.

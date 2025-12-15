@@ -35,24 +35,6 @@ sealed trait Purity
 object Purity {
 
   /**
-    * Represents a pure expression (i.e. an expression that cannot have
-    * side effects).
-    */
-  case object Pure extends Purity
-
-  /**
-    * Represents an impure expression (i.e. an expression that could potentially
-    * have side effects).
-    */
-  case object Impure extends Purity
-
-  /**
-    * Represents a control-impure expression (i.e. an expression that could
-    * potentially use effects like `do Print.print()`).
-    */
-  case object ControlImpure extends Purity
-
-  /**
     * Returns true if `p` is a purity that does not allow algebraic effects.
     */
   def isControlPure(p: Purity): Boolean = p match {

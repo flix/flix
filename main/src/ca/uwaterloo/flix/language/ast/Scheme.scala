@@ -197,16 +197,3 @@ object Scheme {
 
 }
 
-/**
-  * Representation of polytypes.
-  */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[TraitConstraint], econstrs: List[EqualityConstraint], base: Type) {
-
-  /**
-    * Returns a human readable representation of the polytype.
-    */
-  override def toString: String = {
-    FormatScheme.formatSchemeWithOptions(this, FormatOptions.Internal)
-  }
-
-}
