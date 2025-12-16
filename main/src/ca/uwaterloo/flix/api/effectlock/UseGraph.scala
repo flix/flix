@@ -21,52 +21,37 @@ import ca.uwaterloo.flix.language.ast.shared.SymUse
 import ca.uwaterloo.flix.util.collection.ListMap
 
 /**
-  * Computes the set of reachable missing symbols in the program.
-  * A symbol is missing if the root does not contain its definition.
+  * Computes a graph of uses / occurrences of functions and signatures, i.e., [[Symbol.DefnSym]] and [[Symbol.SigSym]].
   *
-  * So far it only supports [[Symbol.DefnSym]]s and [[Symbol.SigSym]]s.
-  *
-  * For effect locking, the caller can filter the program down to
-  * contain only definitions from the local program and find the
-  * reachable library functions by calling [[computeGraph]].
+  * The edge `f -> g` exists if `g` is either a [[Symbol.DefnSym]] or [[Symbol.SigSym]] that occurs
+  * in the definition of `f` and `f` is either a function or signature.
   */
 object UseGraph {
 
   /**
-    * Returns the reachable missing symbols in `root`.
+    * Computes a graph of uses / occurrences of functions and signatures, i.e., [[Symbol.DefnSym]] and [[Symbol.SigSym]].
     *
-    * A symbol is missing if the root does not contain its definition.
+    * The edge `f -> g` exists if `g` is either a [[Symbol.DefnSym]] or [[Symbol.SigSym]] that occurs
+    * in the definition of `f` and `f` is either a function or signature.
     */
-  def computeGraph(root: TypedAst.Root): ListMap[ReachableSym, ReachableSym] = {
-    val missingFromDefs = root.defs.values.map(visitDef).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
-    val missingFromSigs = root.sigs.values.map(visitSig).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
+  def computeGraph(root: TypedAst.Root): ListMap[UsedSym, UsedSym] = {
+    val missingFromDefs = root.defs.values.map(visitDef).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
+    val missingFromSigs = root.sigs.values.map(visitSig).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
     missingFromDefs ++ missingFromSigs
   }
 
-  /**
-    * Returns the reachable missing symbols in `defn0`.
-    *
-    * A symbol is missing if the root does not contain its definition.
-    */
-  private def visitDef(defn0: TypedAst.Def): ListMap[ReachableSym, ReachableSym] = defn0 match {
-    case TypedAst.Def(sym, _, exp, _) => visitExp(exp)(ReachableSym.DefnSym(sym))
+  /** Returns the all the uses of functions and signatures in `defn0`. */
+  private def visitDef(defn0: TypedAst.Def): ListMap[UsedSym, UsedSym] = defn0 match {
+    case TypedAst.Def(sym, _, exp, _) => visitExp(exp)(UsedSym.DefnSym(sym))
   }
 
-  /**
-    * Returns the reachable missing symbols in `sig0`.
-    *
-    * A symbol is missing if the root does not contain its definition.
-    */
-  private def visitSig(sig0: TypedAst.Sig): ListMap[ReachableSym, ReachableSym] = sig0 match {
-    case TypedAst.Sig(sym, _, exp, _) => exp.map(visitExp(_)(ReachableSym.SigSym(sym))).getOrElse(ListMap.empty)
+  /** Returns the all the uses of functions and signatures in `sig0`. */
+  private def visitSig(sig0: TypedAst.Sig): ListMap[UsedSym, UsedSym] = sig0 match {
+    case TypedAst.Sig(sym, _, exp, _) => exp.map(visitExp(_)(UsedSym.SigSym(sym))).getOrElse(ListMap.empty)
   }
 
-  /**
-    * Returns the reachable missing symbols in `exp0`.
-    *
-    * A symbol is missing if the root does not contain its definition.
-    */
-  private def visitExp(exp0: Expr)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = exp0 match {
+  /** Returns the all the uses of functions and signatures in `exp0`. */
+  private def visitExp(exp0: Expr)(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = exp0 match {
     case Expr.Cst(_, _, _) =>
       ListMap.empty
 
@@ -92,7 +77,7 @@ object UseGraph {
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.ApplyDef(SymUse.DefSymUse(sym, _), exps, _, _, _, _, _) =>
-      visitExps(exps) + (sym0 -> ReachableSym.DefnSym(sym))
+      visitExps(exps) + (sym0 -> UsedSym.DefnSym(sym))
 
     case Expr.ApplyLocalDef(_, exps, _, _, _, _) =>
       visitExps(exps)
@@ -101,7 +86,7 @@ object UseGraph {
       visitExps(exps)
 
     case Expr.ApplySig(SymUse.SigSymUse(sym, _), exps, _, _, _, _, _, _) =>
-      visitExps(exps) + (sym0 -> ReachableSym.SigSym(sym))
+      visitExps(exps) + (sym0 -> UsedSym.SigSym(sym))
 
     case Expr.Unary(_, exp, _, _, _) =>
       visitExp(exp)
@@ -272,7 +257,7 @@ object UseGraph {
       visitExp(exp)
 
     case Expr.FixpointConstraintSet(constrs, _, _) =>
-      constrs.map(visitFixpointConstraint).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
+      constrs.map(visitFixpointConstraint).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
 
     case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
@@ -287,7 +272,7 @@ object UseGraph {
       visitExps(exps1) ++
         visitExp(exp) ++
         visitExps(exps2) ++
-        from.map(visitPredicateBody).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _) ++
+        from.map(visitPredicateBody).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _) ++
         visitExps(exps3)
 
     case Expr.FixpointSolveWithProject(exps, _, _, _, _, _) =>
@@ -301,39 +286,39 @@ object UseGraph {
 
   }
 
-  /** Returns the symbols reachable from `exps`. */
-  private def visitExps(exps: List[Expr])(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = {
-    exps.map(visitExp).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
+  /** Returns the all the uses of functions and signatures in `exps`. */
+  private def visitExps(exps: List[Expr])(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = {
+    exps.map(visitExp).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
   }
 
-  /** Returns the symbols reachable from `head0`. */
-  private def visitFixpointConstraint(constr0: TypedAst.Constraint)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = constr0 match {
+  /** Returns the all the uses of functions and signatures in `constr0`. */
+  private def visitFixpointConstraint(constr0: TypedAst.Constraint)(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = constr0 match {
     case TypedAst.Constraint(_, head, body, _) =>
-      visitPredicateHead(head) ++ body.map(visitPredicateBody).foldLeft(ListMap.empty[ReachableSym, ReachableSym])(_ ++ _)
+      visitPredicateHead(head) ++ body.map(visitPredicateBody).foldLeft(ListMap.empty[UsedSym, UsedSym])(_ ++ _)
   }
 
-  /** Returns the symbols reachable from `head0`. */
-  private def visitPredicateHead(head0: TypedAst.Predicate.Head)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = head0 match {
+  /** Returns the all the uses of functions and signatures in `head0`. */
+  private def visitPredicateHead(head0: TypedAst.Predicate.Head)(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = head0 match {
     case TypedAst.Predicate.Head.Atom(_, _, exps, _, _) => visitExps(exps)
   }
 
-  /** Returns the symbols reachable from `body0`. */
-  private def visitPredicateBody(body0: TypedAst.Predicate.Body)(implicit sym0: ReachableSym): ListMap[ReachableSym, ReachableSym] = body0 match {
+  /** Returns the all the uses of functions and signatures in `body0`. */
+  private def visitPredicateBody(body0: TypedAst.Predicate.Body)(implicit sym0: UsedSym): ListMap[UsedSym, UsedSym] = body0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => ListMap.empty
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
   }
 
   /**
-    * Represents a reachable symbol.
+    * Represents a used symbol.
     */
-  sealed trait ReachableSym
+  sealed trait UsedSym
 
-  object ReachableSym {
+  object UsedSym {
 
-    case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
+    case class DefnSym(sym: Symbol.DefnSym) extends UsedSym
 
-    case class SigSym(sym: Symbol.SigSym) extends ReachableSym
+    case class SigSym(sym: Symbol.SigSym) extends UsedSym
 
   }
 

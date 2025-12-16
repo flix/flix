@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.effectlock.UseGraph.ReachableSym
+import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -253,11 +253,11 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  private def mkString(kv: (ReachableSym, ReachableSym)): (String, String) = kv match {
-    case (ReachableSym.DefnSym(source), ReachableSym.DefnSym(dest)) => source.toString -> dest.toString
-    case (ReachableSym.DefnSym(source), ReachableSym.SigSym(dest)) => source.toString -> dest.toString
-    case (ReachableSym.SigSym(source), ReachableSym.DefnSym(dest)) => source.toString -> dest.toString
-    case (ReachableSym.SigSym(source), ReachableSym.SigSym(dest)) => source.toString -> dest.toString
+  private def mkString(kv: (UsedSym, UsedSym)): (String, String) = kv match {
+    case (UsedSym.DefnSym(source), UsedSym.DefnSym(dest)) => source.toString -> dest.toString
+    case (UsedSym.DefnSym(source), UsedSym.SigSym(dest)) => source.toString -> dest.toString
+    case (UsedSym.SigSym(source), UsedSym.DefnSym(dest)) => source.toString -> dest.toString
+    case (UsedSym.SigSym(source), UsedSym.SigSym(dest)) => source.toString -> dest.toString
   }
 
 }
