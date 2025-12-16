@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.effectlock.{TestEffectSafeUpgrade, TestSerialization}
+import ca.uwaterloo.flix.api.effectlock.{TestEffectSafeUpgrade, TestSerialization, TestUseGraph}
 import ca.uwaterloo.flix.api.lsp.LspSuite
 import org.scalatest.Suites
 
 class ApiSuite extends Suites(
   new LspSuite,
   new TestEffectSafeUpgrade,
-  new TestSerialization
+  new TestSerialization,
+  new TestUseGraph
 )
