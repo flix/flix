@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.api.effectlock.UseGraph.ReachableSym
 import ca.uwaterloo.flix.util.Options
-import ca.uwaterloo.flix.util.collection.ListMap
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestUseGraph extends AnyFunSuite with TestUtils {
@@ -29,8 +29,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List.empty
     assert(actual == expected)
   }
 
@@ -42,8 +42,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List.empty
     assert(actual == expected)
   }
 
@@ -56,8 +56,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List.empty
     assert(actual == expected)
   }
 
@@ -69,8 +69,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List("f" -> "g")
     assert(actual == expected)
   }
 
@@ -83,8 +83,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList.sorted
+    val expected = List("f" -> "g", "h" -> "g").sorted
     assert(actual == expected)
   }
 
@@ -101,8 +101,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList.sorted
+    val expected = List("f" -> "a", "g" -> "b", "h" -> "c").sorted
     assert(actual == expected)
   }
 
@@ -117,8 +117,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List("f" -> "ToString.toString")
     assert(actual == expected)
   }
 
@@ -133,8 +133,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List("f" -> "ToString.toString")
     assert(actual == expected)
   }
 
@@ -159,8 +159,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList.sorted
+    val expected = List("f" -> "Bla.write", "f" -> "ToString.toString", "g" -> "h", "h" -> "Bla.write").sorted
     assert(actual == expected)
   }
 
@@ -179,8 +179,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List("f" -> "ToString.toString")
     assert(actual == expected)
   }
 
@@ -192,8 +192,8 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList.sorted
+    val expected = List("f" -> "g", "g" -> "f").sorted
     assert(actual == expected)
   }
 
@@ -204,9 +204,16 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val actual = UseGraph.computeGraph(root)
-    val expected = ListMap.empty
+    val actual = UseGraph.computeGraph(root).map(mkString).toList
+    val expected = List("f" -> "f")
     assert(actual == expected)
+  }
+
+  private def mkString(kv: (ReachableSym, ReachableSym)): (String, String) = kv match {
+    case (ReachableSym.DefnSym(source), ReachableSym.DefnSym(dest)) => source.toString -> dest.toString
+    case (ReachableSym.DefnSym(source), ReachableSym.SigSym(dest)) => source.toString -> dest.toString
+    case (ReachableSym.SigSym(source), ReachableSym.DefnSym(dest)) => source.toString -> dest.toString
+    case (ReachableSym.SigSym(source), ReachableSym.SigSym(dest)) => source.toString -> dest.toString
   }
 
 }
