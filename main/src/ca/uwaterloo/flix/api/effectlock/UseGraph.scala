@@ -203,7 +203,7 @@ object UseGraph {
       visitExp(exp)
 
     case Expr.Handler(_, rules, _, _, _, _, _) =>
-      visitExps(rules.map(r => r.exp))
+      visitExps(rules.map(_.exp))
 
     case Expr.RunWith(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
