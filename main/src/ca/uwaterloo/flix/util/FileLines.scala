@@ -15,9 +15,10 @@
  */
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.SourcePosition
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.util.FileLines.LineInfo
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -28,6 +29,10 @@ import scala.collection.mutable.ArrayBuffer
   * @param endIndexExclusive The exclusive end index of the file content (zero-indexed). MUST be `>= lineStarts.last + lineLengths.last`.
   */
 class FileLines private(private var lineStarts: Array[Int], private var lineLengths: Array[Int], private val endIndexExclusive: Int) {
+  assert(lineStarts.nonEmpty)
+  assert(lineLengths.nonEmpty)
+  assert(lineStarts.length == lineLengths.length)
+  assert(endIndexExclusive >= lineStarts.last + lineLengths.last)
 
   /** Returns the index of the first character of the given line (one-indexed). */
   def indexOfLine(line: Int): Int =
@@ -36,36 +41,49 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   /**
     * Returns the line number of the given index (one-indexed).
     *
-    * Returns `1` for out-of-bounds indices.
+    * Returns `1` for negative indices and the last line for indices positively out of bounds.
     *
     * Time Complexity: O(log lineCount)
     */
   def getLine(index: Int): Int = {
+    assert(0 <= index, index)
+    assert(index <= endIndexExclusive, index.toString + ", " + endIndexExclusive)
     if (index < 0) {
-      return 1
-    } else if (index >= endIndexExclusive) {
       return 1
     }
 
-    ???
+    /** low (inclusive), high (exclusive). */
+    @tailrec
+    def search(low: Int, high: Int): Int = {
+      if (low >= high) throw InternalCompilerException("Unreachable: lineStarts is non-empty.", SourceLocation.Unknown)
+      if (low + 1 == high) return low
+      val mid = low + ((high - low) / 2)
+      val cmp = lineStarts(mid).compareTo(index)
+      if (cmp == 0) {
+        mid
+      } else if (cmp < 0) {
+        search(low, mid)
+      } else {
+        // Ensure that mid is still considered in the search.
+        search(mid, high)
+      }
+    }
+
+    search(0, lineStarts.length) + 1
   }
 
   /**
     * Returns `(line, col)` (one-indexed).
     *
-    * Returns `(1, 1)` for out-of-bounds indices.
+    * Returns XYZ for out-of-bounds indices.
     *
     * Time Complexity: O(log lineCount)
     */
   def getLineAndCol(index: Int): (Int, Int) = {
     val line = getLine(index)
-    if (line == -1) {
-      (1, 1)
-    } else {
-      val lineStart = lineStarts(index)
-      val col = line - lineStart + 1
-      (line, col)
-    }
+    val lineStart = indexOfLine(line)
+    val col = index - lineStart + 1
+    (line, col)
   }
 
   /**
@@ -89,8 +107,8 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
     */
   def getLineAndColExclusive(index: Int): (Int, Int) = {
     val (line, col) = getLineAndCol(index)
-    if (col == 1 && line > 0) {
-      (line - 1, lineLengths(line - 1))
+    if (col == 1 && line > 1) {
+      (line - 1, indexOfLine(line - 1))
     } else {
       (line, col)
     }
@@ -110,8 +128,8 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
 
   /** Returns [[LineInfo]] for `line` if it exists. */
   def nthLineInfo(line: Int): Option[LineInfo] = {
-    if (0 <= line && line < lineStarts.length) {
-      Some(LineInfo(lineStarts(line), lineLengths(line)))
+    if (1 <= line && line <= lineStarts.length) {
+      Some(LineInfo(indexOfLine(line), lineLengths(line - 1)))
     } else {
       None
     }
@@ -142,7 +160,7 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
 object FileLines {
 
   /** A singleton instance representing an empty file. */
-  val empty: FileLines = new FileLines(Array.empty, Array.empty, 0)
+  val empty: FileLines = new FileLines(Array(0), Array(0), 0)
 
   /**
     * Returns a new [[FileLines]] for the given `chars`.
@@ -153,14 +171,15 @@ object FileLines {
     val lineStarts = ArrayBuffer[Int](0)
     val lineLengths = ArrayBuffer[Int]()
     var index = 0
-    while (index <= chars.length) {
+    while (index < chars.length) {
       if (chars(index) == '\n') {
         val extra = if (index > 0 && chars(index - 1) == '\r') 1 else 0;
-        lineLengths += (index - lineStarts.last - extra - 1)
+        lineLengths += (index - extra - lineStarts.last)
         lineStarts += index + 1
       }
       index += 1
     }
+    lineLengths += (index - lineStarts.last)
     new FileLines(lineStarts.toArray, lineLengths.toArray, chars.length)
   }
 
