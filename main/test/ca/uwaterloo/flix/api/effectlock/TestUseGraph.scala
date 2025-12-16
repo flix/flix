@@ -209,6 +209,50 @@ class TestUseGraph extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("UseGraph.13") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a] = ToString.toString(x)
+        |
+        |trait ToString[a: Type] with Helper[a] {
+        |    pub def toString(x: a): String with Helper[a] = Helper.help(x)
+        |}
+        |
+        |trait Helper[a: Type] {
+        |    pub def help(x: a): String
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val actual = UseGraph.computeGraph(root).map(mkString).toList.sorted
+    val expected = List("f" -> "ToString.toString", "ToString.toString" -> "Helper.help").sorted
+    assert(actual == expected)
+  }
+
+  test("UseGraph.14") {
+    val input =
+      """
+        |pub def f(x: a): String with ToString[a] = ToString.toString(x)
+        |
+        |trait ToString[a: Type] with Helper[a] {
+        |    pub def toString(x: a): String with Helper[a] = Helper.help(x)
+        |}
+        |
+        |trait Helper[a: Type] with Helper2[a] {
+        |    pub def help(x: a): String with Helper2[a] = Helper2.help(x)
+        |}
+        |
+        |trait Helper2[a: Type] {
+        |    pub def help(x: a): String
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val actual = UseGraph.computeGraph(root).map(mkString).toList.sorted
+    val expected = List("f" -> "ToString.toString", "ToString.toString" -> "Helper.help", "Helper.help" -> "Helper2.help").sorted
+    assert(actual == expected)
+  }
+
   private def mkString(kv: (ReachableSym, ReachableSym)): (String, String) = kv match {
     case (ReachableSym.DefnSym(source), ReachableSym.DefnSym(dest)) => source.toString -> dest.toString
     case (ReachableSym.DefnSym(source), ReachableSym.SigSym(dest)) => source.toString -> dest.toString
