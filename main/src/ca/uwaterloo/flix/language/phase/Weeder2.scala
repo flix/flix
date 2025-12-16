@@ -963,7 +963,7 @@ object Weeder2 {
       mapN(pickExpr(tree)) {
         case exp2 =>
           val file = tree.loc.source.name
-          val line = tree.loc.sp1.lineOneIndexed
+          val line = tree.loc.beginLine
           val cst = Constant.Str(s"[$file:$line] ")
           val exp1 = WeededAst.Expr.Cst(cst, tree.loc)
           WeededAst.Expr.Binary(SemanticOp.StringOp.Concat, exp1, exp2, tree.loc)
@@ -982,7 +982,7 @@ object Weeder2 {
 
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
-        case (acc, token@Token(_, _, _, _, _, _)) =>
+        case (acc, token@Token(_, _, _, _)) =>
           val loc = token.mkSourceLocation()
           val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
           val lit = lit0.stripSuffix("${")
@@ -1031,9 +1031,8 @@ object Weeder2 {
       mapN(pickNameIdent(tree)) {
         ident =>
           // Strip '?' suffix and update source location
-          val sp1 = ident.loc.sp1
-          val sp2 = SourcePosition.moveLeft(ident.loc.sp2)
-          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, ident.loc.source, sp1, sp2))
+          val loc = ident.loc.copy(sp2 = ident.loc.sp2 - 1)
+          val id = Name.Ident(ident.name.stripSuffix("?"), loc)
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
@@ -1050,11 +1049,11 @@ object Weeder2 {
       // Note: This visitor is used by both expression literals and pattern literals.
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
-        case token@Token(_, _, _, _, _, _) => token.kind match {
+        case token@Token(_, _, _, _) => token.kind match {
           case TokenKind.DebugInterpolator =>
             val loc = tree.loc
             val file = loc.source.name
-            val line = loc.sp1.lineOneIndexed
+            val line = loc.beginLine
             val text = token.text.stripPrefix("d\"").stripSuffix("\"")
             Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
           case TokenKind.KeywordNull => Validation.Success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
@@ -1194,11 +1193,11 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree)) { op =>
         op.children.head match {
           // User-defined operators - use the operator text directly
-          case t@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+          case t@Token(TokenKind.GenericOperator, _, _, _) =>
             Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
 
           // Built-in operators - lookup
-          case Token(kind, _, _, _, _, _) =>
+          case Token(kind, _, _, _) =>
             tokenOperatorToName(kind) match {
               case Some(funcName) =>
                 Validation.Success(Expr.Ambiguous(Name.mkQName(funcName, loc), loc))
@@ -1228,13 +1227,13 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree), pick(TreeKind.Expr.Expr, tree))(
         (opTree, exprTree) => {
           opTree.children.headOption match {
-            case Some(opToken@Token(_, _, _, _, _, _)) =>
+            case Some(opToken@Token(_, _, _, _)) =>
               val literalToken = tryPickNumberLiteralToken(exprTree)
               literalToken match {
                 // fold unary minus into a constant
                 case Some(lit) if opToken.text == "-" =>
                   // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
-                  val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.sp1, lit.sp2)
+                  val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end)
                   val syntheticLiteral = Tree(TreeKind.Expr.Literal, Array(syntheticToken), exprTree.loc.asSynthetic)
                   visitLiteralExpr(syntheticLiteral)
                 case _ => mapN(visitExpr(exprTree))(expr => {
@@ -1260,7 +1259,7 @@ object Weeder2 {
       val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
       maybeTree.flatMap(_.children(0) match {
-        case t@Token(_, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case t@Token(_, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       })
     }
@@ -1285,15 +1284,15 @@ object Weeder2 {
               // Single Token Operator.
               op.children.head match {
                 // Standard operators.
-                case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
+                case Token(kind, _, _, _) if tokenOperatorToName(kind).isDefined =>
                   Validation.Success(mkApply(tokenOperatorToName(kind).get))
 
                 // Special cases that create different AST nodes
-                case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-                case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-                case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-                case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
+                case Token(TokenKind.KeywordAnd, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+                case Token(TokenKind.KeywordOr, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+                case Token(TokenKind.ColonColon, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
+                case Token(TokenKind.AngledPlus, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
+                case Token(TokenKind.KeywordInstanceOf, _, _, _) =>
                   tryPickQName(exprs(1)) match {
                     case Some(qname) =>
                       if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
@@ -1313,7 +1312,7 @@ object Weeder2 {
                       sctx.errors.add(error)
                       Validation.Success(Expr.Error(error))
                   }
-                case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+                case token@Token(TokenKind.GenericOperator, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
                 case _ =>
@@ -2631,16 +2630,16 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val literalToken = ArrayOps.getOption(tree.children, 1) match {
-        case Some(t@Token(_, _, _, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case Some(t@Token(_, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       }
       flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
-        case opToken@Token(_, _, _, _, _, _) =>
+        case opToken@Token(_, _, _, _) =>
           literalToken match {
             // fold unary minus into a constant, and visit it like any other constant
             case Some(lit) if opToken.text == "-" =>
               // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
-              val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.sp1, lit.sp2)
+              val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end)
               val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(syntheticToken), tree.loc.asSynthetic)
               visitLiteralPat(syntheticLiteral)
             case _ =>
@@ -3401,10 +3400,10 @@ object Weeder2 {
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
-      val positionAfterDot = SourcePosition.moveRight(last.loc.sp2)
-      val emptyIdentLoc = SourceLocation(isReal = true, last.loc.source, positionAfterDot, positionAfterDot)
+      val positionAfterDot = last.loc.sp2 + 1
+      val emptyIdentLoc = SourceLocation.zeroPoint(isReal = true, last.loc.source, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
-      val qnameLoc = SourceLocation(isReal = true, first.loc.source, first.loc.sp1, positionAfterDot)
+      val qnameLoc = first.loc.copy(sp2 = positionAfterDot)
       Name.QName(nname, emptyIdent, qnameLoc)
     } else {
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
@@ -3471,8 +3470,8 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
     tree.children.headOption match {
-      case Some(token@Token(_, src, _, _, sp1, sp2)) =>
-        Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
+      case Some(token@Token(_, _, _, _)) =>
+        Name.Ident(token.text, token.mkSourceLocation())
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
@@ -3523,7 +3522,7 @@ object Weeder2 {
     */
   private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
     tree.children.exists {
-      case Token(k, _, _, _, _, _) => k == kind
+      case Token(k, _, _, _) => k == kind
       case _ => false
     }
   }
@@ -3541,7 +3540,7 @@ object Weeder2 {
     * Collects all immediate child tokens from a tree.
     */
   private def pickAllTokens(tree: Tree): Array[Token] = {
-    tree.children.collect { case token@Token(_, _, _, _, _, _) => token }
+    tree.children.collect { case token@Token(_, _, _, _) => token }
   }
 
   /**
@@ -3549,7 +3548,7 @@ object Weeder2 {
     */
   private def text(tree: Tree): List[String] = {
     tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
-      case token@Token(_, _, _, _, _, _) => acc :+ token.text
+      case token@Token(_, _, _, _) => acc :+ token.text
       case _ => acc
     })
   }

@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{LocationLink, Position}
-import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.TypedAst.Root
 
 object ImplementationProvider {
 
@@ -43,10 +43,16 @@ object ImplementationProvider {
     * Returns an empty iterable if there is no such trait symbol.
     */
   private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
-    root.instances.keys.filter(traitSym => traitSym.loc.source.name == uri
-      && (traitSym.loc.beginLine < p.line
-      || (traitSym.loc.beginLine == p.line && traitSym.loc.beginCol <= p.character))
-      && (traitSym.loc.endLine > p.line
-      || (traitSym.loc.endLine == p.line && traitSym.loc.endCol >= p.character)))
+    root.instances.keys.filter(traitSym => {
+      val loc = traitSym.loc
+      if (loc.source.name != uri) {
+        false
+      } else {
+        val (beginLine, beginCol) = loc.beginLineAndCol
+        val (endLine, endCol) = loc.endLineAndCol
+        (beginLine < p.line || (beginLine == p.line && beginCol <= p.character)) &&
+          (endLine > p.line || (endLine == p.line && endCol >= p.character))
+      }
+    })
   }
 }

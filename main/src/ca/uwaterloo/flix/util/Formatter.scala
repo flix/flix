@@ -1,6 +1,6 @@
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.util.collection.ListOps
 
 import scala.collection.mutable
@@ -11,14 +11,12 @@ trait Formatter {
     this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
 
   def code(loc: SourceLocation, msg: String): String = {
-    val beginLine = loc.beginLine
-    val beginCol = loc.beginCol
-    val endLine = loc.endLine
-    val endCol = loc.endCol
+    val (beginLine, beginCol) = loc.beginLineAndCol
+    val (endLine, endCol) = loc.endLineAndCol
 
     def arrowUnderline: String = {
       val sb = new mutable.StringBuilder
-      val lineAt = loc.lineAt(beginLine)
+      val lineAt = loc.source.getLine(beginLine)
       val lineNo = beginLine.toString + " | "
       sb.append(lineNo)
         .append(lineAt)
@@ -35,7 +33,7 @@ trait Formatter {
       val numWidth = endLine.toString.length
       val sb = new mutable.StringBuilder
       for (lineNo <- beginLine to endLine) {
-        val currentLine = loc.lineAt(lineNo)
+        val currentLine = loc.source.getLine(lineNo)
         sb.append(padLeft(numWidth, lineNo.toString))
           .append(" |")
           .append(red(">"))

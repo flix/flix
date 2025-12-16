@@ -53,16 +53,25 @@ class Source(val input: Input, val data: Array[Char]) extends Sourceable {
 
   override def toString: String = name
 
+  /**
+    * Return the characters between `start` (inclusive) and `end` (exclusive).
+    *
+    * Returns "!bad source lookup!" if `start` or `end` is out of bounds.
+    */
+  def getData(start: Int, end: Int): String = {
+    if (start < 0 || start >= data.length || end < 0 || end > data.length) return "!bad source lookup!"
+    new String(data.slice(start, end))
+  }
 
   /**
    * Gets a line of text from the source as a string (without newline characters).
    *
-    * If `line` is out of bounds, the empty string is returned.
+    * If `line` is out of bounds, "!bad source line lookup!" is returned.
    */
   def getLine(line: Int): String = {
     lines.nthLineInfo(line) match {
-      case Some(FileLines.LineInfo(index, realLength)) => data.slice(index, realLength).mkString
-      case None => ""
+      case Some(FileLines.LineInfo(index, realLength)) => new String(data.slice(index, realLength))
+      case None => "!bad source line lookup!"
     }
   }
 }

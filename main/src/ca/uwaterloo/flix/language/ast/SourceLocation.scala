@@ -46,13 +46,21 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
 
   /**
     * Returns the one-indexed line where the entity begins.
+    *
+    * Time Complexity: O(log lineCount)
     */
   def beginLine: Int = source.lines.getLine(sp1)
 
-  /**
-    * Returns the one-indexed column where the entity begins.
-    */
-  def beginCol: Int = source.lines.getColumn(sp1)
+  /** Returns the start (inclusive) `(line, col)` (one-indexed). */
+  def beginLineAndCol: (Int, Int) = {
+    source.lines.getLineAndCol(sp1)
+  }
+
+  /** Returns the start position (inclusive). */
+  def beginPosition: SourcePosition = {
+    val (line, col) = beginLineAndCol
+    SourcePosition(line, col.toShort)
+  }
 
   /**
     * Returns `true` if `this` [[SourceLocation]] completely contains `that`, otherwise `false`.
@@ -71,13 +79,19 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
 
   /**
     * Returns the one-indexed line where the entity ends.
+    *
+    * Time Complexity: O(log lineCount)
     */
-  def endLine: Int = source.lines.getLine(sp2)
+  def endLine: Int =
+    source.lines.getLine(sp2)
 
-  /**
-    * Returns the one-indexed column where the entity ends.
-    */
-  def endCol: Int = source.lines.getColumn(sp2)
+  /** Returns the end (exclusive) `(line, col)` (one-indexed). */
+  def endLineAndCol: (Int, Int) =
+    source.lines.getLineAndColExclusive(sp2)
+
+/** Returns the end position (exclusive) */
+  def endPosition: SourcePosition =
+    source.lines.getPositionExclusive(sp2)
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -105,37 +119,28 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
 
   /**
-    * Returns the text at the given `line`.
-    *
-    * The line does not have to refer to `this` source location.
+    * Returns a string representation of `this` source location with the line number.
     */
-  def lineAt(line: Int): String = source.getLine(line)
-    .replaceAll("\n", "")
-    .replaceAll("\r", "")
+  def formatWithLine: String = s"${source.name}:$beginLine"
 
-//  /**
-//    * Returns a string representation of `this` source location with the line number.
-//    */
-//  def formatWithLine: String = s"${source.name}:$beginLine"
+  /**
+    * Returns a string representation of `this` source location with the line and column numbers.
+    */
+  def format: String = {
+    val (beginLine, beginCol) = source.lines.getLineAndCol(sp1)
+    s"${source.name}:$beginLine:$beginCol"
+  }
 
-//  /**
-//    * Returns a string representation of `this` source location with the line and column numbers.
-//    */
-//  def format: String = s"${source.name}:$beginLine:$beginCol"
-
-//  /**
-//    * Returns the source text of the source location.
-//    */
-//  def text: Option[String] = {
-//    if (isSingleLine) {
-//      val line = lineAt(beginLine)
-//      val b = Math.min(beginCol - 1, line.length)
-//      val e = Math.min(endCol - 1, line.length)
-//      Some(line.substring(b, e))
-//    } else {
-//      None
-//    }
-//  }
+  /**
+    * Returns the source text of the source location.
+    */
+  def text: Option[String] = {
+    if (isSingleLine) {
+      Some(source.getData(sp1, sp2))
+    } else {
+      None
+    }
+  }
 
   /**
     * Returns the hashCode of `this` source location.
@@ -158,6 +163,6 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     *
     * Note: The `toString` method should only be used for debugging.
     */
-  override def toString: String = ???
+  override def toString: String = formatWithLine
 
 }

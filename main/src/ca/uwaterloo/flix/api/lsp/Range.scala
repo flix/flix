@@ -29,10 +29,8 @@ object Range {
   /**
     * Returns a range from the given source location `loc`.
     */
-  def from(loc: SourceLocation): Range = {
-    // NB: LSP line and column numbers are zero-indexed.
+  def from(loc: SourceLocation): Range =
     Range(Position.fromBegin(loc), Position.fromEnd(loc))
-  }
 
   def fromLsp4j(range: lsp4j.Range): Range = Range(Position.fromLsp4j(range.getStart), Position.fromLsp4j(range.getEnd))
 

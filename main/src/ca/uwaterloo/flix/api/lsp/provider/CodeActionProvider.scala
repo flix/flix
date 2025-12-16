@@ -154,7 +154,7 @@ object CodeActionProvider {
       CodeAction(
         title = s"Prefix with '$enumName.'",
         kind = CodeActionKind.QuickFix,
-        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(sourceLocation2Range(loc), s"$enumName.$tagName"))))),
+        edit = Some(WorkspaceEdit(Map(uri -> List(TextEdit(Range.from(loc), s"$enumName.$tagName"))))),
         command = None
       )
     }.toList
@@ -285,15 +285,7 @@ object CodeActionProvider {
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
   private def overlaps(range: Range, loc: SourceLocation): Boolean = {
-    val range2 = sourceLocation2Range(loc)
+    val range2 = Range.from(loc)
     range.overlapsWith(range2)
-  }
-
-  private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.lineOneIndexed, sourcePosition.colOneIndexed)
-  }
-
-  private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
-    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
   }
 }

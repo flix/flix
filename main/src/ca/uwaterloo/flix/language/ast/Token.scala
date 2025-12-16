@@ -31,10 +31,8 @@ import ca.uwaterloo.flix.language.ast.shared.Source
   * @param src   A pointer to the source that this lexeme stems from.
   * @param start The absolute character offset into `src` of the beginning of the lexeme. Must be zero-indexed.
   * @param end   The absolute character offset into `src` of the end (exclusive) of the lexeme. Must be zero-indexed.
-  * @param sp1   The source position that the lexeme __starts__ on.
-  * @param sp2   The source position that the lexeme __ends__ on (exclusive).
   */
-case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: SourcePosition, sp2: SourcePosition) extends SyntaxTree.Child {
+case class Token(kind: TokenKind, src: Source, start: Int, end: Int) extends SyntaxTree.Child {
   /**
     * Computes the lexeme that the token refers to by slicing it from `src`.
     *
@@ -47,10 +45,27 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int, sp1: Source
     *
     * NB: Tokens are zero-indexed
     */
-  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, sp1, sp2)
+  def mkSourceLocation(isReal: Boolean = true): SourceLocation =
+    SourceLocation(isReal, src, start, end)
+
+  /** Returns the start (inclusive)` (line, col)` (one-indexed). */
+  def beginLineAndCol: (Int, Int) =
+    src.lines.getLineAndCol(start)
+
+  /** Returns the start position (inclusive). */
+  def beginPosition: SourcePosition =
+    src.lines.getPosition(start)
+
+  /** Returns the end position (exclusive). */
+  def endPosition: SourcePosition =
+    src.lines.getPositionExclusive(end)
 
   /**
     * Returns a one-indexed string representation of this token. Must only be used for debugging.
     */
-  override def toString: String = s"Token($kind, $text, ${sp1.lineOneIndexed}, ${sp1.colOneIndexed}, ${sp2.lineOneIndexed}, ${sp2.colOneIndexed})"
+  override def toString: String = {
+    val begin = beginPosition
+    val end = endPosition
+    s"Token($kind, $text, ${begin.lineOneIndexed}, ${begin.colOneIndexed}, ${end.lineOneIndexed}, ${end.colOneIndexed})"
+  }
 }

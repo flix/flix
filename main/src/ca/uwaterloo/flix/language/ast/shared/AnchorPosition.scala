@@ -27,7 +27,7 @@ object AnchorPosition {
     * The anchor points to where `import`s and `use`s should be inserted.
     */
   def mkImportOrUseAnchor(name: Name.NName): AnchorPosition = {
-    val sp = name.loc.sp1
+    val (line, col) = name.loc.beginLineAndCol
 
     // We must consider two cases: whether the namespace is the root or is a proper module name.
     if (name.isRoot) {
@@ -40,7 +40,7 @@ object AnchorPosition {
       //     mod Bar {
       // | <---- anchor point for "Bar" is here. Note col is 1, but spaces is 8.
       //
-      AnchorPosition(sp.lineOneIndexed + 1, 1, spaces = (sp.colOneIndexed + 4 - 1).toShort)
+      AnchorPosition(line + 1, 1, spaces = (col + 4 - 1).toShort)
     }
   }
 }

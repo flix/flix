@@ -938,15 +938,18 @@ object Visitor {
       return false
     }
 
-    val afterStart = loc.beginLine < pos.line ||
-      (loc.beginLine == pos.line && loc.beginCol <= pos.character)
+    val (beginLine, beginCol) = loc.beginLineAndCol
+    val (endLine, endCol) = loc.endLineAndCol
+
+    val afterStart = beginLine < pos.line ||
+      (beginLine == pos.line && beginCol <= pos.character)
     if (!afterStart) {
       return false
     }
 
 
-    val beforeEnd = pos.line < loc.endLine ||
-      (pos.line == loc.endLine && pos.character < loc.endCol)
+    val beforeEnd = pos.line < endLine ||
+      (pos.line == endLine && pos.character < endCol)
     if (!beforeEnd) {
       return false
     }

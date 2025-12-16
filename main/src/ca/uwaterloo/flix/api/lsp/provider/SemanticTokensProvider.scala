@@ -20,9 +20,11 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.*
+import ca.uwaterloo.flix.language.ast.shared.Constant.Null.tpe
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle.modifiers
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -47,17 +49,14 @@ object SemanticTokensProvider {
     val keywordModifierOrCommentTokens = sourceOpt match {
       case Some(source) =>
         root.tokens(source).iterator.collect {
-          case Token(kind, src, _, _, sp1, sp2) if kind.isKeyword =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Keyword, Nil, loc)
+          case token@Token(kind, _, _, _) if kind.isKeyword =>
+            SemanticToken(SemanticTokenType.Keyword, Nil, token.mkSourceLocation())
 
-          case Token(kind, src, _, _, sp1, sp2) if kind.isModifier =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
+          case token@Token(kind, _, _, _) if kind.isModifier =>
+            SemanticToken(SemanticTokenType.Modifier, Nil, token.mkSourceLocation())
 
-          case Token(kind, src, _, _, sp1, sp2) if kind.isComment =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Comment, Nil, loc)
+          case token@Token(kind, _, _, _) if kind.isComment =>
+            SemanticToken(SemanticTokenType.Comment, Nil, token.mkSourceLocation())
         }
       case None => Iterator.empty
     }
@@ -1056,16 +1055,9 @@ object SemanticTokensProvider {
   private def splitToken(tokens: List[SemanticToken]): List[SemanticToken] = {
     val splitTokens = ArrayBuffer.empty[SemanticToken]
     tokens.foreach {
-      // Do nothing if it's single-line
-      case token@SemanticToken(_, _, loc) if loc.isSingleLine =>
-        splitTokens += token
-      // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        for (line <- loc.sp1.lineOneIndexed to loc.sp2.lineOneIndexed) {
-          val begin = if (line == loc.sp1.lineOneIndexed) loc.sp1.colOneIndexed else 1.toShort
-          val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
-          val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
-          splitTokens += SemanticToken(tpe, modifiers, newLoc)
+        for((start, end) <- loc.source.lines.splitIntoLines(loc.sp1, loc.sp2)) {
+          splitTokens += SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, start, end))
         }
     }
     splitTokens.toList
@@ -1083,8 +1075,10 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      var relLine = token.loc.beginLine - 1
-      var relCol = token.loc.beginCol - 1
+      val (beginLine, beginCol) = token.loc.beginLineAndCol
+      val (_, endCol) = token.loc.endLineAndCol
+      var relLine = beginLine - 1
+      var relCol = beginCol - 1
 
       if (encoding.nonEmpty) {
         relLine -= prevLine
@@ -1095,12 +1089,12 @@ object SemanticTokensProvider {
 
       encoding += relLine
       encoding += relCol
-      encoding += token.loc.endCol - token.loc.beginCol
+      encoding += endCol - beginCol
       encoding += token.tpe.toInt
       encoding += encodeModifiers(token.mod)
 
-      prevLine = token.loc.beginLine - 1
-      prevCol = token.loc.beginCol - 1
+      prevLine = beginLine - 1
+      prevCol = beginCol - 1
     }
 
     encoding.toList

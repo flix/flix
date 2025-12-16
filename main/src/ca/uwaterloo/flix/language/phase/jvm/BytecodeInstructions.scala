@@ -427,13 +427,15 @@ object BytecodeInstructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
+    val (beginLine, beginCol) = loc.beginLineAndCol
+    val end = loc.endPosition
     NEW(BackendObjType.ReifiedSourceLocation.jvmName)
     DUP()
     pushString(loc.source.name)
-    pushInt(loc.beginLine)
-    pushInt(loc.beginCol)
-    pushInt(loc.endLine)
-    pushInt(loc.endCol)
+    pushInt(beginLine)
+    pushInt(beginCol)
+    pushInt(end.lineOneIndexed)
+    pushInt(end.colOneIndexed)
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 

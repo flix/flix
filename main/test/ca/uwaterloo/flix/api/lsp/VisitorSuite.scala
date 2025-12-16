@@ -21,15 +21,30 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
 class VisitorSuite extends AnyFunSuite {
-  val source: Source = Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), Array.emptyCharArray)
+  val program: String =
+    """
+      |1234567
+      |223456
+      |323456789A
+      |423456
+      |52345678
+      |623456789ABC
+      |7234567
+      |8234567
+      |""".stripMargin.replace("\r", "")
+  val source: Source = Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), program.toCharArray)
   val uri = CompilerConstants.VirtualTestFile.toString
+
+  /** Returns the index of the character at the given position (one-indexed). */
+  private def positionToIndex(line: Int, column: Int): Int =
+    source.lines.indexOfLine(line) + column - 1
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 10),
-      SourcePosition.mkFromOneIndexed(6, 2)
+      positionToIndex(3, 10),
+      positionToIndex(6, 2)
     )
     val pos = Position(5, 5)
 
@@ -40,8 +55,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 4),
-      SourcePosition.mkFromOneIndexed(5, 2)
+      positionToIndex(3, 4),
+      positionToIndex(5, 2)
     )
     val  pos = Position(3, 5)
 
@@ -52,8 +67,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 4),
-      SourcePosition.mkFromOneIndexed(5, 2)
+      positionToIndex(3, 4),
+      positionToIndex(5, 2)
     )
     val  pos = Position(3, 4)
 
@@ -64,8 +79,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 4),
-      SourcePosition.mkFromOneIndexed(5, 3)
+      positionToIndex(3, 4),
+      positionToIndex(5, 3)
     )
     val  pos = Position(5, 1)
 
@@ -76,8 +91,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 4),
-      SourcePosition.mkFromOneIndexed(5, 3)
+      positionToIndex(3, 4),
+      positionToIndex(5, 3)
     )
     val  pos = Position(5, 2)
 
@@ -88,8 +103,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(5, 2),
-      SourcePosition.mkFromOneIndexed(5, 10)
+      positionToIndex(5, 2),
+      positionToIndex(5, 10)
     )
     val  pos = Position(5, 4)
 
@@ -100,8 +115,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(5, 2),
-      SourcePosition.mkFromOneIndexed(5, 10)
+      positionToIndex(5, 2),
+      positionToIndex(5, 10)
     )
     val  pos = Position(5, 2)
 
@@ -112,8 +127,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(5, 2),
-      SourcePosition.mkFromOneIndexed(5, 10)
+      positionToIndex(5, 2),
+      positionToIndex(5, 10)
     )
     val  pos = Position(5, 9)
 
@@ -124,8 +139,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(4, 4),
-      SourcePosition.mkFromOneIndexed(6, 10),
+      positionToIndex(4, 4),
+      positionToIndex(6, 10),
     )
     val pos = Position(3, 7)
 
@@ -136,8 +151,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 2),
-      SourcePosition.mkFromOneIndexed(6, 5),
+      positionToIndex(3, 2),
+      positionToIndex(6, 5),
     )
     val pos = Position(7, 4)
 
@@ -148,8 +163,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(2, 7),
-      SourcePosition.mkFromOneIndexed(6, 4),
+      positionToIndex(2, 7),
+      positionToIndex(6, 4),
     )
     val pos = Position(2, 6)
 
@@ -160,8 +175,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(2, 7),
-      SourcePosition.mkFromOneIndexed(6, 4),
+      positionToIndex(2, 7),
+      positionToIndex(6, 4),
     )
     val pos = Position(6, 11)
 
@@ -173,8 +188,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 5),
-      SourcePosition.mkFromOneIndexed(5, 3),
+      positionToIndex(3, 5),
+      positionToIndex(5, 3),
     )
     val pos = Position(5, 3)
 
@@ -185,8 +200,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(6, 4),
-      SourcePosition.mkFromOneIndexed(6, 8)
+      positionToIndex(6, 4),
+      positionToIndex(6, 8)
     )
     val pos = Position(6, 3)
 
@@ -197,8 +212,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(6, 4),
-      SourcePosition.mkFromOneIndexed(6, 8)
+      positionToIndex(6, 4),
+      positionToIndex(6, 8)
     )
     val pos = Position(6, 9)
 
@@ -209,8 +224,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(6, 4),
-      SourcePosition.mkFromOneIndexed(6, 8)
+      positionToIndex(6, 4),
+      positionToIndex(6, 8)
     )
     val pos = Position(6, 8)
 
@@ -221,8 +236,8 @@ class VisitorSuite extends AnyFunSuite {
     val loc = SourceLocation(
       isReal = true,
       source,
-      SourcePosition.mkFromOneIndexed(3, 6),
-      SourcePosition.mkFromOneIndexed(6, 10)
+      positionToIndex(3, 6),
+      positionToIndex(6, 10)
     )
     val pos = Position(4, 4)
 

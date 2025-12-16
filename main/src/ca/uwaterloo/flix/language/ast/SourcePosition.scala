@@ -1,7 +1,5 @@
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.util.InternalCompilerException
-
 object SourcePosition {
 
   /**
@@ -29,25 +27,6 @@ object SourcePosition {
     */
   def mkFromOneIndexed(line: Int, col: Int): SourcePosition =
     SourcePosition(lineOneIndexed = line, colOneIndexed = col.toShort)
-
-  /**
-    * Returns a new [[SourcePosition]] where the column of `pos` is reduced by 1.
-    *
-    * OBS: Crashes if the column cannot be reduced.
-    */
-  def moveLeft(pos: SourcePosition): SourcePosition = {
-    if (pos.colOneIndexed <= 1) throw InternalCompilerException(s"Trying to reduce the column of a position out of bounds.", SourceLocation.Unknown)
-    else SourcePosition(pos.lineOneIndexed, (pos.colOneIndexed - 1).toShort)
-  }
-
-  /**
-    * Returns a new [[SourcePosition]] where the column of `pos` is increased by 1.
-    *
-    * OBS: This new position might not be a real position in the source.
-    */
-  def moveRight(pos: SourcePosition): SourcePosition = {
-    SourcePosition(pos.lineOneIndexed, (pos.colOneIndexed + 1).toShort)
-  }
 
   /** [[PartialOrdering]] for [[SourcePosition]]s. */
   implicit object Order extends Ordering[SourcePosition] {

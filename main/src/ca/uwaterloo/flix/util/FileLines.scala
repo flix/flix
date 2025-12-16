@@ -15,35 +15,100 @@
  */
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.SourcePosition
 import ca.uwaterloo.flix.util.FileLines.LineInfo
 
-import scala.collection.Searching
 import scala.collection.mutable.ArrayBuffer
 
-class FileLines(private var lineStarts: Array[Int], private var lineLengths: Array[Int]) {
+/**
+  * A utility class for conversion between absolute indices and lines and columns in a text file.
+  *
+  * @param lineStarts        A sorted, non-empty array containing the start indices of each line in the file (zero-indexed). MUST have the same length as lineLengths.
+  * @param lineLengths       A non-empty array providing the length of each line. MUST have the same length as lineStarts.
+  * @param endIndexExclusive The exclusive end index of the file content (zero-indexed). MUST be `>= lineStarts.last + lineLengths.last`.
+  */
+class FileLines private(private var lineStarts: Array[Int], private var lineLengths: Array[Int], private val endIndexExclusive: Int) {
 
+  /** Returns the index of the first character of the given line (one-indexed). */
+  def indexOfLine(line: Int): Int =
+    lineStarts(line - 1)
+
+  /**
+    * Returns the line number of the given index (one-indexed).
+    *
+    * Returns `1` for out-of-bounds indices.
+    *
+    * Time Complexity: O(log lineCount)
+    */
   def getLine(index: Int): Int = {
-    // Written by AI
-    @annotation.tailrec
-    def loop(start: Int, end: Int): Int = {
-      if (start > end) start
-      else {
-        val mid = (start + end) / 2
-        val cmp = lineStarts(mid).compareTo(index)
-        if (cmp < 0) loop(mid + 1, end)
-        else if (cmp > 0) loop(start, mid - 1)
-        else mid
-      }
+    if (index < 0) {
+      return 1
+    } else if (index >= endIndexExclusive) {
+      return 1
     }
-    loop(0, lineStarts.length - 1)
+
+    ???
   }
 
-  def getColumn(index: Int): Int = {
+  /**
+    * Returns `(line, col)` (one-indexed).
+    *
+    * Returns `(1, 1)` for out-of-bounds indices.
+    *
+    * Time Complexity: O(log lineCount)
+    */
+  def getLineAndCol(index: Int): (Int, Int) = {
     val line = getLine(index)
-    val lineStart = lineStarts(line)
-    index - lineStart + 1
+    if (line == -1) {
+      (1, 1)
+    } else {
+      val lineStart = lineStarts(index)
+      val col = line - lineStart + 1
+      (line, col)
+    }
   }
 
+  /**
+    * Returns `(line, col)` (one-indexed).
+    *
+    * Returns `(1, 1)` for out-of-bounds indices.
+    *
+    * Time Complexity: O(log lineCount)
+    */
+  def getPosition(index: Int): SourcePosition = {
+    val (line, col) = getLineAndCol(index)
+    SourcePosition.mkFromOneIndexed(line, col)
+  }
+
+  /**
+    * Returns `(line, col)` (one-indexed).
+    *
+    * Instead of returning `(line, 1)`, `(line - 1, lastColOfPreviousLine + 1)` is returned (unless `line == 0`).
+    *
+    * Time Complexity: O(log lineCount)
+    */
+  def getLineAndColExclusive(index: Int): (Int, Int) = {
+    val (line, col) = getLineAndCol(index)
+    if (col == 1 && line > 0) {
+      (line - 1, lineLengths(line - 1))
+    } else {
+      (line, col)
+    }
+  }
+
+  /**
+    * Returns `(line, col)` (one-indexed).
+    *
+    * Instead of returning `(line, 1)`, `(line - 1, lastColOfPreviousLine + 1)` is returned (unless `line == 0`).
+    *
+    * Time Complexity: O(log lineCount)
+    */
+  def getPositionExclusive(index: Int): SourcePosition = {
+    val (line, col) = getLineAndColExclusive(index)
+    SourcePosition.mkFromOneIndexed(line, col)
+  }
+
+  /** Returns [[LineInfo]] for `line` if it exists. */
   def nthLineInfo(line: Int): Option[LineInfo] = {
     if (0 <= line && line < lineStarts.length) {
       Some(LineInfo(lineStarts(line), lineLengths(line)))
@@ -52,31 +117,58 @@ class FileLines(private var lineStarts: Array[Int], private var lineLengths: Arr
     }
   }
 
+  /** Returns the number of lines. */
   def lineCount: Int = lineStarts.length
+
+  /**
+    * Returns in-order single-line `(line, col)` (one-indexed) pairs that cover the range of `sp1` to `sp2` (exclusive).
+    */
+  def splitIntoLines(sp1: Int, sp2: Int): List[(Int, Int)] = {
+    if (sp2 <= sp1 + 1) return List((sp1, sp2))
+    val startLine = getLine(sp1)
+    val endLine = getLine(sp2)
+    for (_ <- startLine to endLine) {
+      //      val begin = if (line == startLine) getCol(sp1) else 1.toShort
+      //      val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+      //      val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
+      //      splitTokens += SemanticToken(tpe, modifiers, newLoc)
+      ???
+    }
+    ???
+  }
 
 }
 
 object FileLines {
-  val empty: FileLines = new FileLines(Array.empty, Array.empty)
+
+  /** A singleton instance representing an empty file. */
+  val empty: FileLines = new FileLines(Array.empty, Array.empty, 0)
 
   /**
+    * Returns a new [[FileLines]] for the given `chars`.
+    *
     * N.B.: `\r` is assumed only to exist before `\n`.
     */
   def fromChars(chars: Array[Char]): FileLines = {
-    val lineStarts = ArrayBuffer[Int]()
+    val lineStarts = ArrayBuffer[Int](0)
     val lineLengths = ArrayBuffer[Int]()
     var index = 0
     while (index <= chars.length) {
       if (chars(index) == '\n') {
         val extra = if (index > 0 && chars(index - 1) == '\r') 1 else 0;
-        if (lineStarts.nonEmpty) lineLengths += (index - lineStarts.last - extra - 1)
-        else lineLengths += index - extra - 1
+        lineLengths += (index - lineStarts.last - extra - 1)
         lineStarts += index + 1
       }
       index += 1
     }
-    new FileLines(lineStarts.toArray, lineLengths.toArray)
+    new FileLines(lineStarts.toArray, lineLengths.toArray, chars.length)
   }
 
-  case class LineInfo(index: Int, realLength: Int)
+  /**
+    * Represents information about a single line in a file.
+    *
+    * @param index         The index of the line within the file (zero-based).
+    * @param visibleLength The length of the line, excluding line terminators.
+    */
+  case class LineInfo(index: Int, visibleLength: Int)
 }
