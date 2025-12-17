@@ -1082,9 +1082,9 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      val SourcePosition(beginLine, startCol) = token.loc.startPosition
+      val SourcePosition(startLine, startCol) = token.loc.startPosition
       val SourcePosition(_, endCol) = token.loc.endPosition
-      var relLine = beginLine - 1
+      var relLine = startLine - 1
       var relCol = startCol - 1
 
       if (encoding.nonEmpty) {
@@ -1100,7 +1100,7 @@ object SemanticTokensProvider {
       encoding += token.tpe.toInt
       encoding += encodeModifiers(token.mod)
 
-      prevLine = beginLine - 1
+      prevLine = startLine - 1
       prevCol = startCol - 1
     }
 
