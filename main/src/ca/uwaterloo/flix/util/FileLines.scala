@@ -100,7 +100,7 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   def getPositionExclusive(index: Int): SourcePosition = {
     val SourcePosition(line0, col0) = getPosition(index)
     if (col0 == 1 && line0 > 1) {
-      SourcePosition.mkFromOneIndexed(line0 - 1, indexOfLine(line0 - 1))
+      SourcePosition.mkFromOneIndexed(line0 - 1, lengthOfLine(line0 - 1) + 1)
     } else {
       SourcePosition.mkFromOneIndexed(line0, col0)
     }

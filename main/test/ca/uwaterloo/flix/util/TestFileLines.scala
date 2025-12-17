@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.ast.SourcePosition
 import ca.uwaterloo.flix.util.FileLines.LineInfo
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -88,6 +89,77 @@ class TestFileLines extends AnyFunSuite {
     assertResult(Some(LineInfo(9, 1)))(chars.nthLineInfo(3))
     assertResult(Some(LineInfo(11, 3)))(chars.nthLineInfo(4))
     assertResult(None)(chars.nthLineInfo(5))
+  }
+
+  test("get first position") {
+    val input = List(
+      "ABC",
+      "B",
+      "123"
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(SourcePosition(1, 1))(chars.getPosition(0))
+  }
+
+  test("get middle position") {
+    val input = List(
+      "0123",
+      "56X8",
+      "ABCD"
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(SourcePosition(2, 3))(chars.getPosition(7))
+  }
+
+  test("get end position") {
+    val input = List(
+      "0123",
+      "5678",
+      "ABCD"
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(SourcePosition(3, 4))(chars.getPosition(13))
+  }
+
+  test("get start of line position") {
+    val input = List(
+      "0123",
+      "5678",
+      "ABCD"
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(SourcePosition(2, 1))(chars.getPosition(5))
+  }
+
+  test("line count") {
+    val input = List(
+      "0123",
+      "5678",
+      ""
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(3)(chars.lineCount)
+  }
+
+
+  test("exclusive end position at start of line") {
+    val input = List(
+      "0123",
+      "5678",
+      ""
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(SourcePosition(1, 5))(chars.getPositionExclusive(5))
+  }
+
+  test("exclusive end position") {
+    val input = List(
+      "0123",
+      "5678",
+      ""
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(SourcePosition(2, 2))(chars.getPositionExclusive(6))
   }
 
 }
