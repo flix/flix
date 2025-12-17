@@ -294,6 +294,6 @@ object CodeActionProvider {
   }
 
   private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
-    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
+    Range(sourcePosition2Position(sourceLocation.start), sourcePosition2Position(sourceLocation.end))
   }
 }

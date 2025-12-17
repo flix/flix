@@ -11,8 +11,8 @@ trait Formatter {
     this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
 
   def code(loc: SourceLocation, msg: String): String = {
-    val beginLine = loc.beginLine
-    val beginCol = loc.beginCol
+    val beginLine = loc.startLine
+    val beginCol = loc.startCol
     val endLine = loc.endLine
     val endCol = loc.endCol
 

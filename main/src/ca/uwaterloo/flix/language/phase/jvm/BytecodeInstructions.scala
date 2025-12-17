@@ -325,7 +325,7 @@ object BytecodeInstructions {
   def addLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     val label = new Label()
     mv.visitLabel(label)
-    mv.visitLineNumber(loc.beginLine, label)
+    mv.visitLineNumber(loc.startLine, label)
   }
 
   def branch(c: Condition)(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
@@ -430,8 +430,8 @@ object BytecodeInstructions {
     NEW(BackendObjType.ReifiedSourceLocation.jvmName)
     DUP()
     pushString(loc.source.name)
-    pushInt(loc.beginLine)
-    pushInt(loc.beginCol)
+    pushInt(loc.startLine)
+    pushInt(loc.startCol)
     pushInt(loc.endLine)
     pushInt(loc.endCol)
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
