@@ -37,7 +37,7 @@ class VisitorSuite extends AnyFunSuite {
 
   /** Returns the index of the character at the given position (one-indexed). */
   private def positionToIndex(line: Int, column: Int): Int =
-    source.lines.indexOfLine(line) + column - 1
+    source.lines.indexOfLine(line) + (column - 1)
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(

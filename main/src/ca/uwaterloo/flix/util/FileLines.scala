@@ -38,6 +38,10 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   def indexOfLine(line: Int): Int =
     lineStarts(line - 1)
 
+  /** Returns the non-newline length of the given line (one-indexed). */
+  def lengthOfLine(line: Int): Int =
+    lineLengths(line - 1)
+
   /**
     * Returns the line number of the given index (one-indexed).
     *
@@ -129,7 +133,7 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   /** Returns [[LineInfo]] for `line` if it exists. */
   def nthLineInfo(line: Int): Option[LineInfo] = {
     if (1 <= line && line <= lineStarts.length) {
-      Some(LineInfo(indexOfLine(line), lineLengths(line - 1)))
+      Some(LineInfo(indexOfLine(line), lengthOfLine(line)))
     } else {
       None
     }

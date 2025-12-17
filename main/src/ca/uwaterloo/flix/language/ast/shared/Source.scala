@@ -23,14 +23,12 @@ import scala.annotation.tailrec
 object Source {
   /** An unknown source. */
   val Unknown: Source = new Source(Input.Unknown, Array.emptyCharArray)
-
-  def apply(input: Input, data: Array[Char]): Source = new Source(input, data)
 }
 
 /**
  * A source is a name and an array of character data.
  */
-class Source(val input: Input, val data: Array[Char]) extends Sourceable {
+case class Source(input: Input, data: Array[Char]) extends Sourceable {
 
   val lines: FileLines = FileLines.fromChars(data)
 

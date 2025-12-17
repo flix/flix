@@ -20,20 +20,58 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestFileLines extends AnyFunSuite {
 
-  test("example1") {
-    val input =
-      """
-        |1234
-        |223
-        |3
-        |
-        |""".stripMargin.replace("\r", "")
-    val fileLines = FileLines.fromChars(input.toCharArray)
-    assertResult(Some(LineInfo(0, 4)))(fileLines.nthLineInfo(1))
-    assertResult(Some(LineInfo(5, 3)))(fileLines.nthLineInfo(2))
-    assertResult(Some(LineInfo(9, 1)))(fileLines.nthLineInfo(3))
-    assertResult(Some(LineInfo(11, 0)))(fileLines.nthLineInfo(4))
-    assertResult(None)(fileLines.nthLineInfo(5))
+  test("empty file") {
+    val chars = FileLines.fromChars(Array.emptyCharArray)
+    assertResult(None)(chars.nthLineInfo(0))
+    assertResult(Some(LineInfo(0, 0)))(chars.nthLineInfo(1))
+    assertResult(None)(chars.nthLineInfo(2))
+  }
+
+  test("empty lines") {
+    val input = List(
+      "",
+      "",
+      ""
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(None)(chars.nthLineInfo(0))
+    assertResult(Some(LineInfo(0, 0)))(chars.nthLineInfo(1))
+    assertResult(Some(LineInfo(1, 0)))(chars.nthLineInfo(2))
+    assertResult(Some(LineInfo(2, 0)))(chars.nthLineInfo(3))
+    assertResult(None)(chars.nthLineInfo(4))
+  }
+
+  test("single line") {
+    val input = "1234"
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(None)(chars.nthLineInfo(0))
+    assertResult(Some(LineInfo(0, 4)))(chars.nthLineInfo(1))
+    assertResult(None)(chars.nthLineInfo(2))
+  }
+
+  test("single line with newline") {
+    val input = "1234\n"
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(None)(chars.nthLineInfo(0))
+    assertResult(Some(LineInfo(0, 4)))(chars.nthLineInfo(1))
+    assertResult(Some(LineInfo(5, 0)))(chars.nthLineInfo(2))
+    assertResult(None)(chars.nthLineInfo(3))
+  }
+
+  test("trailing line") {
+    val input = List(
+      "1234",
+      "223",
+      "3",
+      ""
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(None)(chars.nthLineInfo(0))
+    assertResult(Some(LineInfo(0, 4)))(chars.nthLineInfo(1))
+    assertResult(Some(LineInfo(5, 3)))(chars.nthLineInfo(2))
+    assertResult(Some(LineInfo(9, 1)))(chars.nthLineInfo(3))
+    assertResult(Some(LineInfo(11, 0)))(chars.nthLineInfo(4))
+    assertResult(None)(chars.nthLineInfo(5))
   }
 
 }
