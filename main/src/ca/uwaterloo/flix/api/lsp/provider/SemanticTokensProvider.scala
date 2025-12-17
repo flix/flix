@@ -47,17 +47,14 @@ object SemanticTokensProvider {
     val keywordModifierOrCommentTokens = sourceOpt match {
       case Some(source) =>
         root.tokens(source).iterator.collect {
-          case Token(kind, src, _, _, sp1, sp2) if kind.isKeyword =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Keyword, Nil, loc)
+          case token: Token if token.kind.isKeyword =>
+            SemanticToken(SemanticTokenType.Keyword, Nil, token.mkSourceLocation())
 
-          case Token(kind, src, _, _, sp1, sp2) if kind.isModifier =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
+          case token: Token if token.kind.isModifier =>
+            SemanticToken(SemanticTokenType.Modifier, Nil, token.mkSourceLocation())
 
-          case Token(kind, src, _, _, sp1, sp2) if kind.isComment =>
-            val loc = SourceLocation(isReal = true, src, sp1, sp2)
-            SemanticToken(SemanticTokenType.Comment, Nil, loc)
+          case token: Token if token.kind.isComment =>
+            SemanticToken(SemanticTokenType.Comment, Nil, token.mkSourceLocation())
         }
       case None => Iterator.empty
     }
