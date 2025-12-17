@@ -32,13 +32,13 @@ object Position {
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
-    Position(loc.startLine, loc.startCol)
+    Position.from(loc.start)
 
   /**
     * Returns a position from the given source location `loc` using its ending line and col.
     */
   def fromEnd(loc: SourceLocation): Position =
-    Position(loc.endLine, loc.endCol)
+    Position.from(loc.end)
 
   /**
     * Returns a position from the given LSP `Position` `pos`.
