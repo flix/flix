@@ -9,7 +9,7 @@ import java.nio.file.Path
 
 class TestChangeSet extends AnyFunSuite {
   case class MySourceable(input: Input) extends Sourceable {
-    override def src: Source = Source(input, Array.emptyCharArray)
+    override def src: Source = Source.empty(input)
   }
 
   private def mkInput(name: String): Input = Input.VirtualFile(Path.of(name), "", Unrestricted)
