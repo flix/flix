@@ -30,7 +30,6 @@ object Range {
     * Returns a range from the given source location `loc`.
     */
   def from(loc: SourceLocation): Range = {
-    // NB: LSP line and column numbers are zero-indexed.
     Range(Position.fromBegin(loc), Position.fromEnd(loc))
   }
 
