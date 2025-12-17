@@ -11,20 +11,20 @@ trait Formatter {
     this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
 
   def code(loc: SourceLocation, msg: String): String = {
-    val SourcePosition(beginLine, beginCol) = loc.startPosition
+    val SourcePosition(startLine, startCol) = loc.startPosition
     val SourcePosition(endLine, endCol) = loc.endPosition
 
     def arrowUnderline: String = {
       val sb = new mutable.StringBuilder
-      val lineAt = loc.lineAt(beginLine)
-      val lineNo = beginLine.toString + " | "
+      val lineAt = loc.lineAt(startLine)
+      val lineNo = startLine.toString + " | "
       sb.append(lineNo)
         .append(lineAt)
         .append(System.lineSeparator())
-        .append(" " * (beginCol + lineNo.length - 1))
-        .append(red("^" * (endCol - beginCol)))
+        .append(" " * (startCol + lineNo.length - 1))
+        .append(red("^" * (endCol - startCol)))
         .append(System.lineSeparator())
-        .append(" " * (beginCol + lineNo.length - 1))
+        .append(" " * (startCol + lineNo.length - 1))
         .append(msg)
         .toString()
     }
@@ -32,7 +32,7 @@ trait Formatter {
     def leftline: String = {
       val numWidth = endLine.toString.length
       val sb = new mutable.StringBuilder
-      for (lineNo <- beginLine to endLine) {
+      for (lineNo <- startLine to endLine) {
         val currentLine = loc.lineAt(lineNo)
         sb.append(padLeft(numWidth, lineNo.toString))
           .append(" |")
@@ -46,7 +46,7 @@ trait Formatter {
         .toString()
     }
 
-    if (beginLine == endLine)
+    if (startLine == endLine)
       arrowUnderline
     else
       leftline

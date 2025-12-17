@@ -131,8 +131,8 @@ case class SourceLocation(isReal: Boolean, source: Source, start: Int, end: Int)
     * Returns a string representation of `this` source location with the line and column numbers.
     */
   def format: String = {
-    val SourcePosition(beginLine, beginCol) = startPosition
-    s"${source.name}:$beginLine:$beginCol"
+    val SourcePosition(startLine, startCol) = startPosition
+    s"${source.name}:$startLine:$startCol"
   }
 
   /**

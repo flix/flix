@@ -100,9 +100,9 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
     * This check is inclusive for both ends.
     */
   def containedBy(loc: SourceLocation): Boolean = {
-    val SourcePosition(beginLine, beginCol) = loc.startPosition
+    val SourcePosition(startLine, startCol) = loc.startPosition
     val SourcePosition(endLine, endCol) = loc.endPosition
-    beginLine <= line && line <= endLine &&
-      beginCol <= character && character <= endCol
+    startLine <= line && line <= endLine &&
+      startCol <= character && character <= endCol
   }
 }
