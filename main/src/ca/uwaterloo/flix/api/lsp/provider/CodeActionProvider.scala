@@ -289,11 +289,7 @@ object CodeActionProvider {
     range.overlapsWith(range2)
   }
 
-  private def sourcePosition2Position(sourcePosition: SourcePosition): Position = {
-    Position(sourcePosition.lineOneIndexed, sourcePosition.colOneIndexed)
-  }
-
   private def sourceLocation2Range(sourceLocation: SourceLocation): Range = {
-    Range(sourcePosition2Position(sourceLocation.sp1), sourcePosition2Position(sourceLocation.sp2))
+    Range(Position.fromBegin(sourceLocation), Position.fromEnd(sourceLocation))
   }
 }
