@@ -21,23 +21,25 @@ import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
 class VisitorSuite extends AnyFunSuite {
-  val program: String =
-    """
-      |1234567
-      |223456
-      |323456789A
-      |423456
-      |52345678
-      |623456789ABC
-      |7234567
-      |8234567
-      |""".stripMargin.replace("\r", "")
+  val program: String = List(
+    "1234567",
+    "223456",
+    "323456789A",
+    "423456",
+    "523456789A",
+    "623456789ABC",
+    "7234567",
+    "8234567"
+  ).mkString("\n")
   val source: Source = new Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), program.toCharArray)
   val uri = CompilerConstants.VirtualTestFile.toString
 
   /** Returns the index of the character at the given position (one-indexed). */
-  private def positionToIndex(line: Int, column: Int): Int =
-    source.lines.indexOfLine(line) + (column - 1)
+  private def positionToIndex(line: Int, column: Int): Int = {
+    val offset = source.lines.indexOfLine(line) + (column - 1)
+    assertResult(SourcePosition(line, column))(source.lines.getPosition(offset))
+    offset
+  }
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(
@@ -58,7 +60,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 4),
       positionToIndex(5, 2)
     )
-    val  pos = Position(3, 5)
+    val pos = Position(3, 5)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -70,7 +72,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 4),
       positionToIndex(5, 2)
     )
-    val  pos = Position(3, 4)
+    val pos = Position(3, 4)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -82,7 +84,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 4),
       positionToIndex(5, 3)
     )
-    val  pos = Position(5, 1)
+    val pos = Position(5, 1)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -94,7 +96,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 4),
       positionToIndex(5, 3)
     )
-    val  pos = Position(5, 2)
+    val pos = Position(5, 2)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -106,7 +108,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(5, 2),
       positionToIndex(5, 10)
     )
-    val  pos = Position(5, 4)
+    val pos = Position(5, 4)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -118,7 +120,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(5, 2),
       positionToIndex(5, 10)
     )
-    val  pos = Position(5, 2)
+    val pos = Position(5, 2)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -130,7 +132,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(5, 2),
       positionToIndex(5, 10)
     )
-    val  pos = Position(5, 9)
+    val pos = Position(5, 9)
 
     assert(Visitor.inside(uri, pos)(loc))
   }

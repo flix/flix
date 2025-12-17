@@ -62,7 +62,7 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
       if (low >= high) throw InternalCompilerException("Unreachable: lineStarts is non-empty.", SourceLocation.Unknown)
       if (low + 1 == high) return low
       val mid = low + ((high - low) / 2)
-      val cmp = lineStarts(mid).compareTo(index)
+      val cmp = index.compareTo(lineStarts(mid))
       if (cmp == 0) {
         mid
       } else if (cmp < 0) {
