@@ -27,7 +27,7 @@ object Source {
   def empty(input: Input): Source = Source(input, Array.emptyCharArray)
 
   /** Returns a source of `input` with the given `str`. */
-  def ofString(input: Input, str: String): Source = Source(input, str.toCharArray)
+  def fromString(input: Input, str: String): Source = Source(input, str.toCharArray)
 }
 
 /**
