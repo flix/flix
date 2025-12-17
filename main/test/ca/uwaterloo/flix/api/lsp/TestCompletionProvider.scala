@@ -704,7 +704,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * If the token spans multiple lines, we will return all the positions on all the lines.
     */
   private def rangeOfInclusive(tok: Token): List[Position] = {
-    val (initLine, initCol) = tok.beginLineAndCol
+    val SourcePosition(initLine, initCol) = tok.beginPosition
 
     tok.text
       .scanLeft((initLine, initCol)) {

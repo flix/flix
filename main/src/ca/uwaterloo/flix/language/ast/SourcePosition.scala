@@ -2,23 +2,8 @@ package ca.uwaterloo.flix.language.ast
 
 object SourcePosition {
 
-  /**
-    * Returns the first [[SourcePosition]].
-    *
-    * OBS: This might not be a real position if the relevant source is empty.
-    */
-  val FirstPosition: SourcePosition = SourcePosition(lineOneIndexed = 1, colOneIndexed = 1)
-
   /** An unknown source position. */
-  val Unknown: SourcePosition = FirstPosition
-
-  /**
-    * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
-    *
-    * `line` and `col` must be 0 or greater.
-    */
-  def mkFromZeroIndexed(line: Int, col: Int): SourcePosition =
-    SourcePosition(lineOneIndexed = line + 1, colOneIndexed = (col + 1).toShort)
+  val Unknown: SourcePosition = SourcePosition(lineOneIndexed = 1, colOneIndexed = 1)
 
   /**
     * Returns a [[SourcePosition]] in `source` with the zero-indexed `line` and `col`.
@@ -48,4 +33,4 @@ object SourcePosition {
 }
 
 /** Represents a source position. */
-case class SourcePosition(lineOneIndexed: Int, colOneIndexed: Short)
+case class SourcePosition(lineOneIndexed: Int, colOneIndexed: Int)

@@ -119,6 +119,13 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
 
   /**
+    * Returns the text at the given `line`.
+    *
+    * The line does not have to refer to `this` source location.
+    */
+  def lineAt(line: Int): String = source.getLine(line)
+
+  /**
     * Returns a string representation of `this` source location with the line number.
     */
   def formatWithLine: String = s"${source.name}:$beginLine"
@@ -127,7 +134,7 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     * Returns a string representation of `this` source location with the line and column numbers.
     */
   def format: String = {
-    val (beginLine, beginCol) = source.lines.getLineAndCol(sp1)
+    val (beginLine, beginCol) = beginLineAndCol
     s"${source.name}:$beginLine:$beginCol"
   }
 
@@ -163,6 +170,6 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     *
     * Note: The `toString` method should only be used for debugging.
     */
-  override def toString: String = formatWithLine
+  override def toString: String = format
 
 }

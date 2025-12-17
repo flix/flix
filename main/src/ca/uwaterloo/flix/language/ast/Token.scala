@@ -45,10 +45,9 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int) extends Syn
     *
     * NB: Tokens are zero-indexed
     */
-  def mkSourceLocation(isReal: Boolean = true): SourceLocation =
-    SourceLocation(isReal, src, start, end)
+  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, start, end)
 
-  /** Returns the start (inclusive)` (line, col)` (one-indexed). */
+  /** Returns the start `(line, col)` (one-indexed). */
   def beginLineAndCol: (Int, Int) =
     src.lines.getLineAndCol(start)
 
