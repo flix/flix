@@ -124,7 +124,7 @@ object Formatter {
     TextEdit(
       Range(
         Position.from(prevLast.endPosition),
-        Position.from(nextFirst.beginPosition)
+        Position.from(nextFirst.startPosition)
       ),
       seperator
     )

@@ -49,16 +49,11 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     *
     * Time Complexity: O(log lineCount)
     */
-  def beginLine: Int = source.lines.getLine(sp1)
+  def startLine: Int = source.lines.getLine(sp1)
 
-  /** Returns the start (inclusive) `(line, col)` (one-indexed). */
-  def beginLineAndCol: (Int, Int) = {
-    source.lines.getLineAndCol(sp1)
-  }
-
-  /** Returns the start position (inclusive). */
-  def beginPosition: SourcePosition = {
-    val (line, col) = beginLineAndCol
+  /** Returns the start position. */
+  def start: SourcePosition = {
+    val (line, col) = source.lines.getLineAndCol(sp1)
     SourcePosition(line, col.toShort)
   }
 
@@ -85,18 +80,14 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   def endLine: Int =
     source.lines.getLine(sp2)
 
-  /** Returns the end (exclusive) `(line, col)` (one-indexed). */
-  def endLineAndCol: (Int, Int) =
-    source.lines.getLineAndColExclusive(sp2)
-
 /** Returns the end position (exclusive) */
-  def endPosition: SourcePosition =
+  def end: SourcePosition =
     source.lines.getPositionExclusive(sp2)
 
   /**
     * Returns `true` if this source location spans a single line.
     */
-  def isSingleLine: Boolean = beginLine == endLine
+  def isSingleLine: Boolean = startLine == endLine
 
   /**
     * Returns `true` if this source location is synthetic.
@@ -128,13 +119,13 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   /**
     * Returns a string representation of `this` source location with the line number.
     */
-  def formatWithLine: String = s"${source.name}:$beginLine"
+  def formatWithLine: String = s"${source.name}:$startLine"
 
   /**
     * Returns a string representation of `this` source location with the line and column numbers.
     */
   def format: String = {
-    val (beginLine, beginCol) = beginLineAndCol
+    val SourcePosition(beginLine, beginCol) = start
     s"${source.name}:$beginLine:$beginCol"
   }
 

@@ -47,12 +47,8 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int) extends Syn
     */
   def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, start, end)
 
-  /** Returns the start `(line, col)` (one-indexed). */
-  def beginLineAndCol: (Int, Int) =
-    src.lines.getLineAndCol(start)
-
   /** Returns the start position (inclusive). */
-  def beginPosition: SourcePosition =
+  def startPosition: SourcePosition =
     src.lines.getPosition(start)
 
   /** Returns the end position (exclusive). */
@@ -63,7 +59,7 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int) extends Syn
     * Returns a one-indexed string representation of this token. Must only be used for debugging.
     */
   override def toString: String = {
-    val begin = beginPosition
+    val begin = startPosition
     val end = endPosition
     s"Token($kind, $text, ${begin.lineOneIndexed}, ${begin.colOneIndexed}, ${end.lineOneIndexed}, ${end.colOneIndexed})"
   }

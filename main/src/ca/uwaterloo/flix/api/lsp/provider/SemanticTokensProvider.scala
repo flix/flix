@@ -1075,8 +1075,8 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      val (beginLine, beginCol) = token.loc.beginLineAndCol
-      val (_, endCol) = token.loc.endLineAndCol
+      val SourcePosition(beginLine, beginCol) = token.loc.start
+      val SourcePosition(_, endCol) = token.loc.end
       var relLine = beginLine - 1
       var relCol = beginCol - 1
 

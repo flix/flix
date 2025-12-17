@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.lsp.{LocationLink, Position}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourcePosition, Symbol}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 
 object ImplementationProvider {
@@ -48,8 +48,8 @@ object ImplementationProvider {
       if (loc.source.name != uri) {
         false
       } else {
-        val (beginLine, beginCol) = loc.beginLineAndCol
-        val (endLine, endCol) = loc.endLineAndCol
+        val SourcePosition(beginLine, beginCol) = loc.start
+        val SourcePosition(endLine, endCol) = loc.end
         (beginLine < p.line || (beginLine == p.line && beginCol <= p.character)) &&
           (endLine > p.line || (endLine == p.line && endCol >= p.character))
       }

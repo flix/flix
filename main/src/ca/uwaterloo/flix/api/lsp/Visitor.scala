@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.{AssocTypeDef, Instance, *}
 import ca.uwaterloo.flix.language.ast.shared.*
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Type}
 
 object Visitor {
   /**
@@ -938,8 +938,8 @@ object Visitor {
       return false
     }
 
-    val (beginLine, beginCol) = loc.beginLineAndCol
-    val (endLine, endCol) = loc.endLineAndCol
+    val SourcePosition(beginLine, beginCol) = loc.start
+    val SourcePosition(endLine, endCol) = loc.end
 
     val afterStart = beginLine < pos.line ||
       (beginLine == pos.line && beginCol <= pos.character)

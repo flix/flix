@@ -31,13 +31,13 @@ object Position {
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
-    Position.from(loc.beginPosition)
+    Position.from(loc.start)
 
   /**
     * Returns a position from the given source location `loc` using its ending line and col.
     */
   def fromEnd(loc: SourceLocation): Position =
-    Position.from(loc.endPosition)
+    Position.from(loc.end)
 
   /**
     * Returns a position from the given LSP `Position` `pos`.
@@ -94,8 +94,8 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
     * This check is inclusive for both ends.
     */
   def containedBy(loc: SourceLocation): Boolean = {
-    val (beginLine, beginCol) = loc.beginLineAndCol
-    val (endLine, endCol) = loc.endLineAndCol
+    val SourcePosition(beginLine, beginCol) = loc.start
+    val SourcePosition(endLine, endCol) = loc.end
     beginLine <= line && line <= endLine &&
       beginCol <= character && character <= endCol
   }

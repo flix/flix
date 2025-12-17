@@ -109,25 +109,14 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
     *
     * Time Complexity: O(log lineCount)
     */
-  def getLineAndColExclusive(index: Int): (Int, Int) = {
-    val (line, col) = getLineAndCol(index)
-    if (col == 1 && line > 1) {
-      (line - 1, indexOfLine(line - 1))
-    } else {
-      (line, col)
-    }
-  }
-
-  /**
-    * Returns `(line, col)` (one-indexed).
-    *
-    * Instead of returning `(line, 1)`, `(line - 1, lastColOfPreviousLine + 1)` is returned (unless `line == 0`).
-    *
-    * Time Complexity: O(log lineCount)
-    */
   def getPositionExclusive(index: Int): SourcePosition = {
-    val (line, col) = getLineAndColExclusive(index)
-    SourcePosition.mkFromOneIndexed(line, col)
+    val (line0, col0) = getLineAndCol(index)
+    if (col0 == 1 && line0 > 1) {
+      SourcePosition.mkFromOneIndexed(line0 - 1, indexOfLine(line0 - 1))
+    } else {
+      SourcePosition.mkFromOneIndexed(line0, col0)
+    }
+
   }
 
   /** Returns [[LineInfo]] for `line` if it exists. */

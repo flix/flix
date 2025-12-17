@@ -963,7 +963,7 @@ object Weeder2 {
       mapN(pickExpr(tree)) {
         case exp2 =>
           val file = tree.loc.source.name
-          val line = tree.loc.beginLine
+          val line = tree.loc.startLine
           val cst = Constant.Str(s"[$file:$line] ")
           val exp1 = WeededAst.Expr.Cst(cst, tree.loc)
           WeededAst.Expr.Binary(SemanticOp.StringOp.Concat, exp1, exp2, tree.loc)
@@ -1053,7 +1053,7 @@ object Weeder2 {
           case TokenKind.DebugInterpolator =>
             val loc = tree.loc
             val file = loc.source.name
-            val line = loc.beginLine
+            val line = loc.startLine
             val text = token.text.stripPrefix("d\"").stripSuffix("\"")
             Validation.Success(Expr.Cst(Constant.Str(s"[$file:$line] $text"), loc))
           case TokenKind.KeywordNull => Validation.Success(Expr.Cst(Constant.Null, token.mkSourceLocation()))
@@ -2363,7 +2363,7 @@ object Weeder2 {
         case ("INT8_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc)
         case ("INT8_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
         case ("INT8_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
-        case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.beginLine}"), loc)
+        case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
         case ("VECTOR_GET", Some(e1 :: e2 :: Nil)) => Expr.VectorLoad(e1, e2, loc)
         case ("VECTOR_LENGTH", Some(e1 :: Nil)) => Expr.VectorLength(e1, loc)
         case _ =>
