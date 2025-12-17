@@ -48,7 +48,6 @@ object MagicMatchCompleter {
     * @param range        The location of the completion.
     * @param baseLocation The location of the base expression, usually the expression before the '.'.
     */
-
     def getCompletions(tpe: Type, range: Range, baseLocation: SourceLocation)(implicit root: TypedAst.Root): Iterable[Completion] = {
     for {
       baseExp <- baseLocation.text
