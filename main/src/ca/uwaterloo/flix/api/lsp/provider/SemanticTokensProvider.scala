@@ -1058,9 +1058,9 @@ object SemanticTokensProvider {
         splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        for (line <- loc.sp1.lineOneIndexed to loc.sp2.lineOneIndexed) {
-          val begin = if (line == loc.sp1.lineOneIndexed) loc.sp1.colOneIndexed else 1.toShort
-          val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
+        for (line <- loc.start.lineOneIndexed to loc.end.lineOneIndexed) {
+          val begin = if (line == loc.start.lineOneIndexed) loc.start.colOneIndexed else 1.toShort
+          val end = if (line == loc.end.lineOneIndexed) loc.end.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
           val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
@@ -1080,8 +1080,8 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      var relLine = token.loc.beginLine - 1
-      var relCol = token.loc.beginCol - 1
+      var relLine = token.loc.startLine - 1
+      var relCol = token.loc.startCol - 1
 
       if (encoding.nonEmpty) {
         relLine -= prevLine
@@ -1092,12 +1092,12 @@ object SemanticTokensProvider {
 
       encoding += relLine
       encoding += relCol
-      encoding += token.loc.endCol - token.loc.beginCol
+      encoding += token.loc.endCol - token.loc.startCol
       encoding += token.tpe.toInt
       encoding += encodeModifiers(token.mod)
 
-      prevLine = token.loc.beginLine - 1
-      prevCol = token.loc.beginCol - 1
+      prevLine = token.loc.startLine - 1
+      prevCol = token.loc.startCol - 1
     }
 
     encoding.toList
