@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.shared.{AvailableClasses, Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{ReadAst, SourceLocation}
 import ca.uwaterloo.flix.language.dbg.AstPrinter.*
-import ca.uwaterloo.flix.util.{FileLines, InternalCompilerException, Result, StreamOps}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result, StreamOps}
 
 import java.nio.file.{Files, Path}
 import java.util.zip.ZipFile
