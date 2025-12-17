@@ -20,11 +20,9 @@ import ca.uwaterloo.flix.api.lsp.*
 import ca.uwaterloo.flix.language.ast.TypedAst.*
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.shared.*
-import ca.uwaterloo.flix.language.ast.shared.Constant.Null.tpe
 import ca.uwaterloo.flix.language.ast.shared.SymUse.*
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.collection.IteratorOps
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle.modifiers
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -1084,10 +1082,10 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      val SourcePosition(beginLine, beginCol) = token.loc.startPosition
+      val SourcePosition(beginLine, startCol) = token.loc.startPosition
       val SourcePosition(_, endCol) = token.loc.endPosition
       var relLine = beginLine - 1
-      var relCol = beginCol - 1
+      var relCol = startCol - 1
 
       if (encoding.nonEmpty) {
         relLine -= prevLine
@@ -1098,12 +1096,12 @@ object SemanticTokensProvider {
 
       encoding += relLine
       encoding += relCol
-      encoding += endCol - beginCol
+      encoding += endCol - startCol
       encoding += token.tpe.toInt
       encoding += encodeModifiers(token.mod)
 
       prevLine = beginLine - 1
-      prevCol = beginCol - 1
+      prevCol = startCol - 1
     }
 
     encoding.toList

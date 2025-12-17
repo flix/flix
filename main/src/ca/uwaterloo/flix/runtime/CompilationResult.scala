@@ -45,7 +45,7 @@ class CompilationResult(main: Option[Array[String] => Unit],
 
   /** Returns the total number of lines of compiled code. */
   def getTotalLines: Int = sources.foldLeft(0) {
-    case (acc, (_, sl)) => acc + sl.endLine
+    case (acc, (src, _)) => acc + src.lines.lineCount
   }
 
 }

@@ -75,14 +75,6 @@ case class SourceLocation(isReal: Boolean, source: Source, start: Int, end: Int)
   }
 
   /**
-    * Returns the one-indexed line where the entity ends.
-    *
-    * Time Complexity: O(log lineCount)
-    */
-  def endLine: Int =
-    source.lines.getLine(end)
-
-  /**
     * Returns the end position (exclusive)
     *
     * Time Complexity: O(log lineCount)
@@ -93,7 +85,7 @@ case class SourceLocation(isReal: Boolean, source: Source, start: Int, end: Int)
   /**
     * Returns `true` if this source location spans a single line.
     */
-  def isSingleLine: Boolean = startLine == endLine
+  def isSingleLine: Boolean = startLine == endPosition.lineOneIndexed
 
   /**
     * Returns `true` if this source location is synthetic.

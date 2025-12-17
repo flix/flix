@@ -61,7 +61,8 @@ object InlayHintProvider {
         */
       val positionToEffectsMap: Map[Position, Set[Symbol.EffSym]] = effSyms.foldLeft(Map.empty[Position, Set[Symbol.EffSym]]) {
         case (acc, (eff, loc)) =>
-          val position = Position(loc.endLine, loc.source.getLine(loc.endLine).length + 2)
+          val end = loc.endPosition
+          val position = Position(end.lineOneIndexed, loc.source.getLine(end.lineOneIndexed).length + 2)
           acc.updated(position, acc.getOrElse(position, Set.empty[Symbol.EffSym]) + eff)
       }
       mkHintsFromEffects(positionToEffectsMap)
