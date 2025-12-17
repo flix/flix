@@ -14,11 +14,11 @@ object SourceLocation {
     */
   val Unknown: SourceLocation = SourceLocation(isReal = true, Source.Unknown, 0, 0)
 
-  /** Returns the [[SourceLocation]] that refers the zero-width location `sp`. */
+  /** Returns the [[SourceLocation]] that refers the zero-width location at `index`. */
   def zeroPoint(isReal: Boolean, src: Source, index: Int): SourceLocation =
     SourceLocation(isReal, src, index, index)
 
-  /** Returns the [[SourceLocation]] that refers the single-width location `sp`. */
+  /** Returns the [[SourceLocation]] that refers the single-width location at `index`. */
   def point(isReal: Boolean, src: Source, index: Int): SourceLocation =
     SourceLocation(isReal, src, index, index + 1)
 
@@ -51,7 +51,11 @@ case class SourceLocation(isReal: Boolean, source: Source, start: Int, end: Int)
     */
   def startLine: Int = source.lines.getLine(start)
 
-  /** Returns the start position. */
+  /**
+    * Returns the start position.
+    *
+    * Time Complexity: O(log lineCount)
+    */
   def startPosition: SourcePosition =
     source.lines.getPosition(start)
 
@@ -78,7 +82,11 @@ case class SourceLocation(isReal: Boolean, source: Source, start: Int, end: Int)
   def endLine: Int =
     source.lines.getLine(end)
 
-/** Returns the end position (exclusive) */
+  /**
+    * Returns the end position (exclusive)
+    *
+    * Time Complexity: O(log lineCount)
+    */
   def endPosition: SourcePosition =
     source.lines.getPositionExclusive(end)
 

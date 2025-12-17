@@ -44,12 +44,11 @@ object ImplementationProvider {
     */
   private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
     root.instances.keys.filter(traitSym => {
-      val loc = traitSym.loc
-      if (loc.source.name != uri) {
+      if (traitSym.loc.source.name != uri) {
         false
       } else {
-        val SourcePosition(beginLine, beginCol) = loc.startPosition
-        val SourcePosition(endLine, endCol) = loc.endPosition
+        val SourcePosition(beginLine, beginCol) = traitSym.loc.startPosition
+        val SourcePosition(endLine, endCol) = traitSym.loc.endPosition
         (beginLine < p.line || (beginLine == p.line && beginCol <= p.character)) &&
           (endLine > p.line || (endLine == p.line && endCol >= p.character))
       }

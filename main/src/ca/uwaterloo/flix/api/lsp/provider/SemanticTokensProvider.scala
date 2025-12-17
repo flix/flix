@@ -50,13 +50,16 @@ object SemanticTokensProvider {
       case Some(source) =>
         root.tokens(source).iterator.collect {
           case token@Token(kind, _, _, _) if kind.isKeyword =>
-            SemanticToken(SemanticTokenType.Keyword, Nil, token.mkSourceLocation())
+            val loc = token.mkSourceLocation()
+            SemanticToken(SemanticTokenType.Keyword, Nil, loc)
 
           case token@Token(kind, _, _, _) if kind.isModifier =>
-            SemanticToken(SemanticTokenType.Modifier, Nil, token.mkSourceLocation())
+            val loc = token.mkSourceLocation()
+            SemanticToken(SemanticTokenType.Modifier, Nil, loc)
 
           case token@Token(kind, _, _, _) if kind.isComment =>
-            SemanticToken(SemanticTokenType.Comment, Nil, token.mkSourceLocation())
+            val loc = token.mkSourceLocation()
+            SemanticToken(SemanticTokenType.Comment, Nil, loc)
         }
       case None => Iterator.empty
     }

@@ -32,7 +32,7 @@ class VisitorSuite extends AnyFunSuite {
       |7234567
       |8234567
       |""".stripMargin.replace("\r", "")
-  val source: Source = Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), program.toCharArray)
+  val source: Source = new Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), program.toCharArray)
   val uri = CompilerConstants.VirtualTestFile.toString
 
   /** Returns the index of the character at the given position (one-indexed). */

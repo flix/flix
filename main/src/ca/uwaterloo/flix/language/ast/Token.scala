@@ -47,11 +47,19 @@ case class Token(kind: TokenKind, src: Source, start: Int, end: Int) extends Syn
     */
   def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, start, end)
 
-  /** Returns the start position (inclusive). */
+  /**
+    * Returns the start position (inclusive).
+    *
+    * Time Complexity: O(log lineCount)
+    */
   def startPosition: SourcePosition =
     src.lines.getPosition(start)
 
-  /** Returns the end position (exclusive). */
+  /**
+    * Returns the end position (exclusive).
+    *
+    * Time Complexity: O(log lineCount)
+    */
   def endPosition: SourcePosition =
     src.lines.getPositionExclusive(end)
 
