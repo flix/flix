@@ -47,9 +47,9 @@ object ImplementationProvider {
       if (traitSym.loc.source.name != uri) {
         false
       } else {
-        val SourcePosition(beginLine, beginCol) = traitSym.loc.startPosition
+        val SourcePosition(startLine, startCol) = traitSym.loc.startPosition
         val SourcePosition(endLine, endCol) = traitSym.loc.endPosition
-        (beginLine < p.line || (beginLine == p.line && beginCol <= p.character)) &&
+        (startLine < p.line || (startLine == p.line && startCol <= p.character)) &&
           (endLine > p.line || (endLine == p.line && endCol >= p.character))
       }
     })
