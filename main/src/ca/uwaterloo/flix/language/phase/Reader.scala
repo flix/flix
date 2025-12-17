@@ -45,17 +45,15 @@ object Reader {
           case Input.RealFile(path, _) =>
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
-            val arr = str.toCharArray
-            val src = new Source(input, arr)
+            val src = Source.fromString(input, str)
             result += (src -> ())
 
           case Input.VirtualFile(_, text, _) =>
-            val src = new Source(input, text.toCharArray)
+            val src = Source.fromString(input, text)
             result += (src -> ())
 
           case Input.VirtualUri(_, text, _) =>
-            val arr = text.toCharArray
-            val src = new Source(input, arr)
+            val src = Source.fromString(input, text)
             result += (src -> ())
 
           case Input.PkgFile(path, sctx) =>
@@ -93,9 +91,8 @@ object Reader {
               val virtualPath = p.getFileName.toString + ":" + name
               val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
               val str = new String(bytes, flix.defaultCharset)
-              val arr = str.toCharArray
               val input = Input.FileInPackage(p, virtualPath, str, sctx)
-              result += new Source(input, arr)
+              result += Source.fromString(input, str)
             }
           }
           result.toList

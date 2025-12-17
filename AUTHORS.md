@@ -4,7 +4,7 @@
 
 - [Matthew Lutze](https://github.com/mlutze)
 - [Magnus Madsen](https://github.com/magnus-madsen)
-- [Jonathan Lindegaard Starup](https://github.com/JonathanStarup)
+- [Jonathan Lindegaard Starup](https://github.com/JonathanStarup) (Google LLC)
 - [Jakob Schneider Villumsen](https://github.com/jaschdoc)
 
 ## Contributors

@@ -31,7 +31,7 @@ class VisitorSuite extends AnyFunSuite {
     "7234567",
     "8234567"
   ).mkString("\n")
-  val source: Source = new Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), program.toCharArray)
+  val source: Source = Source.fromString(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted), program)
   val uri = CompilerConstants.VirtualTestFile.toString
 
   /** Returns the index of the character at the given position (one-indexed). */

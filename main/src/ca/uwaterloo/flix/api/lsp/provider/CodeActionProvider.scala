@@ -205,7 +205,7 @@ object CodeActionProvider {
     * TextEdit(Range(Position(1, 0), Position(1, 0)), "    \n    def foo(): =\n    \n")
     */
   private def mkTextEdit(ap: AnchorPosition, text: String): TextEdit = {
-    val insertPosition = Position(ap.line, ap.col)
+    val insertPosition = Position.fromAnchorPosition(ap)
     val leadingSpaces = " " * ap.spaces
     TextEdit(
       Range(insertPosition, insertPosition),
@@ -284,8 +284,6 @@ object CodeActionProvider {
   /**
     * Returns `true` if the given `range` starts on the same line as the given source location `loc`.
     */
-  private def overlaps(range: Range, loc: SourceLocation): Boolean = {
-    val range2 = Range.from(loc)
-    range.overlapsWith(range2)
-  }
+  private def overlaps(range: Range, loc: SourceLocation): Boolean =
+    range.overlapsWith(Range.from(loc))
 }

@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.language.ast.shared.AnchorPosition
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -50,6 +51,11 @@ object Position {
     * Returns a position from the given source position `pos`.
     */
   def from(pos: SourcePosition): Position = Position(pos.lineOneIndexed, pos.colOneIndexed)
+
+  /**
+    * Returns a position from the given anchor position `ap`.
+    */
+  def fromAnchorPosition(ap: AnchorPosition): Position = Position(ap.line, ap.col)
 
   /**
     * Tries to parse the given `json` value as a [[Position]].
