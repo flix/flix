@@ -46,16 +46,16 @@ object Reader {
             val bytes = Files.readAllBytes(path)
             val str = new String(bytes, flix.defaultCharset)
             val arr = str.toCharArray
-            val src = Source(input, arr)
+            val src = new Source(input, arr)
             result += (src -> ())
 
           case Input.VirtualFile(_, text, _) =>
-            val src = Source(input, text.toCharArray)
+            val src = new Source(input, text.toCharArray)
             result += (src -> ())
 
           case Input.VirtualUri(_, text, _) =>
             val arr = text.toCharArray
-            val src = Source(input, arr)
+            val src = new Source(input, arr)
             result += (src -> ())
 
           case Input.PkgFile(path, sctx) =>
@@ -95,7 +95,7 @@ object Reader {
               val str = new String(bytes, flix.defaultCharset)
               val arr = str.toCharArray
               val input = Input.FileInPackage(p, virtualPath, str, sctx)
-              result += Source(input, arr)
+              result += new Source(input, arr)
             }
           }
           result.toList

@@ -30,7 +30,7 @@ object Source {
 /**
  * A source is a name and an array of character data.
  */
-class Source(input: Input, data: Array[Char]) extends Sourceable {
+class Source(val input: Input, val data: Array[Char]) extends Sourceable {
 
   val lines: FileLines = FileLines.fromChars(data)
 
