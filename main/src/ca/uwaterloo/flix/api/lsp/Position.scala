@@ -32,7 +32,7 @@ object Position {
     * Returns a position from the given source location `loc` using its beginning line and col.
     */
   def fromBegin(loc: SourceLocation): Position =
-    Position(loc.beginLine, loc.beginCol)
+    Position(loc.startLine, loc.startCol)
 
   /**
     * Returns a position from the given source location `loc` using its ending line and col.
@@ -100,6 +100,6 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
     * This check is inclusive for both ends.
     */
   def containedBy(loc: SourceLocation): Boolean =
-    loc.beginLine <= line && line <= loc.endLine &&
-      loc.beginCol <= character && character <= loc.endCol
+    loc.startLine <= line && line <= loc.endLine &&
+      loc.startCol <= character && character <= loc.endCol
 }

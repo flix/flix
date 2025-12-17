@@ -409,14 +409,14 @@ class TestCompletionProvider extends AnyFunSuite {
     val result = mutable.ListBuffer.empty[ProgramWithHole]
     val bOffset = indexOf(Position.fromBegin(loc), prg)
     val eOffset = indexOf(Position.fromEnd(loc), prg)
-    val length = loc.sp2.colOneIndexed - loc.sp1.colOneIndexed
+    val length = loc.end.colOneIndexed - loc.start.colOneIndexed
     for (i <- 0 until length) {
       val o = bOffset + i
       val prefix = prg.substring(0, o)
       val cut = prg.substring(bOffset, bOffset + i)
       val suffix = prg.substring(eOffset, prg.length)
       val withHole = prefix + suffix
-      val pos = Position(loc.sp1.lineOneIndexed, loc.sp1.colOneIndexed + i)
+      val pos = Position(loc.start.lineOneIndexed, loc.start.colOneIndexed + i)
       result += ProgramWithHole(withHole, cut, pos)
     }
 
@@ -736,8 +736,8 @@ class TestCompletionProvider extends AnyFunSuite {
   // TODO: DOC
   private def rangeOfInclusive(loc: SourceLocation): List[Position] = {
     assert(loc.isSingleLine) // TODO: Support multiline
-    (loc.beginCol to loc.endCol).map {
-      case col => Position(loc.beginLine, col)
+    (loc.startCol to loc.endCol).map {
+      case col => Position(loc.startLine, col)
     }.toList
   }
 

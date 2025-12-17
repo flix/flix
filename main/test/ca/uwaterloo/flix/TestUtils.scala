@@ -149,6 +149,6 @@ trait TestUtils {
     * Returns true if the compilation message is ONLY on the given line (one-indexed).
     */
   private def isOnLine(error: CompilationMessage, line: Int) = {
-    error.loc.sp1.lineOneIndexed == line && error.loc.sp2.lineOneIndexed == line
+    error.loc.start.lineOneIndexed == line && error.loc.end.lineOneIndexed == line
   }
 }
