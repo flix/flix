@@ -25,7 +25,7 @@ object Source {
   val Unknown: Source = Source.empty(Input.Unknown)
 
   /** Returns an empty source of `input`. */
-  def empty(input: Input): Source = new Source(input, Array.emptyCharArray)
+  def empty(input: Input): Source = fromString(input, "")
 
   /** Returns a source of `input` with the given `str`. */
   def fromString(input: Input, str: String): Source = new Source(input, str.toCharArray)
