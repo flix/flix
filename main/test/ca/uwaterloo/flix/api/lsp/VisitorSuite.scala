@@ -48,7 +48,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 10),
       positionToIndex(6, 2)
     )
-    val  pos = Position(5, 5)
+    val pos = Position(5, 5)
 
     assert(Visitor.inside(uri, pos)(loc))
   }
@@ -144,7 +144,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(4, 4),
       positionToIndex(6, 10),
     )
-    val  pos = Position(3, 7)
+    val pos = Position(3, 7)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -156,7 +156,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 2),
       positionToIndex(6, 5),
     )
-    val  pos = Position(7, 4)
+    val pos = Position(7, 4)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -168,7 +168,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(2, 7),
       positionToIndex(6, 4),
     )
-    val  pos = Position(2, 6)
+    val pos = Position(2, 6)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -180,7 +180,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(2, 7),
       positionToIndex(6, 4),
     )
-    val  pos = Position(6, 11)
+    val pos = Position(6, 11)
 
     assert(!Visitor.inside(uri, pos)(loc))
 
@@ -193,7 +193,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 5),
       positionToIndex(5, 3),
     )
-    val  pos = Position(5, 3)
+    val pos = Position(5, 3)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -205,7 +205,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(6, 4),
       positionToIndex(6, 8)
     )
-    val  pos = Position(6, 3)
+    val pos = Position(6, 3)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -217,7 +217,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(6, 4),
       positionToIndex(6, 8)
     )
-    val  pos = Position(6, 9)
+    val pos = Position(6, 9)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -229,7 +229,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(6, 4),
       positionToIndex(6, 8)
     )
-    val  pos = Position(6, 8)
+    val pos = Position(6, 8)
 
     assert(!Visitor.inside(uri, pos)(loc))
   }
@@ -241,7 +241,7 @@ class VisitorSuite extends AnyFunSuite {
       positionToIndex(3, 6),
       positionToIndex(6, 10)
     )
-    val  pos = Position(4, 4)
+    val pos = Position(4, 4)
 
     assert(!Visitor.inside("wrong!", pos)(loc))
   }
