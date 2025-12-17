@@ -79,26 +79,14 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   /**
     * Returns `(line, col)` (one-indexed).
     *
-    * Returns XYZ for out-of-bounds indices.
-    *
-    * Time Complexity: O(log lineCount)
-    */
-  def getLineAndCol(index: Int): (Int, Int) = {
-    val line = getLine(index)
-    val lineStart = indexOfLine(line)
-    val col = index - lineStart + 1
-    (line, col)
-  }
-
-  /**
-    * Returns `(line, col)` (one-indexed).
-    *
     * Returns `(1, 1)` for out-of-bounds indices.
     *
     * Time Complexity: O(log lineCount)
     */
   def getPosition(index: Int): SourcePosition = {
-    val (line, col) = getLineAndCol(index)
+    val line = getLine(index)
+    val lineStart = indexOfLine(line)
+    val col = index - lineStart + 1
     SourcePosition.mkFromOneIndexed(line, col)
   }
 
@@ -110,7 +98,7 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
     * Time Complexity: O(log lineCount)
     */
   def getPositionExclusive(index: Int): SourcePosition = {
-    val (line0, col0) = getLineAndCol(index)
+    val SourcePosition(line0, col0) = getPosition(index)
     if (col0 == 1 && line0 > 1) {
       SourcePosition.mkFromOneIndexed(line0 - 1, indexOfLine(line0 - 1))
     } else {

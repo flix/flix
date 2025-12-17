@@ -1056,7 +1056,7 @@ object SemanticTokensProvider {
     val splitTokens = ArrayBuffer.empty[SemanticToken]
     tokens.foreach {
       case SemanticToken(tpe, modifiers, loc) =>
-        for((start, end) <- loc.source.lines.splitIntoLines(loc.sp1, loc.sp2)) {
+        for((start, end) <- loc.source.lines.splitIntoLines(loc.start, loc.end)) {
           splitTokens += SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, start, end))
         }
     }
@@ -1075,8 +1075,8 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      val SourcePosition(beginLine, beginCol) = token.loc.start
-      val SourcePosition(_, endCol) = token.loc.end
+      val SourcePosition(beginLine, beginCol) = token.loc.startPosition
+      val SourcePosition(_, endCol) = token.loc.endPosition
       var relLine = beginLine - 1
       var relCol = beginCol - 1
 

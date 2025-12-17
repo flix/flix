@@ -27,7 +27,7 @@ object SourceLocation {
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.name, x.sp1, x.sp2).compare((y.source.name, y.sp1, y.sp2))
+      (x.source.name, x.start, x.end).compare((y.source.name, y.start, y.end))
   }
 
 }
@@ -37,7 +37,7 @@ object SourceLocation {
   *
   * @param isReal true if real location, false if synthetic location.
   */
-case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
+case class SourceLocation(isReal: Boolean, source: Source, start: Int, end: Int) {
 
   /**
    * Returns the security context associated with the source location.
@@ -49,13 +49,11 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     *
     * Time Complexity: O(log lineCount)
     */
-  def startLine: Int = source.lines.getLine(sp1)
+  def startLine: Int = source.lines.getLine(start)
 
   /** Returns the start position. */
-  def start: SourcePosition = {
-    val (line, col) = source.lines.getLineAndCol(sp1)
-    SourcePosition(line, col.toShort)
-  }
+  def startPosition: SourcePosition =
+    source.lines.getPosition(start)
 
   /**
     * Returns `true` if `this` [[SourceLocation]] completely contains `that`, otherwise `false`.
@@ -66,8 +64,8 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   def contains(that: SourceLocation): Boolean = {
     if (this.source != that.source) false
     else {
-      val thatBeginsLater = this.sp1 <= that.sp1
-      val thatEndsBefore = that.sp2 <= this.sp2
+      val thatBeginsLater = this.start <= that.start
+      val thatEndsBefore = that.end <= this.end
       thatBeginsLater && thatEndsBefore
     }
   }
@@ -78,11 +76,11 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     * Time Complexity: O(log lineCount)
     */
   def endLine: Int =
-    source.lines.getLine(sp2)
+    source.lines.getLine(end)
 
 /** Returns the end position (exclusive) */
-  def end: SourcePosition =
-    source.lines.getPositionExclusive(sp2)
+  def endPosition: SourcePosition =
+    source.lines.getPositionExclusive(end)
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -125,7 +123,7 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     * Returns a string representation of `this` source location with the line and column numbers.
     */
   def format: String = {
-    val SourcePosition(beginLine, beginCol) = start
+    val SourcePosition(beginLine, beginCol) = startPosition
     s"${source.name}:$beginLine:$beginCol"
   }
 
@@ -134,7 +132,7 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
     */
   def text: Option[String] = {
     if (isSingleLine) {
-      Some(source.getData(sp1, sp2))
+      Some(source.getData(start, end))
     } else {
       None
     }
@@ -143,7 +141,7 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   /**
     * Returns the hashCode of `this` source location.
     */
-  override def hashCode(): Int = source.hashCode() + sp1 + sp2
+  override def hashCode(): Int = source.hashCode() + start + end
 
   /**
     * Returns `true` if `this` and `o` represent the same source location.
@@ -151,8 +149,8 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: Int, sp2: Int) {
   override def equals(o: Any): Boolean = o match {
     case that: SourceLocation =>
       this.source == that.source &&
-        this.sp1 == that.sp1 &&
-        this.sp2 == that.sp2
+        this.start == that.start &&
+        this.end == that.end
     case _ => false
   }
 

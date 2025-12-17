@@ -48,8 +48,8 @@ object ImplementationProvider {
       if (loc.source.name != uri) {
         false
       } else {
-        val SourcePosition(beginLine, beginCol) = loc.start
-        val SourcePosition(endLine, endCol) = loc.end
+        val SourcePosition(beginLine, beginCol) = loc.startPosition
+        val SourcePosition(endLine, endCol) = loc.endPosition
         (beginLine < p.line || (beginLine == p.line && beginCol <= p.character)) &&
           (endLine > p.line || (endLine == p.line && endCol >= p.character))
       }

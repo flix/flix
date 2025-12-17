@@ -74,4 +74,20 @@ class TestFileLines extends AnyFunSuite {
     assertResult(None)(chars.nthLineInfo(5))
   }
 
+  test("non-trailing line") {
+    val input = List(
+      "1234",
+      "223",
+      "3",
+      "  X"
+    ).mkString("\n")
+    val chars = FileLines.fromChars(input.toCharArray)
+    assertResult(None)(chars.nthLineInfo(0))
+    assertResult(Some(LineInfo(0, 4)))(chars.nthLineInfo(1))
+    assertResult(Some(LineInfo(5, 3)))(chars.nthLineInfo(2))
+    assertResult(Some(LineInfo(9, 1)))(chars.nthLineInfo(3))
+    assertResult(Some(LineInfo(11, 3)))(chars.nthLineInfo(4))
+    assertResult(None)(chars.nthLineInfo(5))
+  }
+
 }

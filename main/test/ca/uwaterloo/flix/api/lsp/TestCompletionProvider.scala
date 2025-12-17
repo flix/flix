@@ -406,14 +406,14 @@ class TestCompletionProvider extends AnyFunSuite {
   private def cutHoles(prg: String, loc: SourceLocation): List[ProgramWithHole] = {
     assert(loc.isSingleLine)
 
-    val SourcePosition(beginLine, beginCol) = loc.start
+    val SourcePosition(beginLine, beginCol) = loc.startPosition
     val result = mutable.ListBuffer.empty[ProgramWithHole]
-    val length = loc.sp2 - loc.sp1
+    val length = loc.end - loc.start
     for (i <- 0 until length) {
-      val o = loc.sp1 + i
+      val o = loc.start + i
       val prefix = prg.substring(0, o)
-      val cut = prg.substring(loc.sp1, loc.sp1 + i)
-      val suffix = prg.substring(loc.sp2, prg.length)
+      val cut = prg.substring(loc.start, loc.start + i)
+      val suffix = prg.substring(loc.end, prg.length)
       val withHole = prefix + suffix
       val pos = Position(beginLine, beginCol + i)
       result += ProgramWithHole(withHole, cut, pos)
@@ -720,8 +720,8 @@ class TestCompletionProvider extends AnyFunSuite {
 
   // TODO: DOC
   private def rangeOfInclusive(loc: SourceLocation): List[Position] = {
-    val SourcePosition(beginLine, beginCol) = loc.start
-    val SourcePosition(endLine, endCol) = loc.end
+    val SourcePosition(beginLine, beginCol) = loc.startPosition
+    val SourcePosition(endLine, endCol) = loc.endPosition
     assert(beginLine == endLine) // TODO: Support multiline
     (beginCol to endCol).map {
       case col => Position(beginLine, col)

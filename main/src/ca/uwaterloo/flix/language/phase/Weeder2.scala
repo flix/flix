@@ -433,7 +433,7 @@ object Weeder2 {
         (ident, maybeType) =>
           val tpes = maybeType.getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
-          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.sp1, tree.loc.sp2)
+          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
           Case(ident, tpes, loc)
       }
     }
@@ -527,7 +527,7 @@ object Weeder2 {
       ) {
         (ident, ttype) =>
           // Make a source location that spans the name and type
-          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.sp1, tree.loc.sp2)
+          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
           StructField(mod, Name.mkLabel(ident), ttype, loc)
       }
     }
@@ -1031,7 +1031,7 @@ object Weeder2 {
       mapN(pickNameIdent(tree)) {
         ident =>
           // Strip '?' suffix and update source location
-          val loc = ident.loc.copy(sp2 = ident.loc.sp2 - 1)
+          val loc = ident.loc.copy(end = ident.loc.end - 1)
           val id = Name.Ident(ident.name.stripSuffix("?"), loc)
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
@@ -1606,7 +1606,7 @@ object Weeder2 {
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
               // The location of the error is the end of the expression, zero-width.
-              val loc = e.loc.copy(sp1 = e.loc.sp2).asSynthetic
+              val loc = e.loc.copy(start = e.loc.end).asSynthetic
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), loc)
               Validation.Success((e, Expr.Error(error)))
           }
@@ -1680,7 +1680,7 @@ object Weeder2 {
           fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
             case ((label, expr, loc), acc) =>
               val SourceLocation(isReal, src, sp1, _) = loc
-              val extendLoc = SourceLocation(isReal, src, sp1, tree.loc.sp2)
+              val extendLoc = SourceLocation(isReal, src, sp1, tree.loc.end)
               Expr.RecordExtend(label, expr, acc, extendLoc)
           }
       }
@@ -1699,7 +1699,7 @@ object Weeder2 {
         expr =>
           idents.foldLeft(expr) {
             case (acc, ident) =>
-              val loc = SourceLocation(ident.loc.isReal, tree.loc.source, tree.loc.sp1, ident.loc.sp2)
+              val loc = SourceLocation(ident.loc.isReal, tree.loc.source, tree.loc.start, ident.loc.end)
               Expr.RecordSelect(acc, Name.mkLabel(ident), loc)
           }
       }
@@ -1949,7 +1949,7 @@ object Weeder2 {
             // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
 
             // The new param has the zero-width location of the actual argument.
-            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.sp1)
+            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.start)
             val unitParam = Decls.unitFormalParameter(loc)
             HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
           case fparams =>
@@ -3394,16 +3394,16 @@ object Weeder2 {
     assert(idents.nonEmpty) // We require at least one element to construct a qname
     val first = idents.head
     val last = idents.last
-    val loc = SourceLocation(isReal = true, first.loc.source, first.loc.sp1, last.loc.sp2)
+    val loc = SourceLocation(isReal = true, first.loc.source, first.loc.start, last.loc.end)
 
     // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
-      val positionAfterDot = last.loc.sp2 + 1
+      val positionAfterDot = last.loc.end + 1
       val emptyIdentLoc = SourceLocation.zeroPoint(isReal = true, last.loc.source, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
-      val qnameLoc = first.loc.copy(sp2 = positionAfterDot)
+      val qnameLoc = first.loc.copy(end = positionAfterDot)
       Name.QName(nname, emptyIdent, qnameLoc)
     } else {
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
