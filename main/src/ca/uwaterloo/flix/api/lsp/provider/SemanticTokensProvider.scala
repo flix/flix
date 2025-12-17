@@ -1058,8 +1058,14 @@ object SemanticTokensProvider {
   private def splitToken(tokens: List[SemanticToken]): List[SemanticToken] = {
     val splitTokens = ArrayBuffer.empty[SemanticToken]
     tokens.foreach {
+      case SemanticToken(tpe, modifiers, loc) if loc.end <= loc.start + 1 =>
+        SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, loc.start, loc.end))
       case SemanticToken(tpe, modifiers, loc) =>
-        for((start, end) <- loc.source.lines.splitIntoLines(loc.start, loc.end)) {
+        val SourcePosition(startLine, startCol) = loc.startPosition
+        val SourcePosition(endLine, endCol) = loc.endPosition
+        for (line <- startLine to endLine) {
+          val start = if (line == startLine) startCol else 1
+          val end = if (line == endLine) endCol else loc.source.lines.lengthOfLine(line) + 1 // Column is 1-indexed
           splitTokens += SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, start, end))
         }
     }

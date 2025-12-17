@@ -119,23 +119,6 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   /** Returns the number of lines. */
   def lineCount: Int = lineStarts.length
 
-  /**
-    * Returns in-order single-line `(line, col)` (one-indexed) pairs that cover the range of `sp1` to `sp2` (exclusive).
-    */
-  def splitIntoLines(sp1: Int, sp2: Int): List[(Int, Int)] = {
-    if (sp2 <= sp1 + 1) return List((sp1, sp2))
-    val startLine = getLine(sp1)
-    val endLine = getLine(sp2)
-    for (_ <- startLine to endLine) {
-      //      val begin = if (line == startLine) getCol(sp1) else 1.toShort
-      //      val end = if (line == loc.sp2.lineOneIndexed) loc.sp2.colOneIndexed else (loc.source.getLine(line).length + 1).toShort // Column is 1-indexed
-      //      val newLoc = SourceLocation(isReal = true, loc.source, SourcePosition.mkFromOneIndexed(line, begin), SourcePosition.mkFromOneIndexed(line, end))
-      //      splitTokens += SemanticToken(tpe, modifiers, newLoc)
-      ???
-    }
-    ???
-  }
-
 }
 
 object FileLines {
