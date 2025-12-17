@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class SourceLocationSuite extends AnyFunSuite {
 
-  private val Src = Source(Input.VirtualFile(CompilerConstants.VirtualTestFile, "dummy dummy", SecurityContext.Unrestricted), Array.emptyCharArray)
+  private val Src = Source.empty(Input.VirtualFile(CompilerConstants.VirtualTestFile, "dummy dummy", SecurityContext.Unrestricted))
 
   test("l1 contains l2 when l1 starts on earlier line and ends on later") {
     val l1 = SourceLocation(
