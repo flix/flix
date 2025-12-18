@@ -76,7 +76,7 @@ class Source(val input: Input, val data: Array[Char]) extends Sourceable {
    */
   def getLine(line: Int): String = {
     lines.nthLineInfo(line) match {
-      case Some(FileLines.LineInfo(index, realLength)) => new String(data.slice(index, realLength))
+      case Some(FileLines.LineInfo(index, realLength)) => new String(data.slice(index, index + realLength))
       case None => "!bad source line lookup!"
     }
   }
