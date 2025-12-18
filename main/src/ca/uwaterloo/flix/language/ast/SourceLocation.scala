@@ -95,11 +95,6 @@ case class SourceLocation(isReal: Boolean, source: Source, start: SourcePosition
   def asSynthetic: SourceLocation = copy(isReal = false)
 
   /**
-    * Returns `this` source location but as a real kind.
-    */
-  def asReal: SourceLocation = copy(isReal = true)
-
-  /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
     */
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
@@ -112,11 +107,6 @@ case class SourceLocation(isReal: Boolean, source: Source, start: SourcePosition
   def lineAt(line: Int): String = source.getLine(line)
     .replaceAll("\n", "")
     .replaceAll("\r", "")
-
-  /**
-    * Returns a string representation of `this` source location with the line number.
-    */
-  def formatWithLine: String = s"${source.name}:$startLine"
 
   /**
     * Returns a string representation of `this` source location with the line and column numbers.
