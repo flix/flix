@@ -406,14 +406,14 @@ class TestCompletionProvider extends AnyFunSuite {
   private def cutHoles(prg: String, loc: SourceLocation): List[ProgramWithHole] = {
     assert(loc.isSingleLine)
 
-    val SourcePosition(beginLine, beginCol) = loc.startPosition
+    val SourcePosition(beginLine, beginCol) = loc.start
     val result = mutable.ListBuffer.empty[ProgramWithHole]
-    val length = loc.end - loc.start
+    val length = loc.endIndex - loc.startIndex
     for (i <- 0 until length) {
-      val o = loc.start + i
+      val o = loc.startIndex + i
       val prefix = prg.substring(0, o)
-      val cut = prg.substring(loc.start, loc.start + i)
-      val suffix = prg.substring(loc.end, prg.length)
+      val cut = prg.substring(loc.startIndex, loc.startIndex + i)
+      val suffix = prg.substring(loc.endIndex, prg.length)
       val withHole = prefix + suffix
       val pos = Position(beginLine, beginCol + i)
       result += ProgramWithHole(withHole, cut, pos)
@@ -704,7 +704,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * If the token spans multiple lines, we will return all the positions on all the lines.
     */
   private def rangeOfInclusive(tok: Token): List[Position] = {
-    val SourcePosition(initLine, initCol) = tok.startPosition
+    val SourcePosition(initLine, initCol) = tok.start
 
     tok.text
       .scanLeft((initLine, initCol)) {
@@ -720,8 +720,8 @@ class TestCompletionProvider extends AnyFunSuite {
 
   // TODO: DOC
   private def rangeOfInclusive(loc: SourceLocation): List[Position] = {
-    val SourcePosition(beginLine, beginCol) = loc.startPosition
-    val SourcePosition(endLine, endCol) = loc.endPosition
+    val SourcePosition(beginLine, beginCol) = loc.start
+    val SourcePosition(endLine, endCol) = loc.end
     assert(beginLine == endLine) // TODO: Support multiline
     (beginCol to endCol).map {
       case col => Position(beginLine, col)

@@ -1054,12 +1054,12 @@ object SemanticTokensProvider {
     val splitTokens = ArrayBuffer.empty[SemanticToken]
     tokens.foreach {
       // Do nothing if it is a zero- or single char token
-      case SemanticToken(tpe, modifiers, loc) if loc.end <= loc.start + 1 =>
-        SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, loc.start, loc.end))
+      case SemanticToken(tpe, modifiers, loc) if loc.endIndex <= loc.startIndex + 1 =>
+        SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, loc.startIndex, loc.endIndex))
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        val SourcePosition(startLine, startCol) = loc.startPosition
-        val SourcePosition(endLine, endCol) = loc.endPosition
+        val SourcePosition(startLine, startCol) = loc.start
+        val SourcePosition(endLine, endCol) = loc.end
         for (line <- startLine to endLine) {
           val start = if (line == startLine) startCol else 1
           val end = if (line == endLine) endCol else loc.source.lines.lengthOfLine(line) + 1 // Column is 1-indexed
@@ -1081,8 +1081,8 @@ object SemanticTokensProvider {
     var prevCol = 0
 
     for (token <- tokens.sortBy(_.loc)) {
-      val SourcePosition(startLine, startCol) = token.loc.startPosition
-      val SourcePosition(_, endCol) = token.loc.endPosition
+      val SourcePosition(startLine, startCol) = token.loc.start
+      val SourcePosition(_, endCol) = token.loc.end
       var relLine = startLine - 1
       var relCol = startCol - 1
 

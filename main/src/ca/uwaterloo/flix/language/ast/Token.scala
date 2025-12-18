@@ -27,48 +27,48 @@ import ca.uwaterloo.flix.language.ast.shared.Source
   *
   * We do so because [[Token]]s are very common objects.
   *
-  * @param kind  The kind of token this instance represents.
-  * @param src   A pointer to the source that this lexeme stems from.
-  * @param start The absolute character offset into `src` of the beginning of the lexeme. Must be zero-indexed.
-  * @param end   The absolute character offset into `src` of the end (exclusive) of the lexeme. Must be zero-indexed.
+  * @param kind       The kind of token this instance represents.
+  * @param src        A pointer to the source that this lexeme stems from.
+  * @param startIndex The absolute character offset into `src` of the beginning of the lexeme. Must be zero-indexed.
+  * @param endIndex   The absolute character offset into `src` of the end (exclusive) of the lexeme. Must be zero-indexed.
   */
-case class Token(kind: TokenKind, src: Source, start: Int, end: Int) extends SyntaxTree.Child {
+case class Token(kind: TokenKind, src: Source, startIndex: Int, endIndex: Int) extends SyntaxTree.Child {
   /**
     * Computes the lexeme that the token refers to by slicing it from `src`.
     *
     * Note: We do *not* cache the text because it takes up significant memory.
     */
-  def text: String = src.data.slice(start, end).mkString("")
+  def text: String = src.data.slice(startIndex, endIndex).mkString("")
 
   /**
     * Makes a [[SourceLocation]] spanning this token.
     *
     * NB: Tokens are zero-indexed
     */
-  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, start, end)
+  def mkSourceLocation(isReal: Boolean = true): SourceLocation = SourceLocation(isReal, src, startIndex, endIndex)
 
   /**
     * Returns the start position (inclusive).
     *
     * Time Complexity: O(log lineCount)
     */
-  def startPosition: SourcePosition =
-    src.lines.getPosition(start)
+  def start: SourcePosition =
+    src.lines.getPosition(startIndex)
 
   /**
     * Returns the end position (exclusive).
     *
     * Time Complexity: O(log lineCount)
     */
-  def endPosition: SourcePosition =
-    src.lines.getPositionExclusive(end)
+  def end: SourcePosition =
+    src.lines.getPositionExclusive(endIndex)
 
   /**
     * Returns a one-indexed string representation of this token. Must only be used for debugging.
     */
   override def toString: String = {
-    val begin = startPosition
-    val end = endPosition
+    val begin = this.start
+    val end = this.end
     s"Token($kind, $text, ${begin.lineOneIndexed}, ${begin.colOneIndexed}, ${end.lineOneIndexed}, ${end.colOneIndexed})"
   }
 }

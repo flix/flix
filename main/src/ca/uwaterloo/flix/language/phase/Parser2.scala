@@ -184,11 +184,11 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
-            mkSourceLocation(lastAdvance.end, lastAdvance.end)
+            mkSourceLocation(lastAdvance.endIndex, lastAdvance.endIndex)
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
-            mkSourceLocation(openToken.start, lastAdvance.end)
+            mkSourceLocation(openToken.startIndex, lastAdvance.endIndex)
           locationStack = locationStack.tail
           stack = stack.tail
           stack.head.children = stack.head.children :+ child
@@ -205,7 +205,7 @@ object Parser2 {
       isReal = true,
       s.src,
       0,
-      tokens.head.end
+      tokens.head.endIndex
     )
 
     // The stack should now contain a single Source tree, and there should only be an <eof> token

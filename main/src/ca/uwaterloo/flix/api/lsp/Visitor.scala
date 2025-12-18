@@ -938,8 +938,8 @@ object Visitor {
       return false
     }
 
-    val SourcePosition(beginLine, beginCol) = loc.startPosition
-    val SourcePosition(endLine, endCol) = loc.endPosition
+    val SourcePosition(beginLine, beginCol) = loc.start
+    val SourcePosition(endLine, endCol) = loc.end
 
     val afterStart = beginLine < pos.line ||
       (beginLine == pos.line && beginCol <= pos.character)

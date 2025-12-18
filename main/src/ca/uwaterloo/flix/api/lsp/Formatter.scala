@@ -123,8 +123,8 @@ object Formatter {
   private def createSeparatorTextEdit(prevLast: Token, nextFirst: Token, seperator: String) = {
     TextEdit(
       Range(
-        Position.from(prevLast.endPosition),
-        Position.from(nextFirst.startPosition)
+        Position.from(prevLast.end),
+        Position.from(nextFirst.start)
       ),
       seperator
     )

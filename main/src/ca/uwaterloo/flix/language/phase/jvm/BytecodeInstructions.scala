@@ -427,8 +427,8 @@ object BytecodeInstructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
-    val start = loc.startPosition
-    val end = loc.endPosition
+    val start = loc.start
+    val end = loc.end
     NEW(BackendObjType.ReifiedSourceLocation.jvmName)
     DUP()
     pushString(loc.source.name)

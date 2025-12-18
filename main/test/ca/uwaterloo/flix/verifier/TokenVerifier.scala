@@ -79,7 +79,7 @@ object TokenVerifier {
   /** Checks I-Ranges. */
   private def checkRange(token: Token): Unit = {
     if (token.kind != TokenKind.Eof) {
-      if (token.start >= token.end) wrongOffsetRange(token)
+      if (token.startIndex >= token.endIndex) wrongOffsetRange(token)
     }
   }
 
@@ -87,13 +87,13 @@ object TokenVerifier {
   private def checkBounds(src: Source, token: Token): Unit = {
     // Tokens end offsets are exclusive and offsets are zero-indexed.
     def outOfBounds(i: Int): Boolean = i < 0 || src.data.length < i
-    if (outOfBounds(token.start) || outOfBounds(token.end)) outOfBoundOffset(token)
+    if (outOfBounds(token.startIndex) || outOfBounds(token.endIndex)) outOfBoundOffset(token)
   }
 
   /** Checks I-Offset. */
   private def checkOffsetOrder(left: Token, right: Token): Unit = {
     // Tokens end offsets are exclusive.
-    if (left.end > right.start) outOfOrderOffsets(left, right)
+    if (left.endIndex > right.startIndex) outOfOrderOffsets(left, right)
   }
 
   private def missingEof(found: Token): Nothing = {
@@ -132,7 +132,7 @@ object TokenVerifier {
   private def wrongOffsetRange(found: Token): Nothing = {
     val loc = found.mkSourceLocation()
     val msg =
-      s""">> Invalid offset range: ${found.start} - ${found.end}.
+      s""">> Invalid offset range: ${found.startIndex} - ${found.endIndex}.
          |
          |${Formatter.NoFormatter.code(loc, s"here (${found.kind})")}
          |
@@ -143,7 +143,7 @@ object TokenVerifier {
   private def outOfBoundOffset(found: Token): Nothing = {
     val loc = found.mkSourceLocation()
     val msg =
-      s""">> Token with out-of-bound offsets: ${found.start} - ${found.end}.
+      s""">> Token with out-of-bound offsets: ${found.startIndex} - ${found.endIndex}.
          |
          |${Formatter.NoFormatter.code(loc, s"here (${found.kind})")}
          |
@@ -154,7 +154,7 @@ object TokenVerifier {
   private def outOfOrderOffsets(left: Token, right: Token): Nothing = {
     val loc = left.mkSourceLocation()
     val msg =
-      s""">> Overlapping tokens: ${left.start} - ${right.end} and ${right.start} - ${right.end}.
+      s""">> Overlapping tokens: ${left.startIndex} - ${right.endIndex} and ${right.startIndex} - ${right.endIndex}.
          |
          |${Formatter.NoFormatter.code(left.mkSourceLocation(), s"left token here (${left.kind})")}
          |

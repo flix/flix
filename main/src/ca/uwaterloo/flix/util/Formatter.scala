@@ -11,8 +11,8 @@ trait Formatter {
     this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
 
   def code(loc: SourceLocation, msg: String): String = {
-    val SourcePosition(startLine, startCol) = loc.startPosition
-    val SourcePosition(endLine, endCol) = loc.endPosition
+    val SourcePosition(startLine, startCol) = loc.start
+    val SourcePosition(endLine, endCol) = loc.end
 
     def arrowUnderline: String = {
       val sb = new mutable.StringBuilder
