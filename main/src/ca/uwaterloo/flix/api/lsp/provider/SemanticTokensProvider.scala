@@ -1058,12 +1058,12 @@ object SemanticTokensProvider {
         splitTokens += token
       // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
-        val SourcePosition(startLine, startCol) = loc.start
-        val SourcePosition(endLine, endCol) = loc.end
-        for (line <- startLine to endLine) {
-          val start = if (line == startLine) startCol else 1
-          val end = if (line == endLine) endCol else loc.source.lines.lengthOfLine(line) + 1 // Column is 1-indexed
-          splitTokens += SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, start, end))
+        val start = loc.start
+        val end = loc.end
+        for (line <- start.lineOneIndexed to end.lineOneIndexed) {
+          val startIndex = if (line == start.lineOneIndexed) start.colOneIndexed else 1
+          val endIndex = if (line == end.lineOneIndexed) end.colOneIndexed else loc.source.lines.lengthOfLine(line) + 1 // Column is 1-indexed
+          splitTokens += SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, startIndex, endIndex))
         }
     }
     splitTokens.toList
