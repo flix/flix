@@ -1053,8 +1053,10 @@ object SemanticTokensProvider {
   private def splitToken(tokens: List[SemanticToken]): List[SemanticToken] = {
     val splitTokens = ArrayBuffer.empty[SemanticToken]
     tokens.foreach {
+      // Do nothing if it is a zero- or single char token
       case SemanticToken(tpe, modifiers, loc) if loc.end <= loc.start + 1 =>
         SemanticToken(tpe, modifiers, SourceLocation(isReal = true, loc.source, loc.start, loc.end))
+      // Split the multiline token
       case SemanticToken(tpe, modifiers, loc) =>
         val SourcePosition(startLine, startCol) = loc.startPosition
         val SourcePosition(endLine, endCol) = loc.endPosition
