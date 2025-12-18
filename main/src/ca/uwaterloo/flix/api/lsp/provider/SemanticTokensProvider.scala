@@ -1062,7 +1062,7 @@ object SemanticTokensProvider {
         val end = loc.end
         for (line <- start.lineOneIndexed to end.lineOneIndexed) {
           val startIndex = if (line == start.lineOneIndexed) start.colOneIndexed else 1
-          val endIndex = if (line == end.lineOneIndexed) end.colOneIndexed else loc.source.lines.lengthOfLine(line) + 1 // Column is 1-indexed
+          val endIndex = if (line == end.lineOneIndexed) end.colOneIndexed else (loc.source.getLine(line).length + 1) // Column is 1-indexed
           val newLoc = SourceLocation(isReal = true, loc.source, startIndex, endIndex)
           splitTokens += SemanticToken(tpe, modifiers, newLoc)
         }
