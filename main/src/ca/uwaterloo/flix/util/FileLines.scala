@@ -150,8 +150,8 @@ object FileLines {
   /**
     * Represents information about a single line in a file.
     *
-    * @param index         The index of the line within the file (zero-based).
+    * @param startIndex    The start index of the line within the file (zero-based).
     * @param visibleLength The length of the line, excluding line terminators.
     */
-  case class LineInfo(index: Int, visibleLength: Int)
+  case class LineInfo(startIndex: Int, visibleLength: Int)
 }
