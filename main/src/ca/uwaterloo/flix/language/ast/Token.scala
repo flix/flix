@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.shared.Source
 
 /**
-  * A Token holding a kind, line and column.
+  * A Token holding a kind, a source, and a location.
   *
   * Token does not hold its lexeme directly to avoid duplication of common keywords like "def".
-  * Instead it holds a pointer to its source along with start and end offsets.
+  * Instead it holds a pointer to its source along with start and end indices.
   *
   * We take extra efforts to ensure that tokens are compact, i.e. have small memory footprint.
   *
@@ -29,8 +29,8 @@ import ca.uwaterloo.flix.language.ast.shared.Source
   *
   * @param kind       The kind of token this instance represents.
   * @param src        A pointer to the source that this lexeme stems from.
-  * @param startIndex The absolute character offset into `src` of the beginning of the lexeme. Must be zero-indexed.
-  * @param endIndex   The absolute character offset into `src` of the end (exclusive) of the lexeme. Must be zero-indexed.
+  * @param startIndex The absolute character index into `src` of the beginning of the lexeme. Must be zero-indexed.
+  * @param endIndex   The absolute character index into `src` of the end (exclusive) of the lexeme. Must be zero-indexed.
   */
 case class Token(kind: TokenKind, src: Source, startIndex: Int, endIndex: Int) extends SyntaxTree.Child {
   /**
@@ -67,8 +67,8 @@ case class Token(kind: TokenKind, src: Source, startIndex: Int, endIndex: Int) e
     * Returns a one-indexed string representation of this token. Must only be used for debugging.
     */
   override def toString: String = {
-    val begin = this.start
+    val start = this.start
     val end = this.end
-    s"Token($kind, $text, ${begin.lineOneIndexed}, ${begin.colOneIndexed}, ${end.lineOneIndexed}, ${end.colOneIndexed})"
+    s"Token($kind, $text, ${start.lineOneIndexed}, ${start.colOneIndexed}, ${end.lineOneIndexed}, ${end.colOneIndexed})"
   }
 }

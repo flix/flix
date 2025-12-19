@@ -102,7 +102,9 @@ case class Position(line: Int, character: Int) extends Ordered[Position] {
   def containedBy(loc: SourceLocation): Boolean = {
     val SourcePosition(startLine, startCol) = loc.start
     val SourcePosition(endLine, endCol) = loc.end
-    startLine <= line && line <= endLine &&
-      startCol <= character && character <= endCol
+    loc.startLine <= line &&
+      line <= endLine &&
+      (line != startLine || startCol <= character) &&
+      (line != endLine || character <= endCol)
   }
 }
