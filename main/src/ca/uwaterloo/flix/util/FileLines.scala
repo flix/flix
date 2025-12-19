@@ -93,7 +93,7 @@ class FileLines private(private var lineStarts: Array[Int], private var lineLeng
   /**
     * Returns `(line, col)` (one-indexed).
     *
-    * Instead of returning `(line, 1)`, `(line - 1, lastColOfPreviousLine + 1)` is returned (unless `line == 0`).
+    * Instead of returning `(line, 1)`, `(line - 1, lastColOfPreviousLine + 1)` is returned (unless `line == 1`).
     *
     * Time Complexity: O(log lineCount)
     */
