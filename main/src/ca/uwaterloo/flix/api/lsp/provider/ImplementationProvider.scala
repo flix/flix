@@ -43,10 +43,9 @@ object ImplementationProvider {
     * Returns an empty iterable if there is no such trait symbol.
     */
   private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
-    root.instances.keys.filter(traitSym => traitSym.loc.source.name == uri
-      && (traitSym.loc.startLine < p.line
-      || (traitSym.loc.startLine == p.line && traitSym.loc.startCol <= p.character))
-      && (traitSym.loc.endLine > p.line
-      || (traitSym.loc.endLine == p.line && traitSym.loc.endCol >= p.character)))
+    root.instances.keys.filter(traitSym =>
+      traitSym.loc.source.name == uri &&
+        p.containedBy(traitSym.loc)
+    )
   }
 }
