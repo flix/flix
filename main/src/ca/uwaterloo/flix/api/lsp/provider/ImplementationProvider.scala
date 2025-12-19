@@ -44,8 +44,7 @@ object ImplementationProvider {
     */
   private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
     root.instances.keys.filter(traitSym =>
-      traitSym.loc.source.name == uri &&
-        p.containedBy(traitSym.loc)
+      traitSym.loc.source.name == uri && p.containedBy(traitSym.loc)
     )
   }
 }
