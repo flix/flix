@@ -45,13 +45,6 @@ case class SourceLocation(isReal: Boolean, source: Source, startIndex: Int, endI
   def security: SecurityContext = source.input.security
 
   /**
-    * Returns the one-indexed line where the entity begins.
-    *
-    * Time Complexity: O(log lineCount)
-    */
-  def startLine: Int = source.lines.getLine(startIndex)
-
-  /**
     * Returns the start position.
     *
     * Time Complexity: O(log lineCount)
@@ -85,7 +78,7 @@ case class SourceLocation(isReal: Boolean, source: Source, startIndex: Int, endI
   /**
     * Returns `true` if this source location spans a single line.
     */
-  def isSingleLine: Boolean = startLine == end.lineOneIndexed
+  def isSingleLine: Boolean = start.lineOneIndexed == end.lineOneIndexed
 
   /**
     * Returns `true` if this source location is synthetic.
@@ -101,13 +94,6 @@ case class SourceLocation(isReal: Boolean, source: Source, startIndex: Int, endI
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
     */
   def min(that: SourceLocation): SourceLocation = SourceLocation.Order.min(this, that)
-
-  /**
-    * Returns the text at the given `line`.
-    *
-    * The line does not have to refer to `this` source location.
-    */
-  def lineAt(line: Int): String = source.getLine(line)
 
   /**
     * Returns a string representation of `this` source location with the line and column numbers.

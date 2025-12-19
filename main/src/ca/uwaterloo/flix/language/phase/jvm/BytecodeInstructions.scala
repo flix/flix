@@ -325,7 +325,7 @@ object BytecodeInstructions {
   def addLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     val label = new Label()
     mv.visitLabel(label)
-    mv.visitLineNumber(loc.startLine, label)
+    mv.visitLineNumber(loc.start.lineOneIndexed, label)
   }
 
   def branch(c: Condition)(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
