@@ -228,6 +228,10 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
+  test("lock-effects should write effect lock file") {
+    fail
+  }
+
   private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
