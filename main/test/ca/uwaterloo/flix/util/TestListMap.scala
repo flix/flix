@@ -77,7 +77,7 @@ class TestListMap extends AnyFunSuite {
     val res = lm.filter {
       case (k, v) => k > v
     }
-    assert(res == ListMap(1 -> List(2, 3, 4), 2 -> List(3, 4), 3 -> List(4), 4 -> List.empty))
+    assert(res == ListMap(2 -> List(1), 3 -> List(1, 2), 4 -> List(1, 2, 3)))
   }
 
   test("ListMap.foldLeft.01") {
