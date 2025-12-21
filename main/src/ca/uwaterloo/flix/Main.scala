@@ -407,7 +407,7 @@ object Main {
               flix.setOptions(options.copy(progress = false))
               bootstrap.lockEffects(flix)
           } match {
-            case Result.Ok(false) =>
+            case Result.Ok(()) =>
               System.exit(0)
             case Result.Err(error) =>
               println(error.message(formatter))
