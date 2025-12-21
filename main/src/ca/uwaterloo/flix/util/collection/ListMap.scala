@@ -121,6 +121,13 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
   }
 
   /**
+    * Returns a new ListMap with the key-value pairs `k -> v` if `p(k, v)` holds.
+    */
+  def filter(p: ((K, V)) => Boolean): ListMap[K, V] = {
+    withFilter(p).foldLeft(ListMap.empty[K, V])(_ + _)
+  }
+
+  /**
     * Folds the values in the list map using the given function `f`.
     * The function `f` takes an accumulator `z` and a tuple `(k, v)` where `v` is a value of type V instead of a list of V.
     */
