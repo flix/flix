@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -427,6 +428,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } match {
       case Success(()) => Result.Ok(())
       case Failure(e) => Result.Err(BootstrapError.FileError(e.getMessage))
+    }
+  }
+
+  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    Steps.updateStaleSources(flix)
+    for {
+      root <- Steps.check(flix)
+    } yield {
+      // TODO: Serialize signatures also???
+      val serialization = root.defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
+      ???
     }
   }
 

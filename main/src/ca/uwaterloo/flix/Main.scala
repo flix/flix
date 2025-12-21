@@ -400,6 +400,20 @@ object Main {
               System.exit(1)
           }
 
+        case Command.EffLock =>
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.lockEffects(flix)
+          } match {
+            case Result.Ok(false) =>
+              System.exit(0)
+            case Result.Err(error) =>
+              println(error.message(formatter))
+              System.exit(1)
+          }
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -486,6 +500,8 @@ object Main {
 
     case object Outdated extends Command
 
+    case object EffLock extends Command
+
     case object CompilerPerf extends Command
 
     case object CompilerMemory extends Command
@@ -566,6 +582,9 @@ object Main {
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
+
+      cmd("eff-lock").text("  locks the current effect signatures.")
+        .action((_, c) => c.copy(command = Command.EffLock))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
