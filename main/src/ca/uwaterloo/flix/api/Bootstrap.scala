@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML,
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
@@ -437,7 +438,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
       // TODO: Serialize signatures also???
-      val serialization = root.defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
+      val useGraph = effectlock.UseGraph.computeGraph(root)
+      val defs: Map[Symbol.DefnSym, TypedAst.Def] = ???
+      val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
       val effLockFilePath = projectPath.resolve("effects.lock")
       // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
