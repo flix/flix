@@ -162,19 +162,41 @@ class Flix {
     * @param sctx the security context for the input.
     */
   def addFile(p: Path)(implicit sctx: SecurityContext): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
-    if (!p.getFileName.toString.endsWith(".flix"))
-      throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
+    isValidFlixFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        addInput(p.normalize().toString, Input.RealFile(p, sctx))
+        this
+    }
+  }
 
-    addInput(p.toString, Input.RealFile(p, sctx))
-    this
+  /**
+    * Checks that `p` is a valid `.flix` filepath.
+    * `p` is valid if all the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.flix`.
+    */
+  private def isValidFlixFile(p: Path): Result[Unit, IllegalArgumentException] = {
+    if (p == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    if (FileOps.checkExt(pNorm, "flix")) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .flix file."))
+    }
+    Result.Ok(())
   }
 
   /**
@@ -268,7 +290,7 @@ class Flix {
 
   /**
     * Checks that `p` is a valid `.fpkg` filepath.
-    * `p` is valid if the following holds:
+    * `p` is valid if all the following holds:
     *   1. `p` must not be `null`.
     *   1. `p` must exist in the file system.
     *   1. `p` must be a regular file.
@@ -290,7 +312,7 @@ class Flix {
     if (!Files.isReadable(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
     }
-    if (!pNorm.getFileName.toString.endsWith(".fpkg")) {
+    if (!FileOps.checkExt(pNorm, "fpkg")) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .fpkg file."))
     }
     if (!FileOps.isZipArchive(pNorm)) {
@@ -305,18 +327,47 @@ class Flix {
     * @param p the path to the JAR file. Must be a readable `.jar` file.
     */
   def addJar(p: Path): Flix = {
-    if (p == null)
-      throw new IllegalArgumentException(s"'p' must be non-null.")
-    if (!Files.exists(p))
-      throw new IllegalArgumentException(s"'$p' must be a file.")
-    if (!Files.isRegularFile(p))
-      throw new IllegalArgumentException(s"'$p' must be a regular file.")
-    if (!Files.isReadable(p))
-      throw new IllegalArgumentException(s"'$p' must be a readable file.")
+    isValidJarFile(p) match {
+      case Result.Err(e: Throwable) => throw e
+      case Result.Ok(()) =>
+        val p1 = p.normalize()
+        jarLoader.addURL(p1.toUri.toURL)
+        extendKnownJavaClassesAndInterfaces(p1)
+        this
+    }
+  }
 
-    jarLoader.addURL(p.toUri.toURL)
-    extendKnownJavaClassesAndInterfaces(p)
-    this
+  /**
+    * Checks that `p` is a valid `.jar` filepath.
+    * `p` is valid if all the following holds:
+    *   1. `p` must not be `null`.
+    *   1. `p` must exist in the file system.
+    *   1. `p` must be a regular file.
+    *   1. `p` must be readable.
+    *   1. `p` must end with `.jar`.
+    *   1. `p` must be a zip archive.
+    */
+  private def isValidJarFile(p: Path): Result[Unit, IllegalArgumentException] = {
+    if (p == null) {
+      return Result.Err(new IllegalArgumentException(s"'p' must be non-null."))
+    }
+    val pNorm = p.normalize()
+    if (!Files.exists(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a file."))
+    }
+    if (!Files.isRegularFile(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a regular file."))
+    }
+    if (!Files.isReadable(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
+    }
+    if (!FileOps.checkExt(pNorm, "jar")) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .jar file."))
+    }
+    if (!FileOps.isZipArchive(pNorm)) {
+      return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a zip archive."))
+    }
+    Result.Ok(())
   }
 
   /**
