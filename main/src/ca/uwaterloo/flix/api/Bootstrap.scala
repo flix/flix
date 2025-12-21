@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.api.effectlock.UseGraph
+import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
@@ -439,7 +440,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
       // TODO: Serialize signatures also???
-      val useGraph = UseGraph.computeGraph(root)
+      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall)
       val defs: Map[Symbol.DefnSym, TypedAst.Def] = ???
       val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
@@ -448,6 +449,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       FileOps.writeString(effLockFilePath, json)
     }
   }
+
+  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym)): Boolean = ???
 
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
