@@ -193,7 +193,7 @@ class Flix {
     if (!Files.isReadable(pNorm)) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a readable file."))
     }
-    if (FileOps.checkExt(pNorm, "flix")) {
+    if (!FileOps.checkExt(pNorm, "flix")) {
       return Result.Err(new IllegalArgumentException(s"'$pNorm' must be a .flix file."))
     }
     Result.Ok(())
