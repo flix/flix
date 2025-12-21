@@ -19,9 +19,8 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML,
 import ca.uwaterloo.flix.api.effectlock.UseGraph
 import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{Sourceable, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
@@ -440,8 +439,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
       // TODO: Serialize signatures also???
-      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall)
-      val defs: Map[Symbol.DefnSym, TypedAst.Def] = ???
+      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_)(root))
+      val defs = useGraph.map(getLibraryDefn(_)(root)).flatten.toMap
       val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
       val effLockFilePath = projectPath.resolve("effects.lock")
@@ -450,7 +449,45 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym)): Boolean = ???
+  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym))(implicit root: TypedAst.Root): Boolean = graphEdge match {
+    case (UsedSym.DefnSym(src), UsedSym.DefnSym(dst)) =>
+      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst)
+    case (UsedSym.DefnSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
+    case (UsedSym.SigSym(src), UsedSym.DefnSym(dst)) =>
+      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst)
+    case (UsedSym.SigSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
+  }
+
+  private def isFromLocalProject(sym: Sourceable): Boolean = sym.src.input match {
+    case Input.RealFile(_, _) => true
+    case Input.VirtualFile(_, _, _) => true
+    case Input.VirtualUri(_, _, _) => true
+    case Input.PkgFile(_, _) => false
+    case Input.FileInPackage(_, _, _, _) => false
+    case Input.Unknown => false
+  }
+
+  private def isLibraryFunction(sym: Sourceable): Boolean = sym.src.input match {
+    case Input.RealFile(_, _) => false
+    case Input.VirtualFile(_, _, _) => false
+    case Input.VirtualUri(_, _, _) => false
+    case Input.PkgFile(_, _) => true
+    case Input.FileInPackage(_, _, _, _) => true
+    case Input.Unknown => false
+  }
+
+  private def isPublic(sym: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = {
+    root.defs.get(sym).exists(_.spec.mod.isPublic)
+  }
+
+  private def getLibraryDefn(graphEdge: (UsedSym, UsedSym))(implicit root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
+    case (UsedSym.DefnSym(_), UsedSym.DefnSym(dst)) =>
+      Some(dst -> root.defs(dst))
+    case (UsedSym.DefnSym(_), UsedSym.SigSym(_)) => None
+    case (UsedSym.SigSym(_), UsedSym.DefnSym(dst)) =>
+      Some(dst -> root.defs(dst))
+    case (UsedSym.SigSym(_), UsedSym.SigSym(_)) => None
+  }
 
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
