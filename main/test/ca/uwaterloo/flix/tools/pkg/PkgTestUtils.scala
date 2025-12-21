@@ -41,7 +41,6 @@ object PkgTestUtils {
     flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
 
-
   def mkTomlWithDeps(deps: String): String = {
     s"""
        |[package]
@@ -52,7 +51,7 @@ object PkgTestUtils {
        |authors = ["flix"]
        |
        |[dependencies]
-       |${deps.mkString(System.lineSeparator())}
+       |$deps
        |""".stripMargin
   }
 
