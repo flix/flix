@@ -239,11 +239,7 @@ class TestBootstrap extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
-    println("to write:")
-    println(toml)
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
-    println("reading from toml:")
-    println(Files.readAllLines(p.resolve("flix.toml").normalize()).asScala.toList.mkString(System.lineSeparator()))
 
     // Override main file
     val main =
