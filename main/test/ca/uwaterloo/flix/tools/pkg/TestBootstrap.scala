@@ -9,7 +9,7 @@ import java.security.{DigestInputStream, MessageDigest}
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipFile
-import scala.jdk.CollectionConverters.EnumerationHasAsScala
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, EnumerationHasAsScala}
 import scala.util.Using
 
 class TestBootstrap extends AnyFunSuite {
@@ -239,7 +239,11 @@ class TestBootstrap extends AnyFunSuite {
         |"github:flix/test-pkg-trust-java" = { version = "0.1.0", security = "unrestricted" }
         |""".stripMargin
     )
+    println("to write:")
+    println(toml)
     FileOps.writeString(p.resolve("flix.toml").normalize(), toml)
+    println("reading from toml:")
+    println(Files.readAllLines(p.resolve("flix.toml").normalize()).asScala.toList.mkString(System.lineSeparator()))
 
     // Override main file
     val main =
