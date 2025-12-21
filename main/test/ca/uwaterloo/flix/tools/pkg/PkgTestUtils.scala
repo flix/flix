@@ -42,7 +42,7 @@ object PkgTestUtils {
   }
 
 
-  def mkToml(deps: String): String = {
+  def mkTomlWithDeps(deps: String): String = {
     s"""
        |[package]
        |name = "test"

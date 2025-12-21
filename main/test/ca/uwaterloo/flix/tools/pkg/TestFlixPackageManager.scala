@@ -639,7 +639,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
   }
 
   test("mismatched-versions") {
-    val toml = PkgTestUtils.mkToml(
+    val toml = PkgTestUtils.mkTomlWithDeps(
       """
         |"github:jaschdoc/flix-test-pkg-mismatched-versions" = "0.1.0"
         |""".stripMargin
@@ -663,7 +663,7 @@ class TestFlixPackageManager extends AnyFunSuite with BeforeAndAfter {
     */
   private def checkForbidden(deps: String, main: String): (Boolean, String) = {
     val path = Files.createTempDirectory("")
-    val toml = PkgTestUtils.mkToml(deps)
+    val toml = PkgTestUtils.mkTomlWithDeps(deps)
 
     val manifest = ManifestParser.parse(toml, null) match {
       case Ok(m) => m
