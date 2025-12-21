@@ -229,7 +229,9 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("lock-effects should write effect lock file") {
-    fail()
+    val toml = PkgTestUtils.mkToml(List(
+
+    ))
   }
 
   private def calcHash(p: Path): String = {
