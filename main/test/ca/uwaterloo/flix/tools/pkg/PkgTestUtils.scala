@@ -38,7 +38,7 @@ object PkgTestUtils {
     */
   def mkFlix: Flix = {
     val flix = new Flix()
-    flix.setOptions(flix.options.copy(githubToken = gitHubToken))
+    flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
   }
 
 
