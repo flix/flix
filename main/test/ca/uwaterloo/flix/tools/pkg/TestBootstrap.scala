@@ -229,7 +229,7 @@ class TestBootstrap extends AnyFunSuite {
   }
 
   test("lock-effects should write effect lock file") {
-    fail
+    fail()
   }
 
   private def calcHash(p: Path): String = {
