@@ -438,7 +438,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       // TODO: Serialize signatures also???
       val serialization = root.defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
-      ???
+      val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
+      val effLockFilePath = projectPath.resolve("effects.lock")
+      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
+      FileOps.writeString(effLockFilePath, json)
     }
   }
 
