@@ -25,7 +25,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestSerialization extends AnyFunSuite with TestUtils {
 
-  test("serialize.01") {
+  test("serialize.def.01") {
     val input =
       """
         |pub def fun(): Unit = ()
@@ -41,7 +41,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.02") {
+  test("serialize.def.02") {
     val input =
       """
         |pub def fun(x: Int32): Int32 = x + x
@@ -57,7 +57,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.03") {
+  test("serialize.def.03") {
     val input =
       """
         |pub def toUnit(_: Int32): Unit = ()
@@ -73,7 +73,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.04") {
+  test("serialize.def.04") {
     val input =
       """
         |pub def answer(): Int32 = 42
@@ -89,7 +89,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.05") {
+  test("serialize.def.05") {
     val input =
       """
         |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
@@ -120,7 +120,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.06") {
+  test("serialize.def.06") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -140,7 +140,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.07") {
+  test("serialize.def.07") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -164,7 +164,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.08") {
+  test("serialize.def.08") {
     val input =
       """
         |pub eff A {
@@ -202,7 +202,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.09") {
+  test("serialize.def.09") {
     val input =
       """
         |type alias Num = Int32
@@ -220,7 +220,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.10") {
+  test("serialize.def.10") {
     val input =
       """
         |pub trait T[a: Type] {
