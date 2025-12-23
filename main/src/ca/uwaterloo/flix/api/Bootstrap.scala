@@ -430,6 +430,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  def upgradeEffects(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = ???
+
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
     * directories (including the `build` directory itself). Performs safety checks to ensure:
