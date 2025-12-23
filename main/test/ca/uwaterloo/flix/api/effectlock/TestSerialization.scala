@@ -655,4 +655,162 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  ignore("serialize.deserialize.identity.sig.02") {
+    val input =
+      """
+        |pub def fun(x: Int32): Int32 = x + x
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec.declaredScheme)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.03") {
+    val input =
+      """
+        |pub def toUnit(_: Int32): Unit = ()
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec.declaredScheme)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.04") {
+    val input =
+      """
+        |pub def answer(): Int32 = 42
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec.declaredScheme)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.05") {
+    val input =
+      """
+        |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, defn.spec.declaredScheme)
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.06") {
+    val input =
+      """
+        |trait ToString[a: Type] {
+        |   pub def toString(x: a): String
+        |}
+        |
+        |pub def pretty(x: a): String with ToString[a] = ToString.toString(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.07") {
+    val input =
+      """
+        |trait ToString[a: Type] {
+        |   pub def toString(x: a): String
+        |}
+        |
+        |pub eff A {
+        |    def thing(x: String): Unit
+        |}
+        |
+        |pub def prettyPrint(x: t): Unit \ A with ToString[t] = A.thing(ToString.toString(x))
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.08") {
+    val input =
+      """
+        |pub eff A {
+        |    def thing(x: String): Unit
+        |}
+        |
+        |pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.09") {
+    val input =
+      """
+        |type alias Num = Int32
+        |pub def fun(x: Num): Num = x + x
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val erasedBaseType = Type.eraseAliases(defn.spec.declaredScheme.base)
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme.copy(base = erasedBaseType)))
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  ignore("serialize.deserialize.identity.sig.10") {
+    val input =
+      """
+        |pub trait T[a: Type] {
+        |    type B: Type
+        |    pub def f(g: a -> T.B[a]): T.B[a]
+        |}
+        |
+        |pub def h(q: a -> T.B[a], x: a): T.B[a] = q(x)
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val defs = root.defs.keys.flatMap(root.defs.get)
+    val defn = defs.head
+    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
+    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
 }
