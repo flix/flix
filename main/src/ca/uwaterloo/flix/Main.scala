@@ -405,17 +405,13 @@ object Main {
             println("The 'upgrade' command does not support file arguments.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.upgrade(flix)(System.err)
-          } match {
-            case Result.Ok(()) =>
-              System.exit(0)
-            case Result.Err(error) =>
-              println(error.message(formatter))
-              System.exit(1)
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.upgrade(flix)(System.err)
+            }
           }
 
         case Command.CompilerPerf =>
