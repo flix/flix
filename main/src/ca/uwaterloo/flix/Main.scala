@@ -401,6 +401,10 @@ object Main {
           }
 
         case Command.EffLock =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'eff-lock' command does not support file arguments.")
+            System.exit(1)
+          }
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
