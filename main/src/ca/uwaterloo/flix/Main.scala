@@ -400,6 +400,24 @@ object Main {
               System.exit(1)
           }
 
+        case Command.Upgrade =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'outdated' command does not support file arguments.")
+            System.exit(1)
+          }
+          Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.upgrade(flix)(System.err)
+          } match {
+            case Result.Ok(()) =>
+              System.exit(0)
+            case Result.Err(error) =>
+              println(error.message(formatter))
+              System.exit(1)
+          }
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -485,6 +503,8 @@ object Main {
     case object Release extends Command
 
     case object Outdated extends Command
+
+    case object Upgrade extends Command
 
     case object CompilerPerf extends Command
 

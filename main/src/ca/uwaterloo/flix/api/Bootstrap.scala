@@ -431,6 +431,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    * Updates all dependencies to their latest minor version.
+    */
+  def upgrade(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = ???
+
+  /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
     * directories (including the `build` directory itself). Performs safety checks to ensure:
     *  - the current directory is a Flix project (manifest present),
