@@ -446,7 +446,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       // TODO: Serialize signatures also???
       val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_)(root))
-      val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_)(root)).toMap
+      val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_, root)).toMap
       val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
       // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
@@ -486,7 +486,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     root.defs.get(sym).exists(_.spec.mod.isPublic)
   }
 
-  private def getLibraryDefn(graphEdge: UsedSym)(implicit root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
+  private def getLibraryDefn(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
     case UsedSym.DefnSym(sym) =>
       Some(sym -> root.defs(sym))
 
