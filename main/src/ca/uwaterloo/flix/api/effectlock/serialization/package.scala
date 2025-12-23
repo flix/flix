@@ -23,11 +23,13 @@ package ca.uwaterloo.flix.api.effectlock
   */
 package object serialization {
 
+  sealed trait SigOrDef
+
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme)
+  case class SDef(namespace: List[String], text: String, scheme: SScheme) extends SigOrDef
 
   /** Represents a serializable sig. */
-  case class SSig(namespace: List[String], text: String, scheme: SScheme)
+  case class SSig(namespace: List[String], text: String, scheme: SScheme) extends SigOrDef
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)
