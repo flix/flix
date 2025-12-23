@@ -23,6 +23,7 @@ package ca.uwaterloo.flix.api.effectlock
   */
 package object serialization {
 
+  /** Common super type for [[SDef]] and [[SSig]]. */
   sealed trait SigOrDef
 
   /** Represents a serializable def. */
