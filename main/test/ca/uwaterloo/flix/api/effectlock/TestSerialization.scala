@@ -360,20 +360,25 @@ class TestSerialization extends AnyFunSuite with TestUtils {
   ignore("serialize.sig.06") {
     val input =
       """
-        |trait ToString[a: Type] {
-        |   pub def toString(x: a): String
+        |trait ToString[a: Type] with Helper[a] {
+        |   pub def toString(x: a): String = Helper.help(x)
         |}
         |
-        |pub def pretty(x: a): String with ToString[a] = ToString.toString(x)
+        |trait Helper[a: Type] {
+        |   pub def help(x: a): String
+        |}
         |""".stripMargin
 
-    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(VarSym(0, Text("a"), StarKind))), Cst(Str))
-    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(0, Text("a"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "pretty", scheme)
+    val a = VarSym(0, Text("a"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), Cst(Str))
+    val tconstr1 = TraitConstr(TraitSym(List.empty, "ToString"), Var(a))
+    val tconstr2 = TraitConstr(TraitSym(List.empty, "Helper"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr1, tconstr2), List.empty, tpe)
+    val expected = SSig(List("ToString"), "toString", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.find(sig => sig.sym.name == "toString").get)
     assert(actual == expected)
   }
 
