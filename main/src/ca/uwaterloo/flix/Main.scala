@@ -402,7 +402,7 @@ object Main {
 
         case Command.Upgrade =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'outdated' command does not support file arguments.")
+            println("The 'upgrade' command does not support file arguments.")
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
