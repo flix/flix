@@ -1106,7 +1106,7 @@ object GenExpression {
           val resultTpe = BackendObjType.Result.toTpe
           val desc = MethodDescriptor(paramTpes, resultTpe)
           val className = BackendObjType.Defn(sym).jvmName
-          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.DirectApply, desc.toDescriptor, false)
+          mv.visitMethodInsn(INVOKESTATIC, className.toInternalName, JvmName.StaticApply, desc.toDescriptor, false)
           BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)
         } else {
           // JvmType of Def

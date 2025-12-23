@@ -69,7 +69,7 @@ object JvmName {
     * The name of the static method for invoking the function
     * if it is control pure.
     */
-  val DirectApply: String = "directApply"
+  val StaticApply: String = "staticApply"
 
   /** Returns the [[JvmName]] of `clazz`. Crashes if `clazz` is primitive, an array, or unnamed. */
   def ofClass(clazz: Class[?]): JvmName = {
