@@ -301,7 +301,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("serialize.sig.04") {
+  test("serialize.sig.04") {
     val input =
       """
         |trait A[x] {
@@ -322,7 +322,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("serialize.sig.05") {
+  test("serialize.sig.05") {
     val input =
       """
         |trait T[a] {
@@ -357,7 +357,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("serialize.sig.06") {
+  test("serialize.sig.06") {
     val input =
       """
         |trait ToString[a: Type] with Helper[a] {
@@ -382,27 +382,33 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("serialize.sig.07") {
+  test("serialize.sig.07") {
     val input =
       """
+        |trait Pretty[a: Type] with ToString[a] {
+        |   pub def prettyPrint(x: a): Unit \ A = A.thing(ToString.toString(x))
+        |}
+        |
         |trait ToString[a: Type] {
         |   pub def toString(x: a): String
         |}
         |
         |pub eff A {
-        |    def thing(x: String): Unit
+        |    def print(x: String): Unit
         |}
-        |
-        |pub def prettyPrint(x: t): Unit \ A with ToString[t] = A.thing(ToString.toString(x))
         |""".stripMargin
 
-    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(EffSym(List.empty, "A"), EffKind))), Var(VarSym(0, Text("t"), StarKind))), Cst(Unit))
-    val scheme = SScheme(List(VarSym(0, Text("t"), StarKind)), List(TraitConstr(TraitSym(List.empty, "ToString"), Var(VarSym(0, Text("t"), StarKind)))), List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme)
+    val a = VarSym(0, Text("a"), StarKind)
+    val effA = EffSym(List.empty, "A")
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(effA, EffKind))), Var(a)), Cst(Unit))
+    val tconstr1 = TraitConstr(TraitSym(List.empty, "Pretty"), Var(a))
+    val tconstr2 = TraitConstr(TraitSym(List.empty, "ToString"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr1, tconstr2), List.empty, tpe)
+    val expected = SSig(List("Pretty"), "prettyPrint", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.find(sig => sig.sym.name == "prettyPrint").get)
     assert(actual == expected)
   }
 
