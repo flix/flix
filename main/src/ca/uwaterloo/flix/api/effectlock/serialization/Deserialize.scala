@@ -32,6 +32,15 @@ object Deserialize {
       sym -> sc
   }
 
+  def deserializeSig(sig0: SSig): (Symbol.SigSym, Scheme) = sig0 match {
+    case SSig(namespace, text, scheme) =>
+      val fqnTrt = namespace.mkString(".")
+      val trtSym = Symbol.mkTraitSym(fqnTrt)
+      val sym = Symbol.mkSigSym(trtSym, deserializeIdent(text))
+      val sc = deserializeScheme(scheme)
+      sym -> sc
+  }
+
   private def deserializeScheme(sc0: SScheme): Scheme = sc0 match {
     case SScheme(quantifiers, tconstrs, econstrs, base) =>
       val qs = quantifiers.map(deserializeKindedTypeVarSym)

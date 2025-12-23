@@ -16,8 +16,6 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.api.effectlock.serialization.*
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.util.Options
@@ -25,7 +23,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestSerialization extends AnyFunSuite with TestUtils {
 
-  test("serialize.01") {
+  test("serialize.def.01") {
     val input =
       """
         |pub def fun(): Unit = ()
@@ -41,7 +39,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.02") {
+  test("serialize.def.02") {
     val input =
       """
         |pub def fun(x: Int32): Int32 = x + x
@@ -57,7 +55,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.03") {
+  test("serialize.def.03") {
     val input =
       """
         |pub def toUnit(_: Int32): Unit = ()
@@ -73,7 +71,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.04") {
+  test("serialize.def.04") {
     val input =
       """
         |pub def answer(): Int32 = 42
@@ -89,7 +87,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.05") {
+  test("serialize.def.05") {
     val input =
       """
         |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
@@ -120,7 +118,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.06") {
+  test("serialize.def.06") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -140,7 +138,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.07") {
+  test("serialize.def.07") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -164,7 +162,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.08") {
+  test("serialize.def.08") {
     val input =
       """
         |pub eff A {
@@ -202,7 +200,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.09") {
+  test("serialize.def.09") {
     val input =
       """
         |type alias Num = Int32
@@ -220,7 +218,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.10") {
+  test("serialize.def.10") {
     val input =
       """
         |pub trait T[a: Type] {
@@ -243,7 +241,265 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.01") {
+  test("serialize.sig.01") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def fun(): a
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Var(a))
+    val tconstr = TraitConstr(TraitSym(List.empty, "T"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("T"), "fun", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.02") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def fun(x: a): a
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), Var(a))
+    val tconstr = TraitConstr(TraitSym(List.empty, "T"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("T"), "fun", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.03") {
+    val input =
+      """
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |}
+        |""".stripMargin
+
+    val x = VarSym(0, Text("x"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(x)), Cst(Unit))
+    val tconstr = TraitConstr(TraitSym(List.empty, "A"), Var(x))
+    val scheme = SScheme(List(x), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("A"), "toUnit", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.04") {
+    val input =
+      """
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |    pub def answer(): Int32 = 42
+        |}
+        |""".stripMargin
+
+    val x = VarSym(0, Text("x"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
+    val tconstr = TraitConstr(TraitSym(List.empty, "A"), Var(x))
+    val scheme = SScheme(List(x), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("A"), "answer", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.find(sig => sig.sym.name == "answer").get)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.05") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val tpe = Apply(
+      Apply(
+        Apply(
+          Apply(
+            Cst(Arrow(3)), Cst(Pure)
+          ),
+          Apply(
+            Apply(
+              Apply(
+                Cst(Arrow(2)), Cst(Pure)
+              ), Var(a)
+            ), Cst(Int32)
+          )
+        ), Var(a)
+      ), Cst(Int32)
+    )
+    val tconstr = TraitConstr(TraitSym(List.empty, "T"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("T"), "toInt32", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.06") {
+    val input =
+      """
+        |trait ToString[a: Type] with Helper[a] {
+        |   pub def toString(x: a): String = Helper.help(x)
+        |}
+        |
+        |trait Helper[a: Type] {
+        |   pub def help(x: a): String
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), Cst(Str))
+    val tconstr = TraitConstr(TraitSym(List.empty, "ToString"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("ToString"), "toString", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.find(sig => sig.sym.name == "toString").get)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.07") {
+    val input =
+      """
+        |trait Pretty[a: Type] with ToString[a] {
+        |   pub def prettyPrint(x: a): Unit \ A = A.thing(ToString.toString(x))
+        |}
+        |
+        |trait ToString[a: Type] {
+        |   pub def toString(x: a): String
+        |}
+        |
+        |pub eff A {
+        |    def print(x: String): Unit
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val effA = EffSym(List.empty, "A")
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(effA, EffKind))), Var(a)), Cst(Unit))
+    val tconstr = TraitConstr(TraitSym(List.empty, "Pretty"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("Pretty"), "prettyPrint", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.find(sig => sig.sym.name == "prettyPrint").get)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.08") {
+    val input =
+      """
+        |trait Pretty[a: Type] {
+        |   pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
+        |}
+        |
+        |pub eff A {
+        |    def print(x: String): Unit
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val b = VarSym(1, Text("b"), StarKind)
+    val ef = VarSym(0, Text("ef"), EffKind)
+    val effA = EffSym(List.empty, "A")
+    val tpe = Apply(
+      Apply(
+        Apply(
+          Apply(
+            Cst(Arrow(3)), Var(ef)
+          ),
+          Apply(
+            Apply(
+              Apply(
+                Cst(Arrow(2)),
+                Apply(
+                  Apply(
+                    Cst(Difference), Var(ef)
+                  ), Cst(Effect(effA, EffKind)))
+              ), Var(a)
+            ), Var(b))
+        ), Var(a)
+      ), Var(b)
+    )
+    val tconstr = TraitConstr(TraitSym(List.empty, "Pretty"), Var(a))
+    val scheme = SScheme(List(a, ef, b), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("Pretty"), "prettyPrint", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.09") {
+    val input =
+      """
+        |type alias Num = Int32
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |    pub def answer(): Num = 42
+        |}
+        |""".stripMargin
+
+    val x = VarSym(0, Text("x"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
+    val tconstr = TraitConstr(TraitSym(List.empty, "A"), Var(x))
+    val scheme = SScheme(List(x), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("A"), "answer", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.find(sig => sig.sym.name == "answer").get)
+    assert(actual == expected)
+  }
+
+  test("serialize.sig.10") {
+    val input =
+      """
+        |pub trait T[a: Type] {
+        |    type B: Type
+        |    pub def f(g: a -> T.B[a], x: a): T.B[a] = g(x)
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val tb = AssocTypeSym(TraitSym(List(), "T"), "B")
+    val tpe = Apply(Apply(Apply(Apply(Cst(Arrow(3)), Cst(Pure)), Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Var(a)), AssocType(tb, Var(a), StarKind))), Var(a)), AssocType(tb, Var(a), StarKind))
+    val tconstr = TraitConstr(TraitSym(List.empty, "T"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("T"), "f", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.def.01") {
     val input =
       """
         |pub def fun(): Unit = ()
@@ -258,7 +514,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.02") {
+  test("serialize.deserialize.identity.def.02") {
     val input =
       """
         |pub def fun(x: Int32): Int32 = x + x
@@ -273,7 +529,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.03") {
+  test("serialize.deserialize.identity.def.03") {
     val input =
       """
         |pub def toUnit(_: Int32): Unit = ()
@@ -288,7 +544,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.04") {
+  test("serialize.deserialize.identity.def.04") {
     val input =
       """
         |pub def answer(): Int32 = 42
@@ -303,7 +559,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.05") {
+  test("serialize.deserialize.identity.def.05") {
     val input =
       """
         |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
@@ -318,7 +574,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.06") {
+  test("serialize.deserialize.identity.def.06") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -337,7 +593,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.07") {
+  test("serialize.deserialize.identity.def.07") {
     val input =
       """
         |trait ToString[a: Type] {
@@ -360,7 +616,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.08") {
+  test("serialize.deserialize.identity.def.08") {
     val input =
       """
         |pub eff A {
@@ -379,7 +635,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.09") {
+  test("serialize.deserialize.identity.def.09") {
     val input =
       """
         |type alias Num = Int32
@@ -396,7 +652,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  test("serialize.deserialize.identity.10") {
+  test("serialize.deserialize.identity.def.10") {
     val input =
       """
         |pub trait T[a: Type] {
@@ -412,6 +668,198 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val defn = defs.head
     val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
     val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.01") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def fun(): a
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.02") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def fun(x: a): a
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.03") {
+    val input =
+      """
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.04") {
+    val input =
+      """
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |    pub def answer(): Int32 = 42
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "answer").get
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.05") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.06") {
+    val input =
+      """
+        |trait ToString[a: Type] with Helper[a] {
+        |   pub def toString(x: a): String = Helper.help(x)
+        |}
+        |
+        |trait Helper[a: Type] {
+        |   pub def help(x: a): String
+        |}
+        |""".stripMargin
+
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "toString").get
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.07") {
+    val input =
+      """
+        |trait Pretty[a: Type] with ToString[a] {
+        |   pub def prettyPrint(x: a): Unit \ A = A.thing(ToString.toString(x))
+        |}
+        |
+        |trait ToString[a: Type] {
+        |   pub def toString(x: a): String
+        |}
+        |
+        |pub eff A {
+        |    def print(x: String): Unit
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "prettyPrint").get
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.08") {
+    val input =
+      """
+        |trait Pretty[a: Type] {
+        |   pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
+        |}
+        |
+        |pub eff A {
+        |    def print(x: String): Unit
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.09") {
+    val input =
+      """
+        |type alias Num = Int32
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |    pub def answer(): Num = 42
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "answer").get
+    val erasedBaseType = Type.eraseAliases(sig.spec.declaredScheme.base)
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme.copy(base = erasedBaseType)))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
+
+    assert(actual == expected)
+  }
+
+  test("serialize.deserialize.identity.sig.10") {
+    val input =
+      """
+        |pub trait T[a: Type] {
+        |    type B: Type
+        |    pub def f(g: a -> T.B[a], x: a): T.B[a] = g(x)
+        |}
+        |""".stripMargin
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
