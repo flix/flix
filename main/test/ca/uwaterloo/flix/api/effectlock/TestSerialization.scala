@@ -400,9 +400,8 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val a = VarSym(0, Text("a"), StarKind)
     val effA = EffSym(List.empty, "A")
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Effect(effA, EffKind))), Var(a)), Cst(Unit))
-    val tconstr1 = TraitConstr(TraitSym(List.empty, "Pretty"), Var(a))
-    val tconstr2 = TraitConstr(TraitSym(List.empty, "ToString"), Var(a))
-    val scheme = SScheme(List(a), List(tconstr1, tconstr2), List.empty, tpe)
+    val tconstr = TraitConstr(TraitSym(List.empty, "Pretty"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
     val expected = SSig(List("Pretty"), "prettyPrint", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
