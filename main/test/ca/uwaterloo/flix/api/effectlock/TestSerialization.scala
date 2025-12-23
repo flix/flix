@@ -243,6 +243,26 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
+  test("serialize.sig.01") {
+    val input =
+      """
+        |trait T[a] {
+        |    pub def fun(): a
+        |}
+        |""".stripMargin
+
+    val a = VarSym(0, Text("a"), StarKind)
+    val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Var(a))
+    val tconstr = TraitConstr(TraitSym(List(), "T"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("T"), "fun", scheme)
+
+    val (Some(root), _) = check(input, Options.TestWithLibNix)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
+    assert(actual == expected)
+  }
+
   test("serialize.deserialize.identity.01") {
     val input =
       """
