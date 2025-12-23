@@ -16,8 +16,6 @@
 
 package ca.uwaterloo.flix.util
 
-import scala.annotation.tailrec
-
 object StringCursor {
 
   /** The end-of-file character (`'\u0000'`) used methods like [[StringCursor.peek]] to avoid option types. */
@@ -28,52 +26,14 @@ object StringCursor {
 /**
   * Allows iteration through a character array `chars` via a mutable index (the cursor) into the array.
   * Relative indexing is allowed via [[StringCursor.nth]].
-  *
-  * This class is string specific since it tracks the current line and column of the cursor.
   */
 final class StringCursor(val chars: Array[Char]) {
 
   /** The index pointing into [[chars]] (zero-indexed). */
   private var index: Int = 0
 
-  /** The line index of [[index]] (zero-indexed). */
-  private var line: Int = 0
-
-  /** The column index of [[index]] (zero-indexed). */
-  private var column: Int = 0
-
-  /** The max column index of the previous line or `0` if there is no previous line. */
-  private var prevLineMaxColumn = 0
-
-  /** Returns the current line index (zero-indexed). */
-  def getLine: Int = line
-
-  /** Returns the current column index (zero-indexed). */
-  def getColumn: Int = column
-
   /** Returns the current array index (zero-indexed). */
   def getIndex: Int = index
-
-  /**
-    * Returns the current `(line, column)` intended for an exclusive end of a range.
-    *
-    * This function avoids returning the first position of a line, instead returning the fictitious position just after
-    * the previous line.
-    *
-    * In the below example, the current position is on '|v' (1,0).
-    * This function will instead return the position just after 'Example\n' (0, 8).
-    *
-    * {{{
-    *   Example
-    *   v
-    * }}}
-    */
-  def getExclusiveEndPosition: (Int, Int) =
-    if (line <= 0 || column > 0) {
-      (line, column)
-    } else {
-      (line - 1, prevLineMaxColumn + 1)
-    }
 
   /** Advances cursor one character forward
     *
@@ -84,7 +44,7 @@ final class StringCursor(val chars: Array[Char]) {
   def peekAndAdvance(): Char = {
     if (this.isInBounds) {
       val c = chars(index)
-      advance()
+      index += 1
       c
     } else {
       StringCursor.EOF
@@ -98,13 +58,6 @@ final class StringCursor(val chars: Array[Char]) {
     */
   def advance(): Unit =
     if (this.isInBounds) {
-      if (chars(index) == '\n') {
-        prevLineMaxColumn = column
-        line += 1
-        column = 0
-      } else {
-        column += 1
-      }
       index += 1
     }
 
@@ -113,12 +66,12 @@ final class StringCursor(val chars: Array[Char]) {
     *
     * At each step, if the cursor is out of bounds, it will not be further advanced.
     */
-  @tailrec
-  def advanceN(n: Int): Unit =
-    if (0 < n) {
-      advance()
-      advanceN(n - 1)
+  def advanceN(n: Int): Unit = {
+    index += n
+    if (index >= chars.length) {
+      index = chars.length
     }
+  }
 
   /**
     * Returns the character that is `n` characters ahead of the cursor if available.
@@ -192,7 +145,7 @@ final class StringCursor(val chars: Array[Char]) {
     */
   def advanceIfMatch(c: Char): Boolean =
     if (this.isInBounds && chars(index) == c) {
-      advance()
+      index += 1
       true
     } else {
       false
@@ -201,7 +154,7 @@ final class StringCursor(val chars: Array[Char]) {
   /** Continuously advance the cursor while `p` returns `true` for the character under the cursor. */
   def advanceWhile(p: Char => Boolean): Unit =
     while (this.isInBounds && p(chars(index))) {
-      advance()
+      index += 1
     }
 
   /**

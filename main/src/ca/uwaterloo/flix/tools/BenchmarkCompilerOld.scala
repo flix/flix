@@ -160,7 +160,7 @@ object BenchmarkCompilerOld {
         }
         val root = optRoot.get
         val totalLines = root.sources.foldLeft(0) {
-          case (acc, (_, sl)) => acc + sl.endLine
+          case (acc, (src, _)) => acc + src.lines.lineCount
         }
         Run(totalLines, flix.getTotalTime)
       } else {

@@ -433,7 +433,7 @@ object Weeder2 {
         (ident, maybeType) =>
           val tpes = maybeType.getOrElse(Nil)
           // Make a source location that spans the name and type, excluding 'case'.
-          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
+          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.startIndex, tree.loc.endIndex)
           Case(ident, tpes, loc)
       }
     }
@@ -527,7 +527,7 @@ object Weeder2 {
       ) {
         (ident, ttype) =>
           // Make a source location that spans the name and type
-          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.start, tree.loc.end)
+          val loc = SourceLocation(isReal = true, ident.loc.source, ident.loc.startIndex, tree.loc.endIndex)
           StructField(mod, Name.mkLabel(ident), ttype, loc)
       }
     }
@@ -982,7 +982,7 @@ object Weeder2 {
 
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
-        case (acc, token@Token(_, _, _, _, _, _)) =>
+        case (acc, token@Token(_, _, _, _)) =>
           val loc = token.mkSourceLocation()
           val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
           val lit = lit0.stripSuffix("${")
@@ -1031,9 +1031,8 @@ object Weeder2 {
       mapN(pickNameIdent(tree)) {
         ident =>
           // Strip '?' suffix and update source location
-          val sp1 = ident.loc.start
-          val sp2 = SourcePosition.moveLeft(ident.loc.end)
-          val id = Name.Ident(ident.name.stripSuffix("?"), SourceLocation(isReal = true, ident.loc.source, sp1, sp2))
+          val loc = ident.loc.copy(endIndex = ident.loc.endIndex - 1)
+          val id = Name.Ident(ident.name.stripSuffix("?"), loc)
           val expr = Expr.Ambiguous(Name.QName(Name.RootNS, id, id.loc), id.loc)
           Expr.HoleWithExp(expr, tree.loc)
       }
@@ -1050,7 +1049,7 @@ object Weeder2 {
       // Note: This visitor is used by both expression literals and pattern literals.
       expectAny(tree, List(TreeKind.Expr.Literal, TreeKind.Pattern.Literal))
       tree.children(0) match {
-        case token@Token(_, _, _, _, _, _) => token.kind match {
+        case token@Token(_, _, _, _) => token.kind match {
           case TokenKind.DebugInterpolator =>
             val loc = tree.loc
             val file = loc.source.name
@@ -1194,11 +1193,11 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree)) { op =>
         op.children.head match {
           // User-defined operators - use the operator text directly
-          case t@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+          case t@Token(TokenKind.GenericOperator, _, _, _) =>
             Validation.Success(Expr.Ambiguous(Name.mkQName(t.text, loc), loc))
 
           // Built-in operators - lookup
-          case Token(kind, _, _, _, _, _) =>
+          case Token(kind, _, _, _) =>
             tokenOperatorToName(kind) match {
               case Some(funcName) =>
                 Validation.Success(Expr.Ambiguous(Name.mkQName(funcName, loc), loc))
@@ -1228,13 +1227,13 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Operator, tree), pick(TreeKind.Expr.Expr, tree))(
         (opTree, exprTree) => {
           opTree.children.headOption match {
-            case Some(opToken@Token(_, _, _, _, _, _)) =>
+            case Some(opToken@Token(_, _, _, _)) =>
               val literalToken = tryPickNumberLiteralToken(exprTree)
               literalToken match {
                 // fold unary minus into a constant
                 case Some(lit) if opToken.text == "-" =>
                   // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
-                  val syntheticToken = Token(lit.kind, lit.src, opToken.startIndex, lit.endIndex, lit.start, lit.end)
+                  val syntheticToken = Token(lit.kind, lit.src, opToken.startIndex, lit.endIndex)
                   val syntheticLiteral = Tree(TreeKind.Expr.Literal, Array(syntheticToken), exprTree.loc.asSynthetic)
                   visitLiteralExpr(syntheticLiteral)
                 case _ => mapN(visitExpr(exprTree))(expr => {
@@ -1260,7 +1259,7 @@ object Weeder2 {
       val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
       maybeTree.flatMap(_.children(0) match {
-        case t@Token(_, _, _, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case t@Token(_, _, _, _) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       })
     }
@@ -1285,15 +1284,15 @@ object Weeder2 {
               // Single Token Operator.
               op.children.head match {
                 // Standard operators.
-                case Token(kind, _, _, _, _, _) if tokenOperatorToName(kind).isDefined =>
+                case Token(kind, _, _, _) if tokenOperatorToName(kind).isDefined =>
                   Validation.Success(mkApply(tokenOperatorToName(kind).get))
 
                 // Special cases that create different AST nodes
-                case Token(TokenKind.KeywordAnd, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
-                case Token(TokenKind.KeywordOr, _, _, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
-                case Token(TokenKind.ColonColon, _, _, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
-                case Token(TokenKind.AngledPlus, _, _, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
-                case Token(TokenKind.KeywordInstanceOf, _, _, _, _, _) =>
+                case Token(TokenKind.KeywordAnd, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+                case Token(TokenKind.KeywordOr, _, _, _) => Validation.Success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
+                case Token(TokenKind.ColonColon, _, _, _) => Validation.Success(Expr.FCons(e1, e2, tree.loc))
+                case Token(TokenKind.AngledPlus, _, _, _) => Validation.Success(Expr.FixpointMerge(e1, e2, tree.loc))
+                case Token(TokenKind.KeywordInstanceOf, _, _, _) =>
                   tryPickQName(exprs(1)) match {
                     case Some(qname) =>
                       if (qname.isUnqualified) Validation.Success(Expr.InstanceOf(e1, qname.ident, tree.loc))
@@ -1313,7 +1312,7 @@ object Weeder2 {
                       sctx.errors.add(error)
                       Validation.Success(Expr.Error(error))
                   }
-                case token@Token(TokenKind.GenericOperator, _, _, _, _, _) =>
+                case token@Token(TokenKind.GenericOperator, _, _, _) =>
                   val ident = Name.Ident(token.text, op.loc)
                   Validation.Success(Expr.Apply(Expr.Ambiguous(Name.QName(Name.RootNS, ident, ident.loc), op.loc), List(e1, e2), tree.loc))
                 case _ =>
@@ -1607,7 +1606,7 @@ object Weeder2 {
             // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
               // The location of the error is the end of the expression, zero-width.
-              val loc = e.loc.copy(start = e.loc.end).asSynthetic
+              val loc = e.loc.copy(startIndex = e.loc.endIndex).asSynthetic
               val error = Malformed(NamedTokenSet.FromKinds(Set(TokenKind.KeywordLet)), SyntacticContext.Expr.OtherExpr, hint = Some("let-bindings must be followed by an expression"), loc)
               Validation.Success((e, Expr.Error(error)))
           }
@@ -1681,7 +1680,7 @@ object Weeder2 {
           fields.foldRight(Expr.Cst(Constant.RecordEmpty, tree.loc.asSynthetic): Expr) {
             case ((label, expr, loc), acc) =>
               val SourceLocation(isReal, src, sp1, _) = loc
-              val extendLoc = SourceLocation(isReal, src, sp1, tree.loc.end)
+              val extendLoc = SourceLocation(isReal, src, sp1, tree.loc.endIndex)
               Expr.RecordExtend(label, expr, acc, extendLoc)
           }
       }
@@ -1700,7 +1699,7 @@ object Weeder2 {
         expr =>
           idents.foldLeft(expr) {
             case (acc, ident) =>
-              val loc = SourceLocation(ident.loc.isReal, tree.loc.source, tree.loc.start, ident.loc.end)
+              val loc = SourceLocation(ident.loc.isReal, tree.loc.source, tree.loc.startIndex, ident.loc.endIndex)
               Expr.RecordSelect(acc, Name.mkLabel(ident), loc)
           }
       }
@@ -1950,7 +1949,7 @@ object Weeder2 {
             // unit param. For example `def f(k)` becomes `def f(_unit: Unit, k)`.
 
             // The new param has the zero-width location of the actual argument.
-            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.start)
+            val loc = SourceLocation.zeroPoint(isReal = false, fparam.loc.source, fparam.loc.startIndex)
             val unitParam = Decls.unitFormalParameter(loc)
             HandlerRule(ident, List(unitParam, fparam), expr, tree.loc)
           case fparams =>
@@ -2364,7 +2363,7 @@ object Weeder2 {
         case ("INT8_SHR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc)
         case ("INT8_SUB", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc)
         case ("INT8_XOR", Some(e1 :: e2 :: Nil)) => Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc)
-        case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.startLine}"), loc)
+        case ("LINE", None) => Expr.Cst(Constant.Str(s"${loc.start.lineOneIndexed}"), loc)
         case ("VECTOR_GET", Some(e1 :: e2 :: Nil)) => Expr.VectorLoad(e1, e2, loc)
         case ("VECTOR_LENGTH", Some(e1 :: Nil)) => Expr.VectorLength(e1, loc)
         case _ =>
@@ -2631,16 +2630,16 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val literalToken = ArrayOps.getOption(tree.children, 1) match {
-        case Some(t@Token(_, _, _, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case Some(t@Token(_, _, _, _)) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       }
       flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
-        case opToken@Token(_, _, _, _, _, _) =>
+        case opToken@Token(_, _, _, _) =>
           literalToken match {
             // fold unary minus into a constant, and visit it like any other constant
             case Some(lit) if opToken.text == "-" =>
               // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
-              val syntheticToken = Token(lit.kind, lit.src, opToken.startIndex, lit.endIndex, lit.start, lit.end)
+              val syntheticToken = Token(lit.kind, lit.src, opToken.startIndex, lit.endIndex)
               val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(syntheticToken), tree.loc.asSynthetic)
               visitLiteralPat(syntheticLiteral)
             case _ =>
@@ -3395,16 +3394,16 @@ object Weeder2 {
     assert(idents.nonEmpty) // We require at least one element to construct a qname
     val first = idents.head
     val last = idents.last
-    val loc = SourceLocation(isReal = true, first.loc.source, first.loc.start, last.loc.end)
+    val loc = SourceLocation(isReal = true, first.loc.source, first.loc.startIndex, last.loc.endIndex)
 
     // If there is a trailing dot, we use all the idents as namespace and use "" as the ident
     // The resulting QName will be something like QName(["A", "B"], "")
     if (trailingDot) {
       val nname = Name.NName(idents, loc)
-      val positionAfterDot = SourcePosition.moveRight(last.loc.end)
-      val emptyIdentLoc = SourceLocation(isReal = true, last.loc.source, positionAfterDot, positionAfterDot)
+      val positionAfterDot = last.loc.endIndex + 1
+      val emptyIdentLoc = SourceLocation.zeroPoint(isReal = true, last.loc.source, positionAfterDot)
       val emptyIdent = Name.Ident("", emptyIdentLoc)
-      val qnameLoc = SourceLocation(isReal = true, first.loc.source, first.loc.start, positionAfterDot)
+      val qnameLoc = first.loc.copy(endIndex = positionAfterDot)
       Name.QName(nname, emptyIdent, qnameLoc)
     } else {
       // Otherwise we use all but the last ident as namespace and the last ident as the ident
@@ -3471,8 +3470,8 @@ object Weeder2 {
     */
   private def tokenToIdent(tree: Tree)(implicit sctx: SharedContext): Name.Ident = {
     tree.children.headOption match {
-      case Some(token@Token(_, src, _, _, sp1, sp2)) =>
-        Name.Ident(token.text, SourceLocation(isReal = true, src, sp1, sp2))
+      case Some(token@Token(_, _, _, _)) =>
+        Name.Ident(token.text, token.mkSourceLocation())
       // If child is an ErrorTree, that means the parse already reported and error.
       // We can avoid double reporting by returning a success here.
       // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
@@ -3523,7 +3522,7 @@ object Weeder2 {
     */
   private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
     tree.children.exists {
-      case Token(k, _, _, _, _, _) => k == kind
+      case Token(k, _, _, _) => k == kind
       case _ => false
     }
   }
@@ -3541,7 +3540,7 @@ object Weeder2 {
     * Collects all immediate child tokens from a tree.
     */
   private def pickAllTokens(tree: Tree): Array[Token] = {
-    tree.children.collect { case token@Token(_, _, _, _, _, _) => token }
+    tree.children.collect { case token@Token(_, _, _, _) => token }
   }
 
   /**
@@ -3549,7 +3548,7 @@ object Weeder2 {
     */
   private def text(tree: Tree): List[String] = {
     tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
-      case token@Token(_, _, _, _, _, _) => acc :+ token.text
+      case token@Token(_, _, _, _) => acc :+ token.text
       case _ => acc
     })
   }

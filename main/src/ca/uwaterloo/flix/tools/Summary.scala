@@ -100,7 +100,6 @@ object Summary {
     */
   private def fileData(sum: DefSummary)(implicit root: Root): FileData = {
     val src = sum.fun.loc.source
-    val srcLoc = root.sources.getOrElse(src, SourceLocation.Unknown)
     val pureDefs = if (sum.eff == ResEffect.Pure) 1 else 0
     val justIODefs = if (sum.eff == ResEffect.GroundNonPure) 1 else 0
     val polyDefs = if (sum.eff == ResEffect.Poly) 1 else 0
@@ -111,7 +110,7 @@ object Summary {
     val lambdaSubEffVars = sum.lambdaSubEffVars
     FileData(
       Some(src),
-      srcLoc.endLine,
+      src.lines.lineCount,
       defs = 1,
       pureDefs,
       justIODefs,
@@ -327,7 +326,7 @@ object Summary {
       val src = debugSrc.getOrElse(unknownSource)
       throw InternalCompilerException(
         s"${(defs, pureDefs, groundNonPureDefs, polyDefs)} does not sum for $src",
-        SourceLocation(isReal = true, src, SourcePosition.FirstPosition, SourcePosition.FirstPosition)
+        SourceLocation(isReal = true, src, 0, 0)
       )
     }
 
@@ -340,7 +339,7 @@ object Summary {
       if (lines != other.lines) {
         val src = debugSrc.getOrElse(unknownSource)
         throw InternalCompilerException(s"lines '$lines' and '${other.lines}' in $debugSrc",
-          SourceLocation(isReal = true, src, SourcePosition.FirstPosition, SourcePosition.FirstPosition)
+          SourceLocation(isReal = true, src, 0, 0)
         )
       }
       FileData(

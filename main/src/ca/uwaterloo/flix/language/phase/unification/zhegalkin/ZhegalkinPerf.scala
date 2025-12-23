@@ -322,7 +322,7 @@ object ZhegalkinPerf {
       throw new RuntimeException(s"Errors were present after compilation: ${errors.mkString(", ")}")
     }
     val totalLines = root.get.sources.foldLeft(0) {
-      case (acc, (_, sl)) => acc + sl.endLine
+      case (acc, (src, _)) => acc + src.lines.lineCount
     }
 
     val totalTime = flix.getTotalTime
