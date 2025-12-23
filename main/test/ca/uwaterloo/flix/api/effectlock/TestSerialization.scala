@@ -16,8 +16,6 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.api.effectlock.serialization.*
 import ca.uwaterloo.flix.language.ast.Type
 import ca.uwaterloo.flix.util.Options
