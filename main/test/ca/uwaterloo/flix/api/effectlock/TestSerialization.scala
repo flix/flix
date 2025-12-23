@@ -325,9 +325,12 @@ class TestSerialization extends AnyFunSuite with TestUtils {
   ignore("serialize.sig.05") {
     val input =
       """
-        |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |trait T[a] {
+        |    pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |}
         |""".stripMargin
 
+    val a = VarSym(0, Text("a"), StarKind)
     val tpe = Apply(
       Apply(
         Apply(
@@ -338,18 +341,19 @@ class TestSerialization extends AnyFunSuite with TestUtils {
             Apply(
               Apply(
                 Cst(Arrow(2)), Cst(Pure)
-              ), Var(VarSym(0, Text("a"), StarKind))
+              ), Var(a)
             ), Cst(Int32)
           )
-        ), Var(VarSym(0, Text("a"), StarKind))
+        ), Var(a)
       ), Cst(Int32)
     )
-    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List(), "toInt32", scheme)
+    val tconstr = TraitConstr(TraitSym(List.empty, "T"), Var(a))
+    val scheme = SScheme(List(a), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("T"), "toInt32", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
     assert(actual == expected)
   }
 
