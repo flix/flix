@@ -445,7 +445,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root <- Steps.check(flix)
     } yield {
       // TODO: Serialize signatures also???
-      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_)(root))
+      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root))
       val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_, root)).toMap
       val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
@@ -455,12 +455,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym))(implicit root: TypedAst.Root): Boolean = graphEdge match {
+  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
     case (UsedSym.DefnSym(src), UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst)
+      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst, root)
     case (UsedSym.DefnSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
     case (UsedSym.SigSym(src), UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst)
+      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst, root)
     case (UsedSym.SigSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
   }
 
@@ -482,7 +482,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     case Input.Unknown => false
   }
 
-  private def isPublic(sym: Symbol.DefnSym)(implicit root: TypedAst.Root): Boolean = {
+  private def isPublic(sym: Symbol.DefnSym, root: TypedAst.Root): Boolean = {
     root.defs.get(sym).exists(_.spec.mod.isPublic)
   }
 
