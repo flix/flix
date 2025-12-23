@@ -209,6 +209,11 @@ object Bootstrap {
   private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
 
   /**
+    * Returns the path to the `effects.lock` relative to the given path `p`.
+    */
+  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
+
+  /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
   private def getLicenseFile(p: Path): Path = p.resolve(s"./$LICENSE").normalize()
@@ -443,9 +448,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val defs = useGraph.map(getLibraryDefn(_)(root)).flatten.toMap
       val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
-      val effLockFilePath = projectPath.resolve("effects.lock")
       // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
-      FileOps.writeString(effLockFilePath, json)
+      val path = Bootstrap.getEffectLockFile(projectPath)
+      FileOps.writeString(path, json)
     }
   }
 
