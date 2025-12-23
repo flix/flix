@@ -24,13 +24,13 @@ package ca.uwaterloo.flix.api.effectlock
 package object serialization {
 
   /** Common super type for [[SDef]] and [[SSig]]. */
-  sealed trait SigOrDef
+  sealed trait DefOrSig
 
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme) extends SigOrDef
+  case class SDef(namespace: List[String], text: String, scheme: SScheme) extends DefOrSig
 
   /** Represents a serializable sig. */
-  case class SSig(namespace: List[String], text: String, scheme: SScheme) extends SigOrDef
+  case class SSig(namespace: List[String], text: String, scheme: SScheme) extends DefOrSig
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)
@@ -231,6 +231,7 @@ package object serialization {
     org.json4s.ShortTypeHints(
       List(
         classOf[SDef],
+        classOf[SSig],
         classOf[SScheme],
         classOf[Var],
         classOf[Cst],
