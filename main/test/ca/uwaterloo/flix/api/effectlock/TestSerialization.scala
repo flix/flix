@@ -313,7 +313,7 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     val x = VarSym(0, Text("x"), StarKind)
     val tpe = Apply(Apply(Apply(Cst(Arrow(2)), Cst(Pure)), Cst(Unit)), Cst(Int32))
     val tconstr = TraitConstr(TraitSym(List.empty, "A"), Var(x))
-    val scheme = SScheme(List.empty, List(tconstr), List.empty, tpe)
+    val scheme = SScheme(List(x), List(tconstr), List.empty, tpe)
     val expected = SSig(List("A"), "answer", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
