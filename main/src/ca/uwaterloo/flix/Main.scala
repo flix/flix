@@ -587,6 +587,9 @@ object Main {
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
 
+      cmd("upgrade").text("  upgrades the immediate dependencies that have newer versions available.")
+        .action((_, c) => c.copy(command = Command.Upgrade))
+
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
