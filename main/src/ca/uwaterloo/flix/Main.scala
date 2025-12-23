@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix
 
-import ca.uwaterloo.flix.Main.Command.PlainLsp
 import ca.uwaterloo.flix.api.lsp.{LspServer, VSCodeLspServer}
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
@@ -189,7 +188,7 @@ object Main {
 
         case Command.Init =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'init' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Init))
             System.exit(1)
           }
           exitOnResult(Bootstrap.init(cwd))
@@ -212,7 +211,7 @@ object Main {
 
         case Command.Build =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'build' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Build))
             System.exit(1)
           }
           exitOnResult {
@@ -225,7 +224,7 @@ object Main {
 
         case Command.BuildJar =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'build-jar' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.BuildJar))
             System.exit(1)
           }
           exitOnResult {
@@ -238,7 +237,7 @@ object Main {
 
         case Command.BuildFatJar =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'build-fatjar' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.BuildFatJar))
             System.exit(1)
           }
           exitOnResult {
@@ -251,7 +250,7 @@ object Main {
 
         case Command.BuildPkg =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'build-pkg' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.BuildPkg))
             System.exit(1)
           }
           exitOnResult {
@@ -262,7 +261,7 @@ object Main {
 
         case Command.Clean =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'clean' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Clean))
             System.exit(1)
           }
           exitOnResult {
@@ -295,7 +294,7 @@ object Main {
 
         case Command.Run =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'run' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Run))
             System.exit(1)
           }
           exitOnResult {
@@ -329,7 +328,7 @@ object Main {
 
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'repl' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Repl))
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubToken) match {
@@ -342,9 +341,9 @@ object Main {
               System.exit(1)
           }
 
-        case PlainLsp =>
+        case Command.PlainLsp =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'lsp' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.PlainLsp))
             System.exit(1)
           }
           LspServer.run(options)
@@ -352,7 +351,7 @@ object Main {
 
         case Command.VSCodeLsp(port) =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'lsp-vscode' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.VSCodeLsp(port)))
             System.exit(1)
           }
           val o = options.copy(progress = false)
@@ -367,7 +366,7 @@ object Main {
 
         case Command.Release =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'release' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Release))
             System.exit(1)
           }
           exitOnResult {
@@ -380,7 +379,7 @@ object Main {
 
         case Command.Outdated =>
           if (cmdOpts.files.nonEmpty) {
-            println("The 'outdated' command does not support file arguments.")
+            println(doesNotSupportFileArgsError(Command.Outdated))
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
@@ -454,43 +453,81 @@ object Main {
 
     case object None extends Command
 
-    case object Init extends Command
+    case object Init extends Command {
+      override def toString: String = "init"
+    }
 
-    case object Check extends Command
+    case object Check extends Command {
+      override def toString: String = "check"
+    }
 
-    case object Build extends Command
+    case object Build extends Command {
+      override def toString: String = "build"
+    }
 
-    case object BuildJar extends Command
+    case object BuildJar extends Command {
+      override def toString: String = "build-jar"
+    }
 
-    case object BuildFatJar extends Command
+    case object BuildFatJar extends Command {
+      override def toString: String = "build-fatjar"
+    }
 
-    case object BuildPkg extends Command
+    case object BuildPkg extends Command {
+      override def toString: String = "build-pkg"
+    }
 
-    case object Clean extends Command
+    case object Clean extends Command {
+      override def toString: String = "clean"
+    }
 
-    case object Doc extends Command
+    case object Doc extends Command {
+      override def toString: String = "doc"
+    }
 
-    case object Format extends Command
+    case object Format extends Command {
+      override def toString: String = "format"
+    }
 
-    case object Run extends Command
+    case object Run extends Command {
+      override def toString: String = "run"
+    }
 
-    case object Test extends Command
+    case object Test extends Command {
+      override def toString: String = "test"
+    }
 
-    case object Repl extends Command
+    case object Repl extends Command {
+      override def toString: String = "repl"
+    }
 
-    case object PlainLsp extends Command
+    case object PlainLsp extends Command {
+      override def toString: String = "lsp"
+    }
 
-    case class VSCodeLsp(port: Int) extends Command
+    case class VSCodeLsp(port: Int) extends Command {
+      override def toString: String = "lsp-vscode"
+    }
 
-    case object Release extends Command
+    case object Release extends Command {
+      override def toString: String = "release"
+    }
 
-    case object Outdated extends Command
+    case object Outdated extends Command {
+      override def toString: String = "outdated"
+    }
 
-    case object CompilerPerf extends Command
+    case object CompilerPerf extends Command {
+      override def toString: String = "Xperf"
+    }
 
-    case object CompilerMemory extends Command
+    case object CompilerMemory extends Command {
+      override def toString: String = "Xmemory"
+    }
 
-    case object Zhegalkin extends Command
+    case object Zhegalkin extends Command {
+      override def toString: String = "Xzhegalkin"
+    }
 
   }
 
@@ -528,46 +565,46 @@ object Main {
       head("The Flix Programming Language", Version.CurrentVersion.toString)
 
       // Command
-      cmd("init").action((_, c) => c.copy(command = Command.Init)).text("  creates a new project in the current directory.")
+      cmd(Command.Init.toString).action((_, c) => c.copy(command = Command.Init)).text("  creates a new project in the current directory.")
 
-      cmd("check").action((_, c) => c.copy(command = Command.Check)).text("  checks the current project for errors.")
+      cmd(Command.Check.toString).action((_, c) => c.copy(command = Command.Check)).text("  checks the current project for errors.")
 
-      cmd("build").action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
+      cmd(Command.Build.toString).action((_, c) => c.copy(command = Command.Build)).text("  builds (i.e. compiles) the current project.")
 
-      cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
+      cmd(Command.BuildJar.toString).action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
-      cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
+      cmd(Command.BuildFatJar.toString).action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
 
-      cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
+      cmd(Command.BuildPkg.toString).action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
-      cmd("clean").action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
+      cmd(Command.Clean.toString).action((_, c) => c.copy(command = Command.Clean)).text("  recursively removes class files from the build directory.")
 
-      cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
+      cmd(Command.Doc.toString).action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
 
-      cmd("format").action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")
+      cmd(Command.Format.toString).action((_, c) => c.copy(command = Command.Format)).text("  formats Flix source code files.")
 
-      cmd("run").action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
+      cmd(Command.Run.toString).action((_, c) => c.copy(command = Command.Run)).text("  runs main for the current project.")
 
-      cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
+      cmd(Command.Test.toString).action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
-      cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
+      cmd(Command.Repl.toString).action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
-      cmd("lsp").text("  starts the Plain-LSP server.")
+      cmd(Command.PlainLsp.toString).text("  starts the Plain-LSP server.")
         .action((_, c) => c.copy(command = Command.PlainLsp))
 
-      cmd("lsp-vscode").text("  starts the VSCode-LSP server and listens on the given port.")
+      cmd(Command.VSCodeLsp(0).toString).text("  starts the VSCode-LSP server and listens on the given port.")
         .children(
           arg[Int]("port").action((port, c) => c.copy(command = Command.VSCodeLsp(port)))
             .required()
         )
 
-      cmd("release").text("  releases a new version to GitHub.")
+      cmd(Command.Release.toString).text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
 
-      cmd("outdated").text("  shows dependencies which have newer versions available.")
+      cmd(Command.Outdated.toString).text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
 
-      cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
+      cmd(Command.CompilerPerf.toString).action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
           .text("benchmark only frontend"),
@@ -579,9 +616,9 @@ object Main {
           .text("number of compilations")
       ).hidden()
 
-      cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+      cmd(Command.CompilerMemory.toString).action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
-      cmd("Xzhegalkin").action((_, c) => c.copy(command = Command.Zhegalkin)).children(
+      cmd(Command.Zhegalkin.toString).action((_, c) => c.copy(command = Command.Zhegalkin)).children(
         opt[Int]("n")
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
@@ -713,6 +750,11 @@ object Main {
         println(error.message(formatter))
         System.exit(1)
     }
+  }
+
+  /** Returns an error string saying that `cmd` does not support file args. */
+  private def doesNotSupportFileArgsError(cmd: Command): String = {
+    s"The '$cmd' command does not support file arguments."
   }
 
 }
