@@ -447,7 +447,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       // TODO: Serialize signatures also???
       val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root))
       val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_, root)).toMap
-      val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
+      val serialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
       // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
       val path = Bootstrap.getEffectLockFile(projectPath)
