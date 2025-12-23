@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.TupleOps
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -445,7 +446,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       // TODO: Serialize signatures also???
       val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_)(root))
-      val defs = useGraph.map(getLibraryDefn(_)(root)).flatten.toMap
+      val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_)(root)).toMap
       val serialization = defs.map { case (sym, defn) => sym -> Serialize.serializeDef(defn) }
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
       // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
@@ -485,13 +486,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     root.defs.get(sym).exists(_.spec.mod.isPublic)
   }
 
-  private def getLibraryDefn(graphEdge: (UsedSym, UsedSym))(implicit root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
-    case (UsedSym.DefnSym(_), UsedSym.DefnSym(dst)) =>
-      Some(dst -> root.defs(dst))
-    case (UsedSym.DefnSym(_), UsedSym.SigSym(_)) => None
-    case (UsedSym.SigSym(_), UsedSym.DefnSym(dst)) =>
-      Some(dst -> root.defs(dst))
-    case (UsedSym.SigSym(_), UsedSym.SigSym(_)) => None
+  private def getLibraryDefn(graphEdge: UsedSym)(implicit root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
+    case UsedSym.DefnSym(sym) =>
+      Some(sym -> root.defs(sym))
+
+    case UsedSym.SigSym(_) =>
+      None // TODO: Support this
   }
 
   /**
