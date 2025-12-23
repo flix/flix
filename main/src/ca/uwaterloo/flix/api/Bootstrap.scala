@@ -16,8 +16,11 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.shared.SecurityContext
+import ca.uwaterloo.flix.api.effectlock.UseGraph
+import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
+import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
+import ca.uwaterloo.flix.language.ast.{Sourceable, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
@@ -25,6 +28,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.TupleOps
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -204,6 +208,11 @@ object Bootstrap {
     * Returns the path to the artifact directory relative to the given path `p`.
     */
   private def getResourcesDirectory(p: Path): Path = p.resolve("./resources/").normalize()
+
+  /**
+    * Returns the path to the `effects.lock` relative to the given path `p`.
+    */
+  private def getEffectLockFile(p: Path): Path = p.resolve("effects.lock").normalize()
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -428,6 +437,61 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Success(()) => Result.Ok(())
       case Failure(e) => Result.Err(BootstrapError.FileError(e.getMessage))
     }
+  }
+
+  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    Steps.updateStaleSources(flix)
+    for {
+      root <- Steps.check(flix)
+    } yield {
+      // TODO: Serialize signatures also???
+      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root))
+      val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_, root)).toMap
+      val serialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
+      val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
+      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
+      val path = Bootstrap.getEffectLockFile(projectPath)
+      FileOps.writeString(path, json)
+    }
+  }
+
+  private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
+    case (UsedSym.DefnSym(src), UsedSym.DefnSym(dst)) =>
+      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst, root)
+    case (UsedSym.DefnSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
+    case (UsedSym.SigSym(src), UsedSym.DefnSym(dst)) =>
+      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst, root)
+    case (UsedSym.SigSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
+  }
+
+  private def isFromLocalProject(sym: Sourceable): Boolean = sym.src.input match {
+    case Input.RealFile(_, _) => true
+    case Input.VirtualFile(_, _, _) => true
+    case Input.VirtualUri(_, _, _) => true
+    case Input.PkgFile(_, _) => false
+    case Input.FileInPackage(_, _, _, _) => false
+    case Input.Unknown => false
+  }
+
+  private def isLibraryFunction(sym: Sourceable): Boolean = sym.src.input match {
+    case Input.RealFile(_, _) => false
+    case Input.VirtualFile(_, _, _) => false
+    case Input.VirtualUri(_, _, _) => false
+    case Input.PkgFile(_, _) => true
+    case Input.FileInPackage(_, _, _, _) => true
+    case Input.Unknown => false
+  }
+
+  private def isPublic(sym: Symbol.DefnSym, root: TypedAst.Root): Boolean = {
+    root.defs.get(sym).exists(_.spec.mod.isPublic)
+  }
+
+  private def getLibraryDefn(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
+    case UsedSym.DefnSym(sym) =>
+      Some(sym -> root.defs(sym))
+
+    case UsedSym.SigSym(_) =>
+      None // TODO: Support this
   }
 
   /**
