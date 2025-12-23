@@ -689,160 +689,177 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.02") {
+  test("serialize.deserialize.identity.sig.02") {
     val input =
       """
-        |pub def fun(x: Int32): Int32 = x + x
+        |trait T[a] {
+        |    pub def fun(x: a): a
+        |}
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.03") {
+  test("serialize.deserialize.identity.sig.03") {
     val input =
       """
-        |pub def toUnit(_: Int32): Unit = ()
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |}
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.04") {
+  test("serialize.deserialize.identity.sig.04") {
     val input =
       """
-        |pub def answer(): Int32 = 42
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |    pub def answer(): Int32 = 42
+        |}
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "answer").get
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.05") {
+  test("serialize.deserialize.identity.sig.05") {
     val input =
       """
-        |pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |trait T[a] {
+        |    pub def toInt32(f: a -> Int32, x: a): Int32 = f(x)
+        |}
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, defn.spec.declaredScheme)
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, sig.spec.declaredScheme)
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.06") {
+  test("serialize.deserialize.identity.sig.06") {
     val input =
       """
-        |trait ToString[a: Type] {
-        |   pub def toString(x: a): String
+        |trait ToString[a: Type] with Helper[a] {
+        |   pub def toString(x: a): String = Helper.help(x)
         |}
         |
-        |pub def pretty(x: a): String with ToString[a] = ToString.toString(x)
+        |trait Helper[a: Type] {
+        |   pub def help(x: a): String
+        |}
         |""".stripMargin
 
+
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "toString").get
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.07") {
+  test("serialize.deserialize.identity.sig.07") {
     val input =
       """
+        |trait Pretty[a: Type] with ToString[a] {
+        |   pub def prettyPrint(x: a): Unit \ A = A.thing(ToString.toString(x))
+        |}
+        |
         |trait ToString[a: Type] {
         |   pub def toString(x: a): String
         |}
         |
         |pub eff A {
-        |    def thing(x: String): Unit
+        |    def print(x: String): Unit
         |}
-        |
-        |pub def prettyPrint(x: t): Unit \ A with ToString[t] = A.thing(ToString.toString(x))
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "prettyPrint").get
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.08") {
+  test("serialize.deserialize.identity.sig.08") {
     val input =
       """
-        |pub eff A {
-        |    def thing(x: String): Unit
+        |trait Pretty[a: Type] {
+        |   pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
         |}
         |
-        |pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
+        |pub eff A {
+        |    def print(x: String): Unit
+        |}
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.09") {
+  test("serialize.deserialize.identity.sig.09") {
     val input =
       """
         |type alias Num = Int32
-        |pub def fun(x: Num): Num = x + x
+        |trait A[x] {
+        |    pub def toUnit(a: x): Unit
+        |    pub def answer(): Num = 42
+        |}
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val erasedBaseType = Type.eraseAliases(defn.spec.declaredScheme.base)
-    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme.copy(base = erasedBaseType)))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.find(sig => sig.sym.name == "answer").get
+    val erasedBaseType = Type.eraseAliases(sig.spec.declaredScheme.base)
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme.copy(base = erasedBaseType)))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
 
-  ignore("serialize.deserialize.identity.sig.10") {
+  test("serialize.deserialize.identity.sig.10") {
     val input =
       """
         |pub trait T[a: Type] {
         |    type B: Type
-        |    pub def f(g: a -> T.B[a]): T.B[a]
+        |    pub def f(g: a -> T.B[a], x: a): T.B[a] = g(x)
         |}
-        |
-        |pub def h(q: a -> T.B[a], x: a): T.B[a] = q(x)
         |""".stripMargin
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val defn = defs.head
-    val expected = (defn.sym, Util.alpha(defn.spec.declaredScheme))
-    val actual = Deserialize.deserializeDef(Serialize.serializeDef(defn))
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val sig = sigs.head
+    val expected = (sig.sym, Util.alpha(sig.spec.declaredScheme))
+    val actual = Deserialize.deserializeSig(Serialize.serializeSig(sig))
 
     assert(actual == expected)
   }
