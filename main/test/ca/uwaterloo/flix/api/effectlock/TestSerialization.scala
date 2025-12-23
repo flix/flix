@@ -410,21 +410,27 @@ class TestSerialization extends AnyFunSuite with TestUtils {
     assert(actual == expected)
   }
 
-  ignore("serialize.sig.08") {
+  test("serialize.sig.08") {
     val input =
       """
-        |pub eff A {
-        |    def thing(x: String): Unit
+        |trait Pretty[a: Type] {
+        |   pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
         |}
         |
-        |pub def prettyPrint(f: a -> b \ {ef - A}, x: a): b \ ef = f(x)
+        |pub eff A {
+        |    def print(x: String): Unit
+        |}
         |""".stripMargin
 
+    val a = VarSym(0, Text("a"), StarKind)
+    val b = VarSym(1, Text("b"), StarKind)
+    val ef = VarSym(0, Text("ef"), EffKind)
+    val effA = EffSym(List.empty, "A")
     val tpe = Apply(
       Apply(
         Apply(
           Apply(
-            Cst(Arrow(3)), Var(VarSym(0, Text("ef"), EffKind))
+            Cst(Arrow(3)), Var(ef)
           ),
           Apply(
             Apply(
@@ -432,19 +438,20 @@ class TestSerialization extends AnyFunSuite with TestUtils {
                 Cst(Arrow(2)),
                 Apply(
                   Apply(
-                    Cst(Difference), Var(VarSym(0, Text("ef"), EffKind))
-                  ), Cst(Effect(EffSym(List(), "A"), EffKind)))
-              ), Var(VarSym(0, Text("a"), StarKind))
-            ), Var(VarSym(1, Text("b"), StarKind)))
-        ), Var(VarSym(0, Text("a"), StarKind))
-      ), Var(VarSym(1, Text("b"), StarKind))
+                    Cst(Difference), Var(ef)
+                  ), Cst(Effect(effA, EffKind)))
+              ), Var(a)
+            ), Var(b))
+        ), Var(a)
+      ), Var(b)
     )
-    val scheme = SScheme(List(VarSym(0, Text("a"), StarKind), VarSym(0, Text("ef"), EffKind), VarSym(1, Text("b"), StarKind)), List.empty, List.empty, tpe)
-    val expected = SDef(List.empty, "prettyPrint", scheme)
+    val tconstr = TraitConstr(TraitSym(List.empty, "Pretty"), Var(a))
+    val scheme = SScheme(List(a, ef, b), List(tconstr), List.empty, tpe)
+    val expected = SSig(List("Pretty"), "prettyPrint", scheme)
 
     val (Some(root), _) = check(input, Options.TestWithLibNix)
-    val defs = root.defs.keys.flatMap(root.defs.get)
-    val actual = Serialize.serializeDef(defs.head)
+    val sigs = root.sigs.keys.flatMap(root.sigs.get)
+    val actual = Serialize.serializeSig(sigs.head)
     assert(actual == expected)
   }
 
