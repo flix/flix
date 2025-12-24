@@ -40,30 +40,33 @@ object Manifest {
   def render(manifest: Manifest): String = {
     val repo = manifest.repository match {
       case None => ""
-      case Some(r) => System.lineSeparator() + s"repository  = $r" + System.lineSeparator()
+      case Some(r) =>
+        s"repository  = $r" + System.lineSeparator()
     }
     val modules = manifest.modules match {
       case PackageModules.All => ""
       case PackageModules.Selected(included) =>
-        System.lineSeparator() + s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}"
+        s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}"
     }
 
     val license = manifest.license match {
       case None => ""
-      case Some(l) => System.lineSeparator() + s"license     = $l" + System.lineSeparator()
+      case Some(l) =>
+        s"license     = $l" + System.lineSeparator()
     }
 
     val base =
       s"""[package]
          |name        = ${manifest.name}
          |description = ${manifest.description}
-         |version     = ${manifest.version}""".stripMargin +
+         |version     = ${manifest.version}
+         |""".stripMargin +
         repo +
         modules +
-        s"""flix        = ${manifest.flix}""".stripMargin +
+        s"""flix        = ${manifest.flix}
+           |""".stripMargin +
         license +
-        s"""
-           |authors     = ${manifest.authors.mkString("[", ", ", "]")}
+        s"""authors     = ${manifest.authors.mkString("[", ", ", "]")}
            |""".stripMargin
 
 
