@@ -27,7 +27,6 @@ case class Manifest(name: String,
                     authors: List[String],
                     dependencies: List[Dependency]) {}
 
-
 object Manifest {
 
   def render(manifest: Manifest): String = {
