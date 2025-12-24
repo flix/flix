@@ -476,7 +476,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     out.print(upgradeMessage)
 
     val answer = console.readLine() // todo: safe read with result
-    if (answer != "y") {
+    if (answer.toLowerCase != "y") {
       return Err(BootstrapError.ConfirmationError("Aborting..."))
     }
 
