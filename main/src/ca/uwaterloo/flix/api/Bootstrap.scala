@@ -452,7 +452,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       dep => FlixPackageManager.findAvailableUpdates(dep, apiKey).map(upgr => dep -> upgr)
     } match {
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
-      case Ok(upgrs) => upgrs
+      case Ok(upgrs) => upgrs.toMap
     }
 
     // Filter for minor and patch upgrade
@@ -487,7 +487,18 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Perform dependency resolution with new dependency graph
-    val newDeps = ???
+    val newDeps = manifest.dependencies.map {
+      case dep: Dependency.FlixDependency =>
+        val upgr = allUpgrades(dep)
+        if (upgr.minor.isDefined) {
+          dep.copy(version = upgr.minor.get)
+        } else if (upgr.patch.isDefined) {
+          dep.copy(version = upgr.patch.get)
+        } else {
+          dep
+        }
+      case dep => dep
+    }
     val newManifest = manifest.copy(dependencies = newDeps)
     val newResolution = Steps.resolveFlixDependencies(newManifest) match {
       case Err(e) => return Err(e)
