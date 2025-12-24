@@ -33,69 +33,81 @@ case class Manifest(name: String,
 
 object Manifest {
 
+  private case class TomlSection(section: String, keyValuePairs: List[TomlEntry])
+
+  private sealed trait TomlEntry
+
+  private object TomlEntry {
+
+    case object Absent extends TomlEntry
+
+    case class Present(key: TomlKey, value: TomlExp) extends TomlEntry
+
+  }
+
+  private case class TomlKey(k: String, padding: Int = 0)
+
+  private sealed trait TomlExp
+
+  private object TomlExp {
+
+    case class TomlValue(v: String) extends TomlExp
+
+    case class TomlArray(v: List[TomlExp]) extends TomlExp
+
+    case class TomlRecord(v: Set[TomlEntry]) extends TomlExp
+
+  }
+
+  private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
+    val longestKey = entries.map(_.key.k.length).max
+    entries.map {
+      case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - key.length), texp)
+    }
+  }
+
+  private def renderTomlSection(section0: TomlSection): String = {
+    s"""[${section0.section}]
+       |${padKeys(section0.keyValuePairs.collect { case e: TomlEntry.Present => e }).map(renderTomlEntry).mkString(System.lineSeparator())}
+       |""".stripMargin
+  }
+
+  private def renderTomlEntry(entry: TomlEntry.Present): String = entry match {
+    case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
+  }
+
+  private def renderTomlExp(exp0: TomlExp): String = exp0 match {
+    case TomlExp.TomlValue(v) => s"\"$v\""
+    case TomlExp.TomlArray(v) => v.map(renderTomlExp).mkString("[", ", ", "]")
+    case TomlExp.TomlRecord(v) =>
+      v.map {
+        case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
+      }.mkString("{ ", ", ", " }")
+  }
+
+  private def renderTomlKey(key0: TomlKey): String = {
+    val padding = List.range(0, key0.padding).map(_ => " ").mkString
+    s"\"${key0.k}\"$padding"
+  }
+
   /**
     * Renders `manifest` as its textual representation.
     * Parsing the output yields the original manifest, i.e., `manifest`.
     */
   def render(manifest: Manifest): String = {
-    val repo = manifest.repository match {
-      case None => ""
-      case Some(r) =>
-        s"repository  = \"$r\"" + System.lineSeparator()
-    }
-    val modules = manifest.modules match {
-      case PackageModules.All => ""
-      case PackageModules.Selected(included) =>
-        s"modules     = ${included.map("\"" + _.toString + "\"").mkString("[", ", ", "]")}" + System.lineSeparator()
-    }
-
-    val license = manifest.license match {
-      case None => ""
-      case Some(l) =>
-        s"license     = \"$l\"" + System.lineSeparator()
-    }
-
-    val base =
-      s"""[package]
-         |name        = "${manifest.name}"
-         |description = "${manifest.description}"
-         |version     = "${manifest.version}"
-         |""".stripMargin +
-        repo +
-        modules +
-        s"""flix        = "${manifest.flix}"
-           |""".stripMargin +
-        license +
-        s"""authors     = ${manifest.authors.map("\"" + _ + "\"").mkString("[", ", ", "]")}
-           |""".stripMargin
-
-
-    val flixDeps = manifest.flixDependencies match {
-      case Nil => ""
-      case _ :: _ =>
-        s"""[dependencies]
-           |${manifest.flixDependencies.mkString(System.lineSeparator())}
-           |""".stripMargin
-    }
-
-    val mvnDeps = manifest.mavenDependencies match {
-      case Nil => ""
-      case _ :: _ =>
-        s"""[mvn-dependencies]
-           |${manifest.mavenDependencies.mkString(System.lineSeparator())}
-           |""".stripMargin
-    }
-
-    val jarDeps = manifest.jarDependencies match {
-      case Nil => ""
-      case _ :: _ =>
-        s"""[jar-dependencies]
-           |${manifest.jarDependencies.mkString(System.lineSeparator())}
-           |""".stripMargin
-    }
-
-
-    val res = base + flixDeps + mvnDeps + jarDeps
+    // todo: add optional fields as tomlentry.absent if none else present
+    val packageSection = TomlSection("package",
+      List(TomlKey("name") -> TomlExp.TomlValue(manifest.name),
+        TomlKey("description") -> TomlExp.TomlValue(manifest.description),
+        TomlKey("version") -> TomlExp.TomlValue(manifest.version.toString),
+      )
+    )
+    val flixDepSection = TomlSection("dependencies", List())
+    val mvnDepSection = TomlSection("mvn-dependencies", List())
+    val jarDepSection = TomlSection("jar-dependencies", List())
+    val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
+      .map(renderTomlSection)
+      .mkString(System.lineSeparator())
     println(res)
     res
   }
