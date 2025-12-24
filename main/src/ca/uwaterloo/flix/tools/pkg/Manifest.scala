@@ -57,10 +57,10 @@ object Manifest {
       s"""[package]
          |name        = ${manifest.name}
          |description = ${manifest.description}
-         |version     = ${manifest.version}""" +
+         |version     = ${manifest.version}""".stripMargin +
         repo +
         modules +
-        s"""flix        = ${manifest.flix}""" +
+        s"""flix        = ${manifest.flix}""".stripMargin +
         license +
         s"""
            |authors     = ${manifest.authors.mkString("[", ", ", "]")}
