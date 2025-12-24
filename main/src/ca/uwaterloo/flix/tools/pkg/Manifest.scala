@@ -91,7 +91,10 @@ object Manifest {
            |""".stripMargin
     }
 
-    base + flixDeps + mvnDeps + jarDeps
+
+    val res = base + flixDeps + mvnDeps + jarDeps
+    println(res)
+    res
   }
 
 }
