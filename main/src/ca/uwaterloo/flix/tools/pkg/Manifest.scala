@@ -45,12 +45,12 @@ object Manifest {
     val modules = manifest.modules match {
       case PackageModules.All => ""
       case PackageModules.Selected(included) =>
-        s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}"
+        System.lineSeparator() + s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}"
     }
 
     val license = manifest.license match {
       case None => ""
-      case Some(l) => s"license     = $l" + System.lineSeparator()
+      case Some(l) => System.lineSeparator() + s"license     = $l" + System.lineSeparator()
     }
 
     val base =
