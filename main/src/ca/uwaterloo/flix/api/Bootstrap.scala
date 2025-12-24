@@ -470,7 +470,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Ensure all files in `buildDir` are valid class files.
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (file <- files) {
       if (file.startsWith(classDir)) {
         if (!FileOps.checkExt(file, "class")) {
@@ -505,7 +505,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Delete empty directories
     // Visit in reverse order to delete the innermost directories first
-    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue)
+    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (dir <- directories.reverse) {
       checkForDangerousPath(dir) match {
         case Err(e) => return Err(e)
