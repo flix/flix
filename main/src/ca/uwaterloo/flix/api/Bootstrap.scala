@@ -534,7 +534,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Check dangerous paths and abort upon the first error
     Result.traverse(diffPaths)(checkForDangerousPath) match {
       case Err(e) => return Err(e)
-      case Ok(()) => ()
+      case Ok(_) => ()
     }
 
     // N.B. Sequence the result, since we want to delete all paths and if any errors occur, we proceed with the rest of the paths.
@@ -542,7 +542,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Additionally, we are not deleting any directories (yet), so this may leave an empty directory.
     Result.sequence(diffPaths.map(FileOps.delete)) match {
       case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file: $e"))
-      case Ok(()) => ()
+      case Ok(_) => ()
     }
 
     // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
