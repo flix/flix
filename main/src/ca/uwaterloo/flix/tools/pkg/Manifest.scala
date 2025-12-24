@@ -33,6 +33,10 @@ case class Manifest(name: String,
 
 object Manifest {
 
+  /**
+    * Renders `manifest` as its textual representation.
+    * Parsing the output yields the original manifest, i.e., `manifest`.
+    */
   def render(manifest: Manifest): String = {
     val repo = manifest.repository match {
       case None => ""
