@@ -46,7 +46,7 @@ object Manifest {
     val modules = manifest.modules match {
       case PackageModules.All => ""
       case PackageModules.Selected(included) =>
-        s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}"
+        s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}" + System.lineSeparator()
     }
 
     val license = manifest.license match {
