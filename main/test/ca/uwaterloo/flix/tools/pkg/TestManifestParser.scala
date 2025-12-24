@@ -14,7 +14,7 @@ import scala.reflect.ClassTag
 
 class TestManifestParser extends AnyFunSuite {
 
-  def expectError[T](result: Result[Manifest, ManifestError])(implicit classTag: ClassTag[T]): Unit =
+  def expectError[T](result: Result[Manifest, ManifestError])(implicit classTag: ClassTag[T]): Unit = {
     result match {
       case Ok(_) => fail(s"Expected failure, but got success.")
       case Err(error) =>
@@ -24,6 +24,7 @@ class TestManifestParser extends AnyFunSuite {
           fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actual.getName}")
         }
     }
+  }
 
   val f: Formatter = Formatter.NoFormatter
   val s: String = File.separator
