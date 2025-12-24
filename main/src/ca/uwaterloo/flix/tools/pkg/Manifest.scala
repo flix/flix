@@ -39,12 +39,25 @@ object Manifest {
          |authors     = ${manifest.authors.mkString("[", ", ", "]")}
          |""".stripMargin
 
-    val deps = if (manifest.dependencies.isEmpty) "" else
-      s"""[dependencies]
-         |${manifest.dependencies.mkString(System.lineSeparator())}
-         |""".stripMargin
+    val repo = manifest.repository match {
+      case None => ""
+      case Some(r) => s"repository  = $r" + System.lineSeparator()
+    }
 
-    base + deps
+    val license = manifest.license match {
+      case None => ""
+      case Some(l) => s"license     = $l" + System.lineSeparator()
+    }
+
+    val deps = manifest.dependencies match {
+      case Nil => ""
+      case _ :: _ =>
+        s"""[dependencies]
+           |${manifest.dependencies.mkString(System.lineSeparator())}
+           |""".stripMargin
+    }
+
+    base + repo + license + deps
   }
 
 }
