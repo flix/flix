@@ -440,6 +440,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (optManifest.isEmpty) {
       return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
     }
+
+    // Ensure `cwd` is not dangerous
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForSystemPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `projectPath` is not dangerous
+    checkForSystemPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
     val manifest = optManifest.get
 
     // Only consider flix dependencies
