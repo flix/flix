@@ -442,14 +442,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
     val manifest = optManifest.get
 
-    // 1. Get all releases for all immediate dependencies
     val deps = manifest.dependencies.collect {
       case dep: Dependency.FlixDependency => dep
     }
 
-    val updatesRes = Result.traverse(deps)(FlixPackageManager.findAvailableUpdates(_, apiKey))
+    // 1. Field available upgrades
+    for {
+      // Pair each dependency with its upgrade
+      allUpgrades <- Result.traverse(deps) {
+        dep => FlixPackageManager.findAvailableUpdates(dep, apiKey).map(upgr => dep -> upgr)
+      }
 
-    // 2. Check that latest release is newer that current version
+      // Filter for minor and patch upgrade
+      relevantUpgrades = allUpgrades.filter { case (_, upgr) => upgr.minor.isDefined || upgr.patch.isDefined }
+
+    } yield {
+
+    }
+
 
     // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
 
