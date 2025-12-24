@@ -25,7 +25,11 @@ case class Manifest(name: String,
                     flix: SemVer,
                     license: Option[String],
                     authors: List[String],
-                    dependencies: List[Dependency]) {}
+                    dependencies: List[Dependency]) {
+  val flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
+  val mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
+  val jarDependencies: List[Dependency.JarDependency] = dependencies.collect { case dep: Dependency.JarDependency => dep }
+}
 
 object Manifest {
 
@@ -49,15 +53,31 @@ object Manifest {
       case Some(l) => s"license     = $l" + System.lineSeparator()
     }
 
-    val deps = manifest.dependencies match {
+    val flixDeps = manifest.flixDependencies match {
       case Nil => ""
       case _ :: _ =>
         s"""[dependencies]
-           |${manifest.dependencies.mkString(System.lineSeparator())}
+           |${manifest.flixDependencies.mkString(System.lineSeparator())}
            |""".stripMargin
     }
 
-    base + repo + license + deps
+    val mvnDeps = manifest.mavenDependencies match {
+      case Nil => ""
+      case _ :: _ =>
+        s"""[mvn-dependencies]
+           |${manifest.mavenDependencies.mkString(System.lineSeparator())}
+           |""".stripMargin
+    }
+
+    val jarDeps = manifest.jarDependencies match {
+      case Nil => ""
+      case _ :: _ =>
+        s"""[mvn-dependencies]
+           |${manifest.jarDependencies.mkString(System.lineSeparator())}
+           |""".stripMargin
+    }
+
+    base + repo + license + flixDeps + mvnDeps + jarDeps
   }
 
 }
