@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageMa
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
-import java.io.PrintStream
+import java.io.{Console, InputStream, PrintStream}
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
@@ -433,7 +433,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Updates all dependencies to their latest minor version.
     */
-  def upgrade(flix: Flix)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
+  def upgrade(flix: Flix)(implicit formatter: Formatter, console: Console, out: PrintStream): Result[Unit, BootstrapError] = {
     // Assumption: constructing Bootstrap / `this` means the manifest was parsed and is the latest version.
 
     // Ensure project mode
@@ -442,30 +442,57 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
     val manifest = optManifest.get
 
+    // Only consider flix dependencies
     val deps = manifest.dependencies.collect {
       case dep: Dependency.FlixDependency => dep
     }
 
-    // 1. Field available upgrades
-    for {
-      // Pair each dependency with its upgrade
-      allUpgrades <- Result.traverse(deps)(FlixPackageManager.findAvailableUpdates(_, apiKey))
-      // Filter for minor and patch upgrade
-      relevantUpgrades = allUpgrades.filter(upgr => upgr.minor.isDefined || upgr.patch.isDefined)
-
-    } yield {
-      // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
-      ???
+    // Find available upgrades
+    val allUpgrades = Result.traverse(deps) {
+      dep => FlixPackageManager.findAvailableUpdates(dep, apiKey).map(upgr => dep -> upgr)
+    } match {
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+      case Ok(upgrs) => upgrs
     }
 
+    // Filter for minor and patch upgrade
+    val relevantUpgrades = allUpgrades.filter { case (_, upgr) => upgr.minor.isDefined || upgr.patch.isDefined }
 
+    // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
+    val readableUpgrades = relevantUpgrades.map { case (dep, upgr) =>
+      if (upgr.minor.isDefined) {
+        s"${dep.identifier}: ${dep.version} -> ${upgr.minor.get}"
+      } else {
+        s"${dep.identifier}: ${dep.version} -> ${upgr.patch.get}"
+      }
+    }
+    val upgradeMessage =
+      s"""The following dependencies will be upgrade:
+         |
+         |  ${readableUpgrades.mkString("  " + System.lineSeparator())}
+         |
+         |Do you want to proceed? [y/N]
+         |""".stripMargin
+    out.print(upgradeMessage)
+
+    val answer = console.readLine() // todo: safe read with result
+    if (answer != "y") {
+      return Err(BootstrapError.ConfirmationError("Aborting..."))
+    }
 
     // 4. Perform dependency resolution with old dependency graph
-    Steps.resolveFlixDependencies(manifest)
+    val oldResolution = Steps.resolveFlixDependencies(manifest) match {
+      case Err(e) => return Err(e)
+      case Ok(resolution) => resolution
+    }
 
     // 5. Perform dependency resolution with new dependency graph
-    val newManifest = ???
-    Steps.resolveFlixDependencies(newManifest)
+    val newDeps = ???
+    val newManifest = manifest.copy(dependencies = newDeps)
+    val newResolution = Steps.resolveFlixDependencies(newManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(resolution) => resolution
+    }
 
     // 6. Remove packages in the difference (old -- new)
     val diff = ???
