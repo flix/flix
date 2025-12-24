@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
@@ -433,15 +433,36 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Updates all dependencies to their latest minor version.
     */
-  def upgrade(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+  def upgrade(flix: Flix)(implicit formatter: Formatter, out: PrintStream): Result[Unit, BootstrapError] = {
     // Assumption: constructing Bootstrap / `this` means the manifest was parsed and is the latest version.
 
+    // Ensure project mode
+    if (optManifest.isEmpty) {
+      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
+    }
+    val manifest = optManifest.get
+
     // 1. Get all releases for all immediate dependencies
+    val deps = manifest.dependencies.collect {
+      case dep: Dependency.FlixDependency => dep
+    }
+
+    val updatesRes = Result.traverse(deps)(FlixPackageManager.findAvailableUpdates(_, apiKey))
+
     // 2. Check that latest release is newer that current version
+
     // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
+
     // 4. Perform dependency resolution with old dependency graph
+    Steps.resolveFlixDependencies(manifest)
+
     // 5. Perform dependency resolution with new dependency graph
+    val newManifest = ???
+    Steps.resolveFlixDependencies(newManifest)
+
     // 6. Remove packages in the difference (old -- new)
+    val diff = ???
+
     // 7. Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
 
     ???
@@ -460,7 +481,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError("No manifest found (flix.toml). Refusing to run 'clean' in a non-project directory."))
+      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'clean' in a non-project directory."))
     }
 
     // Ensure `cwd` is not dangerous
