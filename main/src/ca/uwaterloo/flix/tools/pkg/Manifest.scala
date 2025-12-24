@@ -26,3 +26,26 @@ case class Manifest(name: String,
                     license: Option[String],
                     authors: List[String],
                     dependencies: List[Dependency]) {}
+
+
+object Manifest {
+
+  def render(manifest: Manifest): String = {
+    val base =
+      s"""[package]
+         |name        = ${manifest.name}
+         |description = ${manifest.description}
+         |version     = ${manifest.version}
+         |flix        = ${manifest.flix}
+         |authors     = ${manifest.authors.mkString("[", ", ", "]")}
+         |""".stripMargin
+
+    val deps = if (manifest.dependencies.isEmpty) "" else
+      s"""[dependencies]
+         |${manifest.dependencies.mkString(System.lineSeparator())}
+         |""".stripMargin
+
+    base + deps
+  }
+
+}
