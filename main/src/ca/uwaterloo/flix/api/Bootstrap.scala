@@ -433,7 +433,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Updates all dependencies to their latest minor version.
     */
-  def upgrade(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = ???
+  def upgrade(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+    // Assumption: constructing Bootstrap / `this` means the manifest was parsed and is the latest version.
+
+    // 1. Get all releases for all immediate dependencies
+    // 2. Check that latest release is newer that current version
+    // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
+    // 4. Perform dependency resolution with old dependency graph
+    // 5. Perform dependency resolution with new dependency graph
+    // 6. Remove packages in the difference (old -- new)
+    // 7. Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
+
+    ???
+  }
 
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
