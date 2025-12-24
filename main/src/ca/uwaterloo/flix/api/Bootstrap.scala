@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, libDirectoryRaw}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -521,6 +521,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Remove packages in the difference (old -- new)
     val diff = oldResolution.manifestToFlixDeps.values.toSet -- newResolution.manifestToFlixDeps.values.toSet
+    val diffPaths = diff.map(dep => Bootstrap.getLibraryDirectory(projectPath).resolve(s"github/${???}"))
 
     // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
 
