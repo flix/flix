@@ -89,7 +89,7 @@ object Manifest {
     val jarDeps = manifest.jarDependencies match {
       case Nil => ""
       case _ :: _ =>
-        s"""[mvn-dependencies]
+        s"""[jar-dependencies]
            |${manifest.jarDependencies.mkString(System.lineSeparator())}
            |""".stripMargin
     }
