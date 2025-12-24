@@ -521,7 +521,29 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Remove packages in the difference (old -- new)
     val diff = oldResolution.manifestToFlixDeps.values.toSet -- newResolution.manifestToFlixDeps.values.toSet
-    val diffPaths = diff.map(dep => Bootstrap.getLibraryDirectory(projectPath).resolve(s"github/${???}"))
+
+    // Map to corresponding file paths
+    val diffPaths = diff.toList.flatMap {
+      dep =>
+        val base = Bootstrap.getLibraryDirectory(projectPath).resolve(s"github/${dep.username}/${dep.repo}/${dep.version}").normalize()
+        val depManifest = base.resolve("flix.toml").normalize()
+        val depFpkg = base.resolve(s"${dep.projectName}.fpkg").normalize()
+        depManifest :: depFpkg :: Nil
+    }
+
+    // Check dangerous paths and abort upon the first error
+    Result.traverse(diffPaths)(checkForDangerousPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // N.B. Sequence the result, since we want to delete all paths and if any errors occur, we proceed with the rest of the paths.
+    // Sequencing afterward then allows us to detect if any file happened and abort.
+    // Additionally, we are not deleting any directories (yet), so this may leave an empty directory.
+    Result.sequence(diffPaths.map(FileOps.delete)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file: $e"))
+      case Ok(()) => ()
+    }
 
     // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
 
@@ -660,7 +682,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
     val home = Path.of(System.getProperty("user.home"))
     if (home == path) {
-      return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
+      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
     }
     Ok(())
   }
@@ -669,7 +691,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
     val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
     if (roots.contains(path)) {
-      return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
+      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
     }
     Ok(())
   }
@@ -677,7 +699,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
     if (projectPath.startsWith(path)) {
-      return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
+      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
   }
