@@ -449,19 +449,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // 1. Field available upgrades
     for {
       // Pair each dependency with its upgrade
-      allUpgrades <- Result.traverse(deps) {
-        dep => FlixPackageManager.findAvailableUpdates(dep, apiKey).map(upgr => dep -> upgr)
-      }
-
+      allUpgrades <- Result.traverse(deps)(FlixPackageManager.findAvailableUpdates(_, apiKey))
       // Filter for minor and patch upgrade
-      relevantUpgrades = allUpgrades.filter { case (_, upgr) => upgr.minor.isDefined || upgr.patch.isDefined }
+      relevantUpgrades = allUpgrades.filter(upgr => upgr.minor.isDefined || upgr.patch.isDefined)
 
     } yield {
-
+      // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
+      ???
     }
 
 
-    // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
 
     // 4. Perform dependency resolution with old dependency graph
     Steps.resolveFlixDependencies(manifest)
