@@ -41,32 +41,32 @@ object Manifest {
     val repo = manifest.repository match {
       case None => ""
       case Some(r) =>
-        s"repository  = $r" + System.lineSeparator()
+        s"repository  = \"$r\"" + System.lineSeparator()
     }
     val modules = manifest.modules match {
       case PackageModules.All => ""
       case PackageModules.Selected(included) =>
-        s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}" + System.lineSeparator()
+        s"modules     = ${included.map("\"" + _.toString + "\"").mkString("[", ", ", "]")}" + System.lineSeparator()
     }
 
     val license = manifest.license match {
       case None => ""
       case Some(l) =>
-        s"license     = $l" + System.lineSeparator()
+        s"license     = \"$l\"" + System.lineSeparator()
     }
 
     val base =
       s"""[package]
-         |name        = ${manifest.name}
-         |description = ${manifest.description}
-         |version     = ${manifest.version}
+         |name        = "${manifest.name}"
+         |description = "${manifest.description}"
+         |version     = "${manifest.version}"
          |""".stripMargin +
         repo +
         modules +
-        s"""flix        = ${manifest.flix}
+        s"""flix        = "${manifest.flix}"
            |""".stripMargin +
         license +
-        s"""authors     = ${manifest.authors.mkString("[", ", ", "]")}
+        s"""authors     = ${manifest.authors.map("\"" + _ + "\"").mkString("[", ", ", "]")}
            |""".stripMargin
 
 
