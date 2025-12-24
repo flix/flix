@@ -410,7 +410,7 @@ object Main {
               bootstrap =>
                 val flix = new Flix().setFormatter(formatter)
                 flix.setOptions(options.copy(progress = false))
-                bootstrap.upgrade(flix)(formatter, System.err)
+                bootstrap.upgrade(flix)(formatter, ???, System.err)
             }
           }
 
