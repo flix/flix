@@ -475,7 +475,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          |""".stripMargin
     out.print(upgradeMessage)
 
-    val answer = console.readLine() // todo: safe read with result
+    val answer = console.readLine() // TODO: safe read with result
     if (answer.toLowerCase != "y") {
       return Err(BootstrapError.ConfirmationError("Aborting..."))
     }
@@ -495,7 +495,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Remove packages in the difference (old -- new)
-    val diff = ???
+    val diff = oldResolution.manifestToFlixDeps.values.toSet -- newResolution.manifestToFlixDeps.values.toSet
 
     // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
 
