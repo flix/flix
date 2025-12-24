@@ -34,24 +34,34 @@ case class Manifest(name: String,
 object Manifest {
 
   def render(manifest: Manifest): String = {
-    val base =
-      s"""[package]
-         |name        = ${manifest.name}
-         |description = ${manifest.description}
-         |version     = ${manifest.version}
-         |flix        = ${manifest.flix}
-         |authors     = ${manifest.authors.mkString("[", ", ", "]")}
-         |""".stripMargin
-
     val repo = manifest.repository match {
       case None => ""
-      case Some(r) => s"repository  = $r" + System.lineSeparator()
+      case Some(r) => System.lineSeparator() + s"repository  = $r" + System.lineSeparator()
+    }
+    val modules = manifest.modules match {
+      case PackageModules.All => ""
+      case PackageModules.Selected(included) =>
+        s"modules     = ${included.map(_.toString).mkString("[", ", ", "]")}"
     }
 
     val license = manifest.license match {
       case None => ""
       case Some(l) => s"license     = $l" + System.lineSeparator()
     }
+
+    val base =
+      s"""[package]
+         |name        = ${manifest.name}
+         |description = ${manifest.description}
+         |version     = ${manifest.version}""" +
+        repo +
+        modules +
+        s"""flix        = ${manifest.flix}""" +
+        license +
+        s"""
+           |authors     = ${manifest.authors.mkString("[", ", ", "]")}
+           |""".stripMargin
+
 
     val flixDeps = manifest.flixDependencies match {
       case Nil => ""
@@ -77,7 +87,7 @@ object Manifest {
            |""".stripMargin
     }
 
-    base + repo + license + flixDeps + mvnDeps + jarDeps
+    base + flixDeps + mvnDeps + jarDeps
   }
 
 }
