@@ -458,7 +458,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Filter for minor and patch upgrade
     val relevantUpgrades = allUpgrades.filter { case (_, upgr) => upgr.minor.isDefined || upgr.patch.isDefined }
 
-    // 3. Report upgrades and ask for confirmation, exiting on default: [y/N]
+    // Report upgrades and ask for confirmation, exiting on default: [y/N]
     val readableUpgrades = relevantUpgrades.map { case (dep, upgr) =>
       if (upgr.minor.isDefined) {
         s"${dep.identifier}: ${dep.version} -> ${upgr.minor.get}"
@@ -480,13 +480,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Err(BootstrapError.ConfirmationError("Aborting..."))
     }
 
-    // 4. Perform dependency resolution with old dependency graph
+    // Perform dependency resolution with old dependency graph
     val oldResolution = Steps.resolveFlixDependencies(manifest) match {
       case Err(e) => return Err(e)
       case Ok(resolution) => resolution
     }
 
-    // 5. Perform dependency resolution with new dependency graph
+    // Perform dependency resolution with new dependency graph
     val newDeps = ???
     val newManifest = manifest.copy(dependencies = newDeps)
     val newResolution = Steps.resolveFlixDependencies(newManifest) match {
@@ -494,10 +494,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(resolution) => resolution
     }
 
-    // 6. Remove packages in the difference (old -- new)
+    // Remove packages in the difference (old -- new)
     val diff = ???
 
-    // 7. Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
+    // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
 
     ???
   }
