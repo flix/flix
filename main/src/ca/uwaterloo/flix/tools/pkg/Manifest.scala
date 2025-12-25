@@ -60,6 +60,7 @@ object Manifest {
 
   }
 
+  /** Returns the list of entries, where the padding has been adjusted to account for the longest key. */
   private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
     val optLongestKey = entries.map(_.key.k.length).maxOption
     optLongestKey match {
