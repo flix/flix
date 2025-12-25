@@ -110,12 +110,16 @@ object Manifest {
     val packageSection = renderPackageSection(manifest)
     val flixDepSection = renderFlixDependencySection(manifest)
     val mvnDepSection = renderMavenDependenciesSection(manifest)
-    val jarDepSection = TomlSection("jar-dependencies", List())
+    val jarDepSection = renderJarDependenciesSection(manifest)
     val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
       .map(renderTomlSection)
       .mkString(System.lineSeparator())
     println(res)
     res
+  }
+
+  private def renderJarDependenciesSection(manifest: Manifest) = {
+    TomlSection("jar-dependencies", manifest.jarDependencies.map(renderJarDependency))
   }
 
   private def renderMavenDependenciesSection(manifest: Manifest) = {
@@ -174,6 +178,12 @@ object Manifest {
   private def renderMavenDependency(dep: Dependency.MavenDependency): TomlEntry = {
     val key = TomlKey(dep.identifier)
     val value = TomlExp.TomlValue(dep.versionTag)
+    TomlEntry.Present(key, value)
+  }
+
+  private def renderJarDependency(dep: Dependency.JarDependency): TomlEntry = {
+    val key = TomlKey(dep.identifier)
+    val value = TomlExp.TomlValue(s"url:${dep.url}")
     TomlEntry.Present(key, value)
   }
 
