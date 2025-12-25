@@ -130,7 +130,7 @@ object Manifest {
         TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply))),
       )
     )
-    val flixDepSection = TomlSection("dependencies", manifest.flixDependencies.map(???))
+    val flixDepSection = TomlSection("dependencies", List())
     val mvnDepSection = TomlSection("mvn-dependencies", List())
     val jarDepSection = TomlSection("jar-dependencies", List())
     val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
