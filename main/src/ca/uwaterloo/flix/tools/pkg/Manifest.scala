@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.Manifest.TomlEntry.Absent
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(name: String,
@@ -73,7 +72,8 @@ object Manifest {
        |""".stripMargin
   }
 
-  private def renderTomlEntry(entry: TomlEntry.Present): String = entry match {
+  private def renderTomlEntry(entry: TomlEntry): String = entry match {
+    case TomlEntry.Absent => ""
     case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
   }
 
@@ -82,6 +82,7 @@ object Manifest {
     case TomlExp.TomlArray(v) => v.map(renderTomlExp).mkString("[", ", ", "]")
     case TomlExp.TomlRecord(v) =>
       v.map {
+        case TomlEntry.Absent => ""
         case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
       }.mkString("{ ", ", ", " }")
   }
@@ -102,7 +103,7 @@ object Manifest {
     val modules = manifest.modules match {
       case PackageModules.All => TomlEntry.Absent
       case PackageModules.Selected(included) =>
-        TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue)))
+        TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue.apply)))
     }
 
     val license = manifest.license.map(license => TomlEntry.Present(TomlKey("license"), TomlExp.TomlValue(license)))
