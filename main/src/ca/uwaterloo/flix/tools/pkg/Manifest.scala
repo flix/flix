@@ -111,11 +111,9 @@ object Manifest {
     val flixDepSection = renderFlixDependencySection(manifest)
     val mvnDepSection = renderMavenDependenciesSection(manifest)
     val jarDepSection = renderJarDependenciesSection(manifest)
-    val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
+    List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
       .map(renderTomlSection)
       .mkString(System.lineSeparator())
-    println(res)
-    res
   }
 
   private def renderJarDependenciesSection(manifest: Manifest) = {
