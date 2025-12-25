@@ -129,7 +129,7 @@ object Manifest {
   }
 
   private def renderPackageSection(manifest: Manifest): TomlSection = {
-    val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(s"${proj.repo}:$proj")))
+    val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(s"github:$proj")))
       .getOrElse(TomlEntry.Absent)
     val modules = manifest.modules match {
       case PackageModules.All => TomlEntry.Absent
