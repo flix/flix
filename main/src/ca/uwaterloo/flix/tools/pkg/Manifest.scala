@@ -108,7 +108,7 @@ object Manifest {
     */
   def render(manifest: Manifest): String = {
     val packageSection = renderPackageSection(manifest)
-    val flixDepSection = TomlSection("dependencies", manifest.flixDependencies.map(renderFlixDependency))
+    val flixDepSection = renderFlixDependencySection(manifest)
     val mvnDepSection = TomlSection("mvn-dependencies", List())
     val jarDepSection = TomlSection("jar-dependencies", List())
     val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
@@ -116,6 +116,10 @@ object Manifest {
       .mkString(System.lineSeparator())
     println(res)
     res
+  }
+
+  private def renderFlixDependencySection(manifest: Manifest): TomlSection = {
+    TomlSection("dependencies", manifest.flixDependencies.map(renderFlixDependency))
   }
 
   private def renderPackageSection(manifest: Manifest): TomlSection = {
