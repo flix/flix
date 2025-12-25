@@ -109,13 +109,17 @@ object Manifest {
   def render(manifest: Manifest): String = {
     val packageSection = renderPackageSection(manifest)
     val flixDepSection = renderFlixDependencySection(manifest)
-    val mvnDepSection = TomlSection("mvn-dependencies", List())
+    val mvnDepSection = renderMavenDependenciesSection(manifest)
     val jarDepSection = TomlSection("jar-dependencies", List())
     val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
       .map(renderTomlSection)
       .mkString(System.lineSeparator())
     println(res)
     res
+  }
+
+  private def renderMavenDependenciesSection(manifest: Manifest) = {
+    TomlSection("mvn-dependencies", manifest.mavenDependencies.map(renderMavenDependency))
   }
 
   private def renderFlixDependencySection(manifest: Manifest): TomlSection = {
@@ -165,6 +169,12 @@ object Manifest {
       ))
     }
     TomlEntry.Present(key, values)
+  }
+
+  private def renderMavenDependency(dep: Dependency.MavenDependency): TomlEntry = {
+    val key = TomlKey(dep.identifier)
+    val value = TomlExp.TomlValue(dep.versionTag)
+    TomlEntry.Present(key, value)
   }
 
 }
