@@ -55,7 +55,7 @@ object Manifest {
 
     case class TomlArray(v: List[TomlExp]) extends TomlExp
 
-    case class TomlRecord(v: Set[TomlEntry]) extends TomlExp
+    case class TomlRecord(v: List[TomlEntry]) extends TomlExp
 
   }
 
@@ -79,7 +79,13 @@ object Manifest {
 
   private def renderTomlExp(exp0: TomlExp): String = exp0 match {
     case TomlExp.TomlValue(v) => s"\"$v\""
+
     case TomlExp.TomlArray(v) => v.map(renderTomlExp).mkString("[", ", ", "]")
+
+    case TomlExp.TomlRecord(List(TomlEntry.Present(_, texp))) =>
+      // Special case for record with only one key-value pair: just render the value.
+      renderTomlExp(texp)
+
     case TomlExp.TomlRecord(v) =>
       v.map {
         case TomlEntry.Absent => ""
@@ -121,7 +127,7 @@ object Manifest {
         TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply))),
       )
     )
-    val flixDepSection = TomlSection("dependencies", List())
+    val flixDepSection = TomlSection("dependencies", manifest.flixDependencies.map(???))
     val mvnDepSection = TomlSection("mvn-dependencies", List())
     val jarDepSection = TomlSection("jar-dependencies", List())
     val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
