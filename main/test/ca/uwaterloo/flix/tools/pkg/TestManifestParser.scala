@@ -458,7 +458,9 @@ class TestManifestParser extends AnyFunSuite {
     println("===========================")
     println("===========================")
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
-    val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
+    val render = Manifest.render(manifest1)
+    println(render)
+    val manifest2 = ManifestParser.parse(render, null).unsafeGet
     println("===========================")
     println("===========================")
     println("===========================")
