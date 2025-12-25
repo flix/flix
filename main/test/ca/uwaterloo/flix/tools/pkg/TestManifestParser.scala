@@ -451,15 +451,8 @@ class TestManifestParser extends AnyFunSuite {
   // Identity tests / parse-render-parse
   test("Manifest.Identity.01") {
     val toml = tomlCorrect
-    println(toml)
-    println("===========================")
-    println("===========================")
-    println("===========================")
-    println("===========================")
-    println("===========================")
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val render = Manifest.render(manifest1)
-    println(render)
     val manifest2 = ManifestParser.parse(render, null).unsafeGet
     assertResult(manifest1)(manifest2)
   }
