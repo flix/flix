@@ -34,102 +34,21 @@ case class Manifest(name: String,
 
 object Manifest {
 
-  private case class TomlSection(section: String, keyValuePairs: List[TomlEntry])
-
-  private sealed trait TomlEntry
-
-  private object TomlEntry {
-
-    case object Absent extends TomlEntry
-
-    case class Present(key: TomlKey, value: TomlExp) extends TomlEntry
-
-  }
-
-  private case class TomlKey(k: String, padding: Int = 0)
-
-  private sealed trait TomlExp
-
-  private object TomlExp {
-
-    case class TomlValue(v: Any) extends TomlExp
-
-    case class TomlArray(v: List[TomlExp]) extends TomlExp
-
-    case class TomlRecord(v: List[TomlEntry]) extends TomlExp
-
-  }
-
-  /** Returns the list of entries, where the padding has been adjusted to account for the longest key. */
-  private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
-    val optLongestKey = entries.map(_.key.k.length).maxOption
-    optLongestKey match {
-      case Some(longestKey) => entries.map {
-        case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - key.length), texp)
-      }
-      case None => entries
-    }
-  }
-
-  private def renderTomlSection(section0: TomlSection): String = {
-    s"""[${section0.section}]
-       |${padKeys(section0.keyValuePairs.collect { case e: TomlEntry.Present => e }).map(renderTomlEntry).mkString(System.lineSeparator())}
-       |""".stripMargin
-  }
-
-  private def renderTomlEntry(entry: TomlEntry): String = entry match {
-    case TomlEntry.Absent => ""
-    case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
-  }
-
-  private def renderTomlExp(exp0: TomlExp): String = exp0 match {
-    case TomlExp.TomlValue(v) => s"\"$v\""
-
-    case TomlExp.TomlArray(v) => v.map(renderTomlExp).mkString("[", ", ", "]")
-
-    case TomlExp.TomlRecord(List(TomlEntry.Present(_, texp))) =>
-      // Special case for record with only one key-value pair: just render the value.
-      renderTomlExp(texp)
-
-    case TomlExp.TomlRecord(v) =>
-      v.map {
-        case TomlEntry.Absent => ""
-        case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
-      }.mkString("{ ", ", ", " }")
-  }
-
-  private def renderTomlKey(key0: TomlKey): String = {
-    val padding = List.range(0, key0.padding).map(_ => " ").mkString
-    s"\"${key0.k}\"$padding"
-  }
-
   /**
     * Renders `manifest` as its textual representation.
     * Parsing the output yields the original manifest, i.e., `manifest`.
     */
   def render(manifest: Manifest): String = {
-    val packageSection = renderPackageSection(manifest)
-    val flixDepSection = renderFlixDependencySection(manifest)
-    val mvnDepSection = renderMavenDependenciesSection(manifest)
-    val jarDepSection = renderJarDependenciesSection(manifest)
+    val packageSection = mkPackageSection(manifest)
+    val flixDepSection = mkFlixDependencySection(manifest)
+    val mvnDepSection = mkMavenDependencySection(manifest)
+    val jarDepSection = mkJarDependencySection(manifest)
     List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
       .map(renderTomlSection)
       .mkString(System.lineSeparator())
   }
 
-  private def renderJarDependenciesSection(manifest: Manifest) = {
-    TomlSection("jar-dependencies", manifest.jarDependencies.map(renderJarDependency))
-  }
-
-  private def renderMavenDependenciesSection(manifest: Manifest) = {
-    TomlSection("mvn-dependencies", manifest.mavenDependencies.map(renderMavenDependency))
-  }
-
-  private def renderFlixDependencySection(manifest: Manifest): TomlSection = {
-    TomlSection("dependencies", manifest.flixDependencies.map(renderFlixDependency))
-  }
-
-  private def renderPackageSection(manifest: Manifest): TomlSection = {
+  private def mkPackageSection(manifest: Manifest): TomlSection = {
     val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(s"github:$proj")))
       .getOrElse(TomlEntry.Absent)
     val modules = manifest.modules match {
@@ -159,7 +78,19 @@ object Manifest {
     )
   }
 
-  private def renderFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
+  private def mkFlixDependencySection(manifest: Manifest): TomlSection = {
+    TomlSection("dependencies", manifest.flixDependencies.map(mkFlixDependency))
+  }
+
+  private def mkMavenDependencySection(manifest: Manifest) = {
+    TomlSection("mvn-dependencies", manifest.mavenDependencies.map(mkMavenDependency))
+  }
+
+  private def mkJarDependencySection(manifest: Manifest) = {
+    TomlSection("jar-dependencies", manifest.jarDependencies.map(mkJarDependency))
+  }
+
+  private def mkFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
     val key = TomlKey(dep.identifier)
     val values = dep.sctx match {
       case SecurityContext.Default =>
@@ -174,16 +105,84 @@ object Manifest {
     TomlEntry.Present(key, values)
   }
 
-  private def renderMavenDependency(dep: Dependency.MavenDependency): TomlEntry = {
+  private def mkMavenDependency(dep: Dependency.MavenDependency): TomlEntry = {
     val key = TomlKey(dep.identifier)
     val value = TomlExp.TomlValue(dep.versionTag)
     TomlEntry.Present(key, value)
   }
 
-  private def renderJarDependency(dep: Dependency.JarDependency): TomlEntry = {
+  private def mkJarDependency(dep: Dependency.JarDependency): TomlEntry = {
     val key = TomlKey(dep.identifier)
     val value = TomlExp.TomlValue(s"url:${dep.url}")
     TomlEntry.Present(key, value)
+  }
+
+  private def renderTomlSection(section0: TomlSection): String = {
+    s"""[${section0.section}]
+       |${padKeys(section0.entries.collect { case e: TomlEntry.Present => e }).map(renderTomlEntry).mkString(System.lineSeparator())}
+       |""".stripMargin
+  }
+
+  private def renderTomlEntry(entry: TomlEntry): String = entry match {
+    case TomlEntry.Absent => ""
+    case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
+  }
+
+  private def renderTomlExp(exp0: TomlExp): String = exp0 match {
+    case TomlExp.TomlValue(v) =>
+      s"\"$v\""
+
+    case TomlExp.TomlArray(v) =>
+      v.map(renderTomlExp).mkString("[", ", ", "]")
+
+    case TomlExp.TomlRecord(List(TomlEntry.Present(_, texp))) =>
+      // Special case for record with only one key-value pair: just render the value.
+      renderTomlExp(texp)
+
+    case TomlExp.TomlRecord(v) =>
+      v.map(renderTomlEntry).mkString("{ ", ", ", " }")
+  }
+
+  private def renderTomlKey(key0: TomlKey): String = {
+    val padding = List.range(0, key0.padding).map(_ => " ").mkString
+    s"\"${key0.k}\"$padding"
+  }
+
+  /** Returns the list of entries, where the padding has been adjusted to account for the longest key. */
+  private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
+    val optLongestKey = entries.map(_.key.k.length).maxOption
+    optLongestKey match {
+      case Some(longestKey) => entries.map {
+        case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - key.length), texp)
+      }
+      case None => entries
+    }
+  }
+
+  private case class TomlSection(section: String, entries: List[TomlEntry])
+
+  private sealed trait TomlEntry
+
+  private object TomlEntry {
+
+    case object Absent extends TomlEntry
+
+    case class Present(key: TomlKey, value: TomlExp) extends TomlEntry
+
+  }
+
+  private case class TomlKey(k: String, padding: Int = 0)
+
+  private sealed trait TomlExp
+
+  private object TomlExp {
+
+    case class TomlValue(v: Any) extends TomlExp
+
+    case class TomlArray(v: List[TomlExp]) extends TomlExp
+
+    case class TomlRecord(v: List[TomlEntry]) extends TomlExp
+
   }
 
 }
