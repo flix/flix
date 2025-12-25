@@ -141,7 +141,7 @@ object Manifest {
     val name = TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name))
     val description = TomlEntry.Present(TomlKey("description"), TomlExp.TomlValue(manifest.description))
     val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version))
-    val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.version))
+    val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.flix))
     val authors = TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply)))
 
     TomlSection("package",
