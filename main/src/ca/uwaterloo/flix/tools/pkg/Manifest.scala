@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(name: String,
@@ -130,7 +131,8 @@ object Manifest {
         TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply))),
       )
     )
-    val flixDepSection = TomlSection("dependencies", List())
+
+    val flixDepSection = TomlSection("dependencies", manifest.flixDependencies.map(renderFlixDependency))
     val mvnDepSection = TomlSection("mvn-dependencies", List())
     val jarDepSection = TomlSection("jar-dependencies", List())
     val res = List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
@@ -138,6 +140,21 @@ object Manifest {
       .mkString(System.lineSeparator())
     println(res)
     res
+  }
+
+  private def renderFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
+    val key = TomlKey(dep.identifier)
+    val values = dep.sctx match {
+      case SecurityContext.Default =>
+        // If sctx is default value, don't render the record
+        TomlExp.TomlValue(dep.version)
+
+      case sctx => TomlExp.TomlRecord(List(
+        TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(dep.version)),
+        TomlEntry.Present(TomlKey("security"), TomlExp.TomlValue(sctx)),
+      ))
+    }
+    TomlEntry.Present(key, values)
   }
 
 }
