@@ -107,31 +107,7 @@ object Manifest {
     * Parsing the output yields the original manifest, i.e., `manifest`.
     */
   def render(manifest: Manifest): String = {
-    val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(proj)))
-      .getOrElse(TomlEntry.Absent)
-
-    val modules = manifest.modules match {
-      case PackageModules.All => TomlEntry.Absent
-      case PackageModules.Selected(included) =>
-        TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue.apply)))
-    }
-
-    val license = manifest.license.map(license => TomlEntry.Present(TomlKey("license"), TomlExp.TomlValue(license)))
-      .getOrElse(TomlEntry.Absent)
-
-    val packageSection = TomlSection("package",
-      List(
-        TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name)),
-        TomlEntry.Present(TomlKey("description"), TomlExp.TomlValue(manifest.description)),
-        TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version)),
-        repository,
-        modules,
-        TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.version)),
-        license,
-        TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply))),
-      )
-    )
-
+    val packageSection = renderPackageSection(manifest)
     val flixDepSection = TomlSection("dependencies", manifest.flixDependencies.map(renderFlixDependency))
     val mvnDepSection = TomlSection("mvn-dependencies", List())
     val jarDepSection = TomlSection("jar-dependencies", List())
@@ -140,6 +116,36 @@ object Manifest {
       .mkString(System.lineSeparator())
     println(res)
     res
+  }
+
+  private def renderPackageSection(manifest: Manifest): TomlSection = {
+    val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(proj)))
+      .getOrElse(TomlEntry.Absent)
+    val modules = manifest.modules match {
+      case PackageModules.All => TomlEntry.Absent
+      case PackageModules.Selected(included) =>
+        TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue.apply)))
+    }
+    val license = manifest.license.map(license => TomlEntry.Present(TomlKey("license"), TomlExp.TomlValue(license)))
+      .getOrElse(TomlEntry.Absent)
+    val name = TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name))
+    val description = TomlEntry.Present(TomlKey("description"), TomlExp.TomlValue(manifest.description))
+    val version = TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version))
+    val flixVersion = TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.version))
+    val authors = TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply)))
+
+    TomlSection("package",
+      List(
+        name,
+        description,
+        version,
+        repository,
+        modules,
+        flixVersion,
+        license,
+        authors,
+      )
+    )
   }
 
   private def renderFlixDependency(dep: Dependency.FlixDependency): TomlEntry = {
