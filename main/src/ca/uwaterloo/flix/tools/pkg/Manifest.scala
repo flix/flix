@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
+import ca.uwaterloo.flix.tools.pkg.Manifest.TomlEntry.Absent
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 
 case class Manifest(name: String,
@@ -51,7 +52,7 @@ object Manifest {
 
   private object TomlExp {
 
-    case class TomlValue(v: String) extends TomlExp
+    case class TomlValue(v: Any) extends TomlExp
 
     case class TomlArray(v: List[TomlExp]) extends TomlExp
 
@@ -95,11 +96,28 @@ object Manifest {
     * Parsing the output yields the original manifest, i.e., `manifest`.
     */
   def render(manifest: Manifest): String = {
-    // todo: add optional fields as tomlentry.absent if none else present
+    val repository = manifest.repository.map(proj => TomlEntry.Present(TomlKey("repository"), TomlExp.TomlValue(proj)))
+      .getOrElse(TomlEntry.Absent)
+
+    val modules = manifest.modules match {
+      case PackageModules.All => TomlEntry.Absent
+      case PackageModules.Selected(included) =>
+        TomlEntry.Present(TomlKey("modules"), TomlExp.TomlArray(included.toList.map(TomlExp.TomlValue)))
+    }
+
+    val license = manifest.license.map(license => TomlEntry.Present(TomlKey("license"), TomlExp.TomlValue(license)))
+      .getOrElse(TomlEntry.Absent)
+
     val packageSection = TomlSection("package",
-      List(TomlKey("name") -> TomlExp.TomlValue(manifest.name),
-        TomlKey("description") -> TomlExp.TomlValue(manifest.description),
-        TomlKey("version") -> TomlExp.TomlValue(manifest.version.toString),
+      List(
+        TomlEntry.Present(TomlKey("name"), TomlExp.TomlValue(manifest.name)),
+        TomlEntry.Present(TomlKey("description"), TomlExp.TomlValue(manifest.description)),
+        TomlEntry.Present(TomlKey("version"), TomlExp.TomlValue(manifest.version)),
+        repository,
+        modules,
+        TomlEntry.Present(TomlKey("flix"), TomlExp.TomlValue(manifest.version)),
+        license,
+        TomlEntry.Present(TomlKey("authors"), TomlExp.TomlArray(manifest.authors.map(TomlExp.TomlValue.apply))),
       )
     )
     val flixDepSection = TomlSection("dependencies", List())
