@@ -450,7 +450,9 @@ class TestManifestParser extends AnyFunSuite {
 
   // Identity tests / parse-render-parse
   test("Manifest.Identity.01") {
-    val manifest1 = ManifestParser.parse(tomlCorrect, null).unsafeGet
+    val toml = tomlCorrect
+    println(toml)
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
   }
@@ -467,6 +469,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -489,6 +492,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -511,6 +515,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -533,6 +538,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -555,6 +561,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -577,6 +584,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -596,6 +604,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = "1.2.3"
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -615,6 +624,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3" }
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -634,6 +644,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -653,6 +664,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
@@ -672,6 +684,7 @@ class TestManifestParser extends AnyFunSuite {
         |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
         |""".stripMargin
     }
+    println(toml)
     val manifest1 = ManifestParser.parse(toml, null).unsafeGet
     val manifest2 = ManifestParser.parse(Manifest.render(manifest1), null).unsafeGet
     assertResult(manifest1)(manifest2)
