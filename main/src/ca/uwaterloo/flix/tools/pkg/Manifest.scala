@@ -60,9 +60,12 @@ object Manifest {
   }
 
   private def padKeys(entries: List[TomlEntry.Present]): List[TomlEntry.Present] = {
-    val longestKey = entries.map(_.key.k.length).max
-    entries.map {
-      case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - key.length), texp)
+    val optLongestKey = entries.map(_.key.k.length).maxOption
+    optLongestKey match {
+      case Some(longestKey) => entries.map {
+        case TomlEntry.Present(TomlKey(key, _), texp) => TomlEntry.Present(TomlKey(key, longestKey - key.length), texp)
+      }
+      case None => entries
     }
   }
 
