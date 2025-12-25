@@ -113,7 +113,7 @@ object Manifest {
     val jarDepSection = renderJarDependenciesSection(manifest)
     List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
       .map(renderTomlSection)
-      .mkString(System.lineSeparator() + System.lineSeparator())
+      .mkString(System.lineSeparator())
   }
 
   private def renderJarDependenciesSection(manifest: Manifest) = {
