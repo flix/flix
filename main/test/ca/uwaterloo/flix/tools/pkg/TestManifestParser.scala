@@ -8,13 +8,12 @@ import ca.uwaterloo.flix.util.{Formatter, Result}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
-import java.net.URI
 import java.nio.file.Paths
 import scala.reflect.ClassTag
 
 class TestManifestParser extends AnyFunSuite {
 
-  def expectError[T](result: Result[Manifest, ManifestError])(implicit classTag: ClassTag[T]): Unit =
+  def expectError[T](result: Result[Manifest, ManifestError])(implicit classTag: ClassTag[T]): Unit = {
     result match {
       case Ok(_) => fail(s"Expected failure, but got success.")
       case Err(error) =>
@@ -24,6 +23,7 @@ class TestManifestParser extends AnyFunSuite {
           fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actual.getName}")
         }
     }
+  }
 
   val f: Formatter = Formatter.NoFormatter
   val s: String = File.separator
@@ -448,10 +448,240 @@ class TestManifestParser extends AnyFunSuite {
     )
   }
 
-  /*
-  * Errors
-  * */
-  //File does not exist
+  // Identity tests / parse-render-parse
+  test("Manifest.Identity.01") {
+    val toml = tomlCorrect
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.03") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "470"
+        |
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.04") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "47"
+        |
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.05") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "a.7.0"
+        |
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.06") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.b.0"
+        |
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.07") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[mvn-dependencies]
+        |"org.postgresql:postgresql" = "1.2.3"
+        |"org.eclipse.jetty:jetty-server" = "4.7.c"
+        |
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.08") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = "1.2.3"
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.09") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3" }
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.10") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "paranoid" }
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.11") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "plain" }
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  test("Manifest.Identity.12") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
+  /////////////
+  // Errors  //
+  /////////////
+  // File does not exist
   test("ManifestError.IOError.01") {
     val pathString = "main/test/ca/uwaterloo/flix/tools/missing.toml"
     val path = Paths.get(pathString)
