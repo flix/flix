@@ -36,16 +36,16 @@ case class Manifest(name: String,
 object Manifest {
 
   /**
-    * Renders `manifest` as its textual representation.
+    * Formats `manifest` as a string / a valid `.toml` file.
     * Parsing the output yields the original manifest, i.e., `manifest`.
     */
-  def render(manifest: Manifest): String = {
+  def format(manifest: Manifest): String = {
     val packageSection = mkPackageSection(manifest)
     val flixDepSection = mkFlixDependencySection(manifest)
     val mvnDepSection = mkMavenDependencySection(manifest)
     val jarDepSection = mkJarDependencySection(manifest)
     List(packageSection, flixDepSection, mvnDepSection, jarDepSection)
-      .map(renderTomlSection)
+      .map(formatTomlSection)
       .mkString(System.lineSeparator())
   }
 
@@ -118,33 +118,33 @@ object Manifest {
     TomlEntry.Present(key, value)
   }
 
-  private def renderTomlSection(section0: TomlSection): String = {
+  private def formatTomlSection(section0: TomlSection): String = {
     s"""[${section0.section}]
-       |${padKeys(section0.entries.collect { case e: TomlEntry.Present => e }).map(renderTomlEntry).mkString(System.lineSeparator())}
+       |${padKeys(section0.entries.collect { case e: TomlEntry.Present => e }).map(formatTomlEntry).mkString(System.lineSeparator())}
        |""".stripMargin
   }
 
-  private def renderTomlEntry(entry: TomlEntry): String = entry match {
+  private def formatTomlEntry(entry: TomlEntry): String = entry match {
     case TomlEntry.Absent => ""
-    case TomlEntry.Present(key, texp) => s"${renderTomlKey(key)} = ${renderTomlExp(texp)}"
+    case TomlEntry.Present(key, texp) => s"${formatTomlKey(key)} = ${formatTomlExp(texp)}"
   }
 
-  private def renderTomlExp(exp0: TomlExp): String = exp0 match {
+  private def formatTomlExp(exp0: TomlExp): String = exp0 match {
     case TomlExp.TomlValue(v) =>
       s"\"$v\""
 
     case TomlExp.TomlArray(v) =>
-      v.map(renderTomlExp).mkString("[", ", ", "]")
+      v.map(formatTomlExp).mkString("[", ", ", "]")
 
     case TomlExp.TomlRecord(List(TomlEntry.Present(_, texp))) =>
       // Special case for record with only one key-value pair: just render the value.
-      renderTomlExp(texp)
+      formatTomlExp(texp)
 
     case TomlExp.TomlRecord(v) =>
-      v.map(renderTomlEntry).mkString("{ ", ", ", " }")
+      v.map(formatTomlEntry).mkString("{ ", ", ", " }")
   }
 
-  private def renderTomlKey(key0: TomlKey): String = {
+  private def formatTomlKey(key0: TomlKey): String = {
     val padding = List.range(0, key0.padding).map(_ => " ").mkString
     s"\"${key0.k}\"$padding"
   }
