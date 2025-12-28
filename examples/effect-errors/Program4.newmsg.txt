@@ -1,0 +1,31 @@
+>> Unable to unify the effect formulas: 'Pure' and 'E'.
+
+>> Expected effect 'Pure' declared at line 5
+
+5 | def foo(): Unit = E.op() without E
+                   ^
+>> Effect `E` occurs in the body due to the following lines:
+
+5 | def foo(): Unit  = E.op() without E
+                       ^^^^^^
+>> E.op() has effect 'E'
+
+1 |> eff E {
+2 |>     def op(): Unit
+3 |> }
+
+///////////////////////////////////////////////////////////// 
+
+>> Violation of without construct at line 5
+
+5 | def foo(): Unit = E.op() without E
+                      ^^^^^^ ^^^^^^^^^
+
+>> E.op() has effect 'E'
+
+1 |> eff E {
+2 |>     def op(): Unit
+3 |> }
+
+
+ 
