@@ -9,7 +9,7 @@
 ///
 /// We introduce type aliases to model the package domain.
 ///
-type alias Package = String    // e.g. "json-parser"
+type alias Package = String    // e.g. "react"
 type alias Version = Int32     // e.g. 3 (simplified semver)
 
 ///
@@ -75,21 +75,28 @@ def main(): Unit \ IO =
 def database(): #{ Available(Package, Version), Depends(Package, Version, Package, Version) | r } = #{
     // Package registry - available packages and versions
     Available("my-app", 1).
-    Available("web-server", 1).
-    Available("web-server", 2).
-    Available("json-parser", 1).
-    Available("json-parser", 2).
-    Available("logger", 1).
-    Available("string-utils", 1).
-    Available("string-utils", 2).
-    Available("string-utils", 3).
-    Available("zlib", 1).
+    Available("react", 17).
+    Available("react", 18).
+    Available("react-dom", 17).
+    Available("react-dom", 18).
+    Available("next", 13).
+    Available("next", 14).
+    Available("next-themes", 1).
+    Available("postcss", 7).
+    Available("postcss", 8).
+    Available("autoprefixer", 9).
+    Available("autoprefixer", 10).
+    Available("string-formatter", 1).
+    // No left-pad available - it was unpublished!
 
     // Dependency declarations: Depends(pkg, version, depPkg, minVersion)
-    Depends("my-app", 1, "web-server", 2).
-    Depends("web-server", 2, "json-parser", 1).
-    Depends("web-server", 2, "logger", 1).
-    Depends("json-parser", 1, "string-utils", 1).
-    Depends("logger", 1, "string-utils", 2).
-    Depends("logger", 1, "zlib", 2).
+    Depends("my-app", 1, "react-dom", 18).
+    Depends("my-app", 1, "next", 14).
+    Depends("react-dom", 18, "react", 18).
+    Depends("next", 14, "react", 18).
+    Depends("next", 14, "postcss", 8).
+    Depends("next", 14, "next-themes", 1).
+    Depends("postcss", 8, "autoprefixer", 9).
+    Depends("next-themes", 1, "string-formatter", 1).
+    Depends("string-formatter", 1, "left-pad", 1).  // unpublished!
 }
