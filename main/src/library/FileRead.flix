@@ -99,7 +99,7 @@ pub eff FileRead {
 
 }
 
-mod FileRead {
+pub mod FileRead {
 
     import java.io.File
     import java.io.IOException

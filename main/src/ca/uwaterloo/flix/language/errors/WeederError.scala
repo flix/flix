@@ -216,44 +216,21 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an inner function is annotated with an illegal annotation.
+    * An error raised to indicate that a specific annotation is not allowed here.
     *
     * @param loc the location of the illegal annotation.
     */
   case class IllegalAnnotation(loc: SourceLocation) extends WeederError {
-    override def summary: String = "Unexpected annotation on inner function."
+    override def summary: String = "Unexpected annotation."
 
     override def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Unexpected annotation on local function.
+      s""">> Unexpected annotation not allowed here.
          |
          |${code(loc, "unexpected annotation")}
          |
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = Some("Annotations are not allowed on local functions.")
-  }
-
-  /**
-    * An error raised to indicate that a lowercase name was expected.
-    *
-    * @param name the non-lowercase name.
-    * @param loc  the location of the non-lowercase name.
-    */
-  case class UnexpectedNonLowerCaseName(name: String, loc: SourceLocation) extends WeederError {
-    override def summary: String = "Expected a lowercase name."
-
-    override def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unexpected non-lowercase name: '$name'
-         |
-         |${code(loc, "unexpected name")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -874,22 +851,6 @@ object WeederError {
       s"${underline("Tip:")} Ensure that the literal is within bounds."
     })
 
-  }
-
-  /**
-    * An error raised to indicate that a name is not a valid Flix identifier.
-    */
-  case class MalformedIdentifier(name: String, loc: SourceLocation) extends WeederError {
-    def summary: String = s"Malformed identifier: '$name'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Malformed identifier '${red(name)}'.
-         |
-         |${code(loc, "illegal identifier")}
-         |
-         |""".stripMargin
-    }
   }
 
   /**

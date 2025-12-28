@@ -1,4 +1,4 @@
-mod Reflect {
+pub mod Reflect {
     import java.lang.{Object => JObject}
 
     ///

@@ -147,6 +147,8 @@ object LoweredAst {
 
     case class SelectChannel(rules: List[SelectChannelRule], default: Option[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class ParYield(frags: List[ParYieldFragment], exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
   }
 
   sealed trait Pattern {

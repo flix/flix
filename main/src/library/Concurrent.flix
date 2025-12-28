@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2021 Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-mod Fixpoint3 {
-    use Fixpoint3.Ast.Shared.PredSym
+pub mod Concurrent {
+    import java.util.concurrent.locks.{Condition => JCondition}
+    import java.util.concurrent.{CyclicBarrier => JCyclicBarrier}
+    import java.util.concurrent.locks.{ReentrantLock => JReentrantLock}
 
     ///
-    /// A trait for types that contain predicate symbols.
+    /// A wrapper around a Java Condition.
     ///
-    pub trait PredSymsOf[t] {
-        pub def predSymsOf(x: t): Set[PredSym]
-    }
+    pub enum Condition(JCondition)
+
+    ///
+    /// A wrapper around a Java CyclicBarrier.
+    ///
+    pub enum CyclicBarrier(JCyclicBarrier)
+
+    ///
+    /// A wrapper around a Java ReentrantLock.
+    ///
+    pub enum ReentrantLock(JReentrantLock)
 }

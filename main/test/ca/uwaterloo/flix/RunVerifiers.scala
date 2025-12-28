@@ -47,7 +47,7 @@ class RunVerifiers extends AnyFunSuite with TestUtils {
         case _ => ()
       }
     })
-    flix.addFlix(Paths.get(path))(SecurityContext.Unrestricted)
+    flix.addFile(Paths.get(path))(SecurityContext.Unrestricted)
 
     val res = flix.compile()
     expectSuccess(res)

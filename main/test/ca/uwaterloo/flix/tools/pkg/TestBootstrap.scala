@@ -63,31 +63,33 @@ class TestBootstrap extends AnyFunSuite {
     for (e <- new ZipFile(jarPath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("2014-06-27 00:00:00"))
+      assert(formatted == "2014-06-27 00:00:00")
     }
   }
 
-  test("build-jar always generates package that is byte-for-byte exactly the same") {
+  test("build-jar always generates package that is byte-for-byte exactly the same modulo concurrency") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
 
-    val flix = PkgTestUtils.mkFlix
+    val flix1 = PkgTestUtils.mkFlix
+    // Use 1 thread for deterministic symbols
+    flix1.setOptions(flix1.options.copy(threads = 1))
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.build(flix)
-    b.buildJar(flix)(Formatter.getDefault)
+    b.buildJar(flix1)(Formatter.getDefault)
+    val hash1 = calcHash(jarPath)
 
-    def hash1 = calcHash(jarPath)
-
-    b.build(flix)
-    b.buildJar(flix)(Formatter.getDefault)
-
-    def hash2 = calcHash(jarPath)
+    // Use new flix instance to reset symbol generation
+    val flix2 = PkgTestUtils.mkFlix
+    // Use 1 thread for deterministic symbols
+    flix2.setOptions(flix2.options.copy(threads = 1))
+    b.buildJar(flix2)(Formatter.getDefault)
+    val hash2 = calcHash(jarPath)
 
     assert(
-      hash1.equals(hash2),
+      hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
@@ -117,7 +119,7 @@ class TestBootstrap extends AnyFunSuite {
     for (e <- new ZipFile(packagePath.toFile).entries().asScala) {
       val time = new Date(e.getTime)
       val formatted = format.format(time)
-      assert(formatted.equals("2014-06-27 00:00:00"))
+      assert(formatted == "2014-06-27 00:00:00")
     }
   }
 
@@ -127,17 +129,21 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
+    val flix = PkgTestUtils.mkFlix
+
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg()(Formatter.getDefault)
-
-    def hash1 = calcHash(packagePath)
+    b.build(flix)
 
     b.buildPkg()(Formatter.getDefault)
 
-    def hash2 = calcHash(packagePath)
+    val hash1 = calcHash(packagePath)
+
+    b.buildPkg()(Formatter.getDefault)
+
+    val hash2 = calcHash(packagePath)
 
     assert(
-      hash1.equals(hash2),
+      hash1 == hash2,
       s"Two file hashes are not same: $hash1 and $hash2")
   }
 
@@ -222,11 +228,10 @@ class TestBootstrap extends AnyFunSuite {
     }
   }
 
-  def calcHash(p: Path): String = {
-    val buffer = new Array[Byte](8192)
+  private def calcHash(p: Path): String = {
     val sha = MessageDigest.getInstance("SHA-256")
     Using(new DigestInputStream(Files.newInputStream(p), sha)) { input =>
-      while (input.read(buffer) != -1) {}
+      input.readNBytes(8192)
       sha.digest.map("%02x".format(_)).mkString
     }.get
   }

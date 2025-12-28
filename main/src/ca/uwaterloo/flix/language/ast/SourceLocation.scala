@@ -27,7 +27,7 @@ object SourceLocation {
     import scala.math.Ordered.orderingToOrdered
 
     def compare(x: SourceLocation, y: SourceLocation): Int =
-      (x.source.name, x.sp1, x.sp2).compare((y.source.name, y.sp1, y.sp2))
+      (x.source.name, x.start, x.end).compare((y.source.name, y.start, y.end))
   }
 
 }
@@ -37,7 +37,7 @@ object SourceLocation {
   *
   * @param isReal true if real location, false if synthetic location.
   */
-case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, sp2: SourcePosition) {
+case class SourceLocation(isReal: Boolean, source: Source, start: SourcePosition, end: SourcePosition) {
 
   /**
    * Returns the security context associated with the source location.
@@ -47,12 +47,12 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
   /**
     * Returns the one-indexed line where the entity begins.
     */
-  def beginLine: Int = sp1.lineOneIndexed
+  def startLine: Int = start.lineOneIndexed
 
   /**
     * Returns the one-indexed column where the entity begins.
     */
-  def beginCol: Int = sp1.colOneIndexed
+  def startCol: Int = start.colOneIndexed
 
   /**
     * Returns `true` if `this` [[SourceLocation]] completely contains `that`, otherwise `false`.
@@ -63,8 +63,8 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
   def contains(that: SourceLocation): Boolean = {
     if (this.source != that.source) false
     else {
-      val thatBeginsLater = SourcePosition.Order.lteq(this.sp1, that.sp1)
-      val thatEndsBefore = SourcePosition.Order.lteq(that.sp2, this.sp2)
+      val thatBeginsLater = SourcePosition.Order.lteq(this.start, that.start)
+      val thatEndsBefore = SourcePosition.Order.lteq(that.end, this.end)
       thatBeginsLater && thatEndsBefore
     }
   }
@@ -72,17 +72,17 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
   /**
     * Returns the one-indexed line where the entity ends.
     */
-  def endLine: Int = sp2.lineOneIndexed
+  def endLine: Int = end.lineOneIndexed
 
   /**
     * Returns the one-indexed column where the entity ends.
     */
-  def endCol: Int = sp2.colOneIndexed
+  def endCol: Int = end.colOneIndexed
 
   /**
     * Returns `true` if this source location spans a single line.
     */
-  def isSingleLine: Boolean = beginLine == endLine
+  def isSingleLine: Boolean = startLine == endLine
 
   /**
     * Returns `true` if this source location is synthetic.
@@ -93,11 +93,6 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
     * Returns `this` source location but as a synthetic kind.
     */
   def asSynthetic: SourceLocation = copy(isReal = false)
-
-  /**
-    * Returns `this` source location but as a real kind.
-    */
-  def asReal: SourceLocation = copy(isReal = true)
 
   /**
     * Returns the smallest (i.e. the first that appears in the source code) of `this` and `that`.
@@ -114,22 +109,17 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
     .replaceAll("\r", "")
 
   /**
-    * Returns a string representation of `this` source location with the line number.
-    */
-  def formatWithLine: String = s"${source.name}:$beginLine"
-
-  /**
     * Returns a string representation of `this` source location with the line and column numbers.
     */
-  def format: String = s"${source.name}:$beginLine:$beginCol"
+  def format: String = s"${source.name}:$startLine:$startCol"
 
   /**
     * Returns the source text of the source location.
     */
   def text: Option[String] = {
     if (isSingleLine) {
-      val line = lineAt(beginLine)
-      val b = Math.min(beginCol - 1, line.length)
+      val line = lineAt(startLine)
+      val b = Math.min(startCol - 1, line.length)
       val e = Math.min(endCol - 1, line.length)
       Some(line.substring(b, e))
     } else {
@@ -140,7 +130,7 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
   /**
     * Returns the hashCode of `this` source location.
     */
-  override def hashCode(): Int = source.hashCode() + beginLine + beginCol + endLine + endCol
+  override def hashCode(): Int = source.hashCode() + startLine + startCol + endLine + endCol
 
   /**
     * Returns `true` if `this` and `o` represent the same source location.
@@ -148,8 +138,8 @@ case class SourceLocation(isReal: Boolean, source: Source, sp1: SourcePosition, 
   override def equals(o: Any): Boolean = o match {
     case that: SourceLocation =>
       this.source == that.source &&
-        this.beginLine == that.beginLine &&
-        this.beginCol == that.beginCol &&
+        this.startLine == that.startLine &&
+        this.startCol == that.startCol &&
         this.endLine == that.endLine &&
         this.endCol == that.endCol
     case _ => false

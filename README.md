@@ -18,7 +18,7 @@ We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for mo
 ///
 enum Expression {
     // A variable expression. A variable is represented by an integer. 
-    case Var(Int23),
+    case Var(Int32),
     
     // A lambda abstracation expression. A variable is represented by an integer.
     case Abs(Int32, Expression),

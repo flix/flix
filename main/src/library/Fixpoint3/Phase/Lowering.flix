@@ -94,7 +94,7 @@
 /// is met. If the query is deeply nested with some values bound higher up in the nesting,
 /// we do not need to evaluate these every time.
 ///
-mod Fixpoint3.Phase.Lowering {
+pub mod Fixpoint3.Phase.Lowering {
     use Fixpoint3.Ast.ExecutableRam
     use Fixpoint3.Ast.ExecutableRam.WriteTuple
     use Fixpoint3.Ast.Ram

@@ -132,7 +132,7 @@ instance ForEach[DelayList[a]] {
     pub def forEach(f: a -> Unit \ ef, l: DelayList[a]): Unit \ ef = DelayList.forEach(f, l)
 }
 
-mod DelayList {
+pub mod DelayList {
 
     ///
     /// Returns a string representation of `l`.

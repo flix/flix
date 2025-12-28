@@ -26,7 +26,7 @@ eff Clock {
 
 }
 
-mod Clock {
+pub mod Clock {
 
     import java.lang.System
     import java.util.concurrent.{TimeUnit => JTimeUnit}

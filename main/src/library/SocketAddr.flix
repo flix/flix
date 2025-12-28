@@ -37,7 +37,7 @@ instance Formattable[SocketAddr] {
     pub def format(x: SocketAddr): RichString = RichString.fromString(ToString.toString(x))
 }
 
-mod SocketAddr {
+pub mod SocketAddr {
 
     use SocketAddrV4.SocketAddrV4
     use SocketAddrV6.SocketAddrV6

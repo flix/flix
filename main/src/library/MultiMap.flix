@@ -92,7 +92,7 @@ instance Monoid[MultiMap[k, v]] with Order[k], Order[v] {
 
 instance CommutativeMonoid[MultiMap[k, v]] with Order[k], Order[v]
 
-mod MultiMap {
+pub mod MultiMap {
 
     ///
     /// Returns a string representation of `m`.

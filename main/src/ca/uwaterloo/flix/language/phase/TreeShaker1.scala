@@ -162,6 +162,9 @@ object TreeShaker1 {
     case Expr.SelectChannel(selects, optExp, _, _, _) =>
       visitExps(selects.map(_.exp)) ++ visitExps(selects.map(_.chan)) ++ optExp.map(visitExp).getOrElse(Set())
 
+    case Expr.ParYield(frags, exp, _, _, _) =>
+      visitExps(frags.map(_.exp)) ++ visitExp(exp)
+
   }
 
   /** Returns the symbols reachable from `exps`. */

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Util {
+pub mod Fixpoint3.Util {
     ///
     /// Unwraps an option.
     ///

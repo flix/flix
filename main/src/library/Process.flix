@@ -74,7 +74,7 @@ eff Process {
 
 }
 
-mod Process {
+pub mod Process {
 
     use IoError.ErrorKind
     use IoError.IoError

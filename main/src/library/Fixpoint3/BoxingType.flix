@@ -49,7 +49,7 @@
 /// to keep the `MutList` and `BPlusTree` for objects, as transforming the simple types
 /// requires less information.
 ///
-mod Fixpoint3.BoxingType {
+pub mod Fixpoint3.BoxingType {
     use Fixpoint3.ReadWriteLock
     use Fixpoint3.Boxed
 

@@ -503,8 +503,9 @@ object FindReferencesProvider {
   }
 
   private def isInProject(loc: SourceLocation): Boolean = loc.source.input match {
-    case Input.Text(_, _, _) => true // over-approximation
-    case Input.TxtFile(_, _) => false
+    case Input.RealFile(_, _) => false
+    case Input.VirtualFile(_, _, _) => true // over-approximation
+    case Input.VirtualUri(_, _, _) => true // over-approximation
     case Input.PkgFile(_, _) => false
     case Input.FileInPackage(_, _, _, _) => false
     case Input.Unknown => false

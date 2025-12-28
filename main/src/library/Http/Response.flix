@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Magnus Madsen
+ * Copyright 2025 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-mod Fixpoint3 {
-
-    use Fixpoint3.Ast.Shared.PredSym
-
-    ///
-    /// A trait for types with predicate symbols that can be substituted.
-    ///
-    pub trait SubstitutePredSym[t] {
-        pub def substitute(x: t, s: Map[PredSym, PredSym]): t
+pub mod Http.Response {
+    pub def status(r: Response): Int32 = match r {
+        case Response(x) => x#status
     }
-
+    pub def headers(r: Response): Map[String, List[String]] = match r {
+        case Response(x) => x#headers
+    }
+    pub def body(r: Response): String = match r {
+        case Response(x) => x#body
+    }
 }

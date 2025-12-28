@@ -22,7 +22,7 @@ instance UpperBound[Int32] {
     pub def maxValue(): Int32 = Int32.maxValue()
 }
 
-mod Int32 {
+pub mod Int32 {
 
     import java.lang.Integer
     import java.lang.NumberFormatException

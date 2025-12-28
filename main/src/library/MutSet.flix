@@ -42,7 +42,7 @@ instance Formattable[MutSet[t, r]] with Formattable[t] {
         fromString("MutSet#{") + joinWith(Formattable.format, fromString(", "), MutSet.toList(x)) + fromString("}")
 }
 
-mod MutSet {
+pub mod MutSet {
 
     ///
     /// Returns a string representation of the given mutable set `s`.

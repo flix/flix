@@ -146,7 +146,7 @@ instance ToFlix[Chain[a]] {
     }
 }
 
-mod Chain {
+pub mod Chain {
     use ViewLeft.{NoneLeft, SomeLeft}
     use ViewRight.{NoneRight, SomeRight}
 

@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 import org.tomlj.*
 
 import java.io.{IOException, StringReader}
-import java.net.{URI, URL}
+import java.net.URI
 import java.nio.file.Path
 import scala.jdk.CollectionConverters.{ListHasAsScala, SetHasAsScala}
 
@@ -404,11 +404,11 @@ object ManifestParser {
   private def getSecurity(depTbl: TomlTable, key: String, path: Path): Result[SecurityContext, ManifestError] = {
     // Ensure the security value is a string.
     if (!depTbl.contains(key)) {
-      return Ok(SecurityContext.Plain)
+      return Ok(SecurityContext.Default)
     }
     if (!depTbl.isString(key)) {
       val perms = depTbl.get(key)
-      Err(ManifestError.FlixDependencySecurityType(Option.apply(path), key, perms))
+      Err(ManifestError.FlixDependencySecurityType(Some(path), key, perms))
     } else {
       val value = depTbl.getString(key)
       SecurityContext.fromString(value) match {

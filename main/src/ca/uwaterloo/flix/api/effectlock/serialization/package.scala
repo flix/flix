@@ -23,8 +23,14 @@ package ca.uwaterloo.flix.api.effectlock
   */
 package object serialization {
 
+  /** Common super type for [[SDef]] and [[SSig]]. */
+  sealed trait DefOrSig
+
   /** Represents a serializable def. */
-  case class SDef(namespace: List[String], text: String, scheme: SScheme, source: String)
+  case class SDef(namespace: List[String], text: String, scheme: SScheme) extends DefOrSig
+
+  /** Represents a serializable sig. */
+  case class SSig(namespace: List[String], text: String, scheme: SScheme) extends DefOrSig
 
   /** Represents a serializable scheme. */
   case class SScheme(quantifiers: List[VarSym], tconstrs: List[TraitConstr], econstrs: List[EqConstr], base: SType)
@@ -37,8 +43,6 @@ package object serialization {
   case class Cst(tc: STC) extends SType
 
   case class Apply(tpe1: SType, tpe2: SType) extends SType
-
-  case class Alias(symUse: TypeAliasSym, args: List[SType], tpe: SType) extends SType
 
   case class AssocType(symUse: AssocTypeSym, arg: SType, kind: SKind) extends SType
 
@@ -108,12 +112,6 @@ package object serialization {
   case class RestrictableEnum(sym: RestrictableEnumSym, kind: SKind) extends STC
 
   case class Native(clazz: String) extends STC
-
-  case class JvmConstructor(name: String) extends STC
-
-  case class JvmMethod(method: String) extends STC
-
-  case class JvmField(field: String) extends STC
 
   case object Array extends STC
 
@@ -188,8 +186,6 @@ package object serialization {
 
   case object PredicateKind extends SKind
 
-  case object JvmKind extends SKind
-
   case class CaseSetKind(sym: RestrictableEnumSym) extends SKind
 
   case class ArrowKind(k1: SKind, k2: SKind) extends SKind
@@ -211,7 +207,7 @@ package object serialization {
 
   case class EffSym(namespace: List[String], name: String) extends SSym
 
-  case class RegionSym(text: String) extends SSym
+  case class RegionSym(id: Int, text: String) extends SSym
 
   case class RestrictableEnumSym(namespace: List[String], name: String, cases: List[String]) extends SSym
 
@@ -235,11 +231,11 @@ package object serialization {
     org.json4s.ShortTypeHints(
       List(
         classOf[SDef],
+        classOf[SSig],
         classOf[SScheme],
         classOf[Var],
         classOf[Cst],
         classOf[Apply],
-        classOf[Alias],
         classOf[AssocType],
         Void.getClass,
         AnyType.getClass,
@@ -273,9 +269,6 @@ package object serialization {
         classOf[Struct],
         classOf[RestrictableEnum],
         classOf[Native],
-        classOf[JvmConstructor],
-        classOf[JvmMethod],
-        classOf[JvmField],
         Array.getClass,
         ArrayWithoutRegion.getClass,
         Vector.getClass,
@@ -311,7 +304,6 @@ package object serialization {
         RecordRowKind.getClass,
         SchemaRowKind.getClass,
         PredicateKind.getClass,
-        JvmKind.getClass,
         classOf[CaseSetKind],
         classOf[ArrowKind],
         classOf[VarSym],

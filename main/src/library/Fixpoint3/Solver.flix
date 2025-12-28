@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint3.Solver {
+pub mod Fixpoint3.Solver {
     import dev.flix.runtime.Global
 
     use Fixpoint3.{Boxed, Debugging, Interpreter, Options, Phase, Predicate, PredSymsOf, SubstitutePredSym}

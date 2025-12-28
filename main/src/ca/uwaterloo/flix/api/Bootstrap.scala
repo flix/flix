@@ -470,7 +470,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Ensure all files in `buildDir` are valid class files.
-    val files = FileOps.getFilesIn(buildDir, Int.MaxValue)
+    val files = FileOps.getFilesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (file <- files) {
       if (file.startsWith(classDir)) {
         if (!FileOps.checkExt(file, "class")) {
@@ -505,7 +505,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Delete empty directories
     // Visit in reverse order to delete the innermost directories first
-    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue)
+    val directories = FileOps.getDirectoriesIn(buildDir, Int.MaxValue).map(_.normalize())
     for (dir <- directories.reverse) {
       checkForDangerousPath(dir) match {
         case Err(e) => return Err(e)
@@ -561,7 +561,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `Err` if `path` is the user's home directory. */
   private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
     val home = Path.of(System.getProperty("user.home"))
-    if (home == path) {
+    if (home.normalize() == path.normalize()) {
       return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
     }
     Ok(())
@@ -569,8 +569,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /** Returns `Err` if `path` is a root directory. */
   private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
-    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList
-    if (roots.contains(path)) {
+    val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
+    if (roots.contains(path.normalize())) {
       return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
     }
     Ok(())
@@ -578,7 +578,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
-    if (projectPath.startsWith(path)) {
+    if (projectPath.normalize().startsWith(path.normalize())) {
       return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
@@ -1054,7 +1054,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           if (securityResolutionErrors.isEmpty) {
             Ok(securityMap)
           } else {
-            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.toString)))
+            Err(BootstrapError.GeneralError(securityResolutionErrors.map(_.message(formatter))))
           }
       }
     }
@@ -1068,7 +1068,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val previousSources = timestamps.keySet
 
       for (path <- sourcePaths if hasChanged(path)) {
-        flix.addFlix(path)(SecurityContext.Unrestricted)
+        flix.addFile(path)(SecurityContext.Unrestricted)
       }
 
       for (path <- flixPackagePaths if hasChanged(path)) {
@@ -1087,7 +1087,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       val deletedSources = previousSources -- currentSources
       for (path <- deletedSources) {
-        flix.remSourceCode(path.toString)
+        flix.remFile(path)(SecurityContext.Unrestricted)
       }
 
       timestamps = currentSources.map(f => f -> f.toFile.lastModified).toMap

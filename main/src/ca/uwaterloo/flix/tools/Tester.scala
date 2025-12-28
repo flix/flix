@@ -128,7 +128,7 @@ object Tester {
               writer.println()
               for ((sym, output) <- failed; if output.nonEmpty) {
                 writer.println(s"  ${bgRed(" FAIL ")} $sym")
-                writer.println(s"         ${sym.loc.source.name}:${sym.loc.beginLine}")
+                writer.println(s"         ${sym.loc.source.name}:${sym.loc.startLine}")
                 for (line <- output) {
                   writer.println(s"    $line")
                 }

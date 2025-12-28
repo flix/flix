@@ -41,7 +41,7 @@ instance Formattable[RichString] {
     pub def format(x: RichString): RichString = x
 }
 
-mod RichString {
+pub mod RichString {
 
     ///
     /// Represents a color with RGB components or the terminal's default color.

@@ -15,13 +15,14 @@
  */
 package ca.uwaterloo.flix.api.lsp
 
+import ca.uwaterloo.flix.api.CompilerConstants
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import org.scalatest.funsuite.AnyFunSuite
 
 class VisitorSuite extends AnyFunSuite {
-  val source: Source = Source(Input.Text("test", "test", SecurityContext.Unrestricted), Array.emptyCharArray)
-  val uri = "test"
+  val source: Source = Source.empty(Input.VirtualFile(CompilerConstants.VirtualTestFile, "test", SecurityContext.Unrestricted))
+  val uri = CompilerConstants.VirtualTestFile.toString
 
   test("inside when strictly within lines") {
     val loc = SourceLocation(
