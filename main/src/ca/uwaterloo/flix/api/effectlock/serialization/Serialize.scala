@@ -35,6 +35,19 @@ object Serialize {
       SDef(ns, text, sscheme)
   }
 
+  /**
+    * Serializes a [[TypedAst.Sig]].
+    *
+    * Erases type aliases and associated type source locations.
+    */
+  def serializeSig(defn0: TypedAst.Sig): SSig = defn0 match {
+    case TypedAst.Sig(sym, spec, _, _) =>
+      val ns = sym.namespace
+      val text = sym.name
+      val sscheme = serializeSpec(spec)
+      SSig(ns, text, sscheme)
+  }
+
   private def serializeSpec(spec0: TypedAst.Spec): SScheme = spec0 match {
     case TypedAst.Spec(_, _, _, _, _, sc0, _, _, _, _) =>
       val Scheme(quantifiers, tconstrs, econstrs, base) = Util.alpha(sc0)
