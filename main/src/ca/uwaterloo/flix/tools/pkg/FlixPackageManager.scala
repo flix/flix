@@ -119,17 +119,17 @@ object FlixPackageManager {
   }
 
   /**
-    * Installs all the Flix dependencies a [[SecureResolution]] into the `lib/` directory
-    * of `path` and returns a list of paths to all the dependencies along with their allowed security context.
+    * Installs all the Flix dependencies of `resolution` into the `lib/` directory of `projectRoot` and
+    * returns a list of paths to all the dependencies along with their allowed security context.
     */
-  def installAll(resolution: SecureResolution, path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], PackageError] = {
+  def installAll(resolution: SecureResolution, projectRoot: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Result[List[(Path, SecurityContext)], PackageError] = {
     out.println("Downloading Flix dependencies...")
 
     val allFlixDeps = ListMap.from(resolution.manifestToFlixDeps.map { case (manifest, flixDep) => resolution.security(manifest) -> flixDep })
 
     val flixPaths = allFlixDeps.map { case (sctx, dep) =>
       val depName: String = s"${dep.username}/${dep.projectName}"
-      install(depName, dep.version, "fpkg", path, apiKey) match {
+      install(depName, dep.version, "fpkg", projectRoot, apiKey) match {
         case Ok(p) => (p, sctx)
         case Err(e) =>
           out.println(s"ERROR: Installation of `$depName' failed.")
