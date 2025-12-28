@@ -27,39 +27,39 @@ def main(): Unit \ IO =
         // Root package is resolved.
         Resolved(root, rootVersion).
 
-        // Transitive: if pkg@v is resolved and depends on dep with minVer,
+        // Transitive: if pkg@pkgVer is resolved and depends on dep with minVer,
         // resolve all available versions of dep that satisfy the constraint.
-        Resolved(dep, depV) :-
-            Resolved(pkg, v),
-            Dependency(pkg, v, dep, minVer),
-            Published(dep, depV),
-            if (depV >= minVer).
+        Resolved(dep, depVer) :-
+            Resolved(pkg, pkgVer),
+            Dependency(pkg, pkgVer, dep, minVer),
+            Published(dep, depVer),
+            if (depVer >= minVer).
 
         // A dependency has at least one satisfying version.
-        Satisfied(pkg, v, dep, minVer) :-
-            Dependency(pkg, v, dep, minVer),
-            Published(dep, depV),
-            if (depV >= minVer).
+        Satisfied(pkg, pkgVer, dep, minVer) :-
+            Dependency(pkg, pkgVer, dep, minVer),
+            Published(dep, depVer),
+            if (depVer >= minVer).
 
         // Missing = resolved package has a dependency that can't be met.
-        Missing(pkg, v, dep, minVer) :-
-            Resolved(pkg, v),
-            Dependency(pkg, v, dep, minVer),
-            not Satisfied(pkg, v, dep, minVer).
+        Missing(pkg, pkgVer, dep, minVer) :-
+            Resolved(pkg, pkgVer),
+            Dependency(pkg, pkgVer, dep, minVer),
+            not Satisfied(pkg, pkgVer, dep, minVer).
     };
 
-    // Query all unsatisfied dependencies.
-    let missing = query db, pr select (pkg, v, dep, minVer) from Missing(pkg, v, dep, minVer);
+    // Query all missing dependencies.
+    let missing = query db, pr select (pkg, pkgVer, dep, minVer) from Missing(pkg, pkgVer, dep, minVer);
     println("Missing dependencies:");
-    foreach((pkg, v, dep, minVer) <- missing) {
-        println("  ${pkg}@${v} requires ${dep} >= ${minVer} (UNSATISFIED)");
+    foreach((pkg, pkgVer, dep, minVer) <- missing) {
+        println("  ${pkg}@${pkgVer} requires ${dep} >= ${minVer} (MISSING)");
 
-        // Use pquery to trace why pkg@v was needed.
-        let chain = pquery db, pr select Resolved(pkg, v) with {Dependency};
+        // Use pquery to trace why pkg@pkgVer was needed.
+        let chain = pquery db, pr select Resolved(pkg, pkgVer) with {Dependency};
         println("  Dependency chain:");
         foreach(fact <- chain) {
             ematch fact {
-                case Dependency(p, pv, d, mv) => println("    ${p}@${pv} requires ${d} >= ${mv}")
+                case Dependency(fromPkg, fromVer, toPkg, toMinVer) => println("    ${fromPkg}@${fromVer} requires ${toPkg} >= ${toMinVer}")
             }
         }
     }
