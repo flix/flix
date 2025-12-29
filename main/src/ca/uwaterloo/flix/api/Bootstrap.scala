@@ -444,27 +444,40 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for {
       root <- Steps.check(flix)
     } yield {
-      // TODO: Serialize signatures also???
-      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root))
-      val defs = useGraph.map(TupleOps.snd).flatMap(getLibraryDefn(_, root)).toMap
-      val serialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
+      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map(TupleOps.snd)
+      val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
+      val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
+      val sigs = useGraph.flatMap(getLibrarySig(_, root)).toMap
+      val sigSerialization = sigs.map { case (sym, sig) => sym.toString -> Serialize.serializeSig(sig) }
+      val serialization = defSerialization ++ sigSerialization
       val json = org.json4s.native.Serialization.write(serialization)(effectlock.serialization.formats)
-      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
       val path = Bootstrap.getEffectLockFile(projectPath)
+      // N.B.: Do not use FileOps.writeJSON, since we uZse custom serialization formats.
       FileOps.writeString(path, json)
     }
   }
 
+  /** Returns `true` if for the edge `f -> g`, `f` occurs in the source project and `g` occurs in a library and `g` is public. */
   private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
-    case (UsedSym.DefnSym(src), UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst, root)
-    case (UsedSym.DefnSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
-    case (UsedSym.SigSym(src), UsedSym.DefnSym(dst)) =>
-      isFromLocalProject(src) && isLibraryFunction(dst) && isPublic(dst, root)
-    case (UsedSym.SigSym(_), UsedSym.SigSym(_)) => false // TODO support serialization of signatures
+    case (src, UsedSym.DefnSym(dst)) =>
+      isFromLocalProject(getInput(src)) &&
+        isLibraryFunction(dst.src.input) &&
+        root.defs.get(dst).exists(_.spec.mod.isPublic)
+
+    case (src, UsedSym.SigSym(dst)) =>
+      isFromLocalProject(getInput(src)) &&
+        isLibraryFunction(dst.src.input) &&
+        root.sigs.get(dst).exists(_.spec.mod.isPublic)
   }
 
-  private def isFromLocalProject(sym: Sourceable): Boolean = sym.src.input match {
+  /** Returns the input source of `sym0`. This is a helper function to reduce repetition. */
+  private def getInput(sym0: UsedSym): Input = sym0 match {
+    case UsedSym.DefnSym(sym) => sym.src.input
+    case UsedSym.SigSym(sym) => sym.src.input
+  }
+
+  /** Returns `true` if `input` is in the source project. */
+  private def isFromLocalProject(input: Input): Boolean = input match {
     case Input.RealFile(_, _) => true
     case Input.VirtualFile(_, _, _) => true
     case Input.VirtualUri(_, _, _) => true
@@ -473,7 +486,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     case Input.Unknown => false
   }
 
-  private def isLibraryFunction(sym: Sourceable): Boolean = sym.src.input match {
+  /** Returns `true` if `input` is in a library. */
+  private def isLibraryFunction(input: Input): Boolean = input match {
     case Input.RealFile(_, _) => false
     case Input.VirtualFile(_, _, _) => false
     case Input.VirtualUri(_, _, _) => false
@@ -482,17 +496,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     case Input.Unknown => false
   }
 
-  private def isPublic(sym: Symbol.DefnSym, root: TypedAst.Root): Boolean = {
-    root.defs.get(sym).exists(_.spec.mod.isPublic)
-  }
-
-  private def getLibraryDefn(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = graphEdge match {
+  /** Returns the definition of `sym0` w.r.t. `root`. */
+  private def getLibraryDefn(sym0: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = sym0 match {
     case UsedSym.DefnSym(sym) =>
       Some(sym -> root.defs(sym))
 
     case UsedSym.SigSym(_) =>
-      None // TODO: Support this
+      None
   }
+
+  /** Returns the definition of `sym0` w.r.t. `root`. */
+  private def getLibrarySig(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.SigSym, TypedAst.Sig)] = graphEdge match {
+    case UsedSym.DefnSym(_) =>
+      None
+
+    case UsedSym.SigSym(sym) =>
+      Some(sym -> root.sigs(sym))
+  }
+
 
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
