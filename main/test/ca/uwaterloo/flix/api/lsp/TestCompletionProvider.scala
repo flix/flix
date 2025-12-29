@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext, Source, SymUse}
 
 import java.nio.file.Path
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Token, TokenKind, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition, Symbol, Token, TokenKind, TypedAst}
 import ca.uwaterloo.flix.language.phase.Lexer
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Options
@@ -406,35 +406,21 @@ class TestCompletionProvider extends AnyFunSuite {
   private def cutHoles(prg: String, loc: SourceLocation): List[ProgramWithHole] = {
     assert(loc.isSingleLine)
 
+    val SourcePosition(beginLine, beginCol) = loc.start
     val result = mutable.ListBuffer.empty[ProgramWithHole]
-    val bOffset = indexOf(Position.fromBegin(loc), prg)
-    val eOffset = indexOf(Position.fromEnd(loc), prg)
-    val length = loc.end.colOneIndexed - loc.start.colOneIndexed
+    val length = loc.endIndex - loc.startIndex
     for (i <- 0 until length) {
-      val o = bOffset + i
+      val o = loc.startIndex + i
       val prefix = prg.substring(0, o)
-      val cut = prg.substring(bOffset, bOffset + i)
-      val suffix = prg.substring(eOffset, prg.length)
+      val cut = prg.substring(loc.startIndex, loc.startIndex + i)
+      val suffix = prg.substring(loc.endIndex, prg.length)
       val withHole = prefix + suffix
-      val pos = Position(loc.start.lineOneIndexed, loc.start.colOneIndexed + i)
+      val pos = Position(beginLine, beginCol + i)
       result += ProgramWithHole(withHole, cut, pos)
     }
 
     result.toList
   }
-
-  /**
-    * Returns the (absolute, zero-based) index of the given position `pos` within the given program `prg`.
-    */
-  private def indexOf(pos: Position, prg: String): Int = {
-    val lines = prg.split('\n')
-    var offset = 0
-    for (i <- 0 until pos.line - 1) {
-      offset += lines(i).length + 1 // +1 for the newline
-    }
-    offset + pos.character - 1
-  }
-
 
   /**
     * Returns all autocomplete suggestions at the given position `pos` for the given AST `root` under the assumption that there are no errors.
@@ -718,8 +704,7 @@ class TestCompletionProvider extends AnyFunSuite {
     * If the token spans multiple lines, we will return all the positions on all the lines.
     */
   private def rangeOfInclusive(tok: Token): List[Position] = {
-    val initLine = tok.start.lineOneIndexed
-    val initCol = tok.start.colOneIndexed.toInt
+    val SourcePosition(initLine, initCol) = tok.start
 
     tok.text
       .scanLeft((initLine, initCol)) {
@@ -735,9 +720,11 @@ class TestCompletionProvider extends AnyFunSuite {
 
   // TODO: DOC
   private def rangeOfInclusive(loc: SourceLocation): List[Position] = {
-    assert(loc.isSingleLine) // TODO: Support multiline
-    (loc.startCol to loc.endCol).map {
-      case col => Position(loc.startLine, col)
+    val SourcePosition(beginLine, beginCol) = loc.start
+    val SourcePosition(endLine, endCol) = loc.end
+    assert(beginLine == endLine) // TODO: Support multiline
+    (beginCol to endCol).map {
+      case col => Position(beginLine, col)
     }.toList
   }
 

@@ -171,9 +171,7 @@ object Parser2 {
     })
 
     // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
-    val b = SourcePosition.FirstPosition
-    val e = SourcePosition.FirstPosition
-    var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0, b, e)
+    var lastAdvance = Token(TokenKind.Eof, s.src, 0, 0)
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
@@ -186,11 +184,11 @@ object Parser2 {
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last
             // token.
-            mkSourceLocation(lastAdvance.end, lastAdvance.end)
+            mkSourceLocation(lastAdvance.endIndex, lastAdvance.endIndex)
           else
             // Otherwise the source location can span from the first to the last token in the
             // subtree.
-            mkSourceLocation(openToken.start, lastAdvance.end)
+            mkSourceLocation(openToken.startIndex, lastAdvance.endIndex)
           locationStack = locationStack.tail
           stack = stack.tail
           stack.head.children = stack.head.children :+ child
@@ -206,8 +204,8 @@ object Parser2 {
     stack.last.loc = SourceLocation(
       isReal = true,
       s.src,
-      SourcePosition.FirstPosition,
-      tokens.head.end
+      0,
+      tokens.head.endIndex
     )
 
     // The stack should now contain a single Source tree, and there should only be an <eof> token
@@ -231,7 +229,7 @@ object Parser2 {
   }
 
   /** Returns a real location of the current source and the given positions. */
-  private def mkSourceLocation(start: SourcePosition, end: SourcePosition)(implicit s: State) = {
+  private def mkSourceLocation(start: Int, end: Int)(implicit s: State) = {
     SourceLocation(isReal = true, s.src, start, end)
   }
 

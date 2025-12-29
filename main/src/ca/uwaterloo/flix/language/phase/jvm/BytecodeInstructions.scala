@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.ast.{SourceLocation, SourcePosition}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.*
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
@@ -325,7 +325,7 @@ object BytecodeInstructions {
   def addLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
     val label = new Label()
     mv.visitLabel(label)
-    mv.visitLineNumber(loc.startLine, label)
+    mv.visitLineNumber(loc.start.lineOneIndexed, label)
   }
 
   def branch(c: Condition)(cases: Branch => Unit)(implicit mv: MethodVisitor): Unit = {
@@ -427,13 +427,15 @@ object BytecodeInstructions {
   }
 
   def pushLoc(loc: SourceLocation)(implicit mv: MethodVisitor): Unit = {
+    val start = loc.start
+    val end = loc.end
     NEW(BackendObjType.ReifiedSourceLocation.jvmName)
     DUP()
     pushString(loc.source.name)
-    pushInt(loc.startLine)
-    pushInt(loc.startCol)
-    pushInt(loc.endLine)
-    pushInt(loc.endCol)
+    pushInt(start.lineOneIndexed)
+    pushInt(start.colOneIndexed)
+    pushInt(end.lineOneIndexed)
+    pushInt(end.colOneIndexed)
     INVOKESPECIAL(BackendObjType.ReifiedSourceLocation.Constructor)
   }
 
