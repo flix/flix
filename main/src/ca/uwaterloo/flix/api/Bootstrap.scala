@@ -489,7 +489,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          |""".stripMargin
     out.print(upgradeMessage)
 
-    val answer = console.readLine() // TODO: safe read with result
+    val answer = try {
+      console.readLine()
+    } catch {
+      case e: Exception => return Err(BootstrapError.IOError(e.getMessage))
+    }
     if (answer.toLowerCase != "y") {
       return Err(BootstrapError.ConfirmationError("Aborting..."))
     }
@@ -546,8 +550,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
-
-    ???
+    try {
+      FileOps.writeString(Bootstrap.getManifestFile(projectPath), Manifest.format(newManifest))
+      optManifest = Some(newManifest)
+      Ok(())
+    } catch {
+      case e: Exception =>
+        Err(BootstrapError.FileError(e.getMessage))
+    }
   }
 
   /**

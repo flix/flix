@@ -58,4 +58,8 @@ object BootstrapError {
   case class ConfirmationError(e: String) extends BootstrapError {
     override def message(f: Formatter): String = e
   }
+
+  case class IOError(e: String) extends BootstrapError {
+    override def message(f: Formatter): String = e
+  }
 }
