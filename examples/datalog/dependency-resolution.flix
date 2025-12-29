@@ -13,35 +13,38 @@ type alias Package = String    // e.g. "react"
 type alias Version = Int32     // e.g. 3 (simplified semver)
 
 ///
-/// We detect unsatisfied dependencies for a root package and use
+/// We detect missing dependencies for a root package and use
 /// provenance queries to trace why each was needed.
 ///
 def main(): Unit \ IO =
     let root = "my-app";
-    let rootVersion = 1;
+    let rootVer = 1;
 
     let db = database();
 
     // A Datalog program that computes transitive dependency resolution.
     let pr = #{
-        // Root package is resolved.
-        Resolved(root, rootVersion).
+        // Base case: the root package seeds the resolution.
+        Resolved(root, rootVer).
 
-        // Transitive: if pkg@pkgVer is resolved and depends on dep with minVer,
-        // resolve all available versions of dep that satisfy the constraint.
+        // Inductive case: if a package is resolved and declares a dependency,
+        // resolve every published version satisfying the constraint.
+        // (Datalog computes all valid candidates, not a single "best" version.)
         Resolved(dep, depVer) :-
             Resolved(pkg, pkgVer),
             Dependency(pkg, pkgVer, dep, minVer),
             Published(dep, depVer),
             if (depVer >= minVer).
 
-        // A dependency has at least one satisfying version.
+        // Auxiliary predicate: true if at least one published version
+        // satisfies the dependency. Used to detect unsatisfiable constraints.
         Satisfied(pkg, pkgVer, dep, minVer) :-
             Dependency(pkg, pkgVer, dep, minVer),
             Published(dep, depVer),
             if (depVer >= minVer).
 
-        // Missing = resolved package has a dependency that can't be met.
+        // A dependency is missing when a resolved package requires something
+        // that has no satisfying version (negation-as-failure over Satisfied).
         Missing(pkg, pkgVer, dep, minVer) :-
             Resolved(pkg, pkgVer),
             Dependency(pkg, pkgVer, dep, minVer),
@@ -49,8 +52,8 @@ def main(): Unit \ IO =
     };
 
     // Query all missing dependencies.
-    let missing = query db, pr select (pkg, pkgVer, dep, minVer) from Missing(pkg, pkgVer, dep, minVer);
     println("Missing dependencies:");
+    let missing = query db, pr select (pkg, pkgVer, dep, minVer) from Missing(pkg, pkgVer, dep, minVer);
     foreach((pkg, pkgVer, dep, minVer) <- missing) {
         println("  ${pkg}@${pkgVer} requires ${dep} >= ${minVer} (MISSING)");
 
@@ -59,13 +62,14 @@ def main(): Unit \ IO =
         println("  Dependency chain:");
         foreach(fact <- chain) {
             ematch fact {
-                case Dependency(fromPkg, fromVer, toPkg, toMinVer) => println("    ${fromPkg}@${fromVer} requires ${toPkg} >= ${toMinVer}")
+                case Dependency(fromPkg, fromVer, toPkg, toMinVer) =>
+                    println("    ${fromPkg}@${fromVer} requires ${toPkg} >= ${toMinVer}")
             }
         }
     }
 
 ///
-/// Returns the database of available packages and their dependencies.
+/// Returns the database of published packages and their dependencies.
 ///
 /// The database contains two kinds of facts:
 /// - `Published(pkg, version)`: Declares that a package exists at a given version.
@@ -73,7 +77,7 @@ def main(): Unit \ IO =
 ///    requires `depPkg` with at least `minVersion`.
 ///
 def database(): #{ Published(Package, Version), Dependency(Package, Version, Package, Version) | r } = #{
-    // Package registry - available packages and versions
+    // Package registry - published packages and their versions
     Published("my-app", 1).
     Published("react", 17).
     Published("react", 18).
@@ -98,5 +102,5 @@ def database(): #{ Published(Package, Version), Dependency(Package, Version, Pac
     Dependency("next", 14, "next-themes", 1).
     Dependency("postcss", 8, "autoprefixer", 9).
     Dependency("next-themes", 1, "string-formatter", 1).
-    Dependency("string-formatter", 1, "left-pad", 1).  // unpublished!
+    Dependency("string-formatter", 1, "left-pad", 1).  // left-pad unpublished!
 }
