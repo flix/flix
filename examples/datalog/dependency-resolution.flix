@@ -65,7 +65,8 @@ def main(): Unit \ IO =
                 case Dependency(fromPkg, fromVer, toPkg, toMinVer) =>
                     println("    ${fromPkg}@${fromVer} requires ${toPkg} >= ${toMinVer}")
             }
-        }
+        };
+        println("")
     }
 
 ///
@@ -100,7 +101,7 @@ def database(): #{ Published(Package, Version), Dependency(Package, Version, Pac
     Dependency("next", 14, "react", 18).
     Dependency("next", 14, "postcss", 8).
     Dependency("next", 14, "next-themes", 1).
-    Dependency("postcss", 8, "autoprefixer", 9).
+    Dependency("postcss", 8, "autoprefixer", 11).      // only @9, @10 exist
     Dependency("next-themes", 1, "string-formatter", 1).
     Dependency("string-formatter", 1, "left-pad", 1).  // left-pad unpublished!
 }
