@@ -133,7 +133,8 @@ object Manifest {
 
   private def formatTomlExp(exp0: TomlExp): String = exp0 match {
     case TomlExp.TomlValue(v) =>
-      s"\"$v\""
+      val escaped = escape(v.toString)
+      s"\"$escaped\""
 
     case TomlExp.TomlArray(v) =>
       v.map(formatTomlExp).mkString("[", ", ", "]")
@@ -160,6 +161,11 @@ object Manifest {
       }
       case None => entries
     }
+  }
+
+  private def escape(str: String): String = {
+    str.replace("\\", "\\\\")
+      .replace("\"", "\\\"")
   }
 
   private case class TomlSection(section: String, entries: List[TomlEntry])
