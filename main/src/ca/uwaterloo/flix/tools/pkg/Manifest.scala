@@ -163,6 +163,7 @@ object Manifest {
     }
   }
 
+  /** Escapes `\` and `"` characters to `\\` and `\"`, respectively. */
   private def escape(str: String): String = {
     str.replace("\\", "\\\\")
       .replace("\"", "\\\"")
