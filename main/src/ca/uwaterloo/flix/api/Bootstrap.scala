@@ -454,15 +454,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(()) => ()
     }
 
-    val manifest = optManifest.get
-
-    // Only consider flix dependencies
-    val deps = manifest.dependencies.collect {
-      case dep: Dependency.FlixDependency => dep
-    }
+    val oldManifest = optManifest.get
 
     // Find available upgrades
-    val allUpgrades = Result.traverse(deps) {
+    val allUpgrades = Result.traverse(oldManifest.flixDependencies) {
       dep => FlixPackageManager.findAvailableUpdates(dep, apiKey).map(upgr => dep -> upgr)
     } match {
       case Err(e) => return Err(BootstrapError.FlixPackageError(e))
@@ -499,13 +494,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Perform dependency resolution with old dependency graph
-    val oldResolution = Steps.resolveFlixDependencies(manifest) match {
+    val oldResolution = Steps.resolveFlixDependencies(oldManifest) match {
       case Err(e) => return Err(e)
       case Ok(resolution) => resolution
     }
 
     // Perform dependency resolution with new dependency graph
-    val newDeps = manifest.dependencies.map {
+    val newDeps = oldManifest.dependencies.map {
       case dep: Dependency.FlixDependency =>
         val upgr = allUpgrades(dep)
         if (upgr.minor.isDefined) {
@@ -517,7 +512,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         }
       case dep => dep
     }
-    val newManifest = manifest.copy(dependencies = newDeps)
+    val newManifest = oldManifest.copy(dependencies = newDeps)
     val newResolution = Steps.resolveFlixDependencies(newManifest) match {
       case Err(e) => return Err(e)
       case Ok(resolution) => resolution
