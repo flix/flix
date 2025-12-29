@@ -683,7 +683,7 @@ class TestManifestParser extends AnyFunSuite {
       """
         |[package]
         |name = "hello-world\""
-        |description = "A simple program\"\""
+        |description = "A simple program\\\"\""
         |version = "0.1.0"
         |flix = "0.33.0"
         |authors = ["John Doe <john@example.com>"]
