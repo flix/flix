@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README, libDirectoryRaw}
+import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageMa
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
-import java.io.{Console, InputStream, PrintStream}
+import java.io.{Console, PrintStream}
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
