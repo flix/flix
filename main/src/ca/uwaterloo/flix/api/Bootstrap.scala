@@ -16,11 +16,9 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.api.effectlock.UseGraph
-import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
-import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Sourceable, Symbol, TypedAst}
-import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
+import ca.uwaterloo.flix.api.effectlock.EffectLock
+import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
@@ -28,7 +26,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, InternalCompilerException, Result, Validation}
+import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -459,93 +457,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
   private def isProjectMode: Boolean = optManifest.isDefined
-
-  object EffectLock {
-
-    /**
-      * Serializes the relevant functions for effect locking in `root` and returns a JSON string.
-      * The result may be written directly to a file.
-      */
-    def serialize(root: TypedAst.Root): String = {
-      try {
-        val serializableAST = EffectLock.mkSerialization(root)
-        val typeHints = effectlock.serialization.formats
-        org.json4s.native.Serialization.write(serializableAST)(typeHints)
-      } catch {
-        case e: Exception => throw InternalCompilerException(s"unexpected exception in effect locking: ${e.getMessage}", SourceLocation.Unknown)
-      }
-    }
-
-    /**
-      * Returns a map of defs and signatures in `root` that must be effect locked.
-      * The map may directly be converted to a string using [[effectlock.serialization.formats]] for type hints.
-      */
-    private def mkSerialization(root: TypedAst.Root): Map[String, effectlock.serialization.DefOrSig] = {
-      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map { case (_, libDefn) => libDefn }
-      val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
-      val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
-      val sigs = useGraph.flatMap(getLibrarySig(_, root)).toMap
-      val sigSerialization = sigs.map { case (sym, sig) => sym.toString -> Serialize.serializeSig(sig) }
-      defSerialization ++ sigSerialization
-    }
-
-    /** Returns `true` if for the edge `f -> g`, `f` occurs in the source project and `g` occurs in a library and `g` is public. */
-    private def isPublicLibraryCall(graphEdge: (UsedSym, UsedSym), root: TypedAst.Root): Boolean = graphEdge match {
-      case (src, UsedSym.DefnSym(dst)) =>
-        isFromLocalProject(getInput(src)) &&
-          isLibraryFunction(dst.src.input) &&
-          root.defs.get(dst).exists(_.spec.mod.isPublic)
-
-      case (src, UsedSym.SigSym(dst)) =>
-        isFromLocalProject(getInput(src)) &&
-          isLibraryFunction(dst.src.input) &&
-          root.sigs.get(dst).exists(_.spec.mod.isPublic)
-    }
-
-    /** Returns the input source of `sym0`. This is a helper function to reduce repetition. */
-    private def getInput(sym0: UsedSym): Input = sym0 match {
-      case UsedSym.DefnSym(sym) => sym.src.input
-      case UsedSym.SigSym(sym) => sym.src.input
-    }
-
-    /** Returns `true` if `input` is in the source project. */
-    private def isFromLocalProject(input: Input): Boolean = input match {
-      case Input.RealFile(_, _) => true
-      case Input.VirtualFile(_, _, _) => true
-      case Input.VirtualUri(_, _, _) => true
-      case Input.PkgFile(_, _) => false
-      case Input.FileInPackage(_, _, _, _) => false
-      case Input.Unknown => false
-    }
-
-    /** Returns `true` if `input` is in a library. */
-    private def isLibraryFunction(input: Input): Boolean = input match {
-      case Input.RealFile(_, _) => false
-      case Input.VirtualFile(_, _, _) => false
-      case Input.VirtualUri(_, _, _) => false
-      case Input.PkgFile(_, _) => true
-      case Input.FileInPackage(_, _, _, _) => true
-      case Input.Unknown => false
-    }
-
-    /** Returns the definition of `sym0` w.r.t. `root`. */
-    private def getLibraryDefn(sym0: UsedSym, root: TypedAst.Root): Option[(Symbol.DefnSym, TypedAst.Def)] = sym0 match {
-      case UsedSym.DefnSym(sym) =>
-        Some(sym -> root.defs(sym))
-
-      case UsedSym.SigSym(_) =>
-        None
-    }
-
-    /** Returns the definition of `sym0` w.r.t. `root`. */
-    private def getLibrarySig(graphEdge: UsedSym, root: TypedAst.Root): Option[(Symbol.SigSym, TypedAst.Sig)] = graphEdge match {
-      case UsedSym.DefnSym(_) =>
-        None
-
-      case UsedSym.SigSym(sym) =>
-        Some(sym -> root.sigs(sym))
-    }
-  }
 
   /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
