@@ -462,6 +462,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Err(e) => return Err(BootstrapError.FileError(e))
         case Ok((defs, sigs)) =>
           // 3. Check effect lock
+          // TODO: What to do about associated types?
           // TODO: Return Ok(true) / Ok(false)?
           ???
       }
