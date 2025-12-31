@@ -52,7 +52,7 @@ object EffectUpgrade {
     *
     */
   private def isGeneralizable(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
-    implicit val eqEnv: EqualityEnv = EqualityEnv.empty // TODO: Accept optional EqualityEnv?
+    implicit val eqEnv: EqualityEnv = EqualityEnv.empty
     val renv = RigidityEnv.apply(SortedSet.from(original.quantifiers))
     val unification = ConstraintSolver2.fullyUnify(original.base, upgrade.base, Scope.Top, renv)
     unification match {
