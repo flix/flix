@@ -121,7 +121,7 @@ object Specialization {
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     */
-  private case class StrictSubstitution(s: Substitution) {
+  protected[monomorph] case class StrictSubstitution(s: Substitution) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
@@ -418,7 +418,6 @@ object Specialization {
           case LoweredAst.FormalParam(varSym, tpe, fpLoc) =>
             LoweredAst.FormalParam(varSym, StrictSubstitution.empty(tpe), fpLoc)
         }
-        // TODO: (By Casper) should the declared scheme's base not be substituted? The type was not substituted before...
         val spec = LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), tconstrs)
         LoweredAst.Op(sym, spec, loc)
     }
