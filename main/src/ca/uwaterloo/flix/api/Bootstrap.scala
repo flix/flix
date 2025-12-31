@@ -440,6 +440,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Type checks the program and performs effect locking, overwriting the current 'effects.lock' file if it exists.
+    * If the program does not type check, then effect locking is aborted without touching the file system.
     */
   def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
