@@ -63,4 +63,9 @@ object Util {
     Scheme(qs, tconstrs, econstrs, base)
   }
 
+  /**
+    * Erases type aliases and associated types
+    */
+  def erase(scheme0: Scheme): Scheme = ???
+
 }

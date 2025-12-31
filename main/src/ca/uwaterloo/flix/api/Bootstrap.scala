@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
+import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -439,14 +440,32 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-upgrade'"))
     }
-    try {
-      val json = Files.readString(Bootstrap.getEffectLockFile(projectPath))
+    Steps.updateStaleSources(flix)
+    for {
+      root <- Steps.check(flix)
+    } yield {
+      try {
+        if (!Files.exists(Bootstrap.getEffectLockFile(projectPath))) {
+          return Err(BootstrapError.FileError("No 'effects.lock' file found. Refusing to run 'eff-upgrade'."))
+        }
+      } catch {
+        case e: Exception => return Err(BootstrapError.FileError(s"IO error: ${e.getMessage}"))
+      }
+      val json =
+        try {
+          Files.readString(Bootstrap.getEffectLockFile(projectPath))
+        } catch {
+          case _: Exception => return Err(BootstrapError.FileError("Unable to read 'effects.lock'. Refusing to run 'eff-upgrade'."))
+        }
+
+      EffectLock.deserialize(json) match {
+        case Err(e) => return Err(BootstrapError.FileError(e))
+        case Ok((defs, sigs)) =>
+          // 3. Check effect lock
+          // TODO: Return Ok(true) / Ok(false)?
+          ???
+      }
     }
-    // 1. Load in file
-    // 2. Deserialize
-    // 3. Check effect lock
-    // TODO: Return Ok(true) / Ok(false)?
-    ???
   }
 
   /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */

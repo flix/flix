@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
@@ -36,9 +37,11 @@ object EffectUpgrade {
     */
   def isEffSafeUpgrade(original: Scheme, upgrade: Scheme)(implicit flix: Flix): Boolean = {
     // Alpha rename so equality of types can be done via `==`.
-    val orig = Util.alpha(original)
-    val upgr = Util.alpha(upgrade)
-    isGeneralizable(original, upgrade) || isSubset(orig, upgr)
+    val originalErased = Util.erase(original)
+    val upgradeErased = Util.erase(upgrade)
+    val orig = Util.alpha(originalErased)
+    val upgr = Util.alpha(upgradeErased)
+    isGeneralizable(originalErased, upgradeErased) || isSubset(orig, upgr)
   }
 
   /**
