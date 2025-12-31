@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML,
 import ca.uwaterloo.flix.api.effectlock.UseGraph
 import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
-import ca.uwaterloo.flix.language.ast.{Sourceable, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Sourceable, Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.{Input, SecurityContext}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
+import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, InternalCompilerException, Result, Validation}
 
 import java.io.PrintStream
 import java.nio.file.*
@@ -468,9 +468,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The result may be written directly to a file.
       */
     def serialize(root: TypedAst.Root): String = {
-      val serializableAST = EffectLocking.mkSerialization(root)
-      val typeHints = effectlock.serialization.formats
-      org.json4s.native.Serialization.write(serializableAST)(typeHints)
+      try {
+        val serializableAST = EffectLocking.mkSerialization(root)
+        val typeHints = effectlock.serialization.formats
+        org.json4s.native.Serialization.write(serializableAST)(typeHints)
+      } catch {
+        case e: Exception => throw InternalCompilerException(s"unexpected exception in effect locking: ${e.getMessage}", SourceLocation.Unknown)
+      }
     }
 
     /**
