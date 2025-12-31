@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.TupleOps
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -469,7 +468,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       * The map may directly be converted to a string using [[effectlock.serialization.formats]] for type hints.
       */
     private def mkSerialization(root: TypedAst.Root): Map[String, effectlock.serialization.DefOrSig] = {
-      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map(TupleOps.snd)
+      val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map { case (_, libDefn) => libDefn }
       val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
       val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
       val sigs = useGraph.flatMap(getLibrarySig(_, root)).toMap
