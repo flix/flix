@@ -439,6 +439,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-upgrade'"))
     }
+    try {
+      val json = Files.readString(Bootstrap.getEffectLockFile(projectPath))
+    }
     // 1. Load in file
     // 2. Deserialize
     // 3. Check effect lock
