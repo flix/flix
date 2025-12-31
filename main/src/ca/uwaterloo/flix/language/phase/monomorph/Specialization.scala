@@ -612,7 +612,6 @@ object Specialization {
       specializeExp(exp, env0, subst)
 
     case LoweredAst.Expr.Cast(exp, declaredType, declaredEff, tpe, eff, loc) =>
-      // Drop the declaredType and declaredEff.
       val e = specializeExp(exp, env0, subst)
       mkCast(e, declaredType.map(subst.apply), declaredEff.map(subst.apply), subst(tpe), subst(eff), loc)
 

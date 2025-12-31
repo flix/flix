@@ -243,6 +243,7 @@ object Lowering {
       MonoAst.Expr.VectorLoad(e1, e2, t, eff, loc)
     case LoweredAst.Expr.VectorLength(exp, loc) => MonoAst.Expr.VectorLength(lowerExp(exp), loc)
     case LoweredAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
+      // Drop the declaredType and declaredEff.
       val e = lowerExp(exp)
       val t = lowerType(tpe)
       MonoAst.Expr.Cast(e, t, eff, loc)
