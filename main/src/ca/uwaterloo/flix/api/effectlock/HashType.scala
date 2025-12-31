@@ -23,11 +23,7 @@ import java.security.MessageDigest
 
 object HashType {
 
-  def hash(tpe0: Type): Array[Byte] = {
-    hashType(tpe0)
-  }
-
-  private def hashType(tpe0: Type): Array[Byte] = tpe0 match {
+  def hashType(tpe0: Type): Array[Byte] = tpe0 match {
     case Type.Var(sym, _) =>
       val h = hashKindedTypeVarSym(sym)
       hashBytes(h.appended(HType.Var.hashCode().byteValue))
