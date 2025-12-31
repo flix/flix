@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.api.effectlock.EffectLock
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -461,10 +461,37 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       EffectLock.deserialize(json) match {
         case Err(e) => return Err(BootstrapError.FileError(e))
         case Ok((defs, sigs)) =>
-
           // 3. Check effect lock
+          val strToLockedDefs = defs.map {
+            case (sym, scheme) => sym.toString -> scheme
+          }
+          val strToLockedSigs = sigs.map {
+            case (sym, scheme) => sym.toString -> scheme
+          }
+          val strToNewDefs = root.defs.map {
+            case (sym, scheme) => sym.toString -> scheme
+          }
+          val strToNewSigs = root.sigs.map {
+            case (sym, scheme) => sym.toString -> scheme
+          }
+          val defSchemes = strToLockedDefs.collect {
+            case (sym, originalScheme) if strToNewDefs.contains(sym) =>
+              val upgradeScheme = strToNewDefs(sym)
+              sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
+          }
+          val sigSchemes = strToLockedSigs.collect {
+            case (sym, originalScheme) if strToNewSigs.contains(sym) =>
+              val upgradeScheme = strToNewSigs(sym)
+              sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
+          }
+          val defUpgrades = defSchemes.map {
+            case (sym, (original, upgrade)) => sym -> EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix) // TODO: Collect errors
+          }
+          val sigUpgrades = sigSchemes.map {
+            case (sym, (original, upgrade)) => sym -> EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix) // TODO: Collect errors
+          }
+
           // TODO: What to do about associated types? Resolve using eq env?
-          // TODO: Return Ok(true) / Ok(false)?
           ???
       }
     }
