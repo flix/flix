@@ -461,6 +461,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       EffectLock.deserialize(json) match {
         case Err(e) => return Err(BootstrapError.FileError(e))
         case Ok((defs, sigs)) =>
+
           // 3. Check effect lock
           // TODO: What to do about associated types? Resolve using eq env?
           // TODO: Return Ok(true) / Ok(false)?

@@ -24,7 +24,7 @@ object EffectLock {
   /**
     * Deserializes `json` to a collection of schemes pointed to by either a def or sig.
     */
-  def deserialize(json: String): Result[(List[(Symbol.DefnSym, Scheme)], List[(Symbol.SigSym, Scheme)]), String] = {
+  def deserialize(json: String): Result[(Map[Symbol.DefnSym, Scheme], Map[Symbol.SigSym, Scheme]), String] = {
     try {
       implicit val formats: org.json4s.Formats = serialization.formats
       val serializableAST = org.json4s.native.Serialization.read[Map[String, serialization.DefOrSig]](json)
@@ -34,8 +34,8 @@ object EffectLock {
       val ssigs = serializableAST.collect {
         case (_, sig: serialization.SSig) => sig
       }
-      val defs = sdefs.map(Deserialize.deserializeDef).toList
-      val sigs = ssigs.map(Deserialize.deserializeSig).toList
+      val defs = sdefs.map(Deserialize.deserializeDef).toMap
+      val sigs = ssigs.map(Deserialize.deserializeSig).toMap
       Result.Ok((defs, sigs))
     } catch {
       case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
