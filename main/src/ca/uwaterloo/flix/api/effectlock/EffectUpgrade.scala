@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.shared.Scope
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, Scheme, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver2, TypeConstraint}
