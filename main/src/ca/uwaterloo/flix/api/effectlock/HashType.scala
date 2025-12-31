@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api.effectlock
 
 import ca.uwaterloo.flix.language.ast.shared.SymUse
-import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.security.MessageDigest
@@ -35,7 +35,71 @@ class HashType {
     case Type.UnresolvedJvmType(_, loc) => throw InternalCompilerException("Unexpected Java type", loc)
   }
 
-  private def hashTypeConstructor(tc0: TypeConstructor): Unit = ???
+  private def hashTypeConstructor(tc0: TypeConstructor): Unit = tc0 match {
+    case TypeConstructor.Void => ???
+    case TypeConstructor.AnyType => ???
+    case TypeConstructor.Unit => ???
+    case TypeConstructor.Null => ???
+    case TypeConstructor.Bool => ???
+    case TypeConstructor.Char => ???
+    case TypeConstructor.Float32 => ???
+    case TypeConstructor.Float64 => ???
+    case TypeConstructor.BigDecimal => ???
+    case TypeConstructor.Int8 => ???
+    case TypeConstructor.Int16 => ???
+    case TypeConstructor.Int32 => ???
+    case TypeConstructor.Int64 => ???
+    case TypeConstructor.BigInt => ???
+    case TypeConstructor.Str => ???
+    case TypeConstructor.Regex => ???
+    case TypeConstructor.Arrow(arity) => ???
+    case TypeConstructor.ArrowWithoutEffect(arity) => ???
+    case TypeConstructor.RecordRowEmpty => ???
+    case TypeConstructor.RecordRowExtend(label) => ???
+    case TypeConstructor.Record => ???
+    case TypeConstructor.Extensible => ???
+    case TypeConstructor.SchemaRowEmpty => ???
+    case TypeConstructor.SchemaRowExtend(pred) => ???
+    case TypeConstructor.Schema => ???
+    case TypeConstructor.Sender => ???
+    case TypeConstructor.Receiver => ???
+    case TypeConstructor.Lazy => ???
+    case TypeConstructor.Enum(sym, kind) => ???
+    case TypeConstructor.Struct(sym, kind) => ???
+    case TypeConstructor.RestrictableEnum(sym, kind) => ???
+    case TypeConstructor.Native(clazz) => ???
+    case TypeConstructor.JvmConstructor(constructor) => ???
+    case TypeConstructor.JvmMethod(method) => ???
+    case TypeConstructor.JvmField(field) => ???
+    case TypeConstructor.Array => ???
+    case TypeConstructor.ArrayWithoutRegion => ???
+    case TypeConstructor.Vector => ???
+    case TypeConstructor.Tuple(arity) => ???
+    case TypeConstructor.Relation(arity) => ???
+    case TypeConstructor.Lattice(arity) => ???
+    case TypeConstructor.True => ???
+    case TypeConstructor.False => ???
+    case TypeConstructor.Not => ???
+    case TypeConstructor.And => ???
+    case TypeConstructor.Or => ???
+    case TypeConstructor.Pure => ???
+    case TypeConstructor.Univ => ???
+    case TypeConstructor.Complement => ???
+    case TypeConstructor.Union => ???
+    case TypeConstructor.Intersection => ???
+    case TypeConstructor.Difference => ???
+    case TypeConstructor.SymmetricDiff => ???
+    case TypeConstructor.Effect(sym, kind) => ???
+    case TypeConstructor.CaseComplement(sym) => ???
+    case TypeConstructor.CaseUnion(sym) => ???
+    case TypeConstructor.CaseIntersection(sym) => ???
+    case TypeConstructor.CaseSymmetricDiff(sym) => ???
+    case TypeConstructor.CaseSet(syms, enumSym) => ???
+    case TypeConstructor.Region(sym) => ???
+    case TypeConstructor.RegionToStar => ???
+    case TypeConstructor.RegionWithoutRegion => ???
+    case TypeConstructor.Error(id, kind) => throw InternalCompilerException("Unexpected error type constructor", SourceLocation.Unknown)
+  }
 
   private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Unit = ???
 }
