@@ -3087,40 +3087,44 @@ mod TestVector {
     // groupBy                                                                 //
     /////////////////////////////////////////////////////////////////////////////
 
-    @Test
-    def groupBy01(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, (Vector#{}: Vector[Int32]));
-        assertEq(expected = Vector#{}, v)
+    enum A with ToString {
+        case A(Int32, Int32)
+    }
+
+    instance Eq[A] {
+        pub def eq(l1: A, l2: A): Bool = match (l1, l2) {
+            case (A.A(x, _), A.A(y, _)) => x == y
+        }
+    }
 
     @Test
-    def groupBy02(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1});
-        assertEq(expected = Vector#{Vector#{1}}, v)
+    def groupBy01(): Unit \ Assert = assertEq(expected = Vector#{}, Vector.groupBy(identity, (Vector#{}: Vector[A])))
 
     @Test
-    def groupBy03(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1, 4});
-        assertEq(expected = Vector#{Vector#{1}, Vector#{4}}, v)
+    def groupBy02(): Unit \ Assert = assertEq(expected = Vector#{Vector#{A.A(1, 1)}}, Vector.groupBy(identity, Vector#{A.A(1, 1)}))
 
     @Test
-    def groupBy04(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1, 9});
-        assertEq(expected = Vector#{Vector#{1, 9}}, v)
+    def groupBy03(): Unit \ Assert = assertEq(expected = Vector#{Vector#{A.A(1, 1), A.A(1, 2), A.A(1, 1)}, Vector#{A.A(2, 1), A.A(2, 4)}}, Vector.groupBy(identity, Vector#{A.A(1, 1), A.A(2, 1), A.A(1, 2), A.A(1, 1), A.A(2, 4)}))
+
+    /////////////////////////////////////////////////////////////////////////////
+    // groupWith                                                               //
+    /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def groupBy05(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a > 3 or b > 8, Vector#{1, 4, 7, 6, 9, 2, 4, 4, 8, 16});
-        assertEq(expected = Vector#{Vector#{1, 9, 16}, Vector#{4, 7, 6, 4, 4, 8}, Vector#{2}}, v)
+    def groupWith01(): Unit \ Assert = assertEq(expected = Vector#{}, Vector.groupWith((a, b) -> a > 3 and b > 3, (Vector#{}: Vector[Int32])))
 
     @Test
-    def groupBy06(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a > -6 or a*b >= 0, Vector#{-1, -11, 4, -11, 0, 8, 2, 1, -3, -24});
-        assertEq(expected = Vector#{Vector#{-1, -11, -11, 0, -3, -24}, Vector#{4, 8, 2, 1}}, v)
+    def groupWith02(): Unit \ Assert = assertEq(expected = Vector#{Vector#{1}}, Vector.groupWith((a, b) -> a > 3 and b > 3, Vector#{1}))
 
     @Test
-    def groupBy07(): Unit \ Assert =
-        let v = Vector.groupBy((a, b) -> a < 0 or (a > 10 or (b > 10 or a == b)), Vector#{-5, 6, 11, 8, 8, -11, -1, 0, 4, -1});
-        assertEq(expected = Vector#{Vector#{-5, 11, -11, -1, -1}, Vector#{6}, Vector#{8, 8}, Vector#{0}, Vector#{4}}, v)
+    def groupWith03(): Unit \ Assert = assertEq(expected = Vector#{Vector#{1}, Vector#{4}}, Vector.groupWith((a, b) -> a > 3 and b > 3, Vector#{1, 4}))
+
+    @Test
+    def groupWith04(): Unit \ Assert = assertEq(expected = Vector#{Vector#{4, 9}}, Vector.groupWith((a, b) -> a > 3 and b > 3, Vector#{4, 9}))
+
+    @Test
+    def groupWith05(): Unit \ Assert =
+        assertEq(expected = Vector#{Vector#{1, 2}, Vector#{4, 7, 6, 9, 4, 4, 8, 16}, Vector#{-1, -5, 0}}, Vector.groupWith((a, b) -> (a > 3 and b > 3) or (a < 1 and b < 1) or ((a >= 1 and a <= 3) and (b >= 1 and b <= 3)), Vector#{1, 4, 7, 6, 9, 2, 4, -1, 4, -5, 8, 16, 0}))
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //
