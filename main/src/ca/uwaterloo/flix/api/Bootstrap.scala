@@ -23,11 +23,11 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
-import java.io.PrintStream
+import java.io.{Console, PrintStream}
 import java.nio.file.*
 import java.util.zip.{ZipInputStream, ZipOutputStream}
 import scala.io.StdIn.readLine
@@ -431,6 +431,131 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   /**
+    * Updates all dependencies to their latest minor version.
+    */
+  def upgrade(flix: Flix)(implicit formatter: Formatter, console: Console, out: PrintStream): Result[Unit, BootstrapError] = {
+    // Assumption: constructing Bootstrap / `this` means the manifest was parsed and is the latest version.
+
+    // Ensure project mode
+    if (optManifest.isEmpty) {
+      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'upgrade' in a non-project directory."))
+    }
+
+    // Ensure `cwd` is not dangerous
+    val cwd = Path.of(System.getProperty("user.dir"))
+    checkForSystemPath(cwd) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    // Ensure `projectPath` is not dangerous
+    checkForSystemPath(projectPath) match {
+      case Err(e) => return Err(e)
+      case Ok(()) => ()
+    }
+
+    val oldManifest = optManifest.get
+
+    // Find available upgrades
+    val allUpgrades = Result.traverse(oldManifest.flixDependencies) {
+      dep => FlixPackageManager.findAvailableUpdates(dep, apiKey).map(upgr => dep -> upgr)
+    } match {
+      case Err(e) => return Err(BootstrapError.FlixPackageError(e))
+      case Ok(upgrs) => upgrs.toMap
+    }
+
+    // Filter for minor and patch upgrade
+    val relevantUpgrades = allUpgrades.filter { case (_, upgr) => upgr.minor.isDefined || upgr.patch.isDefined }
+
+    // Report upgrades and ask for confirmation, exiting on default: [y/N]
+    val readableUpgrades = relevantUpgrades.map { case (dep, upgr) =>
+      if (upgr.minor.isDefined) {
+        s"${dep.identifier}: ${dep.version} -> ${upgr.minor.get}"
+      } else {
+        s"${dep.identifier}: ${dep.version} -> ${upgr.patch.get}"
+      }
+    }
+    val upgradeMessage =
+      s"""The following dependencies will be upgrade:
+         |
+         |  ${readableUpgrades.mkString("  " + System.lineSeparator())}
+         |
+         |Do you want to proceed? [y/N]
+         |""".stripMargin
+    out.print(upgradeMessage)
+
+    val answer = try {
+      console.readLine()
+    } catch {
+      case e: Exception => return Err(BootstrapError.IOError(e.getMessage))
+    }
+    if (answer.toLowerCase != "y") {
+      return Err(BootstrapError.ConfirmationError("Aborting..."))
+    }
+
+    // Perform dependency resolution with old dependency graph
+    val oldResolution = Steps.resolveFlixDependencies(oldManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(resolution) => resolution
+    }
+
+    // Perform dependency resolution with new dependency graph
+    val newDeps = oldManifest.dependencies.map {
+      case dep: Dependency.FlixDependency =>
+        val upgr = allUpgrades(dep)
+        if (upgr.minor.isDefined) {
+          dep.copy(version = upgr.minor.get)
+        } else if (upgr.patch.isDefined) {
+          dep.copy(version = upgr.patch.get)
+        } else {
+          dep
+        }
+      case dep => dep
+    }
+    val newManifest = oldManifest.copy(dependencies = newDeps)
+    val newResolution = Steps.resolveFlixDependencies(newManifest) match {
+      case Err(e) => return Err(e)
+      case Ok(resolution) => resolution
+    }
+
+    // Remove packages in the difference (old -- new)
+    val diff = oldResolution.manifestToFlixDeps.values.toSet -- newResolution.manifestToFlixDeps.values.toSet
+
+    // Map to corresponding file paths
+    val diffPaths = diff.toList.flatMap {
+      dep =>
+        val base = Bootstrap.getLibraryDirectory(projectPath).resolve(s"github/${dep.username}/${dep.repo}/${dep.version}").normalize()
+        val depManifest = base.resolve("flix.toml").normalize()
+        val depFpkg = base.resolve(s"${dep.projectName}.fpkg").normalize()
+        depManifest :: depFpkg :: Nil
+    }
+
+    // Check dangerous paths and abort upon the first error
+    Result.traverse(diffPaths)(checkForDangerousPath) match {
+      case Err(e) => return Err(e)
+      case Ok(_) => ()
+    }
+
+    // N.B. Sequence the result, since we want to delete all paths and if any errors occur, we proceed with the rest of the paths.
+    // Sequencing afterward then allows us to detect if any file happened and abort.
+    // Additionally, we are not deleting any directories (yet), so this may leave an empty directory.
+    Result.sequence(diffPaths.map(FileOps.delete)) match {
+      case Err(e) => return Err(BootstrapError.FileError(s"Failed to delete file: $e"))
+      case Ok(_) => ()
+    }
+
+    // Write new dependencies to manifest and overwrite the cached manifest: `optManifest`
+    try {
+      FileOps.writeString(Bootstrap.getManifestFile(projectPath), Manifest.format(newManifest))
+      optManifest = Some(newManifest)
+      Ok(())
+    } catch {
+      case e: Exception =>
+        Err(BootstrapError.FileError(e.getMessage))
+    }
+  }
+
+  /**
     * Deletes all compiled `.class` files under the project's build directory and removes any now-empty
     * directories (including the `build` directory itself). Performs safety checks to ensure:
     *  - the current directory is a Flix project (manifest present),
@@ -443,7 +568,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def clean(): Result[Unit, BootstrapError] = {
     // Ensure project mode
     if (optManifest.isEmpty) {
-      return Err(BootstrapError.FileError("No manifest found (flix.toml). Refusing to run 'clean' in a non-project directory."))
+      return Err(BootstrapError.FileError("No manifest found ('flix.toml'). Refusing to run 'clean' in a non-project directory."))
     }
 
     // Ensure `cwd` is not dangerous
@@ -562,7 +687,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForHomeDir(path: Path): Result[Unit, BootstrapError] = {
     val home = Path.of(System.getProperty("user.home"))
     if (home.normalize() == path.normalize()) {
-      return Err(BootstrapError.FileError("Refusing to run 'clean' in home directory."))
+      return Err(BootstrapError.FileError("Refusing to delete file in home directory."))
     }
     Ok(())
   }
@@ -571,7 +696,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   private def checkForRootDir(path: Path): Result[Unit, BootstrapError] = {
     val roots = FileSystems.getDefault.getRootDirectories.asScala.toList.map(_.normalize())
     if (roots.contains(path.normalize())) {
-      return Err(BootstrapError.FileError("Refusing to run 'clean' in root directory."))
+      return Err(BootstrapError.FileError("Refusing to delete file in root directory."))
     }
     Ok(())
   }
@@ -579,7 +704,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `Err` if `path` is an ancestor of `projectPath`. */
   private def checkForAncestor(path: Path): Result[Unit, BootstrapError] = {
     if (projectPath.normalize().startsWith(path.normalize())) {
-      return Err(BootstrapError.FileError(s"Refusing to run clean in ancestor of project directory: '${path.normalize()}"))
+      return Err(BootstrapError.FileError(s"Refusing to delete file in ancestor of project directory: '${path.normalize()}"))
     }
     Ok(())
   }

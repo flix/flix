@@ -400,6 +400,20 @@ object Main {
               System.exit(1)
           }
 
+        case Command.Upgrade =>
+          if (cmdOpts.files.nonEmpty) {
+            println("The 'upgrade' command does not support file arguments.")
+            System.exit(1)
+          }
+          exitOnResult {
+            Bootstrap.bootstrap(cwd, options.githubToken).flatMap {
+              bootstrap =>
+                val flix = new Flix().setFormatter(formatter)
+                flix.setOptions(options.copy(progress = false))
+                bootstrap.upgrade(flix)(formatter, ???, System.err)
+            }
+          }
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -486,6 +500,8 @@ object Main {
 
     case object Outdated extends Command
 
+    case object Upgrade extends Command
+
     case object CompilerPerf extends Command
 
     case object CompilerMemory extends Command
@@ -566,6 +582,9 @@ object Main {
 
       cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
+
+      cmd("upgrade").text("  upgrades the immediate dependencies that have newer versions available.")
+        .action((_, c) => c.copy(command = Command.Upgrade))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
