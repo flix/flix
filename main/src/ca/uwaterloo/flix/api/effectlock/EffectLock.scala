@@ -15,19 +15,28 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.api.effectlock.serialization.Deserialize
+import ca.uwaterloo.flix.language.ast.{Scheme, Symbol, TypedAst}
 import ca.uwaterloo.flix.util.Result
 
 object EffectLock {
 
   /**
-    * Deserializes `json` to a collection of defs and sigs.
+    * Deserializes `json` to a collection of schemes pointed to by either a def or sig.
     */
-  def deserialize(json: String): Result[(List[TypedAst.Def], List[TypedAst.Sig]), String] = {
+  def deserialize(json: String): Result[(List[(Symbol.DefnSym, Scheme)], List[(Symbol.SigSym, Scheme)]), String] = {
     try {
       implicit val formats: org.json4s.Formats = serialization.formats
       val serializableAST = org.json4s.native.Serialization.read[Map[String, serialization.DefOrSig]](json)
-      ???
+      val sdefs = serializableAST.collect {
+        case (_, defn: serialization.SDef) => defn
+      }
+      val ssigs = serializableAST.collect {
+        case (_, sig: serialization.SSig) => sig
+      }
+      val defs = sdefs.map(Deserialize.deserializeDef).toList
+      val sigs = ssigs.map(Deserialize.deserializeSig).toList
+      Result.Ok((defs, sigs))
     } catch {
       case e: Exception => Result.Err(s"Unexpected JSON: ${e.getMessage}")
     }
