@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.api.{Flix, Version}
+import ca.uwaterloo.flix.api.Flix
 
 /**
   * Contains a test utilities for the package manager tests that rely heavily on I/O
@@ -38,21 +38,6 @@ object PkgTestUtils {
     */
   def mkFlix: Flix = {
     val flix = new Flix()
-    flix.setOptions(flix.options.copy(githubToken = gitHubToken, progress = false))
+    flix.setOptions(flix.options.copy(githubToken = gitHubToken))
   }
-
-  def mkTomlWithDeps(deps: String): String = {
-    s"""
-       |[package]
-       |name = "test"
-       |description = "test"
-       |version = "0.1.0"
-       |flix = "${Version.CurrentVersion}"
-       |authors = ["flix"]
-       |
-       |[dependencies]
-       |$deps
-       |""".stripMargin
-  }
-
 }
