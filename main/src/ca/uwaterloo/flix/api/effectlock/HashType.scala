@@ -28,7 +28,6 @@ object HashType {
       val h = hashKindedTypeVarSym(sym)
       hashBytes(h.appended(HType.Var.hashCode().byteValue))
 
-
     case Type.Cst(tc, _) =>
       val h = hashTypeConstructor(tc)
       hashBytes(h.appended(HType.Cst.hashCode().byteValue))
