@@ -448,7 +448,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     for {
       root <- Steps.check(flix)
     } yield {
-      EffectLock.serialize(root) match {
+      EffectLock.lock(root) match {
         case Err(e) => return Err(BootstrapError.GeneralError(List(s"Unexpected serialization error: $e")))
         case Ok(json) =>
           val path = Bootstrap.getEffectLockFile(projectPath)

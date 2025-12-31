@@ -15,12 +15,11 @@
  */
 package ca.uwaterloo.flix.api.effectlock
 
-import ca.uwaterloo.flix.api.effectlock
 import ca.uwaterloo.flix.api.effectlock.UseGraph.UsedSym
 import ca.uwaterloo.flix.api.effectlock.serialization.Serialize
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Symbol, TypedAst}
 import ca.uwaterloo.flix.language.ast.shared.Input
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.Result
 
 object EffectLock {
 
@@ -28,10 +27,10 @@ object EffectLock {
     * Serializes the relevant functions for effect locking in `root` and returns a JSON string.
     * If it returns `Ok(json)`, then `json` may be written directly to a file.
     */
-  def serialize(root: TypedAst.Root): Result[String, String] = {
+  def lock(root: TypedAst.Root): Result[String, String] = {
     try {
-      val serializableAST = EffectLock.mkSerialization(root)
-      val typeHints = effectlock.serialization.formats
+      val serializableAST = mkSerialization(root)
+      val typeHints = serialization.formats
       val res = org.json4s.native.Serialization.write(serializableAST)(typeHints)
       Result.Ok(res)
     } catch {
@@ -41,9 +40,9 @@ object EffectLock {
 
   /**
     * Returns a map of defs and signatures in `root` that must be effect locked.
-    * The map may directly be converted to a string using [[effectlock.serialization.formats]] for type hints.
+    * The map may directly be converted to a string using [[serialization.formats]] for type hints.
     */
-  private def mkSerialization(root: TypedAst.Root): Map[String, effectlock.serialization.DefOrSig] = {
+  private def mkSerialization(root: TypedAst.Root): Map[String, serialization.DefOrSig] = {
     val useGraph = UseGraph.computeGraph(root).filter(isPublicLibraryCall(_, root)).map { case (_, libDefn) => libDefn }
     val defs = useGraph.flatMap(getLibraryDefn(_, root)).toMap
     val defSerialization = defs.map { case (sym, defn) => sym.toString -> Serialize.serializeDef(defn) }
