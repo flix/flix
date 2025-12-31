@@ -445,7 +445,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     } yield {
       val json = EffectLocking.serialize(root)
       val path = Bootstrap.getEffectLockFile(projectPath)
-      // N.B.: Do not use FileOps.writeJSON, since we uZse custom serialization formats.
+      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
       FileOps.writeString(path, json)
     }
   }
