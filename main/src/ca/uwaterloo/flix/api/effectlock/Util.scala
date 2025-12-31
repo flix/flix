@@ -1,5 +1,6 @@
 package ca.uwaterloo.flix.api.effectlock
 
+import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Kind, Scheme, Symbol, Type}
 
 import scala.collection.mutable
@@ -64,8 +65,10 @@ object Util {
   }
 
   /**
-    * Erases type aliases and associated types
+    * Erases type aliases in `scheme0`.
     */
-  def erase(scheme0: Scheme): Scheme = ???
+  def erase(scheme0: Scheme): Scheme = {
+    scheme0.copy(base = eraseAliases(scheme0.base))
+  }
 
 }
