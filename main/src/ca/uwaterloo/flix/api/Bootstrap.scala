@@ -438,7 +438,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
+  /**
+    *
+    */
   def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
+    if (!isProjectMode) {
+      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-lock'"))
+    }
     Steps.updateStaleSources(flix)
     for {
       root <- Steps.check(flix)
@@ -449,6 +455,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       FileOps.writeString(path, json)
     }
   }
+
+  /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
+  private def isProjectMode: Boolean = optManifest.isDefined
 
   /** Helper object for effect locking. */
   private object EffectLocking {
