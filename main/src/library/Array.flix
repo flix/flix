@@ -1086,47 +1086,45 @@ pub mod Array {
     /// A subarray is created by iterating through the remaining elements of `a` from left to right and adding an
     /// element to the subarray if and only if doing so creates no conflicts with the elements already in the subarray.
     ///
-    /// The function `f` must be pure.
+    /// The function `f` must be pure and define an equivalence relation.
     ///
-    pub def groupBy(rc1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { r2, r1 } =
+    pub def groupWith(rc1: Region[r1], f: (a, a) -> Bool, a: Array[a, r2]): Array[Array[a, r1], r1] \ { r2, r1 } =
         let xs = toList(a);
         groupByHelper(rc1, f, xs, Nil) |> List.toArray(rc1)
 
     ///
-    /// Helper function for `groupBy`.
+    /// Partitions `a` into subarrays such that for any two elements `x` and `y` in a subarray,
+    /// if `f(x)` and `f(y)` are equal according to `Eq` on `b`.
+    ///
+    /// A subarray is created by iterating through the remaining elements of `a` from left to right and adding an
+    /// element to the subarray if and only if doing so creates no conflicts with the elements already in the subarray.
+    ///
+    pub def groupBy(rc1: Region[r2], f: a -> b, a: Array[a, r1]): Array[Array[a, r2], r2] \ { r1, r2 } with Eq[b] =
+        groupWith(rc1, Eq.eq `on` f, a)
+
+    ///
+    /// Helper function for `groupWith`.
     ///
     def groupByHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ac: List[Array[a, r]]): List[Array[a, r]] \ r = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (rc1, rc2) = extractHelper(rc, f, rs, x :: Nil, Nil);
+            let (rc1, rc2) = extractHelper(rc, f, rs, Nel.singleton(x), Nil);
             groupByHelper(rc, f, rc2, rc1 :: ac)
     }
 
     ///
-    /// Helper function for `groupBy`.
+    /// Helper function for `groupWith`.
     ///
-    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
+    def extractHelper(rc: Region[r], f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Array[a, r], List[a]) \ r = match xs {
         case Nil => {
-            let a = List.reverse(ps);
-            (List.toArray(rc, a), List.reverse(ns))
+            let a = Nel.reverse(ps);
+            (Nel.toArray(rc, a), List.reverse(ns))
         }
         case x :: rs =>
-            if (agreeHelper(f, x, ps))
-                extractHelper(rc, f, rs, x :: ps, ns)
+            if (f(x, Nel.head(ps)))
+                extractHelper(rc, f, rs, Nel.cons(x, ps), ns)
             else
                 extractHelper(rc, f, rs, ps, x :: ns)
-    }
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
-        case Nil => true
-        case x :: rs =>
-            if ((f(x, a) and f(a, x)) == false)
-                false
-            else
-                agreeHelper(f, a, rs)
     }
 
     ///
