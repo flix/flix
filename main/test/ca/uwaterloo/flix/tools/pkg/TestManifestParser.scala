@@ -678,6 +678,25 @@ class TestManifestParser extends AnyFunSuite {
     assertResult(manifest1)(manifest2)
   }
 
+  test("Manifest.Identity.13") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world\""
+        |description = "A simple program\\\"\""
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |[dependencies]
+        |"github:jls/tic-tac-toe" = { version = "1.2.3", security = "unrestricted" }
+        |""".stripMargin
+    }
+    val manifest1 = ManifestParser.parse(toml, null).unsafeGet
+    val manifest2 = ManifestParser.parse(Manifest.format(manifest1), null).unsafeGet
+    assertResult(manifest1)(manifest2)
+  }
+
   /////////////
   // Errors  //
   /////////////

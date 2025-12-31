@@ -28,9 +28,11 @@ case class Manifest(name: String,
                     license: Option[String],
                     authors: List[String],
                     dependencies: List[Dependency]) {
-  val flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
-  val mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
-  val jarDependencies: List[Dependency.JarDependency] = dependencies.collect { case dep: Dependency.JarDependency => dep }
+  def flixDependencies: List[Dependency.FlixDependency] = dependencies.collect { case dep: Dependency.FlixDependency => dep }
+
+  def mavenDependencies: List[Dependency.MavenDependency] = dependencies.collect { case dep: Dependency.MavenDependency => dep }
+
+  def jarDependencies: List[Dependency.JarDependency] = dependencies.collect { case dep: Dependency.JarDependency => dep }
 }
 
 object Manifest {
@@ -131,7 +133,8 @@ object Manifest {
 
   private def formatTomlExp(exp0: TomlExp): String = exp0 match {
     case TomlExp.TomlValue(v) =>
-      s"\"$v\""
+      val escaped = escape(v.toString)
+      s"\"$escaped\""
 
     case TomlExp.TomlArray(v) =>
       v.map(formatTomlExp).mkString("[", ", ", "]")
@@ -158,6 +161,12 @@ object Manifest {
       }
       case None => entries
     }
+  }
+
+  /** Escapes `\` and `"` characters to `\\` and `\"`, respectively. */
+  private def escape(str: String): String = {
+    str.replace("\\", "\\\\")
+      .replace("\"", "\\\"")
   }
 
   private case class TomlSection(section: String, entries: List[TomlEntry])

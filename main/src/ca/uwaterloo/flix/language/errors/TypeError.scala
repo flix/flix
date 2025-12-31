@@ -19,11 +19,8 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.{CompilationMessage, CompilationMessageKind}
 import ca.uwaterloo.flix.language.ast.*
-import ca.uwaterloo.flix.language.ast.shared.SymUse.AssocTypeSymUse
 import ca.uwaterloo.flix.language.ast.shared.SymbolSet
-import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.ast.shared.Denotation
-import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
@@ -202,6 +199,7 @@ object TypeError {
     */
   case class MismatchedTypes(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def amb: SymbolSet = SymbolSet.ambiguous(SymbolSet.symbolsOf(fullType1), SymbolSet.symbolsOf(fullType2))
+
     def summary: String = s"Unable to unify the types '${formatType(fullType1, Some(renv), minimizeEffs = true, amb = amb)}' and '${formatType(fullType2, Some(renv), minimizeEffs = true, amb = amb)}'."
 
     def message(formatter: Formatter): String = {
@@ -361,66 +359,6 @@ object TypeError {
   }
 
   /**
-    * Occurs Check.
-    *
-    * @param baseVar   the base type variable.
-    * @param baseType  the base type.
-    * @param fullType1 the first full type.
-    * @param fullType2 the second full type.
-    * @param renv      the rigidity environment.
-    * @param loc       the location where the error occurred.
-    */
-  case class OccursCheck(baseVar: Type.Var, baseType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Unable to unify the type variable '$baseVar' with the type '$baseType'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Unable to unify the type variable '${red(formatType(baseVar, Some(renv)))}' with the type '${red(formatType(baseType, Some(renv)))}'.
-         |
-         |>> The type variable occurs recursively within the type.
-         |
-         |${code(loc, "mismatched types.")}
-         |
-         |Type One: ${formatType(fullType1, Some(renv))}
-         |Type Two: ${formatType(fullType2, Some(renv))}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Unexpected type, but a checked type cast might work.
-    *
-    * @param expected the expected type.
-    * @param inferred the inferred type.
-    * @param renv     the rigidity environment.
-    * @param loc      the location of the inferred type.
-    */
-  case class PossibleCheckedTypeCast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
-         |
-         |${code(loc, "expression has unexpected type.")}
-         |
-         |'${formatType(expected, Some(renv))}' appears to be assignable from '${formatType(inferred, Some(renv))}'.
-         |Consider using 'checked_cast'?
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some(
-      s"""Flix does not support sub-typing nor sub-effecting.
-         |
-         |Nevertheless, 'checked_cast' is way to use sub-typing in a safe manner, for example:
-         |
-         |    let s = "Hello World";
-         |    let o: Object = checked_cast(s);
-         |""".stripMargin
-    )
-  }
-
-  /**
     * A unification equation system was too complex to solve.
     *
     * @param loc the location where the error occurred.
@@ -495,33 +433,6 @@ object TypeError {
   }
 
   /**
-    * Undefined predicate error.
-    *
-    * @param pred       the missing predicate.
-    * @param predType   the type of the missing predicate.
-    * @param schemaType the schema type where the predicate is missing.
-    * @param renv       the rigidity environment.
-    * @param loc        the location where the error occurred.
-    */
-  case class UndefinedPred(pred: Name.Pred, predType: Type, schemaType: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Missing predicate '${pred.name}' of type '$predType'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Missing predicate '${red(pred.name)}' of type '${cyan(formatType(predType, Some(renv)))}'.
-         |
-         |${code(loc, "missing predicate.")}
-         |
-         |The schema type:
-         |
-         |  ${formatType(schemaType, Some(renv))}
-         |
-         |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatType(predType, Some(renv)))}.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error indicating an unexpected argument.
     *
     * @param sym      the symbol.
@@ -543,26 +454,6 @@ object TypeError {
          |
          |Expected: ${formatType(expected, Some(renv))}
          |  Actual: ${formatType(actual, Some(renv))}
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Unexpected Effect.
-    *
-    * @param expected the expected type.
-    * @param inferred the inferred type.
-    * @param renv     the rigidity environment.
-    * @param loc      the location of the inferred type.
-    */
-  case class UnexpectedEffect(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected type '${formatType(expected, Some(renv))}' but found type: '${formatType(inferred, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter.*
-      s""">> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
-         |
-         |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
     }
   }
@@ -661,7 +552,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter.*
-      s""">> Statement has non-unit type: ${FormatType.formatType(tpe)}.
+      s""">> Statement has non-unit type: ${formatType(tpe)}.
          |
          |${code(loc, s"non-unit type")}
          |

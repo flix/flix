@@ -1204,11 +1204,21 @@ pub mod Vector {
     /// A subvector is created by iterating through the remaining elements of `v` from left to right and adding an
     /// element to the subvector if and only if doing so creates no conflicts with the elements already in the subvector.
     ///
-    /// The function `f` must be pure.
+    /// The function `f` must be pure and define an equivalence relation.
     ///
-    pub def groupBy(f: (a, a) -> Bool, v: Vector[a]): Vector[Vector[a]] =
+    pub def groupWith(f: (a, a) -> Bool, v: Vector[a]): Vector[Vector[a]] =
         let xs = toList(v);
         groupByHelper(f, xs, Nil) |> List.toVector
+
+    ///
+    /// Partitions `v` into subvectors such that for any two elements `x` and `y` in a subvector,
+    /// if `f(x)` and `f(y)` are equal according to `Eq` on `b`.
+    ///
+    /// A subvector is created by iterating through the remaining elements of `v` from left to right and adding an
+    /// element to the subvector if and only if doing so creates no conflicts with the elements already in the subvector.
+    ///
+    pub def groupBy(f: a -> b, v: Vector[a]): Vector[Vector[a]] with Eq[b] =
+        groupWith(Eq.eq `on` f, v)
 
     ///
     /// Helper function for `groupBy`.
@@ -1216,35 +1226,23 @@ pub mod Vector {
     def groupByHelper(f: (a, a) -> Bool, xs: List[a], ac: List[Vector[a]]): List[Vector[a]] = match xs {
         case Nil     => List.reverse(ac)
         case x :: rs =>
-            let (r1, r2) = extractHelper(f, rs, x :: Nil, Nil);
+            let (r1, r2) = extractHelper(f, rs, Nel.singleton(x), Nil);
             groupByHelper(f, r2, r1 :: ac)
     }
 
     ///
     /// Helper function for `groupBy`.
     ///
-    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: List[a], ns: List[a]): (Vector[a], List[a]) = match xs {
+    def extractHelper(f: (a, a) -> Bool, xs: List[a], ps: Nel[a], ns: List[a]): (Vector[a], List[a]) = match xs {
         case Nil => {
-            let a = List.reverse(ps);
-            (List.toVector(a), List.reverse(ns))
+            let a = Nel.reverse(ps);
+            (Nel.toVector(a), List.reverse(ns))
         }
         case x :: rs =>
-            if (agreeHelper(f, x, ps))
-                extractHelper(f, rs, x :: ps, ns)
+            if (f(x, Nel.head(ps)))
+                extractHelper(f, rs, Nel.cons(x, ps), ns)
             else
                 extractHelper(f, rs, ps, x :: ns)
-    }
-
-    ///
-    /// Helper function for `groupBy`.
-    ///
-    def agreeHelper(f: (a, a) -> Bool, a: a, xs: List[a]): Bool = match xs {
-        case Nil => true
-        case x :: rs =>
-            if ((f(x, a) and f(a, x)) == false)
-                false
-            else
-                agreeHelper(f, a, rs)
     }
 
     ///
