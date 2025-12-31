@@ -121,7 +121,7 @@ object Specialization {
     *   - No type aliases
     *   - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     */
-  protected[monomorph] case class StrictSubstitution(s: Substitution) {
+  private case class StrictSubstitution(s: Substitution) {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.

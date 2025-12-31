@@ -88,6 +88,9 @@ object Lowering {
 
   }
 
+  /**
+    * Lowers the given def `defn`.
+    */
   protected[monomorph] def lowerDef(defn: LoweredAst.Def)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Def = defn match {
     case LoweredAst.Def(sym, spec0, exp, loc) =>
       val spec = lowerSpec(spec0)
