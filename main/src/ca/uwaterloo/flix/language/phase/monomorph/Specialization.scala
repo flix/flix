@@ -72,7 +72,8 @@ import scala.collection.mutable
   *        type.
   *      - b. We create new fresh local variable symbols (since the function is effectively being
   *        copied).
-  *      - c. We enqueue (or re-use) other functions referenced by the current function which require
+  *      - c. We lower the specialized function.
+  *      - d. We enqueue (or re-use) other functions referenced by the current function which require
   *        specialization.
   *   - 4. We reconstruct the AST from the specialized functions and remove all parametric functions.
   *
@@ -83,6 +84,12 @@ import scala.collection.mutable
   *   - Effect formulas are flat unions of effects in alphabetical order or a complement thereof.
   *   - Case set formulas are a single CaseSet literal or a complement thererof.
   *
+  * At a high level the relation between specialization and lowering is as follows
+  *
+  *   - First a function is specialized (step 3.a and 3.b)
+  *   - Then a function is lowered (step 3.c)
+  *   - Both specialization and lowering can lead to new functions (step 3.d)
+  *   - Both lowering and specialization do a single traversal of an ast per specialization
   */
 object Specialization {
 
@@ -418,6 +425,9 @@ object Specialization {
           case LoweredAst.FormalParam(varSym, tpe, fpLoc) =>
             LoweredAst.FormalParam(varSym, StrictSubstitution.empty(tpe), fpLoc)
         }
+        // `tparams` and `tconstrs` are ignored by `monomorph.Lowering`.
+        // They are solely passed to adhere to the `LoweredAst.spec`.
+        // For `declaredScheme` we are only interested in the `base` attribute.
         val spec = LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, StrictSubstitution.empty(retTpe), StrictSubstitution.empty(eff), tconstrs)
         LoweredAst.Op(sym, spec, loc)
     }
@@ -430,6 +440,9 @@ object Specialization {
 
     val spec0 = defn.spec
     val declaredScheme = spec0.declaredScheme.copy(base = subst(spec0.declaredScheme.base))
+    // `tparams` and `tconstrs` are ignored by `monomorph.Lowering`.
+    // They are solely passed to adhere to the `LoweredAst.spec`.
+    // For `declaredScheme` we are only interested in the `base` attribute.
     val spec = LoweredAst.Spec(
       spec0.doc,
       spec0.ann,
