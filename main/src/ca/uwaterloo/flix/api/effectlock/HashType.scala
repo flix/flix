@@ -24,9 +24,20 @@ import java.security.MessageDigest
 class HashType {
   private val md = MessageDigest.getInstance("SHA-256")
 
-  def treeHash(tpe0: Type): Array[Byte] = tpe0 match {
-    case Type.Var(sym, _) => ???
+  def hash(tpe0: Type): Array[Byte] = {
+    hashType(tpe0)
+    md.digest()
+  }
+
+  private def hashType(tpe0: Type): Unit = tpe0 match {
+    case Type.Var(sym, _) =>
+      hashKindedTypeVarSym(sym)
+      md.update(HType.Var.hashCode().byteValue)
+
     case Type.Cst(tc, _) =>
+      hashTypeConstructor(tc)
+      md.update(HType.Cst.hashCode().byteValue)
+
     case Type.Apply(tpe1, tpe2, _) => ???
     case Type.AssocType(SymUse.AssocTypeSymUse(sym, loc), arg, kind, _) => ???
     case Type.Alias(symUse, args, tpe, loc) => throw InternalCompilerException("Unexpected type alias", loc)
@@ -102,4 +113,20 @@ class HashType {
   }
 
   private def hashKindedTypeVarSym(sym0: Symbol.KindedTypeVarSym): Unit = ???
+
+  /**
+    * Common super type for hashable types.
+    *
+    * Case objects have hash codes that can be converted to byte values
+    * and thus represents a stable and unique byte value for the constructor.
+    */
+  private sealed trait HType
+
+  private object HType {
+
+    case object Var extends HType
+
+    case object Cst extends HType
+
+  }
 }
