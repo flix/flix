@@ -460,8 +460,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
   private def isProjectMode: Boolean = optManifest.isDefined
 
-  /** Helper object for effect locking. */
-  private object EffectLock {
+  object EffectLock {
 
     /**
       * Serializes the relevant functions for effect locking in `root` and returns a JSON string.
