@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.api.effectlock.EffectLock
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -437,25 +436,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   }
 
   def upgradeEffects(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = ???
-
-  /**
-    * Type checks the program and performs effect locking, overwriting the current 'effects.lock' file if it exists.
-    * If the program does not type check, then effect locking is aborted without touching the file system.
-    */
-  def lockEffects(flix: Flix): Result[Unit, BootstrapError] = {
-    if (!isProjectMode) {
-      return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-lock'"))
-    }
-    Steps.updateStaleSources(flix)
-    for {
-      root <- Steps.check(flix)
-    } yield {
-      val json = EffectLock.serialize(root)
-      val path = Bootstrap.getEffectLockFile(projectPath)
-      // N.B.: Do not use FileOps.writeJSON, since we use custom serialization formats.
-      FileOps.writeString(path, json)
-    }
-  }
 
   /** Returns `true` if in project mode. This is the case when a `flix.toml` file is present. */
   private def isProjectMode: Boolean = optManifest.isDefined
