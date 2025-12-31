@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.language.ast.{Scheme, SourceLocation}
 import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
@@ -53,5 +54,39 @@ object BootstrapError {
 
   case class GeneralError(e: List[String]) extends BootstrapError {
     override def message(f: Formatter): String = e.mkString(System.lineSeparator())
+  }
+
+  case class EffectUpgradeError(e: List[(String, Scheme, List[SourceLocation])]) extends BootstrapError {
+    override def message(f: Formatter): String = {
+      s"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |@  WARNING! YOU MAY BE SUBJECT TO A SUPPLY CHAIN ATTACK!  @
+         |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+         |            ~~ Effect signatures have changed! ~~
+         |
+         |The following potentially harmful changes were detected:
+         |$effectSets
+         |
+         |The functions are used in these places:
+         |$uses
+         |""".stripMargin
+    }
+
+    private def effectSets: String = {
+      e.map {
+        case (sym, upgrade, _) =>
+          val effs = upgrade.base.effects.mkString("*{", ", ", "}*")
+          s"  + '$sym' now uses $effs"
+      }.mkString(System.lineSeparator())
+    }
+
+    private def uses: String = {
+      e.map {
+        case (sym, _, uses) =>
+          val formattedSym = s"  '$sym':"
+          val formattedUses = uses.map(loc => s"    $loc").mkString(System.lineSeparator())
+          s""""$formattedSym
+             |$formattedUses""".stripMargin
+      }.mkString(System.lineSeparator())
+    }
   }
 }

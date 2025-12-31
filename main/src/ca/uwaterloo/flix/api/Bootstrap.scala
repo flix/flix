@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{EXT_CLASS, EXT_FPKG, EXT_JAR, FLIX_TOML, LICENSE, README}
-import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade}
+import ca.uwaterloo.flix.api.effectlock.{EffectLock, EffectUpgrade, UseGraph}
 import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.ast.shared.SecurityContext
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{Build, FileOps, Formatter, Result, Validation}
 
 import java.io.PrintStream
@@ -436,7 +437,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
   }
 
-  def upgradeEffects(flix: Flix)(implicit out: PrintStream): Result[Unit, BootstrapError] = {
+  def upgradeEffects(flix: Flix): Result[Unit, BootstrapError] = {
     if (!isProjectMode) {
       return Err(BootstrapError.FileError("No 'flix.toml' found. Refusing to run 'eff-upgrade'"))
     }
@@ -462,6 +463,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         case Err(e) => return Err(BootstrapError.FileError(e))
         case Ok((defs, sigs)) =>
           // 3. Check effect lock
+          // N.B.: Map to strings to remove different internal sym ids
           val strToLockedDefs = defs.map {
             case (sym, scheme) => sym.toString -> scheme
           }
@@ -484,15 +486,34 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
               val upgradeScheme = strToNewSigs(sym)
               sym -> (originalScheme, upgradeScheme.spec.declaredScheme)
           }
-          val defUpgrades = defSchemes.map {
-            case (sym, (original, upgrade)) => sym -> EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix) // TODO: Collect errors
+          val useGraph = ListMap.from(UseGraph.computeGraph(root).map {
+            case (src, UseGraph.UsedSym.DefnSym(dst)) => src.toString -> dst.loc
+            case (src, UseGraph.UsedSym.SigSym(dst)) => src.toString -> dst.loc
+          })
+          val defUpgradeErrors = defSchemes.map {
+            case (sym, (original, upgrade)) =>
+              val uses = useGraph.get(sym)
+              if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
+                None
+              } else {
+                Some((sym, upgrade, uses))
+              }
+          }.toList.flatten
+          val sigUpgradeErrors = sigSchemes.map {
+            case (sym, (original, upgrade)) =>
+              val uses = useGraph.get(sym)
+              if (uses.isEmpty || EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix)) {
+                None
+              } else {
+                Some((sym, upgrade, uses))
+              }
+          }.toList.flatten
+          val allErrors = defUpgradeErrors ::: sigUpgradeErrors
+          if (allErrors.isEmpty) {
+            Ok(())
+          } else {
+            Err(BootstrapError.EffectUpgradeError(allErrors))
           }
-          val sigUpgrades = sigSchemes.map {
-            case (sym, (original, upgrade)) => sym -> EffectUpgrade.isEffSafeUpgrade(original, upgrade)(flix) // TODO: Collect errors
-          }
-
-          // TODO: What to do about associated types? Resolve using eq env?
-          ???
       }
     }
   }
